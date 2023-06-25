@@ -92,7 +92,7 @@ private:
     static std::vector<std::string> GetConnectDevices();
     static std::vector<std::string> NetworkIdToUUID(const std::vector<std::string>& networkIds);
 
-    static Details HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>> &SyncStatus);
+    static Details HandleSyncStatus(const std::map<std::string, std::vector<DistributedDB::TableStatus>> &syncStatus);
     static Details HandleGenDetails(const GenDetails &details);
     static void EqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);
     static void NotEqualTo(const RdbPredicateOperation& operation, DistributedDB::Query& query);

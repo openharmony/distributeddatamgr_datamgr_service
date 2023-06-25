@@ -38,7 +38,7 @@ public:
     using Database = DistributedData::Database;
     using RdbStore = OHOS::NativeRdb::RdbStore;
 
-    explicit RdbGeneralStore(const StoreMetaData &metaData);
+    explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
     int32_t Bind(const Database &database, BindInfo bindInfo) override;
     bool IsBound() override;
