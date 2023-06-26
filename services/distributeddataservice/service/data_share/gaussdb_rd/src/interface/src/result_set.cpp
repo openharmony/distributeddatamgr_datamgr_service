@@ -190,19 +190,19 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
         GLOGE("No node to cut");
         return -E_NO_DATA;
     }
-    singlePath.emplace_back(node->GetItemField());
-    size_t index = 0;
-    if (!context_->projectionTree.SearchTree(singlePath, index) && index == 0) {
-        allCutPath.emplace_back(singlePath);
-    }
-    if (!node->GetChild().IsNull()) {
-        JsonObject nodeNew = node->GetChild();
-        CheckCutNode(&nodeNew, singlePath, allCutPath);
-    }
-    if (!node->GetNext().IsNull()) {
+    JsonObject nodeInstance = *node;
+    while (!nodeInstance.IsNull()) {
+        singlePath.emplace_back(nodeInstance.GetItemField());
+        size_t index = 0;
+        if (!context_->projectionTree.SearchTree(singlePath, index) && index == 0) {
+            allCutPath.emplace_back(singlePath);
+        }
+        if (!nodeInstance.GetChild().IsNull()) {
+            JsonObject nodeChiled = nodeInstance.GetChild();
+            CheckCutNode(&nodeChiled, singlePath, allCutPath);
+        }
         singlePath.pop_back();
-        JsonObject nodeNew = node->GetNext();
-        CheckCutNode(&nodeNew, singlePath, allCutPath);
+        nodeInstance = nodeInstance.GetNext();
     }
     return E_OK;
 }
