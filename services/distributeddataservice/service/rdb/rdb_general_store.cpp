@@ -284,7 +284,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     genOrigin.store = storeId_;
     Watcher::PRIFields fields;
     Watcher::ChangeInfo changeInfo;
-    for (int i = 0; i < DistributedDB::OP_BUTT; ++i) {
+    for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
         auto &info = changeInfo[data.tableName][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;

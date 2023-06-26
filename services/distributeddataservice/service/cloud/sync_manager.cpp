@@ -49,7 +49,7 @@ SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, con
 }
 
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables)
-    : user_(user), bundleName_(bundleName)
+    : user_(user), bundleName_(bundleName), tables_(tables)
 {
     tables_ = tables;
     syncId_ = SyncManager::GenerateId(user);
@@ -294,7 +294,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
 
 uint64_t SyncManager::GenerateId(int32_t user)
 {
-    uint64_t syncId = user;
+    uint64_t syncId = static_cast<uint64_t>(user) & 0xFFFFFFFF;
     return (syncId << MV_BIT) | (++genId_);
 }
 
@@ -307,7 +307,7 @@ RefCount SyncManager::GenSyncRef(uint64_t syncId)
 
 int32_t SyncManager::Compare(uint64_t syncId, int32_t user)
 {
-    uint64_t inner = user;
+    uint64_t inner = static_cast<uint64_t>(user) & 0xFFFFFFFF;
     return (syncId & USER_MARK) == (inner << MV_BIT);
 }
 
