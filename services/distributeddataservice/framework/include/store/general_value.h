@@ -32,10 +32,10 @@ enum GenProgress {
 };
 
 struct GenStatistic {
-    int32_t total;
-    int32_t success;
-    int32_t failed;
-    int32_t untreated;
+    uint32_t total;
+    uint32_t success;
+    uint32_t failed;
+    uint32_t untreated;
 };
 
 struct GenTableDetail {
