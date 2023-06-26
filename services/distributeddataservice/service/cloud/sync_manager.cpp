@@ -143,7 +143,7 @@ int32_t SyncManager::DoCloudSync(SyncInfo syncInfo)
     }
 
     actives_.Compute(GenerateId(syncInfo.user_), [this, &syncInfo](const uint64_t &key, TaskId &taskId) mutable {
-        taskId = executor_->Execute(GetSyncTask(0, GenSyncRef(key), std::move(syncInfo)));
+        taskId = executor_->Execute(GetSyncTask(0, true, GenSyncRef(key), std::move(syncInfo)));
         return true;
     });
 
@@ -164,10 +164,10 @@ int32_t SyncManager::StopCloudSync(int32_t user)
     return E_OK;
 }
 
-ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInfo &&syncInfo)
+ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo)
 {
-    retry++;
-    return [this, retry, ref = std::move(ref), info = std::move(syncInfo)]() mutable {
+    times++;
+    return [this, times, retry, ref = std::move(ref), info = std::move(syncInfo)]() mutable {
         activeInfos_.Erase(info.syncId_);
         CloudInfo cloud;
         cloud.user = info.user_;
@@ -185,7 +185,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
 
         std::vector<SchemaMeta> schemas;
         auto key = cloud.GetSchemaPrefix(info.bundleName_);
-        auto retryer = GetRetryer(retry, info);
+        auto retryer = GetRetryer(times, info);
         if (!MetaDataManager::GetInstance().LoadMeta(key, schemas, true)) {
             UpdateSchema(info);
             retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
@@ -206,7 +206,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t retry, RefCount ref, SyncInf
                 storeInfo.instanceId = cloud.apps[schema.bundleName].instanceId;
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                    SyncEvent::EventInfo { info.mode_, info.wait_, false, std::move(query), info.async_ });
+                    SyncEvent::EventInfo { info.mode_, info.wait_, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
             }
         }
@@ -237,9 +237,14 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
 
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
-        auto status = store->Sync(
-            { SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.GetAsyncDetail(), evt.GetWait());
-        retryer(status == E_ALREADY_LOCKED ? LOCKED_INTERVAL : RETRY_INTERVAL, status);
+        store->Sync({ SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.AutoRetry() ? [retryer](const GenDetails &details) {
+            if (details.empty()) {
+                ZLOGE("retry, details empty");
+                return;
+            }
+            int32_t code = details.begin()->second.code;
+            retryer(code == E_ALREADY_LOCKED ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
+        } : evt.GetAsyncDetail(), evt.GetWait());
     };
 }
 
@@ -254,14 +259,14 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetAsyncDetail(evt.GetAsyncDetail());
         syncInfo.SetQuery(evt.GetQuery());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
-        auto task = GetSyncTask(times, RefCount(), std::move(syncInfo));
+        auto task = GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo));
         task();
     };
 }
 
-SyncManager::Retryer SyncManager::GetRetryer(int32_t retry, const SyncInfo &syncInfo)
+SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &syncInfo)
 {
-    if (retry >= RETRY_TIMES) {
+    if (times >= RETRY_TIMES) {
         return  [info = SyncInfo(syncInfo)](Duration, int32_t code) mutable {
             if (code == E_OK) {
                 return true;
@@ -270,15 +275,15 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t retry, const SyncInfo &sync
             return true;
         };
     }
-    return [this, retry, info = SyncInfo(syncInfo)](Duration interval, int32_t code) mutable {
+    return [this, times, info = SyncInfo(syncInfo)](Duration interval, int32_t code) mutable {
         if (code == E_OK) {
             return true;
         }
 
-        activeInfos_.ComputeIfAbsent(info.syncId_, [this, retry, interval, &info](uint64_t key) mutable {
+        activeInfos_.ComputeIfAbsent(info.syncId_, [this, times, interval, &info](uint64_t key) mutable {
             auto syncId = GenerateId(info.user_);
-            actives_.Compute(syncId, [this, retry, interval, &info](const uint64_t &key, TaskId &value) mutable {
-                value = executor_->Schedule(interval, GetSyncTask(retry, GenSyncRef(key), std::move(info)));
+            actives_.Compute(syncId, [this, times, interval, &info](const uint64_t &key, TaskId &value) mutable {
+                value = executor_->Schedule(interval, GetSyncTask(times, true, GenSyncRef(key), std::move(info)));
                 return true;
             });
             return syncId;

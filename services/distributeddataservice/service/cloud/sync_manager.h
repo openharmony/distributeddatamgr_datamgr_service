@@ -80,11 +80,11 @@ private:
     static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000; // high 32 bit
     static constexpr int32_t MV_BIT = 32;
 
-    Task GetSyncTask(int32_t retry, RefCount ref, SyncInfo &&syncInfo);
+    Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
     std::function<void(const Event &)> GetClientChangeHandler();
-    Retryer GetRetryer(int32_t retry, const SyncInfo &syncInfo);
+    Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo);
     static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user);
     static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
