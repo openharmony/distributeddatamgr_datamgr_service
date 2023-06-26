@@ -35,6 +35,7 @@ namespace {
 std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 constexpr const char *COLLECTION_NAME = "student";
+constexpr const char *colName1 = "data_";
 const int MAX_COLLECTION_NAME = 511;
 
 const int MAX_ID_LENS = 899;
@@ -1478,7 +1479,6 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest062, TestSize.Level1)
 
 HWTEST_F(DocumentDBFindTest, DocumentDBFindTest063, TestSize.Level1)
 {
-    char *colName1 = "data_";
     GRD_DB *test_db = nullptr;
     std::string path = "./dataShare.db";
     int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &test_db);
@@ -1489,10 +1489,9 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest063, TestSize.Level1)
     EXPECT_EQ(GRD_InsertDoc(test_db, colName1, document0632, 0), GRD_OK);
     EXPECT_EQ(GRD_InsertDoc(test_db, colName1, document0633, 0), GRD_OK);
 
-    string document1 = "{\"_id\":\"key2_11_com.acts.ohos.data.datasharetestclient_100\"\
-          ,\"bundleName\":\"com.acts.ohos.data.datasharetestclient\"\
-          ,\"key\":\"key2\",\"subscriberId\":11,\"timestamp\":1509100700,"
-          "\"userId\":100,\"value\":{\"type\":0,";
+    string document1 = "{\"_id\":\"key2_11_com.acts.ohos.data.datasharetestclient_100\",\
+        \"bundleName\":\"com.acts.ohos.data.datasharetestclient\",\"key\":\"key2\",\
+        \"subscriberId\":11,\"timestamp\":1509100700,""\"userId\":100,\"value\":{\"type\":0,";
     string document2 = "\"value\":[";
     string document3 = "5,";
     string document4 = document3;
@@ -1513,7 +1512,6 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest063, TestSize.Level1)
     char *value;
     while (GRD_Next(resultSet) == GRD_OK) {
         EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
-        printf("value is ======>%s\n", value);
         GRD_FreeValue(value);
     }
     EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
