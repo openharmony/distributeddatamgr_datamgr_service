@@ -35,6 +35,7 @@ namespace {
 std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 constexpr const char *COLLECTION_NAME = "student";
+constexpr const char *colName = "data_";
 const int MAX_COLLECTION_NAME = 511;
 
 const int MAX_ID_LENS = 899;
@@ -1463,5 +1464,42 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest062, TestSize.Level1)
     const char *projection = R"({"abc123_":1})";
     Query query = { filter, projection };
     EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_INVALID_ARGS);
+}
+
+HWTEST_F(DocumentDBFindTest, DocumentDBFindTest063, TestSize.Level1)
+{
+    GRD_DB *test_db = nullptr;
+    std::string path = "./dataShare.db";
+    int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &test_db);
+    EXPECT_EQ(status, GRD_OK);
+    EXPECT_EQ(GRD_CreateCollection(test_db, colName, "", 0), GRD_OK);
+    string document1 = "{\"_id\":\"key2_11_com.acts.ohos.data.datasharetestclient_100\",\
+        \"bundleName\":\"com.acts.ohos.data.datasharetestclient\",\"key\":\"key2\",\
+        \"subscriberId\":11,\"timestamp\":1509100700,""\"userId\":100,\"value\":{\"type\":0,";
+    string document2 = "\"value\":[";
+    string document3 = "5,";
+    string document4 = document3;
+    for (int i = 0; i < 100000; i++) {
+        document4 += document3;
+    }
+    document4.push_back('5');
+    string document5 = "]}}";
+    string document0635 = document1 + document2 + document4 + document5;
+    EXPECT_EQ(GRD_InsertDoc(test_db, colName, document0635.c_str(), 0), GRD_OK);
+    EXPECT_EQ(status, GRD_OK);
+    const char *filter = "{}";
+    GRD_ResultSet *resultSet = nullptr;
+    const char *projection = "{\"id_\":true, \"timestamp\":true, \"key\":true, \"bundleName\": true, "
+                             "\"subscriberId\": true}";
+    Query query = { filter, projection };
+    EXPECT_EQ(GRD_FindDoc(test_db, colName, query, 1, &resultSet), GRD_OK);
+    char *value;
+    while (GRD_Next(resultSet) == GRD_OK) {
+        EXPECT_EQ(GRD_GetValue(resultSet, &value), GRD_OK);
+        GRD_FreeValue(value);
+    }
+    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
+    EXPECT_EQ(GRD_DBClose(test_db, 0), GRD_OK);
+    DocumentDBTestUtils::RemoveTestDbFiles(path.c_str());
 }
 } // namespace
