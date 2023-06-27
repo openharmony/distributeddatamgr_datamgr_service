@@ -14,6 +14,8 @@
  */
 #include "json_common.h"
 
+#include <queue>
+
 #include "doc_errno.h"
 #include "log_print.h"
 
@@ -82,26 +84,27 @@ std::vector<ValueObject> JsonCommon::GetLeafValue(const JsonObject &node)
 
 bool JsonCommon::CheckNode(JsonObject &node)
 {
-    while (!node.IsNull()) {
+    std::queue<JsonObject> jsonQueue;
+    jsonQueue.push(node);
+    while (!jsonQueue.empty()) {
         std::set<std::string> fieldSet;
         bool isFieldNameExist = true;
         int ret = E_OK;
-        std::string fieldName = node.GetItemField(ret);
+        JsonObject item = jsonQueue.front();
+        jsonQueue.pop();
+        std::string fieldName = item.GetItemField(ret);
         if (ret != E_OK) {
             isFieldNameExist = false;
         }
-
         if (fieldSet.find(fieldName) != fieldSet.end()) {
             return false;
         }
-
         if (isFieldNameExist) {
             fieldSet.insert(fieldName);
             if (fieldName.empty()) {
                 return false;
             }
         }
-
         for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || fieldName[i] == '_')) {
                 return false;
@@ -110,14 +113,12 @@ bool JsonCommon::CheckNode(JsonObject &node)
                 return false;
             }
         }
-
-        if (!node.GetChild().IsNull()) {
-            JsonObject nodeNew = node.GetChild();
-            if (!CheckNode(nodeNew)) {
-                return false;
-            }
+        if (!item.GetChild().IsNull()) {
+            jsonQueue.push(item.GetChild());
         }
-        node = node.GetNext();
+        if (!item.GetNext().IsNull()) {
+            jsonQueue.push(item.GetNext());
+        }
     }
     return true;
 }
@@ -129,10 +130,14 @@ bool JsonCommon::CheckJsonField(JsonObject &jsonObj)
 
 bool JsonCommon::CheckProjectionNode(JsonObject &node, bool isFirstLevel, int &errCode)
 {
-    while (!node.IsNull()) {
+    std::queue<JsonObject> jsonQueue;
+    jsonQueue.push(node);
+    while (!jsonQueue.empty()) {
         int ret = 0;
         std::set<std::string> fieldSet;
-        std::string fieldName = node.GetItemField(ret);
+        JsonObject item = jsonQueue.front();
+        jsonQueue.pop();
+        std::string fieldName = item.GetItemField(ret);
         if (fieldName.empty()) {
             errCode = -E_INVALID_ARGS;
             return false;
@@ -154,13 +159,12 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, bool isFirstLevel, int &e
                 return false;
             }
         }
-        if (!node.GetChild().IsNull()) {
-            JsonObject nodeNew = node.GetChild();
-            if (!CheckProjectionNode(nodeNew, false, errCode)) {
-                return false;
-            }
+        if (!item.GetNext().IsNull()) {
+            jsonQueue.push(item.GetNext());
         }
-        node = node.GetNext();
+        if (!item.GetChild().IsNull()) {
+            jsonQueue.push(item.GetChild());
+        }
     }
     return true;
 }

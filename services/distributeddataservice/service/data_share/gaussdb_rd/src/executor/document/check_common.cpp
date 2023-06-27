@@ -41,7 +41,7 @@ bool CheckCollectionNamePrefix(const std::string &name, const std::string &prefi
 
 void ReplaceAll(std::string &inout, const std::string &what, const std::string &with)
 {
-    std::string::size_type pos {};
+    std::string::size_type pos{};
     while ((pos = inout.find(what.data(), pos, what.length())) != std::string::npos) {
         inout.replace(pos, what.length(), with.data(), with.length());
         pos += with.length();

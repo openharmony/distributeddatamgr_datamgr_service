@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <queue>
 
 #include "doc_errno.h"
 #include "log_print.h"
@@ -146,17 +147,23 @@ int JsonObject::GetDeep(cJSON *cjson)
 
 int JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
-    while (item != nullptr) {
-        if (item != NULL && cJSON_IsNumber(item)) {
-            double value = cJSON_GetNumberValue(item);
+    std::queue<cJSON *> cjsonQueue;
+    cjsonQueue.push(item);
+    while (!cjsonQueue.empty()) {
+        cJSON *node = cjsonQueue.front();
+        cjsonQueue.pop();
+        if (node != NULL && cJSON_IsNumber(node)) {
+            double value = cJSON_GetNumberValue(node);
             if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
                 errCode = -E_INVALID_ARGS;
             }
         }
-        if (item->child != nullptr) {
-            return CheckNumber(item->child, errCode);
+        if (node->child != nullptr) {
+            cjsonQueue.push(node->child);
         }
-        item = item->next;
+        if (node->next != nullptr) {
+            cjsonQueue.push(node->next);
+        }
     }
     return E_OK;
 }
