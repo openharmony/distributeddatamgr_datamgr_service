@@ -31,8 +31,8 @@ DBStatus RdbAssetLoader::Download(const std::string &tableName, const std::strin
     std::map<std::string, Assets> &assets)
 {
     DistributedData::VBucket downLoadAssets = ValueProxy::Convert(assets);
-
-    auto error = assetLoader_->Download(tableName, gid, (const DistributedData::Value &)prefix, downLoadAssets);
+    DistributedDB::Type prefixTemp = prefix;
+    auto error = assetLoader_->Download(tableName, gid, ValueProxy::Convert(std::move(prefixTemp)), downLoadAssets);
     if (error == DistributedData::GeneralError::E_OK) {
         assets = ValueProxy::Convert(std::move(downLoadAssets));
     }
