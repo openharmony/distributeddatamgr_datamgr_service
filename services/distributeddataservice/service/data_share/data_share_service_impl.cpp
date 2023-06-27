@@ -442,6 +442,10 @@ void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
     ZLOGD("%{private}s try notified", uri.c_str());
     auto context = std::make_shared<Context>(uri);
+    if (!GetCallerBundleName(context->callerBundleName)) {
+        ZLOGE("get bundleName error, %{private}s", uri.c_str());
+        return;
+    }
     auto ret = rdbNotifyStrategy_.Execute(context);
     if (ret) {
         ZLOGI("%{private}s start notified", uri.c_str());
