@@ -14,9 +14,9 @@
 */
 
 #include "json_object.h"
-
 #include <algorithm>
 #include <cmath>
+#include <queue>
 
 #include "doc_errno.h"
 #include "log_print.h"
