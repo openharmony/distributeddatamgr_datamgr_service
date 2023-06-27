@@ -43,7 +43,7 @@ ValueObject::ValueObject(double val)
     doubleValue = val;
 }
 
-ValueObject::ValueObject(const std::string &val)
+ValueObject::ValueObject(const char *val)
 {
     valueType = ValueType::VALUE_STRING;
     stringValue = val;

@@ -37,7 +37,6 @@ public:
     explicit ValueObject(bool val);
     explicit ValueObject(double val);
     explicit ValueObject(const char *val);
-    explicit ValueObject(const std::string &val);
 
     ValueType GetValueType() const;
     bool GetBoolValue() const;
