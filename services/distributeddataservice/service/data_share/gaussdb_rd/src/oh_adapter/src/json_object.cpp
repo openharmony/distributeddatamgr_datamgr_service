@@ -146,17 +146,17 @@ int JsonObject::GetDeep(cJSON *cjson)
 
 int JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
-    if (item != NULL && cJSON_IsNumber(item)) {
-        double value = cJSON_GetNumberValue(item);
-        if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
-            errCode = -E_INVALID_ARGS;
+    while (item != nullptr) {
+        if (item != NULL && cJSON_IsNumber(item)) {
+            double value = cJSON_GetNumberValue(item);
+            if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
+                errCode = -E_INVALID_ARGS;
+            }
         }
-    }
-    if (item->child != nullptr) {
-        return CheckNumber(item->child, errCode);
-    }
-    if (item->next != nullptr) {
-        return CheckNumber(item->next, errCode);
+        if (item->child != nullptr) {
+            return CheckNumber(item->child, errCode);
+        }
+        item = item->next;
     }
     return E_OK;
 }
