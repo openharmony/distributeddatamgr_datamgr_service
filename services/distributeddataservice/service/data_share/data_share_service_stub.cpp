@@ -329,5 +329,16 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     }
     return -1;
 }
+
+int32_t DataShareServiceStub::OnRemoteNotifyObserver(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    if (!ITypesUtil::Unmarshal(data, uri)) {
+        ZLOGE("read device list failed.");
+        return -1;
+    }
+    NotifyObserver(uri);
+    return 0;
+}
 } // namespace DataShare
 } // namespace OHOS

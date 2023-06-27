@@ -160,7 +160,9 @@ void PublishedData::ClearAging()
         return;
     }
     std::vector<std::string> queryResults;
-    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{}", "{}", queryResults);
+    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{}",
+        "{\"id_\": true, \"timestamp\": true, \"key\": true, \"bundleName\": true, \"subscriberId\": true}",
+        queryResults);
     if (status != E_OK) {
         ZLOGE("db GetBatch failed %{public}d", status);
         return;
@@ -186,5 +188,37 @@ void PublishedData::ClearAging()
         ZLOGI("aging count %{public}d", agingSize);
     }
     return;
+}
+
+void PublishedData::UpdateTimestamp(
+    const std::string &key, const std::string &bundleName, int64_t subscriberId, const int32_t userId)
+{
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return;
+    }
+    std::string queryResult;
+    int32_t status =
+        delegate->Get(KvDBDelegate::DATA_TABLE, Id(GenId(key, bundleName, subscriberId), userId), queryResult);
+    if (status != E_OK) {
+        ZLOGE("db Get failed, %{private}s %{public}d", queryResult.c_str(), status);
+        return;
+    }
+    PublishedDataNode data;
+    if (!PublishedDataNode::Unmarshall(queryResult, data)) {
+        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        return;
+    }
+    auto now = time(nullptr);
+    if (now <= 0) {
+        ZLOGE("time failed");
+        return;
+    }
+    data.timestamp = now;
+    status = delegate->Upsert(KvDBDelegate::DATA_TABLE, PublishedData(data));
+    if (status == E_OK) {
+        ZLOGI("update timestamp %{private}s to %{public}lld", data.key.c_str(), now);
+    }
 }
 } // namespace OHOS::DataShare

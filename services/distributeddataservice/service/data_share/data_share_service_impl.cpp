@@ -308,9 +308,16 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&subscriberId, &context]() -> bool {
-            return PublishedDataSubscriberManager::GetInstance().Delete(
+        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&subscriberId, &context, this]() -> bool {
+            auto result = PublishedDataSubscriberManager::GetInstance().Delete(
                 PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
+            if (binderInfo_.executors != nullptr) {
+                binderInfo_.executors->Execute([context, subscriberId]() {
+                    PublishedData::UpdateTimestamp(
+                        context->uri, context->callerBundleName, subscriberId, context->currentUserId);
+                });
+            }
+            return result;
         }));
     }
     return results;
@@ -429,5 +436,16 @@ int32_t DataShareServiceImpl::OnAppUninstall(
     TemplateData::Delete(bundleName, user);
     RdbHelper::ClearCache();
     return EOK;
+}
+
+void DataShareServiceImpl::NotifyObserver(const std::string &uri)
+{
+    ZLOGD("%{private}s try notified", uri.c_str());
+    auto context = std::make_shared<Context>(uri);
+    auto ret = rdbNotifyStrategy_.Execute(context);
+    if (ret) {
+        ZLOGI("%{private}s start notified", uri.c_str());
+        RdbSubscriberManager::GetInstance().Emit(uri, context);
+    }
 }
 } // namespace OHOS::DataShare

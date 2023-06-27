@@ -232,6 +232,10 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
     }
+    if (context->calledSourceDir.empty()) {
+        LoadConfigDataInfoStrategy loadDataInfo;
+        loadDataInfo(context);
+    }
     rdbCache_.ForEach([&uri, &context, this](const Key &key, std::vector<ObserverNode> &val) {
         if (key.uri != uri) {
             return false;
