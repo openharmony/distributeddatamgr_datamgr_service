@@ -34,8 +34,7 @@ std::string PublishedData::GetValue() const
     return DistributedData::Serializable::Marshall(value);
 }
 
-PublishedData::PublishedData(const PublishedDataNode &node, const int version)
-    : PublishedData(node)
+PublishedData::PublishedData(const PublishedDataNode &node, const int version) : PublishedData(node)
 {
     value.SetVersion(version);
 }
@@ -85,10 +84,13 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
     bool ret = GetValue(node, GET_NAME(key), key);
     ret = ret && GetValue(node, GET_NAME(bundleName), bundleName);
     ret = ret && GetValue(node, GET_NAME(subscriberId), subscriberId);
-    ret = ret && GetValue(node, GET_NAME(value), value);
+    if (ret) {
+        GetValue(node, GET_NAME(value), value);
+        VersionData::Unmarshal(node);
+    }
     ret = ret && GetValue(node, GET_NAME(timestamp), timestamp);
     ret = ret && GetValue(node, GET_NAME(userId), userId);
-    return ret && VersionData::Unmarshal(node);
+    return ret;
 }
 
 PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
@@ -161,7 +163,8 @@ void PublishedData::ClearAging()
     }
     std::vector<std::string> queryResults;
     int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{}",
-        "{\"id_\": true, \"timestamp\": true, \"key\": true, \"bundleName\": true, \"subscriberId\": true}",
+        "{\"id_\": true, \"timestamp\": true, \"key\": true, \"bundleName\": true, \"subscriberId\": true, "
+        "\"userId\": true}",
         queryResults);
     if (status != E_OK) {
         ZLOGE("db GetBatch failed %{public}d", status);
