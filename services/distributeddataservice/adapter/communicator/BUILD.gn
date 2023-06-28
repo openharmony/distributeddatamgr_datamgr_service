@@ -58,7 +58,7 @@ ohos_static_library("distributeddata_communicator_static") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
 
   subsystem_name = "distributeddatamgr"

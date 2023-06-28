@@ -90,7 +90,7 @@ ohos_shared_library("distributeddatasvcfwk") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
   subsystem_name = "distributeddatamgr"
 
