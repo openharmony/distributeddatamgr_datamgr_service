@@ -15,7 +15,6 @@
 
 #define LOG_TAG "RdbCloud"
 #include "rdb_cloud.h"
-#include "cloud/schema_meta.h"
 #include "log_print.h"
 #include "value_proxy.h"
 #include "utils/anonymous.h"
@@ -74,9 +73,6 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         err = cursor->MoveToNext();
         count--;
     }
-    DistributedData::Value cursorFlag;
-    cursor->Get(SchemaMeta::CURSOR_FIELD, cursorFlag);
-    extend[SchemaMeta::CURSOR_FIELD] = ValueProxy::Convert(std::move(cursorFlag));
     if (cursor->IsEnd()) {
         ZLOGD("query end, table:%{public}s", Anonymous::Change(tableName).c_str());
         return DBStatus::QUERY_END;
