@@ -238,15 +238,15 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         auto status = store->Sync({ SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.AutoRetry()
-                          ? [retryer](const GenDetails &details) {
-                              if (details.empty()) {
-                                  ZLOGE("retry, details empty");
-                                  return;
-                              }
-                              int32_t code = details.begin()->second.code;
-                              retryer(code == E_ALREADY_LOCKED ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
-                          }
-                          : evt.GetAsyncDetail(), evt.GetWait());
+            ? [retryer](const GenDetails &details) {
+                if (details.empty()) {
+                    ZLOGE("retry, details empty");
+                    return;
+                }
+                int32_t code = details.begin()->second.code;
+                retryer(code == E_ALREADY_LOCKED ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
+            }
+            : evt.GetAsyncDetail(), evt.GetWait());
         GenAsync async = evt.GetAsyncDetail();
         if (status != E_OK && async) {
             GenDetails details;
