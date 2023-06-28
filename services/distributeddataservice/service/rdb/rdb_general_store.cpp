@@ -103,10 +103,6 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_);
     delegate_->SetCloudDB(rdbCloud_);
     rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_);
-    if (rdbLoader_ == nullptr) {
-        ZLOGE("rdb_AssetLoader is null");
-        return GeneralError::E_ERROR;
-    }
     delegate_->SetIAssetLoader(rdbLoader_);
     DBSchema schema;
     schema.tables.resize(database.tables.size());

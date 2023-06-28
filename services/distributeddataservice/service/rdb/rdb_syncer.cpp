@@ -385,8 +385,8 @@ int32_t RdbSyncer::DoSync(const Option &option, const PredicatesMemo &predicates
             query->query_.FromTable(predicates.tables_);
         }
 
-        auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME), query,
-            [async](const GenDetails &details) {
+        auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME),
+            (option.isAsync && option.seqNum == 0), query, [async](const GenDetails &details) {
                 async(HandleGenDetails(details));
             });
         auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
