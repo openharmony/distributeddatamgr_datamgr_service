@@ -221,7 +221,7 @@ void PublishedData::UpdateTimestamp(
     data.timestamp = now;
     status = delegate->Upsert(KvDBDelegate::DATA_TABLE, PublishedData(data));
     if (status == E_OK) {
-        ZLOGI("update timestamp %{private}s to %{public}lld", data.key.c_str(), now);
+        ZLOGI("update timestamp %{private}s", data.key.c_str());
     }
 }
 } // namespace OHOS::DataShare
