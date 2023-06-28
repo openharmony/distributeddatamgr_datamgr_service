@@ -245,24 +245,6 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest003, TestSize.Level0)
 }
 
 /**
- * @tc.name: UpdateDataTest004
- * @tc.desc: Test update data with invalid filter
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: lianhuix
- */
-HWTEST_F(DocumentDBDataTest, UpdateDataTest004, TestSize.Level0) {}
-
-/**
- * @tc.name: UpdateDataTest005
- * @tc.desc: Test update data with invalid doc
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: lianhuix
- */
-HWTEST_F(DocumentDBDataTest, UpdateDataTest005, TestSize.Level0) {}
-
-/**
  * @tc.name: UpdateDataTest006
  * @tc.desc: Test update data with invalid flag
  * @tc.type: FUNC
