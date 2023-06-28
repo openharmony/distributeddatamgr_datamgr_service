@@ -29,7 +29,13 @@ public:
             ORIGIN_ALL,
             ORIGIN_BUTT,
         };
+        enum DataType : int32_t {
+            BASIC_DATA,
+            ASSET_DATA,
+            TYPE_BUTT,
+        };
         int32_t origin = ORIGIN_BUTT;
+        int32_t dataType = BASIC_DATA;
         // origin is ORIGIN_LOCAL, the id is empty
         // origin is ORIGIN_NEARBY, the id is networkId;
         // origin is ORIGIN_CLOUD, the id is the cloud account id
