@@ -44,10 +44,10 @@ ohos_static_library("distributeddata_dfx_static") {
   deps = [ "//third_party/openssl:libcrypto_shared" ]
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
-    "hilog:libhilog",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

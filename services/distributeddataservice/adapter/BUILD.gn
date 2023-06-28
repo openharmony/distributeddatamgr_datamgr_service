@@ -52,10 +52,10 @@ ohos_shared_library("distributeddata_adapter") {
 
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
-    "hilog:libhilog",
   ]
 
   public_configs = [ ":distributeddata_adapter_public_config" ]

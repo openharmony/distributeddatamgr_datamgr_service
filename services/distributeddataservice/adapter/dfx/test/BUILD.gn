@@ -41,9 +41,9 @@ ohos_unittest("DistributeddataDfxMSTTest") {
 
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
-    "hilog:libhilog",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
@@ -99,9 +99,9 @@ ohos_unittest("DistributeddataDfxUTTest") {
 
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
-    "hilog:libhilog",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
