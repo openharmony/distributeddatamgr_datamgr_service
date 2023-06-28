@@ -280,8 +280,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)   ? GenOrigin::ORIGIN_LOCAL
                        : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD
                                                             : GenOrigin::ORIGIN_NEARBY;
-    genOrigin.dataType = (data.type == TYPE_INDEX<Asset> || data.type == TYPE_INDEX<Assets>) ? GenOrigin::ASSET_DATA
-                                                                                             : GenOrigin::BASIC_DATA;
+    genOrigin.dataType = data.type == DistributedDB::ASSET ? GenOrigin::ASSET_DATA : GenOrigin::BASIC_DATA;
     genOrigin.id.push_back(originalId);
     genOrigin.store = storeId_;
     Watcher::PRIFields fields;
