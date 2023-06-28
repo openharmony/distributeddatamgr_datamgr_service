@@ -314,7 +314,7 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
             if (binderInfo_.executors != nullptr) {
                 binderInfo_.executors->Execute([context, subscriberId]() {
                     PublishedData::UpdateTimestamp(
-                        context->uri, context->callerBundleName, subscriberId, context->currentUserId);
+                        context->uri, context->calledBundleName, subscriberId, context->currentUserId);
                 });
             }
             return result;
