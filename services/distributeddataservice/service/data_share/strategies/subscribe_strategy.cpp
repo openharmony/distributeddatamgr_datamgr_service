@@ -24,7 +24,7 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::function<bool()> process)
+int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::function<int32_t()> process)
 {
     auto &preProcess = GetStrategy();
     if (preProcess.IsEmpty()) {

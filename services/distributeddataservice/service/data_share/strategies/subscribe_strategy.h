@@ -23,7 +23,7 @@
 namespace OHOS::DataShare {
 class SubscribeStrategy final {
 public:
-    int32_t Execute(std::shared_ptr<Context> context, std::function<bool()> process);
+    int32_t Execute(std::shared_ptr<Context> context, std::function<int32_t()> process);
 
 private:
     SeqStrategy &GetStrategy();
