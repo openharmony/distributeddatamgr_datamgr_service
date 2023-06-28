@@ -234,13 +234,13 @@ std::pair<uint32_t, uint32_t> ValueProxy::Asset::ConvertToDBStatus(const Distrib
             return { static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL),
                 static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE) };
         case DistributedData::Asset::STATUS_INSERT:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL),
+            return { static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT),
                 static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT) };
         case DistributedData::Asset::STATUS_UPDATE:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL),
+            return { static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE),
                 static_cast<uint32_t>(DistributedDB::AssetOpType::UPDATE) };
         case DistributedData::Asset::STATUS_DELETE:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL),
+            return { static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE),
                 static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE) };
         case DistributedData::Asset::STATUS_DOWNLOADING:
             return { static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING),
