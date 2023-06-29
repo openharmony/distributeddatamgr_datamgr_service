@@ -27,6 +27,7 @@
 #include "insert_strategy.h"
 #include "publish_strategy.h"
 #include "query_strategy.h"
+#include "rdb_notify_strategy.h"
 #include "subscribe_strategy.h"
 #include "template_strategy.h"
 #include "update_strategy.h"
@@ -67,6 +68,7 @@ public:
     int32_t OnBind(const BindInfo &binderInfo) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
+    void NotifyObserver(const std::string &uri) override;
 
 private:
     class Factory {
@@ -87,6 +89,7 @@ private:
     QueryStrategy queryStrategy_;
     UpdateStrategy updateStrategy_;
     TemplateStrategy templateStrategy_;
+    RdbNotifyStrategy rdbNotifyStrategy_;
     BindInfo binderInfo_;
 };
 } // namespace OHOS::DataShare

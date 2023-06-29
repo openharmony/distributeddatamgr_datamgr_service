@@ -16,6 +16,7 @@
 #include "published_data.h"
 
 #include "log_print.h"
+#include "subscriber_managers/published_data_subscriber_manager.h"
 
 namespace OHOS::DataShare {
 bool PublishedData::HasVersion() const
@@ -33,8 +34,7 @@ std::string PublishedData::GetValue() const
     return DistributedData::Serializable::Marshall(value);
 }
 
-PublishedData::PublishedData(const PublishedDataNode &node, const int version)
-    : PublishedData(node)
+PublishedData::PublishedData(const PublishedDataNode &node, const int version) : PublishedData(node)
 {
     value.SetVersion(version);
 }
@@ -84,10 +84,13 @@ bool PublishedDataNode::Unmarshal(const DistributedData::Serializable::json &nod
     bool ret = GetValue(node, GET_NAME(key), key);
     ret = ret && GetValue(node, GET_NAME(bundleName), bundleName);
     ret = ret && GetValue(node, GET_NAME(subscriberId), subscriberId);
-    ret = ret && GetValue(node, GET_NAME(value), value);
+    if (ret) {
+        GetValue(node, GET_NAME(value), value);
+        VersionData::Unmarshal(node);
+    }
     ret = ret && GetValue(node, GET_NAME(timestamp), timestamp);
     ret = ret && GetValue(node, GET_NAME(userId), userId);
-    return ret && VersionData::Unmarshal(node);
+    return ret;
 }
 
 PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
@@ -159,7 +162,10 @@ void PublishedData::ClearAging()
         return;
     }
     std::vector<std::string> queryResults;
-    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{}", "{}", queryResults);
+    int32_t status = delegate->GetBatch(KvDBDelegate::DATA_TABLE, "{}",
+        "{\"id_\": true, \"timestamp\": true, \"key\": true, \"bundleName\": true, \"subscriberId\": true, "
+        "\"userId\": true}",
+        queryResults);
     if (status != E_OK) {
         ZLOGE("db GetBatch failed %{public}d", status);
         return;
@@ -171,8 +177,8 @@ void PublishedData::ClearAging()
             ZLOGE("Unmarshall %{public}s failed", result.c_str());
             continue;
         }
-
-        if (data.timestamp < lastValidTime) {
+        if (data.timestamp < lastValidTime && PublishedDataSubscriberManager::GetInstance()
+            .GetCount(PublishedDataKey(data.key, data.bundleName, data.subscriberId)) == 0) {
             status = delegate->Delete(KvDBDelegate::DATA_TABLE,
                 Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId), data.userId));
             if (status != E_OK) {
@@ -185,5 +191,37 @@ void PublishedData::ClearAging()
         ZLOGI("aging count %{public}d", agingSize);
     }
     return;
+}
+
+void PublishedData::UpdateTimestamp(
+    const std::string &key, const std::string &bundleName, int64_t subscriberId, const int32_t userId)
+{
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        return;
+    }
+    std::string queryResult;
+    int32_t status =
+        delegate->Get(KvDBDelegate::DATA_TABLE, Id(GenId(key, bundleName, subscriberId), userId), queryResult);
+    if (status != E_OK) {
+        ZLOGE("db Get failed, %{private}s %{public}d", queryResult.c_str(), status);
+        return;
+    }
+    PublishedDataNode data;
+    if (!PublishedDataNode::Unmarshall(queryResult, data)) {
+        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        return;
+    }
+    auto now = time(nullptr);
+    if (now <= 0) {
+        ZLOGE("time failed");
+        return;
+    }
+    data.timestamp = now;
+    status = delegate->Upsert(KvDBDelegate::DATA_TABLE, PublishedData(data));
+    if (status == E_OK) {
+        ZLOGI("update timestamp %{private}s", data.key.c_str());
+    }
 }
 } // namespace OHOS::DataShare

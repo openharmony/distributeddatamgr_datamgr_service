@@ -49,7 +49,7 @@ public:
     void Emit(const std::vector<PublishedDataKey> &keys, const int32_t userId, const std::string &ownerBundleName,
         const sptr<IDataProxyPublishedDataObserver> observer = nullptr);
     void Clear();
-
+    int GetCount(const PublishedDataKey &key);
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t callerTokenId);

@@ -42,6 +42,8 @@ public:
     explicit PublishedData(const PublishedDataNode &node);
     static std::vector<PublishedData> Query(const std::string &bundleName, int32_t userId);
     static void Delete(const std::string &bundleName, const int32_t userId);
+    static void UpdateTimestamp(
+        const std::string &key, const std::string &bundleName, int64_t subscriberId, const int32_t userId);
     static void ClearAging();
     static int32_t Query(const std::string &filter, PublishedDataNode::Data &publishedData);
     static std::string GenId(const std::string &key, const std::string &bundleName, int64_t subscriberId);
@@ -51,6 +53,7 @@ public:
     int GetVersion() const override;
     std::string GetValue() const override;
     friend class GetDataStrategy;
+
 private:
     PublishedDataNode value;
 };

@@ -12,18 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef DATASHARESERVICE_SUBSCRIBE_STRAGETY_H
-#define DATASHARESERVICE_SUBSCRIBE_STRAGETY_H
+#ifndef DATASHARESERVICE_RDB_NOTIFY_STRAGETY_H
+#define DATASHARESERVICE_RDB_NOTIFY_STRAGETY_H
 
 #include <shared_mutex>
+
+#include "datashare_values_bucket.h"
 #include "seq_strategy.h"
-#include "data_proxy_observer.h"
 
 namespace OHOS::DataShare {
-class SubscribeStrategy final {
+class RdbNotifyStrategy final {
 public:
-    int32_t Execute(std::shared_ptr<Context> context, std::function<int32_t()> process);
+    bool Execute(std::shared_ptr<Context> context);
 
 private:
     SeqStrategy &GetStrategy();

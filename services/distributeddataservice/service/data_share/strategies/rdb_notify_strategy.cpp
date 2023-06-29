@@ -12,35 +12,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "SubscribeStrategy"
+#define LOG_TAG "RdbNotifyStrategy"
 
-#include "subscribe_strategy.h"
+#include "rdb_notify_strategy.h"
 
-#include "data_proxy/load_config_from_data_proxy_node_strategy.h"
 #include "general/load_config_common_strategy.h"
 #include "general/load_config_data_info_strategy.h"
-#include "general/permission_strategy.h"
+#include "general/load_config_from_bundle_info_strategy.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::function<int32_t()> process)
+bool RdbNotifyStrategy::Execute(std::shared_ptr<Context> context)
 {
     auto &preProcess = GetStrategy();
     if (preProcess.IsEmpty()) {
         ZLOGE("get strategy fail, maybe memory not enough");
-        return -1;
+        return false;
     }
-    context->isRead = true;
-    context->needAutoLoadCallerBundleName = true;
     if (!preProcess(context)) {
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
-        return context->errCode;
+        return false;
     }
-    return process();
+    if (context->callerBundleName != context->calledBundleName) {
+        ZLOGE("not your data, cannot notify, callerBundleName: %{public}s, calledBundleName: %{public}s",
+            context->callerBundleName.c_str(), context->calledBundleName.c_str());
+        return false;
+    }
+    return true;
 }
 
-SeqStrategy &SubscribeStrategy::GetStrategy()
+SeqStrategy &RdbNotifyStrategy::GetStrategy()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (!strategies_.IsEmpty()) {
@@ -48,8 +50,8 @@ SeqStrategy &SubscribeStrategy::GetStrategy()
     }
     std::initializer_list<Strategy *> list = {
         new (std::nothrow)LoadConfigCommonStrategy(),
-        new (std::nothrow)LoadConfigFromDataProxyNodeStrategy(),
-        new (std::nothrow)PermissionStrategy()
+        new (std::nothrow)LoadConfigFromBundleInfoStrategy(),
+        new (std::nothrow)LoadConfigDataInfoStrategy()
     };
     auto ret = strategies_.Init(list);
     if (!ret) {
