@@ -100,7 +100,7 @@ ohos_shared_library("data_share_service") {
     "c_utils:utils",
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
     "relational_store:native_rdb",
     "relational_store:rdb_bms_adapter",

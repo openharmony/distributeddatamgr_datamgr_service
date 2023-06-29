@@ -35,7 +35,7 @@ ohos_static_library("distributeddata_permission_static") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

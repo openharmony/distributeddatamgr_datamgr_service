@@ -30,7 +30,7 @@ ohos_unittest("CommunicationProviderTest") {
   ]
   external_deps = [
     "dsoftbus:softbus_client",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
   ]
   deps = [
@@ -55,7 +55,7 @@ ohos_unittest("DeviceManagerAdapterTest") {
   ]
   external_deps = [
     "dsoftbus:softbus_client",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
   ]
   deps = [

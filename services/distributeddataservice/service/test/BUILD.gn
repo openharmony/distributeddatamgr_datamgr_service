@@ -54,7 +54,7 @@ ohos_unittest("CloudDataTest") {
     "ability_base:base",
     "ability_base:want",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -84,7 +84,7 @@ ohos_unittest("ValueProxyTest") {
     "ability_base:base",
     "ability_base:want",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -109,7 +109,7 @@ ohos_unittest("ConfigFactoryTest") {
     "ability_base:base",
     "ability_base:want",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
   ]
 
@@ -135,7 +135,7 @@ ohos_unittest("DirectoryManagerTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
   ]
 
@@ -160,7 +160,7 @@ ohos_unittest("CryptoManagerTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
   ]
 
@@ -189,7 +189,7 @@ ohos_unittest("DeviceMatrixTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
   ]
 

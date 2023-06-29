@@ -42,7 +42,7 @@ ohos_static_library("distributeddata_account_static") {
     "ability_base:want",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
 
   if (os_account_part_is_enabled) {
