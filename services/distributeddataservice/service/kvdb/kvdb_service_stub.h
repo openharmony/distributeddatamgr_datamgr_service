@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
 #define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
+#include "distributeddata_kvdb_ipc_interface_code.h"
 #include "iremote_stub.h"
 #include "kvdb_service.h"
 #include "feature/feature_system.h"
@@ -43,7 +44,7 @@ private:
     int32_t OnSubscribe(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnUnsubscribe(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetBackupPassword(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    static const Handler HANDLERS[TRANS_BUTT];
+    static const Handler HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)];
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H

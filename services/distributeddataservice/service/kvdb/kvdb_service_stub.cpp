@@ -23,7 +23,8 @@
 #include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
-const KVDBServiceStub::Handler KVDBServiceStub::HANDLERS[TRANS_BUTT] = {
+const KVDBServiceStub::Handler
+    KVDBServiceStub::HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)] = {
     &KVDBServiceStub::OnGetStoreIds,
     &KVDBServiceStub::OnBeforeCreate,
     &KVDBServiceStub::OnAfterCreate,
@@ -53,8 +54,10 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         return -1;
     }
 
-    if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] == nullptr) {
-        ZLOGE("not support code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
+    if (static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_HEAD) > code ||
+        code >= static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT) || HANDLERS[code] == nullptr) {
+        ZLOGE("not support code:%{public}u, BUTT:%{public}d", code,
+              static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT));
         return -1;
     }
 

@@ -22,6 +22,7 @@
 #include "feature/feature_system.h"
 #include "message_parcel.h"
 
+#include "distributeddata_udmf_ipc_interface_code.h"
 #include "error_code.h"
 #include "udmf_service.h"
 
@@ -32,8 +33,6 @@ namespace UDMF {
  */
 class UdmfServiceStub : public UdmfService, public DistributedData::FeatureSystem::Feature {
 public:
-    UdmfServiceStub();
-    virtual ~UdmfServiceStub() override;
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
@@ -52,8 +51,17 @@ private:
     const std::string WRITE_PERMISSION = "ohos.permission.WRITE_UDMF_DATA";
     const std::string SYNC_PERMISSION = "ohos.permission.SYNC_UDMF_DATA";
 
-    using UdmfServiceFunc = int32_t (UdmfServiceStub::*)(MessageParcel &data, MessageParcel &reply);
-    std::map<uint32_t, UdmfServiceFunc> memberFuncMap_;
+    using Handler = int32_t (UdmfServiceStub::*)(MessageParcel &data, MessageParcel &reply);
+    static constexpr Handler HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)] = {
+        &UdmfServiceStub::OnSetData,
+        &UdmfServiceStub::OnGetData,
+        &UdmfServiceStub::OnGetBatchData,
+        &UdmfServiceStub::OnUpdateData,
+        &UdmfServiceStub::OnDeleteData,
+        &UdmfServiceStub::OnGetSummary,
+        &UdmfServiceStub::OnAddPrivilege,
+        &UdmfServiceStub::OnSync
+    };
 };
 } // namespace UDMF
 } // namespace OHOS

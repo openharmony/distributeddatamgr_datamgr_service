@@ -27,23 +27,8 @@
 
 namespace OHOS {
 namespace UDMF {
-UdmfServiceStub::UdmfServiceStub()
-{
-    memberFuncMap_[static_cast<uint32_t>(SET_DATA)] = &UdmfServiceStub::OnSetData;
-    memberFuncMap_[static_cast<uint32_t>(GET_DATA)] = &UdmfServiceStub::OnGetData;
-    memberFuncMap_[static_cast<uint32_t>(GET_BATCH_DATA)] = &UdmfServiceStub::OnGetBatchData;
-    memberFuncMap_[static_cast<uint32_t>(UPDATE_DATA)] = &UdmfServiceStub::OnUpdateData;
-    memberFuncMap_[static_cast<uint32_t>(DELETE_DATA)] = &UdmfServiceStub::OnDeleteData;
-    memberFuncMap_[static_cast<uint32_t>(GET_SUMMARY)] = &UdmfServiceStub::OnGetSummary;
-    memberFuncMap_[static_cast<uint32_t>(ADD_PRIVILEGE)] = &UdmfServiceStub::OnAddPrivilege;
-    memberFuncMap_[static_cast<uint32_t>(SYNC)] = &UdmfServiceStub::OnSync;
-}
-
-UdmfServiceStub::~UdmfServiceStub()
-{
-    memberFuncMap_.clear();
-}
-
+constexpr UdmfServiceStub::Handler
+    UdmfServiceStub::HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)];
 int UdmfServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     ZLOGI("start##code = %{public}u", code);
@@ -53,18 +38,11 @@ int UdmfServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         ZLOGE("end##descriptor checked fail");
         return -1;
     }
-    if (CODE_HEAD > code || code >= CODE_BUTT) {
+    if (static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_HEAD) > code ||
+        code >= static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)) {
         return -1;
     }
-    auto itFunc = memberFuncMap_.find(code);
-    if (itFunc != memberFuncMap_.end()) {
-        auto memberFunc = itFunc->second;
-        if (memberFunc != nullptr) {
-            return (this->*memberFunc)(data, reply);
-        }
-    }
-    ZLOGI("end##ret = -1");
-    return -1;
+    return (this->*HANDLERS[code])(data, reply);
 }
 
 int32_t UdmfServiceStub::OnSetData(MessageParcel &data, MessageParcel &reply)
