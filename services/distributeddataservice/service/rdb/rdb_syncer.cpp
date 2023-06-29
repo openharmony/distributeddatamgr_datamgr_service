@@ -167,11 +167,11 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
         }
         option.observer = observer_;
         std::string fileName = meta.dataDir;
-        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), meta.GetStoreAlias().c_str());
+        ZLOGI("path=%{public}s storeId=%{public}s", Anonymous::Change(fileName).c_str(), meta.GetStoreAlias().c_str());
         auto status = manager_->OpenStore(fileName, meta.storeId, option, delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("open store failed, path=%{public}s storeId=%{public}s status=%{public}d",
-                fileName.c_str(), meta.GetStoreAlias().c_str(), status);
+                  Anonymous::Change(fileName).c_str(), meta.GetStoreAlias().c_str(), status);
             return RDB_ERROR;
         }
         ZLOGI("open store success");
