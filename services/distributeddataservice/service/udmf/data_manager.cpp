@@ -22,6 +22,7 @@
 #include "log_print.h"
 #include "preprocess_utils.h"
 #include "uri_permission_manager.h"
+#include "remote_file_share.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -43,6 +44,14 @@ DataManager &DataManager::GetInstance()
     return instance;
 }
 
+bool DataManager::IsFileType(UDType udType){
+    if (udType == UDType::FILE || udType == UDType::IMAGE || udType == UDType::VIDEO || udType == UDType::AUDIO
+        || udType == UDType::FOLDER) {
+        return true;
+    }
+    return false;
+}
+
 int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key)
 {
     if (unifiedData.IsEmpty()) {
@@ -60,10 +69,23 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
         ZLOGE("Imputation failed");
         return E_UNKNOWN;
     }
-    for (auto &record : unifiedData.GetRecords()) {
-        std::string uid = PreProcessUtils::IdGenerator();
-        record->SetUid(uid);
+    int32_t userId = PreProcessUtils::GetHapUidByToken(option.tokenId);
+    for (const auto &record : unifiedData.GetRecords())
+    {
+        auto type = record->GetType();
+        if (IsFileType(type)) {
+            auto file = static_cast<File *>(record.get());
+            std::string remoteUri = AppFileService::GetDfsUriFromLocal(file->GetUri(), userId);
+            if(remoteUri.empty()) {
+                ZLOGW("Get remoteUri failed, uri: %{public}s,  remoteUri: %{public}s.", file->GetUri().c_str(), remoteUri.c_str());
+                return E_UNKNOWN;
+			}
+            file->SetRemoteUri(remoteUri);  
+        }
+
+        record->SetUid(PreProcessUtils::GetInstance().IdGenerator());
     }
+
 
     std::string intention = unifiedData.GetRuntime()->key.intention;
     auto store = storeCache_.GetStore(intention);
@@ -121,10 +143,16 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
         for (auto record : records) {
             auto type = record->GetType();
             std::string uri = "";
-            if (type == UDType::FILE || type == UDType::IMAGE || type == UDType::VIDEO || type == UDType::AUDIO
-                || type == UDType::FOLDER) {
+            if (IsFileType(type)) {
                 auto file = static_cast<File *>(record.get());
                 uri = file->GetUri();
+
+                std::string localDeviceId=PreProcessUtils::GetLocalDeviceId();
+                ZLOGE("DataManager::RetrieveData, localDeviceId=%{public}s, remoteDeviceId=%{public}s,uri=%{public}s,remoteUri=%{public}s.", localDeviceId.c_str(), (runtime->deviceId).c_str(),file->GetUri().c_str(),file->GetRemoteUri().c_str());
+                if (localDeviceId != runtime->deviceId) {
+                    uri = file->GetRemoteUri();
+                    file->SetUri(uri); // cross dev, need dis path.
+                }
             }
             if (!uri.empty() && (UriPermissionManager::GetInstance().GrantUriPermission(uri, bundleName) != E_OK)) {
                 return E_NO_PERMISSION;

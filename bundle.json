@@ -75,7 +75,8 @@
                 "relational_store",
                 "safwk",
                 "samgr",
-                "udmf"
+                "udmf",
+                "app_file_service"
             ],
             "third_party": [
                 "cjson",

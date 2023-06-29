@@ -31,6 +31,7 @@ config("module_public_config") {
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${kv_store_path}/frameworks/common",
+    "${file_service_path}/interfaces/innerkits/remote_file_share/native",
   ]
 }
 
@@ -54,12 +55,16 @@ ohos_shared_library("udmf_server") {
 
   configs = [ ":module_public_config" ]
 
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk",
+           "${data_service_path}/adapter:distributeddata_adapter",
+
+         ]
 
   external_deps = [
     "ability_base:zuri",
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
+    "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",

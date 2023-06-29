@@ -16,11 +16,12 @@
 #include "preprocess_utils.h"
 
 #include <sstream>
-
+#include "log_print.h"
 #include "error_code.h"
 #include "accesstoken_kit.h"
 #include "bundlemgr/bundle_mgr_client_impl.h"
 #include "ipc_skeleton.h"
+#include "device_manager_adapter.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -44,8 +45,21 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
     runtime.createTime = GetTimeStamp();
     runtime.sourcePackage = bundleName;
     runtime.createPackage = bundleName;
+    runtime.deviceId = GetLocalDeviceId();
     data.SetRuntime(runtime);
     return E_OK;
+}
+
+std::string PreProcessUtils::GetLocalDeviceId()
+{
+    auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
+
+    std::string encryptedUuid;
+    encryptedUuid = DistributedData::DeviceManagerAdapter::GetInstance().CalcClientUuid(" ", info.uuid);
+
+    ZLOGI("[LocalDevice] uuid:%{public}s, encryptedUuid:%{public}s, name:%{public}s, type:%{public}d",
+             info.uuid.c_str(), encryptedUuid.c_str(), info.deviceName.c_str(), info.deviceType); // if log uuid, need tb be anonymous;
+    return encryptedUuid;
 }
 
 std::string PreProcessUtils::IdGenerator()
@@ -71,6 +85,16 @@ time_t PreProcessUtils::GetTimeStamp()
     return timestamp;
 }
 
+int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId) const
+{
+    HapTokenInfo tokenInfo;
+    auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (result != Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
+        return -1;
+    }
+    return tokenInfo.userID;
+}
 bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleName)
 {
     Security::AccessToken::HapTokenInfo hapInfo;

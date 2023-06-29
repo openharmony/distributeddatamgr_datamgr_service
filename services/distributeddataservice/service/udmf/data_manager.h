@@ -45,6 +45,7 @@ public:
 
 private:
     DataManager();
+    bool IsFileType(UDType udType);
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
     StoreCache storeCache_;
     std::map<std::string, std::string> authorizationMap_;
