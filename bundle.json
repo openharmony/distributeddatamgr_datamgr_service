@@ -74,7 +74,8 @@
                 "os_account",
                 "relational_store",
                 "safwk",
-                "samgr"
+                "samgr",
+                "udmf"
             ],
             "third_party": [
                 "cjson",
@@ -92,7 +93,8 @@
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/conf:build_module",
-                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module"
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/udmf:build_module"
             ],
             "inner_kits": [],
             "test": [

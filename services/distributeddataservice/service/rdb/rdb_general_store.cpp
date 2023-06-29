@@ -103,10 +103,6 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_);
     delegate_->SetCloudDB(rdbCloud_);
     rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_);
-    if (rdbLoader_ == nullptr) {
-        ZLOGE("rdb_AssetLoader is null");
-        return GeneralError::E_ERROR;
-    }
     delegate_->SetIAssetLoader(rdbLoader_);
     DBSchema schema;
     schema.tables.resize(database.tables.size());
@@ -284,6 +280,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)   ? GenOrigin::ORIGIN_LOCAL
                        : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD
                                                             : GenOrigin::ORIGIN_NEARBY;
+    genOrigin.dataType = data.type == DistributedDB::ASSET ? GenOrigin::ASSET_DATA : GenOrigin::BASIC_DATA;
     genOrigin.id.push_back(originalId);
     genOrigin.store = storeId_;
     Watcher::PRIFields fields;
