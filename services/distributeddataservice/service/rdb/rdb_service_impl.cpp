@@ -143,7 +143,6 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
 int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
 {
     OnClientDied(pid);
-    AutoCache::GetInstance().CloseStore(tokenId);
     return E_OK;
 }
 
@@ -652,5 +651,17 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     return 0;
+}
+
+int32_t RdbServiceImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
+{
+    AutoCache::GetInstance().CloseStore(tokenId);
+    return E_OK;
+}
+
+int32_t RdbServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
+{
+    AutoCache::GetInstance().CloseStore(tokenId);
+    return E_OK;
 }
 } // namespace OHOS::DistributedRdb
