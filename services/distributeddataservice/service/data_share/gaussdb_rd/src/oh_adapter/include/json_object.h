@@ -101,8 +101,8 @@ public:
 private:
     JsonObject();
     int Init(const std::string &str, bool isFilter = false);
-    int CheckJsonRepeatField(cJSON *object);
-    int CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType);
+    int CheckJsonRepeatField(cJSON *object, bool isFirstFloor);
+    int CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType, bool isFirstFloor);
     int GetDeep(cJSON *cjson);
     int CheckNumber(cJSON *cjson, int &errCode);
     cJSON *cjson_ = nullptr;

@@ -157,13 +157,7 @@ int UpdateArgsCheck(const std::string &collection, const std::string &filter, co
         return errCode;
     }
     if (update != "{}") {
-        std::vector<std::vector<std::string>> allPath;
-        allPath = JsonCommon::ParsePath(updateObj, errCode);
-        if (errCode != E_OK) {
-            GLOGE("updateObj ParsePath failed");
-            return errCode;
-        }
-        errCode = CheckCommon::CheckUpdata(updateObj, allPath);
+        errCode = CheckCommon::CheckUpdata(updateObj);
         if (errCode != E_OK) {
             GLOGE("Updata format is illegal");
             return errCode;
@@ -439,12 +433,7 @@ int UpsertDocumentFormatCheck(const std::string &document, JsonObject &documentO
 {
     int errCode = E_OK;
     if (document != "{}") {
-        std::vector<std::vector<std::string>> allPath;
-        allPath = JsonCommon::ParsePath(documentObj, errCode);
-        if (errCode != E_OK) {
-            return errCode;
-        }
-        errCode = CheckCommon::CheckUpdata(documentObj, allPath);
+        errCode = CheckCommon::CheckUpdata(documentObj);
         if (errCode != E_OK) {
             GLOGE("UpsertDocument document format is illegal");
             return errCode;
