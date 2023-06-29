@@ -155,34 +155,50 @@ int CheckCommon::CheckDocument(JsonObject &documentObj)
     return E_OK;
 }
 
-int CheckCommon::CheckUpdata(JsonObject &updataObj, std::vector<std::vector<std::string>> &path)
+int SplitFieldName(const std::string &fieldName, std::vector<std::string> &allFieldsName)
 {
-    if (updataObj.GetDeep() > JSON_DEEP_MAX) {
-        GLOGE("projectionObj's json deep is deeper than JSON_DEEP_MAX");
-        return -E_INVALID_ARGS;
-    }
-    for (size_t i = 0; i < path.size(); i++) {
-        if (path[i].empty()) {
-            return -E_INVALID_JSON_FORMAT;
+    std::string tempParseName;
+    std::string priFieldName = fieldName;
+    for (size_t j = 0; j < priFieldName.size(); j++) {
+        if (priFieldName[j] != '.') {
+            tempParseName += priFieldName[j];
         }
-        for (size_t j = 0; j < path[i].size(); j++) {
-            if (path[i][j].empty()) {
+        if (priFieldName[j] == '.' || j == priFieldName.size() - 1) {
+            if ((j > 0 && priFieldName[j] == '.' && priFieldName[j - 1] == '.') ||
+                (priFieldName[j] == '.' && j == priFieldName.size() - 1)) {
                 return -E_INVALID_ARGS;
             }
-            for (auto oneChar : path[i][j]) {
+            allFieldsName.emplace_back(tempParseName);
+            tempParseName.clear();
+        }
+    }
+    return E_OK;
+}
+
+int CheckCommon::CheckUpdata(JsonObject &updataObj)
+{
+    JsonObject jsonTemp = updataObj.GetChild();
+    size_t maxDeep = 0;
+    while (!jsonTemp.IsNull()) {
+        std::vector<std::string> allFieldsName;
+        int errCode = SplitFieldName(jsonTemp.GetItemField(), allFieldsName);
+        if (errCode != E_OK) {
+            return errCode;
+        }
+        for (auto fieldName : allFieldsName) {
+            for (auto oneChar : fieldName) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
+                    GLOGE("updata fieldName is illegal");
                     return -E_INVALID_ARGS;
                 }
             }
         }
-        if (!path[i].empty() && !path[i][0].empty() && isdigit(path[i][0][0])) {
+        maxDeep = std::max(allFieldsName.size() + jsonTemp.GetDeep(), maxDeep);
+        if (maxDeep > JSON_DEEP_MAX) {
+            GLOGE("document's json deep is deeper than JSON_DEEP_MAX");
             return -E_INVALID_ARGS;
         }
-    }
-    for (const auto &singlePath : path) {
-        if (singlePath.size() > JSON_DEEP_MAX) {
-            return -E_INVALID_ARGS;
-        }
+        jsonTemp = jsonTemp.GetNext();
     }
     bool isIdExist = true;
     CheckIdFormat(updataObj, isIdExist);
