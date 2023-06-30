@@ -461,6 +461,12 @@ int32_t DataShareServiceImpl::OnAppUninstall(
     return EOK;
 }
 
+int32_t DataShareServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    ZLOGI("ObjectServiceImpl::OnAppExit uid=%{public}d, pid=%{public}d, tokenId=%{public}d, bundleName=%{public}s",
+        uid, pid, tokenId, bundleName.c_str());
+}
+
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
     ZLOGD("%{private}s try notified", uri.c_str());
