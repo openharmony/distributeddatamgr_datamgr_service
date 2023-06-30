@@ -44,7 +44,10 @@ ohos_fuzztest("UdmfServiceFuzzTest") {
 
   sources = [ "udmfservice_fuzzer.cpp" ]
 
-  deps = [ "${data_service_path}/service/udmf:udmf_server" ]
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
 
   external_deps = [
     "ability_base:zuri",
