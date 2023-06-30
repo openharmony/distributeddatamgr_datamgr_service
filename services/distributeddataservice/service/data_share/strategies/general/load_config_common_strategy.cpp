@@ -33,6 +33,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (context->currentUserId == 0) {
         URIUtils::GetInfoFromProxyURI(
             context->uri, context->currentUserId, context->callerTokenId, context->calledBundleName);
+        FormatUri(context->uri);
     }
     if (context->needAutoLoadCallerBundleName && context->callerBundleName.empty()) {
         Security::AccessToken::HapTokenInfo tokenInfo;
@@ -43,13 +44,12 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
         }
         context->callerBundleName = tokenInfo.bundleName;
     }
-    FormatUri(context->uri);
     return true;
 }
 
 void LoadConfigCommonStrategy::FormatUri(std::string &uri)
 {
-    auto pos = uri.find('?');
+    auto pos = uri.find_last_of('?');
     if (pos == std::string::npos) {
         return;
     }

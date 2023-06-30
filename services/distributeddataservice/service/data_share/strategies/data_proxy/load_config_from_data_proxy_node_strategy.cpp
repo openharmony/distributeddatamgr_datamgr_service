@@ -64,7 +64,8 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         ZLOGI("access private data, caller and called is same, go");
         return true;
     }
-    if (context->isAllowCrossPer) {
+    // cross permission can only cross uri like weather,can not cross like datashareproxy://weather
+    if (context->isAllowCrossPer && !URIUtils::IsDataProxyURI(context->uri)) {
         ZLOGI("access has white permission, go");
         return true;
     }
