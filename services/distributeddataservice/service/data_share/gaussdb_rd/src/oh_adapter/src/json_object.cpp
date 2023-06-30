@@ -195,7 +195,8 @@ int JsonObject::Init(const std::string &str, bool isFilter)
         return -E_INVALID_ARGS;
     }
     if (!isFilter) {
-        ret = CheckJsonRepeatField(cjson_);
+        bool isFirstFloor = true;
+        ret = CheckJsonRepeatField(cjson_, isFirstFloor);
         if (ret != E_OK) {
             return ret;
         }
@@ -203,7 +204,7 @@ int JsonObject::Init(const std::string &str, bool isFilter)
     return E_OK;
 }
 
-int JsonObject::CheckJsonRepeatField(cJSON *object)
+int JsonObject::CheckJsonRepeatField(cJSON *object, bool isFirstFloor)
 {
     if (object == nullptr) {
         return -E_INVALID_ARGS;
@@ -216,7 +217,7 @@ int JsonObject::CheckJsonRepeatField(cJSON *object)
     std::set<std::string> fieldSet;
     cJSON *subObj = object->child;
     while (subObj != nullptr) {
-        ret = CheckSubObj(fieldSet, subObj, type);
+        ret = CheckSubObj(fieldSet, subObj, type, isFirstFloor);
         if (ret != E_OK) {
             break;
         }
@@ -225,7 +226,7 @@ int JsonObject::CheckJsonRepeatField(cJSON *object)
     return ret;
 }
 
-int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType)
+int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType, bool isFirstFloor)
 {
     if (subObj == nullptr) {
         return -E_INVALID_ARGS;
@@ -233,9 +234,20 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     std::string fieldName;
     if (subObj->string != nullptr) {
         fieldName = subObj->string;
+        if (!isFirstFloor) {
+            for (auto oneChar : fieldName) {
+                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
+                    return -E_INVALID_ARGS;
+                }
+            }
+        }
+        if (!fieldName.empty() && isdigit(fieldName[0])) {
+            return -E_INVALID_ARGS;
+        }
     }
+    isFirstFloor = false;
     if (parentType == cJSON_Array) {
-        return CheckJsonRepeatField(subObj);
+        return CheckJsonRepeatField(subObj, isFirstFloor);
     }
     if (fieldName.empty()) {
         return -E_INVALID_JSON_FORMAT;
@@ -245,7 +257,7 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     } else {
         return -E_INVALID_JSON_FORMAT;
     }
-    return CheckJsonRepeatField(subObj);
+    return CheckJsonRepeatField(subObj, isFirstFloor);
 }
 
 std::string JsonObject::Print() const
