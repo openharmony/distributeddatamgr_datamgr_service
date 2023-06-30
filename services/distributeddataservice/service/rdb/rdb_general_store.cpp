@@ -35,6 +35,7 @@ using namespace NativeRdb;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
+using ClearMode = DistributedDB::ClearMode;
 class RdbOpenCallbackImpl : public RdbOpenCallback {
 public:
     int OnCreate(RdbStore &rdbStore) override
@@ -190,6 +191,21 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
                   : (mode > NEARBY_END && mode < CLOUD_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
                   : DistributedDB::INVALID_ARGS;
+    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+}
+
+int32_t RdbGeneralStore::Clean(const std::vector<std::string> &device, int32_t mode)
+{
+    if (mode < 0 || mode > 1) {
+        return GeneralError::E_INVALID_ARGS;
+    }
+    int32_t dbMode;
+    if (mode == CLOUD_INFO) {
+        dbMode = CleanMode::CLOUD_INFO;
+    } else {
+        dbMode = CleanMode::CLOUD_DATA;
+    }
+    auto status = delegate_->RemoveDeviceData(device, static_cast<ClearMode>(dbMode));
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 

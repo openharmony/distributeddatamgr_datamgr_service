@@ -29,6 +29,8 @@ public:
     using GenStore = DistributedData::GeneralStore;
     using GenQuery = DistributedData::GenQuery;
     using RefCount = DistributedData::RefCount;
+    using AutoCache = DistributedData::AutoCache;
+    using StoreMetaData = DistributedData::StoreMetaData;
     class SyncInfo final {
     public:
         using Store = std::string;
@@ -44,6 +46,7 @@ public:
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
+        static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = false);
         inline static constexpr const char *DEFAULT_ID = "default";
 
     private:
@@ -68,9 +71,7 @@ private:
     using Event = DistributedData::Event;
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
-    using AutoCache = DistributedData::AutoCache;
     using Duration = ExecutorPool::Duration;
-    using StoreMetaData = DistributedData::StoreMetaData;
     using Retryer = std::function<bool(Duration interval, int32_t status)>;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
@@ -85,7 +86,6 @@ private:
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
     std::function<void(const Event &)> GetClientChangeHandler();
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo);
-    static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user);
     static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);

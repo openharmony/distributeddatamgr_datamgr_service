@@ -16,7 +16,7 @@
 #define LOG_TAG "CloudServiceImpl"
 
 #include "cloud_service_impl.h"
-
+#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
@@ -29,10 +29,12 @@
 #include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
+#include "sync_manager.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
+using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::Work CloudServiceImpl::HANDLERS[WORK_BUTT] = {
     &CloudServiceImpl::DoSubscribe,
@@ -122,6 +124,54 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     return SUCCESS;
 }
 
+int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions)
+{
+    syncManager_.StopCloudSync(cloudInfo.user);
+    auto keys = cloudInfo.GetSchemaKey();
+    for (const auto &[bundle, action] : actions) {
+        if (!cloudInfo.Exist(bundle)) {
+            continue;
+        }
+        SchemaMeta schemaMeta;
+        if (!MetaDataManager::GetInstance().LoadMeta(keys[bundle], schemaMeta, true)) {
+            return ERROR;
+        }
+        auto instance = CloudServer::GetInstance();
+        for (auto database : schemaMeta.databases) {
+            // action
+            StoreMetaData meta;
+            meta.bundleName = schemaMeta.bundleName;
+            meta.storeId = database.name;
+            meta.user = std::to_string(cloudInfo.user);
+            meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+            meta.instanceId = cloudInfo.apps[bundle].instanceId;
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+                ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                    meta.GetStoreAlias().c_str());
+                continue;
+            }
+            AutoCache::Store store;
+            if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
+                OHOS::Security::AccessToken::TOKEN_HAP) {
+                store = SyncManager::SyncInfo::GetStore(meta, cloudInfo.user, false);
+            } else {
+                store = SyncManager::SyncManager::SyncInfo::GetStore(meta, cloudInfo.user, true);
+            }
+
+            if (store == nullptr) {
+                ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+                return ERROR;
+            }
+            auto status = store->Clean({}, action);
+            if (status != E_OK) {
+                ZLOGD("remove device data status:%{public}d, storeId:%{public}s", status, meta.GetStoreAlias().c_str());
+                return ERROR;
+            }
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::string, int32_t> &actions)
 {
     CloudInfo cloudInfo;
@@ -130,18 +180,12 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS) {
         return ERROR;
     }
-    syncManager_.StopCloudSync(cloudInfo.user);
-    auto keys = cloudInfo.GetSchemaKey();
-    for (const auto &[bundle, action] : actions) {
-        if (!cloudInfo.Exist(bundle)) {
-            continue;
-        }
-        SchemaMeta schemaMeta;
-        if (MetaDataManager::GetInstance().LoadMeta(keys[bundle], schemaMeta, true)) {
-            // action
-        }
+    if (id != cloudInfo.id) {
+        ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
+            Anonymous::Change(id).c_str());
     }
-    return SUCCESS;
+    auto status = DoClean(cloudInfo, actions);
+    return status;
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
@@ -254,14 +298,21 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
         return true;
     }
     if (oldInfo.id != cloudInfo.id) {
-        ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s",
-            Anonymous::Change(cloudInfo.id).c_str(), Anonymous::Change(oldInfo.id).c_str());
+        ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
+            Anonymous::Change(oldInfo.id).c_str());
         std::map<std::string, int32_t> actions;
         for (auto &[bundle, app] : cloudInfo.apps) {
             actions[bundle] = CLEAR_CLOUD_INFO;
         }
+        DoClean(oldInfo, actions);
     }
-
+    if (cloudInfo.enableCloud) {
+        for (auto &[bundle, app] : cloudInfo.apps) {
+            if (app.cloudSwitch == true && oldInfo.apps[bundle].cloudSwitch == false) {
+                syncManager_.DoCloudSync({ cloudInfo.user, bundle });
+            }
+        }
+    }
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
     return true;
 }
