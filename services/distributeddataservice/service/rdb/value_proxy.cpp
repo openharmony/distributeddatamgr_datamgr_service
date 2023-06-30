@@ -125,7 +125,7 @@ ValueProxy::Asset::Asset(NativeRdb::AssetValue asset)
     asset_ = DistributedData::Asset { .version = asset.version,
         .status = asset.status,
         .expiresTime = asset.expiresTime,
-        .id = asset.id,
+        .id = std::move(asset.id),
         .name = std::move(asset.name),
         .uri = std::move(asset.uri),
         .createTime = std::move(asset.createTime),
@@ -209,7 +209,7 @@ uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asse
         return DistributedData::Asset::STATUS_DOWNLOADING;
     } else if (asset.status == DistributedDB::AssetStatus::ABNORMAL) {
         return DistributedData::Asset::STATUS_ABNORMAL;
-    } else if (asset.status == DistributedDB::AssetStatus::NORMAL) {
+    } else {
         switch (asset.flag) {
             case static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT):
                 return DistributedData::Asset::STATUS_INSERT;
