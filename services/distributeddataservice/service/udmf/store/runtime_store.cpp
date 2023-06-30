@@ -32,7 +32,7 @@ const std::string RuntimeStore::BASE_DIR = "/data/service/el1/public/database/di
 
 RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_({ storeId })
 {
-    updateTime();
+    UpdateTime();
     ZLOGI("Construct runtimeStore: %{public}s.", storeId_.storeId.c_str());
 }
 
@@ -44,7 +44,7 @@ RuntimeStore::~RuntimeStore()
 
 Status RuntimeStore::Put(const UnifiedData &unifiedData)
 {
-    updateTime();
+    UpdateTime();
     std::vector<Entry> entries;
     std::string unifiedKey = unifiedData.GetRuntime()->key.GetUnifiedKey();
     // add unified record
@@ -79,7 +79,7 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
 
 Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 {
-    updateTime();
+    UpdateTime();
     std::vector<Entry> entries;
     if (GetEntries(key, entries) != E_OK) {
         ZLOGI("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
@@ -94,7 +94,7 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 
 Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
 {
-    updateTime();
+    UpdateTime();
     UnifiedData unifiedData;
     if (Get(key, unifiedData) != E_OK) {
         ZLOGE("Get unified data failed.");
@@ -116,7 +116,7 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
 
 Status RuntimeStore::Update(const UnifiedData &unifiedData)
 {
-    updateTime();
+    UpdateTime();
     std::string key = unifiedData.GetRuntime()->key.key;
     if (Delete(key) != E_OK) {
         ZLOGE("Delete unified data failed.");
@@ -131,7 +131,7 @@ Status RuntimeStore::Update(const UnifiedData &unifiedData)
 
 Status RuntimeStore::Delete(const std::string &key)
 {
-    updateTime();
+    UpdateTime();
     std::vector<Entry> entries;
     if (GetEntries(key, entries) != E_OK) {
         ZLOGE("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
@@ -150,7 +150,7 @@ Status RuntimeStore::Delete(const std::string &key)
 
 Status RuntimeStore::DeleteBatch(const std::vector<std::string> &unifiedKeys)
 {
-    updateTime();
+    UpdateTime();
     ZLOGD("called!");
     if (unifiedKeys.empty()) {
         ZLOGD("No need to delete!");
@@ -167,7 +167,7 @@ Status RuntimeStore::DeleteBatch(const std::vector<std::string> &unifiedKeys)
 
 Status RuntimeStore::Sync(const std::vector<std::string> &devices)
 {
-    updateTime();
+    UpdateTime();
     SameProcessIpcGuard ipcGuard;
     DistributedKv::Status status = kvStore_->Sync(devices, SyncMode::PULL);
     if (status != DistributedKv::Status::SUCCESS) {
@@ -179,13 +179,13 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices)
 
 Status RuntimeStore::Clear()
 {
-    updateTime();
+    UpdateTime();
     return Delete(DATA_PREFIX);
 }
 
 Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<UnifiedData> &unifiedDataSet)
 {
-    updateTime();
+    UpdateTime();
     std::vector<Entry> entries;
     auto status = GetEntries(dataPrefix, entries);
     if (status != E_OK) {

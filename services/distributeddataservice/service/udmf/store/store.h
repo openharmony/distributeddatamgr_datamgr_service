@@ -47,7 +47,7 @@ public:
         return time_ < time;
     }
 
-    void updateTime()
+    void UpdateTime()
     {
         std::unique_lock<std::shared_mutex> lock(timeMutex_);
         time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
