@@ -136,7 +136,6 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
         if (!MetaDataManager::GetInstance().LoadMeta(keys[bundle], schemaMeta, true)) {
             return ERROR;
         }
-        auto instance = CloudServer::GetInstance();
         for (auto database : schemaMeta.databases) {
             // action
             StoreMetaData meta;
