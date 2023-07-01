@@ -14,7 +14,7 @@
  */
 #define LOG_TAG "RdbGeneralStore"
 #include "rdb_general_store.h"
-
+#include "cloud_service.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/schema_meta.h"
@@ -32,9 +32,12 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
+using namespace  CloudData;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
+using ClearMode = DistributedDB::ClearMode;
+using DBStatus = DistributedDB::DBStatus;
 class RdbOpenCallbackImpl : public RdbOpenCallback {
 public:
     int OnCreate(RdbStore &rdbStore) override
@@ -190,6 +193,28 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
                   : (mode > NEARBY_END && mode < CLOUD_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
                   : DistributedDB::INVALID_ARGS;
+    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+}
+
+int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode)
+{
+    if (mode < 0 || mode > 1) {
+        return GeneralError::E_INVALID_ARGS;
+    }
+    int32_t dbMode;
+    if (mode == CloudService::CLEAR_CLOUD_INFO) {
+        dbMode = CleanMode::CLOUD_INFO;
+    } else {
+        dbMode = CleanMode::CLOUD_DATA;
+    }
+    DBStatus status;
+    if (devices.size() == 0) {
+        status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+        return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+    }
+    for (auto device : devices) {
+        status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+    }
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 

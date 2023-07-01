@@ -329,7 +329,7 @@ void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
     EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo));
 }
 
-AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user)
+AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, bool mustBind)
 {
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
@@ -356,12 +356,15 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user)
         auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
         auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
         auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
-        if (cloudDB == nullptr || assetLoader == nullptr) {
-            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
-                dbMeta.name.c_str(), dbMeta.alias.c_str());
-            return nullptr;
+        if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
+            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId, dbMeta.name.c_str(),
+                dbMeta.alias.c_str());
+            return store;
         }
-        store->Bind(dbMeta, { std::move(cloudDB), std::move(assetLoader) });
+
+        if (cloudDB != nullptr || assetLoader != nullptr) {
+            store->Bind(dbMeta, { std::move(cloudDB), std::move(assetLoader) });
+        }
     }
     return store;
 }

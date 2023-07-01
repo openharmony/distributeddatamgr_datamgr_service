@@ -43,6 +43,12 @@ public:
         CLOUD_END,
         MODE_BUTT = CLOUD_END,
     };
+    enum CleanMode {
+        NEARBY_DATA = 0,
+        CLOUD_DATA,
+        CLOUD_INFO,
+        LOCAL_DATA,
+    };
 
     struct BindInfo {
         BindInfo(std::shared_ptr<CloudDB> db = nullptr, std::shared_ptr<AssetLoader> loader = nullptr)
@@ -71,6 +77,8 @@ public:
     virtual std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) = 0;
 
     virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) = 0;
+
+    virtual int32_t Clean(const std::vector<std::string> &devices, int32_t mode) = 0;
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 
