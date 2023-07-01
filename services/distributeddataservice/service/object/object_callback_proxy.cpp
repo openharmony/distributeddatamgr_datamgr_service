@@ -55,7 +55,9 @@ void ObjectSaveCallbackProxy::Completed(const std::map<std::string, int32_t> &re
         return;
     }
     MessageOption mo { MessageOption::TF_SYNC };
-    int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(OHOS::DistributedObject::ObjectStore::ObjectStoreInterfaceCode::COMPLETED),
+        data, reply, mo);
     if (error != 0) {
         ZLOGW("SendRequest failed, error %d", error);
     }
@@ -74,7 +76,9 @@ void ObjectRevokeSaveCallbackProxy::Completed(int32_t status)
         return;
     }
     MessageOption mo { MessageOption::TF_SYNC };
-    int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(OHOS::DistributedObject::ObjectStore::ObjectStoreInterfaceCode::COMPLETED),
+        data, reply, mo);
     if (error != 0) {
         ZLOGW("SendRequest failed, error %d", error);
     }
@@ -93,7 +97,9 @@ void ObjectRetrieveCallbackProxy::Completed(const std::map<std::string, std::vec
         return;
     }
     MessageOption mo { MessageOption::TF_SYNC };
-    int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(OHOS::DistributedObject::ObjectStore::ObjectStoreInterfaceCode::COMPLETED,
+        data, reply, mo);
     if (error != 0) {
         ZLOGW("SendRequest failed, error %d", error);
     }
@@ -112,7 +118,9 @@ void ObjectChangeCallbackProxy::Completed(const std::map<std::string, std::vecto
         return;
     }
     MessageOption mo { MessageOption::TF_SYNC };
-    int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(OHOS::DistributedObject::ObjectStore::ObjectStoreInterfaceCode::COMPLETED,
+        data, reply, mo);
     if (error != 0) {
         ZLOGW("SendRequest failed, error %d", error);
     }
