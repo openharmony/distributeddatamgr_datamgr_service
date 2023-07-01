@@ -44,7 +44,7 @@ public:
         MODE_BUTT = CLOUD_END,
     };
     enum CleanMode {
-        NEARBY_DATA,
+        NEARBY_DATA = 0,
         CLOUD_DATA,
         CLOUD_INFO,
         LOCAL_DATA,
