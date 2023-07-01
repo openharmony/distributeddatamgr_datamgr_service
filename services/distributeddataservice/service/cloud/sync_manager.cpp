@@ -359,7 +359,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
             ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId, dbMeta.name.c_str(),
                 dbMeta.alias.c_str());
-            return nullptr;
+            return store;
         }
 
         if (cloudDB != nullptr || assetLoader != nullptr) {
