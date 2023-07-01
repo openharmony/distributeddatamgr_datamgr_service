@@ -194,9 +194,9 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
     while (!nodeInstance.IsNull()) {
         singlePath.emplace_back(nodeInstance.GetItemField());
         size_t index = 0;
-        if ((nodeInstance.GetType() == JsonObject::Type::JSON_ARRAY &&
-                context_->projectionTree.SearchTree(singlePath, index) && index == 0) ||
-            (!context_->projectionTree.SearchTree(singlePath, index) && index == 0)) {
+        bool isMatch = context_->projectionTree.SearchTree(singlePath, index);
+        if ((nodeInstance.GetType() == JsonObject::Type::JSON_ARRAY && isMatch && index == 0) ||
+            (!isMatch && index == 0)) {
             allCutPath.emplace_back(singlePath);
         }
         if (nodeInstance.GetType() != JsonObject::Type::JSON_ARRAY && !nodeInstance.GetChild().IsNull()) {
