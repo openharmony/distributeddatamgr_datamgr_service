@@ -435,11 +435,13 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         auto &dbs = enabled ? subDbs : unsubDbs;
         auto it = sub.expiresTime.find(bundle);
         // cloud is enabled, but the subscription won't expire
-        if (enabled && (it != sub.expiresTime.end() && it->second >= static_cast<uint64_t>(onThreshold.count() / TO_MS))) {
+        if (enabled && (it != sub.expiresTime.end() &&
+            it->second >= static_cast<uint64_t>(onThreshold.count() / TO_MS))) {
             continue;
         }
         // cloud is disabled, we don't care the subscription which was expired or didn't subscribe.
-        if (!enabled && (it == sub.expiresTime.end() || it->second <= static_cast<uint64_t>(offThreshold.count() / TO_MS))) {
+        if (!enabled && (it == sub.expiresTime.end() ||
+            it->second <= static_cast<uint64_t>(offThreshold.count() / TO_MS))) {
             continue;
         }
 
