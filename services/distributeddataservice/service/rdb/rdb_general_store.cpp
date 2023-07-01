@@ -14,7 +14,7 @@
  */
 #define LOG_TAG "RdbGeneralStore"
 #include "rdb_general_store.h"
-
+#include "cloud_service.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/schema_meta.h"
@@ -32,6 +32,7 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
+using namespace  CloudData;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
@@ -201,7 +202,7 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &device, int32_t m
         return GeneralError::E_INVALID_ARGS;
     }
     int32_t dbMode;
-    if (mode == CLOUD_INFO) {
+    if (mode == CloudService::CLEAR_CLOUD_INFO) {
         dbMode = CleanMode::CLOUD_INFO;
     } else {
         dbMode = CleanMode::CLOUD_DATA;
