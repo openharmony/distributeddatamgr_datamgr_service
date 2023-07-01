@@ -30,7 +30,6 @@ ohos_static_library("distributeddata_broadcaster_static") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   external_deps = [
-    # "ces:libcommonevent",
     "ability_base:base",
     "ability_base:want",
     "bundle_framework:appexecfwk_base",
