@@ -49,7 +49,7 @@ public:
         OP_BUTT,
     };
     // PK primary key
-    using PRIValue = std::variant<std::monostate, std::string, int64_t>;
+    using PRIValue = std::variant<std::monostate, std::string, int64_t, double>;
     using PRIFields = std::map<std::string, std::string>;
     using ChangeInfo = std::map<std::string, std::vector<PRIValue>[OP_BUTT]>;
     virtual ~GeneralWatcher() = default;
