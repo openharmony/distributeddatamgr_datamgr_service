@@ -58,11 +58,11 @@ bool ProjectionTree::SearchTree(std::vector<std::string> &singlePath, size_t &in
 {
     ProjectionNode *node = &node_;
     for (size_t i = 0; i < singlePath.size(); i++) {
-        if (node->isDeepest) {
-            index = i;
-        }
         if (node->sonNode[singlePath[i]] != nullptr) {
             node = node->sonNode[singlePath[i]];
+            if (node->isDeepest) {
+                index = i + 1;
+            }
         } else {
             return false;
         }
