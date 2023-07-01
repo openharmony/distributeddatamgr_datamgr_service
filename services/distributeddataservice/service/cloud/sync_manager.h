@@ -31,6 +31,7 @@ public:
     using RefCount = DistributedData::RefCount;
     using AutoCache = DistributedData::AutoCache;
     using StoreMetaData = DistributedData::StoreMetaData;
+    static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = false);
     class SyncInfo final {
     public:
         using Store = std::string;
@@ -46,7 +47,6 @@ public:
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
-        static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = false);
         inline static constexpr const char *DEFAULT_ID = "default";
 
     private:

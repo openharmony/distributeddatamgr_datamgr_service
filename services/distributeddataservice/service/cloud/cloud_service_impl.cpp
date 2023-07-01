@@ -153,9 +153,9 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
             AutoCache::Store store;
             if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
                 OHOS::Security::AccessToken::TOKEN_HAP) {
-                store = SyncManager::SyncInfo::GetStore(meta, cloudInfo.user, true);
+                store = SyncManager::GetStore(meta, cloudInfo.user, true);
             } else {
-                store = SyncManager::SyncManager::SyncInfo::GetStore(meta, cloudInfo.user, false);
+                store = SyncManager::SyncManager::GetStore(meta, cloudInfo.user, false);
             }
 
             if (store == nullptr) {
