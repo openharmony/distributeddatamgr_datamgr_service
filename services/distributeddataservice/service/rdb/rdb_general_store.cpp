@@ -36,6 +36,7 @@ using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
+using DBStatus = DistributedDB::DBStatus;
 class RdbOpenCallbackImpl : public RdbOpenCallback {
 public:
     int OnCreate(RdbStore &rdbStore) override
@@ -205,7 +206,14 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &device, int32_t m
     } else {
         dbMode = CleanMode::CLOUD_DATA;
     }
-    auto status = delegate_->RemoveDeviceData(device, static_cast<ClearMode>(dbMode));
+    DBStatus status;
+    if (devices.size() == 0) {
+        status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+        return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+    }
+    for (auto device : devices) {
+        status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+    }
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
