@@ -31,7 +31,7 @@ public:
     using RefCount = DistributedData::RefCount;
     using AutoCache = DistributedData::AutoCache;
     using StoreMetaData = DistributedData::StoreMetaData;
-    static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = false);
+    static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     class SyncInfo final {
     public:
         using Store = std::string;

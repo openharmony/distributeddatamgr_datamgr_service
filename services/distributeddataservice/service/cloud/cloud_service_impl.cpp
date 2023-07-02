@@ -134,9 +134,11 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
         }
         SchemaMeta schemaMeta;
         if (!MetaDataManager::GetInstance().LoadMeta(keys[bundle], schemaMeta, true)) {
+            ZLOGE("failed, no schema meta:bundleName:%{public}s", bundle.c_str());
             return ERROR;
         }
-        for (auto database : schemaMeta.databases) {
+
+        for (const auto &database : schemaMeta.databases) {
             // action
             StoreMetaData meta;
             meta.bundleName = schemaMeta.bundleName;
@@ -149,13 +151,7 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
                     meta.GetStoreAlias().c_str());
                 continue;
             }
-            AutoCache::Store store;
-            if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
-                OHOS::Security::AccessToken::TOKEN_HAP) {
-                store = SyncManager::GetStore(meta, cloudInfo.user, true);
-            } else {
-                store = SyncManager::SyncManager::GetStore(meta, cloudInfo.user, false);
-            }
+            AutoCache::Store store = SyncManager::GetStore(meta, cloudInfo.user, false);
 
             if (store == nullptr) {
                 ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
@@ -163,8 +159,8 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
             }
             auto status = store->Clean({}, action);
             if (status != E_OK) {
-                ZLOGD("remove device data status:%{public}d, storeId:%{public}s", status, meta.GetStoreAlias().c_str());
-                return ERROR;
+                ZLOGE("remove device data status:%{public}d, storeId:%{public}s", status, meta.GetStoreAlias().c_str());
+                continue;
             }
         }
     }
@@ -177,14 +173,14 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS) {
+        ZLOGE("get cloud meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
         return ERROR;
     }
     if (id != cloudInfo.id) {
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(id).c_str());
     }
-    auto status = DoClean(cloudInfo, actions);
-    return status;
+    return DoClean(cloudInfo, actions);
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
@@ -307,7 +303,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
     }
     if (cloudInfo.enableCloud) {
         for (auto &[bundle, app] : cloudInfo.apps) {
-            if (app.cloudSwitch == true && oldInfo.apps[bundle].cloudSwitch == false) {
+            if (app.cloudSwitch && !oldInfo.apps[bundle].cloudSwitch) {
                 syncManager_.DoCloudSync({ cloudInfo.user, bundle });
             }
         }
