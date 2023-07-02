@@ -17,7 +17,7 @@
 #include "itypes_util.h"
 #include "log_print.h"
 namespace OHOS::DistributedRdb {
-using NotifierIFCode = relationalStore::IRdbNotifierInterfaceCode;
+using NotifierIFCode = RelationalStore::IRdbNotifierInterfaceCode;
 
 RdbNotifierProxy::RdbNotifierProxy(const sptr<IRemoteObject> &object) : IRemoteProxy<RdbNotifierProxyBroker>(object)
 {
