@@ -196,7 +196,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
-int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode)
+int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
 {
     if (mode < 0 || mode > CloudService::CLEAR_CLOUD_BUTT) {
         return GeneralError::E_INVALID_ARGS;
