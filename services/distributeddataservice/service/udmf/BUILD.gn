@@ -14,7 +14,10 @@ import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
-  deps = [ ":udmf_server" ]
+  deps = []
+  if (datamgr_service_udmf) {
+    deps += [ ":udmf_server" ]
+  }
 }
 
 config("module_public_config") {

@@ -51,4 +51,6 @@ declare_args() {
   }
 
   datamgr_service_config = true
+
+  datamgr_service_udmf = false
 }
