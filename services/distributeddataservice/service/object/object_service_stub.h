@@ -20,7 +20,7 @@
 #include "iobject_service.h"
 #include "feature/feature_system.h"
 namespace OHOS::DistributedObject {
-using ObjectCode = ObjectService::ObjectServiceInterfaceCode;
+using ObjectCode = ObjectStoreService::ObjectServiceInterfaceCode;
 
 class ObjectServiceStub : public ObjectService, public DistributedData::FeatureSystem::Feature {
 public:
