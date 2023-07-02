@@ -157,9 +157,11 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
                 ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
                 return ERROR;
             }
-            auto status = store->Clean({}, action);
+            auto status = store->Clean({}, action, "");
             if (status != E_OK) {
-                ZLOGE("remove device data status:%{public}d, storeId:%{public}s", status, meta.GetStoreAlias().c_str());
+                ZLOGW("remove device data status:%{public}d, user:%{pubilc}d, bundleName:%{public}s, "
+                      "storeId:%{public}s",
+                    status, static_cast<int>(cloudInfo.user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
                 continue;
             }
         }
