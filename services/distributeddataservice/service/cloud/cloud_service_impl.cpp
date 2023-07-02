@@ -137,7 +137,6 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
             ZLOGE("failed, no schema meta:bundleName:%{public}s", bundle.c_str());
             return ERROR;
         }
-
         for (const auto &database : schemaMeta.databases) {
             // action
             StoreMetaData meta;
@@ -152,7 +151,6 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
                 continue;
             }
             AutoCache::Store store = SyncManager::GetStore(meta, cloudInfo.user, false);
-
             if (store == nullptr) {
                 ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
                 return ERROR;
