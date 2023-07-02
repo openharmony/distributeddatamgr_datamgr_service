@@ -150,7 +150,7 @@ int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, Messa
     if (!CheckInterfaceToken(data)) {
         return -1;
     }
-    if (code >= 0 && code < ObjectCode::OBJECTSTORE_SERVICE_CMD_MAX) {
+    if (code >= 0 && code < static_cast<uint32_t>(ObjectCode::OBJECTSTORE_SERVICE_CMD_MAX)) {
         return (this->*HANDLERS[code])(data, reply);
     }
     return -1;
