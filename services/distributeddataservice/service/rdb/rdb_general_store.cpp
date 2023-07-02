@@ -214,7 +214,7 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
             break;
         default:
             if (devices.empty()) {
-                delegate_->RemoveDeviceData();
+                status = delegate_->RemoveDeviceData();
                 break;
             }
 
