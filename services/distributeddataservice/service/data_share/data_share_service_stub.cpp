@@ -327,7 +327,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     if (code < DATA_SHARE_SERVICE_CMD_MAX) {
         return (this->*HANDLERS[code])(data, reply);
     }
-    return -1;
+    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
 }
 
 int32_t DataShareServiceStub::OnRemoteNotifyObserver(MessageParcel &data, MessageParcel &reply)
