@@ -173,7 +173,7 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj)
         if (errCode != E_OK) {
             return errCode;
         }
-        for (auto fieldName : allFieldsName) {
+        for (const auto &fieldName : allFieldsName) {
             for (auto oneChar : fieldName) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
                     GLOGE("updata fieldName is illegal");
@@ -214,7 +214,7 @@ int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vec
         if (path[i].empty()) {
             return -E_INVALID_JSON_FORMAT;
         }
-        for (auto fieldName : path[i]) {
+        for (const auto &fieldName : path[i]) {
             if (fieldName.empty()) {
                 return -E_INVALID_ARGS;
             }

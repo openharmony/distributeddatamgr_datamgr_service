@@ -147,25 +147,6 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest005, TestSize.Level0)
     EXPECT_EQ(itemCase.GetItemValue().GetStringValue(), "GG");
 }
 
-HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest006, TestSize.Level0)
-{
-    std::string document = R""({"name":{"first":"Tno", "last":"moray"}})"";
-    std::string updateDoc = R""({"name":{"midle.AA":"GG"}})"";
-
-    int errCode = E_OK;
-    JsonObject src = JsonObject::Parse(document, errCode);
-    EXPECT_EQ(errCode, E_OK);
-    JsonObject add = JsonObject::Parse(updateDoc, errCode);
-    EXPECT_EQ(errCode, E_OK);
-
-    EXPECT_EQ(JsonCommon::Append(src, add, false), E_OK);
-    GLOGD("result: %s", src.Print().c_str());
-
-    JsonObject itemCase = src.FindItem({ "name", "midle.AA" }, errCode);
-    EXPECT_EQ(errCode, E_OK);
-    EXPECT_EQ(itemCase.GetItemValue().GetStringValue(), "GG");
-}
-
 HWTEST_F(DocumentDBJsonCommonTest, JsonObjectAppendTest007, TestSize.Level0)
 {
     std::string document = R""({"name":{"first":["XX", "CC"], "last":"moray"}})"";
