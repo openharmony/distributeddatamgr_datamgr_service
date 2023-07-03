@@ -17,6 +17,8 @@
 #include "itypes_util.h"
 #include "log_print.h"
 namespace OHOS::DistributedRdb {
+using NotifierIFCode = RelationalStore::IRdbNotifierInterfaceCode;
+
 RdbNotifierProxy::RdbNotifierProxy(const sptr<IRemoteObject> &object) : IRemoteProxy<RdbNotifierProxyBroker>(object)
 {
     ZLOGI("construct");
@@ -40,7 +42,8 @@ int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, Details &&result)
 
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
-    if (Remote()->SendRequest(RDB_NOTIFIER_CMD_SYNC_COMPLETE, data, reply, option) != 0) {
+    if (Remote()->SendRequest(
+        static_cast<uint32_t>(NotifierIFCode::RDB_NOTIFIER_CMD_SYNC_COMPLETE), data, reply, option) != 0) {
         ZLOGE("send request failed");
         return RDB_ERROR;
     }
@@ -61,7 +64,8 @@ int32_t RdbNotifierProxy::OnChange(const Origin &origin, const PrimaryFields &pr
 
     MessageParcel reply;
     MessageOption option;
-    if (Remote()->SendRequest(RDB_NOTIFIER_CMD_DATA_CHANGE, data, reply, option) != 0) {
+    if (Remote()->SendRequest(
+        static_cast<uint32_t>(NotifierIFCode::RDB_NOTIFIER_CMD_DATA_CHANGE), data, reply, option) != 0) {
         ZLOGE("send request failed");
         return RDB_ERROR;
     }
