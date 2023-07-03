@@ -44,7 +44,7 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
 
     if (TRANS_HEAD > code || code >= TRANS_BUTT || HANDLERS[code] == nullptr) {
         ZLOGE("not support code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
-        return -1;
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
 
     if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
