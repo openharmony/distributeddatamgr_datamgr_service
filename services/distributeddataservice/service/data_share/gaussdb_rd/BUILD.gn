@@ -82,9 +82,9 @@ ohos_shared_library("gaussdb_rd") {
 
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
-    "hilog:libhilog",
   ]
 
   subsystem_name = "distributeddatamgr"
