@@ -58,7 +58,7 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         code >= static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT) || HANDLERS[code] == nullptr) {
         ZLOGE("not support code:%{public}u, BUTT:%{public}d", code,
               static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT));
-        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+        return -1;
     }
 
     AppId appId;
