@@ -61,7 +61,7 @@ public:
         operator DistributedData::Asset();
         operator DistributedDB::Asset();
         static uint32_t ConvertToDataStatus(const DistributedDB::Asset &asset);
-        static std::pair<uint32_t, uint32_t> ConvertToDBStatus(const DistributedData::Asset &asset);
+        static uint32_t ConvertToDBStatus(const DistributedData::Asset &asset);
 
     private:
         DistributedData::Asset asset_;
