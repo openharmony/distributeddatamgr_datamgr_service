@@ -1,0 +1,113 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################hydra-fuzz########################################
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+##############################fuzztest##########################################
+ohos_fuzztest("CloudServiceStubFuzzTest") {
+  module_out_path = "datamgr_service/service"
+
+  include_dirs = [
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/cloud",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/object",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/rdb",
+    "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${kv_store_distributeddb_path}",
+    "${kv_store_distributeddb_path}/include/",
+    "${kv_store_distributeddb_path}/interfaces/include/",
+    "${kv_store_distributeddb_path}/interfaces/include/relational",
+    "${dataobject_path}/frameworks/innerkitsimpl/include",
+    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
+    "${relational_store_path}/interfaces/inner_api/rdb/include",
+    "//third_party/json/single_include",
+  ]
+
+  fuzz_config_file =
+      "${data_service_path}/service/test/fuzztest/cloudservicestub_fuzzer"
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+
+  sources = [
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
+    "${data_service_path}/service/rdb/rdb_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_general_store.cpp",
+    "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_service_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_service_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_store_observer_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_syncer.cpp",
+    "${data_service_path}/service/rdb/rdb_watcher.cpp",
+    "${data_service_path}/service/rdb/value_proxy.cpp",
+    "cloudservicestub_fuzzer.cpp",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_distributeddb_path}:distributeddb",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_manager",
+    "ability_runtime:dataobs_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "hilog:libhilog",
+    "huks:libhukssdk",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "relational_store:native_rdb",
+  ]
+}
+
+###############################################################################
+group("fuzztest") {
+  testonly = true
+
+  deps = [ ":CloudServiceStubFuzzTest" ]
+}
+###############################################################################

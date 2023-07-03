@@ -24,3 +24,9 @@ group("unittest") {
     "../permission/test:unittest",
   ]
 }
+
+group("fuzztest") {
+  testonly = true
+
+  deps = [ "../communicator/test/fuzztest:fuzztest" ]
+}
