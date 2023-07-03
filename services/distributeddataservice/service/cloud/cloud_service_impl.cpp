@@ -32,6 +32,7 @@
 #include "sync_manager.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
+using namespace std::chrono;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
@@ -472,8 +473,8 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
 
     ZLOGD("begin cloud:%{public}d user:%{public}d apps:%{public}zu", cloudInfo.enableCloud, sub.userId,
         cloudInfo.apps.size());
-    auto onThreshold = (std::chrono::system_clock::now() + std::chrono::hours(EXPIRE_INTERVAL)).time_since_epoch();
-    auto offThreshold = std::chrono::system_clock::now().time_since_epoch();
+    auto onThreshold = duration_cast<milliseconds>((system_clock::now() + hours(EXPIRE_INTERVAL)).time_since_epoch());
+    auto offThreshold = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     std::map<std::string, std::vector<SchemaMeta::Database>> subDbs;
     std::map<std::string, std::vector<SchemaMeta::Database>> unsubDbs;
     for (auto &[bundle, app] : cloudInfo.apps) {
