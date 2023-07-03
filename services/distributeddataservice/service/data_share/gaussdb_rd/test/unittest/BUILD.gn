@@ -81,9 +81,9 @@ ohos_source_set("src_file") {
   deps += [ "//third_party/cJSON:cjson" ]
   external_deps = [
     "c_utils:utils",
-    "hisysevent_native:libhisysevent",
-    "hitrace_native:hitrace_meter",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
   ]
 
   subsystem_name = "distributeddatamgr"
@@ -115,9 +115,9 @@ template("gaussdb_rd_unittest") {
     ]
     external_deps = [
       "c_utils:utils",
-      "hisysevent_native:libhisysevent",
-      "hitrace_native:hitrace_meter",
-      "hiviewdfx_hilog_native:libhilog",
+      "hilog:libhilog",
+      "hisysevent:libhisysevent",
+      "hitrace:hitrace_meter",
     ]
   }
 }
