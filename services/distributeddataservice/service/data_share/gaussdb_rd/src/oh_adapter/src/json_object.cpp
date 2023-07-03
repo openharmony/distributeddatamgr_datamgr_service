@@ -625,7 +625,6 @@ int JsonObject::DeleteItemDeeplyOnTarget(const JsonFieldPath &path)
 
     cJSON *nodeFather = MoveToPath(cjson_, patherPath, caseSensitive_);
     if (nodeFather == nullptr) {
-        GLOGE("Delete item failed, json field path not found.");
         return -E_JSON_PATH_NOT_EXISTS;
     }
 
