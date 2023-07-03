@@ -199,8 +199,7 @@ ValueProxy::Asset::operator DistributedDB::Asset()
         .createTime = std::move(asset_.createTime),
         .size = std::move(asset_.size),
         .hash = std::move(asset_.hash),
-        .flag = ConvertToDBStatus(asset_).second,
-        .status = ConvertToDBStatus(asset_).first };
+        .status = ConvertToDBStatus(asset_) };
 }
 
 uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asset)
@@ -224,30 +223,23 @@ uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asse
     return DistributedData::Asset::STATUS_UNKNOWN;
 }
 
-std::pair<uint32_t, uint32_t> ValueProxy::Asset::ConvertToDBStatus(const DistributedData::Asset &asset)
+uint32_t ValueProxy::Asset::ConvertToDBStatus(const DistributedData::Asset &asset)
 {
     switch (asset.status) {
         case DistributedData::Asset::STATUS_NORMAL:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL),
-                static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE) };
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
         case DistributedData::Asset::STATUS_ABNORMAL:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL),
-                static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE) };
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
         case DistributedData::Asset::STATUS_INSERT:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT),
-                static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT) };
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT);
         case DistributedData::Asset::STATUS_UPDATE:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE),
-                static_cast<uint32_t>(DistributedDB::AssetOpType::UPDATE) };
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE);
         case DistributedData::Asset::STATUS_DELETE:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE),
-                static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE) };
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE);
         case DistributedData::Asset::STATUS_DOWNLOADING:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING),
-                static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE) };
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING);
         default:
-            return { static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL),
-                static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE) };
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
     }
 }
 
