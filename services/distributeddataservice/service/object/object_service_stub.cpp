@@ -153,6 +153,6 @@ int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, Messa
     if (code >= 0 && code < static_cast<uint32_t>(ObjectCode::OBJECTSTORE_SERVICE_CMD_MAX)) {
         return (this->*HANDLERS[code])(data, reply);
     }
-    return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    return -1;
 }
 } // namespace OHOS::DistributedRdb
