@@ -426,8 +426,9 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
 
     ZLOGD("begin cloud:%{public}d user:%{public}d apps:%{public}zu", cloudInfo.enableCloud, sub.userId,
         cloudInfo.apps.size());
-    auto onThreshold = (std::chrono::system_clock::now() + std::chrono::hours(EXPIRE_INTERVAL)).time_since_epoch();
-    auto offThreshold = std::chrono::system_clock::now().time_since_epoch();
+    auto onThreshold = std::chrono::duration_cast<std::chrono::milliseconds>(
+        (system_clock::now() + hours(EXPIRE_INTERVAL)).time_since_epoch());
+    auto offThreshold = std::chrono::duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch());
     std::map<std::string, std::vector<SchemaMeta::Database>> subDbs;
     std::map<std::string, std::vector<SchemaMeta::Database>> unsubDbs;
     for (auto &[bundle, app] : cloudInfo.apps) {
@@ -436,12 +437,12 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         auto it = sub.expiresTime.find(bundle);
         // cloud is enabled, but the subscription won't expire
         if (enabled && (it != sub.expiresTime.end() &&
-            it->second >= static_cast<uint64_t>(onThreshold.count() / TO_MS))) {
+            it->second >= static_cast<uint64_t>(onThreshold.count())) {
             continue;
         }
         // cloud is disabled, we don't care the subscription which was expired or didn't subscribe.
         if (!enabled && (it == sub.expiresTime.end() ||
-            it->second <= static_cast<uint64_t>(offThreshold.count() / TO_MS))) {
+            it->second <= static_cast<uint64_t>(offThreshold.count()))) {
             continue;
         }
 
