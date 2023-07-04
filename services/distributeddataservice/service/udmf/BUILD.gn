@@ -32,6 +32,8 @@ config("module_public_config") {
     "${data_service_path}/service/udmf",
     "${kv_store_path}/frameworks/common",
     "${file_service_path}/interfaces/innerkits/remote_file_share/native",
+    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
+    "${data_service_path}/adapter/include/communicator"
   ]
 }
 

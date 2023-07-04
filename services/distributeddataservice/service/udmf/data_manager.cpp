@@ -75,15 +75,16 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
         auto type = record->GetType();
         if (IsFileType(type)) {
             auto file = static_cast<File *>(record.get());
-            std::string remoteUri = AppFileService::GetDfsUriFromLocal(file->GetUri(), userId);
-            if(remoteUri.empty()) {
+            std::string remoteUri = AppFileService::ModuleRemoteFileShare::RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId);
+            if(remoteUri.empty() || remoteUri == "error") {
                 ZLOGW("Get remoteUri failed, uri: %{public}s,  remoteUri: %{public}s.", file->GetUri().c_str(), remoteUri.c_str());
                 return E_UNKNOWN;
 			}
+
             file->SetRemoteUri(remoteUri);  
         }
 
-        record->SetUid(PreProcessUtils::GetInstance().IdGenerator());
+        record->SetUid(PreProcessUtils::IdGenerator());
     }
 
 

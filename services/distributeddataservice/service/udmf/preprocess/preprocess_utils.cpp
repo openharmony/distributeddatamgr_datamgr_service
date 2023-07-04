@@ -16,7 +16,6 @@
 #include "preprocess_utils.h"
 
 #include <sstream>
-#include "log_print.h"
 #include "error_code.h"
 #include "accesstoken_kit.h"
 #include "bundlemgr/bundle_mgr_client_impl.h"
@@ -56,9 +55,6 @@ std::string PreProcessUtils::GetLocalDeviceId()
 
     std::string encryptedUuid;
     encryptedUuid = DistributedData::DeviceManagerAdapter::GetInstance().CalcClientUuid(" ", info.uuid);
-
-    ZLOGI("[LocalDevice] uuid:%{public}s, encryptedUuid:%{public}s, name:%{public}s, type:%{public}d",
-             info.uuid.c_str(), encryptedUuid.c_str(), info.deviceName.c_str(), info.deviceType); // if log uuid, need tb be anonymous;
     return encryptedUuid;
 }
 
@@ -85,12 +81,11 @@ time_t PreProcessUtils::GetTimeStamp()
     return timestamp;
 }
 
-int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId) const
+int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId)
 {
-    HapTokenInfo tokenInfo;
+    Security::AccessToken::HapTokenInfo tokenInfo;
     auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (result != Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
         return -1;
     }
     return tokenInfo.userID;
