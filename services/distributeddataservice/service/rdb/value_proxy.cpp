@@ -205,6 +205,9 @@ ValueProxy::Asset::operator DistributedDB::Asset()
 uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asset)
 {
     if (asset.status == DistributedDB::AssetStatus::DOWNLOADING) {
+        if (asset.flag == static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE)) {
+            return DistributedData::Asset::STATUS_DELETE;
+        }
         return DistributedData::Asset::STATUS_DOWNLOADING;
     } else if (asset.status == DistributedDB::AssetStatus::ABNORMAL) {
         return DistributedData::Asset::STATUS_ABNORMAL;
