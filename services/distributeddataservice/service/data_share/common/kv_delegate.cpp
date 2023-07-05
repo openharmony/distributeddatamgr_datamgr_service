@@ -62,7 +62,9 @@ int32_t KvDelegate::Delete(const std::string &collectionName, const std::string 
         }
     }
     Flush();
-    ZLOGI("Delete, %{public}s, count %{public}zu", collectionName.c_str(), queryResults.size());
+    if (queryResults.size() > 0) {
+        ZLOGI("Delete, %{public}s, count %{public}zu", collectionName.c_str(), queryResults.size());
+    }
     return E_OK;
 }
 
@@ -136,9 +138,9 @@ int32_t KvDelegate::Get(const std::string &collectionName, const Id &id, std::st
     std::string filter = DistributedData::Serializable::Marshall(id);
     if (Get(collectionName, filter, "{}", value) != E_OK) {
         ZLOGE("Get failed, %{public}s %{public}s", collectionName.c_str(), filter.c_str());
-        return false;
+        return E_ERROR;
     }
-    return true;
+    return E_OK;
 }
 
 bool KvDelegate::GetVersion(const std::string &collectionName, const std::string &filter, int &version)

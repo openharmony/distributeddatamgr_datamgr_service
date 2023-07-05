@@ -30,7 +30,7 @@
 namespace OHOS::DataShare {
 class DBDelegate {
 public:
-    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version, bool registerFunction = false);
+    static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version, bool registerFunction = true);
     virtual int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) = 0;
@@ -39,7 +39,7 @@ public:
         const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode) = 0;
     virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
-    virtual std::shared_ptr<NativeRdb::AbsSharedResultSet> QuerySql(const std::string &sql) = 0;
+    virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
 };
 
 class Id : public DistributedData::Serializable {

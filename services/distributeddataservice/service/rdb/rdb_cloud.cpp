@@ -15,6 +15,8 @@
 
 #define LOG_TAG "RdbCloud"
 #include "rdb_cloud.h"
+
+#include "cloud/schema_meta.h"
 #include "log_print.h"
 #include "value_proxy.h"
 #include "utils/anonymous.h"
@@ -41,8 +43,11 @@ DBStatus RdbCloud::BatchInsert(
 DBStatus RdbCloud::BatchUpdate(
     const std::string &tableName, std::vector<DBVBucket> &&record, std::vector<DBVBucket> &extend)
 {
-    auto error = cloudDB_->BatchUpdate(
-        tableName, ValueProxy::Convert(std::move(record)), ValueProxy::Convert(std::move(extend)));
+    DistributedData::VBuckets extends = ValueProxy::Convert(std::move(extend));
+    auto error = cloudDB_->BatchUpdate(tableName, ValueProxy::Convert(std::move(record)), extends);
+    if (error == GeneralError::E_OK) {
+        extend = ValueProxy::Convert(std::move(extends));
+    }
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
@@ -73,6 +78,9 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         err = cursor->MoveToNext();
         count--;
     }
+    DistributedData::Value cursorFlag;
+    cursor->Get(SchemaMeta::CURSOR_FIELD, cursorFlag);
+    extend[SchemaMeta::CURSOR_FIELD] = ValueProxy::Convert(std::move(cursorFlag));
     if (cursor->IsEnd()) {
         ZLOGD("query end, table:%{public}s", Anonymous::Change(tableName).c_str());
         return DBStatus::QUERY_END;

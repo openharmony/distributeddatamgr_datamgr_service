@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 #include "eventcenter/event.h"
 #include "executor_pool.h"
+#include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "utils/ref_count.h"
@@ -28,6 +29,9 @@ public:
     using GenStore = DistributedData::GeneralStore;
     using GenQuery = DistributedData::GenQuery;
     using RefCount = DistributedData::RefCount;
+    using AutoCache = DistributedData::AutoCache;
+    using StoreMetaData = DistributedData::StoreMetaData;
+    static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     class SyncInfo final {
     public:
         using Store = std::string;
@@ -41,12 +45,13 @@ public:
         void SetWait(int32_t wait);
         void SetAsyncDetail(GenAsync asyncDetail);
         void SetQuery(std::shared_ptr<GenQuery> query);
-        void SetError(int32_t code);
+        void SetError(int32_t code) const;
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         inline static constexpr const char *DEFAULT_ID = "default";
 
     private:
         friend SyncManager;
+        uint64_t syncId_ = 0;
         int32_t mode_ = GenStore::CLOUD_TIME_FIRST;
         int32_t user_ = 0;
         int32_t wait_ = 0;
@@ -66,22 +71,29 @@ private:
     using Event = DistributedData::Event;
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
+    using Duration = ExecutorPool::Duration;
+    using Retryer = std::function<bool(Duration interval, int32_t status)>;
+
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
-    static constexpr int32_t RETRY_TIMES = 6; // second
+    static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
+    static constexpr int32_t RETRY_TIMES = 6; // normal retry
+    static constexpr int32_t CLIENT_RETRY_TIMES = 3; // normal retry
     static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000; // high 32 bit
     static constexpr int32_t MV_BIT = 32;
 
-    Task GetSyncTask(int32_t retry, RefCount ref, SyncInfo &&syncInfo);
-    void DoRetry(int32_t retry, SyncInfo &&syncInfo);
-    std::function<void(const Event &)> GetSyncHandler();
+    Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
+    void UpdateSchema(const SyncInfo &syncInfo);
+    std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
     std::function<void(const Event &)> GetClientChangeHandler();
-    uint64_t GenSyncId(int32_t user);
+    Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo);
+    static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
 
-    std::atomic<uint32_t> syncId_ = 0;
+    static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;
+    ConcurrentMap<uint64_t, uint64_t> activeInfos_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

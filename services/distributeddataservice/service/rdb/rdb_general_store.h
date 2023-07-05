@@ -18,6 +18,7 @@
 #include <atomic>
 #include <functional>
 #include "metadata/store_meta_data.h"
+#include "rdb_asset_loader.h"
 #include "rdb_cloud.h"
 #include "rdb_store.h"
 #include "relational_store_delegate.h"
@@ -37,7 +38,7 @@ public:
     using Database = DistributedData::Database;
     using RdbStore = OHOS::NativeRdb::RdbStore;
 
-    explicit RdbGeneralStore(const StoreMetaData &metaData);
+    explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
     int32_t Bind(const Database &database, BindInfo bindInfo) override;
     bool IsBound() override;
@@ -48,6 +49,7 @@ public:
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
     int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) override;
+    int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t Close() override;
@@ -83,6 +85,7 @@ private:
     RdbDelegate *delegate_ = nullptr;
     std::shared_ptr<RdbStore> store_;
     std::shared_ptr<RdbCloud> rdbCloud_ {};
+    std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
     BindInfo bindInfo_;
     std::atomic<bool> isBound_ = false;
 };

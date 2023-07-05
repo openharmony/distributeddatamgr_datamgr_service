@@ -23,13 +23,14 @@ class API_EXPORT SyncEvent : public CloudEvent {
 public:
     class EventInfo {
     public:
-        API_EXPORT EventInfo(int32_t mode,  int32_t wait, std::shared_ptr<GenQuery> query, GenAsync async);
+        API_EXPORT EventInfo(int32_t mode, int32_t wait, bool retry, std::shared_ptr<GenQuery> query, GenAsync async);
         API_EXPORT EventInfo(EventInfo &&info) noexcept;
         EventInfo(const EventInfo &info) = default;
         API_EXPORT EventInfo &operator=(EventInfo &&info) noexcept;
         EventInfo &operator=(const EventInfo &info) = default;
     private:
         friend SyncEvent;
+        bool retry_ = false;
         int32_t mode_ = -1;
         int32_t wait_ = 0;
         std::shared_ptr<GenQuery> query_;
@@ -39,6 +40,7 @@ public:
     ~SyncEvent() override = default;
     int32_t GetMode() const;
     int32_t GetWait() const;
+    bool AutoRetry() const;
     std::shared_ptr<GenQuery> GetQuery() const;
     GenAsync GetAsyncDetail() const;
 

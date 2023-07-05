@@ -14,7 +14,6 @@
  */
 
 #define LOG_TAG "ValueProxy"
-#include "log_print.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
@@ -124,23 +123,31 @@ ValueProxy::Asset::Asset(DistributedData::Asset asset)
 ValueProxy::Asset::Asset(NativeRdb::AssetValue asset)
 {
     asset_ = DistributedData::Asset { .version = asset.version,
+        .status = asset.status,
+        .expiresTime = asset.expiresTime,
+        .id = std::move(asset.id),
         .name = std::move(asset.name),
         .uri = std::move(asset.uri),
         .createTime = std::move(asset.createTime),
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
-        .hash = std::move(asset.hash) };
+        .hash = std::move(asset.hash),
+        .path = std::move(asset.path) };
 }
 
 ValueProxy::Asset::Asset(DistributedDB::Asset asset)
 {
     asset_ = DistributedData::Asset { .version = asset.version,
+        .status = ConvertToDataStatus(asset),
+        .expiresTime = DistributedData::Asset::NO_EXPIRES_TIME,
+        .id = std::move(asset.assetId),
         .name = std::move(asset.name),
         .uri = std::move(asset.uri),
         .createTime = std::move(asset.createTime),
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
-        .hash = std::move(asset.hash) };
+        .hash = std::move(asset.hash),
+        .path = std::move(asset.subpath) };
 }
 
 ValueProxy::Asset &ValueProxy::Asset::operator=(const Asset &proxy)
@@ -164,12 +171,16 @@ ValueProxy::Asset &ValueProxy::Asset::operator=(Asset &&proxy) noexcept
 ValueProxy::Asset::operator NativeRdb::AssetValue()
 {
     return NativeRdb::AssetValue { .version = asset_.version,
+        .status = asset_.status,
+        .expiresTime = asset_.expiresTime,
+        .id = std::move(asset_.id),
         .name = std::move(asset_.name),
         .uri = std::move(asset_.uri),
         .createTime = std::move(asset_.createTime),
         .modifyTime = std::move(asset_.modifyTime),
         .size = std::move(asset_.size),
-        .hash = std::move(asset_.hash) };
+        .hash = std::move(asset_.hash),
+        .path = std::move(asset_.path) };
 }
 
 ValueProxy::Asset::operator DistributedData::Asset()
@@ -181,11 +192,58 @@ ValueProxy::Asset::operator DistributedDB::Asset()
 {
     return DistributedDB::Asset { .version = asset_.version,
         .name = std::move(asset_.name),
+        .assetId = std::move(asset_.id),
+        .subpath = std::move(asset_.path),
         .uri = std::move(asset_.uri),
         .modifyTime = std::move(asset_.modifyTime),
         .createTime = std::move(asset_.createTime),
         .size = std::move(asset_.size),
-        .hash = std::move(asset_.hash) };
+        .hash = std::move(asset_.hash),
+        .status = ConvertToDBStatus(asset_) };
+}
+
+uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asset)
+{
+    if (asset.status == DistributedDB::AssetStatus::DOWNLOADING) {
+        if (asset.flag == static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE)) {
+            return DistributedData::Asset::STATUS_DELETE;
+        }
+        return DistributedData::Asset::STATUS_DOWNLOADING;
+    } else if (asset.status == DistributedDB::AssetStatus::ABNORMAL) {
+        return DistributedData::Asset::STATUS_ABNORMAL;
+    } else {
+        switch (asset.flag) {
+            case static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT):
+                return DistributedData::Asset::STATUS_INSERT;
+            case static_cast<uint32_t>(DistributedDB::AssetOpType::UPDATE):
+                return DistributedData::Asset::STATUS_UPDATE;
+            case static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE):
+                return DistributedData::Asset::STATUS_DELETE;
+            default:
+                return DistributedData::Asset::STATUS_NORMAL;
+        }
+    }
+    return DistributedData::Asset::STATUS_UNKNOWN;
+}
+
+uint32_t ValueProxy::Asset::ConvertToDBStatus(const DistributedData::Asset &asset)
+{
+    switch (asset.status) {
+        case DistributedData::Asset::STATUS_NORMAL:
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
+        case DistributedData::Asset::STATUS_ABNORMAL:
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
+        case DistributedData::Asset::STATUS_INSERT:
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT);
+        case DistributedData::Asset::STATUS_UPDATE:
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE);
+        case DistributedData::Asset::STATUS_DELETE:
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE);
+        case DistributedData::Asset::STATUS_DOWNLOADING:
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING);
+        default:
+            return static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
+    }
 }
 
 ValueProxy::Assets::Assets(DistributedData::Assets assets)

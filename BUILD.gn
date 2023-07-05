@@ -29,6 +29,9 @@ group("fuzztest") {
   testonly = true
   deps = []
   deps += [
+    "services/distributeddataservice/adapter/test:fuzztest",
+    "services/distributeddataservice/app/test/fuzztest:fuzztest",
+    "services/distributeddataservice/service/test/fuzztest:fuzztest",
     "test/fuzztest/autolaunch_fuzzer:fuzztest",
     "test/fuzztest/kvstoredisksize_fuzzer:fuzztest",
   ]

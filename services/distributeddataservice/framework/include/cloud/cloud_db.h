@@ -34,6 +34,8 @@ public:
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values, VBuckets &extends);
 
+    virtual int32_t BatchUpdate(const std::string &table, VBuckets &&values, VBuckets &extends);
+
     virtual int32_t BatchUpdate(const std::string &table, VBuckets &&values, const VBuckets &extends);
 
     virtual int32_t BatchDelete(const std::string &table, const VBuckets &extends);

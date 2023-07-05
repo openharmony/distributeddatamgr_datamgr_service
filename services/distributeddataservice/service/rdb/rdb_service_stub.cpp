@@ -207,7 +207,7 @@ int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageP
     if (!CheckInterfaceToken(data)) {
         return RDB_ERROR;
     }
-    if (code >= 0 && code < RDB_SERVICE_CMD_MAX) {
+    if (code >= 0 && code < static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)) {
         return (this->*HANDLERS[code])(data, reply);
     }
     return RDB_ERROR;

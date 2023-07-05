@@ -19,9 +19,14 @@ group("unittest") {
 
   deps += [
     "../account/test:unittest",
-    "../autils/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
     "../permission/test:unittest",
   ]
+}
+
+group("fuzztest") {
+  testonly = true
+
+  deps = [ "../communicator/test/fuzztest:fuzztest" ]
 }

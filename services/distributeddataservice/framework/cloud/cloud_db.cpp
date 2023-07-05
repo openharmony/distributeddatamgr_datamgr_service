@@ -25,6 +25,11 @@ int32_t CloudDB::BatchInsert(const std::string &table, VBuckets &&values, VBucke
     return E_NOT_SUPPORT;
 }
 
+int32_t CloudDB::BatchUpdate(const std::string &table, VBuckets &&values, VBuckets &extends)
+{
+    return BatchUpdate(table, std::move(values), static_cast<const VBuckets &>(extends));
+}
+
 int32_t CloudDB::BatchUpdate(const std::string &table, VBuckets &&values, const VBuckets &extends)
 {
     return E_NOT_SUPPORT;

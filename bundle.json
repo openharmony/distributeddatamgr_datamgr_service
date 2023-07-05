@@ -38,7 +38,10 @@
         "name": "datamgr_service",
         "subsystem": "distributeddatamgr",
         "syscap": [],
-        "features": [],
+        "features": [
+            "datamgr_service_config",
+            "datamgr_service_udmf"
+        ],
         "adapted_system_type": [
             "standard"
         ],
@@ -49,35 +52,37 @@
           ],
         "deps": {
             "components": [
-                "libuv",
-                "common_event_service",
-                "bundle_framework",
-                "safwk",
-                "zlib",
-                "init",
-                "os_account",
-                "common",
-                "samgr",
-                "dataclassification",
-                "dsoftbus",
-                "jsoncpp",
-                "hitrace_native",
-                "access_token",
-                "huks",
                 "ability_base",
                 "ability_runtime",
-                "hiviewdfx_hilog_native",
-                "hisysevent_native",
+                "access_token",
+                "bundle_framework",
+                "common_event_service",
+                "c_utils",
+                "dataclassification",
+                "data_share",
                 "device_auth",
+                "device_manager",
+                "dsoftbus",
+                "hilog",
+                "hisysevent",
+                "hitrace",
+                "huks",
+                "kv_store",
                 "ipc",
-                "napi"
+                "napi",
+                "os_account",
+                "relational_store",
+                "safwk",
+                "samgr",
+                "udmf"
             ],
             "third_party": [
-                "uv_static",
-                "sqlite",
-                "libz",
+                "cjson",
                 "jsoncpp",
-                "libcrypto_shared"
+                "libuv",
+                "openssl",
+                "sqlite",
+                "zlib"
             ]
         },
         "build": {

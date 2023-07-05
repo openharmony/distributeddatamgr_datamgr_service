@@ -174,6 +174,12 @@ bool Serializable::SetValue(json &node, const int64_t &value)
     return true;
 }
 
+bool Serializable::SetValue(json &node, const double &value)
+{
+    node = value;
+    return true;
+}
+
 bool Serializable::SetValue(json &node, const uint64_t &value)
 {
     node = value;

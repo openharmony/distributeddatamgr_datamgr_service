@@ -22,6 +22,8 @@
 #include "feature/feature_system.h"
 
 namespace OHOS::DistributedRdb {
+using RdbServiceCode = OHOS::DistributedRdb::RelationalStore::RdbServiceInterfaceCode;
+
 class RdbServiceStub : public RdbService, public DistributedData::FeatureSystem::Feature {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedRdb.IRdbService");
@@ -49,16 +51,18 @@ private:
     int32_t OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel& reply);
 
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
-    static constexpr RequestHandle HANDLERS[RDB_SERVICE_CMD_MAX] = {
-        [RDB_SERVICE_CMD_OBTAIN_TABLE] = &RdbServiceStub::OnRemoteObtainDistributedTableName,
-        [RDB_SERVICE_CMD_INIT_NOTIFIER] = &RdbServiceStub::OnRemoteInitNotifier,
-        [RDB_SERVICE_CMD_SET_DIST_TABLE] = &RdbServiceStub::OnRemoteSetDistributedTables,
-        [RDB_SERVICE_CMD_SYNC] = &RdbServiceStub::OnRemoteDoSync,
-        [RDB_SERVICE_CMD_ASYNC] = &RdbServiceStub::OnRemoteDoAsync,
-        [RDB_SERVICE_CMD_SUBSCRIBE] = &RdbServiceStub::OnRemoteDoSubscribe,
-        [RDB_SERVICE_CMD_UNSUBSCRIBE] = &RdbServiceStub::OnRemoteDoUnSubscribe,
-        [RDB_SERVICE_CMD_REMOTE_QUERY] = &RdbServiceStub::OnRemoteDoRemoteQuery,
-        [RDB_SERVICE_CMD_GET_SCHEMA] = &RdbServiceStub::OnGetSchema
+    static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)] = {
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_TABLE)] =
+            &RdbServiceStub::OnRemoteObtainDistributedTableName,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_INIT_NOTIFIER)] = &RdbServiceStub::OnRemoteInitNotifier,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_SET_DIST_TABLE)] =
+            &RdbServiceStub::OnRemoteSetDistributedTables,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_SYNC)] = &RdbServiceStub::OnRemoteDoSync,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_ASYNC)] = &RdbServiceStub::OnRemoteDoAsync,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_SUBSCRIBE)] = &RdbServiceStub::OnRemoteDoSubscribe,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNSUBSCRIBE)] = &RdbServiceStub::OnRemoteDoUnSubscribe,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REMOTE_QUERY)] = &RdbServiceStub::OnRemoteDoRemoteQuery,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_SCHEMA)] = &RdbServiceStub::OnGetSchema
     };
 };
 } // namespace OHOS::DistributedRdb

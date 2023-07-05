@@ -42,7 +42,7 @@ ohos_unittest("PermissionValidatorTest") {
     "//third_party/googletest:gtest_main",
   ]
 
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

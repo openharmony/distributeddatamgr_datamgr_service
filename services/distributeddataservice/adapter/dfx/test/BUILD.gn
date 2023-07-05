@@ -41,13 +41,12 @@ ohos_unittest("DistributeddataDfxMSTTest") {
 
   external_deps = [
     "c_utils:utils",
-    "hisysevent_native:libhisysevent",
-    "hitrace_native:hitrace_meter",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "../../autils:distributeddata_autils_static",
     "../../dfx:distributeddata_dfx_static",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
@@ -100,13 +99,12 @@ ohos_unittest("DistributeddataDfxUTTest") {
 
   external_deps = [
     "c_utils:utils",
-    "hisysevent_native:libhisysevent",
-    "hitrace_native:hitrace_meter",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "../../autils:distributeddata_autils_static",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
   ]

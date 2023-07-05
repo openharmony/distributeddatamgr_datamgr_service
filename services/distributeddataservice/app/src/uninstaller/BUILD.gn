@@ -42,14 +42,12 @@ ohos_static_library("distributeddata_uninstaller_static") {
   ]
 
   external_deps = [
+    "ability_base:want",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-
-    # "ces:libcommonevent",
-    "ability_base:want",
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

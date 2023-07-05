@@ -32,6 +32,12 @@ ipc_core_path = "//foundation/communication/ipc/interfaces/innerkits/ipc_core"
 
 device_manager_path = "//foundation/distributedhardware/device_manager"
 
+data_service_path = "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice"
+
+udmf_path = "//foundation/distributeddatamgr/udmf"
+
+dataobject_path = "//foundation/distributeddatamgr/data_object"
+
 declare_args() {
   datamgr_service_power = true
   if (!defined(global_parts_info.power_manager_native_powermgr_client) ||
@@ -45,4 +51,8 @@ declare_args() {
   } else {
     os_account_part_is_enabled = false
   }
+
+  datamgr_service_config = true
+
+  datamgr_service_udmf = false
 }

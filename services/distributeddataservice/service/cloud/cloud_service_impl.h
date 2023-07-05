@@ -80,6 +80,7 @@ private:
     ExecutorPool::Task GenTask(int32_t retry, int32_t user, AsyncWork work);
     void Execute(Tasks tasks);
     bool DoSubscribe(int32_t user);
+    int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
     static const Work HANDLERS[WORK_BUTT];

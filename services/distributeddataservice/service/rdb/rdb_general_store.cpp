@@ -14,7 +14,7 @@
  */
 #define LOG_TAG "RdbGeneralStore"
 #include "rdb_general_store.h"
-
+#include "cloud_service.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/schema_meta.h"
@@ -32,9 +32,12 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
+using namespace  CloudData;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
+using ClearMode = DistributedDB::ClearMode;
+using DBStatus = DistributedDB::DBStatus;
 class RdbOpenCallbackImpl : public RdbOpenCallback {
 public:
     int OnCreate(RdbStore &rdbStore) override
@@ -86,11 +89,12 @@ RdbGeneralStore::~RdbGeneralStore()
     bindInfo_.db_->Close();
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
+    rdbLoader_ = nullptr;
 }
 
 int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
 {
-    if (bindInfo.db_ == nullptr) {
+    if (bindInfo.db_ == nullptr || bindInfo.loader_ == nullptr) {
         return GeneralError::E_INVALID_ARGS;
     }
 
@@ -100,11 +104,9 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
 
     bindInfo_ = std::move(bindInfo);
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_);
-    if (rdbCloud_ == nullptr) {
-        ZLOGE("rdb_cloudDb is null");
-        return GeneralError::E_ERROR;
-    }
     delegate_->SetCloudDB(rdbCloud_);
+    rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_);
+    delegate_->SetIAssetLoader(rdbLoader_);
     DBSchema schema;
     schema.tables.resize(database.tables.size());
     for (size_t i = 0; i < database.tables.size(); i++) {
@@ -141,6 +143,7 @@ int32_t RdbGeneralStore::Close()
     bindInfo_.db_->Close();
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
+    rdbLoader_ = nullptr;
     return 0;
 }
 
@@ -190,6 +193,36 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
                   : (mode > NEARBY_END && mode < CLOUD_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
                   : DistributedDB::INVALID_ARGS;
+    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+}
+
+int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
+{
+    if (mode < 0 || mode > CloudService::CLEAR_CLOUD_BUTT) {
+        return GeneralError::E_INVALID_ARGS;
+    }
+    int32_t dbMode;
+    DBStatus status;
+    switch (mode) {
+        case CloudService::CLEAR_CLOUD_INFO:
+            dbMode = CleanMode::CLOUD_INFO;
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+            break;
+        case CloudService::CLEAR_CLOUD_DATA_AND_INFO:
+            dbMode = CleanMode::CLOUD_DATA;
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+            break;
+        default:
+            if (devices.empty()) {
+                status = delegate_->RemoveDeviceData();
+                break;
+            }
+
+            for (auto device : devices) {
+                status = delegate_->RemoveDeviceData(device, tableName);
+            }
+            break;
+    }
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
@@ -285,7 +318,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     genOrigin.store = storeId_;
     Watcher::PRIFields fields;
     Watcher::ChangeInfo changeInfo;
-    for (int i = 0; i < DistributedDB::OP_BUTT; ++i) {
+    for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
         auto &info = changeInfo[data.tableName][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;

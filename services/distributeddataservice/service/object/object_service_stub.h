@@ -20,6 +20,8 @@
 #include "iobject_service.h"
 #include "feature/feature_system.h"
 namespace OHOS::DistributedObject {
+using ObjectCode = ObjectStoreService::ObjectServiceInterfaceCode;
+
 class ObjectServiceStub : public ObjectService, public DistributedData::FeatureSystem::Feature {
 public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
@@ -33,7 +35,7 @@ private:
     int32_t OnUnsubscribeRequest(MessageParcel &data, MessageParcel &reply);
     
     using RequestHandle = int (ObjectServiceStub::*)(MessageParcel &, MessageParcel &);
-    static constexpr RequestHandle HANDLERS[OBJECTSTORE_SERVICE_CMD_MAX] = {
+    static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(ObjectCode::OBJECTSTORE_SERVICE_CMD_MAX)] = {
         &ObjectServiceStub::ObjectStoreSaveOnRemote,
         &ObjectServiceStub::ObjectStoreRevokeSaveOnRemote,
         &ObjectServiceStub::ObjectStoreRetrieveOnRemote,

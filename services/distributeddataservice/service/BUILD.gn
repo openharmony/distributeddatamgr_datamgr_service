@@ -16,6 +16,10 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
   deps = [ ":distributeddatasvc" ]
+
+  if (datamgr_service_udmf) {
+    deps += [ "${data_service_path}/service/udmf:udmf_server" ]
+  }
 }
 config("module_public_config") {
   visibility = [ ":*" ]
@@ -69,7 +73,6 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/protocol_config.cpp",
     "crypto/src/crypto_manager.cpp",
     "kvdb/auth_delegate.cpp",
-    "kvdb/executor_factory.cpp",
     "kvdb/kvdb_exporter.cpp",
     "kvdb/kvdb_service_impl.cpp",
     "kvdb/kvdb_service_stub.cpp",
@@ -86,7 +89,9 @@ ohos_shared_library("distributeddatasvc") {
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
     "permission/src/permit_delegate.cpp",
+    "rdb/rdb_asset_loader.cpp",
     "rdb/rdb_cloud.cpp",
+    "rdb/rdb_cloud_data_translate.cpp",
     "rdb/rdb_cursor.cpp",
     "rdb/rdb_general_store.cpp",
     "rdb/rdb_notifier_proxy.cpp",
@@ -108,7 +113,6 @@ ohos_shared_library("distributeddatasvc") {
 
   deps = [
     "${kv_store_distributeddb_path}:distributeddb",
-    "${relational_store_path}/interfaces/inner_api/cloud_data:cloud_data_inner",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
@@ -124,7 +128,7 @@ ohos_shared_library("distributeddatasvc") {
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",

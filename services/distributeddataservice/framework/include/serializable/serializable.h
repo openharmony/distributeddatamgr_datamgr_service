@@ -65,6 +65,7 @@ public:
     API_EXPORT static bool SetValue(json &node, const uint32_t &value);
     API_EXPORT static bool SetValue(json &node, const int32_t &value);
     API_EXPORT static bool SetValue(json &node, const int64_t &value);
+    API_EXPORT static bool SetValue(json &node, const double &value);
     API_EXPORT static bool SetValue(json &node, const uint64_t &value);
     // Use bool & to forbid the const T * auto convert to bool, const bool will convert to const uint32_t &value;
     API_EXPORT static bool SetValue(json &node, bool &value);

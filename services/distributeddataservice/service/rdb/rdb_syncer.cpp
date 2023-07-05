@@ -92,7 +92,7 @@ std::string RdbSyncer::GetBundleName() const
 
 std::string RdbSyncer::GetAppId() const
 {
-    return DistributedData::CheckerManager::GetInstance().GetAppId( { uid_, token_, param_.bundleName_ } );
+    return DistributedData::CheckerManager::GetInstance().GetAppId({ uid_, token_, param_.bundleName_ });
 }
 
 std::string RdbSyncer::GetStoreId() const
@@ -167,11 +167,11 @@ int32_t RdbSyncer::InitDBDelegate(const StoreMetaData &meta)
         }
         option.observer = observer_;
         std::string fileName = meta.dataDir;
-        ZLOGI("path=%{public}s storeId=%{public}s", fileName.c_str(), meta.GetStoreAlias().c_str());
+        ZLOGI("path=%{public}s storeId=%{public}s", Anonymous::Change(fileName).c_str(), meta.GetStoreAlias().c_str());
         auto status = manager_->OpenStore(fileName, meta.storeId, option, delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("open store failed, path=%{public}s storeId=%{public}s status=%{public}d",
-                fileName.c_str(), meta.GetStoreAlias().c_str(), status);
+                  Anonymous::Change(fileName).c_str(), meta.GetStoreAlias().c_str(), status);
             return RDB_ERROR;
         }
         ZLOGI("open store success");
@@ -385,8 +385,8 @@ int32_t RdbSyncer::DoSync(const Option &option, const PredicatesMemo &predicates
             query->query_.FromTable(predicates.tables_);
         }
 
-        auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME), query,
-            [async](const GenDetails &details) {
+        auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME),
+            (option.isAsync && option.seqNum == 0), query, [async](const GenDetails &details) {
                 async(HandleGenDetails(details));
             });
         auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
