@@ -155,7 +155,7 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
     std::queue<cJSON *> cjsonQueue;
     cjsonQueue.push(item);
-    while (!cjsonQueue.empty()) { //node is not null all the time
+    while (!cjsonQueue.empty()) {
         cJSON *node = cjsonQueue.front();
         cjsonQueue.pop();
         if (cJSON_IsNumber(node)) {
