@@ -35,6 +35,21 @@ enum DeviceType {
     OTHERS,
 };
 
+enum RouteType : int32_t {
+    INVALID_ROUTE_TYPE = -1,
+    ROUTE_TYPE_ALL = 0,
+    WIFI_STA = 1,
+    WIFI_P2P = 2,
+    BT_BR = 3,
+    BT_BLE = 4,
+    BUTT = 5,
+};
+
+struct DataInfo {
+    uint8_t *data;
+    uint32_t length;
+};
+
 struct API_EXPORT PipeInfo {
     std::string pipeId;
     std::string userId;

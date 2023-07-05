@@ -19,6 +19,7 @@
 #include <map>
 #include <mutex>
 
+#include "commu_types.h"
 #include "communication_strategy.h"
 #include "session.h"
 #include "softbus_bus_center.h"
@@ -30,7 +31,7 @@ public:
     ~SoftBusClient();
 
     using Strategy = CommunicationStrategy::Strategy;
-    Status Send(const uint8_t *data, int size);
+    Status Send(const DataInfo &dataInfo, uint32_t totalLength);
     bool operator==(int32_t connId) const;
     bool operator==(const std::string &deviceId) const;
     uint32_t GetMtuSize() const;
@@ -50,7 +51,10 @@ private:
     static constexpr int32_t INVALID_CONNECT_ID = -1;
     static constexpr uint32_t WAIT_MAX_TIME = 10;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
+    static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
+    static constexpr float SWITCH_DELAY_FACTOR = 0.6f; // 64KB
     int32_t connId_ = INVALID_CONNECT_ID;
+    int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
     Strategy strategy_ = Strategy::DEFAULT;
     ConnectStatus status_ = ConnectStatus::DISCONNECT;
     std::mutex mutex_;

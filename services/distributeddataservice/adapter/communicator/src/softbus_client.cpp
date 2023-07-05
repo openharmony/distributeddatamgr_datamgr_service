@@ -51,6 +51,7 @@ void SoftBusClient::RestoreDefaultValue()
 {
     connId_ = INVALID_CONNECT_ID;
     status_ = ConnectStatus::DISCONNECT;
+    routeType_ = RouteType::INVALID_ROUTE_TYPE;
     strategy_ = Strategy::DEFAULT;
     mtu_ = DEFAULT_MTU_SIZE;
 }
@@ -61,7 +62,7 @@ uint32_t SoftBusClient::GetMtuSize() const
     return mtu_;
 }
 
-Status SoftBusClient::Send(const uint8_t *data, int size)
+Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto result = OpenConnect();
@@ -69,8 +70,8 @@ Status SoftBusClient::Send(const uint8_t *data, int size)
         return result;
     }
 
-    ZLOGD("send data connId:%{public}d, data size:%{public}d.", connId_, size);
-    int32_t ret = SendBytes(connId_, data, size);
+    ZLOGD("send data connId:%{public}d, data size:%{public}u.", connId_, dataInfo.length);
+    int32_t ret = SendBytes(connId_, dataInfo.data, dataInfo.length);
     if (ret != SOFTBUS_OK) {
         ZLOGE("send data to connId%{public}d failed, ret:%{public}d.", connId_, ret);
         return Status::ERROR;
