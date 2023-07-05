@@ -139,18 +139,21 @@ bool RdbGeneralStore::IsBound()
 
 int32_t RdbGeneralStore::Close()
 {
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        return 0;
+    }
+    auto status = manager_.CloseStore(delegate_);
+    if (status != DBStatus::OK) {
+        return status;
+    }
+    delegate_ = nullptr;
     store_ = nullptr;
     bindInfo_.loader_ = nullptr;
     bindInfo_.db_->Close();
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
-    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
-    auto status = manager_.CloseStore(delegate_);
-    if (status != DBStatus::OK) {
-        return status;
-    }
-    delegate_ = nullptr;
     return 0;
 }
 
