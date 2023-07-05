@@ -32,7 +32,7 @@ public:
     static int CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath);
     static int CheckIdFormat(JsonObject &filterJson, bool &isIdExisit);
     static int CheckDocument(JsonObject &documentObj);
-    static int CheckUpdata(JsonObject &updata);
+    static int CheckUpdata(JsonObject &updataObj);
     static int CheckProjection(JsonObject &projectionObj, std::vector<std::vector<std::string>> &path);
 };
 using Key = std::vector<uint8_t>;

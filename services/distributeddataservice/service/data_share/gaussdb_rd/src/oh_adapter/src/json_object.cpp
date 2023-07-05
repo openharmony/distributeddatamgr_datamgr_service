@@ -14,6 +14,7 @@
 */
 
 #include "json_object.h"
+
 #include <algorithm>
 #include <cmath>
 #include <queue>
@@ -226,6 +227,16 @@ int JsonObject::CheckJsonRepeatField(cJSON *object, bool isFirstFloor)
     return ret;
 }
 
+bool IsFieldNameLegal(const std::string &fieldName)
+{
+    for (auto oneChar : fieldName) {
+        if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType, bool isFirstFloor)
 {
     if (subObj == nullptr) {
@@ -235,10 +246,8 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     if (subObj->string != nullptr) {
         fieldName = subObj->string;
         if (!isFirstFloor) {
-            for (auto oneChar : fieldName) {
-                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
-                    return -E_INVALID_ARGS;
-                }
+            if (!IsFieldNameLegal(fieldName)) {
+                return -E_INVALID_ARGS;
             }
         }
         if (!fieldName.empty() && isdigit(fieldName[0])) {
