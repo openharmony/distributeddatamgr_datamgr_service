@@ -27,6 +27,7 @@
 #include "rdb_query.h"
 #include "rdb_syncer.h"
 #include "relational_store_manager.h"
+#include "utils/anonymous.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -104,9 +105,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
 
     bindInfo_ = std::move(bindInfo);
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_);
-    delegate_->SetCloudDB(rdbCloud_);
     rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_);
-    delegate_->SetIAssetLoader(rdbLoader_);
     DBSchema schema;
     schema.tables.resize(database.tables.size());
     for (size_t i = 0; i < database.tables.size(); i++) {
@@ -122,6 +121,13 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
             dbTable.fields.push_back(std::move(dbField));
         }
     }
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database:%{public}s already closed!", Anonymous::Change(database.name).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    delegate_->SetCloudDB(rdbCloud_);
+    delegate_->SetIAssetLoader(rdbLoader_);
     delegate_->SetCloudDbSchema(std::move(schema));
     return GeneralError::E_OK;
 }
@@ -133,17 +139,18 @@ bool RdbGeneralStore::IsBound()
 
 int32_t RdbGeneralStore::Close()
 {
-    auto status = manager_.CloseStore(delegate_);
-    if (status != DBStatus::OK) {
-        return status;
-    }
-    delegate_ = nullptr;
     store_ = nullptr;
     bindInfo_.loader_ = nullptr;
     bindInfo_.db_->Close();
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    auto status = manager_.CloseStore(delegate_);
+    if (status != DBStatus::OK) {
+        return status;
+    }
+    delegate_ = nullptr;
     return 0;
 }
 
@@ -188,6 +195,13 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
         dbQuery = rdbQuery->query_;
     }
     auto dbMode = DistributedDB::SyncMode(mode);
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
+              "wait:%{public}d",
+            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode, wait);
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     auto status = (mode < NEARBY_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait)
                   : (mode > NEARBY_END && mode < CLOUD_END)
@@ -203,6 +217,14 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
     }
     int32_t dbMode;
     DBStatus status;
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
+              "tableName:%{public}s",
+            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode,
+            Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     switch (mode) {
         case CloudService::CLEAR_CLOUD_INFO:
             dbMode = CleanMode::CLOUD_INFO;
@@ -293,6 +315,32 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async)
         }
         async(details);
     };
+}
+
+int32_t RdbGeneralStore::Release()
+{
+    auto ref = 1;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (ref_ == 0) {
+            return 0;
+        }
+        ref = --ref_;
+    }
+    ZLOGD("ref:%{public}d", ref);
+    if (ref == 0) {
+        delete this;
+    }
+    return ref;
+}
+
+int32_t RdbGeneralStore::AddRef()
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (ref_ == 0) {
+        return 0;
+    }
+    return ++ref_;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

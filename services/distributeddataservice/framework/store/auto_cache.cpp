@@ -161,6 +161,7 @@ AutoCache::Delegate::~Delegate()
     if (store_ != nullptr) {
         store_->Unwatch(Origin::ORIGIN_ALL, *this);
         store_->Close();
+        store_->Release();
         store_ = nullptr;
     }
 }
@@ -168,7 +169,11 @@ AutoCache::Delegate::~Delegate()
 AutoCache::Delegate::operator Store()
 {
     time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
-    return Store(store_, [](GeneralStore *) {});
+    if (store_ != nullptr) {
+        store_->AddRef();
+        return Store(store_, [](GeneralStore *store) { store->Release(); });
+    }
+    return nullptr;
 }
 
 bool AutoCache::Delegate::operator<(const AutoCache::Time &time) const

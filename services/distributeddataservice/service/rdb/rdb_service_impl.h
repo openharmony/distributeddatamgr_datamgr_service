@@ -66,10 +66,6 @@ public:
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
-    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
-
-    int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
-
     int32_t GetSchema(const RdbSyncerParam &param) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;
