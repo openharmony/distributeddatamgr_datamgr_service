@@ -155,10 +155,10 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
     std::queue<cJSON *> cjsonQueue;
     cjsonQueue.push(item);
-    while (!cjsonQueue.empty()) {
+    while (!cjsonQueue.empty()) { // node is not null all the time 
         cJSON *node = cjsonQueue.front();
         cjsonQueue.pop();
-        if (node != NULL && cJSON_IsNumber(node)) {
+        if (cJSON_IsNumber(node)) {
             double value = cJSON_GetNumberValue(node);
             if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
                 errCode = -E_INVALID_ARGS;
