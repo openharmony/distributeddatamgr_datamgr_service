@@ -158,7 +158,7 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
     while (!cjsonQueue.empty()) {
         cJSON *node = cjsonQueue.front();
         cjsonQueue.pop();
-        if (cJSON_IsNumber(node)) {
+        if (cJSON_IsNumber(node)) { // node is not null all the time
             double value = cJSON_GetNumberValue(node);
             if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
                 errCode = -E_INVALID_ARGS;
