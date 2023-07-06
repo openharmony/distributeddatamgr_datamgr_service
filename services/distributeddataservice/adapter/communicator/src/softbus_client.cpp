@@ -65,7 +65,7 @@ uint32_t SoftBusClient::GetMtuSize() const
 Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto result = OpenConnect();
+    auto result = OpenConnect(totalLength);
     if (result != Status::SUCCESS) {
         return result;
     }
@@ -80,30 +80,81 @@ Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
     return Status::SUCCESS;
 }
 
-Status SoftBusClient::OpenConnect()
+Status SoftBusClient::OpenConnect(uint32_t totalLength)
 {
+    strategy_ = CommunicationStrategy::GetInstance().GetStrategy(device_.deviceId);
     if (status_ == ConnectStatus::CONNECT_OK) {
-        return Status::SUCCESS;
+        auto result = SwitchChannel(totalLength);
+        if (result != Status::SUCCESS) {
+            status_ = ConnectStatus::DISCONNECT;
+        }
+        return result;
     }
 
-    auto result = Open();
+    auto result = CreateChannel(totalLength);
     if (result != Status::SUCCESS) {
         return result;
     }
     status_ = ConnectStatus::CONNECT_OK;
-    UpdateMtuSize();
     return Status::SUCCESS;
 }
 
-Status SoftBusClient::Open()
+Status SoftBusClient::SwitchChannel(uint32_t totalLength)
 {
-    Strategy strategy = CommunicationStrategy::GetInstance().GetStrategy(device_.deviceId);
-    SessionAttribute attr = { 0 };
-    InitSessionAttribute(strategy, attr);
+    if (strategy_ == Strategy::BUTT) {
+        return Status::NETWORK_ERROR;
+    }
+
+    if (strategy_ == Strategy::ON_LINE_SELECT_CHANNEL) {
+        return Status::SUCCESS;
+    }
+
+    if (routeType_ == RouteType::WIFI_STA) {
+        return Status::SUCCESS;
+    }
+
+    if (routeType_ == RouteType::BT_BLE || routeType_ == RouteType::BT_BR) {
+        if (totalLength < P2P_SIZE_THRESHOLD) {
+            return Status::SUCCESS;
+        }
+
+        RestoreDefaultValue();
+        return Open(GetSessionAttribute(true));
+    }
+
+    if (routeType_ == RouteType::WIFI_P2P) {
+        if (totalLength > P2P_SIZE_THRESHOLD * SWITCH_DELAY_FACTOR) {
+            return Status::SUCCESS;
+        }
+
+        CloseSession(connId_);
+        RestoreDefaultValue();
+        return Open(GetSessionAttribute(false));
+    }
+}
+
+Status SoftBusClient::CreateChannel(uint32_t totalLength)
+{
+    if (strategy_ == Strategy::BUTT) {
+        return Status::NETWORK_ERROR;
+    }
+
+    if (strategy_ == Strategy::ON_LINE_SELECT_CHANNEL) {
+        return Open(GetSessionAttribute(true));
+    }
+
+    if (totalLength < P2P_SIZE_THRESHOLD) {
+        return Open(GetSessionAttribute(false));
+    }
+    return Open(GetSessionAttribute(true));
+}
+
+Status SoftBusClient::Open(SessionAttribute attr)
+{
     int id = OpenSession(pipe_.pipeId.c_str(), pipe_.pipeId.c_str(),
                          DmAdapter::GetInstance().ToNetworkID(device_.deviceId).c_str(), "GROUP_ID", &attr);
-    ZLOGI("open %{public}s,session:%{public}s,connId:%{public}d,linkNum:%{public}d,strategy:%{public}d",
-          KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), id, attr.linkTypeNum, strategy);
+    ZLOGI("open %{public}s,session:%{public}s,connId:%{public}d,linkNum:%{public}d",
+          KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), id, attr.linkTypeNum);
     if (id < 0) {
         ZLOGW("Open %{public}s, type:%{public}d failed, connId:%{public}d",
               pipe_.pipeId.c_str(), attr.dataType, id);
@@ -111,22 +162,34 @@ Status SoftBusClient::Open()
     }
 
     connId_ = id;
-    strategy_ = strategy;
     int state = getConnStatus_(connId_);
     ZLOGI("waited for notification, state:%{public}d connId:%{public}d", state, id);
     if (state != SOFTBUS_OK) {
         ZLOGE("open callback result error");
         return Status::NETWORK_ERROR;
     }
+
+    int32_t routeType = RouteType::INVALID_ROUTE_TYPE;
+    auto ret = GetSessionOption(connId_, SESSION_OPTION_LINK_TYPE, &routeType, sizeof(routeType));
+    if (ret != SOFTBUS_OK) {
+        ZLOGE("get routeType failed, session:%{public}s, connId:%{public}d", pipe_.pipeId.c_str(), connId_);
+        return Status::NETWORK_ERROR;
+    }
+    routeType_ = routeType;
+
+    UpdateMtuSize();
+    ZLOGI("open %{public}s, session:%{public}s success, connId:%{public}d, routeType:%{public}d",
+        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
     return Status::SUCCESS;
 }
 
-void SoftBusClient::InitSessionAttribute(Strategy strategy, SessionAttribute &attr)
+SessionAttribute SoftBusClient::GetSessionAttribute(bool isP2P)
 {
+    SessionAttribute attr;
     attr.dataType = TYPE_BYTES;
     // If the dataType is BYTES, the default strategy is wifi_5G > wifi_2.4G > BR, without P2P;
-    if (strategy == Strategy::DEFAULT) {
-        return;
+    if (!isP2P) {
+        return attr;
     }
 
     int index = 0;
@@ -135,6 +198,7 @@ void SoftBusClient::InitSessionAttribute(Strategy strategy, SessionAttribute &at
     attr.linkType[index++] = LINK_TYPE_WIFI_P2P;
     attr.linkType[index++] = LINK_TYPE_BR;
     attr.linkTypeNum = index;
+    return attr;
 }
 
 void SoftBusClient::UpdateMtuSize()
