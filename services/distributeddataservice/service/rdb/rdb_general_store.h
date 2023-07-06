@@ -56,7 +56,7 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
-	static GenErr ConvertStatus(DistributedDB::DBStatus status);
+    static GenErr ConvertStatus(DistributedDB::DBStatus status);
 
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
