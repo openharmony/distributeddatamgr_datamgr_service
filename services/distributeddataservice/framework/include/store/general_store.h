@@ -85,6 +85,10 @@ public:
     virtual int32_t Unwatch(int32_t origin, Watcher &watcher) = 0;
 
     virtual int32_t Close() = 0;
+
+    virtual int32_t AddRef() = 0;
+
+    virtual int32_t Release()  = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

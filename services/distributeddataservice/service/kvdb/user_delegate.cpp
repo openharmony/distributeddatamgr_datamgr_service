@@ -26,12 +26,7 @@ namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
 std::string GetLocalDeviceId()
 {
-    static std::string deviceId;
-    if (deviceId.empty()) {
-        deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    }
-
-    return deviceId;
+    return DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
 }
 
 std::vector<UserStatus> UserDelegate::GetLocalUserStatus()

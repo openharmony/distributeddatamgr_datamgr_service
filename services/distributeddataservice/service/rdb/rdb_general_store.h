@@ -53,6 +53,8 @@ public:
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t Close() override;
+    int32_t AddRef() override;
+    int32_t Release() override;
 
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
@@ -88,6 +90,9 @@ private:
     std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
     BindInfo bindInfo_;
     std::atomic<bool> isBound_ = false;
+    std::mutex mutex_;
+    int32_t ref_ = 1;
+    mutable std::shared_mutex rwMutex_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
