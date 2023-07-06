@@ -18,6 +18,7 @@
 
 #include "error/general_error.h"
 #include "log_print.h"
+#include "rdb_cloud.h"
 #include "value_proxy.h"
 
 using namespace DistributedDB;
@@ -36,29 +37,6 @@ DBStatus RdbAssetLoader::Download(const std::string &tableName, const std::strin
     if (error == DistributedData::GeneralError::E_OK) {
         assets = ValueProxy::Convert(std::move(downLoadAssets));
     }
-    return ConvertStatus(static_cast<DistributedData::GeneralError>(error));
-}
-
-DBStatus RdbAssetLoader::ConvertStatus(DistributedData::GeneralError error)
-{
-    switch (error) {
-        case DistributedData::GeneralError::E_OK:
-            return DBStatus::OK;
-        case DistributedData::GeneralError::E_BUSY:
-            return DBStatus::BUSY;
-        case DistributedData::GeneralError::E_INVALID_ARGS:
-            return DBStatus::INVALID_ARGS;
-        case DistributedData::GeneralError::E_NOT_SUPPORT:
-            return DBStatus::NOT_SUPPORT;
-        case DistributedData::GeneralError::E_ERROR: // fallthrough
-        case DistributedData::GeneralError::E_NOT_INIT:
-        case DistributedData::GeneralError::E_ALREADY_CONSUMED:
-        case DistributedData::GeneralError::E_ALREADY_CLOSED:
-            return DBStatus::CLOUD_ERROR;
-        default:
-            ZLOGE("unknown error:0x%{public}x", error);
-            break;
-    }
-    return DBStatus::CLOUD_ERROR;
+    return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
 }
 } // namespace OHOS::DistributedRdb
