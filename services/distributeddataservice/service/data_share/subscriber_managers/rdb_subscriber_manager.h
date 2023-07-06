@@ -55,6 +55,7 @@ public:
     int Add(const Key &key, const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
         std::shared_ptr<ExecutorPool> executorPool);
     int Delete(const Key &key, const uint32_t callerTokenId);
+    void Delete(const uint32_t callerTokenId);
     int Disable(const Key &key, const uint32_t callerTokenId);
     int Enable(const Key &key, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
@@ -71,26 +72,6 @@ private:
         bool enabled = true;
     };
 
-    class ObserverNodeRecipient : public IRemoteObject::DeathRecipient {
-    public:
-        ObserverNodeRecipient(RdbSubscriberManager *owner, const Key &key, sptr<IDataProxyRdbObserver> observer)
-            : owner_(owner), key_(key), observer_(observer) {};
-
-        void OnRemoteDied(const wptr<IRemoteObject> &object) override
-        {
-            if (owner_ != nullptr) {
-                owner_->OnRemoteDied(key_, observer_);
-            }
-        }
-
-    private:
-        RdbSubscriberManager *owner_;
-        Key key_;
-        sptr<IDataProxyRdbObserver> observer_;
-    };
-
-    void LinkToDeath(const Key &key, sptr<IDataProxyRdbObserver> observer);
-    void OnRemoteDied(const Key &key, sptr<IDataProxyRdbObserver> observer);
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
     int Notify(const Key &key, const int32_t userId, const std::vector<ObserverNode> &val, const std::string &rdbDir,

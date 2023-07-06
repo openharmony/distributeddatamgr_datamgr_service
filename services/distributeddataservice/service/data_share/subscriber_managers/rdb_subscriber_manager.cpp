@@ -107,39 +107,6 @@ RdbSubscriberManager &RdbSubscriberManager::GetInstance()
     return manager;
 }
 
-void RdbSubscriberManager::LinkToDeath(const Key &key, sptr<IDataProxyRdbObserver> observer)
-{
-    sptr<ObserverNodeRecipient> deathRecipient = new (std::nothrow) ObserverNodeRecipient(this, key, observer);
-    if (deathRecipient == nullptr) {
-        ZLOGE("new ObserverNodeRecipient error, uri is %{public}s",
-              DistributedData::Anonymous::Change(key.uri).c_str());
-        return;
-    }
-    auto remote = observer->AsObject();
-    if (!remote->AddDeathRecipient(deathRecipient)) {
-        ZLOGE("add death recipient failed, uri is %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
-        return;
-    }
-    ZLOGD("link to death success, uri is %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
-}
-
-void RdbSubscriberManager::OnRemoteDied(const Key &key, sptr<IDataProxyRdbObserver> observer)
-{
-    rdbCache_.ComputeIfPresent(key, [&observer, this](const auto &key, std::vector<ObserverNode> &value) {
-        for (auto it = value.begin(); it != value.end(); ++it) {
-            if (it->observer->AsObject() == observer->AsObject()) {
-                value.erase(it);
-                ZLOGI("OnRemoteDied delete subscriber, uri is %{public}s",
-                    DistributedData::Anonymous::Change(key.uri).c_str());
-                break;
-            }
-        }
-        if (GetEnableObserverCount(key) == 0) {
-            SchedulerManager::GetInstance().RemoveTimer(key);
-        }
-        return !value.empty();
-    });
-}
 int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> observer,
     std::shared_ptr<Context> context, std::shared_ptr<ExecutorPool> executorPool)
 {
@@ -156,7 +123,6 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         };
         executorPool->Execute(task);
         value.emplace_back(observer, context->callerTokenId);
-        LinkToDeath(key, observer);
         if (GetEnableObserverCount(key) == 1) {
             SchedulerManager::GetInstance().Execute(
                 key, context->currentUserId, context->calledSourceDir, context->version);
@@ -185,6 +151,24 @@ int RdbSubscriberManager::Delete(const Key &key, const uint32_t callerTokenId)
             return !value.empty();
         });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
+}
+
+void RdbSubscriberManager::Delete(const uint32_t callerTokenId)
+{
+    rdbCache_.EraseIf([&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
+        for (auto it = value.begin(); it != value.end();) {
+            if (it->callerTokenId == callerTokenId) {
+                ZLOGI("erase start, uri is %{private}s, tokenId %{public}d", key.uri.c_str(), callerTokenId);
+                it = value.erase(it);
+            } else {
+                it++;
+            }
+        }
+        if (GetEnableObserverCount(key) == 0) {
+            SchedulerManager::GetInstance().RemoveTimer(key);
+        }
+        return value.empty();
+    });
 }
 
 int RdbSubscriberManager::Disable(const Key &key, const uint32_t callerTokenId)

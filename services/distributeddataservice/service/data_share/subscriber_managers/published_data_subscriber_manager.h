@@ -44,6 +44,7 @@ public:
     int Add(const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer,
         const uint32_t callerTokenId);
     int Delete(const PublishedDataKey &key, const uint32_t callerTokenId);
+    void Delete(const uint32_t callerTokenId);
     int Disable(const PublishedDataKey &key, const uint32_t callerTokenId);
     int Enable(const PublishedDataKey &key, const uint32_t callerTokenId);
     void Emit(const std::vector<PublishedDataKey> &keys, const int32_t userId, const std::string &ownerBundleName,
@@ -57,26 +58,6 @@ private:
         uint32_t callerTokenId;
         bool enabled = true;
     };
-    class ObserverNodeRecipient : public IRemoteObject::DeathRecipient {
-    public:
-        ObserverNodeRecipient(PublishedDataSubscriberManager *owner, const PublishedDataKey &key,
-            sptr<IDataProxyPublishedDataObserver> observer) : owner_(owner), key_(key), observer_(observer) {};
-
-        void OnRemoteDied(const wptr<IRemoteObject> &object) override
-        {
-            if (owner_ != nullptr) {
-                owner_->OnRemoteDied(key_, observer_);
-            }
-        }
-
-    private:
-        PublishedDataSubscriberManager *owner_;
-        PublishedDataKey key_;
-        sptr<IDataProxyPublishedDataObserver> observer_;
-    };
-
-    void LinkToDeath(const PublishedDataKey &key, sptr<IDataProxyPublishedDataObserver> observer);
-    void OnRemoteDied(const PublishedDataKey &key, sptr<IDataProxyPublishedDataObserver> observer);
 
     PublishedDataSubscriberManager() = default;
     void PutInto(std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &,
