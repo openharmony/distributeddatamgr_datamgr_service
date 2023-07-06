@@ -108,4 +108,18 @@ int32_t FeatureStubImpl::OnReady(const std::string &device)
     }
     return featureImpl_->OnReady(device);
 }
+int32_t FeatureStubImpl::OnNetworkOnline()
+{
+    if (featureImpl_ == nullptr) {
+        return -1;
+    }
+    return featureImpl_->OnNetworkOnline();
+}
+int32_t FeatureStubImpl::OnNetworkOffline()
+{
+    if (featureImpl_ == nullptr) {
+        return -1;
+    }
+    return featureImpl_->OnNetworkOffline();
+}
 }

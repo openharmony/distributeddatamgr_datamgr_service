@@ -53,6 +53,8 @@ public:
         virtual int32_t Online(const std::string &device);
         virtual int32_t Offline(const std::string &device);
         virtual int32_t OnReady(const std::string &device);
+        virtual int32_t OnNetworkOnline();
+        virtual int32_t OnNetworkOffline();
     };
     using Creator = std::function<std::shared_ptr<Feature>()>;
     static FeatureSystem &GetInstance();

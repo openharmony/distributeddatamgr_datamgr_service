@@ -39,6 +39,8 @@ public:
     int32_t Online(const std::string &device);
     int32_t Offline(const std::string &device);
     int32_t OnReady(const std::string &device);
+    int32_t OnNetworkOnline();
+    int32_t OnNetworkOffline();
 private:
     std::shared_ptr<FeatureSystem::Feature> featureImpl_;
 };

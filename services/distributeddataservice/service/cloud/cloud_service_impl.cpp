@@ -239,6 +239,59 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
     return E_OK;
 }
 
+int32_t CloudServiceImpl::OnNetworkOnline()
+{
+    ZLOGI("OnNetworkOnline");
+
+    std::vector<int32_t> users;
+    Account::GetInstance()->QueryUsers(users);
+    if (users.empty()) {
+        return SUCCESS;
+    }
+    auto it = users.begin();
+    while (it != users.end()) {
+        CloudInfo cloudInfo;
+        cloudInfo.user = *it;
+        if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS && GetCloudInfoFromServer(cloudInfo) != SUCCESS) {
+            it++;
+            continue;
+        }
+        if (!cloudInfo.enableCloud) {
+            it++;
+            continue;
+        }
+        syncManager_.DoCloudSync( { *it } );
+        it++;
+    }
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::OnNetworkOffline()
+{
+    ZLOGI("OnNetworkOffline");
+    std::vector<int32_t> users;
+    Account::GetInstance()->QueryUsers(users);
+    if (users.empty()) {
+        return SUCCESS;
+    }
+    auto it = users.begin();
+    while (it != users.end()) {
+        CloudInfo cloudInfo;
+        cloudInfo.user = *it;
+        if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS && GetCloudInfoFromServer(cloudInfo) != SUCCESS) {
+            it++;
+            continue;
+        }
+        if (!cloudInfo.enableCloud) {
+            it++;
+            continue;
+        }
+        syncManager_.StopCloudSync(*it);
+        it++;
+    }
+    return SUCCESS;
+}
+
 int32_t CloudServiceImpl::GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo)
 {
     cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);

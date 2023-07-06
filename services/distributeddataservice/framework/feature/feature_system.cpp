@@ -106,5 +106,15 @@ int32_t FeatureSystem::Feature::OnBind(const FeatureSystem::Feature::BindInfo &b
 {
     return E_OK;
 }
+
+int32_t FeatureSystem::Feature::OnNetworkOnline()
+{
+    return E_OK;
+}
+
+int32_t FeatureSystem::Feature::OnNetworkOffline()
+{
+    return E_OK;
+}
 } // namespace DistributedData
 } // namespace OHOS

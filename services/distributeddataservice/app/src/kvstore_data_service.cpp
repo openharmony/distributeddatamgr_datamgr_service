@@ -36,6 +36,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "network_manager/network_manager.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -286,6 +287,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     }
     AccountDelegate::GetInstance()->SubscribeAccountEvent();
     Uninstaller::GetInstance().Init(this, executors_);
+    NetWorkManager::GetInstance().RegOnNetworkChange(this);
 }
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -687,6 +689,24 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
             value->OnAppUpdate(bundleName, user, index, tokenId);
             return false;
         });
+    return 0;
+}
+
+int32_t KvStoreDataService::OnNetworkOnline()
+{
+    features_.ForEachCopies([](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnNetworkOnline();
+        return false;
+    });
+    return 0;
+}
+
+int32_t KvStoreDataService::OnNetworkOffline()
+{
+    features_.ForEachCopies([](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnNetworkOffline();
+        return false;
+    });
     return 0;
 }
 } // namespace OHOS::DistributedKv
