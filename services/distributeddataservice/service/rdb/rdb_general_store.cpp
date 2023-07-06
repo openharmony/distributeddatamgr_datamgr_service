@@ -70,14 +70,6 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     }
     option.observer = &observer_;
     manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
-    RdbStoreConfig config(meta.dataDir);
-    config.SetCreateNecessary(false);
-    RdbOpenCallbackImpl callback;
-    int32_t errCode = NativeRdb::E_OK;
-    store_ = RdbHelper::GetRdbStore(config, -1, callback, errCode);
-    if (errCode != NativeRdb::E_OK) {
-        ZLOGE("GetRdbStore failed, errCode is %{public}d, storeId is %{public}s", errCode, meta.storeId.c_str());
-    }
 }
 
 RdbGeneralStore::~RdbGeneralStore()
