@@ -77,7 +77,7 @@
                 "udmf"
             ],
             "third_party": [
-                "cjson",
+                "cJSON",
                 "jsoncpp",
                 "libuv",
                 "openssl",
