@@ -169,7 +169,7 @@ int PublishedDataSubscriberManager::GetCount(const PublishedDataKey &key)
 {
     int count = 0;
     publishedDataCache.ComputeIfPresent(key, [&count](const auto &key, std::vector<ObserverNode> &value) {
-        count = value.size();
+        count = static_cast<int>(value.size());
         return true;
     });
     return count;
