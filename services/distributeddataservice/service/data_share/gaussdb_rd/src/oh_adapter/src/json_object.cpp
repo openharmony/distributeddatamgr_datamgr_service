@@ -151,14 +151,18 @@ int JsonObject::GetDeep(cJSON *cjson)
     return depth;
 }
 
-int JsonObject::CheckNumber(cJSON *item, int &errCode)
+void JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
     std::queue<cJSON *> cjsonQueue;
     cjsonQueue.push(item);
     while (!cjsonQueue.empty()) {
         cJSON *node = cjsonQueue.front();
         cjsonQueue.pop();
-        if (node != NULL && cJSON_IsNumber(node)) {
+        if (node == nullptr) {
+            errCode = -E_INVALID_ARGS;
+            break;
+        }
+        if (cJSON_IsNumber(node)) { // node is not null all the time
             double value = cJSON_GetNumberValue(node);
             if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
                 errCode = -E_INVALID_ARGS;
@@ -171,7 +175,6 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
             cjsonQueue.push(node->next);
         }
     }
-    return E_OK;
 }
 
 int JsonObject::Init(const std::string &str, bool isFilter)
