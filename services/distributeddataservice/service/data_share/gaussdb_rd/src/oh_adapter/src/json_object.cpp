@@ -151,7 +151,7 @@ int JsonObject::GetDeep(cJSON *cjson)
     return depth;
 }
 
-int JsonObject::CheckNumber(cJSON *item, int &errCode)
+void JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
     std::queue<cJSON *> cjsonQueue;
     cjsonQueue.push(item);
@@ -175,7 +175,6 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
             cjsonQueue.push(node->next);
         }
     }
-    return E_OK;
 }
 
 int JsonObject::Init(const std::string &str, bool isFilter)
