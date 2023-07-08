@@ -110,6 +110,12 @@ DBStatus ProcessCommunicatorImpl::RegOnDataReceive(const OnDataReceive &callback
     return DBStatus::OK;
 }
 
+DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length)
+{
+    uint32_t totalLength = 0;
+    return SendData(dstDevInfo, data, length, totalLength);
+}
+
 DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length,  uint32_t totalLength)
 {
     PipeInfo pi = {thisProcessLabel_, ""};
