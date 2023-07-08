@@ -141,6 +141,10 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
         return;
     }
 
+    if (type == AppDistributedKv::DeviceChangeType::DEVICE_NET_AVAILABLE ||
+        type == AppDistributedKv::DeviceChangeType::DEVICE_NET_UNAVAILABLE) {
+        return;
+    }
     bool isOnline = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE;
     if (isOnline) {
         (void)GetSensitiveByUuid(info.uuid);
