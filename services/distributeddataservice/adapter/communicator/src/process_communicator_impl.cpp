@@ -195,8 +195,7 @@ void ProcessCommunicatorImpl::OnMessage(const DeviceInfo &info, const uint8_t *p
 
 void ProcessCommunicatorImpl::OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const
 {
-    if (type == DeviceChangeType::DEVICE_ONREADY || type == DeviceChangeType::DEVICE_NET_AVAILABLE ||
-        type == DeviceChangeType::DEVICE_NET_UNAVAILABLE) {
+    if (type == DeviceChangeType::DEVICE_ONREADY) {
         return;
     }
     std::lock_guard<std::mutex> onDeviceChangeLockGuard(onDeviceChangeMutex_);

@@ -36,6 +36,7 @@ using namespace std::chrono;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
+const std::string NET_UUID = "netUuid";
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::Work CloudServiceImpl::HANDLERS[WORK_BUTT] = {
     &CloudServiceImpl::DoSubscribe,
@@ -239,10 +240,12 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
     return E_OK;
 }
 
-int32_t CloudServiceImpl::OnNetworkOnline()
+int32_t CloudServiceImpl::Online(const std::string &device)
 {
-    ZLOGI("OnNetworkOnline");
-
+    if (device != NET_UUID) {
+        ZLOGI("Not network online");
+        return SUCCESS;
+    }
     std::vector<int32_t> users;
     Account::GetInstance()->QueryUsers(users);
     if (users.empty()) {
@@ -260,15 +263,18 @@ int32_t CloudServiceImpl::OnNetworkOnline()
             it++;
             continue;
         }
-        syncManager_.DoCloudSync( { *it } );
+        syncManager_.DoCloudSync({ *it });
         it++;
     }
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::OnNetworkOffline()
+int32_t CloudServiceImpl::Offline(const std::string &device)
 {
-    ZLOGI("OnNetworkOffline");
+    if (device != NET_UUID) {
+        ZLOGI("Not network offline");
+        return SUCCESS;
+    }
     std::vector<int32_t> users;
     Account::GetInstance()->QueryUsers(users);
     if (users.empty()) {

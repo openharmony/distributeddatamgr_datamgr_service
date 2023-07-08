@@ -689,22 +689,4 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
         });
     return 0;
 }
-
-int32_t KvStoreDataService::OnNetworkOnline()
-{
-    features_.ForEachCopies([](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
-        value->OnNetworkOnline();
-        return false;
-    });
-    return 0;
-}
-
-int32_t KvStoreDataService::OnNetworkOffline()
-{
-    features_.ForEachCopies([](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
-        value->OnNetworkOffline();
-        return false;
-    });
-    return 0;
-}
 } // namespace OHOS::DistributedKv

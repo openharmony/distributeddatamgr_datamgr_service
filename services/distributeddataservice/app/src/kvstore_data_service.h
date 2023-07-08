@@ -77,10 +77,6 @@ public:
 
     int32_t OnUpdate(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
 
-    int32_t OnNetworkOnline();
-
-    int32_t OnNetworkOffline();
-
 private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
     class KvStoreClientDeathObserverImpl {

@@ -57,8 +57,6 @@ enum class API_EXPORT DeviceChangeType {
     DEVICE_OFFLINE = 0,
     DEVICE_ONLINE = 1,
     DEVICE_ONREADY = 2,
-    DEVICE_NET_AVAILABLE = 3,
-    DEVICE_NET_UNAVAILABLE = 4,
 };
 
 enum class API_EXPORT DeviceStatus {

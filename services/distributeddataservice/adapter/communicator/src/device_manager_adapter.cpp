@@ -219,17 +219,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     auto observers = GetObservers();
-
-    if (dvInfo.deviceName == DeviceManagerAdapter::cloudDmInfo.deviceName) {
-        for (const auto &item : observers) { // network available
-            if (item == nullptr) {
-                continue;
-            }
-            item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_NET_AVAILABLE);
-        }
-        return;
-    }
-
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
             continue;
@@ -308,16 +297,6 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
         return;
     }
     syncTask_.Erase(dvInfo.uuid);
-    if (dvInfo.deviceName == DeviceManagerAdapter::cloudDmInfo.deviceName) {
-        auto observers = GetObservers();
-        for (const auto &item : observers) { // network unavailable
-            if (item == nullptr) {
-                continue;
-            }
-            item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_NET_UNAVAILABLE);
-        }
-        return;
-    }
     ZLOGI("[offline] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
@@ -588,7 +567,7 @@ bool DeviceManagerAdapter::RegOnNetworkChange()
         ZLOGE("new operator error.observer is nullptr");
         return false;
     }
-    int nRet = DelayedSingleton<NetConnClient>::GetInstance()->RegisterNetConnCallback(observer);
+    int nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
     if (nRet != NETMANAGER_SUCCESS) {
         ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
         return false;
