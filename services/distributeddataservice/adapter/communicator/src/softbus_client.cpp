@@ -131,6 +131,8 @@ Status SoftBusClient::SwitchChannel(uint32_t totalLength)
         RestoreDefaultValue();
         return Open(GetSessionAttribute(false));
     }
+
+    return Status::NETWORK_ERROR;
 }
 
 Status SoftBusClient::CreateChannel(uint32_t totalLength)
