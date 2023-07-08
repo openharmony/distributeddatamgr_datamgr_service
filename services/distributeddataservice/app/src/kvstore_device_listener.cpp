@@ -23,11 +23,22 @@ namespace OHOS::DistributedKv {
 void KvStoreDeviceListener::OnDeviceChanged(
     const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const
 {
-    if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE) {
-        kvStoreDataService_.SetCompatibleIdentify(info);
-        kvStoreDataService_.OnDeviceOnline(info);
-    } else if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONREADY) {
-        kvStoreDataService_.OnDeviceOnReady(info);
+    switch (type) {
+        case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
+            kvStoreDataService_.SetCompatibleIdentify(info);
+            kvStoreDataService_.OnDeviceOnline(info);
+            break;
+        case AppDistributedKv::DeviceChangeType::DEVICE_ONREADY:
+            kvStoreDataService_.OnDeviceOnReady(info);
+            break;
+        case AppDistributedKv::DeviceChangeType::DEVICE_NET_AVAILABLE:
+            kvStoreDataService_.OnNetworkOnline();
+            break;
+        case AppDistributedKv::DeviceChangeType::DEVICE_NET_UNAVAILABLE:
+            kvStoreDataService_.OnNetworkOffline();
+            break;
+        default:
+            break;
     }
     ZLOGI("device is %{public}d", type);
 }

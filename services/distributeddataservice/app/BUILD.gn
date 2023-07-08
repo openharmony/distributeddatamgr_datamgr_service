@@ -59,7 +59,6 @@ config("module_private_config") {
     "../adapter/include/utils",
     "../adapter/include/dfx",
     "../adapter/include",
-    "src/network_manager",
 
     # for ipc_core interfaces.
     "include",
@@ -82,7 +81,6 @@ ohos_shared_library("distributeddataservice") {
     "src/kvstore_data_service.cpp",
     "src/kvstore_device_listener.cpp",
     "src/kvstore_meta_manager.cpp",
-    "src/network_manager/network_manager.cpp",
     "src/security/security.cpp",
     "src/security/sensitive.cpp",
     "src/session_manager/route_head_handler_impl.cpp",
@@ -126,7 +124,6 @@ ohos_shared_library("distributeddataservice") {
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "netmanager_base:net_conn_manager_if",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

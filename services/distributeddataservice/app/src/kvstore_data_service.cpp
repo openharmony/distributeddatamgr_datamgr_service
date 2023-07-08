@@ -287,7 +287,6 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     }
     AccountDelegate::GetInstance()->SubscribeAccountEvent();
     Uninstaller::GetInstance().Init(this, executors_);
-    NetWorkManager::GetInstance().RegOnNetworkChange(this);
 }
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
