@@ -44,7 +44,7 @@ public:
     int Add(const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer,
         uint32_t callerTokenId);
     int Delete(const PublishedDataKey &key, uint32_t callerTokenId);
-    void Delete(const uint32_t callerTokenId);
+    void Delete(uint32_t callerTokenId);
     int Disable(const PublishedDataKey &key, uint32_t callerTokenId);
     int Enable(const PublishedDataKey &key, uint32_t callerTokenId);
     void Emit(const std::vector<PublishedDataKey> &keys, int32_t userId, const std::string &ownerBundleName,

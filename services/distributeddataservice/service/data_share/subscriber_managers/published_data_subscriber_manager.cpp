@@ -34,7 +34,8 @@ int PublishedDataSubscriberManager::Add(
 {
     publishedDataCache_.Compute(
         key, [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
-            ZLOGI("add publish subscriber, uri %{public}s tokenId %{public}d", key.key.c_str(), callerTokenId);
+            ZLOGI("add publish subscriber, uri %{public}s tokenId %{public}d",
+                DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
             value.emplace_back(observer, callerTokenId);
             return true;
         });
@@ -47,8 +48,8 @@ int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, uint32_t
         publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == callerTokenId) {
-                    ZLOGI("delete publish subscriber, uri %{public}s tokenId %{public}d", key.key.c_str(),
-                        callerTokenId);
+                    ZLOGI("delete publish subscriber, uri %{public}s tokenId %{public}d",
+                        DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
                     it = value.erase(it);
                 } else {
                     it++;
