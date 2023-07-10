@@ -112,7 +112,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
 {
     int result = E_OK;
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
-        ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
+        ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId);
         ExecutorPool::Task task = [key, node, context, this]() {
@@ -136,7 +136,7 @@ int RdbSubscriberManager::Delete(const Key &key, uint32_t callerTokenId)
 {
     auto result =
         rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
-            ZLOGI("delete subscriber, uri %{public}s tokenId %{public}d",
+            ZLOGI("delete subscriber, uri %{public}s tokenId 0x%{public}x",
                 DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == callerTokenId) {
@@ -159,7 +159,7 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId)
     rdbCache_.EraseIf([&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end();) {
             if (it->callerTokenId == callerTokenId) {
-                ZLOGI("erase start, uri is %{public}s, tokenId %{public}d",
+                ZLOGI("erase start, uri is %{public}s, tokenId 0x%{public}x",
                     DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
                 it = value.erase(it);
             } else {
