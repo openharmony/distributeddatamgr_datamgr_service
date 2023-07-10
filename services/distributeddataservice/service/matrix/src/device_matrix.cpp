@@ -83,9 +83,7 @@ void DeviceMatrix::Online(const std::string &device)
         offLines_.erase(it);
     }
     onLines_.insert_or_assign(device, mask);
-    if (mask.bitset != 0) {
-        EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_ONLINE, device, mask.bitset));
-    }
+    EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_ONLINE, device, mask.bitset));
 }
 
 void DeviceMatrix::Offline(const std::string &device)
