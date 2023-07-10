@@ -104,7 +104,7 @@ private:
     int CheckJsonRepeatField(cJSON *object, bool isFirstFloor);
     int CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType, bool isFirstFloor);
     int GetDeep(cJSON *cjson);
-    int CheckNumber(cJSON *cjson, int &errCode);
+    void CheckNumber(cJSON *cjson, int &errCode);
     cJSON *cjson_ = nullptr;
     int jsonDeep_ = 0;
     bool isOwner_ = false;

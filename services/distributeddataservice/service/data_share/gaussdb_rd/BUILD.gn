@@ -59,6 +59,7 @@ ohos_shared_library("gaussdb_rd") {
     "src/executor/document/grd_resultset_api.cpp",
     "src/interface/src/collection.cpp",
     "src/interface/src/doc_errno.cpp",
+    "src/interface/src/document_key.cpp",
     "src/interface/src/document_store.cpp",
     "src/interface/src/document_store_manager.cpp",
     "src/interface/src/projection_tree.cpp",
@@ -82,9 +83,9 @@ ohos_shared_library("gaussdb_rd") {
 
   external_deps = [
     "c_utils:utils",
-    "hisysevent_native:libhisysevent",
-    "hitrace_native:hitrace_meter",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
   ]
 
   subsystem_name = "distributeddatamgr"

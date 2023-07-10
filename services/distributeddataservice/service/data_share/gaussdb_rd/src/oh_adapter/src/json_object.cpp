@@ -145,14 +145,18 @@ int JsonObject::GetDeep(cJSON *cjson)
     return depth;
 }
 
-int JsonObject::CheckNumber(cJSON *item, int &errCode)
+void JsonObject::CheckNumber(cJSON *item, int &errCode)
 {
     std::queue<cJSON *> cjsonQueue;
     cjsonQueue.push(item);
     while (!cjsonQueue.empty()) {
         cJSON *node = cjsonQueue.front();
         cjsonQueue.pop();
-        if (node != NULL && cJSON_IsNumber(node)) {
+        if (node == nullptr) {
+            errCode = -E_INVALID_ARGS;
+            break;
+        }
+        if (cJSON_IsNumber(node)) { // node is not null all the time
             double value = cJSON_GetNumberValue(node);
             if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
                 errCode = -E_INVALID_ARGS;
@@ -165,7 +169,6 @@ int JsonObject::CheckNumber(cJSON *item, int &errCode)
             cjsonQueue.push(node->next);
         }
     }
-    return E_OK;
 }
 
 int JsonObject::Init(const std::string &str, bool isFilter)
@@ -221,6 +224,16 @@ int JsonObject::CheckJsonRepeatField(cJSON *object, bool isFirstFloor)
     return ret;
 }
 
+bool IsFieldNameLegal(const std::string &fieldName)
+{
+    for (auto oneChar : fieldName) {
+        if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int parentType, bool isFirstFloor)
 {
     if (subObj == nullptr) {
@@ -230,10 +243,8 @@ int JsonObject::CheckSubObj(std::set<std::string> &fieldSet, cJSON *subObj, int 
     if (subObj->string != nullptr) {
         fieldName = subObj->string;
         if (!isFirstFloor) {
-            for (auto oneChar : fieldName) {
-                if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
-                    return -E_INVALID_ARGS;
-                }
+            if (!IsFieldNameLegal(fieldName)) {
+                return -E_INVALID_ARGS;
             }
         }
         if (!fieldName.empty() && isdigit(fieldName[0])) {

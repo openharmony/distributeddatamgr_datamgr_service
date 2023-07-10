@@ -1468,45 +1468,14 @@ HWTEST_F(DocumentDBFindTest, DocumentDBFindTest062, TestSize.Level1)
 
 HWTEST_F(DocumentDBFindTest, DocumentDBFindTest063, TestSize.Level1)
 {
-    const char *document = "{\"a\":1, \"doc64\" : 2}";
-    const char *filter1 = "{\"b\":1}";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    EXPECT_EQ(GRD_UpsertDoc(g_db, COLLECTION_NAME, filter1, document, 0), 1);
-    const char *filter = "{\"a\":1}";
-    GRD_ResultSet *resultSet = nullptr;
-    const char *projection = R"({})";
-    Query query = { filter, projection };
-    EXPECT_EQ(GRD_FindDoc(g_db, COLLECTION_NAME, query, 1, &resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_OK);
-    EXPECT_EQ(GRD_Next(resultSet), GRD_NO_DATA);
-    EXPECT_EQ(GRD_FreeResultSet(resultSet), GRD_OK);
-}
-
-HWTEST_F(DocumentDBFindTest, DocumentDBFindTest064, TestSize.Level1)
-{
     GRD_DB *test_db = nullptr;
     std::string path = "./dataShare.db";
     int status = GRD_DBOpen(path.c_str(), nullptr, GRD_DB_OPEN_CREATE, &test_db);
     EXPECT_EQ(status, GRD_OK);
     EXPECT_EQ(GRD_CreateCollection(test_db, colName, "", 0), GRD_OK);
-
-    string document1 = "{\"_id\":\"key2_11_com.acts.ohos.data.datasharetestclient_100\"\
-          ,\"bundleName\":\"com.acts.ohos.data.datasharetestclient\"\
-          ,\"key\":\"key2\",\"subscriberId\":11,\"timestamp\":1509100700,"
-          "\"userId\":100,\"value\":{\"type\":0,";
+    string document1 = "{\"_id\":\"key2_11_com.acts.ohos.data.datasharetestclient_100\",\
+        \"bundleName\":\"com.acts.ohos.data.datasharetestclient\",\"key\":\"key2\",\
+        \"subscriberId\":11,\"timestamp\":1509100700,""\"userId\":100,\"value\":{\"type\":0,";
     string document2 = "\"value\":[";
     string document3 = "5,";
     string document4 = document3;

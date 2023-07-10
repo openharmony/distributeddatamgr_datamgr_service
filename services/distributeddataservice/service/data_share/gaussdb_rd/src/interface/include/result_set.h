@@ -16,6 +16,7 @@
 #ifndef RESULTSET_H
 #define RESULTSET_H
 
+#include <sstream>
 #include <string>
 #include <vector>
 

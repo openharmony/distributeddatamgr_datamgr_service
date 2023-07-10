@@ -22,8 +22,6 @@
 #include "log_print.h"
 
 namespace DocumentDB {
-constexpr int JSON_LENS_MAX = 1024 * 1024;
-
 Collection::Collection(const std::string &name, KvStoreExecutor *executor) : executor_(executor)
 {
     std::string lowerCaseName = name;

@@ -133,8 +133,7 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest006, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-
-    for (auto flags : std::vector<unsigned int>{ 2, 4, 8, 64, 1024, UINT32_MAX }) {
+    for (auto flags : std::vector<unsigned int> { 2, 4, 8, 64, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), flags), GRD_INVALID_ARGS);
     }
 }
@@ -273,24 +272,6 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest003, TestSize.Level0)
         EXPECT_EQ(GRD_UpdateDoc(g_db, it.first, filter.c_str(), document.c_str(), 0), it.second);
     }
 }
-
-/**
- * @tc.name: UpdateDataTest004
- * @tc.desc: Test update data with invalid filter
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: lianhuix
- */
-HWTEST_F(DocumentDBDataTest, UpdateDataTest004, TestSize.Level0) {}
-
-/**
- * @tc.name: UpdateDataTest005
- * @tc.desc: Test update data with invalid doc
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: lianhuix
- */
-HWTEST_F(DocumentDBDataTest, UpdateDataTest005, TestSize.Level0) {}
 
 /**
  * @tc.name: UpdateDataTest006

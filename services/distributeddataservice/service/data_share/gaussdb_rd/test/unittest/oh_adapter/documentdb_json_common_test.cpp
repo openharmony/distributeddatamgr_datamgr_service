@@ -590,5 +590,4 @@ HWTEST_F(DocumentDBJsonCommonTest, JsonObjectisFilterCheckTest023, TestSize.Leve
     EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj1, filterObj1, errCode), true);
     EXPECT_EQ(JsonCommon::IsJsonNodeMatch(srcObj2, filterObj1, errCode), false);
 }
-
 } // namespace
