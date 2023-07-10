@@ -88,6 +88,8 @@ Status SoftBusClient::OpenConnect(uint32_t totalLength)
         if (result != Status::SUCCESS) {
             status_ = ConnectStatus::DISCONNECT;
         }
+
+        status_ = ConnectStatus::CONNECT_OK;
         return result;
     }
 
@@ -118,6 +120,8 @@ Status SoftBusClient::SwitchChannel(uint32_t totalLength)
             return Status::SUCCESS;
         }
 
+        ZLOGD("switch %{public}s,session:%{public}s,connId:%{public}d,routeType:%{public}d to wifi or p2p.",
+            KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
         RestoreDefaultValue();
         return Open(GetSessionAttribute(true));
     }
@@ -127,6 +131,8 @@ Status SoftBusClient::SwitchChannel(uint32_t totalLength)
             return Status::SUCCESS;
         }
 
+        ZLOGD("switch %{public}s,session:%{public}s,connId:%{public}d,routeType:%{public}d to ble or br.",
+            KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
         CloseSession(connId_);
         RestoreDefaultValue();
         return Open(GetSessionAttribute(false));
@@ -155,8 +161,8 @@ Status SoftBusClient::Open(SessionAttribute attr)
 {
     int id = OpenSession(pipe_.pipeId.c_str(), pipe_.pipeId.c_str(),
                          DmAdapter::GetInstance().ToNetworkID(device_.deviceId).c_str(), "GROUP_ID", &attr);
-    ZLOGI("open %{public}s,session:%{public}s,connId:%{public}d,linkNum:%{public}d",
-          KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), id, attr.linkTypeNum);
+    ZLOGI("open %{public}s,session:%{public}s,connId:%{public}d,linkNum:%{public}d,strategy:%{public}d",
+          KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), id, attr.linkTypeNum, strategy_);
     if (id < 0) {
         ZLOGW("Open %{public}s, type:%{public}d failed, connId:%{public}d",
               pipe_.pipeId.c_str(), attr.dataType, id);
