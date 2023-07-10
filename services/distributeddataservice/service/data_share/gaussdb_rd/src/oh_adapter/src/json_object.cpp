@@ -145,7 +145,7 @@ int JsonObject::GetDeep(cJSON *cjson)
     return depth;
 }
 
-void JsonObject::CheckNumber(cJSON *item, int &errCode)
+int JsonObject::CheckNumber(cJSON *item)
 {
     std::queue<cJSON *> cjsonQueue;
     cjsonQueue.push(item);
@@ -153,13 +153,12 @@ void JsonObject::CheckNumber(cJSON *item, int &errCode)
         cJSON *node = cjsonQueue.front();
         cjsonQueue.pop();
         if (node == nullptr) {
-            errCode = -E_INVALID_ARGS;
-            break;
+            return -E_INVALID_ARGS;
         }
         if (cJSON_IsNumber(node)) { // node is not null all the time
             double value = cJSON_GetNumberValue(node);
             if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
-                errCode = -E_INVALID_ARGS;
+                return -E_INVALID_ARGS;
             }
         }
         if (node->child != nullptr) {
@@ -169,6 +168,7 @@ void JsonObject::CheckNumber(cJSON *item, int &errCode)
             cjsonQueue.push(node->next);
         }
     }
+    return E_OK;
 }
 
 int JsonObject::Init(const std::string &str, bool isFilter)
@@ -186,8 +186,7 @@ int JsonObject::Init(const std::string &str, bool isFilter)
         return -E_INVALID_ARGS;
     }
 
-    int ret = 0;
-    CheckNumber(cjson_, ret);
+    int ret = CheckNumber(cjson_);
     if (ret == -E_INVALID_ARGS) {
         GLOGE("Int value is larger than double");
         return -E_INVALID_ARGS;
