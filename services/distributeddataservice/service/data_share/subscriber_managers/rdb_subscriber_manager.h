@@ -26,7 +26,7 @@
 #include "executor_pool.h"
 namespace OHOS::DataShare {
 struct Key {
-    Key(const std::string &uri, const int64_t subscriberId, const std::string &bundleName);
+    Key(const std::string &uri, int64_t subscriberId, const std::string &bundleName);
     bool operator==(const Key &rhs) const;
     bool operator!=(const Key &rhs) const;
     bool operator<(const Key &rhs) const;
@@ -40,9 +40,9 @@ struct Key {
 class TemplateManager {
 public:
     static TemplateManager &GetInstance();
-    int32_t Add(const Key &key, const int32_t userId, const Template &tpl);
-    int32_t Delete(const Key &key, const int32_t userId);
-    bool Get(const Key &key, const int32_t userId, Template &tpl);
+    int32_t Add(const Key &key, int32_t userId, const Template &tpl);
+    int32_t Delete(const Key &key, int32_t userId);
+    bool Get(const Key &key, int32_t userId, Template &tpl);
 
 private:
     TemplateManager();
@@ -54,12 +54,12 @@ public:
     static RdbSubscriberManager &GetInstance();
     int Add(const Key &key, const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
         std::shared_ptr<ExecutorPool> executorPool);
-    int Delete(const Key &key, const uint32_t callerTokenId);
-    void Delete(const uint32_t callerTokenId);
-    int Disable(const Key &key, const uint32_t callerTokenId);
+    int Delete(const Key &key, uint32_t callerTokenId);
+    void Delete(uint32_t callerTokenId);
+    int Disable(const Key &key, uint32_t callerTokenId);
     int Enable(const Key &key, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
-    void EmitByKey(const Key &key, const int32_t userId, const std::string &rdbPath, int version);
+    void EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version);
     int GetCount(const Key &key);
     std::vector<Key> GetKeysByUri(const std::string &uri);
     void Clear();
@@ -74,7 +74,7 @@ private:
 
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
-    int Notify(const Key &key, const int32_t userId, const std::vector<ObserverNode> &val, const std::string &rdbDir,
+    int Notify(const Key &key, int32_t userId, const std::vector<ObserverNode> &val, const std::string &rdbDir,
         int rdbVersion);
     int GetEnableObserverCount(const Key &key);
 };

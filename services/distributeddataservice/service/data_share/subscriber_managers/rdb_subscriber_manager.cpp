@@ -24,12 +24,12 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-bool TemplateManager::Get(const Key &key, const int32_t userId, Template &tpl)
+bool TemplateManager::Get(const Key &key, int32_t userId, Template &tpl)
 {
     return TemplateData::Query(Id(TemplateData::GenId(key.uri, key.bundleName, key.subscriberId), userId), tpl) == E_OK;
 }
 
-int32_t TemplateManager::Add(const Key &key, const int32_t userId, const Template &tpl)
+int32_t TemplateManager::Add(const Key &key, int32_t userId, const Template &tpl)
 {
     auto status = TemplateData::Add(key.uri, userId, key.bundleName, key.subscriberId, tpl);
     if (!status) {
@@ -39,7 +39,7 @@ int32_t TemplateManager::Add(const Key &key, const int32_t userId, const Templat
     return E_OK;
 }
 
-int32_t TemplateManager::Delete(const Key &key, const int32_t userId)
+int32_t TemplateManager::Delete(const Key &key, int32_t userId)
 {
     auto status = TemplateData::Delete(key.uri, userId, key.bundleName, key.subscriberId);
     if (!status) {
@@ -50,7 +50,7 @@ int32_t TemplateManager::Delete(const Key &key, const int32_t userId)
     return E_OK;
 }
 
-Key::Key(const std::string &uri, const int64_t subscriberId, const std::string &bundleName)
+Key::Key(const std::string &uri, int64_t subscriberId, const std::string &bundleName)
     : uri(uri), subscriberId(subscriberId), bundleName(bundleName)
 {
 }
@@ -132,11 +132,12 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     return result;
 }
 
-int RdbSubscriberManager::Delete(const Key &key, const uint32_t callerTokenId)
+int RdbSubscriberManager::Delete(const Key &key, uint32_t callerTokenId)
 {
     auto result =
         rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
-            ZLOGI("delete subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), callerTokenId);
+            ZLOGI("delete subscriber, uri %{public}s tokenId %{public}d",
+                DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == callerTokenId) {
                     ZLOGI("erase start");
@@ -153,12 +154,13 @@ int RdbSubscriberManager::Delete(const Key &key, const uint32_t callerTokenId)
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-void RdbSubscriberManager::Delete(const uint32_t callerTokenId)
+void RdbSubscriberManager::Delete(uint32_t callerTokenId)
 {
     rdbCache_.EraseIf([&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end();) {
             if (it->callerTokenId == callerTokenId) {
-                ZLOGI("erase start, uri is %{private}s, tokenId %{public}d", key.uri.c_str(), callerTokenId);
+                ZLOGI("erase start, uri is %{public}s, tokenId %{public}d",
+                    DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
                 it = value.erase(it);
             } else {
                 it++;
@@ -171,7 +173,7 @@ void RdbSubscriberManager::Delete(const uint32_t callerTokenId)
     });
 }
 
-int RdbSubscriberManager::Disable(const Key &key, const uint32_t callerTokenId)
+int RdbSubscriberManager::Disable(const Key &key, uint32_t callerTokenId)
 {
     auto result =
         rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
@@ -242,7 +244,7 @@ std::vector<Key> RdbSubscriberManager::GetKeysByUri(const std::string &uri)
     return results;
 }
 
-void RdbSubscriberManager::EmitByKey(const Key &key, const int32_t userId, const std::string &rdbPath, int version)
+void RdbSubscriberManager::EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version)
 {
     if (!URIUtils::IsDataProxyURI(key.uri)) {
         return;
@@ -277,7 +279,7 @@ int RdbSubscriberManager::GetEnableObserverCount(const Key &key)
     return count;
 }
 
-int RdbSubscriberManager::Notify(const Key &key, const int32_t userId, const std::vector<ObserverNode> &val,
+int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vector<ObserverNode> &val,
     const std::string &rdbDir, int rdbVersion)
 {
     Template tpl;
