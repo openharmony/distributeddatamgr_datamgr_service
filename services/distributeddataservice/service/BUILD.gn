@@ -128,7 +128,6 @@ ohos_shared_library("distributeddatasvc") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "app_file_service:remote_file_share_native",
     "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"

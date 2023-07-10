@@ -26,6 +26,8 @@
 
 namespace OHOS {
 namespace UDMF {
+using namespace OHOS::AppFileService;
+
 const std::string MSDP_PROCESS_NAME = "msdp_sa";
 const std::string DATA_PREFIX = "udmf://";
 DataManager::DataManager()
@@ -44,7 +46,8 @@ DataManager &DataManager::GetInstance()
     return instance;
 }
 
-bool DataManager::IsFileType(UDType udType){
+bool DataManager::IsFileType(UDType udType)
+{
     if (udType == UDType::FILE || udType == UDType::IMAGE || udType == UDType::VIDEO || udType == UDType::AUDIO
         || udType == UDType::FOLDER) {
         return true;
@@ -70,24 +73,22 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
         return E_UNKNOWN;
     }
     int32_t userId = PreProcessUtils::GetHapUidByToken(option.tokenId);
-    for (const auto &record : unifiedData.GetRecords())
-    {
+    for (const auto &record : unifiedData.GetRecords()) {
         auto type = record->GetType();
         if (IsFileType(type)) {
             auto file = static_cast<File *>(record.get());
-            struct AppFileService::ModuleRemoteFileShare::HmdfsUriInfo dfsUriInfo;
-            int ret = AppFileService::ModuleRemoteFileShare::RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
-            if(ret != 0 || dfsUriInfo.uriStr.empty()) {
-                ZLOGW("Get remoteUri failed, ret = %{public}d, uri: %{public}s,  userId: %{public}d.", ret, file->GetUri().c_str(), userId);
-                return E_DFS_URI;
-			}
-
-            file->SetRemoteUri(dfsUriInfo.uriStr);  
+            struct ModuleRemoteFileShare::HmdfsUriInfo dfsUriInfo;
+            int ret = ModuleRemoteFileShare::RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
+            if (ret != 0 || dfsUriInfo.uriStr.empty()) {
+                ZLOGE("Get remoteUri failed, ret = %{public}d, uri: %{public}s, userId: %{public}d.",
+                      ret, file->GetUri().c_str(), userId);
+                return E_FS_ERROR;
+            }
+            file->SetRemoteUri(dfsUriInfo.uriStr);
         }
 
         record->SetUid(PreProcessUtils::IdGenerator());
     }
-
 
     std::string intention = unifiedData.GetRuntime()->key.intention;
     auto store = storeCache_.GetStore(intention);
@@ -141,21 +142,10 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
         return E_ERROR;
     }
     if (runtime->createPackage != bundleName) {
+        std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
         auto records = unifiedData.GetRecords();
         for (auto record : records) {
-            auto type = record->GetType();
-            std::string uri = "";
-            if (IsFileType(type)) {
-                auto file = static_cast<File *>(record.get());
-                uri = file->GetUri();
-
-                std::string localDeviceId=PreProcessUtils::GetLocalDeviceId();
-                ZLOGE("DataManager::RetrieveData, localDeviceId=%{public}s, remoteDeviceId=%{public}s,uri=%{public}s,remoteUri=%{public}s.", localDeviceId.c_str(), (runtime->deviceId).c_str(),file->GetUri().c_str(),file->GetRemoteUri().c_str());
-                if (localDeviceId != runtime->deviceId) {
-                    uri = file->GetRemoteUri();
-                    file->SetUri(uri); // cross dev, need dis path.
-                }
-            }
+            std::string uri = ConvertUri(record, localDeviceId, runtime->deviceId);
             if (!uri.empty() && (UriPermissionManager::GetInstance().GrantUriPermission(uri, bundleName) != E_OK)) {
                 return E_NO_PERMISSION;
             }
@@ -166,6 +156,21 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
         return E_DB_ERROR;
     }
     return E_OK;
+}
+std::string DataManager::ConvertUri(std::shared_ptr<UnifiedRecord> record, std::string localDevId,
+                                    std::string remoteDevId)
+{
+    std::string uri = "";
+    auto type = record->GetType();
+    if (IsFileType(type)) {
+        auto file = static_cast<File *>(record.get());
+        uri = file->GetUri();
+        if (localDevId != remoteDevId) {
+            uri = file->GetRemoteUri();
+            file->SetUri(uri); // cross dev, need dis path.
+        }
+    }
+    return uri;
 }
 
 int32_t DataManager::RetrieveBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)

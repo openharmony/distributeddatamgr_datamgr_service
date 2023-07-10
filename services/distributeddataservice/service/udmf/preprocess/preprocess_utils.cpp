@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#define LOG_TAG "preprocess_utils"
+
 #include "preprocess_utils.h"
 
 #include <sstream>
@@ -21,6 +23,7 @@
 #include "bundlemgr/bundle_mgr_client_impl.h"
 #include "ipc_skeleton.h"
 #include "device_manager_adapter.h"
+#include "log_print.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -52,10 +55,7 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
 std::string PreProcessUtils::GetLocalDeviceId()
 {
     auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
-
-    std::string encryptedUuid;
-    encryptedUuid = DistributedData::DeviceManagerAdapter::GetInstance().CalcClientUuid(" ", info.uuid);
-    return encryptedUuid;
+    return DistributedData::DeviceManagerAdapter::GetInstance().CalcClientUuid(" ", info.uuid);
 }
 
 std::string PreProcessUtils::IdGenerator()
@@ -86,10 +86,12 @@ int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId)
     Security::AccessToken::HapTokenInfo tokenInfo;
     auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (result != Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
-        return -1;
+        ZLOGE("GetHapUidByToken failed, result = %{public}d.", result);
+        return E_ERROR;
     }
     return tokenInfo.userID;
 }
+
 bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleName)
 {
     Security::AccessToken::HapTokenInfo hapInfo;
