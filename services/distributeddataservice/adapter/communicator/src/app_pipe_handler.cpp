@@ -43,10 +43,10 @@ AppPipeHandler::AppPipeHandler(const PipeInfo &pipeInfo)
     softbusAdapter_ = SoftBusAdapter::GetInstance();
 }
 
-Status AppPipeHandler::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *ptr, int size,
-                                const MessageInfo &info)
+Status AppPipeHandler::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
+    uint32_t totalLength, const MessageInfo &info)
 {
-    return softbusAdapter_->SendData(pipeInfo, deviceId, ptr, size, info);
+    return softbusAdapter_->SendData(pipeInfo, deviceId, dataInfo, totalLength, info);
 }
 
 Status AppPipeHandler::StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo)

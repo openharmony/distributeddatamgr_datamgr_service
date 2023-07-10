@@ -112,10 +112,18 @@ DBStatus ProcessCommunicatorImpl::RegOnDataReceive(const OnDataReceive &callback
 
 DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length)
 {
+    uint32_t totalLength = 0;
+    return SendData(dstDevInfo, data, length, totalLength);
+}
+
+DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length,
+    uint32_t totalLength)
+{
     PipeInfo pi = {thisProcessLabel_, ""};
+    const DataInfo dataInfo = { const_cast<uint8_t *>(data), length};
     DeviceId destination;
     destination.deviceId = dstDevInfo.identifier;
-    Status errCode = CommunicationProvider::GetInstance().SendData(pi, destination, data, static_cast<int>(length));
+    Status errCode = CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
     if (errCode != Status::SUCCESS) {
         ZLOGE("commProvider_ SendData Fail.");
         return DBStatus::DB_ERROR;

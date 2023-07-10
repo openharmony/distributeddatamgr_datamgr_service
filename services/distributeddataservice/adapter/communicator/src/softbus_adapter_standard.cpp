@@ -38,6 +38,7 @@ enum SoftBusAdapterErrorCode : int32_t {
     PEER_SESSION_NAME_INVALID,
     PEER_DEVICE_ID_INVALID,
     SESSION_SIDE_INVALID,
+    ROUTE_TYPE_INVALID,
 };
 constexpr int32_t SESSION_NAME_SIZE_MAX = 65;
 constexpr int32_t DEVICE_ID_SIZE_MAX = 65;
@@ -52,6 +53,7 @@ struct ConnDetailsInfo {
     char peerName[SESSION_NAME_SIZE_MAX] = "";
     std::string peerDevUuid;
     int32_t side = -1;
+    int32_t routeType = -1;
 };
 class AppDataListenerWrap {
 public:
@@ -160,8 +162,8 @@ Status SoftBusAdapter::StopWatchDataChange(__attribute__((unused)) const AppData
     return Status::ERROR;
 }
 
-Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const uint8_t *data, int size,
-    const MessageInfo &info)
+Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
+    uint32_t totalLength, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
     {
@@ -176,7 +178,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     }
 
     if (conn != nullptr) {
-        return conn->Send(data, size);
+        return conn->Send(dataInfo, totalLength);
     }
 
     return Status::ERROR;
@@ -359,6 +361,13 @@ int AppDataListenerWrap::GetConnDetailsInfo(int connId, ConnDetailsInfo &connInf
         return SESSION_SIDE_INVALID;
     }
 
+    int32_t routeType = RouteType::INVALID_ROUTE_TYPE;
+    ret = GetSessionOption(connId, SESSION_OPTION_LINK_TYPE, &routeType, sizeof(routeType));
+    if (ret != SOFTBUS_OK) {
+        return ROUTE_TYPE_INVALID;
+    }
+    connInfo.routeType = routeType;
+
     return SOFTBUS_OK;
 }
 
@@ -379,8 +388,8 @@ int AppDataListenerWrap::OnConnectOpened(int connId, int result)
     }
 
     ZLOGD("[OnConnectOpened] conn id:%{public}d, my name:%{public}s, peer name:%{public}s, "
-          "peer devId:%{public}s, side:%{public}d", connId, connInfo.myName, connInfo.peerName,
-          KvStoreUtils::ToBeAnonymous(connInfo.peerDevUuid).c_str(), connInfo.side);
+          "peer devId:%{public}s, side:%{public}d, routeType:%{public}d", connId, connInfo.myName, connInfo.peerName,
+          KvStoreUtils::ToBeAnonymous(connInfo.peerDevUuid).c_str(), connInfo.side, connInfo.routeType);
     return 0;
 }
 

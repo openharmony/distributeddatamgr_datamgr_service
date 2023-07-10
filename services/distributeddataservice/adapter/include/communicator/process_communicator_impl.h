@@ -46,6 +46,8 @@ public:
     DBStatus RegOnDataReceive(const OnDataReceive &callback) override;
 
     DBStatus SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length) override;
+    DBStatus SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length,
+        uint32_t totalLength) override;
     uint32_t GetMtuSize() override;
     uint32_t GetMtuSize(const DeviceInfos &devInfo) override;
     DeviceInfos GetLocalDeviceInfos() override;
