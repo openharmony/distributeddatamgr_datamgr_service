@@ -24,12 +24,12 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-bool TemplateManager::Get(const Key &key, const int32_t userId, Template &tpl)
+bool TemplateManager::Get(const Key &key, int32_t userId, Template &tpl)
 {
     return TemplateData::Query(Id(TemplateData::GenId(key.uri, key.bundleName, key.subscriberId), userId), tpl) == E_OK;
 }
 
-int32_t TemplateManager::Add(const Key &key, const int32_t userId, const Template &tpl)
+int32_t TemplateManager::Add(const Key &key, int32_t userId, const Template &tpl)
 {
     auto status = TemplateData::Add(key.uri, userId, key.bundleName, key.subscriberId, tpl);
     if (!status) {
@@ -39,7 +39,7 @@ int32_t TemplateManager::Add(const Key &key, const int32_t userId, const Templat
     return E_OK;
 }
 
-int32_t TemplateManager::Delete(const Key &key, const int32_t userId)
+int32_t TemplateManager::Delete(const Key &key, int32_t userId)
 {
     auto status = TemplateData::Delete(key.uri, userId, key.bundleName, key.subscriberId);
     if (!status) {
@@ -50,7 +50,7 @@ int32_t TemplateManager::Delete(const Key &key, const int32_t userId)
     return E_OK;
 }
 
-Key::Key(const std::string &uri, const int64_t subscriberId, const std::string &bundleName)
+Key::Key(const std::string &uri, int64_t subscriberId, const std::string &bundleName)
     : uri(uri), subscriberId(subscriberId), bundleName(bundleName)
 {
 }
@@ -107,45 +107,12 @@ RdbSubscriberManager &RdbSubscriberManager::GetInstance()
     return manager;
 }
 
-void RdbSubscriberManager::LinkToDeath(const Key &key, sptr<IDataProxyRdbObserver> observer)
-{
-    sptr<ObserverNodeRecipient> deathRecipient = new (std::nothrow) ObserverNodeRecipient(this, key, observer);
-    if (deathRecipient == nullptr) {
-        ZLOGE("new ObserverNodeRecipient error, uri is %{public}s",
-              DistributedData::Anonymous::Change(key.uri).c_str());
-        return;
-    }
-    auto remote = observer->AsObject();
-    if (!remote->AddDeathRecipient(deathRecipient)) {
-        ZLOGE("add death recipient failed, uri is %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
-        return;
-    }
-    ZLOGD("link to death success, uri is %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
-}
-
-void RdbSubscriberManager::OnRemoteDied(const Key &key, sptr<IDataProxyRdbObserver> observer)
-{
-    rdbCache_.ComputeIfPresent(key, [&observer, this](const auto &key, std::vector<ObserverNode> &value) {
-        for (auto it = value.begin(); it != value.end(); ++it) {
-            if (it->observer->AsObject() == observer->AsObject()) {
-                value.erase(it);
-                ZLOGI("OnRemoteDied delete subscriber, uri is %{public}s",
-                    DistributedData::Anonymous::Change(key.uri).c_str());
-                break;
-            }
-        }
-        if (GetEnableObserverCount(key) == 0) {
-            SchedulerManager::GetInstance().RemoveTimer(key);
-        }
-        return !value.empty();
-    });
-}
 int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> observer,
     std::shared_ptr<Context> context, std::shared_ptr<ExecutorPool> executorPool)
 {
     int result = E_OK;
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
-        ZLOGI("add subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), context->callerTokenId);
+        ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId);
         ExecutorPool::Task task = [key, node, context, this]() {
@@ -156,7 +123,6 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         };
         executorPool->Execute(task);
         value.emplace_back(observer, context->callerTokenId);
-        LinkToDeath(key, observer);
         if (GetEnableObserverCount(key) == 1) {
             SchedulerManager::GetInstance().Execute(
                 key, context->currentUserId, context->calledSourceDir, context->version);
@@ -166,11 +132,12 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     return result;
 }
 
-int RdbSubscriberManager::Delete(const Key &key, const uint32_t callerTokenId)
+int RdbSubscriberManager::Delete(const Key &key, uint32_t callerTokenId)
 {
     auto result =
         rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
-            ZLOGI("delete subscriber, uri %{private}s tokenId %{public}d", key.uri.c_str(), callerTokenId);
+            ZLOGI("delete subscriber, uri %{public}s tokenId 0x%{public}x",
+                DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == callerTokenId) {
                     ZLOGI("erase start");
@@ -187,7 +154,26 @@ int RdbSubscriberManager::Delete(const Key &key, const uint32_t callerTokenId)
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-int RdbSubscriberManager::Disable(const Key &key, const uint32_t callerTokenId)
+void RdbSubscriberManager::Delete(uint32_t callerTokenId)
+{
+    rdbCache_.EraseIf([&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
+        for (auto it = value.begin(); it != value.end();) {
+            if (it->callerTokenId == callerTokenId) {
+                ZLOGI("erase start, uri is %{public}s, tokenId 0x%{public}x",
+                    DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
+                it = value.erase(it);
+            } else {
+                it++;
+            }
+        }
+        if (GetEnableObserverCount(key) == 0) {
+            SchedulerManager::GetInstance().RemoveTimer(key);
+        }
+        return value.empty();
+    });
+}
+
+int RdbSubscriberManager::Disable(const Key &key, uint32_t callerTokenId)
 {
     auto result =
         rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
@@ -258,7 +244,7 @@ std::vector<Key> RdbSubscriberManager::GetKeysByUri(const std::string &uri)
     return results;
 }
 
-void RdbSubscriberManager::EmitByKey(const Key &key, const int32_t userId, const std::string &rdbPath, int version)
+void RdbSubscriberManager::EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version)
 {
     if (!URIUtils::IsDataProxyURI(key.uri)) {
         return;
@@ -293,7 +279,7 @@ int RdbSubscriberManager::GetEnableObserverCount(const Key &key)
     return count;
 }
 
-int RdbSubscriberManager::Notify(const Key &key, const int32_t userId, const std::vector<ObserverNode> &val,
+int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vector<ObserverNode> &val,
     const std::string &rdbDir, int rdbVersion)
 {
     Template tpl;
