@@ -125,7 +125,7 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
         case GeneralError::E_RECODE_LIMIT_EXCEEDED:
             return DBStatus::CLOUD_FULL_RECORDS;
         case GeneralError::E_NO_SPACE_FOR_ASSET:
-            return DBStatus::CLOUD_SYNC_UNSET; // for test
+            return DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;
