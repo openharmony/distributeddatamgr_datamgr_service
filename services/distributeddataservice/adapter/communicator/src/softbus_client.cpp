@@ -123,6 +123,7 @@ Status SoftBusClient::SwitchChannel(uint32_t totalLength)
 
         ZLOGD("switch %{public}s,session:%{public}s,connId:%{public}d,routeType:%{public}d to wifi or p2p.",
             KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
+        CloseSession(connId_);
         RestoreDefaultValue();
         return Open(GetSessionAttribute(true));
     }
