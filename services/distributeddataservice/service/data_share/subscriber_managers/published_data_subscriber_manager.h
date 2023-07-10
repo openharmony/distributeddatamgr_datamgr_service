@@ -26,7 +26,7 @@
 #include "executor_pool.h"
 namespace OHOS::DataShare {
 struct PublishedDataKey {
-    PublishedDataKey(const std::string &key, const std::string &bundleName, const int64_t subscriberId);
+    PublishedDataKey(const std::string &key, const std::string &bundleName, int64_t subscriberId);
     bool operator<(const PublishedDataKey &rhs) const;
     bool operator>(const PublishedDataKey &rhs) const;
     bool operator<=(const PublishedDataKey &rhs) const;
@@ -42,12 +42,12 @@ class PublishedDataSubscriberManager {
 public:
     static PublishedDataSubscriberManager &GetInstance();
     int Add(const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer,
-        const uint32_t callerTokenId);
-    int Delete(const PublishedDataKey &key, const uint32_t callerTokenId);
+        uint32_t callerTokenId);
+    int Delete(const PublishedDataKey &key, uint32_t callerTokenId);
     void Delete(const uint32_t callerTokenId);
-    int Disable(const PublishedDataKey &key, const uint32_t callerTokenId);
-    int Enable(const PublishedDataKey &key, const uint32_t callerTokenId);
-    void Emit(const std::vector<PublishedDataKey> &keys, const int32_t userId, const std::string &ownerBundleName,
+    int Disable(const PublishedDataKey &key, uint32_t callerTokenId);
+    int Enable(const PublishedDataKey &key, uint32_t callerTokenId);
+    void Emit(const std::vector<PublishedDataKey> &keys, int32_t userId, const std::string &ownerBundleName,
         const sptr<IDataProxyPublishedDataObserver> observer = nullptr);
     void Clear();
     int GetCount(const PublishedDataKey &key);
@@ -62,7 +62,7 @@ private:
     PublishedDataSubscriberManager() = default;
     void PutInto(std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &,
         const std::vector<ObserverNode> &, const PublishedDataKey &, const sptr<IDataProxyPublishedDataObserver>);
-    ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache;
+    ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache_;
 };
 } // namespace OHOS::DataShare
 #endif
