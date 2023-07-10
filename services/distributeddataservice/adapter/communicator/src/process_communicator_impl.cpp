@@ -116,7 +116,8 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     return SendData(dstDevInfo, data, length, totalLength);
 }
 
-DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length,  uint32_t totalLength)
+DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length,
+    uint32_t totalLength)
 {
     PipeInfo pi = {thisProcessLabel_, ""};
     const DataInfo dataInfo = { const_cast<uint8_t *>(data), length};
