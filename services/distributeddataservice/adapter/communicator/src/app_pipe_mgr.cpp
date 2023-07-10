@@ -66,7 +66,7 @@ Status AppPipeMgr::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, 
         ZLOGW("Input is invalid, maxSize:%d, current size:%u", DataBuffer::MAX_TRANSFER_SIZE, dataInfo.length);
         return Status::ERROR;
     }
-    ZLOGD("pipeInfo:%s ,size:%u", pipeInfo.pipeId.c_str(), dataInfo.length);
+    ZLOGD("pipeInfo:%s ,size:%u, total length:%u", pipeInfo.pipeId.c_str(), dataInfo.length, totalLength);
     std::shared_ptr<AppPipeHandler> appPipeHandler;
     {
         std::lock_guard<std::mutex> lock(dataBusMapMutex_);

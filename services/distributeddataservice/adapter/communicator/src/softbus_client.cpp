@@ -70,7 +70,8 @@ Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
         return result;
     }
 
-    ZLOGD("send data connId:%{public}d, data size:%{public}u.", connId_, dataInfo.length);
+    ZLOGD("send data connId:%{public}d, data size:%{public}u, total length:%{public}u.",
+        connId_, dataInfo.length, totalLength);
     int32_t ret = SendBytes(connId_, dataInfo.data, dataInfo.length);
     if (ret != SOFTBUS_OK) {
         ZLOGE("send data to connId%{public}d failed, ret:%{public}d.", connId_, ret);
