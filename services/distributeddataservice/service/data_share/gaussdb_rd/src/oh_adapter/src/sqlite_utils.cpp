@@ -162,10 +162,6 @@ int SQLiteUtils::BindBlobToStatement(sqlite3_stmt *statement, int index, const s
         errCode = sqlite3_bind_blob(statement, index, static_cast<const void *>(value.data()), value.size(),
             SQLITE_TRANSIENT);
     }
-
-    if (errCode != SQLITE_OK) {
-        GLOGE("[SQLiteUtil][Bind blob] Failed to bind the value:%d", errCode);
-    }
     return errCode;
 }
 
