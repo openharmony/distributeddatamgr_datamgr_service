@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "behaviour_reporter_impl.h"
 
 namespace OHOS {
@@ -22,6 +21,13 @@ ReportStatus BehaviourReporterImpl::Report(const BehaviourMsg &msg)
     HiViewAdapter::ReportBehaviour(DfxCodeConstant::DATABASE_BEHAVIOUR, msg, executors_);
     return ReportStatus::SUCCESS;
 }
+
+ReportStatus BehaviourReporterImpl::UDMFReport(const UDMFBehaviourMsg &msg)
+{
+    HiViewAdapter::ReportUDMFBehaviour(DfxCodeConstant::UDMF_DATA_BEHAVIOR, msg, executors_);
+    return ReportStatus::SUCCESS;
+}
+
 void BehaviourReporterImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;

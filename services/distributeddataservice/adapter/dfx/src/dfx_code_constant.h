@@ -32,5 +32,6 @@ public:
     static inline const int DATABASE_CORRUPTED_FAILED = 950001113;
     static inline const int DATABASE_REKEY_FAILED = 950001114;
     static inline const int DATABASE_BEHAVIOUR = 950001115;
+    static inline const int UDMF_DATA_BEHAVIOR = 950001116;
 };
 #endif // DISTRIBUTEDDATAMGR_DFX_CODE_CONSTANT_H

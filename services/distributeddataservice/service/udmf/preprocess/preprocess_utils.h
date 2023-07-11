@@ -33,7 +33,8 @@ public:
     static int32_t GetHapUidByToken(uint32_t tokenId);
     static bool GetHapBundleNameByToken(int tokenId, std::string &bundleName);
     static bool GetNativeProcessNameByToken(int tokenId, std::string &processName);
-    static std::string GetLocalDeviceId();  // uuid
+    static std::string GetLocalDeviceId();
+    static void SetRemoteData(UnifiedData &data);
 };
 } // namespace UDMF
 } // namespace OHOS
