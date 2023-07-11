@@ -26,10 +26,12 @@ using namespace OHOS::UDMF;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
+const uint32_t CODE_MIN = 0;
+const uint32_t CODE_MAX = 10;
 
 bool OnRemoteRequestFuzz(const uint8_t* data, size_t size)
 {
-    uint32_t code = static_cast<uint32_t>(*data);
+    uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
