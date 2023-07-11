@@ -72,7 +72,7 @@ bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
     return MetaDataManager::GetInstance().SaveMeta(newMeta.GetKey(), newMeta);
 }
 
-void DeviceMatrix::Online(const std::string &device)
+void DeviceMatrix::Online(const std::string &device, RefCount refCount)
 {
     Mask mask;
     EventCenter::Defer defer;
@@ -83,7 +83,11 @@ void DeviceMatrix::Online(const std::string &device)
         offLines_.erase(it);
     }
     onLines_.insert_or_assign(device, mask);
-    EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_ONLINE, device, mask.bitset));
+    if (mask.bitset != 0) {
+        auto evt = std::make_unique<MatrixEvent>(MATRIX_ONLINE, device, mask.bitset);
+        evt->SetRefCount(std::move(refCount));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+    }
 }
 
 void DeviceMatrix::Offline(const std::string &device)

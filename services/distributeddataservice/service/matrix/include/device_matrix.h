@@ -20,6 +20,7 @@
 #include "lru_bucket.h"
 #include "metadata/matrix_meta_data.h"
 #include "metadata/store_meta_data.h"
+#include "utils/ref_count.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
 class API_EXPORT DeviceMatrix {
@@ -34,7 +35,7 @@ public:
     };
     static DeviceMatrix &GetInstance();
     bool Initialize(uint32_t token, std::string storeId);
-    void Online(const std::string &device);
+    void Online(const std::string &device, RefCount refCount = {});
     void Offline(const std::string &device);
     uint16_t OnBroadcast(const std::string &device, uint16_t code);
     void OnChanged(uint16_t code);

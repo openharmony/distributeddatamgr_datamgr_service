@@ -70,7 +70,7 @@ KVDBServiceImpl::KVDBServiceImpl()
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_META_FINISHED, [this](const Event &event) {
         auto &matrixEvent = static_cast<const MatrixEvent &>(event);
         auto deviceId = matrixEvent.GetDeviceId();
-        RefCount refCount([deviceId] { DMAdapter::GetInstance().NotifyReadyEvent(deviceId); });
+        auto refCount = matrixEvent.StealRefCount();
         std::vector<StoreMetaData> metaData;
         auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
         if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
