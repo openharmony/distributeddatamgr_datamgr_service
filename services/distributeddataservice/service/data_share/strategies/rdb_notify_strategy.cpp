@@ -35,7 +35,7 @@ bool RdbNotifyStrategy::Execute(std::shared_ptr<Context> context)
         return false;
     }
     if (context->callerBundleName != context->calledBundleName) {
-        ZLOGE("not your data, cannot notify, callerBundleName: %{public}s, calledBundleName: %{public}s",
+        ZLOGD("not your data, cannot notify, callerBundleName: %{public}s, calledBundleName: %{public}s",
             context->callerBundleName.c_str(), context->calledBundleName.c_str());
         return false;
     }

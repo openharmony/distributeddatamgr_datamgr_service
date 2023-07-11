@@ -35,11 +35,11 @@ group("build_module") {
 }
 ohos_shared_library("data_share_service") {
   sources = [
-    "common/app_connect_manager.cpp",
     "common/bundle_mgr_proxy.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
     "common/extension_connect_adaptor.cpp",
+    "common/extension_mgr_proxy.cpp",
     "common/kv_delegate.cpp",
     "common/rdb_delegate.cpp",
     "common/scheduler_manager.cpp",
@@ -91,7 +91,7 @@ ohos_shared_library("data_share_service") {
   external_deps = [
     "ability_base:want",
     "ability_base:zuri",
-    "ability_runtime:ability_manager",
+    "ability_runtime:extension_manager",
     "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",

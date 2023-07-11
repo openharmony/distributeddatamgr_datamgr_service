@@ -60,7 +60,6 @@ public:
     int Enable(const Key &key, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
     void EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version);
-    int GetCount(const Key &key);
     std::vector<Key> GetKeysByUri(const std::string &uri);
     void Clear();
 

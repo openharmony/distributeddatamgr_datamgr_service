@@ -39,9 +39,6 @@ void SchedulerManager::Execute(const std::string &uri, const int32_t userId, con
     }
     std::vector<Key> keys = RdbSubscriberManager::GetInstance().GetKeysByUri(uri);
     for (auto const &key : keys) {
-        if (RdbSubscriberManager::GetInstance().GetCount(key) == 0) {
-            continue;
-        }
         ExecuteSchedulerSQL(rdbDir, userId, version, key, delegate);
     }
 }
@@ -64,23 +61,33 @@ void SchedulerManager::SetTimer(
         ZLOGE("executor_ is nullptr");
         return;
     }
+    // reminder time must is in future
+    auto now = time(nullptr);
+    if (reminderTime <= now) {
+        ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64 , reminderTime, now);
+        return;
+    }
+    auto duration = std::chrono::seconds(reminderTime - now);
+    ZLOGI("reminderTime will notify in %{public}" PRId64 " seconds", reminderTime - now);
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         // has current timer, reset time
-        ZLOGD("has current taskId, uri is %{public}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
-        DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
-        executor_->Reset(it->second, std::chrono::seconds(reminderTime - time(nullptr)));
+        ZLOGD("has current taskId, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
+            key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
+        executor_->Reset(it->second, duration);
         return;
     }
     // not find task in map, create new timer
-    auto taskId = executor_->Schedule(std::chrono::seconds(reminderTime - time(nullptr)),
-        [key, dbPath, version, userId, this]() {
-            timerCache_.erase(key);
-            // 1. execute schedulerSQL in next time
-            Execute(key, userId, dbPath, version);
-            // 2. notify
-            RdbSubscriberManager::GetInstance().EmitByKey(key, userId, dbPath, version);
-        });
+    auto taskId = executor_->Schedule(duration, [key, dbPath, version, userId, this]() {
+        ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
+              "%{public}s",
+            key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
+        timerCache_.erase(key);
+        // 1. execute schedulerSQL in next time
+        Execute(key, userId, dbPath, version);
+        // 2. notify
+        RdbSubscriberManager::GetInstance().EmitByKey(key, userId, dbPath, version);
+    });
     if (taskId == ExecutorPool::INVALID_TASK_ID) {
         ZLOGE("create timer failed, over the max capacity");
         return;

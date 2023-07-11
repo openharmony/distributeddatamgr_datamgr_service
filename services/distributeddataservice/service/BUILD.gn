@@ -121,7 +121,6 @@ ohos_shared_library("distributeddatasvc") {
   external_deps = [
     "ability_base:want",
     "ability_base:zuri",
-    "ability_runtime:ability_manager",
     "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
