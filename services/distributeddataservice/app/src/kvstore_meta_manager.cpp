@@ -129,7 +129,7 @@ void KvStoreMetaManager::InitDeviceOnline()
             ZLOGW("meta online sync error 0x%{public}08x device:%{public}s %{public}d", mask,
                 Anonymous::Change(deviceId).c_str(), status);
         }
-        onComplete({});
+        onComplete({ });
     });
 }
 
@@ -397,6 +397,7 @@ size_t KvStoreMetaManager::GetSyncDataSize(const std::string &deviceId)
 
     return metaDelegate->GetSyncDataSize(deviceId);
 }
+
 void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;
