@@ -30,7 +30,7 @@ public:
     static int32_t RuntimeDataImputation(UnifiedData &data, CustomOption &option);
     static std::string IdGenerator();
     static time_t GetTimeStamp();
-    static int32_t GetHapUidByToken(uint32_t  tokenId);
+    static int32_t GetHapUidByToken(uint32_t tokenId);
     static bool GetHapBundleNameByToken(int tokenId, std::string &bundleName);
     static bool GetNativeProcessNameByToken(int tokenId, std::string &processName);
     static std::string GetLocalDeviceId();  // uuid

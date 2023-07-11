@@ -48,11 +48,8 @@ DataManager &DataManager::GetInstance()
 
 bool DataManager::IsFileType(UDType udType)
 {
-    if (udType == UDType::FILE || udType == UDType::IMAGE || udType == UDType::VIDEO || udType == UDType::AUDIO
-        || udType == UDType::FOLDER) {
-        return true;
-    }
-    return false;
+    return (udType == UDType::FILE || udType == UDType::IMAGE || udType == UDType::VIDEO || udType == UDType::AUDIO
+        || udType == UDType::FOLDER);
 }
 
 int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key)
@@ -80,8 +77,7 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
             struct ModuleRemoteFileShare::HmdfsUriInfo dfsUriInfo;
             int ret = ModuleRemoteFileShare::RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
             if (ret != 0 || dfsUriInfo.uriStr.empty()) {
-                ZLOGE("Get remoteUri failed, ret = %{public}d, uri: %{public}s, userId: %{public}d.",
-                      ret, file->GetUri().c_str(), userId);
+                ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d.", ret, userId);
                 return E_FS_ERROR;
             }
             file->SetRemoteUri(dfsUriInfo.uriStr);
@@ -157,12 +153,11 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     }
     return E_OK;
 }
-std::string DataManager::ConvertUri(std::shared_ptr<UnifiedRecord> record, std::string localDevId,
-                                    std::string remoteDevId)
+std::string DataManager::ConvertUri(std::shared_ptr<UnifiedRecord> record, const std::string &localDevId,
+                                    const std::string &remoteDevId)
 {
-    std::string uri = "";
-    auto type = record->GetType();
-    if (IsFileType(type)) {
+    std::string uri;
+    if (record != nullptr && IsFileType(record->GetType())) {
         auto file = static_cast<File *>(record.get());
         uri = file->GetUri();
         if (localDevId != remoteDevId) {
