@@ -23,13 +23,14 @@
 namespace OHOS::DataShare {
 class ExtensionMgrProxy final : public std::enable_shared_from_this<ExtensionMgrProxy> {
 public:
+    // do not use
+    ExtensionMgrProxy() = default;
     ~ExtensionMgrProxy();
     static std::shared_ptr<ExtensionMgrProxy> GetInstance();
     bool Connect(const std::string &uri, const sptr<IRemoteObject> &connect, const sptr<IRemoteObject> &callerToken);
     bool DisConnect(sptr<IRemoteObject> connect);
 private:
     using Proxy = AAFwk::ExtensionManagerProxy;
-    ExtensionMgrProxy() = default;
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
         explicit ServiceDeathRecipient(std::weak_ptr<ExtensionMgrProxy> owner) : owner_(owner)
