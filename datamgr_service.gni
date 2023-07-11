@@ -32,6 +32,8 @@ ipc_core_path = "//foundation/communication/ipc/interfaces/innerkits/ipc_core"
 
 device_manager_path = "//foundation/distributedhardware/device_manager"
 
+file_service_path = "//foundation/filemanagement/app_file_service"
+
 data_service_path = "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice"
 
 udmf_path = "//foundation/distributeddatamgr/udmf"
