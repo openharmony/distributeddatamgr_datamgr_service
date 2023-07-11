@@ -64,7 +64,7 @@ void SchedulerManager::SetTimer(
     // reminder time must is in future
     auto now = time(nullptr);
     if (reminderTime <= now) {
-        ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64 , reminderTime, now);
+        ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64, reminderTime, now);
         return;
     }
     auto duration = std::chrono::seconds(reminderTime - now);
