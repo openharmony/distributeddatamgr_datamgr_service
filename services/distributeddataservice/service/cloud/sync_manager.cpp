@@ -191,10 +191,6 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
             return;
         }
-        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
-            retryer(RETRY_INTERVAL, E_NETWORK_ERROR);
-            return;
-        }
 
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
         for (auto &schema : schemas) {
