@@ -46,6 +46,7 @@ public:
     static void ReportApiPerformanceStatistic(int dfxCode, const ApiPerformanceStat &stat,
         std::shared_ptr<ExecutorPool> executors);
     static void ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors);
+    static void ReportUDMFBehaviour(int dfxCode, const UDMFBehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors);
     static void StartTimerThread(std::shared_ptr<ExecutorPool> executors);
 
 private:

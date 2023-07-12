@@ -100,6 +100,15 @@ DATABASE_BEHAVIOUR:
   STORE_ID: {type: STRING, desc: store id }
   BEHAVIOUR_INFO: {type: STRING, desc: behaviour type and behaviour resulte }
 
+UDMF_DATA_BEHAVIOR:
+  __BASE: {type: BEHAVIOR, level: MINOR, desc: The event is behaviour record }
+  APP_ID: {type: STRING, desc: app id }
+  CHANNEL: {type: STRING, desc: channel name }
+  DATA_SIZE: {type: INT64, desc: data size }
+  DATA_TYPE: {type: STRING, desc: data type }
+  OPERATION: {type: STRING, desc: data operation }
+  RESULT: {type: STRING, desc: data operation result }
+
 OPEN_DATABASE_FAILED:
   __BASE: {type: FAULT, level: CRITICAL, desc: The database open failed}
   APP_ID: {type: STRING, desc: app id }

@@ -131,6 +131,15 @@ struct BehaviourMsg {
     std::string extensionInfo;
 };
 
+struct UDMFBehaviourMsg {
+    std::string appId;
+    std::string channel;
+    int64_t dataSize;
+    std::string dataType;
+    std::string operation;
+    std::string result;
+};
+
 struct VisitStat {
     std::string appId;
     std::string interfaceName;

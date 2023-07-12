@@ -43,7 +43,7 @@ public:
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors)
     {
         executors_ = executors;
-        if (executors == nullptr) {
+        if (executors != nullptr) {
             ServiceFault();
             RuntimeFault();
             DatabaseFault();

@@ -12,23 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#define LOG_TAG "preprocess_utils"
+#define LOG_TAG "PreProcessUtils"
 
 #include "preprocess_utils.h"
 
 #include <sstream>
-#include "error_code.h"
+
 #include "accesstoken_kit.h"
 #include "bundlemgr/bundle_mgr_client_impl.h"
-#include "ipc_skeleton.h"
 #include "device_manager_adapter.h"
+#include "error_code.h"
+#include "file.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 
 namespace OHOS {
 namespace UDMF {
 static constexpr int ID_LEN = 32;
 const char SPECIAL = '^';
+using namespace Security::AccessToken;
 int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &option)
 {
     auto it = UD_INTENTION_MAP.find(option.intention);
@@ -50,12 +52,6 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
     runtime.deviceId = GetLocalDeviceId();
     data.SetRuntime(runtime);
     return E_OK;
-}
-
-std::string PreProcessUtils::GetLocalDeviceId()
-{
-    auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
-    return DistributedData::DeviceManagerAdapter::GetInstance().CalcClientUuid(" ", info.uuid);
 }
 
 std::string PreProcessUtils::IdGenerator()
@@ -112,6 +108,38 @@ bool PreProcessUtils::GetNativeProcessNameByToken(int tokenId, std::string &proc
     }
     processName = nativeInfo.processName;
     return true;
+}
+
+std::string PreProcessUtils::GetLocalDeviceId()
+{
+    auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
+    std::string encryptedUuid = DistributedData::DeviceManagerAdapter::GetInstance().CalcClientUuid(" ", info.uuid);
+    return encryptedUuid;
+}
+
+void PreProcessUtils::SetRemoteData(UnifiedData &data)
+{
+    if (data.IsEmpty()) {
+        ZLOGD("invalid data.");
+        return;
+    }
+    std::shared_ptr<Runtime> runtime = data.GetRuntime();
+    if (runtime->deviceId == PreProcessUtils::GetLocalDeviceId()) {
+        ZLOGD("not remote data.");
+        return;
+    }
+    ZLOGD("is remote data.");
+    auto records = data.GetRecords();
+    for (auto record : records) {
+        auto type = record->GetType();
+        if (type == UDType::FILE || type == UDType::IMAGE || type == UDType::VIDEO || type == UDType::AUDIO
+            || type == UDType::FOLDER) {
+            auto file = static_cast<File *>(record.get());
+            UDDetails details = file->GetDetails();
+            details.insert({"isRemote", "true"});
+            file->SetDetails(details);
+        }
+    }
 }
 } // namespace UDMF
 } // namespace OHOS

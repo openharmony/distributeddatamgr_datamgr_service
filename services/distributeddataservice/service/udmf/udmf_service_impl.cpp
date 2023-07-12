@@ -22,10 +22,13 @@
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
 #include "preprocess_utils.h"
+#include "reporter.h"
 
 namespace OHOS {
 namespace UDMF {
 using FeatureSystem = DistributedData::FeatureSystem;
+using UDMFBehaviourMsg = OHOS::DistributedDataDfx::UDMFBehaviourMsg;
+using Reporter = OHOS::DistributedDataDfx::Reporter;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -46,13 +49,49 @@ UdmfServiceImpl::Factory::~Factory()
 int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData, std::string &key)
 {
     ZLOGD("start");
-    return DataManager::GetInstance().SaveData(option, unifiedData, key);
+    int32_t res = E_OK;
+    UDMFBehaviourMsg msg;
+    auto find = UD_INTENTION_MAP.find(option.intention);
+    msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
+    msg.operation = "insert";
+    std::string bundleName;
+    if (!PreProcessUtils::GetHapBundleNameByToken(option.tokenId, bundleName)) {
+        msg.appId = "unknown";
+        res = E_ERROR;
+    } else {
+        msg.appId = bundleName;
+        res = DataManager::GetInstance().SaveData(option, unifiedData, key);
+    }
+    msg.result = ERROR_MAP.find(res)->second;
+    std::vector<UDType> types = unifiedData.GetUDTypes();
+    msg.dataType = unifiedData.GetTypes();
+    msg.dataSize = unifiedData.GetSize();
+    Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
+    return res;
 }
 
 int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedData)
 {
     ZLOGD("start");
-    return DataManager::GetInstance().RetrieveData(query, unifiedData);
+    int32_t res = E_OK;
+    UDMFBehaviourMsg msg;
+    auto find = UD_INTENTION_MAP.find(query.intention);
+    msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
+    msg.operation = "insert";
+    std::string bundleName;
+    if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
+        msg.appId = "unknown";
+        res = E_ERROR;
+    } else {
+        msg.appId = bundleName;
+        res = DataManager::GetInstance().RetrieveData(query, unifiedData);
+    }
+    msg.result = ERROR_MAP.find(res)->second;
+    std::vector<UDType> types = unifiedData.GetUDTypes();
+    msg.dataType = unifiedData.GetTypes();
+    msg.dataSize = unifiedData.GetSize();
+    Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
+    return res;
 }
 
 int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)

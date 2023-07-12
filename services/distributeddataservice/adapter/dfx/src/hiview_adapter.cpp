@@ -47,6 +47,11 @@ constexpr const char *TAG = "TAG";
 constexpr const char *POWERSTATS = "PowerStats";
 // behaviour key
 constexpr const char *BEHAVIOUR_INFO = "BEHAVIOUR_INFO";
+constexpr const char *CHANNEL = "CHANNEL";
+constexpr const char *DATA_SIZE = "DATA_SIZE";
+constexpr const char *DATA_TYPE = "DATA_TYPE";
+constexpr const char *OPERATION = "OPERATION";
+constexpr const char *RESULT = "RESULT";
 
 const std::map<int, std::string> EVENT_COVERT_TABLE = {
     { DfxCodeConstant::SERVICE_FAULT, "SERVICE_FAULT" },
@@ -63,6 +68,7 @@ const std::map<int, std::string> EVENT_COVERT_TABLE = {
     { DfxCodeConstant::DATABASE_CORRUPTED_FAILED, "DATABASE_CORRUPTED_FAILED" },
     { DfxCodeConstant::DATABASE_REKEY_FAILED, "DATABASE_REKEY_FAILED" },
     { DfxCodeConstant::DATABASE_BEHAVIOUR, "DATABASE_BEHAVIOUR" },
+    { DfxCodeConstant::UDMF_DATA_BEHAVIOR, "UDMF_DATA_BEHAVIOR" },
 };
 }
 using OHOS::HiviewDFX::HiSysEvent;
@@ -296,6 +302,23 @@ void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerforma
 
     executors->Execute(std::move(task));
     StartTimerThread(executors);
+}
+
+void HiViewAdapter::ReportUDMFBehaviour(
+    int dfxCode, const UDMFBehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors)
+{
+    ExecutorPool::Task task([dfxCode, msg]() {
+        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
+            CoverEventID(dfxCode),
+            HiSysEvent::EventType::BEHAVIOR,
+            APP_ID, msg.appId,
+            CHANNEL, msg.channel,
+            DATA_SIZE, msg.dataSize,
+            DATA_TYPE, msg.dataType,
+            OPERATION, msg.operation,
+            RESULT, msg.result);
+    });
+    executors->Execute(std::move(task));
 }
 
 void HiViewAdapter::InvokeApiPerformance()

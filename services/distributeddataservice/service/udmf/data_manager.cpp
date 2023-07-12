@@ -17,6 +17,7 @@
 #include "data_manager.h"
 
 #include "checker_manager.h"
+#include "dfx_types.h"
 #include "file.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
@@ -151,6 +152,7 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
         ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
+    PreProcessUtils::SetRemoteData(unifiedData);
     return E_OK;
 }
 std::string DataManager::ConvertUri(std::shared_ptr<UnifiedRecord> record, const std::string &localDevId,
@@ -181,7 +183,8 @@ int32_t DataManager::RetrieveBatchData(const QueryOption &query, std::vector<Uni
         ZLOGW("DataSet has no data, key: %{public}s, intention: %{public}d.", query.key.c_str(), query.intention);
         return E_OK;
     }
-    for (const auto &data : dataSet) {
+    for (auto &data : dataSet) {
+        PreProcessUtils::SetRemoteData(data);
         unifiedDataSet.push_back(data);
     }
     return E_OK;
