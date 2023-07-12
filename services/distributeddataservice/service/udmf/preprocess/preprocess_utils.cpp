@@ -25,12 +25,15 @@
 #include "file.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
-
+#include "remote_file_share.h"
+#include "uri.h"
 namespace OHOS {
 namespace UDMF {
 static constexpr int ID_LEN = 32;
 const char SPECIAL = '^';
 using namespace Security::AccessToken;
+using namespace OHOS::AppFileService::ModuleRemoteFileShare;
+
 int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &option)
 {
     auto it = UD_INTENTION_MAP.find(option.intention);
@@ -132,14 +135,61 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
     auto records = data.GetRecords();
     for (auto record : records) {
         auto type = record->GetType();
-        if (type == UDType::FILE || type == UDType::IMAGE || type == UDType::VIDEO || type == UDType::AUDIO
-            || type == UDType::FOLDER) {
+        if (IsFileType(type)) {
             auto file = static_cast<File *>(record.get());
             UDDetails details = file->GetDetails();
             details.insert({"isRemote", "true"});
             file->SetDetails(details);
         }
     }
+}
+
+bool PreProcessUtils::IsFileType(UDType udType)
+{
+    return (udType == UDType::FILE || udType == UDType::IMAGE || udType == UDType::VIDEO || udType == UDType::AUDIO
+        || udType == UDType::FOLDER);
+}
+
+int32_t PreProcessUtils::SetDargRemoteUri(uint32_t tokenId, UnifiedData &data)
+{
+    int32_t userId = GetHapUidByToken(tokenId);
+    std::string bundleName = data.GetRuntime()->createPackage;
+    for (const auto &record : data.GetRecords()) {
+        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+            auto file = static_cast<File *>(record.get());
+            if (!(file->GetUri()).empty() && IsHapOwnPath(file->GetUri(), bundleName)) {
+                struct HmdfsUriInfo dfsUriInfo;
+                int ret = RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
+                if (ret != 0 || dfsUriInfo.uriStr.empty()) {
+                    ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d.", ret, userId);
+                    return E_FS_ERROR;
+                }
+                file->SetRemoteUri(dfsUriInfo.uriStr);
+            }
+        }
+    }
+    return E_OK;
+}
+
+bool PreProcessUtils::IsHapOwnPath(const std::string &path, const std::string &bundleName)
+{
+    Uri uri(path);
+    return (uri.GetAuthority() == bundleName);
+}
+
+std::string PreProcessUtils::ConvertUri(std::shared_ptr<UnifiedRecord> record, const std::string &localDevId,
+                                        const std::string &remoteDevId)
+{
+    std::string uri;
+    if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+        auto file = static_cast<File *>(record.get());
+        uri = file->GetUri();
+        if (localDevId != remoteDevId) {
+            uri = file->GetRemoteUri();
+            file->SetUri(uri); // cross dev, need dis path.
+        }
+    }
+    return uri;
 }
 } // namespace UDMF
 } // namespace OHOS
