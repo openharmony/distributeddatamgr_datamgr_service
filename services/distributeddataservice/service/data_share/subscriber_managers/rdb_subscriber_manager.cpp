@@ -293,6 +293,9 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
     changeNode.templateId_.bundleName_ = key.bundleName;
     for (const auto &predicate : tpl.predicates_) {
         std::string result = delegate->Query(predicate.selectSql_);
+        if (result.empty()) {
+            continue;
+        }
         changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
 
