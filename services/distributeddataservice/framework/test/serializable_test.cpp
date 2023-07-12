@@ -198,6 +198,7 @@ HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
         ~TestMeta()
         {
             delete index;
+            index = nullptr;
         }
         bool Marshal(json &node) const
         {
