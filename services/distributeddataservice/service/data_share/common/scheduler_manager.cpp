@@ -80,8 +80,7 @@ void SchedulerManager::SetTimer(
     // not find task in map, create new timer
     auto taskId = executor_->Schedule(duration, [key, dbPath, version, userId, this]() {
         ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
-              "%{public}s",
-            key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
+            "%{public}s", key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
         timerCache_.erase(key);
         // 1. execute schedulerSQL in next time
         Execute(key, userId, dbPath, version);

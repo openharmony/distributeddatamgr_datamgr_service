@@ -44,7 +44,7 @@ ExtensionMgrProxy::~ExtensionMgrProxy()
 
 std::shared_ptr<ExtensionMgrProxy> ExtensionMgrProxy::GetInstance()
 {
-    std::shared_ptr<ExtensionMgrProxy> proxy = std::make_shared<ExtensionMgrProxy>();
+    static std::shared_ptr<ExtensionMgrProxy> proxy = std::make_shared<ExtensionMgrProxy>();
     return proxy;
 }
 
