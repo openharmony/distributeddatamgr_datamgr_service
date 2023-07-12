@@ -20,6 +20,7 @@
 #include "store/general_value.h"
 #include "value_object.h"
 #include "values_bucket.h"
+#include "distributeddb/result_set.h"
 namespace OHOS::DistributedRdb {
 class ValueProxy final {
 public:
@@ -201,6 +202,9 @@ public:
     static Buckets Convert(DistributedData::VBuckets &&buckets);
     static Buckets Convert(std::vector<NativeRdb::ValuesBucket> &&buckets);
     static Buckets Convert(std::vector<DistributedDB::VBucket> &&buckets);
+
+    static Value Convert(DistributedDB::VariantData &&value);
+    static Bucket Convert(std::map<std::string, DistributedDB::VariantData> &&value);
 
     template<typename T>
     static std::enable_if_t < CVT_INDEX<T, Proxy><MAX, Bucket>

@@ -16,14 +16,25 @@
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
 #include "store/cursor.h"
-#include "result_set.h"
+#include "distributeddb/result_set.h"
 namespace OHOS::DistributedRdb {
 class RdbCursor : public DistributedData::Cursor {
 public:
-    explicit RdbCursor(std::shared_ptr<NativeRdb::ResultSet> resultSet);
+    explicit RdbCursor(std::shared_ptr<DistributedDB::ResultSet> resultSet);
     ~RdbCursor();
     int32_t GetColumnNames(std::vector<std::string> &names) const override;
     int32_t GetColumnName(int32_t col, std::string &name) const override;
+    int32_t GetColumnIndex(const std::string &columnName) const override;
+    int32_t GetIndex() const override;
+    int32_t MoveToPre() override;
+    int32_t MoveTo(int offset) override;
+    int32_t MoveToRow(int position) override;
+    int32_t MoveToLast() override;
+    bool IsStart() override;
+    bool IsFirst() override;
+    bool IsLast() override;
+    bool IsClosed() override;
+    int32_t IsColumnNull(int32_t col, bool &isNull) const override;
     int32_t GetColumnType(int32_t col) const override;
     int32_t GetCount() const override;
     int32_t MoveToFirst() override;
@@ -36,7 +47,8 @@ public:
     bool IsEnd() override;
 
 private:
-    std::shared_ptr<NativeRdb::ResultSet> resultSet_;
+    std::shared_ptr<DistributedDB::ResultSet> resultSet_;
+    static ColumnType Convert(DistributedDB::ResultSet::ColumnType columnType);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H

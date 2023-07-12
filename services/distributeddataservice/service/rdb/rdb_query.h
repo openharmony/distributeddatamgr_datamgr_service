@@ -29,6 +29,26 @@ public:
 
     bool IsEqual(uint64_t tid) override;
     std::vector<std::string> GetTables() override;
+    DistributedDB::Query GetQuery();
+    void MakeQuery(const PredicatesMemo &predicates);
+
+private:
+    void EqualTo(const RdbPredicateOperation& operation);
+    void NotEqualTo(const RdbPredicateOperation& operation);
+    void And(const RdbPredicateOperation& operation);
+    void Or(const RdbPredicateOperation& operation);
+    void OrderBy(const RdbPredicateOperation& operation);
+    void Limit(const RdbPredicateOperation& operation);
+    using PredicateHandle = void (RdbQuery::*)(const RdbPredicateOperation &operation);
+    static constexpr inline PredicateHandle HANDLES[OPERATOR_MAX] = {
+        [EQUAL_TO] = &RdbQuery::EqualTo,
+        [NOT_EQUAL_TO] = &RdbQuery::NotEqualTo,
+        [AND] = &RdbQuery::And,
+        [OR] = &RdbQuery::Or,
+        [ORDER_BY] = &RdbQuery::OrderBy,
+        [LIMIT] = &RdbQuery::Limit,
+    };
+    static constexpr inline uint32_t DECIMAL_BASE = 10;
 
     DistributedDB::Query query_;
     std::string sql_;

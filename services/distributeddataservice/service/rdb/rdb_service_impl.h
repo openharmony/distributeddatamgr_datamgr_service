@@ -25,11 +25,13 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_notifier_proxy.h"
-#include "rdb_syncer.h"
+#include "rdb_store_observer_impl.h"
 #include "rdb_watcher.h"
 #include "store/auto_cache.h"
+#include "store/general_store.h"
 #include "store_observer.h"
 #include "visibility.h"
+#include "store/general_value.h"
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
@@ -90,7 +92,6 @@ private:
     private:
         std::shared_ptr<RdbServiceImpl> product_;
     };
-    using StoreSyncersType = std::map<std::string, std::shared_ptr<RdbSyncer>>;
 
     static constexpr int32_t MAX_SYNCER_NUM = 50;
     static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
@@ -106,9 +107,7 @@ private:
 
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
-    void SyncerTimeout(std::shared_ptr<RdbSyncer> syncer);
-
-    std::shared_ptr<RdbSyncer> GetRdbSyncer(const RdbSyncerParam& param);
+    std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
     void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details&& result);
 
@@ -120,11 +119,17 @@ private:
 
     int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
 
+    static Details HandleGenDetails(const DistributedData::GenDetails &details);
+
     static std::string TransferStringToHex(const std::string& origStr);
 
+    static std::string RemoveSuffix(const std::string& name);
+
+    static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
+
+    static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+
     static Factory factory_;
-    int32_t syncerNum_ {};
-    ConcurrentMap<pid_t, StoreSyncersType> syncers_;
     ConcurrentMap<std::string, std::pair<pid_t, uint32_t>> identifiers_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     RdbStoreObserverImpl autoLaunchObserver_;

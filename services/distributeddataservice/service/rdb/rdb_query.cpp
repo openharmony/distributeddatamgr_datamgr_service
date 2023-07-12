@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#define LOG_TAG "RdbQuery"
 #include "rdb_query.h"
+#include "log_print.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 bool RdbQuery::IsEqual(uint64_t tid)
@@ -25,4 +26,65 @@ std::vector<std::string> RdbQuery::GetTables()
 {
     return {};
 }
+
+DistributedDB::Query RdbQuery::GetQuery()
+{
+    return query_;
+}
+
+void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
+{
+    ZLOGI("table=%{public}zu", predicates.tables_.size());
+    auto query = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
+                                                : DistributedDB::Query::Select();
+    if (predicates.tables_.size() > 1) {
+        query.FromTable(predicates.tables_);
+    }
+    for (const auto &operation : predicates.operations_) {
+        if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
+            (this->*HANDLES[operation.operator_])(operation);
+        }
+    }
+}
+
+void RdbQuery::EqualTo(const RdbPredicateOperation &operation)
+{
+    query_.EqualTo(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::NotEqualTo(const RdbPredicateOperation &operation)
+{
+    query_.NotEqualTo(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::And(const RdbPredicateOperation &operation)
+{
+    query_.And();
+}
+
+void RdbQuery::Or(const RdbPredicateOperation &operation)
+{
+    query_.Or();
+}
+
+void RdbQuery::OrderBy(const RdbPredicateOperation &operation)
+{
+    bool isAsc = operation.values_[0] == "true";
+    query_.OrderBy(operation.field_, isAsc);
+}
+
+void RdbQuery::Limit(const RdbPredicateOperation &operation)
+{
+    char *end = nullptr;
+    int limit = static_cast<int>(strtol(operation.field_.c_str(), &end, DECIMAL_BASE));
+    int offset = static_cast<int>(strtol(operation.values_[0].c_str(), &end, DECIMAL_BASE));
+    if (limit < 0) {
+        limit = 0;
+    }
+    if (offset < 0) {
+        offset = 0;
+    }
+    query_.Limit(limit, offset);
+}
+
 } // namespace OHOS::DistributedRdb

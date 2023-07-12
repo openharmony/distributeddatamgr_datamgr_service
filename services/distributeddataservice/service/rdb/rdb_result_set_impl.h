@@ -18,13 +18,12 @@
 
 #include <shared_mutex>
 #include "rdb_result_set_stub.h"
-#include "distributeddb/result_set.h"
+#include "store/cursor.h"
 
 namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public RdbResultSetStub {
 public:
-    using DbColumnType = DistributedDB::ResultSet::ColumnType;
-    explicit RdbResultSetImpl(std::shared_ptr<DistributedDB::ResultSet> resultSet);
+    explicit RdbResultSetImpl(std::shared_ptr<DistributedData::Cursor> resultSet);
     ~RdbResultSetImpl() override {};
     int GetAllColumnNames(std::vector<std::string> &columnNames) override;
     int GetColumnCount(int &count) override;
@@ -43,7 +42,7 @@ public:
     int IsStarted(bool &result) const override;
     int IsAtFirstRow(bool &result) const override;
     int IsAtLastRow(bool &result) override;
-    int GetBlob(int columnIndex, std::vector<uint8_t> &blob) override;
+    int GetBlob(int columnIndex, std::vector<uint8_t> &value) override;
     int GetString(int columnIndex, std::string &value) override;
     int GetInt(int columnIndex, int &value) override;
     int GetLong(int columnIndex, int64_t &value) override;
@@ -54,8 +53,17 @@ public:
 
 private:
     mutable std::shared_mutex mutex_ {};
-    std::shared_ptr<DistributedDB::ResultSet> resultSet_;
-    ColumnType ConvertColumnType(DbColumnType columnType) const;
+    using GenColumnType = DistributedData::Cursor::ColumnType;
+    static inline constexpr ColumnType COLUMNTYPES[GenColumnType::TYPE_BUTT] = {
+        [GenColumnType::INVALID_TYPE] = ColumnType::TYPE_NULL,
+        [GenColumnType::INT64] = ColumnType::TYPE_INTEGER,
+        [GenColumnType::STRING] = ColumnType::TYPE_STRING,
+        [GenColumnType::BLOB] = ColumnType::TYPE_BLOB,
+        [GenColumnType::DOUBLE] = ColumnType::TYPE_FLOAT,
+        [GenColumnType::NULL_VALUE] = ColumnType::TYPE_NULL
+    };
+    std::shared_ptr<DistributedData::Cursor> resultSet_;
+    ColumnType ConvertColumnType(int32_t columnType) const;
 };
 } // namespace OHOS::DistributedRdb
 #endif // DISTRIBUTED_RDB_RDB_RESULT_SET_IMPL_H

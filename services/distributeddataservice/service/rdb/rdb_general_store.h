@@ -42,12 +42,15 @@ public:
     ~RdbGeneralStore();
     int32_t Bind(const Database &database, BindInfo bindInfo) override;
     bool IsBound() override;
-    int32_t Execute(const std::string &table, const std::string &sql) override;
+    int32_t Execute(const std::vector<std::string> &tables, const std::string &sql,
+        const Values &bindArgs = Values()) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
-    std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
-    std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
+    int32_t RemoveDeviceData() override;
+    std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args,
+        const std::string &device = "") override;
+    std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query, const std::string &device = "") override;
     int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
@@ -55,6 +58,8 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type);
+    static inline constexpr const char *SET_DISTRIBUTED_TABLE = "SET_DISTRIBUTED_TABLE";
 
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
@@ -62,12 +67,14 @@ private:
     using SyncProcess = DistributedDB::SyncProcess;
     using DBBriefCB = DistributedDB::SyncStatusCallback;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
-    static constexpr uint32_t ITERATE_TIMES = 10000;
+    static constexpr inline uint32_t ITERATE_TIMES = 10000;
+    static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
     class ObserverProxy : public DistributedDB::StoreObserver {
     public:
         using DBChangedIF = DistributedDB::StoreChangedData;
         using DBChangedData = DistributedDB::ChangedData;
         using DBOrigin = DistributedDB::Origin;
+        using GenOrigin = Watcher::Origin;
         void OnChange(const DistributedDB::StoreChangedData &data) override;
         void OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data) override;
         bool HasWatcher() const
@@ -85,7 +92,6 @@ private:
     ObserverProxy observer_;
     RdbManager manager_;
     RdbDelegate *delegate_ = nullptr;
-    std::shared_ptr<RdbStore> store_;
     std::shared_ptr<RdbCloud> rdbCloud_ {};
     std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
     BindInfo bindInfo_;

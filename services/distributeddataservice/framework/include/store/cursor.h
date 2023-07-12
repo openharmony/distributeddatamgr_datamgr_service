@@ -23,19 +23,43 @@
 namespace OHOS::DistributedData {
 class Cursor {
 public:
+    enum ColumnType : int32_t {
+        INVALID_TYPE = 0,
+        INT64,
+        STRING,
+        BLOB,
+        DOUBLE,
+        NULL_VALUE,
+        TYPE_BUTT
+    };
     virtual ~Cursor() = default;
 
     virtual int32_t GetColumnNames(std::vector<std::string> &names) const = 0;
+
+    // Get the column index by column name. Returns -1 if not exist or not found.
+    virtual int32_t GetColumnIndex(const std::string &columnName) const = 0;
 
     virtual int32_t GetColumnName(int32_t col, std::string &name) const = 0;
 
     virtual int32_t GetColumnType(int32_t col) const = 0;
 
+    virtual int32_t IsColumnNull(int32_t col, bool &isNull) const = 0;
+
     virtual int32_t GetCount() const = 0;
+
+    virtual int32_t GetIndex() const = 0;
 
     virtual int32_t MoveToFirst() = 0;
 
+    virtual int32_t MoveToPre() = 0;
+
     virtual int32_t MoveToNext() = 0;
+
+    virtual int32_t MoveTo(int offset) = 0;
+
+    virtual int32_t MoveToRow(int position) = 0;
+
+    virtual int32_t MoveToLast() = 0;
 
     virtual int32_t GetEntry(VBucket &entry) = 0;
 
@@ -45,9 +69,17 @@ public:
 
     virtual int32_t Get(const std::string &col, Value &value) = 0;
 
-    virtual int32_t Close() = 0;
+    virtual bool IsStart() = 0;
 
     virtual bool IsEnd() = 0;
+
+    virtual bool IsFirst() = 0;
+
+    virtual bool IsLast() = 0;
+
+    virtual bool IsClosed() = 0;
+
+    virtual int32_t Close() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_CURSOR_H

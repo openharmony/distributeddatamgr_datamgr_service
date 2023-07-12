@@ -64,7 +64,7 @@ public:
 
     virtual bool IsBound() = 0;
 
-    virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
+    virtual int32_t Execute(const std::vector<std::string> &tables, const std::string &sql, const Values &bindArgs = Values()) = 0;
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values) = 0;
 
@@ -72,9 +72,12 @@ public:
 
     virtual int32_t Delete(const std::string &table, const std::string &sql, Values &&args) = 0;
 
-    virtual std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) = 0;
+    virtual int32_t RemoveDeviceData() = 0;
 
-    virtual std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) = 0;
+    virtual std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args,
+        const std::string &device = "") = 0;
+
+    virtual std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query, const std::string &device = "") = 0;
 
     virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) = 0;
 
