@@ -19,6 +19,11 @@ namespace OHOS::DistributedData {
 enum GeneralError : int32_t {
     E_OK = 0,
     E_ERROR,
+    E_NETWORK_ERROR,
+    E_CLOUD_DISABLED,
+    E_LOCKED_BY_OTHERS,
+    E_RECODE_LIMIT_EXCEEDED,
+    E_NO_SPACE_FOR_ASSET,
     E_BUSY,
     E_INVALID_ARGS,
     E_NOT_INIT,
@@ -27,7 +32,6 @@ enum GeneralError : int32_t {
     E_ALREADY_CLOSED,
     E_UNOPENED,
     E_RETRY_TIMEOUT,
-    E_ALREADY_LOCKED,
     E_BUTT,
 };
 }

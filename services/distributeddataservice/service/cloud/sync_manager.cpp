@@ -172,14 +172,14 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         CloudInfo cloud;
         cloud.user = info.user_;
         if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-            info.SetError(E_NOT_INIT);
+            info.SetError(E_CLOUD_DISABLED);
             ZLOGE("no cloud info for user:%{public}d", info.user_);
             return;
         }
 
         if (!cloud.enableCloud || (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_) ||
             (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
-            info.SetError(E_UNOPENED);
+            info.SetError(E_CLOUD_DISABLED);
             return;
         }
 
@@ -244,7 +244,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                     return;
                 }
                 int32_t code = details.begin()->second.code;
-                retryer(code == E_ALREADY_LOCKED ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
+                retryer(code == E_LOCKED_BY_OTHERS ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
             }
             : evt.GetAsyncDetail(), evt.GetWait());
         GenAsync async = evt.GetAsyncDetail();

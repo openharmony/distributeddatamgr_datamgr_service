@@ -36,6 +36,7 @@ public:
     using Values = DistributedData::Values;
     using StoreMetaData = DistributedData::StoreMetaData;
     using Database = DistributedData::Database;
+    using GenErr = DistributedData::GeneralError;
     using RdbStore = OHOS::NativeRdb::RdbStore;
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
@@ -55,6 +56,7 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
+    static GenErr ConvertStatus(DistributedDB::DBStatus status);
 
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;

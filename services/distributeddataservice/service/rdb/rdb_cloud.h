@@ -38,7 +38,7 @@ public:
     DBStatus UnLock() override;
     DBStatus HeartBeat() override;
     DBStatus Close() override;
-    DBStatus ConvertStatus(DistributedData::GeneralError error);
+    static DBStatus ConvertStatus(DistributedData::GeneralError error);
 
 private:
     static constexpr int32_t TO_MS = 1000; // s > ms
