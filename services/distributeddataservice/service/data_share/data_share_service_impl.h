@@ -18,6 +18,8 @@
 
 #include <string>
 
+#include "common_event_subscribe_info.h"
+#include "common_event_subscriber.h"
 #include "data_proxy_observer.h"
 #include "data_share_service_stub.h"
 #include "datashare_template.h"
@@ -77,7 +79,14 @@ private:
         Factory();
         ~Factory();
     };
-
+    class TimerReceiver : public EventFwk::CommonEventSubscriber {
+    public:
+        TimerReceiver() = default;
+        TimerReceiver(const EventFwk::CommonEventSubscribeInfo &subscriberInfo);
+        virtual ~TimerReceiver() = default;
+        virtual void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+    };
+    bool SubscribeTimeChanged();
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);
     static Factory factory_;
@@ -92,6 +101,7 @@ private:
     TemplateStrategy templateStrategy_;
     RdbNotifyStrategy rdbNotifyStrategy_;
     BindInfo binderInfo_;
+    std::shared_ptr<TimerReceiver> timerReceiver_ = nullptr;
 };
 } // namespace OHOS::DataShare
 #endif

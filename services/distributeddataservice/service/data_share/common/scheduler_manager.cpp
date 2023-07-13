@@ -178,5 +178,14 @@ void SchedulerManager::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)
 {
     executor_ = executor;
 }
+
+void SchedulerManager::ReExecuteAll()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto &item : timerCache_) {
+        // restart in 200ms
+        executor_->Reset(item.second, std::chrono::milliseconds(200));
+    }
+}
 } // namespace OHOS::DataShare
 

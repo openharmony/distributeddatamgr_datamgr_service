@@ -28,6 +28,7 @@ public:
     static SchedulerManager &GetInstance();
     void Execute(const std::string &uri, const int32_t userId, const std::string &rdbDir, int version);
     void Execute(const Key &key, const int32_t userId, const std::string &rdbDir, int version);
+    void ReExecuteAll();
     void SetTimer(const std::string &dbPath, const int32_t userId, int version, const Key &key, int64_t reminderTime);
     void RemoveTimer(const Key &key);
     void ClearTimer();
