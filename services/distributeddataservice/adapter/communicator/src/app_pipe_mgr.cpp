@@ -63,7 +63,7 @@ Status AppPipeMgr::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, 
 {
     if (dataInfo.length > DataBuffer::MAX_TRANSFER_SIZE || dataInfo.length == 0 || dataInfo.data == nullptr ||
         pipeInfo.pipeId.empty() || deviceId.deviceId.empty()) {
-        ZLOGW("Input is invalid, maxSize:%d, current size:%u", DataBuffer::MAX_TRANSFER_SIZE, dataInfo.length);
+        ZLOGW("Input is invalid, maxSize:%u, current size:%u", DataBuffer::MAX_TRANSFER_SIZE, dataInfo.length);
         return Status::ERROR;
     }
     ZLOGD("pipeInfo:%s ,size:%u, total length:%u", pipeInfo.pipeId.c_str(), dataInfo.length, totalLength);
