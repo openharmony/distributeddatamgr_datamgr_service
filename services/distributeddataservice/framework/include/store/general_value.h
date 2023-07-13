@@ -127,54 +127,5 @@ bool Convert(T &&input, std::variant<Types...> &output)
     return GetItem<T, decltype(output), Types...>(std::move(input), output);
 }
 
-template<typename T, typename... Types>
-std::enable_if_t<Traits::same_in_v<T, Types...>, bool>
-Convert(std::variant<Types...> &&input, T &output)
-{
-    auto val = Traits::get_if<T>(&input);
-    if (val != nullptr) {
-        output = std::move(*val);
-        return true;
-    }
-    return false;
-}
-
-template<typename T, typename... Types>
-std::enable_if_t<Traits::same_in_v<T, Types...>, bool>
-Convert(const std::vector<T> &input, std::vector<std::variant<Types...>> &output)
-{
-    output.reserve(input.size());
-    for (auto &item : input) {
-        output.emplace_back(item);
-    }
-    return true;
-}
-
-template<typename T, typename... Types>
-std::enable_if_t<Traits::same_in_v<T, Types...>, bool>
-Convert(std::vector<T> &&input, std::vector<std::variant<Types...>> &output)
-{
-    output.reserve(input.size());
-    std::variant<Types...> opt;
-    for (auto &item : input) {
-        output.emplace_back(std::move(item));
-    }
-    return true;
-}
-
-template<typename T, typename... Types>
-std::enable_if_t<Traits::same_in_v<T, Types...>, bool>
-Convert(std::vector<std::variant<Types...>> &&input, std::vector<T> &output)
-{
-    output.reserve(input.size());
-    for (auto &item : input) {
-        T *opt = std::get_if<T>(&item);
-        if (opt == nullptr) {
-            return false;
-        }
-        output.emplace_back(*opt);
-    }
-    return true;
-}
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_VALUE_H

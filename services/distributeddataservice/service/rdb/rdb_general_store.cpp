@@ -173,27 +173,13 @@ int32_t RdbGeneralStore::Delete(const std::string &table, const std::string &sql
     return 0;
 }
 
-int32_t RdbGeneralStore::RemoveDeviceData()
-{
-    auto status = delegate_->RemoveDeviceData();
-    if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("RemoveDeviceData failed, status is %{public}d.", status);
-        return GeneralError::E_ERROR;
-    }
-    return GeneralError::E_OK;
-}
-
 std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, const std::string &sql, Values &&args,
     const std::string &device)
 {
     std::shared_ptr<RdbCursor> cursor = nullptr;
     if (!device.empty()) {
         std::shared_ptr<DistributedDB::ResultSet> dbResultSet;
-        std::vector<std::string> bindArgs;
-        if (!Convert(std::move(args), bindArgs)) {
-            ZLOGE("Convert to bindArgs failed");
-            return {};
-        }
+        std::vector<std::string> bindArgs = ValueProxy::Convert(std::move(args));
         DistributedDB::DBStatus status =
             delegate_->RemoteQuery(device, { sql, bindArgs }, REMOTE_QUERY_TIME_OUT, dbResultSet);
         if (status != DistributedDB::DBStatus::OK) {
@@ -238,10 +224,9 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
 
 int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
 {
-    if (mode < 0 || mode > CloudService::CLEAR_CLOUD_BUTT) {
+    if (mode < 0 || mode > CLEAN_MODE_BUTT) {
         return GeneralError::E_INVALID_ARGS;
     }
-    int32_t dbMode;
     DBStatus status;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -252,24 +237,23 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
         return GeneralError::E_ALREADY_CLOSED;
     }
     switch (mode) {
-        case CloudService::CLEAR_CLOUD_INFO:
-            dbMode = CleanMode::CLOUD_INFO;
-            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+        case CLOUD_INFO:
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_INFO));
             break;
-        case CloudService::CLEAR_CLOUD_DATA_AND_INFO:
-            dbMode = CleanMode::CLOUD_DATA;
-            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+        case CLOUD_DATA:
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
             break;
-        default:
+        case NEARBY_DATA:
             if (devices.empty()) {
                 status = delegate_->RemoveDeviceData();
                 break;
             }
-
             for (auto device : devices) {
                 status = delegate_->RemoveDeviceData(device, tableName);
             }
             break;
+        default:
+            return GeneralError::E_ERROR;
     }
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }

@@ -30,6 +30,7 @@
 #include "rdb_watcher.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
+#include "store/general_store.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
@@ -371,11 +372,8 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
         ZLOGE("store is null");
         return RDB_ERROR;
     }
-    Values values;
-    if (!Convert(selectionArgs, values)){
-        ZLOGE("Convert selectionArgs error");
-        return RDB_ERROR;
-    }
+    auto values = ValueProxy::Convert(selectionArgs);
+
     auto cursor = store->Query("", sql, std::move(values), device);
     if(cursor== nullptr){
         ZLOGE("Query failed, cursor is null");
@@ -570,7 +568,7 @@ int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData
                 Anonymous::Change(param.storeName_).c_str());
             return RDB_ERROR;
         }
-        return store->RemoveDeviceData() == GeneralError::E_OK ? RDB_OK : RDB_ERROR;
+        return store->Clean({}, GeneralStore::CleanMode::NEARBY_DATA, "") == GeneralError::E_OK ? RDB_OK : RDB_ERROR;
     }
     return RDB_OK;
 }

@@ -20,6 +20,7 @@
 
 #include "rdb_result_set_impl.h"
 #include "message_parcel.h"
+#include "store/cursor.h"
 #include "securec.h"
 
 using namespace OHOS::DistributedRdb;
@@ -38,7 +39,7 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
     request.RewindRead(0);
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<DistributedDB::ResultSet> dbResultSet;
+    std::shared_ptr<DistributedData::Cursor> dbResultSet;
     std::shared_ptr<RdbResultSetStub> rdbResultSetStub = std::make_shared<RdbResultSetImpl>(dbResultSet);
     rdbResultSetStub->OnRemoteRequest(code, request, reply, option);
     return true;

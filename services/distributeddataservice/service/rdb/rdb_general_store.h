@@ -47,7 +47,6 @@ public:
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
-    int32_t RemoveDeviceData() override;
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args,
         const std::string &device = "") override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query, const std::string &device = "") override;

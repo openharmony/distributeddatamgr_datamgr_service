@@ -48,6 +48,7 @@ public:
         CLOUD_DATA,
         CLOUD_INFO,
         LOCAL_DATA,
+        CLEAN_MODE_BUTT
     };
 
     struct BindInfo {
@@ -71,8 +72,6 @@ public:
     virtual int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) = 0;
 
     virtual int32_t Delete(const std::string &table, const std::string &sql, Values &&args) = 0;
-
-    virtual int32_t RemoveDeviceData() = 0;
 
     virtual std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args,
         const std::string &device = "") = 0;

@@ -217,6 +217,19 @@ public:
         return bucket;
     }
 
+    template<typename T>
+    static std::enable_if_t < CVT_INDEX<T, Proxy><MAX && CVT_INDEX<T, Proxy> != CVT_INDEX<Asset, Proxy>, Values>
+    Convert(const std::vector<T> &values)
+    {
+        Values proxy;
+        proxy.value_.resize(values.size());
+        for (int i = 0; i < values.size(); i++) {
+            proxy.value_[i].value_ = static_cast<std::variant_alternative_t<CVT_INDEX<T, Proxy>, Proxy>>(values[i]);
+        }
+        return proxy;
+    }
+
+
 private:
     ValueProxy() = delete;
     ~ValueProxy() = delete;

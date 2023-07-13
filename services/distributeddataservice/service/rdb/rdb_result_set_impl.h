@@ -18,7 +18,9 @@
 
 #include <shared_mutex>
 #include "rdb_result_set_stub.h"
+#include "rdb_errno.h"
 #include "store/cursor.h"
+#include "value_proxy.h"
 
 namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public RdbResultSetStub {
@@ -52,6 +54,24 @@ public:
     int Close() override;
 
 private:
+    template<typename T>
+    int Get(int columnIndex, T &value) const
+    {
+        DistributedData::Value var;
+        auto status = resultSet_->MoveToRow(index_);
+        if (status != DistributedData::GeneralError::E_OK) {
+            return NativeRdb::E_ERROR;
+        }
+        status = resultSet_->Get(columnIndex, var);
+        if (status != DistributedData::GeneralError::E_OK || var.index() != DistributedData::TYPE_INDEX<T>) {
+            return NativeRdb::E_ERROR;
+        }
+        auto proxy = DistributedRdb::ValueProxy::Convert(std::move(var));
+        value = proxy.operator T();
+        return NativeRdb::E_OK;
+    };
+
+    bool isValid(int64_t position) const;
     mutable std::shared_mutex mutex_ {};
     using GenColumnType = DistributedData::Cursor::ColumnType;
     static inline constexpr ColumnType COLUMNTYPES[GenColumnType::TYPE_BUTT] = {
@@ -63,6 +83,7 @@ private:
         [GenColumnType::NULL_VALUE] = ColumnType::TYPE_NULL
     };
     std::shared_ptr<DistributedData::Cursor> resultSet_;
+    int32_t index_ = -1;
     ColumnType ConvertColumnType(int32_t columnType) const;
 };
 } // namespace OHOS::DistributedRdb

@@ -70,6 +70,11 @@ int32_t RdbCursor::MoveToNext()
     return resultSet_->MoveToNext() ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
+int32_t RdbCursor::MoveToRow(int position)
+{
+    return resultSet_->MoveToPosition(position) ? GeneralError::E_OK : GeneralError::E_ERROR;
+}
+
 int32_t RdbCursor::GetEntry(VBucket &entry)
 {
     return GetRow(entry);
@@ -116,11 +121,11 @@ int32_t RdbCursor::Get(int32_t col, DistributedData::Value &value)
             break;
         }
         case ResultSet::ColumnType::NULL_VALUE: {
-            value = nullptr;
+            value = std::monostate();
             return GeneralError::E_OK;
         }
         default: {
-            value = nullptr;
+            value = std::monostate();
             return GeneralError::E_ERROR;
         }
     }
@@ -143,63 +148,14 @@ int32_t RdbCursor::Close()
     return GeneralError::E_OK;
 }
 
-int32_t RdbCursor::GetColumnIndex(const std::string &columnName) const
-{
-    int index = -1;
-    if (resultSet_->GetColumnIndex(columnName, index) != DBStatus::OK) {
-        return -1;
-    }
-    return index;
-}
-
-int32_t RdbCursor::GetIndex() const
-{
-    return resultSet_->GetPosition();
-}
-
-int32_t RdbCursor::MoveToPre()
-{
-    return resultSet_->MoveToPrevious() ? GeneralError::E_OK : GeneralError::E_ERROR;
-}
-
-int32_t RdbCursor::MoveTo(int offset)
-{
-    return resultSet_->Move(offset) ? GeneralError::E_OK : GeneralError::E_ERROR;
-}
-
-int32_t RdbCursor::MoveToRow(int position)
-{
-    return resultSet_->MoveToPosition(position) ? GeneralError::E_OK : GeneralError::E_ERROR;
-}
-
-int32_t RdbCursor::MoveToLast()
-{
-    return resultSet_->MoveToLast() ? GeneralError::E_OK : GeneralError::E_ERROR;
-}
-
-bool RdbCursor::IsStart()
-{
-    return resultSet_->IsBeforeFirst();
-}
-
 bool RdbCursor::IsEnd()
 {
     return resultSet_->IsAfterLast();
 }
 
-bool RdbCursor::IsFirst()
+int32_t RdbCursor::MoveToPre()
 {
-    return resultSet_->IsFirst();
-}
-
-bool RdbCursor::IsLast()
-{
-    return resultSet_->IsLast();
-}
-
-bool RdbCursor::IsClosed()
-{
-    return resultSet_->IsClosed();
+    return resultSet_->MoveToPrevious() ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 RdbCursor::ColumnType RdbCursor::Convert(ResultSet::ColumnType columnType)
@@ -220,10 +176,5 @@ RdbCursor::ColumnType RdbCursor::Convert(ResultSet::ColumnType columnType)
         default:
             return ColumnType::INVALID_TYPE;
     }
-}
-
-int32_t RdbCursor::IsColumnNull(int32_t col, bool &isNull) const
-{
-    return resultSet_->IsColumnNull(col, isNull) == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 } // namespace OHOS::DistributedRdb
