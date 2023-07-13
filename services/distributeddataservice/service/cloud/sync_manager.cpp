@@ -192,6 +192,11 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             return;
         }
 
+        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+            retryer(RETRY_INTERVAL, E_NETWORK_ERROR);
+            return;
+        }
+
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
         for (auto &schema : schemas) {
             if (!cloud.IsOn(schema.bundleName)) {
