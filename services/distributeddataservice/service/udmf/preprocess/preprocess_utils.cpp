@@ -150,43 +150,30 @@ bool PreProcessUtils::IsFileType(UDType udType)
         || udType == UDType::FOLDER);
 }
 
-int32_t PreProcessUtils::SetDargRemoteUri(uint32_t tokenId, UnifiedData &data)
+int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
 {
     int32_t userId = GetHapUidByToken(tokenId);
     std::string bundleName = data.GetRuntime()->createPackage;
     for (const auto &record : data.GetRecords()) {
         if (record != nullptr && IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
-            if (!(file->GetUri()).empty() && IsHapOwnPath(file->GetUri(), bundleName)) {
-                struct HmdfsUriInfo dfsUriInfo;
-                int ret = RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
-                if (ret != 0 || dfsUriInfo.uriStr.empty()) {
-                    ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d.", ret, userId);
-                    return E_FS_ERROR;
-                }
-                file->SetRemoteUri(dfsUriInfo.uriStr);
+            if (file->GetUri().empty()) {
+                continue;
             }
+            Uri uri(file->GetUri());
+            if (uri.GetAuthority().empty()) {
+                continue;
+            }
+            struct HmdfsUriInfo dfsUriInfo;
+            int ret = RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
+            if (ret != 0 || dfsUriInfo.uriStr.empty()) {
+                ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d.", ret, userId);
+                return E_FS_ERROR;
+            }
+            file->SetRemoteUri(dfsUriInfo.uriStr);
         }
     }
     return E_OK;
-}
-
-bool PreProcessUtils::IsHapOwnPath(const std::string &path, const std::string &bundleName)
-{
-    Uri uri(path);
-    return (uri.GetAuthority() == bundleName);
-}
-
-void PreProcessUtils::ConvertUri(std::vector<std::shared_ptr<UnifiedRecord>> records)
-{
-    std::string uri;
-    for (auto record : records) {
-        if (record != nullptr && IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
-            uri = file->GetRemoteUri();
-            file->SetUri(uri); // cross dev, need dis path.
-        }
-    }
 }
 } // namespace UDMF
 } // namespace OHOS

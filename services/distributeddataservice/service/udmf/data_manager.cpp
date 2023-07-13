@@ -64,7 +64,7 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
 
     std::string intention = unifiedData.GetRuntime()->key.intention;
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        int32_t ret = PreProcessUtils::SetDargRemoteUri(option.tokenId, unifiedData);
+        int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
             return ret;
         }
@@ -122,7 +122,9 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     }
 
     if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        if (DragUriProcessing(query, unifiedData) != E_OK) {
+        int32_t ret = ProcessingUri(query, unifiedData);
+        if (ret != E_OK) {
+            ZLOGE("DragUriProcessing failed. ret=%{public}d", ret);
             return E_NO_PERMISSION;
         }
     }
@@ -135,11 +137,19 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     return E_OK;
 }
 
-int32_t DataManager::DragUriProcessing(const QueryOption &query, UnifiedData &unifiedData)
+int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifiedData)
 {
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+    auto records = unifiedData.GetRecords();
     if (localDeviceId != unifiedData.GetRuntime()->deviceId) {
-        PreProcessUtils::ConvertUri(unifiedData.GetRecords());
+        std::string uri;
+        for (auto record : records) {
+            if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+                auto file = static_cast<File *>(record.get());
+                uri = file->GetRemoteUri();
+                file->SetUri(uri); // cross dev, need dis path.
+            }
+        }
     }
 
     std::string bundleName;
@@ -147,7 +157,6 @@ int32_t DataManager::DragUriProcessing(const QueryOption &query, UnifiedData &un
         return E_ERROR;
     }
     if (unifiedData.GetRuntime()->createPackage != bundleName) {
-        auto records = unifiedData.GetRecords();
         for (auto record : records) {
             if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
                 auto file = static_cast<File *>(record.get());
