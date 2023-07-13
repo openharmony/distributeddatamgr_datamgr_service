@@ -37,8 +37,7 @@ public:
     static void SetRemoteData(UnifiedData &data);
     static bool IsFileType(UDType udType);
     static int32_t SetDargRemoteUri(uint32_t tokenId, UnifiedData &data);
-    static std::string ConvertUri(std::shared_ptr<UnifiedRecord> record, const std::string &localDevId,
-                                  const std::string &remoteDevId);
+    static void ConvertUri(std::vector<std::shared_ptr<UnifiedRecord>> records);
     static bool IsHapOwnPath(const std::string &uri, const std::string &bundleName);
 };
 } // namespace UDMF

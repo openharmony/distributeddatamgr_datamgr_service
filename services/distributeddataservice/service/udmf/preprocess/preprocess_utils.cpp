@@ -127,7 +127,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
         return;
     }
     std::shared_ptr<Runtime> runtime = data.GetRuntime();
-    if (runtime->deviceId == PreProcessUtils::GetLocalDeviceId()) {
+    if (runtime->deviceId == GetLocalDeviceId()) {
         ZLOGD("not remote data.");
         return;
     }
@@ -155,7 +155,7 @@ int32_t PreProcessUtils::SetDargRemoteUri(uint32_t tokenId, UnifiedData &data)
     int32_t userId = GetHapUidByToken(tokenId);
     std::string bundleName = data.GetRuntime()->createPackage;
     for (const auto &record : data.GetRecords()) {
-        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+        if (record != nullptr && IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             if (!(file->GetUri()).empty() && IsHapOwnPath(file->GetUri(), bundleName)) {
                 struct HmdfsUriInfo dfsUriInfo;
@@ -177,19 +177,16 @@ bool PreProcessUtils::IsHapOwnPath(const std::string &path, const std::string &b
     return (uri.GetAuthority() == bundleName);
 }
 
-std::string PreProcessUtils::ConvertUri(std::shared_ptr<UnifiedRecord> record, const std::string &localDevId,
-                                        const std::string &remoteDevId)
+void PreProcessUtils::ConvertUri(std::vector<std::shared_ptr<UnifiedRecord>> records)
 {
     std::string uri;
-    if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-        auto file = static_cast<File *>(record.get());
-        uri = file->GetUri();
-        if (localDevId != remoteDevId) {
+    for (auto record : records) {
+        if (record != nullptr && IsFileType(record->GetType())) {
+            auto file = static_cast<File *>(record.get());
             uri = file->GetRemoteUri();
             file->SetUri(uri); // cross dev, need dis path.
         }
     }
-    return uri;
 }
 } // namespace UDMF
 } // namespace OHOS

@@ -46,6 +46,7 @@ public:
 private:
     DataManager();
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
+    int32_t DragUriProcessing(const QueryOption &query, UnifiedData &unifiedData);
     StoreCache storeCache_;
     std::map<std::string, std::string> authorizationMap_;
 };

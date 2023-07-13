@@ -120,27 +120,45 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info)) {
         return E_NO_PERMISSION;
     }
-    std::string bundleName;
-    if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
-        return E_ERROR;
-    }
-    if (runtime->createPackage != bundleName) {
-        std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-        auto records = unifiedData.GetRecords();
-        for (auto record : records) {
-            if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-                std::string uri = PreProcessUtils::ConvertUri(record, localDeviceId, runtime->deviceId);
-                if (!uri.empty() && (UriPermissionManager::GetInstance().GrantUriPermission(uri, bundleName) != E_OK)) {
-                    return E_NO_PERMISSION;
-                }
-            }
+
+    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        if (DragUriProcessing(query, unifiedData) != E_OK) {
+            return E_NO_PERMISSION;
         }
     }
+
     if (LifeCycleManager::GetInstance().DeleteOnGet(key) != E_OK) {
         ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
     PreProcessUtils::SetRemoteData(unifiedData);
+    return E_OK;
+}
+
+int32_t DataManager::DragUriProcessing(const QueryOption &query, UnifiedData &unifiedData)
+{
+    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+    if (localDeviceId != unifiedData.GetRuntime()->deviceId) {
+        PreProcessUtils::ConvertUri(unifiedData.GetRecords());
+    }
+
+    std::string bundleName;
+    if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
+        return E_ERROR;
+    }
+    if (unifiedData.GetRuntime()->createPackage != bundleName) {
+        auto records = unifiedData.GetRecords();
+        for (auto record : records) {
+            if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+                auto file = static_cast<File *>(record.get());
+                std::string uri = file->GetUri();
+                if (!uri.empty()
+                    && (UriPermissionManager::GetInstance().GrantUriPermission(uri, bundleName) != E_OK)) {
+                    return E_NO_PERMISSION;
+                }
+            }
+        }
+    }
     return E_OK;
 }
 
