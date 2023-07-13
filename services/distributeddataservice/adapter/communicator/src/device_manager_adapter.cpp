@@ -153,6 +153,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
+    syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
@@ -176,7 +177,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         [this, dvInfo]() {
             TimeOut(dvInfo.uuid);
         });
-    syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     for (const auto &item : observers) { // set compatible identify, sync service meta
         if (item == nullptr) {
             continue;
