@@ -63,7 +63,6 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
         res = DataManager::GetInstance().SaveData(option, unifiedData, key);
     }
     msg.result = ERROR_MAP.find(res)->second;
-    std::vector<UDType> types = unifiedData.GetUDTypes();
     msg.dataType = unifiedData.GetTypes();
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
@@ -87,7 +86,6 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
         res = DataManager::GetInstance().RetrieveData(query, unifiedData);
     }
     msg.result = ERROR_MAP.find(res)->second;
-    std::vector<UDType> types = unifiedData.GetUDTypes();
     msg.dataType = unifiedData.GetTypes();
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);

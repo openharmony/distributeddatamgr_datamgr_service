@@ -45,17 +45,17 @@ public:
     size_t GetBufUsed() const;
 
     // header length
-    static const int HEADER_LEN = sizeof(HeaderInfo);
+    static const uint32_t HEADER_LEN = sizeof(HeaderInfo);
 
 // max size for transferring data using pipe is 5M
-    static const size_t MAX_DATA_LEN;
+    static constexpr size_t MAX_DATA_LEN = 1024 * 1024 * 5;
 
 // 5M; max size for transfer using pipe (12 is header length, rest is data wait for transferring)
-    static const int MAX_TRANSFER_SIZE;
+    static constexpr uint32_t MAX_TRANSFER_SIZE = 1024 * 1024 * 5 - HEADER_LEN;
 
-    static const uint32_t VERSION;
+    static constexpr uint32_t VERSION = 0;
 
-    static const uint32_t TYPE;
+    static constexpr uint32_t TYPE = 0;
 
 private:
     char *buf_;
