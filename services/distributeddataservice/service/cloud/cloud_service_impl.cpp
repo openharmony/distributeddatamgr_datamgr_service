@@ -36,7 +36,7 @@ using namespace std::chrono;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
-const std::string NET_UUID = "netUuid";
+constexpr std::string_view NET_UUID = "netUuid";
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::Work CloudServiceImpl::HANDLERS[WORK_BUTT] = {
     &CloudServiceImpl::DoSubscribe,
@@ -252,20 +252,7 @@ int32_t CloudServiceImpl::Online(const std::string &device)
         return SUCCESS;
     }
     auto it = users.begin();
-    while (it != users.end()) {
-        CloudInfo cloudInfo;
-        cloudInfo.user = *it;
-        if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS && GetCloudInfoFromServer(cloudInfo) != SUCCESS) {
-            it++;
-            continue;
-        }
-        if (!cloudInfo.enableCloud) {
-            it++;
-            continue;
-        }
-        syncManager_.DoCloudSync({ *it });
-        it++;
-    }
+    syncManager_.DoCloudSync({ *it });
     return SUCCESS;
 }
 
@@ -281,20 +268,7 @@ int32_t CloudServiceImpl::Offline(const std::string &device)
         return SUCCESS;
     }
     auto it = users.begin();
-    while (it != users.end()) {
-        CloudInfo cloudInfo;
-        cloudInfo.user = *it;
-        if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS && GetCloudInfoFromServer(cloudInfo) != SUCCESS) {
-            it++;
-            continue;
-        }
-        if (!cloudInfo.enableCloud) {
-            it++;
-            continue;
-        }
-        syncManager_.StopCloudSync(*it);
-        it++;
-    }
+    syncManager_.StopCloudSync(*it);
     return SUCCESS;
 }
 

@@ -183,17 +183,17 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             return;
         }
 
+        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+            info.SetError(E_NETWORK_ERROR);
+            return;
+        }
+
         std::vector<SchemaMeta> schemas;
         auto key = cloud.GetSchemaPrefix(info.bundleName_);
         auto retryer = GetRetryer(times, info);
         if (!MetaDataManager::GetInstance().LoadMeta(key, schemas, true)) {
             UpdateSchema(info);
             retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
-            return;
-        }
-
-        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
-            retryer(RETRY_INTERVAL, E_NETWORK_ERROR);
             return;
         }
 

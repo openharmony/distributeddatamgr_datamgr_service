@@ -98,7 +98,7 @@ private:
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
 {
     ZLOGI("OnNetworkAvailable");
-    dmAdapter_.Online(DeviceManagerAdapter::cloudDmInfo);
+    dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     dmAdapter_.isNetAvailable_ = true;
     return DistributedKv::SUCCESS;
 }
@@ -128,7 +128,7 @@ int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
 {
     ZLOGI("OnNetLost");
     dmAdapter_.isNetAvailable_ = false;
-    dmAdapter_.Offline(DeviceManagerAdapter::cloudDmInfo);
+    dmAdapter_.Offline(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
 
