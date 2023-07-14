@@ -192,17 +192,18 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
 {
     auto result = rdbCache_.ComputeIfPresent(key, [&context, this](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end(); it++) {
-            if (it->callerTokenId == context->callerTokenId) {
-                it->enabled = true;
+            if (it->callerTokenId != context->callerTokenId) {
+                continue;
+            }
+            it->enabled = true;
+            if (it->isNotifyOnEnabled) {
                 std::vector<ObserverNode> node;
-                if (it->isNotifyOnEnabled) {
-                    node.emplace_back(it->observer, context->callerTokenId);
-                    LoadConfigDataInfoStrategy loadDataInfo;
-                    if (loadDataInfo(context)) {
-                        Notify(key, context->currentUserId, node, context->calledSourceDir, context->version);
-                    }
-                    it->isNotifyOnEnabled = false;
+                node.emplace_back(it->observer, context->callerTokenId);
+                LoadConfigDataInfoStrategy loadDataInfo;
+                if (loadDataInfo(context)) {
+                    Notify(key, context->currentUserId, node, context->calledSourceDir, context->version);
                 }
+                it->isNotifyOnEnabled = false;
             }
         }
         return true;
