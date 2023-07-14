@@ -36,6 +36,7 @@ using namespace std::chrono;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
+constexpr std::string_view NET_UUID = "netUuid";
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::Work CloudServiceImpl::HANDLERS[WORK_BUTT] = {
     &CloudServiceImpl::DoSubscribe,
@@ -237,6 +238,38 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
     }
     syncManager_.StopCloudSync(userId);
     return E_OK;
+}
+
+int32_t CloudServiceImpl::Online(const std::string &device)
+{
+    if (device != NET_UUID) {
+        ZLOGI("Not network online");
+        return SUCCESS;
+    }
+    std::vector<int32_t> users;
+    Account::GetInstance()->QueryUsers(users);
+    if (users.empty()) {
+        return SUCCESS;
+    }
+    auto it = users.begin();
+    syncManager_.DoCloudSync({ *it });
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::Offline(const std::string &device)
+{
+    if (device != NET_UUID) {
+        ZLOGI("Not network offline");
+        return SUCCESS;
+    }
+    std::vector<int32_t> users;
+    Account::GetInstance()->QueryUsers(users);
+    if (users.empty()) {
+        return SUCCESS;
+    }
+    auto it = users.begin();
+    syncManager_.StopCloudSync(*it);
+    return SUCCESS;
 }
 
 int32_t CloudServiceImpl::GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo)

@@ -54,12 +54,15 @@ public:
     static std::vector<std::string> ToUUID(std::vector<DeviceInfo> devices);
     std::string ToNetworkID(const std::string &id);
     void NotifyReadyEvent(const std::string &uuid);
+    bool IsNetworkAvailable();
     friend class DataMgrDmStateCall;
+    friend class NetConnCallbackObserver;
 
 private:
     DeviceManagerAdapter();
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
+    bool RegOnNetworkChange();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void UpdateDeviceInfo();
@@ -73,12 +76,14 @@ private:
 
     std::mutex devInfoMutex_ {};
     DeviceInfo localInfo_ {};
+    const DmDeviceInfo cloudDmInfo;
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;
     static constexpr int32_t SYNC_TIMEOUT = 10 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
     std::shared_ptr<ExecutorPool> executors_;
+    bool isNetAvailable_ = false;
 };
 }  // namespace DistributedData
 }  // namespace OHOS

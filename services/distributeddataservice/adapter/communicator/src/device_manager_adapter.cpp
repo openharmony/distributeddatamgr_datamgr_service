@@ -15,13 +15,19 @@
 
 #define LOG_TAG "DeviceManagerAdapter"
 #include "device_manager_adapter.h"
+
 #include <thread>
-#include "log_print.h"
+
 #include "kvstore_utils.h"
+#include "log_print.h"
+#include "net_conn_callback_stub.h"
+#include "net_conn_client.h"
+#include "net_handle.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedHardware;
 using namespace OHOS::AppDistributedKv;
+using namespace OHOS::NetManagerStandard;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
@@ -74,7 +80,66 @@ void DataMgrDmInitCall::OnRemoteDied()
     dmAdapter_.Init(executors_);
 }
 
+class NetConnCallbackObserver : public NetConnCallbackStub {
+public:
+    explicit NetConnCallbackObserver(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
+    ~NetConnCallbackObserver() override = default;
+    int32_t NetAvailable(sptr<NetHandle> &netHandle) override;
+    int32_t NetCapabilitiesChange(sptr<NetHandle> &netHandle, const sptr<NetAllCapabilities> &netAllCap) override;
+    int32_t NetConnectionPropertiesChange(sptr<NetHandle> &netHandle, const sptr<NetLinkInfo> &info) override;
+    int32_t NetLost(sptr<NetHandle> &netHandle) override;
+    int32_t NetUnavailable() override;
+    int32_t NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked) override;
+
+private:
+    DeviceManagerAdapter &dmAdapter_;
+};
+
+int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
+{
+    ZLOGI("OnNetworkAvailable");
+    dmAdapter_.Online(dmAdapter_.cloudDmInfo);
+    dmAdapter_.isNetAvailable_ = true;
+    return DistributedKv::SUCCESS;
+}
+
+int32_t NetConnCallbackObserver::NetUnavailable()
+{
+    ZLOGI("OnNetworkUnavailable");
+    dmAdapter_.isNetAvailable_ = false;
+    return DistributedKv::SUCCESS;
+}
+
+int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandle,
+    const sptr<NetAllCapabilities> &netAllCap)
+{
+    ZLOGI("OnNetCapabilitiesChange");
+    return DistributedKv::SUCCESS;
+}
+
+int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &netHandle,
+    const sptr<NetLinkInfo> &info)
+{
+    ZLOGI("OnNetConnectionPropertiesChange");
+    return DistributedKv::SUCCESS;
+}
+
+int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
+{
+    ZLOGI("OnNetLost");
+    dmAdapter_.isNetAvailable_ = false;
+    dmAdapter_.Offline(dmAdapter_.cloudDmInfo);
+    return DistributedKv::SUCCESS;
+}
+
+int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked)
+{
+    ZLOGI("OnNetBlockStatusChange");
+    return DistributedKv::SUCCESS;
+}
+
 DeviceManagerAdapter::DeviceManagerAdapter()
+    : cloudDmInfo({ "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 })
 {
     ZLOGI("construct");
 }
@@ -107,11 +172,12 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
         auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this, executors_);
         auto resultInit = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
         auto resultState = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
-        if (resultInit == DM_OK && resultState == DM_OK) {
+        auto resultNet = RegOnNetworkChange();
+        if (resultInit == DM_OK && resultState == DM_OK && resultNet) {
             return;
         }
         constexpr int32_t INTERVAL = 500;
-        executors_->Schedule(RegDevCallback(), std::chrono::milliseconds(INTERVAL));
+        executors_->Schedule(std::chrono::milliseconds(INTERVAL), RegDevCallback());
     };
 }
 
@@ -404,6 +470,9 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
     if (networkId.empty()) {
         return "";
     }
+    if (networkId == DeviceManagerAdapter::cloudDmInfo.networkId) {
+        return "netUuid";
+    }
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(networkId, dvInfo)) {
         return dvInfo.uuid;
@@ -421,6 +490,9 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
 {
     if (networkId.empty()) {
         return "";
+    }
+    if (networkId == DeviceManagerAdapter::cloudDmInfo.networkId) {
+        return "netUdid";
     }
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(networkId, dvInfo)) {
@@ -451,7 +523,7 @@ std::vector<std::string> DeviceManagerAdapter::ToUUID(const std::vector<std::str
     for (auto &device : devices) {
         auto uuid = DeviceManagerAdapter::GetInstance().ToUUID(device);
         if (uuid.empty()) {
-            continue ;
+            continue;
         }
         uuids.push_back(std::move(uuid));
     }
@@ -463,7 +535,7 @@ std::vector<std::string> DeviceManagerAdapter::ToUUID(std::vector<DeviceInfo> de
     std::vector<std::string> uuids;
     for (auto &device : devices) {
         if (device.uuid.empty()) {
-            continue ;
+            continue;
         }
         uuids.push_back(std::move(device.uuid));
     }
@@ -487,5 +559,25 @@ std::string DeviceManagerAdapter::CalcClientUuid(const std::string &appId, const
         return "";
     }
     return encryptedUuid;
+}
+
+bool DeviceManagerAdapter::RegOnNetworkChange()
+{
+    sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(*this);
+    if (observer == nullptr) {
+        ZLOGE("new operator error.observer is nullptr");
+        return false;
+    }
+    int nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
+    if (nRet != NETMANAGER_SUCCESS) {
+        ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
+        return false;
+    }
+    return true;
+}
+
+bool DeviceManagerAdapter::IsNetworkAvailable()
+{
+    return isNetAvailable_;
 }
 } // namespace OHOS::DistributedData

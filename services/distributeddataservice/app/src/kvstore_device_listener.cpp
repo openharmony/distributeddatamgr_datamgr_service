@@ -26,6 +26,8 @@ void KvStoreDeviceListener::OnDeviceChanged(
     if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE) {
         kvStoreDataService_.SetCompatibleIdentify(info);
         kvStoreDataService_.OnDeviceOnline(info);
+    } else if (type == AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE) {
+        kvStoreDataService_.OnDeviceOffline(info);
     } else if (type == AppDistributedKv::DeviceChangeType::DEVICE_ONREADY) {
         kvStoreDataService_.OnDeviceOnReady(info);
     }
