@@ -70,6 +70,7 @@
                 "kv_store",
                 "ipc",
                 "napi",
+                "netmanager_base",
                 "os_account",
                 "relational_store",
                 "safwk",
