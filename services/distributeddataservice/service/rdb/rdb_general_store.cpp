@@ -288,7 +288,7 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
         for (auto &[key, tables] : result) {
             auto &value = details[key];
             value.progress = FINISHED;
-            value.progress = GeneralError::E_OK;
+            value.code = GeneralError::E_OK;
             for (auto &table : tables) {
                 if (table.status != DBStatus::OK) {
                     value.code = GeneralError::E_ERROR;
@@ -310,7 +310,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async)
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
             detail.progress = process.process;
-            detail.code = process.errCode == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+            detail.code = ConvertStatus(process.errCode);
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];
                 table.upload.total = value.upLoadInfo.total;
@@ -365,6 +365,26 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         }
     }
     return GeneralError::E_OK;
+}
+
+RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus status)
+{
+    switch (status) {
+        case DBStatus::OK:
+            return GenErr::E_OK;
+        case DBStatus::CLOUD_NETWORK_ERROR:
+            return GenErr::E_NETWORK_ERROR;
+        case DBStatus::CLOUD_LOCK_ERROR:
+            return GenErr::E_LOCKED_BY_OTHERS;
+        case DBStatus::CLOUD_FULL_RECORDS:
+            return GenErr::E_RECODE_LIMIT_EXCEEDED;
+        case DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT:
+            return GenErr::E_NO_SPACE_FOR_ASSET;
+        default:
+            ZLOGI("status:0x%{public}x", status);
+            break;
+    }
+    return GenErr::E_ERROR;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

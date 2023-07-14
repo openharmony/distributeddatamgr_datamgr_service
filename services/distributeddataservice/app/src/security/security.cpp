@@ -161,8 +161,8 @@ Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
     auto it = devicesUdid_.Find(uuid);
     if (!it.first) {
         executors_->Execute([this, uuid]() {
-            auto it = devicesUdid_.Find(uuid);
-            if (it.first) {
+            auto iter = devicesUdid_.Find(uuid);
+            if (iter.first) {
                 return;
             }
             auto udid = DistributedData::DeviceManagerAdapter::GetInstance().ToUDID(uuid);

@@ -23,12 +23,9 @@
 #include "log_print.h"
 #include "preprocess_utils.h"
 #include "uri_permission_manager.h"
-#include "remote_file_share.h"
 
 namespace OHOS {
 namespace UDMF {
-using namespace OHOS::AppFileService;
-
 const std::string MSDP_PROCESS_NAME = "msdp_sa";
 const std::string DATA_PREFIX = "udmf://";
 DataManager::DataManager()
@@ -45,12 +42,6 @@ DataManager &DataManager::GetInstance()
 {
     static DataManager instance;
     return instance;
-}
-
-bool DataManager::IsFileType(UDType udType)
-{
-    return (udType == UDType::FILE || udType == UDType::IMAGE || udType == UDType::VIDEO || udType == UDType::AUDIO
-        || udType == UDType::FOLDER);
 }
 
 int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key)
@@ -70,24 +61,19 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
         ZLOGE("Imputation failed");
         return E_UNKNOWN;
     }
-    int32_t userId = PreProcessUtils::GetHapUidByToken(option.tokenId);
-    for (const auto &record : unifiedData.GetRecords()) {
-        auto type = record->GetType();
-        if (IsFileType(type)) {
-            auto file = static_cast<File *>(record.get());
-            struct ModuleRemoteFileShare::HmdfsUriInfo dfsUriInfo;
-            int ret = ModuleRemoteFileShare::RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
-            if (ret != 0 || dfsUriInfo.uriStr.empty()) {
-                ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d.", ret, userId);
-                return E_FS_ERROR;
-            }
-            file->SetRemoteUri(dfsUriInfo.uriStr);
-        }
 
+    std::string intention = unifiedData.GetRuntime()->key.intention;
+    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
+        if (ret != E_OK) {
+            return ret;
+        }
+    }
+
+    for (const auto &record : unifiedData.GetRecords()) {
         record->SetUid(PreProcessUtils::IdGenerator());
     }
 
-    std::string intention = unifiedData.GetRuntime()->key.intention;
     auto store = storeCache_.GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
@@ -134,20 +120,15 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info)) {
         return E_NO_PERMISSION;
     }
-    std::string bundleName;
-    if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
-        return E_ERROR;
-    }
-    if (runtime->createPackage != bundleName) {
-        std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-        auto records = unifiedData.GetRecords();
-        for (auto record : records) {
-            std::string uri = ConvertUri(record, localDeviceId, runtime->deviceId);
-            if (!uri.empty() && (UriPermissionManager::GetInstance().GrantUriPermission(uri, bundleName) != E_OK)) {
-                return E_NO_PERMISSION;
-            }
+
+    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        int32_t ret = ProcessingUri(query, unifiedData);
+        if (ret != E_OK) {
+            ZLOGE("DragUriProcessing failed. ret=%{public}d", ret);
+            return E_NO_PERMISSION;
         }
     }
+
     if (LifeCycleManager::GetInstance().DeleteOnGet(key) != E_OK) {
         ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -155,19 +136,39 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     PreProcessUtils::SetRemoteData(unifiedData);
     return E_OK;
 }
-std::string DataManager::ConvertUri(std::shared_ptr<UnifiedRecord> record, const std::string &localDevId,
-                                    const std::string &remoteDevId)
+
+int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifiedData)
 {
-    std::string uri;
-    if (record != nullptr && IsFileType(record->GetType())) {
-        auto file = static_cast<File *>(record.get());
-        uri = file->GetUri();
-        if (localDevId != remoteDevId) {
-            uri = file->GetRemoteUri();
-            file->SetUri(uri); // cross dev, need dis path.
+    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+    auto records = unifiedData.GetRecords();
+    if (localDeviceId != unifiedData.GetRuntime()->deviceId) {
+        std::string uri;
+        for (auto record : records) {
+            if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+                auto file = static_cast<File *>(record.get());
+                uri = file->GetRemoteUri();
+                file->SetUri(uri); // cross dev, need dis path.
+            }
         }
     }
-    return uri;
+
+    std::string bundleName;
+    if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
+        return E_ERROR;
+    }
+    if (unifiedData.GetRuntime()->createPackage != bundleName) {
+        for (auto record : records) {
+            if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+                auto file = static_cast<File *>(record.get());
+                std::string uri = file->GetUri();
+                if (!uri.empty()
+                    && (UriPermissionManager::GetInstance().GrantUriPermission(uri, bundleName) != E_OK)) {
+                    return E_NO_PERMISSION;
+                }
+            }
+        }
+    }
+    return E_OK;
 }
 
 int32_t DataManager::RetrieveBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)

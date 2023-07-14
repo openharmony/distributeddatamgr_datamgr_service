@@ -118,19 +118,16 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
     switch (error) {
         case GeneralError::E_OK:
             return DBStatus::OK;
-        case GeneralError::E_BUSY:
-            return DBStatus::BUSY;
-        case GeneralError::E_INVALID_ARGS:
-            return DBStatus::INVALID_ARGS;
-        case GeneralError::E_NOT_SUPPORT:
-            return DBStatus::NOT_SUPPORT;
-        case GeneralError::E_ERROR: // fallthrough
-        case GeneralError::E_NOT_INIT:
-        case GeneralError::E_ALREADY_CONSUMED:
-        case GeneralError::E_ALREADY_CLOSED:
-            return DBStatus::CLOUD_ERROR;
+        case GeneralError::E_NETWORK_ERROR:
+            return DBStatus::CLOUD_NETWORK_ERROR;
+        case GeneralError::E_LOCKED_BY_OTHERS:
+            return DBStatus::CLOUD_LOCK_ERROR;
+        case GeneralError::E_RECODE_LIMIT_EXCEEDED:
+            return DBStatus::CLOUD_FULL_RECORDS;
+        case GeneralError::E_NO_SPACE_FOR_ASSET:
+            return DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT;
         default:
-            ZLOGE("unknown error:0x%{public}x", error);
+            ZLOGI("error:0x%{public}x", error);
             break;
     }
     return DBStatus::CLOUD_ERROR;

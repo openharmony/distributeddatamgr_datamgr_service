@@ -35,6 +35,10 @@ public:
     static bool GetNativeProcessNameByToken(int tokenId, std::string &processName);
     static std::string GetLocalDeviceId();
     static void SetRemoteData(UnifiedData &data);
+    static bool IsFileType(UDType udType);
+    static int32_t SetRemoteUri(uint32_t tokenId, UnifiedData &data);
+    static void ConvertUri(std::vector<std::shared_ptr<UnifiedRecord>> &records);
+    static bool IsHapOwnPath(const std::string &uri, const std::string &bundleName);
 };
 } // namespace UDMF
 } // namespace OHOS
