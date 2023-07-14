@@ -105,6 +105,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",

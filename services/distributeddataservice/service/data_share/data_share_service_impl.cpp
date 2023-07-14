@@ -20,6 +20,8 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
+#include "common_event_manager.h"
+#include "common_event_support.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
@@ -27,10 +29,11 @@
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "matching_skills.h"
 #include "scheduler_manager.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
-#include "utils/anonymous.h"
 #include "template_data.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -423,6 +426,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    SubscribeTimeChanged();
     return EOK;
 }
 
@@ -477,5 +481,36 @@ void DataShareServiceImpl::NotifyObserver(const std::string &uri)
         ZLOGI("%{private}s start notified", uri.c_str());
         RdbSubscriberManager::GetInstance().Emit(uri, context);
     }
+}
+bool DataShareServiceImpl::SubscribeTimeChanged()
+{
+    ZLOGD("start");
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
+    timerReceiver_ = std::make_shared<TimerReceiver>(subscribeInfo);
+    auto result = EventFwk::CommonEventManager::SubscribeCommonEvent(timerReceiver_);
+    if (!result) {
+        ZLOGE("SubscribeCommonEvent err");
+    }
+    return result;
+}
+
+void DataShareServiceImpl::TimerReceiver::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
+{
+    AAFwk::Want want = eventData.GetWant();
+    std::string action = want.GetAction();
+    ZLOGI("action:%{public}s.", action.c_str());
+    if (action == EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED
+        || action == EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED) {
+        SchedulerManager::GetInstance().ReExecuteAll();
+    }
+}
+
+DataShareServiceImpl::TimerReceiver::TimerReceiver(const EventFwk::CommonEventSubscribeInfo &subscriberInfo)
+    : CommonEventSubscriber(subscriberInfo)
+{
 }
 } // namespace OHOS::DataShare
