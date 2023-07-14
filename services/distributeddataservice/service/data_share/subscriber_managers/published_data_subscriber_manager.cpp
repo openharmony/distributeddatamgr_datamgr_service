@@ -206,12 +206,16 @@ void PublishedDataSubscriberManager::SetObserversNotifiedOnEnabled(const std::ve
     }
 }
 
-void PublishedDataSubscriberManager::SetObserversNotNotifiedOnEnabled(const std::vector<PublishedDataKey> &keys)
+void PublishedDataSubscriberManager::SetObserversNotNotifiedOnEnabled(const std::vector<PublishedDataKey> &keys,
+    uint32_t callerTokenId)
 {
     for (const auto &pkey : keys) {
-        publishedDataCache_.ComputeIfPresent(pkey, [](const auto &key, std::vector<ObserverNode> &value) {
+        publishedDataCache_.ComputeIfPresent(pkey,
+            [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
-                it->isNotifyOnEnabled = false;
+                if (it->callerTokenId == callerTokenId) {
+                    it->isNotifyOnEnabled = false;
+                }
             }
             return true;
         });
