@@ -26,7 +26,13 @@ using OHOS::NativeRdb::ColumnType;
 namespace OHOS::DistributedRdb {
 using OHOS::DistributedData::GeneralError;
 using Cursor = OHOS::DistributedData::Cursor;
-RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<Cursor> resultSet) : resultSet_(std::move(resultSet)), index_(-1) {}
+RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<Cursor> resultSet) : resultSet_(std::move(resultSet))
+{
+    if (resultSet_ != nullptr) {
+        count_ = resultSet_->GetCount();
+        resultSet_->GetColumnNames(colNames_);
+    }
+}
 
 int RdbResultSetImpl::GetAllColumnNames(std::vector<std::string> &columnNames)
 {
@@ -34,12 +40,14 @@ int RdbResultSetImpl::GetAllColumnNames(std::vector<std::string> &columnNames)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    return resultSet_->GetColumnNames(columnNames) == GeneralError::E_OK ? NativeRdb::E_ERROR : NativeRdb::E_OK;
+    columnNames = colNames_;
+    return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetColumnCount(int &count)
 {
-    return NativeRdb::E_NOT_SUPPORT;
+    count = static_cast<int>(colNames_.size());
+    return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetColumnType(int columnIndex, ColumnType &columnType)
@@ -63,8 +71,11 @@ int RdbResultSetImpl::GetColumnName(int columnIndex, std::string &columnName)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    return resultSet_->GetColumnName(columnIndex, columnName) == GeneralError::E_OK ? NativeRdb::E_ERROR
-                                                                                    : NativeRdb::E_OK;
+    if (colNames_.size() <= columnIndex || columnIndex < 0) {
+        return NativeRdb::E_ERROR;
+    }
+    columnName = colNames_[columnIndex];
+    return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetRowCount(int &count)
@@ -73,7 +84,7 @@ int RdbResultSetImpl::GetRowCount(int &count)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    count = resultSet_->GetCount();
+    count = count_;
     return NativeRdb::E_OK;
 }
 
@@ -83,60 +94,74 @@ int RdbResultSetImpl::GetRowIndex(int &position) const
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    position = index_;
+    position = current_;
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GoTo(int offset)
 {
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    if (resultSet_ == nullptr) {
-        return NativeRdb::E_STEP_RESULT_CLOSED;
+    int ret = NativeRdb::E_OK;
+    while(offset != 0 && ret == NativeRdb::E_OK) {
+        if (offset > 0) {
+            ret = GoToNextRow();
+            offset--;
+        } else {
+            ret = GoToPreviousRow();
+            offset++;
+        }
     }
-    int64_t position = index_;
-    if (!isValid(position + offset)) {
-        return NativeRdb::E_ERROR;
-    }
-    index_ = position + offset;
-    return NativeRdb::E_OK;
+    return ret;
 }
 
 int RdbResultSetImpl::GoToRow(int position)
 {
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    if (resultSet_ == nullptr) {
-        return NativeRdb::E_STEP_RESULT_CLOSED;
-    }
-    if (!isValid(position)) {
-        return NativeRdb::E_ERROR;
-    }
-    index_ = position;
-    return NativeRdb::E_OK;
+    return GoTo(position - current_);
 }
 
 int RdbResultSetImpl::GoToFirstRow()
 {
-    return GoToRow(0);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_STEP_RESULT_CLOSED;
+    }
+    auto ret = resultSet_->MoveToFirst();
+    current_ = 0;
+    return ret == GeneralError::E_OK ?  NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::GoToLastRow()
 {
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    if (resultSet_ == nullptr) {
-        return NativeRdb::E_STEP_RESULT_CLOSED;
-    }
-    index_ = resultSet_->GetCount() - 1;
-    return NativeRdb::E_OK;
+    return GoToRow(count_ - 1);
 }
 
 int RdbResultSetImpl::GoToNextRow()
 {
-    return GoTo(1);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_STEP_RESULT_CLOSED;
+    }
+    if (current_ >= count_) {
+        return NativeRdb::E_ERROR;
+    }
+
+    auto ret = resultSet_->MoveToNext();
+    current_++;
+    return ret == GeneralError::E_OK ?  NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::GoToPreviousRow()
 {
-    return GoTo(-1);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_STEP_RESULT_CLOSED;
+    }
+    if (current_ <= -1) {
+        return NativeRdb::E_ERROR;
+    }
+
+    auto ret = resultSet_->MoveToPrev();
+    current_--;
+    return ret == GeneralError::E_OK ?  NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::IsEnded(bool &result)
@@ -145,7 +170,7 @@ int RdbResultSetImpl::IsEnded(bool &result)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = index_ >= resultSet_->GetCount() || resultSet_->GetCount() <= 0;
+    result = current_ >= count_ || count_ <= 0;
     return NativeRdb::E_OK;
 }
 
@@ -155,7 +180,7 @@ int RdbResultSetImpl::IsStarted(bool &result) const
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = index_ < 0 || resultSet_->GetCount() <= 0;
+    result = current_ < 0 || count_ <= 0;
     return NativeRdb::E_OK;
 }
 
@@ -165,7 +190,7 @@ int RdbResultSetImpl::IsAtFirstRow(bool &result) const
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = resultSet_->GetCount() > 0 && index_ == 0;
+    result = count_ > 0 && current_ == 0;
     return NativeRdb::E_OK;
 }
 
@@ -175,7 +200,7 @@ int RdbResultSetImpl::IsAtLastRow(bool &result)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = resultSet_->GetCount() > 0 && index_ == resultSet_->GetCount() - 1;
+    result = count_ > 0 && current_ == count_ - 1;
     return NativeRdb::E_OK;
 }
 
@@ -264,14 +289,9 @@ int RdbResultSetImpl::Close()
 
 ColumnType RdbResultSetImpl::ConvertColumnType(int32_t columnType) const
 {
-    if (columnType >= GenColumnType::TYPE_BUTT || columnType < 0) {
+    if (columnType >= DistributedData::TYPE_MAX || columnType < 0) {
         return ColumnType::TYPE_NULL;
     }
     return COLUMNTYPES[columnType];
-}
-
-bool RdbResultSetImpl::isValid(int64_t position) const
-{
-    return resultSet_ != nullptr && position >= 0 && position < resultSet_->GetCount();
 }
 } // namespace OHOS::DistributedRdb

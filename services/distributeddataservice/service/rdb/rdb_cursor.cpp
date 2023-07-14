@@ -47,10 +47,10 @@ int32_t RdbCursor::GetColumnName(int32_t col, std::string &name) const
 
 int32_t RdbCursor::GetColumnType(int32_t col) const
 {
-    ResultSet::ColumnType dbColumnType;
+    ResultSet::ColumnType dbColumnType = ResultSet::ColumnType::INVALID_TYPE;
     auto status = resultSet_->GetColumnType(col, dbColumnType);
     if (status != DBStatus::OK) {
-        return static_cast<int32_t>(ColumnType::INVALID_TYPE);
+        dbColumnType = ResultSet::ColumnType::INVALID_TYPE;
     }
     return Convert(dbColumnType);
 }
@@ -70,9 +70,9 @@ int32_t RdbCursor::MoveToNext()
     return resultSet_->MoveToNext() ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
-int32_t RdbCursor::MoveToRow(int position)
+int32_t RdbCursor::MoveToPrev()
 {
-    return resultSet_->MoveToPosition(position) ? GeneralError::E_OK : GeneralError::E_ERROR;
+    return resultSet_->MoveToPrevious() ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbCursor::GetEntry(VBucket &entry)
@@ -90,46 +90,17 @@ int32_t RdbCursor::GetRow(VBucket &data)
 
 int32_t RdbCursor::Get(int32_t col, DistributedData::Value &value)
 {
-    ResultSet::ColumnType columnType;
-    auto status = resultSet_->GetColumnType(col, columnType);
+    std::string name;
+    auto status = resultSet_->GetColumnName(col, name);
     if (status != DBStatus::OK) {
         return GeneralError::E_ERROR;
     }
-    switch (columnType) {
-        case ResultSet::ColumnType::INT64: {
-            int64_t intTmp;
-            status = resultSet_->Get(col, intTmp);
-            value = intTmp;
-            break;
-        }
-        case ResultSet::ColumnType::STRING: {
-            std::string strTmp;
-            status = resultSet_->Get(col, strTmp);
-            value = strTmp;
-            break;
-        }
-        case ResultSet::ColumnType::DOUBLE: {
-            double doubleTmp;
-            status = resultSet_->Get(col, doubleTmp);
-            value = doubleTmp;
-            break;
-        }
-        case ResultSet::ColumnType::BLOB: {
-            std::vector<uint8_t> blobTmp;
-            status = resultSet_->Get(col, blobTmp);
-            value = blobTmp;
-            break;
-        }
-        case ResultSet::ColumnType::NULL_VALUE: {
-            value = std::monostate();
-            return GeneralError::E_OK;
-        }
-        default: {
-            value = std::monostate();
-            return GeneralError::E_ERROR;
-        }
+    VBucket bucket;
+    if (GetRow(bucket) != GeneralError::E_OK) {
+        return GeneralError::E_ERROR;
     }
-    return status == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+    value = bucket[name];
+    return GeneralError::E_OK;
 }
 
 int32_t RdbCursor::Get(const std::string &col, DistributedData::Value &value)
@@ -153,28 +124,23 @@ bool RdbCursor::IsEnd()
     return resultSet_->IsAfterLast();
 }
 
-int32_t RdbCursor::MoveToPre()
-{
-    return resultSet_->MoveToPrevious() ? GeneralError::E_OK : GeneralError::E_ERROR;
-}
-
-RdbCursor::ColumnType RdbCursor::Convert(ResultSet::ColumnType columnType)
+int32_t RdbCursor::Convert(ResultSet::ColumnType columnType)
 {
     switch (columnType) {
         case ResultSet::ColumnType::INT64:
-            return ColumnType::INT64;
+            return TYPE_INDEX<int64_t>;
         case ResultSet::ColumnType::STRING:
-            return ColumnType::STRING;
+            return TYPE_INDEX<std::string>;
         case ResultSet::ColumnType::BLOB:
-            return ColumnType::BLOB;
+            return TYPE_INDEX<std::vector<uint8_t>>;
         case ResultSet::ColumnType::DOUBLE:
-            return ColumnType::DOUBLE;
+            return TYPE_INDEX<double>;
         case ResultSet::ColumnType::NULL_VALUE:
-            return ColumnType::NULL_VALUE;
+            return TYPE_INDEX<std::monostate>;
         case ResultSet::ColumnType::INVALID_TYPE:
-            return ColumnType::INVALID_TYPE;
+            return TYPE_INDEX<std::monostate>;
         default:
-            return ColumnType::INVALID_TYPE;
+            return TYPE_INDEX<std::monostate>;
     }
 }
 } // namespace OHOS::DistributedRdb

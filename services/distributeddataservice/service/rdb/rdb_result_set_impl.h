@@ -21,6 +21,7 @@
 #include "rdb_errno.h"
 #include "store/cursor.h"
 #include "value_proxy.h"
+#include "store/general_value.h"
 
 namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public RdbResultSetStub {
@@ -55,35 +56,39 @@ public:
 
 private:
     template<typename T>
-    int Get(int columnIndex, T &value) const
+    std::enable_if_t < ValueProxy::CVT_INDEX<T, ValueProxy::Proxy><ValueProxy::MAX, int>
+    Get(int columnIndex, T &value) const
     {
-        DistributedData::Value var;
-        auto status = resultSet_->MoveToRow(index_);
-        if (status != DistributedData::GeneralError::E_OK) {
-            return NativeRdb::E_ERROR;
-        }
-        status = resultSet_->Get(columnIndex, var);
-        if (status != DistributedData::GeneralError::E_OK || var.index() != DistributedData::TYPE_INDEX<T>) {
-            return NativeRdb::E_ERROR;
-        }
-        auto proxy = DistributedRdb::ValueProxy::Convert(std::move(var));
-        value = proxy.operator T();
-        return NativeRdb::E_OK;
+        auto [ret, val] = GetValue(columnIndex);
+        value = val.operator T();
+        return ret;
     };
 
-    bool isValid(int64_t position) const;
+    std::pair<int32_t, ValueProxy::Value> GetValue(int columnIndex) const
+    {
+        DistributedData::Value var;
+        auto status = resultSet_->Get(columnIndex, var);
+        if (status != DistributedData::GeneralError::E_OK) {
+            return { NativeRdb::E_ERROR, ValueProxy::Value() };
+        }
+        return {NativeRdb::E_OK, ValueProxy::Convert(std::move(var))};
+    };
+
     mutable std::shared_mutex mutex_ {};
-    using GenColumnType = DistributedData::Cursor::ColumnType;
-    static inline constexpr ColumnType COLUMNTYPES[GenColumnType::TYPE_BUTT] = {
-        [GenColumnType::INVALID_TYPE] = ColumnType::TYPE_NULL,
-        [GenColumnType::INT64] = ColumnType::TYPE_INTEGER,
-        [GenColumnType::STRING] = ColumnType::TYPE_STRING,
-        [GenColumnType::BLOB] = ColumnType::TYPE_BLOB,
-        [GenColumnType::DOUBLE] = ColumnType::TYPE_FLOAT,
-        [GenColumnType::NULL_VALUE] = ColumnType::TYPE_NULL
+    static constexpr ColumnType COLUMNTYPES[DistributedData::TYPE_MAX] = {
+        [DistributedData::TYPE_INDEX<std::monostate>] = ColumnType::TYPE_NULL,
+        [DistributedData::TYPE_INDEX<int64_t>] = ColumnType::TYPE_INTEGER,
+        [DistributedData::TYPE_INDEX<double>] = ColumnType::TYPE_FLOAT,
+        [DistributedData::TYPE_INDEX<std::string>] = ColumnType::TYPE_STRING,
+        [DistributedData::TYPE_INDEX<bool>] = ColumnType::TYPE_INTEGER,
+        [DistributedData::TYPE_INDEX<DistributedData::Bytes>] = ColumnType::TYPE_BLOB,
+        [DistributedData::TYPE_INDEX<DistributedData::Asset>] = ColumnType::TYPE_BLOB,
+        [DistributedData::TYPE_INDEX<DistributedData::Assets>] = ColumnType::TYPE_BLOB,
     };
     std::shared_ptr<DistributedData::Cursor> resultSet_;
-    int32_t index_ = -1;
+    std::atomic<int32_t> current_ = -1;
+    int32_t count_ = 0;
+    std::vector<std::string> colNames_;
     ColumnType ConvertColumnType(int32_t columnType) const;
 };
 } // namespace OHOS::DistributedRdb

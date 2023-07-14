@@ -27,7 +27,6 @@
 #include "rdb_query.h"
 #include "relational_store_manager.h"
 #include "utils/anonymous.h"
-#include "utils/constant.h"
 #include "value_proxy.h"
 #include "device_manager_adapter.h"
 #include "rdb_result_set_impl.h"
@@ -139,22 +138,8 @@ int32_t RdbGeneralStore::Close()
     return 0;
 }
 
-int32_t RdbGeneralStore::Execute(const std::vector<std::string> &tables, const std::string &sql, const Values &bindArgs)
+int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sql)
 {
-    if (sql == SET_DISTRIBUTED_TABLE) {
-        ZLOGD("Execute SET_DISTRIBUTED_TABLE");
-        if (bindArgs.empty()) {
-            ZLOGE("bindArgs is empty");
-            return GeneralError::E_INVALID_ARGS;
-        }
-        auto *type = std::get_if<int64_t>(&bindArgs[0]);
-        if (type == nullptr || *type < DistributedDB::TableSyncType::DEVICE_COOPERATION ||
-            *type > DistributedDB::TableSyncType::CLOUD_COOPERATION) {
-            ZLOGE("type is invalid, type:%{public}s", type == nullptr ? "nullptr" : std::to_string(*type).c_str());
-            return GeneralError::E_INVALID_ARGS;
-        }
-        return SetDistributedTables(tables, static_cast<DistributedDB::TableSyncType>(*type));
-    }
     return GeneralError::E_OK;
 }
 
@@ -173,27 +158,27 @@ int32_t RdbGeneralStore::Delete(const std::string &table, const std::string &sql
     return 0;
 }
 
-std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, const std::string &sql, Values &&args,
-    const std::string &device)
-{
-    std::shared_ptr<RdbCursor> cursor = nullptr;
-    if (!device.empty()) {
-        std::shared_ptr<DistributedDB::ResultSet> dbResultSet;
-        std::vector<std::string> bindArgs = ValueProxy::Convert(std::move(args));
-        DistributedDB::DBStatus status =
-            delegate_->RemoteQuery(device, { sql, bindArgs }, REMOTE_QUERY_TIME_OUT, dbResultSet);
-        if (status != DistributedDB::DBStatus::OK) {
-            ZLOGE("DistributedDB remote query failed, status is  %{public}d.", status);
-            return {};
-        }
-        cursor = std::make_shared<RdbCursor>(dbResultSet);
-    }
-    return cursor;
-}
-
-std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuery &query, const std::string &device)
+std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, const std::string &sql, Values &&args)
 {
     return std::shared_ptr<Cursor>();
+}
+
+std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuery &query)
+{
+    RdbQuery *rdbQuery = nullptr;
+    auto ret = query.QueryInterface(rdbQuery);
+    if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
+        ZLOGE("not RdbQuery!");
+        return nullptr;
+    }
+    if (rdbQuery->IsRemoteQuery()) {
+        if (rdbQuery->GetDevices().size() != 1) {
+            ZLOGE("RemoteQuery: devices size error! size:%{public}zu", rdbQuery->GetDevices().size());
+            return nullptr;
+        }
+        return RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition());
+    }
+    return nullptr;
 }
 
 int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)
@@ -365,6 +350,20 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         }
     }
     return GeneralError::E_OK;
+}
+
+std::shared_ptr<Cursor> RdbGeneralStore::RemoteQuery(const std::string &device,
+    const DistributedDB::RemoteCondition &remoteCondition)
+{
+    std::shared_ptr<DistributedDB::ResultSet> dbResultSet;
+    DistributedDB::DBStatus status =
+        delegate_->RemoteQuery(device, remoteCondition, REMOTE_QUERY_TIME_OUT, dbResultSet);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("DistributedDB remote query failed, device:%{public}s, status is  %{public}d.",
+            Anonymous::Change(device).c_str(), status);
+        return nullptr;
+    }
+    return std::make_shared<RdbCursor>(dbResultSet);
 }
 
 RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus status)

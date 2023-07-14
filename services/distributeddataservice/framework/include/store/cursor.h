@@ -23,15 +23,6 @@
 namespace OHOS::DistributedData {
 class Cursor {
 public:
-    enum ColumnType : int32_t {
-        INVALID_TYPE = 0,
-        INT64,
-        STRING,
-        BLOB,
-        DOUBLE,
-        NULL_VALUE,
-        TYPE_BUTT
-    };
     virtual ~Cursor() = default;
 
     virtual int32_t GetColumnNames(std::vector<std::string> &names) const = 0;
@@ -44,11 +35,9 @@ public:
 
     virtual int32_t MoveToFirst() = 0;
 
-    virtual int32_t MoveToPre() = 0;
-
     virtual int32_t MoveToNext() = 0;
 
-    virtual int32_t MoveToRow(int position) = 0;
+    virtual int32_t MoveToPrev() = 0;
 
     virtual int32_t GetEntry(VBucket &entry) = 0;
 

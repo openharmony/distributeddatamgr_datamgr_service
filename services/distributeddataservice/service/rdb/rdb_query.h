@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_QUERY_H
 #include "rdb_predicates.h"
 #include "store/general_value.h"
+#include "store_types.h"
 #include "query.h"
 namespace OHOS::DistributedRdb {
 class RdbQuery : public DistributedData::GenQuery {
@@ -24,12 +25,18 @@ public:
     using Predicates = NativeRdb::RdbPredicates;
     static constexpr uint64_t TYPE_ID = 0x20000001;
     RdbQuery() = default;
+    RdbQuery(bool isRemote);
 
     ~RdbQuery() override = default;
 
     bool IsEqual(uint64_t tid) override;
     std::vector<std::string> GetTables() override;
-    DistributedDB::Query GetQuery();
+    std::vector<std::string> GetDevices() const;
+    DistributedDB::Query GetQuery() const;
+    DistributedDB::RemoteCondition GetRemoteCondition() const;
+    bool IsRemoteQuery();
+    void SetDevices(const std::vector<std::string> &devices);
+    void SetSql(const std::string &sql, DistributedData::Values &&args);
     void MakeQuery(const PredicatesMemo &predicates);
 
 private:
@@ -51,7 +58,10 @@ private:
     static constexpr inline uint32_t DECIMAL_BASE = 10;
 
     DistributedDB::Query query_;
+    bool isRemote_ = false;
     std::string sql_;
+    DistributedData::Values args_;
+    std::vector<std::string> devices_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_QUERY_H

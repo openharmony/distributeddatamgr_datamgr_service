@@ -15,8 +15,12 @@
 #define LOG_TAG "RdbQuery"
 #include "rdb_query.h"
 #include "log_print.h"
+#include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
+
+RdbQuery::RdbQuery(bool isRemote) : isRemote_(isRemote) {}
+
 bool RdbQuery::IsEqual(uint64_t tid)
 {
     return tid == TYPE_ID;
@@ -27,9 +31,25 @@ std::vector<std::string> RdbQuery::GetTables()
     return {};
 }
 
-DistributedDB::Query RdbQuery::GetQuery()
+void RdbQuery::SetDevices(const std::vector<std::string> &devices)
+{
+    devices_ = devices;
+}
+
+void RdbQuery::SetSql(const std::string &sql, DistributedData::Values &&args)
+{
+    sql_ = sql;
+    args_ = std::move(args);
+}
+
+DistributedDB::Query RdbQuery::GetQuery() const
 {
     return query_;
+}
+
+std::vector<std::string> RdbQuery::GetDevices() const
+{
+    return devices_;
 }
 
 void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
@@ -45,6 +65,19 @@ void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
             (this->*HANDLES[operation.operator_])(operation);
         }
     }
+    devices_ = predicates.devices_;
+}
+
+bool RdbQuery::IsRemoteQuery()
+{
+    return isRemote_;
+}
+
+DistributedDB::RemoteCondition RdbQuery::GetRemoteCondition() const
+{
+    auto args = args_;
+    std::vector<std::string> bindArgs = ValueProxy::Convert(std::move(args));
+    return { sql_, bindArgs };
 }
 
 void RdbQuery::EqualTo(const RdbPredicateOperation &operation)
@@ -86,5 +119,4 @@ void RdbQuery::Limit(const RdbPredicateOperation &operation)
     }
     query_.Limit(limit, offset);
 }
-
 } // namespace OHOS::DistributedRdb

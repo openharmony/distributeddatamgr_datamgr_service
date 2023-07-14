@@ -126,6 +126,5 @@ bool Convert(T &&input, std::variant<Types...> &output)
 {
     return GetItem<T, decltype(output), Types...>(std::move(input), output);
 }
-
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_VALUE_H

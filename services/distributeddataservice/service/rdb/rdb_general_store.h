@@ -43,14 +43,12 @@ public:
     ~RdbGeneralStore();
     int32_t Bind(const Database &database, BindInfo bindInfo) override;
     bool IsBound() override;
-    int32_t Execute(const std::vector<std::string> &tables, const std::string &sql,
-        const Values &bindArgs = Values()) override;
+    int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
-    std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args,
-        const std::string &device = "") override;
-    std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query, const std::string &device = "") override;
+    std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
+    std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
     int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
@@ -58,8 +56,7 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
-    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type);
-    static inline constexpr const char *SET_DISTRIBUTED_TABLE = "SET_DISTRIBUTED_TABLE";
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
 
 private:
@@ -89,6 +86,8 @@ private:
     };
     DBBriefCB GetDBBriefCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
+    std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
+        const DistributedDB::RemoteCondition &remoteCondition);
 
     ObserverProxy observer_;
     RdbManager manager_;

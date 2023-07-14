@@ -264,7 +264,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    return store->Execute(tables, RdbGeneralStore::SET_DISTRIBUTED_TABLE, { type });
+    return store->SetDistributedTables(tables, type);
 }
 
 std::pair<int32_t, Details> RdbServiceImpl::DoSync(const RdbSyncerParam &param, const Option &option,
@@ -373,8 +373,10 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
         return RDB_ERROR;
     }
     auto values = ValueProxy::Convert(selectionArgs);
-
-    auto cursor = store->Query("", sql, std::move(values), device);
+    RdbQuery rdbQuery(true);
+    rdbQuery.SetDevices({ device });
+    rdbQuery.SetSql(sql, std::move(values));
+    auto cursor = store->Query("", rdbQuery);
     if(cursor== nullptr){
         ZLOGE("Query failed, cursor is null");
         return RDB_ERROR;

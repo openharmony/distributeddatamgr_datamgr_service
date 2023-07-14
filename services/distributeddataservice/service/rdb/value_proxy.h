@@ -191,6 +191,7 @@ public:
         friend ValueProxy;
         std::vector<Bucket> value_;
     };
+
     static Value Convert(DistributedData::Value &&value);
     static Value Convert(NativeRdb::ValueObject &&value);
     static Value Convert(DistributedDB::Type &&value);
@@ -218,7 +219,7 @@ public:
     }
 
     template<typename T>
-    static std::enable_if_t < CVT_INDEX<T, Proxy><MAX && CVT_INDEX<T, Proxy> != CVT_INDEX<Asset, Proxy>, Values>
+    static std::enable_if_t < CVT_INDEX<T, Proxy><MAX, Values>
     Convert(const std::vector<T> &values)
     {
         Values proxy;
@@ -228,7 +229,6 @@ public:
         }
         return proxy;
     }
-
 
 private:
     ValueProxy() = delete;
