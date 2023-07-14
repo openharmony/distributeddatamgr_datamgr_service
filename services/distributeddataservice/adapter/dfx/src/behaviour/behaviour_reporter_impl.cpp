@@ -22,9 +22,9 @@ ReportStatus BehaviourReporterImpl::Report(const BehaviourMsg &msg)
     return ReportStatus::SUCCESS;
 }
 
-ReportStatus BehaviourReporterImpl::UDMFReport(const UDMFBehaviourMsg &msg)
+ReportStatus BehaviourReporterImpl::UDMFReport(const UdmfBehaviourMsg &msg)
 {
-    HiViewAdapter::ReportUDMFBehaviour(DfxCodeConstant::UDMF_DATA_BEHAVIOR, msg, executors_);
+    HiViewAdapter::ReportUdmfBehaviour(DfxCodeConstant::UDMF_DATA_BEHAVIOR, msg, executors_);
     return ReportStatus::SUCCESS;
 }
 

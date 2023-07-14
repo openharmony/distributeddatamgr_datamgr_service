@@ -25,7 +25,7 @@ class BehaviourReporterImpl : public BehaviourReporter {
 public:
     virtual ~BehaviourReporterImpl() {}
     ReportStatus Report(const struct BehaviourMsg &msg) override;
-    ReportStatus UDMFReport(const UDMFBehaviourMsg &msg) override;
+    ReportStatus UDMFReport(const UdmfBehaviourMsg &msg) override;
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 
 private:

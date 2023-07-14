@@ -304,9 +304,13 @@ void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerforma
     StartTimerThread(executors);
 }
 
-void HiViewAdapter::ReportUDMFBehaviour(
-    int dfxCode, const UDMFBehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors)
+void HiViewAdapter::ReportUdmfBehaviour(
+    int dfxCode, const UdmfBehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGI("report udmf behavior failed");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, msg]() {
         HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
             CoverEventID(dfxCode),

@@ -23,7 +23,7 @@ namespace DistributedDataDfx {
 class BehaviourReporter {
 public:
     KVSTORE_API virtual ReportStatus Report(const BehaviourMsg &msg) = 0;
-    KVSTORE_API virtual ReportStatus UDMFReport(const UDMFBehaviourMsg &msg) = 0;
+    KVSTORE_API virtual ReportStatus UDMFReport(const UdmfBehaviourMsg &msg) = 0;
     KVSTORE_API virtual ~BehaviourReporter() {}
 };
 }  // namespace DistributedDataDfx
