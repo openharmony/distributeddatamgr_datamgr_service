@@ -185,6 +185,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
     }
     if (!publishedData.empty()) {
         PublishedDataSubscriberManager::GetInstance().Emit(publishedData, userId, callerBundleName);
+        PublishedDataSubscriberManager::GetInstance().SetObserversNotifiedOnEnabled(publishedData);
     }
     return results;
 }
@@ -356,12 +357,17 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         }
         results.emplace_back(uri, result);
         if (result == E_OK) {
-            publishedKeys.emplace_back(context->uri, context->callerBundleName, subscriberId);
+            PublishedDataKey pKey(context->uri, context->callerBundleName, subscriberId);
+            // ��ȥ����key��ѯ���ж�����tokenid��ͬ���Ƿ�boolֵΪtrue
+            if (PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(pKey, context->callerTokenId)) {
+                publishedKeys.emplace_back(pKey);
+            }
             userId = context->currentUserId;
         }
     }
     if (!publishedKeys.empty()) {
         PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, userId, callerBundleName);
+        PublishedDataSubscriberManager::GetInstance().SetObserversNotNotifiedOnEnabled(publishedKeys);
     }
     return results;
 }

@@ -69,6 +69,7 @@ private:
         sptr<IDataProxyRdbObserver> observer;
         uint32_t callerTokenId;
         bool enabled = true;
+        bool isNotifyOnEnabled = false;
     };
 
     RdbSubscriberManager() = default;
