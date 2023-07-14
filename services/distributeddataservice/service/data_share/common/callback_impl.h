@@ -16,7 +16,6 @@
 #define DATASHARESERVICE_CALLBACK_IMPL_H
 
 #include "ability_connect_callback_stub.h"
-#include "ability_manager_client.h"
 #include "block_data.h"
 
 namespace OHOS::DataShare {

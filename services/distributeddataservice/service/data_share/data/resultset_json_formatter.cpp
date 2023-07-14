@@ -21,6 +21,7 @@
 namespace OHOS::DataShare {
 bool ResultSetJsonFormatter::Marshal(json &node) const
 {
+    node = json::array();
     int columnCount = 0;
     auto result = resultSet->GetColumnCount(columnCount);
     if (result != NativeRdb::E_OK) {

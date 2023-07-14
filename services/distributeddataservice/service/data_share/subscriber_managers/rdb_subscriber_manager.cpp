@@ -229,6 +229,8 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
         Notify(key, context->currentUserId, val, context->calledSourceDir, context->version);
         return false;
     });
+    SchedulerManager::GetInstance().Execute(
+        uri, context->currentUserId, context->calledSourceDir, context->version);
 }
 
 std::vector<Key> RdbSubscriberManager::GetKeysByUri(const std::string &uri)
@@ -253,15 +255,6 @@ void RdbSubscriberManager::EmitByKey(const Key &key, int32_t userId, const std::
         Notify(key, userId, val, rdbPath, version);
         return true;
     });
-}
-
-int RdbSubscriberManager::GetCount(const Key &key)
-{
-    auto pair = rdbCache_.Find(key);
-    if (!pair.first) {
-        return 0;
-    }
-    return pair.second.size();
 }
 
 int RdbSubscriberManager::GetEnableObserverCount(const Key &key)
@@ -300,6 +293,9 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
     changeNode.templateId_.bundleName_ = key.bundleName;
     for (const auto &predicate : tpl.predicates_) {
         std::string result = delegate->Query(predicate.selectSql_);
+        if (result.empty()) {
+            continue;
+        }
         changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
 

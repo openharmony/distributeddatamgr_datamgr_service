@@ -20,6 +20,7 @@
 
 #include "app_connect_manager.h"
 #include "callback_impl.h"
+#include "extension_mgr_proxy.h"
 #include "log_print.h"
 
 namespace OHOS::DataShare {
@@ -37,8 +38,6 @@ ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(1) {}
 
 bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
 {
-    AAFwk::Want want;
-    want.SetUri(context->uri);
     data_.Clear();
     callback_ = new (std::nothrow) CallbackImpl(data_);
     if (callback_ == nullptr) {
@@ -46,7 +45,7 @@ bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
         return false;
     }
     ZLOGI("Start connect %{public}s", context->uri.c_str());
-    ErrCode ret = AAFwk::AbilityManagerClient::GetInstance()->ConnectAbility(want, callback_, nullptr);
+    ErrCode ret = ExtensionMgrProxy::GetInstance()->Connect(context->uri, callback_->AsObject(), nullptr);
     if (ret != ERR_OK) {
         ZLOGE("connect ability failed, ret = %{public}d", ret);
         return false;
@@ -80,7 +79,7 @@ void ExtensionConnectAdaptor::Disconnect()
     }
     data_.Clear();
     ZLOGI("Start disconnect");
-    AAFwk::AbilityManagerClient::GetInstance()->DisconnectAbility(callback_);
+    ExtensionMgrProxy::GetInstance()->DisConnect(callback_->AsObject());
     if (!data_.GetValue()) {
         ZLOGI("disconnect ability ended successfully");
     }
