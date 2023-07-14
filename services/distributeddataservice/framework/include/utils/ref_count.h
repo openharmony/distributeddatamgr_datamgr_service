@@ -23,7 +23,7 @@ namespace OHOS::DistributedData {
 class API_EXPORT RefCount final {
 public:
     RefCount();
-    explicit RefCount(std::function<void()> action);
+    RefCount(std::function<void()> action);
     RefCount(const RefCount &other);
     RefCount(RefCount &&other) noexcept;
     RefCount &operator=(const RefCount &other);

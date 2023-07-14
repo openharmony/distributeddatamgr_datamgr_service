@@ -18,6 +18,7 @@
 #include <string>
 
 #include "eventcenter/event.h"
+#include "utils/ref_count.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
 class API_EXPORT MatrixEvent : public Event {
@@ -26,11 +27,14 @@ public:
     ~MatrixEvent() = default;
     uint16_t GetMask() const;
     std::string GetDeviceId() const;
+    void SetRefCount(RefCount refCount);
+    RefCount StealRefCount() const;
     bool Equals(const Event &event) const override;
 
 private:
     uint16_t mask_;
     std::string deviceId_;
+    mutable RefCount refCount_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_MATRIX_EVENT_H

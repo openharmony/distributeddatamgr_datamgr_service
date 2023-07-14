@@ -37,6 +37,7 @@
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "utils/ref_count.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -107,27 +108,28 @@ void KvStoreMetaManager::InitBroadcast()
 void KvStoreMetaManager::InitDeviceOnline()
 {
     ZLOGI("observer matrix online event.");
+    using DBStatuses = std::map<std::string, DBStatus>;
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_ONLINE, [this](const Event &event) {
-        const MatrixEvent &matrixEvent = static_cast<const MatrixEvent &>(event);
+        auto &matrixEvent = static_cast<const MatrixEvent &>(event);
         auto mask = matrixEvent.GetMask();
         auto deviceId = matrixEvent.GetDeviceId();
         auto store = GetMetaKvStore();
+        auto onComplete = [deviceId, mask, refCount = matrixEvent.StealRefCount()](const DBStatuses &) mutable {
+            ZLOGD("matrix 0x%{public}08x device:%{public}s online", mask, Anonymous::Change(deviceId).c_str());
+            auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
+            finEvent->SetRefCount(std::move(refCount));
+            DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
+            EventCenter::GetInstance().PostEvent(std::move(finEvent));
+        };
         if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
-            auto onComplete = [deviceId, mask](const std::map<std::string, DBStatus> &) {
-                ZLOGI("online sync complete");
-                auto event = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
-                DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
-                EventCenter::GetInstance().PostEvent(std::move(event));
-            };
             auto status = store->Sync({ deviceId }, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
             if (status == OK) {
                 return;
             }
-            ZLOGW("meta db sync error %{public}d.", status);
+            ZLOGW("meta online sync error 0x%{public}08x device:%{public}s %{public}d", mask,
+                Anonymous::Change(deviceId).c_str(), status);
         }
-
-        auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
-        EventCenter::GetInstance().PostEvent(std::move(finEvent));
+        onComplete({ });
     });
 }
 
@@ -365,7 +367,9 @@ void KvStoreMetaManager::MetaDeviceChangeListenerImpl::OnDeviceChanged(const App
             DeviceMatrix::GetInstance().Offline(info.uuid);
             break;
         case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
-            DeviceMatrix::GetInstance().Online(info.uuid);
+            DeviceMatrix::GetInstance().Online(info.uuid, RefCount([deviceId = info.uuid]() {
+                DmAdapter::GetInstance().NotifyReadyEvent(deviceId);
+            }));
             break;
         default:
             ZLOGI("flag:%{public}d", type);
@@ -393,6 +397,7 @@ size_t KvStoreMetaManager::GetSyncDataSize(const std::string &deviceId)
 
     return metaDelegate->GetSyncDataSize(deviceId);
 }
+
 void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;

@@ -34,4 +34,14 @@ bool MatrixEvent::Equals(const Event &event) const
     auto &evt = static_cast<const MatrixEvent &>(event);
     return (deviceId_ == evt.deviceId_) && (mask_ == evt.mask_);
 }
+
+void MatrixEvent::SetRefCount(RefCount refCount)
+{
+    refCount_ = std::move(refCount);
+}
+
+RefCount MatrixEvent::StealRefCount() const
+{
+    return std::move(refCount_);
+}
 } // namespace OHOS::DistributedData
