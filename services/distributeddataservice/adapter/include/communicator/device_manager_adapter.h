@@ -76,7 +76,7 @@ private:
 
     std::mutex devInfoMutex_ {};
     DeviceInfo localInfo_ {};
-    static DmDeviceInfo cloudDmInfo;
+    const DmDeviceInfo cloudDmInfo;
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;

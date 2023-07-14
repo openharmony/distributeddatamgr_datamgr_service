@@ -31,7 +31,6 @@ using namespace OHOS::NetManagerStandard;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
-DmDeviceInfo DeviceManagerAdapter::cloudDmInfo = { "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 };
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
     explicit DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
@@ -140,6 +139,7 @@ int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle
 }
 
 DeviceManagerAdapter::DeviceManagerAdapter()
+    : cloudDmInfo({ "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 })
 {
     ZLOGI("construct");
 }
