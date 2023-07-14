@@ -659,6 +659,17 @@ void KvStoreDataService::OnDeviceOnline(const AppDistributedKv::DeviceInfo &info
     });
 }
 
+void KvStoreDataService::OnDeviceOffline(const AppDistributedKv::DeviceInfo &info)
+{
+    if (info.uuid.empty()) {
+        return;
+    }
+    features_.ForEachCopies([&info](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->Offline(info.uuid);
+        return false;
+    });
+}
+
 void KvStoreDataService::OnDeviceOnReady(const AppDistributedKv::DeviceInfo &info)
 {
     if (info.uuid.empty()) {
