@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace UDMF {
 using FeatureSystem = DistributedData::FeatureSystem;
-using UDMFBehaviourMsg = OHOS::DistributedDataDfx::UDMFBehaviourMsg;
+using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
@@ -50,7 +50,7 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
 {
     ZLOGD("start");
     int32_t res = E_OK;
-    UDMFBehaviourMsg msg;
+    UdmfBehaviourMsg msg;
     auto find = UD_INTENTION_MAP.find(option.intention);
     msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
     msg.operation = "insert";
@@ -62,7 +62,8 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
         msg.appId = bundleName;
         res = DataManager::GetInstance().SaveData(option, unifiedData, key);
     }
-    msg.result = ERROR_MAP.find(res)->second;
+    auto errFind = ERROR_MAP.find(res);
+    msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
     msg.dataType = unifiedData.GetTypes();
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
@@ -73,7 +74,7 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
 {
     ZLOGD("start");
     int32_t res = E_OK;
-    UDMFBehaviourMsg msg;
+    UdmfBehaviourMsg msg;
     auto find = UD_INTENTION_MAP.find(query.intention);
     msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
     msg.operation = "insert";
@@ -85,7 +86,8 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
         msg.appId = bundleName;
         res = DataManager::GetInstance().RetrieveData(query, unifiedData);
     }
-    msg.result = ERROR_MAP.find(res)->second;
+    auto errFind = ERROR_MAP.find(res);
+    msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
     msg.dataType = unifiedData.GetTypes();
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);

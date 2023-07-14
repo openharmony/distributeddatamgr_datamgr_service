@@ -131,7 +131,7 @@ struct BehaviourMsg {
     std::string extensionInfo;
 };
 
-struct UDMFBehaviourMsg {
+struct UdmfBehaviourMsg {
     std::string appId;
     std::string channel;
     int64_t dataSize;
