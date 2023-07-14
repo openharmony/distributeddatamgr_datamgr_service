@@ -358,7 +358,6 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         results.emplace_back(uri, result);
         if (result == E_OK) {
             PublishedDataKey pKey(context->uri, context->callerBundleName, subscriberId);
-            // ��ȥ����key��ѯ���ж�����tokenid��ͬ���Ƿ�boolֵΪtrue
             if (PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(pKey, context->callerTokenId)) {
                 publishedKeys.emplace_back(pKey);
             }
