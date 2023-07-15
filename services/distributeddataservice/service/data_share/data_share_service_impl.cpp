@@ -368,7 +368,6 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
     }
     if (!publishedKeys.empty()) {
         PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, userId, callerBundleName);
-        PublishedDataSubscriberManager::GetInstance().SetObserversNotNotifiedOnEnabled(publishedKeys, callerTokenId);
     }
     return results;
 }

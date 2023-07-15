@@ -53,7 +53,6 @@ public:
     int GetCount(const PublishedDataKey &key);
 
     bool IsNotifyOnEnabled(const PublishedDataKey &key, uint32_t callerTokenId);
-    void SetObserversNotNotifiedOnEnabled(const std::vector<PublishedDataKey> &keys, uint32_t callerTokenId);
     void SetObserversNotifiedOnEnabled(const std::vector<PublishedDataKey> &keys);
 
 private:

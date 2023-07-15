@@ -203,7 +203,6 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
                 if (loadDataInfo(context)) {
                     Notify(key, context->currentUserId, node, context->calledSourceDir, context->version);
                 }
-                it->isNotifyOnEnabled = false;
             }
         }
         return true;
@@ -225,15 +224,20 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
             return false;
         }
         Notify(key, context->currentUserId, val, context->calledSourceDir, context->version);
-        for (auto &node : val) {
-            if (!node.enabled) {
-                node.isNotifyOnEnabled = true;
-            }
-        }
+        SetObserverNotifyOnEnabled(val);
         return false;
     });
     SchedulerManager::GetInstance().Execute(
         uri, context->currentUserId, context->calledSourceDir, context->version);
+}
+
+void RdbSubscriberManager::SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes)
+{
+    for (auto &node : nodes) {
+        if (!node.enabled) {
+            node.isNotifyOnEnabled = true;
+        }
+    }
 }
 
 std::vector<Key> RdbSubscriberManager::GetKeysByUri(const std::string &uri)
@@ -256,11 +260,7 @@ void RdbSubscriberManager::EmitByKey(const Key &key, int32_t userId, const std::
     }
     rdbCache_.ComputeIfPresent(key, [&rdbPath, &version, &userId, this](const Key &key, auto &val) {
         Notify(key, userId, val, rdbPath, version);
-        for (auto &node : val) {
-            if (!node.enabled) {
-                node.isNotifyOnEnabled = true;
-            }
-        }
+        SetObserverNotifyOnEnabled(val);
         return true;
     });
 }
