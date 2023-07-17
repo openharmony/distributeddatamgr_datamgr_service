@@ -83,6 +83,7 @@ int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_
             for (auto it = value.begin(); it != value.end(); it++) {
                 if (it->callerTokenId == callerTokenId) {
                     it->enabled = false;
+                    it->isNotifyOnEnabled = false;
                 }
             }
             return true;
@@ -175,6 +176,34 @@ int PublishedDataSubscriberManager::GetCount(const PublishedDataKey &key)
         return true;
     });
     return count;
+}
+
+bool PublishedDataSubscriberManager::IsNotifyOnEnabled(const PublishedDataKey &key, uint32_t callerTokenId)
+{
+    auto pair = publishedDataCache_.Find(key);
+    if (!pair.first) {
+        return false;
+    }
+    for (const auto &value : pair.second) {
+        if (value.callerTokenId == callerTokenId && value.isNotifyOnEnabled) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void PublishedDataSubscriberManager::SetObserversNotifiedOnEnabled(const std::vector<PublishedDataKey> &keys)
+{
+    for (const auto &pkey : keys) {
+        publishedDataCache_.ComputeIfPresent(pkey, [](const auto &key, std::vector<ObserverNode> &value) {
+            for (auto it = value.begin(); it != value.end(); it++) {
+                if (!it->enabled) {
+                    it->isNotifyOnEnabled = true;
+                }
+            }
+            return true;
+        });
+    }
 }
 
 PublishedDataKey::PublishedDataKey(const std::string &key, const std::string &bundle, const int64_t subscriberId)

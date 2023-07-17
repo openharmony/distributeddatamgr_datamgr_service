@@ -51,12 +51,17 @@ public:
         const sptr<IDataProxyPublishedDataObserver> observer = nullptr);
     void Clear();
     int GetCount(const PublishedDataKey &key);
+
+    bool IsNotifyOnEnabled(const PublishedDataKey &key, uint32_t callerTokenId);
+    void SetObserversNotifiedOnEnabled(const std::vector<PublishedDataKey> &keys);
+
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t callerTokenId);
         sptr<IDataProxyPublishedDataObserver> observer;
         uint32_t callerTokenId;
         bool enabled = true;
+        bool isNotifyOnEnabled = false;
     };
 
     PublishedDataSubscriberManager() = default;

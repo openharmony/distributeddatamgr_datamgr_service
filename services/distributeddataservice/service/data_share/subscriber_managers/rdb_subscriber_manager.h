@@ -69,6 +69,7 @@ private:
         sptr<IDataProxyRdbObserver> observer;
         uint32_t callerTokenId;
         bool enabled = true;
+        bool isNotifyOnEnabled = false;
     };
 
     RdbSubscriberManager() = default;
@@ -76,6 +77,7 @@ private:
     int Notify(const Key &key, int32_t userId, const std::vector<ObserverNode> &val, const std::string &rdbDir,
         int rdbVersion);
     int GetEnableObserverCount(const Key &key);
+    void SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes);
 };
 } // namespace OHOS::DataShare
 #endif
