@@ -200,7 +200,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = (mode < NEARBY_END)
-                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0 )
+                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0)
                   : (mode > NEARBY_END && mode < CLOUD_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
                   : DistributedDB::INVALID_ARGS;

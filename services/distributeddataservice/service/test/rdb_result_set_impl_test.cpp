@@ -22,6 +22,8 @@ using namespace OHOS;
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
 
+namespace OHOS::Test {
+namespace DistributedRDBTest {
 class RdbResultSetImplTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -42,13 +44,9 @@ public:
     static inline constexpr int32_t SIZE = 50;
 };
 
-void RdbResultSetImplTest::SetUpTestCase(void)
-{
-}
+void RdbResultSetImplTest::SetUpTestCase(void) {}
 
-void RdbResultSetImplTest::TearDownTestCase(void)
-{
-}
+void RdbResultSetImplTest::TearDownTestCase(void) {}
 
 void RdbResultSetImplTest::SetUp()
 {
@@ -60,9 +58,7 @@ void RdbResultSetImplTest::SetUp()
     resultSet = std::make_shared<RdbResultSetImpl>(cursorMock);
 }
 
-void RdbResultSetImplTest::TearDown()
-{
-}
+void RdbResultSetImplTest::TearDown() {}
 
 std::map<std::string, Value> RdbResultSetImplTest::makeEntry(int i)
 {
@@ -167,7 +163,6 @@ HWTEST_F(RdbResultSetImplTest, RdbResultSetImplGoTO, TestSize.Level0)
     ASSERT_EQ(position, SIZE - 10);
 }
 
-
 /**
 * @tc.name: RdbResultSetImplGet
 * @tc.desc: RdbResultSetImpl get data;
@@ -184,7 +179,7 @@ HWTEST_F(RdbResultSetImplTest, RdbResultSetImplGet, TestSize.Level0)
     double tmpFlo;
     std::string tmpStr;
     Bytes tmpBlob;
-    while(!result){
+    while (!result) {
         for (int i = 0; i < Names.size(); i++) {
             auto var = (*cursor)[index][Names[i].first];
             ValueProxy::Value value = ValueProxy::Convert(std::move(var));
@@ -214,3 +209,5 @@ HWTEST_F(RdbResultSetImplTest, RdbResultSetImplGet, TestSize.Level0)
         resultSet->IsEnded(result);
     }
 }
+} // namespace DistributedRDBTest
+} // namespace OHOS::Test

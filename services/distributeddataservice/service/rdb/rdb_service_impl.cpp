@@ -374,10 +374,10 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     }
     auto values = ValueProxy::Convert(selectionArgs);
     RdbQuery rdbQuery(true);
-    rdbQuery.SetDevices({ device });
+    rdbQuery.SetDevices( { device } );
     rdbQuery.SetSql(sql, std::move(values));
     auto cursor = store->Query("", rdbQuery);
-    if(cursor== nullptr){
+    if (cursor == nullptr) {
         ZLOGE("Query failed, cursor is null");
         return RDB_ERROR;
     }
@@ -407,51 +407,51 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    switch (option.mode) {
-        case SubscribeMode::REMOTE: 
-        case SubscribeMode::CLOUD: // fallthrough
-        case SubscribeMode::CLOUD_DETAIL: {
-            syncAgents_.Compute(tokenId, [pid, &param](auto &key, SyncAgent &agent) {
-                if (pid != agent.pid_) {
-                    agent.ReInit(pid, param.bundleName_);
-                }
-                if (agent.watcher_ == nullptr) {
-                    agent.SetWatcher(std::make_shared<RdbWatcher>());
-                }
-                agent.count_++;
-                return true;
-            });
-            break;
-        }
-        default:
-            ZLOGE("mode:%{public}d error", option.mode);
-            return RDB_ERROR;
+    if (option.mode < 0 || option.mode >= SUBSCRIBE_MODE_MAX) {
+        ZLOGE("mode:%{public}d error", option.mode);
+        return RDB_ERROR;
     }
+    if (option.mode == SubscribeMode::REMOTE) {
+        auto identifier = GenIdentifier(param);
+        identifiers_.Insert(identifier, std::pair{ pid, tokenId });
+        ZLOGI("storeName:%{public}s, identifier:%{public}.6s, pid:%{public}d",
+            Anonymous::Change(param.storeName_).c_str(), identifier.c_str(), pid);
+    }
+    syncAgents_.Compute(tokenId, [pid, &param](auto &key, SyncAgent &agent) {
+        if (pid != agent.pid_) {
+            agent.ReInit(pid, param.bundleName_);
+        }
+        if (agent.watcher_ == nullptr) {
+            agent.SetWatcher(std::make_shared<RdbWatcher>());
+        }
+        agent.count_++;
+        return true;
+    });
     return RDB_OK;
 }
 
 int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
     RdbStoreObserver *observer)
 {
-    switch (option.mode) {
-        case SubscribeMode::REMOTE:
-        case SubscribeMode::CLOUD: // fallthrough
-        case SubscribeMode::CLOUD_DETAIL: {
-            syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [](auto &key, SyncAgent &agent) {
-                if (agent.count_ > 0) {
-                    agent.count_--;
-                }
-                if (agent.count_ == 0) {
-                    agent.SetWatcher(nullptr);
-                }
-                return true;
-            });
-            break;
-        }
-        default:
-            ZLOGE("mode:%{public}d error", option.mode);
-            return RDB_ERROR;
+    if (option.mode < 0 || option.mode >= SUBSCRIBE_MODE_MAX) {
+        ZLOGE("mode:%{public}d error", option.mode);
+        return RDB_ERROR;
     }
+    if (option.mode == SubscribeMode::REMOTE) {
+        auto identifier = GenIdentifier(param);
+        ZLOGI("storeName:%{public}s, identifier:%{public}.6s", Anonymous::Change(param.storeName_).c_str(),
+            identifier.c_str());
+        identifiers_.Erase(identifier);
+    }
+    syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [](auto &key, SyncAgent &agent) {
+        if (agent.count_ > 0) {
+            agent.count_--;
+        }
+        if (agent.count_ == 0) {
+            agent.SetWatcher(nullptr);
+        }
+        return true;
+    });
     return RDB_OK;
 }
 

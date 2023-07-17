@@ -16,9 +16,7 @@
 #include "store/general_value.h"
 namespace OHOS {
 namespace DistributedData {
-
-CursorMock::CursorMock(std::shared_ptr<ResultSet> resultSet):resultSet_(std::move(resultSet))
-{}
+CursorMock::CursorMock(std::shared_ptr<ResultSet> resultSet) : resultSet_(std::move(resultSet)) {}
 CursorMock::~CursorMock() {}
 int32_t CursorMock::GetColumnNames(std::vector<std::string> &names) const
 {

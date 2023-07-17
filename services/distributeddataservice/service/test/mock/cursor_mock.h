@@ -23,7 +23,7 @@ namespace OHOS {
 namespace DistributedData {
 class CursorMock : public DistributedData::Cursor {
 public:
-    using ResultSet = std::vector<std::map<std::string,DistributedData::Value>>;
+    using ResultSet = std::vector<std::map<std::string, DistributedData::Value>>;
     explicit CursorMock(std::shared_ptr<ResultSet> resultSet);
     ~CursorMock();
     int32_t GetColumnNames(std::vector<std::string> &names) const override;

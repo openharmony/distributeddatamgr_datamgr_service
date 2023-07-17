@@ -25,7 +25,7 @@ public:
     using Predicates = NativeRdb::RdbPredicates;
     static constexpr uint64_t TYPE_ID = 0x20000001;
     RdbQuery() = default;
-    RdbQuery(bool isRemote);
+    explicit RdbQuery(bool isRemote);
 
     ~RdbQuery() override = default;
 

@@ -85,7 +85,7 @@ int32_t RdbCursor::GetRow(VBucket &data)
     std::map<std::string, VariantData> bucket;
     auto ret = resultSet_->GetRow(bucket);
     data = ValueProxy::Convert(std::move(bucket));
-    return ret == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;;
+    return ret == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbCursor::Get(int32_t col, DistributedData::Value &value)
