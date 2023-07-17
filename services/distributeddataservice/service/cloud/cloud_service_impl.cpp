@@ -397,7 +397,9 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncW
         if (retry >= RETRY_TIMES || executor == nullptr) {
             return;
         }
-
+        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, work));
+        }
         bool finished = true;
         std::vector<int32_t> users;
         if (user == 0) {
@@ -406,7 +408,6 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncW
         } else {
             users.push_back(user);
         }
-
         for (auto user : users) {
             finished = (this->*HANDLERS[work])(user) && finished;
         }
