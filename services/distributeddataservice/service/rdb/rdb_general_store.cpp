@@ -69,7 +69,9 @@ RdbGeneralStore::~RdbGeneralStore()
     manager_.CloseStore(delegate_);
     delegate_ = nullptr;
     bindInfo_.loader_ = nullptr;
-    bindInfo_.db_->Close();
+    if (bindInfo_.db_ != nullptr) {
+        bindInfo_.db_->Close();
+    }
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
@@ -131,7 +133,9 @@ int32_t RdbGeneralStore::Close()
     }
     delegate_ = nullptr;
     bindInfo_.loader_ = nullptr;
-    bindInfo_.db_->Close();
+    if (bindInfo_.db_ != nullptr) {
+        bindInfo_.db_->Close();
+    }
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
@@ -169,6 +173,10 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
         ZLOGE("not RdbQuery!");
+        return nullptr;
+    }
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! tables name:%{public}s", Anonymous::Change(table).c_str());
         return nullptr;
     }
     if (rdbQuery->IsRemoteQuery()) {
@@ -340,6 +348,10 @@ int32_t RdbGeneralStore::AddRef()
 
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type)
 {
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! tables size:%{public}zu, type:%{public}d", tables.size(), type);
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     for (const auto &table : tables) {
         ZLOGD("tableName:%{public}s, type:%{public}d", Anonymous::Change(table).c_str(), type);
         auto dBStatus = delegate_->CreateDistributedTable(table, static_cast<DistributedDB::TableSyncType>(type));

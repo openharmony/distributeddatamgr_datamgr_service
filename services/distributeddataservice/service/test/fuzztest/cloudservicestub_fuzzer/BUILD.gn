@@ -71,7 +71,6 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
-    "${data_service_path}/service/rdb/rdb_store_observer_impl.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "${data_service_path}/service/rdb/value_proxy.cpp",
     "cloudservicestub_fuzzer.cpp",

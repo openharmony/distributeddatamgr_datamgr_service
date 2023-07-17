@@ -25,7 +25,6 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_notifier_proxy.h"
-#include "rdb_store_observer_impl.h"
 #include "rdb_watcher.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
@@ -60,8 +59,6 @@ public:
     int32_t UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
         RdbStoreObserver *observer) override;
 
-    void OnDataChange(pid_t pid, uint32_t tokenId, const DistributedDB::StoreChangedData& data);
-
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
     int32_t OnInitialize() override;
@@ -93,17 +90,11 @@ private:
         std::shared_ptr<RdbServiceImpl> product_;
     };
 
-    static constexpr int32_t MAX_SYNCER_NUM = 50;
-    static constexpr int32_t MAX_SYNCER_PER_PROCESS = 10;
-    static constexpr int32_t SYNCER_TIMEOUT = 60 * 1000; // ms
-
     std::pair<int32_t, Details> DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred);
 
     int32_t DoAsync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
-
-    std::string GenIdentifier(const RdbSyncerParam& param);
 
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
@@ -130,9 +121,7 @@ private:
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
     static Factory factory_;
-    ConcurrentMap<std::string, std::pair<pid_t, uint32_t>> identifiers_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
-    RdbStoreObserverImpl autoLaunchObserver_;
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedRdb

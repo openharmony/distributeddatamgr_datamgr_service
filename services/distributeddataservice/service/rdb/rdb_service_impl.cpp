@@ -69,7 +69,7 @@ RdbServiceImpl::Factory::~Factory()
 {
 }
 
-RdbServiceImpl::RdbServiceImpl() : autoLaunchObserver_(this)
+RdbServiceImpl::RdbServiceImpl()
 {
     ZLOGI("construct");
     DistributedDB::RelationalStoreManager::SetAutoLaunchRequestCallback(
@@ -128,16 +128,16 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
         param.appId = entry.appId;
         param.storeId = entry.storeId;
         param.path = entry.dataDir;
-        param.option.storeObserver = &autoLaunchObserver_;
+        param.option.storeObserver = nullptr;
         param.option.isEncryptedDb = entry.isEncrypt;
         if (entry.isEncrypt) {
             param.option.iterateTimes = ITERATE_TIMES;
             param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
             GetPassword(entry, param.option.passwd);
         }
+        AutoCache::GetInstance().GetStore(entry, GetWatchers(entry.tokenId, entry.storeId));
         return true;
     }
-
     ZLOGE("not find identifier");
     return false;
 }
@@ -152,9 +152,6 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
 void RdbServiceImpl::OnClientDied(pid_t pid)
 {
     ZLOGI("client dead pid=%{public}d", pid);
-    identifiers_.EraseIf([pid](const auto &key, std::pair<pid_t, uint32_t> &value) {
-        return value.first == pid;
-    });
     syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) { return agent.pid_ == pid; });
 }
 
@@ -207,35 +204,6 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
     ZLOGI("success tokenId:%{public}x, pid=%{public}d", tokenId, pid);
 
     return RDB_OK;
-}
-
-void RdbServiceImpl::OnDataChange(pid_t pid, uint32_t tokenId, const DistributedDB::StoreChangedData &data)
-{
-    DistributedDB::StoreProperty property;
-    data.GetStoreProperty(property);
-    ZLOGI("%{public}d %{public}s", pid, Anonymous::Change(property.storeId).c_str());
-    if (pid == 0) {
-        auto identifier = RelationalStoreManager::GetRelationalStoreIdentifier(property.userId, property.appId,
-                                                                               property.storeId);
-        auto [success, info] = identifiers_.Find(TransferStringToHex(identifier));
-        if (!success) {
-            ZLOGI("client doesn't subscribe");
-            return;
-        }
-        pid = info.first;
-        tokenId = info.second;
-        ZLOGI("fixed pid=%{public}d and tokenId=0x%{public}d", pid, tokenId);
-    }
-    auto [success, agent] = syncAgents_.Find(tokenId);
-    if (success && agent.notifier_ != nullptr && pid == agent.pid_) {
-        std::string device = data.GetDataChangeDevice();
-        auto networkId = DmAdapter::GetInstance().ToNetworkID(device);
-        Origin origin;
-        origin.origin = Origin::ORIGIN_NEARBY;
-        origin.store = property.storeId;
-        origin.id.push_back(networkId);
-        agent.notifier_->OnChange(origin, {}, {});
-    }
 }
 
 std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const RdbSyncerParam &param)
@@ -338,19 +306,6 @@ std::string RdbServiceImpl::TransferStringToHex(const std::string &origStr)
     return tmp;
 }
 
-std::string RdbServiceImpl::GenIdentifier(const RdbSyncerParam &param)
-{
-    pid_t uid = IPCSkeleton::GetCallingUid();
-    uint32_t token = IPCSkeleton::GetCallingTokenID();
-    auto storeId = RemoveSuffix(param.storeName_);
-    CheckerManager::StoreInfo storeInfo { uid, token, param.bundleName_, storeId };
-    auto userId = AccountDelegate::GetInstance()->GetUserByToken(token);
-    std::string appId = CheckerManager::GetInstance().GetAppId(storeInfo);
-    std::string identifier = RelationalStoreManager::GetRelationalStoreIdentifier(
-        std::to_string(userId), appId, storeId);
-    return TransferStringToHex(identifier);
-}
-
 AutoCache::Watchers RdbServiceImpl::GetWatchers(uint32_t tokenId, const std::string &storeName)
 {
     auto [success, agent] = syncAgents_.Find(tokenId);
@@ -374,7 +329,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     }
     auto values = ValueProxy::Convert(selectionArgs);
     RdbQuery rdbQuery(true);
-    rdbQuery.SetDevices( { device } );
+    rdbQuery.SetDevices({ device });
     rdbQuery.SetSql(sql, std::move(values));
     auto cursor = store->Query("", rdbQuery);
     if (cursor == nullptr) {
@@ -405,28 +360,27 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
 int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOption &option,
     RdbStoreObserver *observer)
 {
-    pid_t pid = IPCSkeleton::GetCallingPid();
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
     if (option.mode < 0 || option.mode >= SUBSCRIBE_MODE_MAX) {
         ZLOGE("mode:%{public}d error", option.mode);
         return RDB_ERROR;
     }
-    if (option.mode == SubscribeMode::REMOTE) {
-        auto identifier = GenIdentifier(param);
-        identifiers_.Insert(identifier, std::pair{ pid, tokenId });
-        ZLOGI("storeName:%{public}s, identifier:%{public}.6s, pid:%{public}d",
-            Anonymous::Change(param.storeName_).c_str(), identifier.c_str(), pid);
-    }
-    syncAgents_.Compute(tokenId, [pid, &param](auto &key, SyncAgent &agent) {
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    bool isCreate = false;
+    syncAgents_.Compute(tokenId, [pid, &param, &isCreate](auto &key, SyncAgent &agent) {
         if (pid != agent.pid_) {
             agent.ReInit(pid, param.bundleName_);
         }
         if (agent.watcher_ == nullptr) {
+            isCreate = true;
             agent.SetWatcher(std::make_shared<RdbWatcher>());
         }
         agent.count_++;
         return true;
     });
+    if (isCreate) {
+        AutoCache::GetInstance().SetObserver(tokenId, param.storeName_, GetWatchers(tokenId, param.storeName_));
+    }
     return RDB_OK;
 }
 
@@ -437,21 +391,21 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         ZLOGE("mode:%{public}d error", option.mode);
         return RDB_ERROR;
     }
-    if (option.mode == SubscribeMode::REMOTE) {
-        auto identifier = GenIdentifier(param);
-        ZLOGI("storeName:%{public}s, identifier:%{public}.6s", Anonymous::Change(param.storeName_).c_str(),
-            identifier.c_str());
-        identifiers_.Erase(identifier);
-    }
-    syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [](auto &key, SyncAgent &agent) {
+    bool destroyed = false;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    syncAgents_.ComputeIfPresent(tokenId, [&destroyed](auto &key, SyncAgent &agent) {
         if (agent.count_ > 0) {
             agent.count_--;
         }
         if (agent.count_ == 0) {
+            destroyed = true;
             agent.SetWatcher(nullptr);
         }
         return true;
     });
+    if (destroyed) {
+        AutoCache::GetInstance().SetObserver(tokenId, param.storeName_, GetWatchers(tokenId, param.storeName_));
+    }
     return RDB_OK;
 }
 
@@ -570,7 +524,7 @@ int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData
                 Anonymous::Change(param.storeName_).c_str());
             return RDB_ERROR;
         }
-        return store->Clean({}, GeneralStore::CleanMode::NEARBY_DATA, "") == GeneralError::E_OK ? RDB_OK : RDB_ERROR;
+        return store->Clean( {}, GeneralStore::CleanMode::NEARBY_DATA, "") == GeneralError::E_OK ? RDB_OK : RDB_ERROR;
     }
     return RDB_OK;
 }

@@ -15,9 +15,9 @@
 
 #define LOG_TAG "RdbResultSetImpl"
 
+#include "rdb_result_set_impl.h"
 #include "log_print.h"
 #include "store_types.h"
-#include "rdb_result_set_impl.h"
 #include "store/cursor.h"
 
 using DistributedDB::DBStatus;
@@ -46,6 +46,10 @@ int RdbResultSetImpl::GetAllColumnNames(std::vector<std::string> &columnNames)
 
 int RdbResultSetImpl::GetColumnCount(int &count)
 {
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_STEP_RESULT_CLOSED;
+    }
     count = static_cast<int>(colNames_.size());
     return NativeRdb::E_OK;
 }
@@ -62,7 +66,17 @@ int RdbResultSetImpl::GetColumnType(int columnIndex, ColumnType &columnType)
 
 int RdbResultSetImpl::GetColumnIndex(const std::string &columnName, int &columnIndex)
 {
-    return NativeRdb::E_NOT_SUPPORT;
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_STEP_RESULT_CLOSED;
+    }
+    for (int i = 0; i < colNames_.size(); i++) {
+        if (colNames_[i] == columnName) {
+            columnIndex = i;
+            return NativeRdb::E_OK;
+        }
+    }
+    return NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::GetColumnName(int columnIndex, std::string &columnName)
@@ -101,7 +115,7 @@ int RdbResultSetImpl::GetRowIndex(int &position) const
 int RdbResultSetImpl::GoTo(int offset)
 {
     int ret = NativeRdb::E_OK;
-    while(offset != 0 && ret == NativeRdb::E_OK) {
+    while (offset != 0 && ret == NativeRdb::E_OK) {
         if (offset > 0) {
             ret = GoToNextRow();
             offset--;
@@ -140,7 +154,8 @@ int RdbResultSetImpl::GoToNextRow()
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    if (current_ >= count_) {
+    if (current_ >= count_ - 1) {
+        current_ = count_;
         return NativeRdb::E_ERROR;
     }
 
@@ -155,7 +170,8 @@ int RdbResultSetImpl::GoToPreviousRow()
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    if (current_ <= -1) {
+    if (current_ <= 0) {
+        current_ = -1;
         return NativeRdb::E_ERROR;
     }
 
@@ -219,7 +235,7 @@ int RdbResultSetImpl::GetString(int columnIndex, std::string &value)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    return Get(columnIndex,value);
+    return Get(columnIndex, value);
 }
 
 int RdbResultSetImpl::GetInt(int columnIndex, int &value)
@@ -242,7 +258,7 @@ int RdbResultSetImpl::GetLong(int columnIndex, int64_t &value)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    return Get(columnIndex,value);
+    return Get(columnIndex, value);
 }
 
 int RdbResultSetImpl::GetDouble(int columnIndex, double &value)
@@ -251,7 +267,7 @@ int RdbResultSetImpl::GetDouble(int columnIndex, double &value)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    return Get(columnIndex,value);
+    return Get(columnIndex, value);
 }
 
 int RdbResultSetImpl::IsColumnNull(int columnIndex, bool &isNull)
