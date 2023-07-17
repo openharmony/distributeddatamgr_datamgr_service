@@ -408,6 +408,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncW
         } else {
             users.push_back(user);
         }
+
         for (auto user : users) {
             finished = (this->*HANDLERS[work])(user) && finished;
         }
