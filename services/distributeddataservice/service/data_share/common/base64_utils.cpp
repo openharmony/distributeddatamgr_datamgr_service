@@ -61,7 +61,7 @@ static inline bool IsBase64Char(const char c)
     return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
-static inline void MakeCharFour(const std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> &charArrayThree,
+static void MakeCharFour(const std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> &charArrayThree,
                                 std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> &charArrayFour)
 {
     const uint8_t table[CHAR_ARRAY_LENGTH_FOUR] = {
@@ -77,7 +77,7 @@ static inline void MakeCharFour(const std::array<uint8_t, CHAR_ARRAY_LENGTH_THRE
     }
 }
 
-static inline void MakeCharTree(const std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> &charArrayFour,
+static void MakeCharTree(const std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> &charArrayFour,
                                 std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> &charArrayThree)
 {
     const uint8_t table[CHAR_ARRAY_LENGTH_THREE] = {
