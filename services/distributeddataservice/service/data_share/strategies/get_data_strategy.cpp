@@ -38,7 +38,7 @@ Data GetDataStrategy::Execute(std::shared_ptr<Context> context, int &errorCode)
     }
     auto result = PublishedData::Query(context->calledBundleName, context->currentUserId);
     Data data;
-    for (const auto &item:result) {
+    for (auto &item : result) {
         if (!CheckPermission(context, item.value.key)) {
             ZLOGI("uri: %{private}s not allowed", context->uri.c_str());
             continue;
@@ -46,7 +46,8 @@ Data GetDataStrategy::Execute(std::shared_ptr<Context> context, int &errorCode)
         if (item.GetVersion() > data.version_) {
             data.version_ = item.GetVersion();
         }
-        data.datas_.emplace_back(item.value.key, item.value.subscriberId, item.value.value);
+        data.datas_.emplace_back(
+            item.value.key, item.value.subscriberId, PublishedDataNode::MoveTo(item.value.value));
     }
     return data;
 }

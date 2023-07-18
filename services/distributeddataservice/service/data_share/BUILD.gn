@@ -36,6 +36,7 @@ group("build_module") {
 ohos_shared_library("data_share_service") {
   sources = [
     "common/app_connect_manager.cpp",
+    "common/base64_utils.cpp",
     "common/bundle_mgr_proxy.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
