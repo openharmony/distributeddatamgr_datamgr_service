@@ -136,15 +136,7 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
         result.datas_.clear();
         for (auto &key : keys) {
             if (publishedResult.count(key) != 0) {
-                auto *valueStr = std::get_if<std::string>(&publishedResult[key]);
-                if (valueStr != nullptr) {
-                    result.datas_.emplace_back(key.key, key.subscriberId, *valueStr);
-                    continue;
-                }
-                auto *valueBytes = std::get_if<PublishedDataNode::BytesData>(&publishedResult[key]);
-                if (valueBytes != nullptr) {
-                    result.datas_.emplace_back(key.key, key.subscriberId, std::move(valueBytes->data));
-                }
+                result.datas_.emplace_back(key.key, key.subscriberId, PublishedDataNode::MoveTo(publishedResult[key]);
             }
         }
         if (result.datas_.empty()) {

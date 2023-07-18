@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include <array>
-#include <algorithm>
-
 #include "base64_utils.h"
+
+#include <algorithm>
+#include <array>
 
 namespace OHOS::DataShare::Base64 {
 static std::string BASE64_CHARS = /* NOLINT */
@@ -27,7 +27,8 @@ static std::string BASE64_CHARS = /* NOLINT */
 static constexpr const uint32_t CHAR_ARRAY_LENGTH_THREE = 3;
 static constexpr const uint32_t CHAR_ARRAY_LENGTH_FOUR = 4;
 
-enum BASE64_ENCODE_CONSTANT : uint8_t {
+enum BASE64_ENCODE_CONSTANT : uint8_t
+{
     BASE64_ENCODE_MASK1 = 0xfc,
     BASE64_ENCODE_MASK2 = 0x03,
     BASE64_ENCODE_MASK3 = 0x0f,
@@ -42,7 +43,8 @@ enum BASE64_ENCODE_CONSTANT : uint8_t {
     BASE64_ENCODE_INDEX2 = 2,
 };
 
-enum BASE64_DECODE_CONSTANT : uint8_t {
+enum BASE64_DECODE_CONSTANT : uint8_t
+{
     BASE64_DECODE_MASK1 = 0x30,
     BASE64_DECODE_MASK2 = 0xf,
     BASE64_DECODE_MASK3 = 0x3c,
@@ -62,7 +64,7 @@ static inline bool IsBase64Char(const char c)
 }
 
 static void MakeCharFour(const std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> &charArrayThree,
-                                std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> &charArrayFour)
+    std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> &charArrayFour)
 {
     const uint8_t table[CHAR_ARRAY_LENGTH_FOUR] = {
         static_cast<uint8_t>((charArrayThree[BASE64_ENCODE_INDEX0] & BASE64_ENCODE_MASK1) >> BASE64_ENCODE_OFFSET2),
@@ -78,7 +80,7 @@ static void MakeCharFour(const std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> &cha
 }
 
 static void MakeCharTree(const std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> &charArrayFour,
-                                std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> &charArrayThree)
+    std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> &charArrayThree)
 {
     const uint8_t table[CHAR_ARRAY_LENGTH_THREE] = {
         static_cast<uint8_t>((charArrayFour[BASE64_DECODE_INDEX0] << BASE64_DECODE_OFFSET2) +
@@ -98,8 +100,8 @@ std::string Encode(const std::vector<uint8_t> &source)
     auto it = source.begin();
     std::string ret;
     size_t index = 0;
-    std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> charArrayThree = {0};
-    std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> charArrayFour = {0};
+    std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> charArrayThree = { 0 };
+    std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> charArrayFour = { 0 };
 
     while (it != source.end()) {
         charArrayThree[index] = *it;
@@ -138,8 +140,8 @@ std::vector<uint8_t> Decode(const std::string &encoded)
 {
     auto it = encoded.begin();
     size_t index = 0;
-    std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> charArrayThree = {0};
-    std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> charArrayFour = {0};
+    std::array<uint8_t, CHAR_ARRAY_LENGTH_THREE> charArrayThree = { 0 };
+    std::array<uint8_t, CHAR_ARRAY_LENGTH_FOUR> charArrayFour = { 0 };
     std::vector<uint8_t> ret;
 
     while (it != encoded.end() && IsBase64Char(*it)) {
@@ -178,4 +180,4 @@ std::vector<uint8_t> Decode(const std::string &encoded)
     }
     return ret;
 }
-} // namespace OHOS::NetManagerStandard::Base64
+} // namespace OHOS::DataShare::Base64
