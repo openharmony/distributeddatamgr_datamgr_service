@@ -19,25 +19,33 @@
 #include <cstdint>
 
 #include "data_share_service_impl.h"
+#include "ipc_skeleton.h"
 #include "message_parcel.h"
 #include "securec.h"
 
 using namespace OHOS::DataShare;
 
 namespace OHOS {
-const std::u16string INTERFACE_TOKEN = u"OHOS.DataShare.IDataShare";
-const uint32_t CODE_MIN = 0;
-const uint32_t CODE_MAX = 16;
+const std::u16string INTERFACE_TOKEN = u"OHOS.DataShare.IDataShareService";
+constexpr uint32_t CODE_MIN = 0;
+constexpr uint32_t CODE_MAX = 16;
+constexpr size_t NUM_MIN = 5;
+constexpr size_t NUM_MAX = 12;
 
 bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 {
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    dataShareServiceImpl->OnBind(
+        { "DataShareServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
     request.RewindRead(0);
     MessageParcel reply;
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = std::make_shared<DataShareServiceImpl>();
+    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
     dataShareServiceStub->OnRemoteRequest(code, request, reply);
     return true;
 }

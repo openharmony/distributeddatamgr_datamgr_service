@@ -26,8 +26,8 @@ using namespace OHOS::UDMF;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
-const uint32_t CODE_MIN = 0;
-const uint32_t CODE_MAX = 10;
+constexpr uint32_t CODE_MIN = 0;
+constexpr uint32_t CODE_MAX = 10;
 
 bool OnRemoteRequestFuzz(const uint8_t* data, size_t size)
 {
