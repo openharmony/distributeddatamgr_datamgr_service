@@ -25,21 +25,19 @@ namespace DocumentDB {
 class Collection {
 public:
     Collection(const std::string &name, KvStoreExecutor *executor);
-    Collection(const Collection &other);
-    Collection() {};
     ~Collection();
 
-    int PutDocument(const Key &key, const Value &document);
-    int InsertDocument(const Key &key, const Value &document);
-    int GetDocument(const Key &key, Value &document) const;
-    int GetMatchedDocument(const JsonObject &filterObj, std::vector<std::pair<std::string, std::string>> &values) const;
-    int DeleteDocument(const Key &key);
+    int InsertDocument(const std::string &id, const std::string &document, bool &isIdExist);
+    int GetDocumentById(Key &key, Value &document) const;
+    int GetMatchedDocument(const JsonObject &filterObj, Key &key, std::pair<std::string, std::string> &values,
+        int isIdExist) const;
+    int DeleteDocument(Key &key);
     int IsCollectionExists(int &errCode);
-    int UpsertDocument(const std::string &id, const std::string &document, bool isReplace = true);
-    bool FindDocument();
-    int UpdateDocument(const std::string &id, const std::string &document, bool isReplace = false);
+    int UpsertDocument(const std::string &id, const std::string &newDocument, bool &isIdExist);
+    int UpdateDocument(const std::string &id, const std::string &document);
 
 private:
+    int InsertUntilSuccess(Key &key, const std::string &id, Value &valSet);
     std::string name_;
     KvStoreExecutor *executor_ = nullptr;
 };

@@ -63,7 +63,6 @@ int KvStoreManager::GetKvStore(const std::string &path, const DBConfig &config, 
             goto END;
         }
     }
-
     executor = sqliteExecutor;
     return E_OK;
 

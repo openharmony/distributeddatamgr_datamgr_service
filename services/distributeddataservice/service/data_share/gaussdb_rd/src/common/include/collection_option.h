@@ -23,9 +23,6 @@ class CollectionOption final {
 public:
     static CollectionOption ReadOption(const std::string &optStr, int &errCode);
 
-    uint32_t GetMaxDoc() const;
-    std::string ToString() const;
-
     bool operator==(const CollectionOption &targetOption) const;
     bool operator!=(const CollectionOption &targetOption) const;
 
