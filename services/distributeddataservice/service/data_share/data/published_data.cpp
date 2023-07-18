@@ -129,7 +129,6 @@ PublishedDataNode::Data PublishedDataNode::MoveTo(std::variant<std::vector<uint8
     }
     auto *valueBytes = std::get_if<std::vector<uint8_t>>(&data);
     if (valueBytes != nullptr) {
-        ZLOGE("hanlu size input data %{public}d", valueBytes->size());
         return BytesData(*valueBytes);
     }
     ZLOGE("error");
