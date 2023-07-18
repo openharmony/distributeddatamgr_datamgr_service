@@ -82,7 +82,7 @@ private:
     class TimerReceiver : public EventFwk::CommonEventSubscriber {
     public:
         TimerReceiver() = default;
-        TimerReceiver(const EventFwk::CommonEventSubscribeInfo &subscriberInfo);
+        explicit TimerReceiver(const EventFwk::CommonEventSubscribeInfo &subscriberInfo);
         virtual ~TimerReceiver() = default;
         virtual void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
     };
