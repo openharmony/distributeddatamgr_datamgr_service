@@ -14,8 +14,6 @@
 */
 #include "result_set.h"
 
-#include <sstream>
-
 #include "db_constant.h"
 #include "document_key.h"
 #include "log_print.h"
