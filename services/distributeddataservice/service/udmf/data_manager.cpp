@@ -23,6 +23,7 @@
 #include "log_print.h"
 #include "preprocess_utils.h"
 #include "uri_permission_manager.h"
+#include "uri.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -66,6 +67,7 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
+            ZLOGE("SetRemoteUri failed, ret: %{public}d.", ret);
             return ret;
         }
     }
@@ -142,12 +144,15 @@ int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifie
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
     auto records = unifiedData.GetRecords();
     if (localDeviceId != unifiedData.GetRuntime()->deviceId) {
-        std::string uri;
         for (auto record : records) {
             if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
                 auto file = static_cast<File *>(record.get());
-                uri = file->GetRemoteUri();
-                file->SetUri(uri); // cross dev, need dis path.
+                std::string remoteUri = file->GetRemoteUri();
+                if (remoteUri.empty()) {
+                    ZLOGW("RetrieveData, remoteUri is empyt, key=%{public}s.", query.key.c_str());
+                    continue;
+                }
+                file->SetUri(remoteUri); // cross dev, need dis path.
             }
         }
     }
@@ -156,15 +161,18 @@ int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifie
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         return E_ERROR;
     }
-    if (unifiedData.GetRuntime()->createPackage != bundleName) {
-        for (auto record : records) {
-            if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-                auto file = static_cast<File *>(record.get());
-                std::string uri = file->GetUri();
-                if (!uri.empty()
-                    && (UriPermissionManager::GetInstance().GrantUriPermission(uri, bundleName) != E_OK)) {
-                    return E_NO_PERMISSION;
-                }
+    for (auto record : records) {
+        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+            auto file = static_cast<File *>(record.get());
+            if (file->GetUri().empty()) {
+                ZLOGW("RetrieveData, uri is empty, key=%{public}s.", query.key.c_str());
+                continue;
+            }
+            Uri uri(file->GetUri());
+            if (uri.GetAuthority() != bundleName
+                && (UriPermissionManager::GetInstance().GrantUriPermission(file->GetUri(), bundleName) != E_OK)) {
+                ZLOGE("RetrieveData, GrantUriPermission fail, key=%{public}s.", query.key.c_str());
+                return E_NO_PERMISSION;
             }
         }
     }

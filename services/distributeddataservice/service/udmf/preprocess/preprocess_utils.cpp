@@ -31,6 +31,7 @@ namespace OHOS {
 namespace UDMF {
 static constexpr int ID_LEN = 32;
 const char SPECIAL = '^';
+constexpr const char* PERMISSION_PROXY_AUTHORIZATION_URI = "ohos.permission.PROXY_AUTHORIZATION_URI";
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 
@@ -158,22 +159,41 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         if (record != nullptr && IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             if (file->GetUri().empty()) {
+                ZLOGW("SetRemoteUri, Get uri empty, plase check the uri.");
                 continue;
             }
             Uri uri(file->GetUri());
             if (uri.GetAuthority().empty()) {
+                ZLOGW("SetRemoteUri, Get uri authority failed, will not cross device, maybe need check the uri.");
                 continue;
+            }
+            if (uri.GetAuthority() != bundleName
+                && !VerifyCallingPermission(tokenId, PERMISSION_PROXY_AUTHORIZATION_URI)) {
+                ZLOGW("SetRemoteUri, no authority to handle this uri.");
+                return E_NO_PERMISSION;
             }
             struct HmdfsUriInfo dfsUriInfo;
             int ret = RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
             if (ret != 0 || dfsUriInfo.uriStr.empty()) {
-                ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d.", ret, userId);
+                ZLOGE("SetRemoteUri, Get remoteUri failed, ret = %{public}d, userId: %{public}d.", ret, userId);
                 return E_FS_ERROR;
             }
             file->SetRemoteUri(dfsUriInfo.uriStr);
         }
     }
     return E_OK;
+}
+
+bool PreProcessUtils::VerifyCallingPermission(uint32_t tokenId, const std::string &permissionName)
+{
+    ZLOGD("SetRemoteUri, VerifyCallingPermission permission %{public}s", permissionName.c_str());
+    int32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
+    if (ret != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        ZLOGE("SetRemoteUri, permission %{public}s: PERMISSION_DENIED", permissionName.c_str());
+        return false;
+    }
+    ZLOGD("SetRemoteUri, verify AccessToken success");
+    return true;
 }
 } // namespace UDMF
 } // namespace OHOS
