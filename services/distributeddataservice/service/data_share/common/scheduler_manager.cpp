@@ -16,6 +16,7 @@
 
 #include "scheduler_manager.h"
 
+#include <sys/timeb.h>
 #include "log_print.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
@@ -62,13 +63,16 @@ void SchedulerManager::SetTimer(
         return;
     }
     // reminder time must is in future
-    auto now = time(nullptr);
+    auto now = time(nullptr) * 1000;
+    timeb mtime;
+    ftime(&mtime);
+    now += mtime.millitm;
     if (reminderTime <= now) {
         ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64, reminderTime, now);
         return;
     }
-    auto duration = std::chrono::seconds(reminderTime - now);
-    ZLOGI("reminderTime will notify in %{public}" PRId64 " seconds", reminderTime - now);
+    auto duration = std::chrono::milliseconds(reminderTime - now);
+    ZLOGI("reminderTime will notify in %{public}" PRId64 " milliseconds", reminderTime - now);
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         // has current timer, reset time
