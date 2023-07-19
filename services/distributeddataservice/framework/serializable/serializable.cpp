@@ -144,7 +144,7 @@ bool Serializable::GetValue(const json &node, const std::string &name, std::vect
 bool Serializable::GetValue(const json &node, const std::string &name, Serializable &value)
 {
     auto &subNode = GetSubNode(node, name);
-    if (subNode.is_null()) {
+    if (subNode.is_null() || !subNode.is_object()) {
         return false;
     }
     return value.Unmarshal(subNode);

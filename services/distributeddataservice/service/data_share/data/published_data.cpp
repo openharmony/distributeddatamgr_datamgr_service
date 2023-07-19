@@ -260,13 +260,14 @@ PublishedDataNode::BytesData::BytesData(std::vector<uint8_t> &data) : data(std::
 
 bool PublishedDataNode::BytesData::Marshal(DistributedData::Serializable::json &node) const
 {
-    node = Base64::Encode(data);
-    return true;
+    return SetValue(node[GET_NAME(data)], Base64::Encode(data));
 }
 
 bool PublishedDataNode::BytesData::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    data = Base64::Decode(node);
-    return true;
+    std::string dataStr;
+    bool ret = GetValue(node, GET_NAME(data), dataStr);
+    data = Base64::Decode(dataStr);
+    return ret;
 }
 } // namespace OHOS::DataShare
