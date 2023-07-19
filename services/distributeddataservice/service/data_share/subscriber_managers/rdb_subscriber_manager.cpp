@@ -119,8 +119,8 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         ExecutorPool::Task task = [key, node, context, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
-                ZLOGE("loadDataInfo failed, uri %{private}s tokenId %{public}d",
-                    key.uri.c_str(), context->callerTokenId);
+                ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",
+                    DistributedData::Anonymous::Change(key.uri).c_str(), context->callerTokenId);
                 return;
             }
             Notify(key, context->currentUserId, node, context->calledSourceDir, context->version);
