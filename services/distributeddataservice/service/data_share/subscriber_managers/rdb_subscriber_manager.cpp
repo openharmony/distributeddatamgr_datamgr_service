@@ -113,6 +113,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     int result = E_OK;
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
+        value.emplace_back(observer, context->callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId);
         ExecutorPool::Task task = [key, node, context, this]() {
@@ -129,7 +130,6 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
             }
         };
         executorPool->Execute(task);
-        value.emplace_back(observer, context->callerTokenId);
         return true;
     });
     return result;
