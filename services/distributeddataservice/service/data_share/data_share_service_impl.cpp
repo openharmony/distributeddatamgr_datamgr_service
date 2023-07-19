@@ -343,7 +343,6 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
     std::vector<PublishedDataKey> publishedKeys;
     int32_t result;
     int32_t userId = -1;
-    uint32_t callerTokenId = 0;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
@@ -353,7 +352,6 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
             return PublishedDataSubscriberManager::GetInstance().Enable(
                 PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
         });
-        callerTokenId = context->callerTokenId;
         if (result == E_OK && binderInfo_.executors != nullptr) {
             binderInfo_.executors->Execute([context, subscriberId]() {
                 PublishedData::UpdateTimestamp(
