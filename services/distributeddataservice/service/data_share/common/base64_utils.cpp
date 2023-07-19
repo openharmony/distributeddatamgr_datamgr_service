@@ -19,7 +19,7 @@
 #include <array>
 
 namespace OHOS::DataShare::Base64 {
-constexpr const char *BASE64_CHARS = /* NOLINT */
+static constexpr const std::string_view BASE64_CHARS = /* NOLINT */
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
