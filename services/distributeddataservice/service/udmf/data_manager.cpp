@@ -149,7 +149,7 @@ int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifie
                 auto file = static_cast<File *>(record.get());
                 std::string remoteUri = file->GetRemoteUri();
                 if (remoteUri.empty()) {
-                    ZLOGW("RetrieveData, remoteUri is empyt, key=%{public}s.", query.key.c_str());
+                    ZLOGW("Get remoteUri is empyt, key=%{public}s.", query.key.c_str());
                     continue;
                 }
                 file->SetUri(remoteUri); // cross dev, need dis path.
@@ -165,13 +165,19 @@ int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifie
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             if (file->GetUri().empty()) {
-                ZLOGW("RetrieveData, uri is empty, key=%{public}s.", query.key.c_str());
+                ZLOGW("Get uri is empty, key=%{public}s.", query.key.c_str());
                 continue;
             }
             Uri uri(file->GetUri());
-            if (uri.GetAuthority() != bundleName
-                && (UriPermissionManager::GetInstance().GrantUriPermission(file->GetUri(), bundleName) != E_OK)) {
-                ZLOGE("RetrieveData, GrantUriPermission fail, key=%{public}s.", query.key.c_str());
+            if (uri.GetAuthority().empty()) {
+                ZLOGW("Get authority is empty, key=%{public}s.", query.key.c_str());
+                continue;
+            }
+            if (uri.GetAuthority() == bundleName) {
+                continue;
+            }
+            if (UriPermissionManager::GetInstance().GrantUriPermission(file->GetUri(), bundleName) != E_OK) {
+                ZLOGE("GrantUriPermission fail, key=%{public}s.", query.key.c_str());
                 return E_NO_PERMISSION;
             }
         }
