@@ -158,7 +158,7 @@ void SchedulerManager::RemoveTimer(const Key &key)
     }
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
-        ZLOGD("RemoveTimer %{public}s %{public}s %{public}" PRId64,
+        ZLOGW("RemoveTimer %{public}s %{public}s %{public}" PRId64,
             DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
         executor_->Remove(it->second);
         timerCache_.erase(key);
