@@ -22,7 +22,16 @@
 namespace OHOS::DataShare {
 class PublishedDataNode final : public VersionData {
 public:
-    using Data = std::variant<std::vector<uint8_t>, std::string>;
+    struct BytesData : public DistributedData::Serializable {
+        explicit BytesData(std::vector<uint8_t> &data);
+        BytesData() = default;
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
+        std::vector<uint8_t> data;
+    };
+    using Data = std::variant<BytesData, std::string>;
+    static std::variant<std::vector<uint8_t>, std::string> MoveTo(const Data &data);
+    static Data MoveTo(std::variant<std::vector<uint8_t>, std::string> &data);
     PublishedDataNode();
     PublishedDataNode(const std::string &key, const std::string &bundleName, int64_t subscriberId,
         const int32_t userId, const Data &value);

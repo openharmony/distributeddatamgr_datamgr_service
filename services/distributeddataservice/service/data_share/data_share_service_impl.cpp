@@ -486,6 +486,7 @@ void DataShareServiceImpl::NotifyObserver(const std::string &uri)
         RdbSubscriberManager::GetInstance().Emit(uri, context);
     }
 }
+
 bool DataShareServiceImpl::SubscribeTimeChanged()
 {
     ZLOGD("start");

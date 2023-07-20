@@ -17,6 +17,7 @@
 
 #include "log_print.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
+#include "base64_utils.h"
 
 namespace OHOS::DataShare {
 bool PublishedData::HasVersion() const
@@ -105,6 +106,34 @@ PublishedDataNode::PublishedDataNode(const std::string &key, const std::string &
 }
 
 PublishedDataNode::PublishedDataNode() : VersionData(-1) {}
+
+std::variant<std::vector<uint8_t>, std::string> PublishedDataNode::MoveTo(const PublishedDataNode::Data &data)
+{
+    auto *valueStr = std::get_if<std::string>(&data);
+    if (valueStr != nullptr) {
+        return *valueStr;
+    }
+    auto *valueBytes = std::get_if<PublishedDataNode::BytesData>(&data);
+    if (valueBytes != nullptr) {
+        return valueBytes->data;
+    }
+    ZLOGE("error");
+    return "";
+}
+
+PublishedDataNode::Data PublishedDataNode::MoveTo(std::variant<std::vector<uint8_t>, std::string> &data)
+{
+    auto *valueStr = std::get_if<std::string>(&data);
+    if (valueStr != nullptr) {
+        return *valueStr;
+    }
+    auto *valueBytes = std::get_if<std::vector<uint8_t>>(&data);
+    if (valueBytes != nullptr) {
+        return BytesData(*valueBytes);
+    }
+    ZLOGE("error");
+    return "";
+}
 
 int32_t PublishedData::Query(const std::string &filter, PublishedDataNode::Data &publishedData)
 {
@@ -223,5 +252,22 @@ void PublishedData::UpdateTimestamp(
     if (status == E_OK) {
         ZLOGI("update timestamp %{private}s", data.key.c_str());
     }
+}
+
+PublishedDataNode::BytesData::BytesData(std::vector<uint8_t> &data) : data(std::move(data))
+{
+}
+
+bool PublishedDataNode::BytesData::Marshal(DistributedData::Serializable::json &node) const
+{
+    return SetValue(node[GET_NAME(data)], Base64::Encode(data));
+}
+
+bool PublishedDataNode::BytesData::Unmarshal(const DistributedData::Serializable::json &node)
+{
+    std::string dataStr;
+    bool ret = GetValue(node, GET_NAME(data), dataStr);
+    data = Base64::Decode(dataStr);
+    return ret;
 }
 } // namespace OHOS::DataShare
