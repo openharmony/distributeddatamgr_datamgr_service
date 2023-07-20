@@ -78,15 +78,6 @@ int Collection::GetDocumentById(Key &key, Value &document) const
     return executor_->GetDataById(name_, key, document);
 }
 
-int Collection::GetMatchedDocument(const JsonObject &filterObj, Key &key, std::pair<std::string, std::string> &values,
-    int isIdExist) const
-{
-    if (executor_ == nullptr) {
-        return -E_INNER_ERROR;
-    }
-    return executor_->GetDataByFilter(name_, key, filterObj, values, isIdExist);
-}
-
 int Collection::DeleteDocument(Key &key)
 {
     if (executor_ == nullptr) {
@@ -101,6 +92,15 @@ int Collection::DeleteDocument(Key &key)
         return -E_INVALID_ARGS;
     }
     return executor_->DelData(name_, key);
+}
+
+int Collection::GetMatchedDocument(const JsonObject &filterObj, Key &key, std::pair<std::string, std::string> &values,
+    int isIdExist) const
+{
+    if (executor_ == nullptr) {
+        return -E_INNER_ERROR;
+    }
+    return executor_->GetDataByFilter(name_, key, filterObj, values, isIdExist);
 }
 
 int Collection::IsCollectionExists(int &errCode)
