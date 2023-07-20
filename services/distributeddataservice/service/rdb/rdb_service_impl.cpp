@@ -18,6 +18,7 @@
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
+#include "cloud/change_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory/directory_manager.h"
@@ -235,60 +236,13 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     return store->SetDistributedTables(tables, type);
 }
 
-std::pair<int32_t, Details> RdbServiceImpl::DoSync(const RdbSyncerParam &param, const Option &option,
-    const PredicatesMemo &pred)
-{
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
-        return {RDB_ERROR, {}};
-    }
-    auto store = GetStore(param);
-    if (store == nullptr) {
-        return {RDB_ERROR, {}};
-    }
-    Details details = {};
-    RdbQuery rdbQuery;
-    rdbQuery.MakeQuery(pred);
-    auto status = store->Sync(
-        DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
-        [&details, &param](const GenDetails &result) mutable {
-            ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
-                Anonymous::Change(param.storeName_).c_str());
-            details = HandleGenDetails(result);
-        },
-        true);
-    return { status, std::move(details) };
-}
-
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
 {
-    ZLOGI("pid=%{public}x seqnum=%{public}u", tokenId, seqNum);
+    ZLOGI("tokenId=%{public}x seqnum=%{public}u", tokenId, seqNum);
     auto [success, agent] = syncAgents_.Find(tokenId);
     if (success && agent.notifier_ != nullptr) {
         agent.notifier_->OnComplete(seqNum, std::move(result));
     }
-}
-
-int32_t RdbServiceImpl::DoAsync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred)
-{
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
-        return RDB_ERROR;
-    }
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    ZLOGI("seq num=%{public}u", option.seqNum);
-    auto store = GetStore(param);
-    if (store == nullptr) {
-        return RDB_ERROR;
-    }
-    RdbQuery rdbQuery;
-    rdbQuery.MakeQuery(pred);
-    return store->Sync(
-        DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
-        [this, tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
-            OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
-        },
-        false);
 }
 
 std::string RdbServiceImpl::TransferStringToHex(const std::string &origStr)
@@ -329,7 +283,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     }
     auto values = ValueProxy::Convert(selectionArgs);
     RdbQuery rdbQuery(true);
-    rdbQuery.SetDevices({ device });
+    rdbQuery.SetDevices({device});
     rdbQuery.SetSql(sql, std::move(values));
     auto cursor = store->Query("", rdbQuery);
     if (cursor == nullptr) {
@@ -347,14 +301,81 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
 int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
                              const AsyncDetail &async)
 {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("permission error");
+        return RDB_ERROR;
+    }
+    if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
+        option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
+        DoCloudSync(param, option, predicates, async);
+        return RDB_OK;
+    }
+    return DoSync(param, option, predicates, async);
+}
+
+int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option &option,
+    const PredicatesMemo &predicates, const AsyncDetail &async)
+{
+    auto store = GetStore(param);
+    if (store == nullptr) {
+        return RDB_ERROR;
+    }
+    RdbQuery rdbQuery;
+    rdbQuery.MakeQuery(predicates);
     if (!option.isAsync) {
-        auto [status, details] = DoSync(param, option, predicates);
+        Details details = {};
+        auto status = store->Sync(
+            DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
+            [&details, &param](const GenDetails &result) mutable {
+                ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+                    Anonymous::Change(param.storeName_).c_str());
+                details = HandleGenDetails(result);
+            },
+            true);
         if (async != nullptr) {
             async(std::move(details));
         }
         return status;
     }
-    return DoAsync(param, option, predicates);
+    ZLOGD("seqNum=%{public}u", option.seqNum);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    return store->Sync(
+        DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
+        [this, tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
+            OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+        },
+        false);
+}
+
+void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::Option &option,
+    const PredicatesMemo &predicates, const AsyncDetail &async)
+{
+    CloudEvent::StoreInfo storeInfo;
+    storeInfo.bundleName = param.bundleName_;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.storeName = param.storeName_;
+    std::shared_ptr<RdbQuery> query = nullptr;
+    if (!predicates.tables_.empty()) {
+        query = std::make_shared<RdbQuery>();
+        query->FromTable(predicates.tables_);
+    }
+    GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](
+                                 const GenDetails &result) mutable {
+        OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+    };
+    GenAsync syncCallback = [async, &param](const GenDetails &details) {
+        ZLOGD("Cloud Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        if (async != nullptr) {
+            async(HandleGenDetails(details));
+        }
+    };
+
+    auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME),
+        (option.isAsync && option.seqNum == 0), query, (option.isAsync ? asyncCallback : syncCallback));
+    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
 int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOption &option,
@@ -524,7 +545,7 @@ int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData
                 Anonymous::Change(param.storeName_).c_str());
             return RDB_ERROR;
         }
-        return store->Clean( {}, GeneralStore::CleanMode::NEARBY_DATA, "") == GeneralError::E_OK ? RDB_OK : RDB_ERROR;
+        return store->Clean({}, GeneralStore::CleanMode::NEARBY_DATA, "") == GeneralError::E_OK ? RDB_OK : RDB_ERROR;
     }
     return RDB_OK;
 }

@@ -15,6 +15,7 @@
 #define LOG_TAG "RdbQuery"
 #include "rdb_query.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -28,7 +29,7 @@ bool RdbQuery::IsEqual(uint64_t tid)
 
 std::vector<std::string> RdbQuery::GetTables()
 {
-    return {};
+    return tables_;
 }
 
 void RdbQuery::SetDevices(const std::vector<std::string> &devices)
@@ -52,13 +53,22 @@ std::vector<std::string> RdbQuery::GetDevices() const
     return devices_;
 }
 
+void RdbQuery::FromTable(const std::vector<std::string> &tables)
+{
+    ZLOGD("table count=%{public}zu", tables.size());
+    if (tables.size() > 1) {
+        query_.FromTable(tables);
+    }
+    tables_ = tables;
+}
+
 void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
 {
-    ZLOGI("table=%{public}zu", predicates.tables_.size());
-    auto query = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
-                                                : DistributedDB::Query::Select();
+    ZLOGD("table=%{public}zu", predicates.tables_.size());
+    query_ = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
+                                            : DistributedDB::Query::Select();
     if (predicates.tables_.size() > 1) {
-        query.FromTable(predicates.tables_);
+        query_.FromTable(predicates.tables_);
     }
     for (const auto &operation : predicates.operations_) {
         if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
@@ -66,6 +76,7 @@ void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
         }
     }
     devices_ = predicates.devices_;
+    tables_ = predicates.tables_;
 }
 
 bool RdbQuery::IsRemoteQuery()

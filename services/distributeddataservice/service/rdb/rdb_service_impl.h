@@ -90,9 +90,13 @@ private:
         std::shared_ptr<RdbServiceImpl> product_;
     };
 
-    std::pair<int32_t, Details> DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred);
+    static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
 
-    int32_t DoAsync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &pred);
+    void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
+        const AsyncDetail &async);
+		
+    int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
+        const AsyncDetail &async);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 

@@ -37,6 +37,7 @@ public:
     bool IsRemoteQuery();
     void SetDevices(const std::vector<std::string> &devices);
     void SetSql(const std::string &sql, DistributedData::Values &&args);
+    void FromTable(const std::vector<std::string> &tables);
     void MakeQuery(const PredicatesMemo &predicates);
 
 private:
@@ -62,6 +63,7 @@ private:
     std::string sql_;
     DistributedData::Values args_;
     std::vector<std::string> devices_;
+    std::vector<std::string> tables_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_QUERY_H

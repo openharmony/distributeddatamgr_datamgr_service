@@ -175,6 +175,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
         ZLOGE("not RdbQuery!");
         return nullptr;
     }
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("database already closed! tables name:%{public}s", Anonymous::Change(table).c_str());
         return nullptr;
@@ -348,6 +349,7 @@ int32_t RdbGeneralStore::AddRef()
 
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type)
 {
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("database already closed! tables size:%{public}zu, type:%{public}d", tables.size(), type);
         return GeneralError::E_ALREADY_CLOSED;
