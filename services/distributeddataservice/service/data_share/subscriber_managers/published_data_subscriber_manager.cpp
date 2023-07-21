@@ -48,7 +48,7 @@ int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, uint32_t
     auto result =
         publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end();) {
-            if (it->firstCallerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == callerTokenId) {
                     ZLOGI("delete publish subscriber, uri %{public}s tokenId 0x%{public}x",
                         DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
                     it = value.erase(it);
