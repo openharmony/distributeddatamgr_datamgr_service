@@ -65,8 +65,10 @@ public:
 
 private:
     struct ObserverNode {
-        ObserverNode(const sptr<IDataProxyRdbObserver> &observer, uint32_t callerTokenId);
+        ObserverNode(const sptr<IDataProxyRdbObserver> &observer, uint32_t firstCallerTokenId,
+            uint32_t callerTokenId = 0);
         sptr<IDataProxyRdbObserver> observer;
+        uint32_t firstCallerTokenId;
         uint32_t callerTokenId;
         bool enabled = true;
         bool isNotifyOnEnabled = false;

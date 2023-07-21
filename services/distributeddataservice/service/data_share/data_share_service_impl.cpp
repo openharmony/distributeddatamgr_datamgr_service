@@ -461,6 +461,15 @@ int32_t DataShareServiceImpl::OnAppUninstall(
     return EOK;
 }
 
+int32_t DataShareServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    ZLOGI("AppExit uid=%{public}d, pid=%{public}d, tokenId=0x%{public}x, bundleName=%{public}s",
+        uid, pid, tokenId, bundleName.c_str());
+    RdbSubscriberManager::GetInstance().Delete(tokenId);
+    PublishedDataSubscriberManager::GetInstance().Delete(tokenId);
+    return EOK;
+}
+
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
     ZLOGD("%{private}s try notified", uri.c_str());

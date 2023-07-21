@@ -16,6 +16,7 @@
 
 #include "rdb_subscriber_manager.h"
 
+#include "ipc_skeleton.h"
 #include "general/load_config_data_info_strategy.h"
 #include "log_print.h"
 #include "scheduler_manager.h"
@@ -113,9 +114,11 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     int result = E_OK;
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
-        value.emplace_back(observer, context->callerTokenId);
+		auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+        auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+        value.emplace_back(observer, context->callerTokenId, callerTokenId);
         std::vector<ObserverNode> node;
-        node.emplace_back(observer, context->callerTokenId);
+        node.emplace_back(observer, context->callerTokenId, callerTokenId);
         ExecutorPool::Task task = [key, node, context, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
@@ -142,7 +145,7 @@ int RdbSubscriberManager::Delete(const Key &key, uint32_t callerTokenId)
             ZLOGI("delete subscriber, uri %{public}s tokenId 0x%{public}x",
                 DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
             for (auto it = value.begin(); it != value.end();) {
-                if (it->callerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == callerTokenId) {
                     ZLOGI("erase start");
                     it = value.erase(it);
                 } else {
@@ -181,7 +184,7 @@ int RdbSubscriberManager::Disable(const Key &key, uint32_t callerTokenId)
     auto result =
         rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
-                if (it->callerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == callerTokenId) {
                     it->enabled = false;
                     it->isNotifyOnEnabled = false;
                 }
@@ -195,7 +198,7 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
 {
     auto result = rdbCache_.ComputeIfPresent(key, [&context, this](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end(); it++) {
-            if (it->callerTokenId != context->callerTokenId) {
+            if (it->firstCallerTokenId != context->callerTokenId) {
                 continue;
             }
             it->enabled = true;
@@ -324,8 +327,9 @@ void RdbSubscriberManager::Clear()
     rdbCache_.Clear();
 }
 
-RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer, uint32_t callerTokenId)
-    : observer(observer), callerTokenId(callerTokenId)
+RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer,
+    uint32_t firstCallerTokenId, uint32_t callerTokenId)
+    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId)
 {
 }
 } // namespace OHOS::DataShare

@@ -16,6 +16,7 @@
 
 #include "published_data_subscriber_manager.h"
 
+#include "ipc_skeleton.h"
 #include "general/load_config_data_info_strategy.h"
 #include "log_print.h"
 #include "published_data.h"
@@ -36,7 +37,7 @@ int PublishedDataSubscriberManager::Add(
         key, [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{public}s tokenId 0x%{public}x",
                 DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
-            value.emplace_back(observer, callerTokenId);
+            value.emplace_back(observer, callerTokenId, IPCSkeleton::GetCallingTokenID());
             return true;
         });
     return E_OK;
@@ -47,7 +48,7 @@ int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, uint32_t
     auto result =
         publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end();) {
-                if (it->callerTokenId == callerTokenId) {
+            if (it->firstCallerTokenId == callerTokenId) {
                     ZLOGI("delete publish subscriber, uri %{public}s tokenId 0x%{public}x",
                         DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
                     it = value.erase(it);
@@ -81,7 +82,7 @@ int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_
     auto result =
         publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
-                if (it->callerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == callerTokenId) {
                     it->enabled = false;
                     it->isNotifyOnEnabled = false;
                 }
@@ -96,7 +97,7 @@ int PublishedDataSubscriberManager::Enable(const PublishedDataKey &key, uint32_t
     auto result =
         publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
-                if (it->callerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == callerTokenId) {
                     it->enabled = true;
                 }
             }
@@ -185,7 +186,7 @@ bool PublishedDataSubscriberManager::IsNotifyOnEnabled(const PublishedDataKey &k
         return false;
     }
     for (const auto &value : pair.second) {
-        if (value.callerTokenId == callerTokenId && value.isNotifyOnEnabled) {
+        if (value.firstCallerTokenId == callerTokenId && value.isNotifyOnEnabled) {
             return true;
         }
     }
@@ -259,9 +260,9 @@ bool PublishedDataKey::operator!=(const PublishedDataKey &rhs) const
     return !(rhs == *this);
 }
 
-PublishedDataSubscriberManager::ObserverNode::ObserverNode(
-    const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t callerTokenId)
-    : observer(observer), callerTokenId(callerTokenId)
+PublishedDataSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer,
+    uint32_t firstCallerTokenId, uint32_t callerTokenId)
+    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId)
 {
 }
 } // namespace OHOS::DataShare
