@@ -138,7 +138,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
         if (IsFileType(type)) {
             auto file = static_cast<File *>(record.get());
             UDDetails details = file->GetDetails();
-            details.insert({"isRemote", "true"});
+            details.insert({ "isRemote", "true" });
             file->SetDetails(details);
         }
     }
