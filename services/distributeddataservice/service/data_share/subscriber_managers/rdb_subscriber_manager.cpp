@@ -115,7 +115,6 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
 		auto callerTokenId = IPCSkeleton::GetCallingTokenID();
-        auto callerTokenId = IPCSkeleton::GetCallingTokenID();
         value.emplace_back(observer, context->callerTokenId, callerTokenId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId, callerTokenId);
