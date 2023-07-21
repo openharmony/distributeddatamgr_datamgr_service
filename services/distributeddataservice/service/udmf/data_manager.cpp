@@ -159,6 +159,7 @@ int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifie
 
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
+        ZLOGE("GetHapBundleNameByToken fail, key=%{public}s.", query.key.c_str());
         return E_ERROR;
     }
     for (auto record : records) {
@@ -173,11 +174,9 @@ int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifie
                 ZLOGW("Get authority is empty, key=%{public}s.", query.key.c_str());
                 continue;
             }
-            if (uri.GetAuthority() == bundleName) {
-                continue;
-            }
             if (UriPermissionManager::GetInstance().GrantUriPermission(file->GetUri(), bundleName) != E_OK) {
-                ZLOGE("GrantUriPermission fail, key=%{public}s.", query.key.c_str());
+                ZLOGE("GrantUriPermission fail, uriAuthority=%{public}s, bundleName=%{public}s, key=%{public}s.",
+                      uri.GetAuthority().c_str(), bundleName.c_str(), query.key.c_str());
                 return E_NO_PERMISSION;
             }
         }

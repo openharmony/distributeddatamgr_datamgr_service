@@ -159,7 +159,7 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         if (record != nullptr && IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             if (file->GetUri().empty()) {
-                ZLOGW("SetRemoteUri, Get uri empty, plase check the uri.");
+                ZLOGW("Get uri empty, plase check the uri.");
                 continue;
             }
             Uri uri(file->GetUri());
@@ -169,7 +169,8 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
             }
             if (uri.GetAuthority() != bundleName
                 && !VerifyCallingPermission(tokenId, PERMISSION_PROXY_AUTHORIZATION_URI)) {
-                ZLOGE("no authority to handle this uri.");
+                ZLOGE("No auth to handle this uri, authority=%{public}s, bundleName=%{public}s.",
+                      uri.GetAuthority().c_str(), bundleName.c_str());
                 return E_NO_PERMISSION;
             }
             struct HmdfsUriInfo dfsUriInfo;
@@ -188,7 +189,7 @@ bool PreProcessUtils::VerifyCallingPermission(uint32_t tokenId, const std::strin
 {
     int32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
     if (ret != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-        ZLOGE("Permission %{public}s: PERMISSION_DENIED", permissionName.c_str());
+        ZLOGE("Permission %{public}s: PERMISSION_DENIED, ret=%{public}d ", permissionName.c_str(), ret);
         return false;
     }
     ZLOGD("Verify AccessToken success, %{public}s", permissionName.c_str());
