@@ -79,7 +79,9 @@ RdbGeneralStore::~RdbGeneralStore()
     delegate_ = nullptr;
     store_ = nullptr;
     bindInfo_.loader_ = nullptr;
-    bindInfo_.db_->Close();
+    if (bindInfo_.db_ != nullptr) {
+        bindInfo_.db_->Close();
+    }
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
@@ -142,7 +144,9 @@ int32_t RdbGeneralStore::Close()
     delegate_ = nullptr;
     store_ = nullptr;
     bindInfo_.loader_ = nullptr;
-    bindInfo_.db_->Close();
+    if (bindInfo_.db_ != nullptr) {
+        bindInfo_.db_->Close();
+    }
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
