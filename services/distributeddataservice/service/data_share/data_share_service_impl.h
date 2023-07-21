@@ -68,7 +68,6 @@ public:
     int32_t OnBind(const BindInfo &binderInfo) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
-    int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
     void NotifyObserver(const std::string &uri) override;
 
 private:
