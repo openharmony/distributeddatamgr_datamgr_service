@@ -31,26 +31,27 @@ PublishedDataSubscriberManager &PublishedDataSubscriberManager::GetInstance()
 }
 
 int PublishedDataSubscriberManager::Add(
-    const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer, uint32_t callerTokenId)
+    const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer, uint32_t firstCallerTokenId)
 {
     publishedDataCache_.Compute(
-        key, [&observer, &callerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
+        key, [&observer, &firstCallerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{public}s tokenId 0x%{public}x",
-                DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
-            value.emplace_back(observer, callerTokenId, IPCSkeleton::GetCallingTokenID());
+                DistributedData::Anonymous::Change(key.key).c_str(), firstCallerTokenId);
+            value.emplace_back(observer, firstCallerTokenId, IPCSkeleton::GetCallingTokenID());
             return true;
         });
     return E_OK;
 }
 
-int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, uint32_t callerTokenId)
+int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, uint32_t firstCallerTokenId)
 {
     auto result =
-        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+        publishedDataCache_.ComputeIfPresent(key, [&firstCallerTokenId](const auto &key,
+            std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end();) {
-                if (it->firstCallerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == firstCallerTokenId) {
                     ZLOGI("delete publish subscriber, uri %{public}s tokenId 0x%{public}x",
-                        DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
+                        DistributedData::Anonymous::Change(key.key).c_str(), firstCallerTokenId);
                     it = value.erase(it);
                 } else {
                     it++;
@@ -77,12 +78,13 @@ void PublishedDataSubscriberManager::Delete(uint32_t callerTokenId)
     });
 }
 
-int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_t callerTokenId)
+int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_t firstCallerTokenId)
 {
     auto result =
-        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+        publishedDataCache_.ComputeIfPresent(key, [&firstCallerTokenId](const auto &key,
+            std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
-                if (it->firstCallerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == firstCallerTokenId) {
                     it->enabled = false;
                     it->isNotifyOnEnabled = false;
                 }
@@ -92,12 +94,13 @@ int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-int PublishedDataSubscriberManager::Enable(const PublishedDataKey &key, uint32_t callerTokenId)
+int PublishedDataSubscriberManager::Enable(const PublishedDataKey &key, uint32_t firstCallerTokenId)
 {
     auto result =
-        publishedDataCache_.ComputeIfPresent(key, [&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+        publishedDataCache_.ComputeIfPresent(key, [&firstCallerTokenId](const auto &key,
+            std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
-                if (it->firstCallerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == firstCallerTokenId) {
                     it->enabled = true;
                 }
             }

@@ -137,14 +137,15 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     return result;
 }
 
-int RdbSubscriberManager::Delete(const Key &key, uint32_t callerTokenId)
+int RdbSubscriberManager::Delete(const Key &key, uint32_t firstCallerTokenId)
 {
     auto result =
-        rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
+        rdbCache_.ComputeIfPresent(key, [&firstCallerTokenId, this](const auto &key,
+            std::vector<ObserverNode> &value) {
             ZLOGI("delete subscriber, uri %{public}s tokenId 0x%{public}x",
-                DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
+                DistributedData::Anonymous::Change(key.uri).c_str(), firstCallerTokenId);
             for (auto it = value.begin(); it != value.end();) {
-                if (it->firstCallerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == firstCallerTokenId) {
                     ZLOGI("erase start");
                     it = value.erase(it);
                 } else {
@@ -178,12 +179,13 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId)
     });
 }
 
-int RdbSubscriberManager::Disable(const Key &key, uint32_t callerTokenId)
+int RdbSubscriberManager::Disable(const Key &key, uint32_t firstCallerTokenId)
 {
     auto result =
-        rdbCache_.ComputeIfPresent(key, [&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
+        rdbCache_.ComputeIfPresent(key, [&firstCallerTokenId, this](const auto &key,
+            std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
-                if (it->firstCallerTokenId == callerTokenId) {
+                if (it->firstCallerTokenId == firstCallerTokenId) {
                     it->enabled = false;
                     it->isNotifyOnEnabled = false;
                 }

@@ -54,9 +54,9 @@ public:
     static RdbSubscriberManager &GetInstance();
     int Add(const Key &key, const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
         std::shared_ptr<ExecutorPool> executorPool);
-    int Delete(const Key &key, uint32_t callerTokenId);
+    int Delete(const Key &key, uint32_t firstCallerTokenId);
     void Delete(uint32_t callerTokenId);
-    int Disable(const Key &key, uint32_t callerTokenId);
+    int Disable(const Key &key, uint32_t firstCallerTokenId);
     int Enable(const Key &key, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
     void EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version);
