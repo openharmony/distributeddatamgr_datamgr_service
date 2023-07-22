@@ -32,14 +32,14 @@ PermissionValidator &PermissionValidator::GetInstance()
 bool PermissionValidator::CheckSyncPermission(uint32_t tokenId)
 {
     auto permit = AccessTokenKit::VerifyAccessToken(tokenId, DISTRIBUTED_DATASYNC);
-    ZLOGD("sync permit: %{public}d, token: %{public}u", permit, tokenId);
+    ZLOGD("sync permit:%{public}d, token:0x%{public}x", permit, tokenId);
     return permit == PERMISSION_GRANTED;
 }
 
 bool PermissionValidator::IsCloudConfigPermit(uint32_t tokenId)
 {
     auto permit = AccessTokenKit::VerifyAccessToken(tokenId, CLOUD_DATA_CONFIG);
-    ZLOGD("cloud permit: %{public}d, token: %{public}u", permit, tokenId);
+    ZLOGD("cloud permit:%{public}d, token:0x%{public}x", permit, tokenId);
     return permit == PERMISSION_GRANTED;
 }
 } // namespace DistributedKv
