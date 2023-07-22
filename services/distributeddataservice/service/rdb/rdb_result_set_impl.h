@@ -18,13 +18,15 @@
 
 #include <shared_mutex>
 #include "rdb_result_set_stub.h"
-#include "distributeddb/result_set.h"
+#include "rdb_errno.h"
+#include "store/cursor.h"
+#include "value_proxy.h"
+#include "store/general_value.h"
 
 namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public RdbResultSetStub {
 public:
-    using DbColumnType = DistributedDB::ResultSet::ColumnType;
-    explicit RdbResultSetImpl(std::shared_ptr<DistributedDB::ResultSet> resultSet);
+    explicit RdbResultSetImpl(std::shared_ptr<DistributedData::Cursor> resultSet);
     ~RdbResultSetImpl() override {};
     int GetAllColumnNames(std::vector<std::string> &columnNames) override;
     int GetColumnCount(int &count) override;
@@ -43,7 +45,7 @@ public:
     int IsStarted(bool &result) const override;
     int IsAtFirstRow(bool &result) const override;
     int IsAtLastRow(bool &result) override;
-    int GetBlob(int columnIndex, std::vector<uint8_t> &blob) override;
+    int GetBlob(int columnIndex, std::vector<uint8_t> &value) override;
     int GetString(int columnIndex, std::string &value) override;
     int GetInt(int columnIndex, int &value) override;
     int GetLong(int columnIndex, int64_t &value) override;
@@ -53,9 +55,41 @@ public:
     int Close() override;
 
 private:
+    template<typename T>
+    std::enable_if_t < ValueProxy::CVT_INDEX<T, ValueProxy::Proxy><ValueProxy::MAX, int>
+    Get(int columnIndex, T &value) const
+    {
+        auto [ret, val] = GetValue(columnIndex);
+        value = val.operator T();
+        return ret;
+    };
+
+    std::pair<int32_t, ValueProxy::Value> GetValue(int columnIndex) const
+    {
+        DistributedData::Value var;
+        auto status = resultSet_->Get(columnIndex, var);
+        if (status != DistributedData::GeneralError::E_OK) {
+            return { NativeRdb::E_ERROR, ValueProxy::Value() };
+        }
+        return {NativeRdb::E_OK, ValueProxy::Convert(std::move(var))};
+    };
+
     mutable std::shared_mutex mutex_ {};
-    std::shared_ptr<DistributedDB::ResultSet> resultSet_;
-    ColumnType ConvertColumnType(DbColumnType columnType) const;
+    static constexpr ColumnType COLUMNTYPES[DistributedData::TYPE_MAX] = {
+        [DistributedData::TYPE_INDEX<std::monostate>] = ColumnType::TYPE_NULL,
+        [DistributedData::TYPE_INDEX<int64_t>] = ColumnType::TYPE_INTEGER,
+        [DistributedData::TYPE_INDEX<double>] = ColumnType::TYPE_FLOAT,
+        [DistributedData::TYPE_INDEX<std::string>] = ColumnType::TYPE_STRING,
+        [DistributedData::TYPE_INDEX<bool>] = ColumnType::TYPE_INTEGER,
+        [DistributedData::TYPE_INDEX<DistributedData::Bytes>] = ColumnType::TYPE_BLOB,
+        [DistributedData::TYPE_INDEX<DistributedData::Asset>] = ColumnType::TYPE_BLOB,
+        [DistributedData::TYPE_INDEX<DistributedData::Assets>] = ColumnType::TYPE_BLOB,
+    };
+    std::shared_ptr<DistributedData::Cursor> resultSet_;
+    std::atomic<int32_t> current_ = -1;
+    int32_t count_ = 0;
+    std::vector<std::string> colNames_;
+    ColumnType ConvertColumnType(int32_t columnType) const;
 };
 } // namespace OHOS::DistributedRdb
 #endif // DISTRIBUTED_RDB_RDB_RESULT_SET_IMPL_H

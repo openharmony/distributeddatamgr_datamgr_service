@@ -20,6 +20,7 @@
 #include "store/general_value.h"
 #include "value_object.h"
 #include "values_bucket.h"
+#include "distributeddb/result_set.h"
 namespace OHOS::DistributedRdb {
 class ValueProxy final {
 public:
@@ -190,6 +191,7 @@ public:
         friend ValueProxy;
         std::vector<Bucket> value_;
     };
+
     static Value Convert(DistributedData::Value &&value);
     static Value Convert(NativeRdb::ValueObject &&value);
     static Value Convert(DistributedDB::Type &&value);
@@ -202,6 +204,9 @@ public:
     static Buckets Convert(std::vector<NativeRdb::ValuesBucket> &&buckets);
     static Buckets Convert(std::vector<DistributedDB::VBucket> &&buckets);
 
+    static Value Convert(DistributedDB::VariantData &&value);
+    static Bucket Convert(std::map<std::string, DistributedDB::VariantData> &&value);
+
     template<typename T>
     static std::enable_if_t < CVT_INDEX<T, Proxy><MAX, Bucket>
     Convert(const std::map<std::string, T> &values)
@@ -211,6 +216,18 @@ public:
             bucket.value_[key].value_ = static_cast<std::variant_alternative_t<CVT_INDEX<T, Proxy>, Proxy>>(value);
         }
         return bucket;
+    }
+
+    template<typename T>
+    static std::enable_if_t < CVT_INDEX<T, Proxy><MAX, Values>
+    Convert(const std::vector<T> &values)
+    {
+        Values proxy;
+        proxy.value_.resize(values.size());
+        for (int i = 0; i < values.size(); i++) {
+            proxy.value_[i].value_ = static_cast<std::variant_alternative_t<CVT_INDEX<T, Proxy>, Proxy>>(values[i]);
+        }
+        return proxy;
     }
 
 private:

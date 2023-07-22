@@ -115,6 +115,22 @@ ValueProxy::Buckets ValueProxy::Convert(DistributedData::VBuckets &&buckets)
     return proxy;
 }
 
+ValueProxy::Value ValueProxy::Convert(DistributedDB::VariantData &&value)
+{
+    Value proxy;
+    DistributedData::Convert(std::move(value), proxy.value_);
+    return proxy;
+}
+
+ValueProxy::Bucket ValueProxy::Convert(std::map<std::string, DistributedDB::VariantData> &&value)
+{
+    ValueProxy::Bucket proxy;
+    for (auto &[key, value] : value) {
+        proxy.value_.insert_or_assign(key, Convert(std::move(value)));
+    }
+    return proxy;
+}
+
 ValueProxy::Asset::Asset(DistributedData::Asset asset)
 {
     asset_ = std::move(asset);

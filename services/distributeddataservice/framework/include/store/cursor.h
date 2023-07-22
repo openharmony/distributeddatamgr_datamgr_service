@@ -37,6 +37,8 @@ public:
 
     virtual int32_t MoveToNext() = 0;
 
+    virtual int32_t MoveToPrev();
+
     virtual int32_t GetEntry(VBucket &entry) = 0;
 
     virtual int32_t GetRow(VBucket &data) = 0;
