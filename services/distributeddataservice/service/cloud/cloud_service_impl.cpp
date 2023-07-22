@@ -253,6 +253,7 @@ int32_t CloudServiceImpl::Online(const std::string &device)
     }
     auto it = users.begin();
     syncManager_.DoCloudSync({ *it });
+    Execute(GetCloudTask(0, *it, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE }));
     return SUCCESS;
 }
 
@@ -397,7 +398,9 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncW
         if (retry >= RETRY_TIMES || executor == nullptr) {
             return;
         }
-
+        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+            return;
+        }
         bool finished = true;
         std::vector<int32_t> users;
         if (user == 0) {
