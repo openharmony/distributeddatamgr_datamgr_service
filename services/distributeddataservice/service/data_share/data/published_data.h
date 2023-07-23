@@ -23,7 +23,7 @@ namespace OHOS::DataShare {
 class PublishedDataNode final : public VersionData {
 public:
     struct BytesData : public DistributedData::Serializable {
-        explicit BytesData(std::string &data);
+        explicit BytesData(std::string &&data);
         BytesData() = default;
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
