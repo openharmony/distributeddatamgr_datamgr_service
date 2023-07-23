@@ -130,7 +130,7 @@ PublishedDataNode::Data PublishedDataNode::MoveTo(std::variant<std::vector<uint8
     auto *valueBytes = std::get_if<std::vector<uint8_t>>(&data);
     if (valueBytes != nullptr) {
         std::string valueEncode = Base64::Encode(*valueBytes);
-        return BytesData(valueEncode);
+        return BytesData(std::move(valueEncode));
     }
     ZLOGE("error");
     return "";
