@@ -255,7 +255,7 @@ void PublishedData::UpdateTimestamp(
     }
 }
 
-PublishedDataNode::BytesData::BytesData(std::string &data) : data(std::move(data))
+PublishedDataNode::BytesData::BytesData(std::string &&data) : data(std::move(data))
 {
 }
 
