@@ -16,7 +16,6 @@
 
 #include "scheduler_manager.h"
 
-#include <sys/timeb.h>
 #include "log_print.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
@@ -62,11 +61,9 @@ void SchedulerManager::SetTimer(
         ZLOGE("executor_ is nullptr");
         return;
     }
+    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
     // reminder time must is in future
-    auto now = time(nullptr) * 1000;
-    timeb mtime;
-    ftime(&mtime);
-    now += mtime.millitm;
     if (reminderTime <= now) {
         ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64, reminderTime, now);
         return;
