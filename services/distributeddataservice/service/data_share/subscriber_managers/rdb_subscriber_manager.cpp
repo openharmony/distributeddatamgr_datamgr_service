@@ -248,14 +248,19 @@ void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
     }
-    rdbCache_.ForEach([&uri, &userId, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
+    bool hasObserver = false;
+    rdbCache_.ForEach([&uri, &userId, &metaData, &hasObserver, this](const Key &key, std::vector<ObserverNode> &val) {
         if (key.uri != uri) {
             return false;
         }
+        hasObserver = true;
         Notify(key, userId, val, metaData.dataDir, metaData.version);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
+    if (!hasObserver) {
+        return;
+    }
     SchedulerManager::GetInstance().Execute(
         uri, userId, metaData.dataDir, metaData.version, metaData.bundleName);
 }
@@ -339,7 +344,8 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
 
-    ZLOGI("emit, size %{public}zu %{private}s", val.size(), changeNode.uri_.c_str());
+    ZLOGI("emit, valSize: %{public}zu, dataSize:%{public}zu, uri:%{public}s,",
+        val.size(), changeNode.data_.size(), DistributedData::Anonymous::Change(changeNode.uri_).c_str());
     for (const auto &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             callback.observer->OnChangeFromRdb(changeNode);
@@ -379,3 +385,4 @@ RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserve
 {
 }
 } // namespace OHOS::DataShare
+

@@ -59,7 +59,14 @@ bool TemplateRootNode::Unmarshal(const DistributedData::Serializable::json &node
 {
     bool ret = GetValue(node, GET_NAME(uri), uri);
     ret = ret && GetValue(node, GET_NAME(bundleName), bundleName);
-    ret = ret && GetValue(node, GET_NAME(subscriberId), subscriberId);
+    if (!GetValue(node, GET_NAME(subscriberId), subscriberId)) {
+        int64_t subId;
+        if (GetValue(node, GET_NAME(subscriberId), subId)) {
+            subscriberId = std::to_string(subId);
+        } else {
+            ret = false;
+        }
+    }
     ret = ret && GetValue(node, GET_NAME(userId), userId);
     ret = ret && GetValue(node, GET_NAME(templat), tpl);
     return ret;
@@ -67,7 +74,7 @@ bool TemplateRootNode::Unmarshal(const DistributedData::Serializable::json &node
 
 TemplateRootNode::TemplateRootNode(const std::string &uri, const std::string &bundleName, const int64_t subscriberId,
     const int32_t userId, const Template &tpl)
-    : uri(uri), bundleName(bundleName), subscriberId(subscriberId), userId(userId), tpl(tpl)
+    : uri(uri), bundleName(bundleName), subscriberId(std::to_string(subscriberId)), userId(userId), tpl(tpl)
 {
 }
 
@@ -132,6 +139,7 @@ bool TemplateData::Delete(const std::string &bundleName, const int32_t userId)
         ZLOGE("db DeleteById failed, %{public}d", status);
         return false;
     }
+    delegate->NotifyBackup();
     return true;
 }
 
@@ -149,6 +157,7 @@ bool TemplateData::Add(const std::string &uri, const int32_t userId, const std::
         ZLOGE("db Upsert failed, %{public}d", status);
         return false;
     }
+    delegate->NotifyBackup();
     return true;
 }
 
@@ -166,6 +175,7 @@ bool TemplateData::Delete(
         ZLOGE("db DeleteById failed, %{public}d", status);
         return false;
     }
+    delegate->NotifyBackup();
     return true;
 }
 

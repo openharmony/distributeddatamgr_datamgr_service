@@ -26,6 +26,7 @@
 #include "metadata/secret_key_meta_data.h"
 #include "resultset_json_formatter.h"
 #include "log_print.h"
+#include "rdb_errno.h"
 #include "rdb_utils.h"
 #include "scheduler_manager.h"
 #include "string_wrapper.h"
@@ -63,7 +64,8 @@ std::string RemindTimerFunc(const std::vector<std::string> &args)
     return args[ARG_TIME];
 }
 
-RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction)
+std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta,
+    bool registerFunction)
 {
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);
@@ -71,28 +73,38 @@ RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta
     config.SetBundleName(meta.bundleName);
     if (meta.isEncrypt) {
         DistributedData::SecretKeyMetaData secretKeyMeta;
-        DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKeyMeta, true);
+        if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKeyMeta, true)) {
+            return std::make_pair(E_DB_NOT_EXIST, config);
+        }
         std::vector<uint8_t> decryptKey;
-        DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        if (!DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey)) {
+            return std::make_pair(E_ERROR, config);
+        };
         config.SetEncryptKey(decryptKey);
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
     }
     if (registerFunction) {
         config.SetScalarFunction("remindTimer", ARGS_SIZE, RemindTimerFunc);
     }
-    return config;
+    return std::make_pair(E_OK, config);
 }
 
 RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
     bool registerFunction, const std::string &extUriData, const std::string &backup)
 {
+    tokenId_ = meta.tokenId;
     bundleName_ = meta.bundleName;
     storeName_ = meta.storeId;
     extUri_ = extUriData;
     haMode_ = meta.haMode;
     backup_ = backup;
 
-    RdbStoreConfig config = GetConfig(meta, registerFunction);
+    auto [err, config] = GetConfig(meta, registerFunction);
+    if (err != E_OK) {
+        ZLOGW("Get rdbConfig failed, errCode is %{public}d, dir is %{public}s", err,
+            DistributedData::Anonymous::Change(meta.dataDir).c_str());
+        return;
+    }
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
     if (errCode_ != E_OK) {
@@ -129,6 +141,9 @@ int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesB
         ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::INSERT_RDB_ERROR);
+        if (ret == E_SQLITE_ERROR) {
+            EraseStoreCache(tokenId_);
+        }
     }
     return rowId;
 }
@@ -147,6 +162,9 @@ int64_t RdbDelegate::Update(
         ZLOGE("Update failed  %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::UPDATE_RDB_ERROR);
+        if (ret == E_SQLITE_ERROR) {
+            EraseStoreCache(tokenId_);
+        }
     }
     return changeCount;
 }
@@ -163,6 +181,9 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
         ZLOGE("Delete failed  %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::DELETE_RDB_ERROR);
+        if (ret == E_SQLITE_ERROR) {
+            EraseStoreCache(tokenId_);
+        }
     }
     return changeCount;
 }
@@ -181,6 +202,9 @@ std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
         ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::INSERT_RDB_ERROR);
+        if (ret == E_SQLITE_ERROR) {
+            EraseStoreCache(tokenId_);
+        }
         RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, rowId);
     }
@@ -202,6 +226,9 @@ std::pair<int64_t, int64_t> RdbDelegate::UpdateEx(
         ZLOGE("Update failed  %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::UPDATE_RDB_ERROR);
+        if (ret == E_SQLITE_ERROR) {
+            EraseStoreCache(tokenId_);
+        }
         RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, changeCount);
     }
@@ -221,6 +248,9 @@ std::pair<int64_t, int64_t> RdbDelegate::DeleteEx(const std::string &tableName, 
         ZLOGE("Delete failed  %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::DELETE_RDB_ERROR);
+        if (ret == E_SQLITE_ERROR) {
+            EraseStoreCache(tokenId_);
+        }
         RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, changeCount);
     }
@@ -252,6 +282,10 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     }
     int err = resultSet->GetRowCount(count);
     RdbDelegate::TryAndSend(err);
+    if (err == E_SQLITE_ERROR) {
+        ZLOGE("query failed, err:%{public}d, pid:%{public}d", E_SQLITE_ERROR, callingPid);
+        EraseStoreCache(tokenId_);
+    }
     resultSetCallingPids.Compute(callingPid, [](const uint32_t &, int32_t &value) {
         ++value;
         return true;
@@ -288,6 +322,11 @@ std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::st
         ZLOGE("Query failed %{private}s", sql.c_str());
         return "";
     }
+    int rowCount;
+    if (resultSet->GetRowCount(rowCount) == E_SQLITE_ERROR) {
+        ZLOGE("query failed, err:%{public}d", E_SQLITE_ERROR);
+        EraseStoreCache(tokenId_);
+    }
     ResultSetJsonFormatter formatter(std::move(resultSet));
     return DistributedData::Serializable::Marshall(formatter);
 }
@@ -298,7 +337,17 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
         ZLOGE("store is null");
         return nullptr;
     }
-    return store_->QuerySql(sql);
+    auto resultSet = store_->QuerySql(sql);
+    if (resultSet == nullptr) {
+        ZLOGE("Query failed %{private}s", sql.c_str());
+        return resultSet;
+    }
+    int rowCount;
+    if (resultSet->GetRowCount(rowCount) == E_SQLITE_ERROR) {
+        ZLOGE("query failed, err:%{public}d", E_SQLITE_ERROR);
+        EraseStoreCache(tokenId_);
+    }
+    return resultSet;
 }
 
 bool RdbDelegate::IsInvalid()
@@ -320,7 +369,7 @@ bool RdbDelegate::IsLimit(int count, const int32_t callingPid)
         return false;
     }
     std::string logStr;
-    resultSetCallingPids.ForEach([&logStr](const uint32_t &key, int32_t &value) {
+    resultSetCallingPids.ForEach([&logStr](const uint32_t &key, const int32_t &value) {
         logStr += std::to_string(key) + ":" + std::to_string(value) + ";";
         return false;
     });

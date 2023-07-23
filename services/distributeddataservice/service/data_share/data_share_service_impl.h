@@ -95,8 +95,8 @@ public:
     int32_t GetSilentProxyStatus(const std::string &uri, bool isCreateHelper) override;
     int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
     int32_t UnregisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
-
 private:
+    class SystemAbilityStatusChangeListener;
     using StaticActs = DistributedData::StaticActs;
     class DataShareStatic : public StaticActs {
     public:
@@ -129,7 +129,8 @@ private:
     std::pair<int32_t, int32_t> ExecuteEx(const std::string &uri, const std::string &extUri, const int32_t tokenId,
         bool isRead, ExecuteCallbackEx callback);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
-    void InitSubEvent();
+    void SubscribeCommonEvent();
+    static void InitSubEvent();
     void AutoLaunch(const DistributedData::Event &event);
     void SubscribeChange();
     bool AllowCleanDataLaunchApp(const DistributedData::Event &event, bool launchForCleanData);

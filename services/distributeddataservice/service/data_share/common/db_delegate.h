@@ -62,7 +62,7 @@ private:
         Time time_;
     };
     static constexpr int NO_CHANGE_VERSION = -1;
-    static constexpr int64_t INTERVAL = 1; //min
+    static constexpr int64_t INTERVAL = 20; //seconds
     static ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<Entity>>> stores_;
     static std::shared_ptr<ExecutorPool> executor_;
     static ExecutorPool::TaskId taskId_;
@@ -129,6 +129,7 @@ public:
         std::string &result) = 0;
     virtual int32_t GetBatch(const std::string &collectionName, const std::string &filter,
         const std::string &projection, std::vector<std::string> &result) = 0;
+    virtual void NotifyBackup() = 0;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_DB_DELEGATE_H

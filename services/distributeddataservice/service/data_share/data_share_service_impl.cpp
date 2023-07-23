@@ -38,7 +38,9 @@
 #include "dump/dump_manager.h"
 #include "extension_ability_manager.h"
 #include "hap_token_info.h"
+#include "if_system_ability_manager.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
@@ -48,6 +50,8 @@
 #include "scheduler_manager.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
 #include "sys_event_subscriber.h"
+#include "system_ability_definition.h"
+#include "system_ability_status_change_stub.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 #include "xcollie.h"
@@ -58,6 +62,29 @@ using DumpManager = OHOS::DistributedData::DumpManager;
 using ProviderInfo = DataProviderConfig::ProviderInfo;
 using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
+class DataShareServiceImpl::SystemAbilityStatusChangeListener
+    : public SystemAbilityStatusChangeStub {
+public:
+    SystemAbilityStatusChangeListener()
+    {
+    }
+    ~SystemAbilityStatusChangeListener() = default;
+    void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
+    void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
+    {
+    }
+};
+
+void DataShareServiceImpl::SystemAbilityStatusChangeListener::OnAddSystemAbility(
+    int32_t systemAbilityId, const std::string &deviceId)
+{
+    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        return;
+    }
+    ZLOGI("Common event service start. saId:%{public}d", systemAbilityId);
+    InitSubEvent();
+}
+
 DataShareServiceImpl::Factory::Factory()
 {
     FeatureSystem::GetInstance().RegisterCreator("data_share", []() {
@@ -566,11 +593,22 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
-    InitSubEvent();
+    SubscribeCommonEvent();
     SubscribeTimeChanged();
     SubscribeChange();
     ZLOGI("end");
     return E_OK;
+}
+
+void DataShareServiceImpl::SubscribeCommonEvent()
+{
+    sptr<ISystemAbilityManager> systemManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemManager == nullptr) {
+        ZLOGE("System mgr is nullptr");
+        return;
+    }
+    sptr<SystemAbilityStatusChangeListener> callback(new SystemAbilityStatusChangeListener());
+    systemManager->SubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, callback);
 }
 
 void DataShareServiceImpl::SubscribeChange()
@@ -584,7 +622,7 @@ void DataShareServiceImpl::SubscribeChange()
         AutoLaunch(event);
     });
 }
-
+ 
 void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const std::string &userId,
     const std::string &deviceId)
 {
@@ -596,22 +634,21 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     if (profileInfos.empty()) {
         return;
     }
-    std::map<std::string, AutoLaunchMetaData> maps;
+    StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
     for (auto &[uri, value] : profileInfos) {
         if (uri.find(EXT_URI_SCHEMA) == std::string::npos) {
             continue;
         }
         std::string extUri = uri;
         extUri.insert(strlen(EXT_URI_SCHEMA), "/");
-        StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
         if (value.launchInfos.empty()) {
             meta.storeId = "";
             AutoLaunchMetaData autoLaunchMetaData = {};
-            std::vector<std::string> tempData = {};
-            autoLaunchMetaData.datas.emplace(extUri, tempData);
+            std::vector<std::string> tempDatas = {};
+            autoLaunchMetaData.datas.emplace(extUri, tempDatas);
             autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
             MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), autoLaunchMetaData, true);
-            ZLOGI("Without launchInfos, save meta end, bundleName = %{public}s.", bundleName.c_str());
+            ZLOGI("without launchInfos, save meta end, bundleName = %{public}s.", bundleName.c_str());
             continue;
         }
         for (const auto &launchInfo : value.launchInfos) {
@@ -642,26 +679,25 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     StoreMetaData meta = MakeMetaData(dataInfo.bundleName, dataInfo.userId, dataInfo.deviceId, dataInfo.storeId);
     AutoLaunchMetaData autoLaunchMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
-        return;
-    }
-    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, autoLaunchMetaData.launchForCleanData)) {
-        return;
         meta.storeId = "";
         if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
-            ZLOGE("No launch meta without storeId, bundleName = %{public}s.", dataInfo.bundleName.c_str());
+            ZLOGE("NO autoLaunch meta without storeId, bundleName = %{public}s", dataInfo.bundleName.c_str());
             return;
         }
     }
+    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, autoLaunchMetaData.launchForCleanData)) {
+        return;
+    }
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
         if (dataInfo.tables.empty() && dataInfo.changeType == 1) {
-            ZLOGI("Start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
+            ZLOGI("Start to connect extension, bundleName = %{public}s", dataInfo.bundleName.c_str());
             AAFwk::WantParams wantParams;
             ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
             return;
         }
         for (const auto &table : dataInfo.tables) {
             if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
-                ZLOGI("Find table, start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
+                ZLOGI("Find table, start to connect extension, bundleName = %{public}s", dataInfo.bundleName.c_str());
                 AAFwk::WantParams wantParams;
                 ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
                 break;
@@ -669,7 +705,7 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
         }
     }
 }
-
+ 
 StoreMetaData DataShareServiceImpl::MakeMetaData(const std::string &bundleName, const std::string &userId,
     const std::string &deviceId, const std::string storeId)
 {
@@ -1033,7 +1069,7 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
     auto [errCode, calledInfo] = calledConfig.GetProviderInfo();
     if (errCode == E_URI_NOT_EXIST) {
         ZLOGE("Create helper invalid uri, token:0x%{public}x, uri:%{public}s", tokenId,
-            URIUtils::Anonymous(calledInfo.uri).c_str());
+              URIUtils::Anonymous(calledInfo.uri).c_str());
         return E_OK;
     }
     if (errCode != E_OK) {

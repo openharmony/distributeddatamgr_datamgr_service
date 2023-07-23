@@ -52,7 +52,7 @@ public:
 
 private:
     void TryAndSend(int errCode);
-    RdbStoreConfig GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
+    std::pair<int, RdbStoreConfig> GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
     bool IsLimit(int count, const int32_t callingPid);
     static std::atomic<int32_t> resultSetCount;
     static ConcurrentMap<uint32_t, int32_t> resultSetCallingPids;
@@ -62,6 +62,7 @@ private:
     static constexpr int RETRY = 3;
     static constexpr const char *DUAL_WRITE = "dualWrite";
     static constexpr const char *PERIODIC = "periodic";
+    uint32_t tokenId_;
     std::string bundleName_;
     std::string storeName_;
     int32_t haMode_;
