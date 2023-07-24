@@ -57,6 +57,7 @@ public:
     int32_t AddRef() override;
     int32_t Release() override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
+    int32_t GetTaskCount() override;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
 
 private:

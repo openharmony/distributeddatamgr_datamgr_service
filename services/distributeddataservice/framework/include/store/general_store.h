@@ -92,6 +92,8 @@ public:
     virtual int32_t AddRef() = 0;
 
     virtual int32_t Release()  = 0;
+
+    virtual int32_t GetTaskCount() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

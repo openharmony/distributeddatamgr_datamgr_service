@@ -142,6 +142,15 @@ int32_t RdbGeneralStore::Close()
     return 0;
 }
 
+int32_t RdbGeneralStore::GetTaskCount()
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        return 0;
+    }
+    return delegate_->GetCloudSyncTaskCount();
+}
+
 int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sql)
 {
     return GeneralError::E_OK;

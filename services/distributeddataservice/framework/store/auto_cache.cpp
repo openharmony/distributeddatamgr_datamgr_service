@@ -137,7 +137,7 @@ void AutoCache::GarbageCollect(bool isForce)
     stores_.EraseIf([&current, isForce](auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the kv store is BUSY we wait more INTERVAL minutes again
-            if ((isForce || it->second < current) && it->second.Close()) {
+            if ((isForce || (it->second.GetTaskCount() <= 0 && it->second < current)) && it->second.Close()) {
                 it = delegates.erase(it);
             } else {
                 ++it;
