@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "ipc_skeleton.h"
 #include "object_service_impl.h"
 #include "message_parcel.h"
 #include "securec.h"
@@ -26,18 +27,25 @@ using namespace OHOS::DistributedObject;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedObject.IObjectService";
-const uint32_t CODE_MIN = 0;
-const uint32_t CODE_MAX = 4;
+constexpr uint32_t CODE_MIN = 0;
+constexpr uint32_t CODE_MAX = 4;
+constexpr size_t NUM_MIN = 5;
+constexpr size_t NUM_MAX = 12;
 
 bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 {
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    objectServiceImpl->OnBind(
+        { "ObjectServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
     request.RewindRead(0);
     MessageParcel reply;
-    std::shared_ptr<ObjectServiceStub> objectServiceStub = std::make_shared<ObjectServiceImpl>();
+    std::shared_ptr<ObjectServiceStub> objectServiceStub = objectServiceImpl;
     objectServiceStub->OnRemoteRequest(code, request, reply);
     return true;
 }
