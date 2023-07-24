@@ -61,14 +61,15 @@ void SchedulerManager::SetTimer(
         ZLOGE("executor_ is nullptr");
         return;
     }
+    int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
     // reminder time must is in future
-    auto now = time(nullptr);
     if (reminderTime <= now) {
         ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64, reminderTime, now);
         return;
     }
-    auto duration = std::chrono::seconds(reminderTime - now);
-    ZLOGI("reminderTime will notify in %{public}" PRId64 " seconds", reminderTime - now);
+    auto duration = std::chrono::milliseconds(reminderTime - now);
+    ZLOGI("reminderTime will notify in %{public}" PRId64 " milliseconds", reminderTime - now);
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         // has current timer, reset time
