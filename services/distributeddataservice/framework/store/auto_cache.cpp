@@ -176,7 +176,7 @@ AutoCache::Delegate::operator Store()
     return nullptr;
 }
 
-int32_t AutoCache::GetTaskCount()
+int32_t AutoCache::Delegate::GetTaskCount()
 {
     return store_ == nullptr ? 0 : store_->GetTaskCount();
 }
