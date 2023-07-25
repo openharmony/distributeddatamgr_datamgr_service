@@ -115,7 +115,7 @@ std::variant<std::vector<uint8_t>, std::string> PublishedDataNode::MoveTo(const 
     }
     auto *valueBytes = std::get_if<PublishedDataNode::BytesData>(&data);
     if (valueBytes != nullptr) {
-        return valueBytes->data;
+        return Base64::Decode(valueBytes->data);
     }
     ZLOGE("error");
     return "";
@@ -129,7 +129,8 @@ PublishedDataNode::Data PublishedDataNode::MoveTo(std::variant<std::vector<uint8
     }
     auto *valueBytes = std::get_if<std::vector<uint8_t>>(&data);
     if (valueBytes != nullptr) {
-        return BytesData(*valueBytes);
+        std::string valueEncode = Base64::Encode(*valueBytes);
+        return BytesData(std::move(valueEncode));
     }
     ZLOGE("error");
     return "";
@@ -254,20 +255,18 @@ void PublishedData::UpdateTimestamp(
     }
 }
 
-PublishedDataNode::BytesData::BytesData(std::vector<uint8_t> &data) : data(std::move(data))
+PublishedDataNode::BytesData::BytesData(std::string &&data) : data(std::move(data))
 {
 }
 
 bool PublishedDataNode::BytesData::Marshal(DistributedData::Serializable::json &node) const
 {
-    return SetValue(node[GET_NAME(data)], Base64::Encode(data));
+    return SetValue(node[GET_NAME(data)], data);
 }
 
 bool PublishedDataNode::BytesData::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    std::string dataStr;
-    bool ret = GetValue(node, GET_NAME(data), dataStr);
-    data = Base64::Decode(dataStr);
+    bool ret = GetValue(node, GET_NAME(data), data);
     return ret;
 }
 } // namespace OHOS::DataShare
