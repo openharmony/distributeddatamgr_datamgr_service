@@ -28,6 +28,7 @@
 #include "rdb_cloud_data_translate.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
+#include "store/general_store.h"
 #include "utils/anonymous.h"
 #include "sync_manager.h"
 namespace OHOS::CloudData {
@@ -253,6 +254,7 @@ int32_t CloudServiceImpl::Online(const std::string &device)
     }
     auto it = users.begin();
     syncManager_.DoCloudSync({ *it });
+    Execute(GetCloudTask(0, *it, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE }));
     return SUCCESS;
 }
 
@@ -331,7 +333,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
             Anonymous::Change(oldInfo.id).c_str());
         std::map<std::string, int32_t> actions;
         for (auto &[bundle, app] : cloudInfo.apps) {
-            actions[bundle] = CLEAR_CLOUD_INFO;
+            actions[bundle] = GeneralStore::CleanMode::CLOUD_INFO;
         }
         DoClean(oldInfo, actions);
     }
@@ -397,7 +399,9 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncW
         if (retry >= RETRY_TIMES || executor == nullptr) {
             return;
         }
-
+        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+            return;
+        }
         bool finished = true;
         std::vector<int32_t> users;
         if (user == 0) {

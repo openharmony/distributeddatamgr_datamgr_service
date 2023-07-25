@@ -31,6 +31,7 @@ namespace OHOS {
 namespace UDMF {
 static constexpr int ID_LEN = 32;
 const char SPECIAL = '^';
+const std::string PERMISSION_PROXY_AUTHORIZATION_URI = "ohos.permission.PROXY_AUTHORIZATION_URI";
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 
@@ -138,7 +139,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
         if (IsFileType(type)) {
             auto file = static_cast<File *>(record.get());
             UDDetails details = file->GetDetails();
-            details.insert({"isRemote", "true"});
+            details.insert({ "isRemote", "true" });
             file->SetDetails(details);
         }
     }
@@ -158,11 +159,19 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         if (record != nullptr && IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             if (file->GetUri().empty()) {
+                ZLOGW("Get uri empty, plase check the uri.");
                 continue;
             }
             Uri uri(file->GetUri());
             if (uri.GetAuthority().empty()) {
+                ZLOGW("Get uri authority empty.");
                 continue;
+            }
+            if (uri.GetAuthority() != bundleName
+                && !VerifyCallingPermission(tokenId, PERMISSION_PROXY_AUTHORIZATION_URI)) {
+                ZLOGE("No auth to handle this uri, authority=%{public}s, bundleName=%{public}s.",
+                      uri.GetAuthority().c_str(), bundleName.c_str());
+                return E_NO_PERMISSION;
             }
             struct HmdfsUriInfo dfsUriInfo;
             int ret = RemoteFileShare::GetDfsUriFromLocal(file->GetUri(), userId, dfsUriInfo);
@@ -174,6 +183,17 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         }
     }
     return E_OK;
+}
+
+bool PreProcessUtils::VerifyCallingPermission(uint32_t tokenId, const std::string &permissionName)
+{
+    int32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
+    if (ret != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        ZLOGE("Permission %{public}s: PERMISSION_DENIED, ret=%{public}d ", permissionName.c_str(), ret);
+        return false;
+    }
+    ZLOGD("Verify AccessToken success, %{public}s", permissionName.c_str());
+    return true;
 }
 } // namespace UDMF
 } // namespace OHOS

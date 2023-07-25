@@ -37,6 +37,8 @@ public:
     static void SetRemoteData(UnifiedData &data);
     static bool IsFileType(UDType udType);
     static int32_t SetRemoteUri(uint32_t tokenId, UnifiedData &data);
+private:
+    static bool VerifyCallingPermission(uint32_t tokenId, const std::string &permissionName);
 };
 } // namespace UDMF
 } // namespace OHOS

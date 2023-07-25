@@ -15,232 +15,227 @@
 
 #define LOG_TAG "RdbResultSetImpl"
 
-#include "log_print.h"
-#include "rdb_errno.h"
-#include "store_types.h"
 #include "rdb_result_set_impl.h"
+#include "log_print.h"
+#include "store_types.h"
+#include "store/cursor.h"
 
 using DistributedDB::DBStatus;
 using OHOS::NativeRdb::ColumnType;
 
 namespace OHOS::DistributedRdb {
-RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<DistributedDB::ResultSet> resultSet)
+using OHOS::DistributedData::GeneralError;
+using Cursor = OHOS::DistributedData::Cursor;
+RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<Cursor> resultSet) : resultSet_(std::move(resultSet))
 {
-    resultSet_ = std::move(resultSet);
+    if (resultSet_ != nullptr) {
+        count_ = resultSet_->GetCount();
+        resultSet_->GetColumnNames(colNames_);
+    }
 }
 
 int RdbResultSetImpl::GetAllColumnNames(std::vector<std::string> &columnNames)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    resultSet_->GetColumnNames(columnNames);
+    columnNames = colNames_;
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetColumnCount(int &count)
 {
-    return NativeRdb::E_NOT_SUPPORT;
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_STEP_RESULT_CLOSED;
+    }
+    count = static_cast<int>(colNames_.size());
+    return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetColumnType(int columnIndex, ColumnType &columnType)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DbColumnType dbColumnType;
-    DBStatus status = resultSet_->GetColumnType(columnIndex, dbColumnType);
-    if (status != DBStatus::OK) {
-        return NativeRdb::E_ERROR;
-    }
-    columnType = ConvertColumnType(dbColumnType);
+    columnType = ConvertColumnType(resultSet_->GetColumnType(columnIndex));
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetColumnIndex(const std::string &columnName, int &columnIndex)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DBStatus status = resultSet_->GetColumnIndex(columnName, columnIndex);
-    if (status != DBStatus::OK) {
-        return NativeRdb::E_ERROR;
+    for (int i = 0; i < colNames_.size(); i++) {
+        if (colNames_[i] == columnName) {
+            columnIndex = i;
+            return NativeRdb::E_OK;
+        }
     }
-    return NativeRdb::E_OK;
+    return NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::GetColumnName(int columnIndex, std::string &columnName)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DBStatus status = resultSet_->GetColumnName(columnIndex, columnName);
-    if (status != DBStatus::OK) {
+    if (colNames_.size() <= columnIndex || columnIndex < 0) {
         return NativeRdb::E_ERROR;
     }
+    columnName = colNames_[columnIndex];
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetRowCount(int &count)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    count = resultSet_->GetCount();
+    count = count_;
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GetRowIndex(int &position) const
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    position = resultSet_->GetPosition();
+    position = current_;
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::GoTo(int offset)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
-    if (resultSet_ == nullptr) {
-        return NativeRdb::E_STEP_RESULT_CLOSED;
+    int ret = NativeRdb::E_OK;
+    while (offset != 0 && ret == NativeRdb::E_OK) {
+        if (offset > 0) {
+            ret = GoToNextRow();
+            offset--;
+        } else {
+            ret = GoToPreviousRow();
+            offset++;
+        }
     }
-    if (!resultSet_->Move(offset)) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    return ret;
 }
 
 int RdbResultSetImpl::GoToRow(int position)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
-    if (resultSet_ == nullptr) {
-        return NativeRdb::E_STEP_RESULT_CLOSED;
-    }
-    if (!resultSet_->MoveToPosition(position)) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    return GoTo(position - current_);
 }
 
 int RdbResultSetImpl::GoToFirstRow()
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    if (!resultSet_->MoveToFirst()) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    auto ret = resultSet_->MoveToFirst();
+    current_ = 0;
+    return ret == GeneralError::E_OK ?  NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::GoToLastRow()
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
-    if (resultSet_ == nullptr) {
-        return NativeRdb::E_STEP_RESULT_CLOSED;
-    }
-    if (!resultSet_->MoveToLast()) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    return GoToRow(count_ - 1);
 }
 
 int RdbResultSetImpl::GoToNextRow()
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    if (!resultSet_->MoveToNext()) {
+    if (current_ >= count_ - 1) {
+        current_ = count_;
         return NativeRdb::E_ERROR;
     }
-    return NativeRdb::E_OK;
+
+    auto ret = resultSet_->MoveToNext();
+    current_++;
+    return ret == GeneralError::E_OK ?  NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::GoToPreviousRow()
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    if (!resultSet_->MoveToPrevious()) {
+    if (current_ <= 0) {
+        current_ = -1;
         return NativeRdb::E_ERROR;
     }
-    return NativeRdb::E_OK;
+
+    auto ret = resultSet_->MoveToPrev();
+    current_--;
+    return ret == GeneralError::E_OK ?  NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
 int RdbResultSetImpl::IsEnded(bool &result)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = resultSet_->IsAfterLast();
+    result = current_ >= count_ || count_ <= 0;
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::IsStarted(bool &result) const
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = resultSet_->IsBeforeFirst();
+    result = current_ < 0 || count_ <= 0;
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::IsAtFirstRow(bool &result) const
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = resultSet_->IsFirst();
+    result = count_ > 0 && current_ == 0;
     return NativeRdb::E_OK;
 }
 
 int RdbResultSetImpl::IsAtLastRow(bool &result)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    result = resultSet_->IsLast();
+    result = count_ > 0 && current_ == count_ - 1;
     return NativeRdb::E_OK;
 }
 
-int RdbResultSetImpl::GetBlob(int columnIndex, std::vector<uint8_t> &blob)
+int RdbResultSetImpl::GetBlob(int columnIndex, std::vector<uint8_t> &value)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DBStatus status = resultSet_->Get(columnIndex, blob);
-    if (status != DBStatus::OK) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    return Get(columnIndex, value);
 }
 
 int RdbResultSetImpl::GetString(int columnIndex, std::string &value)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DBStatus status = resultSet_->Get(columnIndex, value);
-    if (status != DBStatus::OK) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    return Get(columnIndex, value);
 }
 
 int RdbResultSetImpl::GetInt(int columnIndex, int &value)
@@ -259,56 +254,46 @@ int RdbResultSetImpl::GetInt(int columnIndex, int &value)
 
 int RdbResultSetImpl::GetLong(int columnIndex, int64_t &value)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DBStatus status = resultSet_->Get(columnIndex, value);
-    if (status != DBStatus::OK) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    return Get(columnIndex, value);
 }
 
 int RdbResultSetImpl::GetDouble(int columnIndex, double &value)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DBStatus status = resultSet_->Get(columnIndex, value);
-    if (status != DBStatus::OK) {
-        return NativeRdb::E_ERROR;
-    }
-    return NativeRdb::E_OK;
+    return Get(columnIndex, value);
 }
 
 int RdbResultSetImpl::IsColumnNull(int columnIndex, bool &isNull)
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    DBStatus status = resultSet_->IsColumnNull(columnIndex, isNull);
-    if (status != DBStatus::OK) {
+    DistributedData::Value var;
+    auto status = resultSet_->Get(columnIndex, var);
+    if (status != DistributedData::GeneralError::E_OK) {
         return NativeRdb::E_ERROR;
     }
+    isNull = var.index() == DistributedData::TYPE_INDEX<std::monostate>;
     return NativeRdb::E_OK;
 }
 
 bool RdbResultSetImpl::IsClosed() const
 {
-    std::shared_lock<std::shared_mutex> lock(this->mutex_);
-    if (resultSet_ == nullptr) {
-        ZLOGW("resultSet already closed.");
-        return true;
-    }
-    return resultSet_->IsClosed();
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    return resultSet_ == nullptr;
 }
 
 int RdbResultSetImpl::Close()
 {
-    std::unique_lock<std::shared_mutex> lock(this->mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         ZLOGW("Result set has been closed.");
         return NativeRdb::E_OK;
@@ -318,21 +303,11 @@ int RdbResultSetImpl::Close()
     return NativeRdb::E_OK;
 }
 
-ColumnType RdbResultSetImpl::ConvertColumnType(DbColumnType columnType) const
+ColumnType RdbResultSetImpl::ConvertColumnType(int32_t columnType) const
 {
-    switch (columnType) {
-        case DbColumnType::INT64:
-            return ColumnType::TYPE_INTEGER;
-        case DbColumnType::STRING:
-            return ColumnType::TYPE_STRING;
-        case DbColumnType::BLOB:
-            return ColumnType::TYPE_BLOB;
-        case DbColumnType::DOUBLE:
-            return ColumnType::TYPE_FLOAT;
-        case DbColumnType::NULL_VALUE:
-            return ColumnType::TYPE_NULL;
-        default:
-            return ColumnType::TYPE_NULL;
+    if (columnType >= DistributedData::TYPE_MAX || columnType < 0) {
+        return ColumnType::TYPE_NULL;
     }
+    return COLUMNTYPES[columnType];
 }
 } // namespace OHOS::DistributedRdb

@@ -25,10 +25,11 @@
 #include "rdb_cursor.h"
 #include "rdb_helper.h"
 #include "rdb_query.h"
-#include "rdb_syncer.h"
 #include "relational_store_manager.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
+#include "device_manager_adapter.h"
+#include "rdb_result_set_impl.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
@@ -39,17 +40,7 @@ using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
-class RdbOpenCallbackImpl : public RdbOpenCallback {
-public:
-    int OnCreate(RdbStore &rdbStore) override
-    {
-        return NativeRdb::E_OK;
-    }
-    int OnUpgrade(RdbStore &rdbStore, int oldVersion, int newVersion) override
-    {
-        return NativeRdb::E_OK;
-    }
-};
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
@@ -77,9 +68,10 @@ RdbGeneralStore::~RdbGeneralStore()
 {
     manager_.CloseStore(delegate_);
     delegate_ = nullptr;
-    store_ = nullptr;
     bindInfo_.loader_ = nullptr;
-    bindInfo_.db_->Close();
+    if (bindInfo_.db_ != nullptr) {
+        bindInfo_.db_->Close();
+    }
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
@@ -140,9 +132,10 @@ int32_t RdbGeneralStore::Close()
         return status;
     }
     delegate_ = nullptr;
-    store_ = nullptr;
     bindInfo_.loader_ = nullptr;
-    bindInfo_.db_->Close();
+    if (bindInfo_.db_ != nullptr) {
+        bindInfo_.db_->Close();
+    }
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
@@ -176,7 +169,25 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, const s
 
 std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuery &query)
 {
-    return std::shared_ptr<Cursor>();
+    RdbQuery *rdbQuery = nullptr;
+    auto ret = query.QueryInterface(rdbQuery);
+    if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
+        ZLOGE("not RdbQuery!");
+        return nullptr;
+    }
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! tables name:%{public}s", Anonymous::Change(table).c_str());
+        return nullptr;
+    }
+    if (rdbQuery->IsRemoteQuery()) {
+        if (rdbQuery->GetDevices().size() != 1) {
+            ZLOGE("RemoteQuery: devices size error! size:%{public}zu", rdbQuery->GetDevices().size());
+            return nullptr;
+        }
+        return RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition());
+    }
+    return nullptr;
 }
 
 int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)
@@ -187,7 +198,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
         dbQuery.FromTable(query.GetTables());
     } else {
-        dbQuery = rdbQuery->query_;
+        dbQuery = rdbQuery->GetQuery();
     }
     auto dbMode = DistributedDB::SyncMode(mode);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
@@ -198,7 +209,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = (mode < NEARBY_END)
-                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait)
+                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0)
                   : (mode > NEARBY_END && mode < CLOUD_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
                   : DistributedDB::INVALID_ARGS;
@@ -207,10 +218,9 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
 
 int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
 {
-    if (mode < 0 || mode > CloudService::CLEAR_CLOUD_BUTT) {
+    if (mode < 0 || mode > CLEAN_MODE_BUTT) {
         return GeneralError::E_INVALID_ARGS;
     }
-    int32_t dbMode;
     DBStatus status;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -221,24 +231,23 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
         return GeneralError::E_ALREADY_CLOSED;
     }
     switch (mode) {
-        case CloudService::CLEAR_CLOUD_INFO:
-            dbMode = CleanMode::CLOUD_INFO;
-            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+        case CLOUD_INFO:
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_INFO));
             break;
-        case CloudService::CLEAR_CLOUD_DATA_AND_INFO:
-            dbMode = CleanMode::CLOUD_DATA;
-            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(dbMode));
+        case CLOUD_DATA:
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
             break;
-        default:
+        case NEARBY_DATA:
             if (devices.empty()) {
                 status = delegate_->RemoveDeviceData();
                 break;
             }
-
             for (auto device : devices) {
                 status = delegate_->RemoveDeviceData(device, tableName);
             }
             break;
+        default:
+            return GeneralError::E_ERROR;
     }
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
@@ -338,6 +347,39 @@ int32_t RdbGeneralStore::AddRef()
     return ++ref_;
 }
 
+int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! tables size:%{public}zu, type:%{public}d", tables.size(), type);
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    for (const auto &table : tables) {
+        ZLOGD("tableName:%{public}s, type:%{public}d", Anonymous::Change(table).c_str(), type);
+        auto dBStatus = delegate_->CreateDistributedTable(table, static_cast<DistributedDB::TableSyncType>(type));
+        if (dBStatus != DistributedDB::DBStatus::OK) {
+            ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
+                Anonymous::Change(table).c_str(), dBStatus);
+            return GeneralError::E_ERROR;
+        }
+    }
+    return GeneralError::E_OK;
+}
+
+std::shared_ptr<Cursor> RdbGeneralStore::RemoteQuery(const std::string &device,
+    const DistributedDB::RemoteCondition &remoteCondition)
+{
+    std::shared_ptr<DistributedDB::ResultSet> dbResultSet;
+    DistributedDB::DBStatus status =
+        delegate_->RemoteQuery(device, remoteCondition, REMOTE_QUERY_TIME_OUT, dbResultSet);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("DistributedDB remote query failed, device:%{public}s, status is  %{public}d.",
+            Anonymous::Change(device).c_str(), status);
+        return nullptr;
+    }
+    return std::make_shared<RdbCursor>(dbResultSet);
+}
+
 RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus status)
 {
     switch (status) {
@@ -363,15 +405,28 @@ void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
     if (!HasWatcher()) {
         return;
     }
+    std::string device = data.GetDataChangeDevice();
+    auto networkId = DmAdapter::GetInstance().ToNetworkID(device);
+    ZLOGD("store:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
+        Anonymous::Change(device).c_str());
+    GenOrigin genOrigin;
+    genOrigin.origin = GenOrigin::ORIGIN_NEARBY;
+    genOrigin.dataType = GenOrigin::BASIC_DATA;
+    DistributedDB::StoreProperty property;
+    data.GetStoreProperty(property);
+    genOrigin.id.push_back(networkId);
+    genOrigin.store = storeId_;
+    watcher_->OnChange(genOrigin, {}, {});
     return;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data)
 {
-    using GenOrigin = Watcher::Origin;
     if (!HasWatcher()) {
         return;
     }
+    ZLOGD("store:%{public}s table:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
+        Anonymous::Change(data.tableName).c_str(), Anonymous::Change(originalId).c_str());
     GenOrigin genOrigin;
     genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)   ? GenOrigin::ORIGIN_LOCAL
                        : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD

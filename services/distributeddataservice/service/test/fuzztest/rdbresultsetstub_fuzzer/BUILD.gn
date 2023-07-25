@@ -49,6 +49,7 @@ ohos_fuzztest("RdbResultSetStubFuzzTest") {
   sources = [
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/value_proxy.cpp",
     "rdbresultsetstub_fuzzer.cpp",
   ]
 

@@ -31,22 +31,15 @@ PermissionValidator &PermissionValidator::GetInstance()
 // check whether the client process have enough privilege to share data with the other devices.
 bool PermissionValidator::CheckSyncPermission(uint32_t tokenId)
 {
-    auto type = AccessTokenKit::GetTokenTypeFlag(tokenId);
-    if (type == TOKEN_NATIVE || type == TOKEN_SHELL) {
-        return true;
-    }
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_HAP) {
-        return (AccessTokenKit::VerifyAccessToken(tokenId, DISTRIBUTED_DATASYNC) == PERMISSION_GRANTED);
-    }
-
-    ZLOGE("token:0x%{public}x", tokenId);
-    return false;
+    auto permit = AccessTokenKit::VerifyAccessToken(tokenId, DISTRIBUTED_DATASYNC);
+    ZLOGD("sync permit:%{public}d, token:0x%{public}x", permit, tokenId);
+    return permit == PERMISSION_GRANTED;
 }
 
 bool PermissionValidator::IsCloudConfigPermit(uint32_t tokenId)
 {
     auto permit = AccessTokenKit::VerifyAccessToken(tokenId, CLOUD_DATA_CONFIG);
-    ZLOGD("cloud permit: %{public}d", permit);
+    ZLOGD("cloud permit:%{public}d, token:0x%{public}x", permit, tokenId);
     return permit == PERMISSION_GRANTED;
 }
 } // namespace DistributedKv

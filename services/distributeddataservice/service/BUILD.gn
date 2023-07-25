@@ -100,8 +100,6 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_result_set_stub.cpp",
     "rdb/rdb_service_impl.cpp",
     "rdb/rdb_service_stub.cpp",
-    "rdb/rdb_store_observer_impl.cpp",
-    "rdb/rdb_syncer.cpp",
     "rdb/rdb_watcher.cpp",
     "rdb/value_proxy.cpp",
   ]
@@ -112,7 +110,6 @@ ohos_shared_library("distributeddatasvc") {
   configs = [ ":module_public_config" ]
 
   deps = [
-    "${kv_store_distributeddb_path}:distributeddb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
@@ -128,6 +125,7 @@ ohos_shared_library("distributeddatasvc") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"

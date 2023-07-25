@@ -56,6 +56,7 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
 
 private:
@@ -64,12 +65,14 @@ private:
     using SyncProcess = DistributedDB::SyncProcess;
     using DBBriefCB = DistributedDB::SyncStatusCallback;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
-    static constexpr uint32_t ITERATE_TIMES = 10000;
+    static constexpr inline uint32_t ITERATE_TIMES = 10000;
+    static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
     class ObserverProxy : public DistributedDB::StoreObserver {
     public:
         using DBChangedIF = DistributedDB::StoreChangedData;
         using DBChangedData = DistributedDB::ChangedData;
         using DBOrigin = DistributedDB::Origin;
+        using GenOrigin = Watcher::Origin;
         void OnChange(const DistributedDB::StoreChangedData &data) override;
         void OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data) override;
         bool HasWatcher() const
@@ -83,11 +86,12 @@ private:
     };
     DBBriefCB GetDBBriefCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
+    std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
+        const DistributedDB::RemoteCondition &remoteCondition);
 
     ObserverProxy observer_;
     RdbManager manager_;
     RdbDelegate *delegate_ = nullptr;
-    std::shared_ptr<RdbStore> store_;
     std::shared_ptr<RdbCloud> rdbCloud_ {};
     std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
     BindInfo bindInfo_;

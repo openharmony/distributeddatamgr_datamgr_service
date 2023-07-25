@@ -48,6 +48,7 @@ public:
         CLOUD_DATA,
         CLOUD_INFO,
         LOCAL_DATA,
+        CLEAN_MODE_BUTT
     };
 
     struct BindInfo {
@@ -65,6 +66,8 @@ public:
     virtual bool IsBound() = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
+
+    virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type);
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values) = 0;
 

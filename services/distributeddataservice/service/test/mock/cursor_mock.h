@@ -12,16 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
+#ifndef OHOS_DISTRIBUTEDDATA_SERVICE_TEST_CURSOR_MOCK_H
+#define OHOS_DISTRIBUTEDDATA_SERVICE_TEST_CURSOR_MOCK_H
+#include <map>
+#include <string>
+#include <vector>
 #include "store/cursor.h"
-#include "distributeddb/result_set.h"
-namespace OHOS::DistributedRdb {
-class RdbCursor : public DistributedData::Cursor {
+#include "store/general_value.h"
+namespace OHOS {
+namespace DistributedData {
+class CursorMock : public DistributedData::Cursor {
 public:
-    explicit RdbCursor(std::shared_ptr<DistributedDB::ResultSet> resultSet);
-    ~RdbCursor();
+    using ResultSet = std::vector<std::map<std::string, DistributedData::Value>>;
+    explicit CursorMock(std::shared_ptr<ResultSet> resultSet);
+    ~CursorMock();
     int32_t GetColumnNames(std::vector<std::string> &names) const override;
     int32_t GetColumnName(int32_t col, std::string &name) const override;
     int32_t GetColumnType(int32_t col) const override;
@@ -37,8 +41,9 @@ public:
     bool IsEnd() override;
 
 private:
-    std::shared_ptr<DistributedDB::ResultSet> resultSet_;
-    static int32_t Convert(DistributedDB::ResultSet::ColumnType columnType);
+    std::shared_ptr<ResultSet> resultSet_;
+    int32_t index_ = 0;
 };
-} // namespace OHOS::DistributedRdb
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
+} // namespace DistributedData
+} // namespace OHOS
+#endif // OHOS_DISTRIBUTEDDATA_SERVICE_TEST_CURSOR_MOCK_H

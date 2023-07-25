@@ -65,8 +65,8 @@ private:
         WORK_BUTT,
     };
 
-    static constexpr int32_t RETRY_TIMES = 10;
-    static constexpr int32_t RETRY_INTERVAL = 30;
+    static constexpr int32_t RETRY_TIMES = 3;
+    static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 7 * 24; // 7 day
 
     bool UpdateCloudInfo(int32_t user);
