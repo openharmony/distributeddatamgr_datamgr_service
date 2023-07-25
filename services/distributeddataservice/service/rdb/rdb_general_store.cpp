@@ -127,6 +127,10 @@ int32_t RdbGeneralStore::Close()
     if (delegate_ == nullptr) {
         return 0;
     }
+    int32_t count = delegate_->GetCloudSyncTaskCount();
+    if (count > 0) {
+        return GeneralError::E_BUSY;
+    }
     auto status = manager_.CloseStore(delegate_);
     if (status != DBStatus::OK) {
         return status;
@@ -140,15 +144,6 @@ int32_t RdbGeneralStore::Close()
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
     return 0;
-}
-
-int32_t RdbGeneralStore::GetTaskCount()
-{
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
-    if (delegate_ == nullptr) {
-        return 0;
-    }
-    return delegate_->GetCloudSyncTaskCount();
 }
 
 int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sql)
