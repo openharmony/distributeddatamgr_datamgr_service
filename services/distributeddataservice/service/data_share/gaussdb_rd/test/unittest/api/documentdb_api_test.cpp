@@ -190,7 +190,7 @@ HWTEST_F(DocumentDBApiTest, OpenDBPathTest002, TestSize.Level0)
 HWTEST_F(DocumentDBApiTest, OpenDBPathTest004, TestSize.Level0)
 {
     GRD_DB *db = nullptr;
-    std::string pathNoPerm = "../build";
+    std::string pathNoPerm = "../test";
     int status = GRD_DBOpen(pathNoPerm.c_str(), nullptr, GRD_DB_OPEN_CREATE, &db);
     EXPECT_EQ(status, GRD_INVALID_ARGS);
 }
