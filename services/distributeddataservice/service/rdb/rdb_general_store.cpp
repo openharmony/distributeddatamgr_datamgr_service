@@ -127,6 +127,10 @@ int32_t RdbGeneralStore::Close()
     if (delegate_ == nullptr) {
         return 0;
     }
+    int32_t count = delegate_->GetCloudSyncTaskCount();
+    if (count > 0) {
+        return GeneralError::E_BUSY;
+    }
     auto status = manager_.CloseStore(delegate_);
     if (status != DBStatus::OK) {
         return status;

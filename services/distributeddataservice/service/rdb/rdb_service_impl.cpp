@@ -146,7 +146,6 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
 int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
 {
     OnClientDied(pid);
-    AutoCache::GetInstance().CloseStore(tokenId);
     return E_OK;
 }
 
