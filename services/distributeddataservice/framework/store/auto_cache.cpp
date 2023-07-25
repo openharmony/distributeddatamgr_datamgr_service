@@ -137,7 +137,7 @@ void AutoCache::GarbageCollect(bool isForce)
     stores_.EraseIf([&current, isForce](auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the kv store is BUSY we wait more INTERVAL minutes again
-            if ((isForce || (it->second->GetTaskCount() <= 0 && it->second < current)) && it->second.Close()) {
+            if ((isForce || (it->second.GetTaskCount() <= 0 && it->second < current)) && it->second.Close()) {
                 it = delegates.erase(it);
             } else {
                 ++it;
@@ -174,6 +174,11 @@ AutoCache::Delegate::operator Store()
         return Store(store_, [](GeneralStore *store) { store->Release(); });
     }
     return nullptr;
+}
+
+int32_t AutoCache::GetTaskCount()
+{
+    return store_ == nullptr ? 0 : store_->GetTaskCount();
 }
 
 bool AutoCache::Delegate::operator<(const AutoCache::Time &time) const
