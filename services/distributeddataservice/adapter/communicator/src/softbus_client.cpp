@@ -85,12 +85,11 @@ Status SoftBusClient::OpenConnect(uint32_t totalLength)
 {
     strategy_ = CommunicationStrategy::GetInstance().GetStrategy(device_.deviceId);
     if (status_ == ConnectStatus::CONNECT_OK) {
+        status_ = ConnectStatus::DISCONNECT;
         auto result = SwitchChannel(totalLength);
-        if (result != Status::SUCCESS) {
-            status_ = ConnectStatus::DISCONNECT;
+        if (result == Status::SUCCESS) {
+            status_ = ConnectStatus::CONNECT_OK;
         }
-
-        status_ = ConnectStatus::CONNECT_OK;
         return result;
     }
 
@@ -193,7 +192,7 @@ Status SoftBusClient::Open(SessionAttribute attr)
     return Status::SUCCESS;
 }
 
-SessionAttribute SoftBusClient::GetSessionAttribute(bool isP2P)
+SessionAttribute SoftBusClient::GetSessionAttribute(bool isP2p)
 {
     SessionAttribute attr;
     attr.dataType = TYPE_BYTES;

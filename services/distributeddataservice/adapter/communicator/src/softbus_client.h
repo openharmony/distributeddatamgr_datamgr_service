@@ -46,7 +46,7 @@ private:
     Status SwitchChannel(uint32_t totalLength);
     Status CreateChannel(uint32_t totalLength);
     Status Open(SessionAttribute attr);
-    SessionAttribute GetSessionAttribute(bool isP2P);
+    SessionAttribute GetSessionAttribute(bool isP2p);
     void RestoreDefaultValue();
     void UpdateMtuSize();
 
