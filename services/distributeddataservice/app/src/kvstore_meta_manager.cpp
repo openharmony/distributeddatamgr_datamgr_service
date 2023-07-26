@@ -361,17 +361,18 @@ void KvStoreMetaManager::KvStoreMetaObserver::HandleChanges(CHANGE_FLAG flag,
 void KvStoreMetaManager::MetaDeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     const AppDistributedKv::DeviceChangeType &type) const
 {
+    if (info.uuid == DmAdapter::CLOUD_DEVICE_UUID) {
+        return;
+    }
     EventCenter::Defer defer;
     switch (type) {
         case AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE:
             DeviceMatrix::GetInstance().Offline(info.uuid);
             break;
         case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
-            if (info.uuid != DmAdapter::CLOUD_DEVICE_UUID) {
-                DeviceMatrix::GetInstance().Online(info.uuid, RefCount([deviceId = info.uuid]() {
-                    DmAdapter::GetInstance().NotifyReadyEvent(deviceId);
-                }));
-            }
+            DeviceMatrix::GetInstance().Online(info.uuid, RefCount([deviceId = info.uuid]() {
+                DmAdapter::GetInstance().NotifyReadyEvent(deviceId);
+            }));
             break;
         default:
             ZLOGI("flag:%{public}d", type);
