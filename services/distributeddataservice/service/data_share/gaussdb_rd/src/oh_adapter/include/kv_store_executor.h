@@ -29,18 +29,18 @@ public:
     virtual int Commit() = 0;
     virtual int Rollback() = 0;
 
-    virtual int PutData(const std::string &collName, const Key &key, const Value &value) = 0;
-    virtual int InsertData(const std::string &collName, const Key &key, const Value &value) = 0;
-    virtual int GetData(const std::string &collName, const Key &key, Value &value) const = 0;
-    virtual int GetFieldedData(const std::string &collName, const JsonObject &filterObj,
-        std::vector<std::pair<std::string, std::string>> &values) const = 0;
-    virtual int DelData(const std::string &collName, const Key &key) = 0;
+    virtual int PutData(const std::string &collName, Key &key, const Value &value, bool isNeedAddKeyType = true) = 0;
+    virtual int InsertData(const std::string &collName, Key &key, const Value &value, bool isNeedAddKeyType = true) = 0;
+    virtual int GetDataByKey(const std::string &collName, Key &key, Value &value) const = 0;
+    virtual int GetDataById(const std::string &collName, Key &key, Value &value) const = 0;
+    virtual int GetDataByFilter(const std::string &collName, Key &key, const JsonObject &filterObj,
+        std::pair<std::string, std::string> &values, int isIdExist) const = 0;
+    virtual int DelData(const std::string &collName, Key &key) = 0;
 
     virtual int CreateCollection(const std::string &name, const std::string &option, bool ignoreExists) = 0;
     virtual int DropCollection(const std::string &name, bool ignoreNonExists) = 0;
     virtual bool IsCollectionExists(const std::string &name, int &errCode) = 0;
 
-    virtual int GetCollectionOption(const std::string &name, std::string &option) = 0;
     virtual int SetCollectionOption(const std::string &name, const std::string &option) = 0;
     virtual int CleanCollectionOption(const std::string &name) = 0;
 };

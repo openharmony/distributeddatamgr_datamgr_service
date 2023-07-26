@@ -14,6 +14,8 @@
  */
 #include "json_common.h"
 
+#include <queue>
+
 #include "doc_errno.h"
 #include "log_print.h"
 
@@ -82,26 +84,27 @@ std::vector<ValueObject> JsonCommon::GetLeafValue(const JsonObject &node)
 
 bool JsonCommon::CheckNode(JsonObject &node)
 {
-    while (!node.IsNull()) {
-        int ret = 0;
+    std::queue<JsonObject> jsonQueue;
+    jsonQueue.push(node);
+    while (!jsonQueue.empty()) {
         std::set<std::string> fieldSet;
         bool isFieldNameExist = true;
-        std::string fieldName = node.GetItemField(ret);
+        int ret = E_OK;
+        JsonObject item = jsonQueue.front();
+        jsonQueue.pop();
+        std::string fieldName = item.GetItemField(ret);
         if (ret != E_OK) {
             isFieldNameExist = false;
         }
-
         if (fieldSet.find(fieldName) != fieldSet.end()) {
             return false;
         }
-
         if (isFieldNameExist) {
             fieldSet.insert(fieldName);
             if (fieldName.empty()) {
                 return false;
             }
         }
-
         for (size_t i = 0; i < fieldName.size(); i++) {
             if (!((isalpha(fieldName[i])) || (isdigit(fieldName[i])) || fieldName[i] == '_')) {
                 return false;
@@ -110,14 +113,12 @@ bool JsonCommon::CheckNode(JsonObject &node)
                 return false;
             }
         }
-
-        if (!node.GetChild().IsNull()) {
-            JsonObject nodeNew = node.GetChild();
-            if (!CheckNode(nodeNew)) {
-                return false;
-            }
+        if (!item.GetChild().IsNull()) {
+            jsonQueue.push(item.GetChild());
         }
-        node = node.GetNext();
+        if (!item.GetNext().IsNull()) {
+            jsonQueue.push(item.GetNext());
+        }
     }
     return true;
 }
@@ -129,10 +130,14 @@ bool JsonCommon::CheckJsonField(JsonObject &jsonObj)
 
 bool JsonCommon::CheckProjectionNode(JsonObject &node, bool isFirstLevel, int &errCode)
 {
-    while (!node.IsNull()) {
+    std::queue<JsonObject> jsonQueue;
+    jsonQueue.push(node);
+    while (!jsonQueue.empty()) {
         int ret = 0;
         std::set<std::string> fieldSet;
-        std::string fieldName = node.GetItemField(ret);
+        JsonObject item = jsonQueue.front();
+        jsonQueue.pop();
+        std::string fieldName = item.GetItemField(ret);
         if (fieldName.empty()) {
             errCode = -E_INVALID_ARGS;
             return false;
@@ -154,13 +159,12 @@ bool JsonCommon::CheckProjectionNode(JsonObject &node, bool isFirstLevel, int &e
                 return false;
             }
         }
-        if (!node.GetChild().IsNull()) {
-            JsonObject nodeNew = node.GetChild();
-            if (!CheckProjectionNode(nodeNew, false, errCode)) {
-                return false;
-            }
+        if (!item.GetNext().IsNull()) {
+            jsonQueue.push(item.GetNext());
         }
-        node = node.GetNext();
+        if (!item.GetChild().IsNull()) {
+            jsonQueue.push(item.GetChild());
+        }
     }
     return true;
 }
@@ -214,8 +218,7 @@ int JsonCommon::ParseNode(JsonObject &node, std::vector<std::string> singlePath,
         }
         if (!node.GetChild().IsNull() && node.GetChild().GetItemField() != "") {
             JsonObject nodeNew = node.GetChild();
-            int ret = E_OK;
-            ret = ParseNode(nodeNew, singlePath, resultPath, false);
+            int ret = ParseNode(nodeNew, singlePath, resultPath, false);
             if (ret != E_OK) {
                 return ret;
             }
@@ -340,7 +343,7 @@ bool AddSpliteHitField(const JsonObject &src, const JsonObject &item, JsonFieldP
         return true;
     }
 
-    for (int32_t i = (int32_t)abandonPath.size() - 1; i > -1; i--) {
+    for (int32_t i = static_cast<int32_t>(abandonPath.size()) - 1; i > -1; i--) {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
@@ -382,7 +385,7 @@ bool AddSpliteField(const JsonObject &src, const JsonObject &item, const JsonFie
         return false;
     }
     JsonFieldPath newHitPath;
-    for (int32_t i = (int32_t)abandonPath.size() - 1; i > -1; i--) {
+    for (int32_t i = static_cast<int32_t>(abandonPath.size()) - 1; i > -1; i--) {
         if (hitItem.GetType() != JsonObject::Type::JSON_OBJECT) {
             GLOGE("Add collapse item to object failed, path not exist.");
             externErrCode = -E_DATA_CONFLICT;
@@ -538,8 +541,8 @@ int JsonCommon::Append(const JsonObject &src, const JsonObject &add, bool isRepl
 {
     int externErrCode = E_OK;
     JsonObjectIterator(add, {},
-        [&src, &externErrCode, &isReplace](const JsonFieldPath &path, const JsonObject &father,
-            const JsonObject &item) {
+        [&src, &externErrCode, &isReplace](const JsonFieldPath &path,
+            const JsonObject &father, const JsonObject &item) {
             bool isCollapse = false; // Whether there is a path generated by the dot operator, such as t1.t2.t3
             JsonFieldPath itemPath = ExpendPathForField(path, isCollapse);
             if (src.IsFieldExists(itemPath)) {
@@ -639,7 +642,7 @@ bool JsonCommon::IsObjectItemMatch(const JsonObject &srcItem, const JsonObject &
 bool JsonCommon::JsonEqualJudge(const JsonFieldPath &itemPath, const JsonObject &src, const JsonObject &item,
     bool &isCollapse, int &isMatchFlag)
 {
-    int errCode;
+    int errCode = E_OK;
     JsonObject srcItem = src.FindItemPowerMode(itemPath, errCode);
     if (errCode != -E_JSON_PATH_NOT_EXISTS && srcItem == item) {
         isMatchFlag = true;

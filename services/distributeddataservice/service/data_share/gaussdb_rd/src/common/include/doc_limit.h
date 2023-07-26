@@ -17,6 +17,6 @@
 #define DOC_LIMIT_H
 
 namespace DocumentDB {
-constexpr int MAX_DB_CONFIG_LEN = 512 * 1024; // 512 * 1024: 512k length
+constexpr int MAX_DB_CONFIG_LEN = 1024 * 1024; // 1024 * 1024: 1024k length
 } // namespace DocumentDB
 #endif // DOC_LIMIT_H

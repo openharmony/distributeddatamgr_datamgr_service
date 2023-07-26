@@ -40,6 +40,7 @@ constexpr int E_RESOURCE_BUSY = E_BASE + 50;
 constexpr int E_FAILED_MEMORY_ALLOCATE = E_BASE + 51;
 constexpr int E_INNER_ERROR = E_BASE + 52;
 constexpr int E_INVALID_FILE_FORMAT = E_BASE + 53;
+constexpr int E_FAILED_FILE_OPERATION = E_BASE + 54;
 
 int TransferDocErr(int err);
 } // namespace DocumentDB

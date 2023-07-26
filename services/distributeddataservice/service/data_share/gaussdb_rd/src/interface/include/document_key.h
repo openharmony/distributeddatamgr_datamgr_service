@@ -13,22 +13,36 @@
 * limitations under the License.
 */
 
-#ifndef DOCUMENT_TYPE_H
-#define DOCUMENT_TYPE_H
+#ifndef DOCUMENT_KEY_H
+#define DOCUMENT_KEY_H
 
+#include <stdint.h>
 #include <string>
 
-#include "projection_tree.h"
+#include "json_object.h"
+
+#define GRD_DOC_OID_TIME_SIZE 4
+#define GRD_DOC_OID_INCREMENTAL_VALUE_SIZE 2
+#define GRD_DOC_OID_SIZE (GRD_DOC_OID_TIME_SIZE + GRD_DOC_OID_INCREMENTAL_VALUE_SIZE)
+#define GRD_DOC_OID_HEX_SIZE (GRD_DOC_OID_SIZE * 2)
+#define GRD_DOC_ID_TYPE_SIZE 1
 
 namespace DocumentDB {
-struct QueryContext {
-    std::string collectionName;
-    std::string filter;
-    std::vector<std::vector<std::string>> projectionPath;
-    ProjectionTree projectionTree;
-    bool ifShowId = false;
-    bool viewType = false;
-    bool isIdExist = false;
+enum class DocIdType {
+    INT = 1,
+    STRING,
+};
+
+struct DocKey {
+public:
+    int32_t keySize;
+    std::string key;
+    uint8_t type;
+};
+
+class DocumentKey {
+public:
+    static int GetOidDocKey(DocKey &key);
 };
 } // namespace DocumentDB
-#endif // DOCUMENT_TYPE_H
+#endif // DOCUMENT_KEY_H

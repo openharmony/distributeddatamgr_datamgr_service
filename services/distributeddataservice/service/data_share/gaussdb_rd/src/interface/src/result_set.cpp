@@ -15,6 +15,7 @@
 #include "result_set.h"
 
 #include "db_constant.h"
+#include "document_key.h"
 #include "log_print.h"
 #include "securec.h"
 
@@ -33,59 +34,65 @@ int ResultSet::EraseCollection()
     }
     return E_OK;
 }
-int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool ifField)
+int ResultSet::Init(std::shared_ptr<QueryContext> &context, DocumentStore *store, bool isCutBranch)
 {
-    ifField_ = ifField;
+    isCutBranch_ = isCutBranch;
     context_ = context;
     store_ = store;
     return E_OK;
 }
 
+int ResultSet::GetValueFromDB(Key &key, JsonObject &filterObj, std::string &jsonKey, std::string &jsonData)
+{
+    std::pair<std::string, std::string> value;
+    Collection coll = store_->GetCollection(context_->collectionName);
+    filterObj.DeleteItemFromObject(KEY_ID);
+    int errCode = coll.GetMatchedDocument(filterObj, key, value, context_->isIdExist);
+    if (errCode == -E_NOT_FOUND) {
+        return -E_NO_DATA;
+    }
+    jsonData.assign(value.second.begin(), value.second.end());
+    jsonKey.assign(value.first.begin(), value.first.end());
+    lastKeyIndex_ = jsonKey;
+    if (isCutBranch_) {
+        errCode = CutJsonBranch(jsonKey, jsonData);
+        if (errCode != E_OK) {
+            GLOGE("cut branch faild");
+        }
+    }
+    return errCode;
+}
+
 int ResultSet::GetNextWithField()
 {
     int errCode = E_OK;
-    if (context_->isOnlyId) {
-        JsonObject filterObj = JsonObject::Parse(context_->filter, errCode, true, true);
-        if (errCode != E_OK) {
-            GLOGE("filter Parsed failed");
-            return errCode;
-        }
-        JsonObject filterObjChild = filterObj.GetChild();
-        ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
-        std::string idKey = idValue.GetStringValue();
-        if (idKey.empty()) {
-            return -E_NO_DATA;
-        }
-        Key key(idKey.begin(), idKey.end());
-        Value document;
-        Collection coll = store_->GetCollection(context_->collectionName);
-        errCode = coll.GetDocument(key, document);
-        if (errCode == -E_NOT_FOUND) {
-            return -E_NO_DATA;
-        }
-        std::string jsonData(document.begin(), document.end());
-        CutJsonBranch(jsonData);
-        std::vector<std::pair<std::string, std::string>> values;
-        values.emplace_back(std::make_pair(idKey, jsonData));
-        matchDatas_ = values;
-    } else {
-        Collection coll = store_->GetCollection(context_->collectionName);
-        std::vector<std::pair<std::string, std::string>> values;
-        JsonObject filterObj = JsonObject::Parse(context_->filter, errCode, true, true);
-        if (errCode != E_OK) {
-            GLOGE("filter Parsed failed");
-            return errCode;
-        }
-        errCode = coll.GetMatchedDocument(filterObj, values);
-        if (errCode == -E_NOT_FOUND) {
-            return -E_NO_DATA;
-        }
-        for (size_t i = 0; i < values.size(); i++) {
-            CutJsonBranch(values[i].second);
-        }
-        matchDatas_ = values;
+    JsonObject filterObj = JsonObject::Parse(context_->filter, errCode, true, true);
+    if (errCode != E_OK) {
+        GLOGE("filter Parsed failed");
+        return errCode;
     }
-    return E_OK;
+    Key key;
+    if (context_->isIdExist) {
+        if (index_ == 0) { // get id from filter, if alreay has got id once, get from lastKeyIndex.
+            JsonObject filterObjChild = filterObj.GetChild();
+            ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID);
+            std::string idKey = idValue.GetStringValue();
+            key.assign(idKey.begin(), idKey.end());
+        } else { // Use id to find data that can only get one data.
+            matchData_.first.clear(); // Delete previous data.
+            matchData_.second.clear();
+            return -E_NO_DATA;
+        }
+    } else {
+        key.assign(lastKeyIndex_.begin(), lastKeyIndex_.end());
+    }
+    matchData_.first.clear();
+    matchData_.second.clear();
+    std::string jsonKey;
+    std::string jsonData;
+    errCode = GetValueFromDB(key, filterObj, jsonKey, jsonData);
+    matchData_ = std::make_pair(jsonKey, jsonData);
+    return errCode;
 }
 
 int ResultSet::GetNextInner(bool isNeedCheckTable)
@@ -104,27 +111,12 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
             return -E_INVALID_ARGS;
         }
     }
-    if (!ifField_ && index_ == 0) {
-        errCode = GetNextWithField();
-        if (errCode != E_OK) {
-            return errCode;
-        }
-    } else if (index_ == 0) {
-        Collection coll = store_->GetCollection(context_->collectionName);
-        std::vector<std::pair<std::string, std::string>> values;
-        JsonObject filterObj = JsonObject::Parse(context_->filter, errCode, true, true);
-        if (errCode != E_OK) {
-            GLOGE("filter Parsed failed");
-            return errCode;
-        }
-        errCode = coll.GetMatchedDocument(filterObj, values);
-        if (errCode == -E_NOT_FOUND) {
-            return -E_NO_DATA;
-        }
-        matchDatas_ = values;
-    }
+    errCode = GetNextWithField();
     index_++;
-    if (index_ > matchDatas_.size()) {
+    if (errCode != E_OK) {
+        return errCode;
+    }
+    if (matchData_.second.empty()) {
         return -E_NO_DATA;
     }
     return E_OK;
@@ -132,13 +124,13 @@ int ResultSet::GetNextInner(bool isNeedCheckTable)
 
 int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
 {
-    int errCode = E_OK;
     if (!isNeedTransaction) {
         return GetNextInner(isNeedCheckTable);
     }
     std::lock_guard<std::mutex> lock(store_->dbMutex_);
-    errCode = store_->StartTransaction();
+    int errCode = store_->StartTransaction();
     if (errCode != E_OK) {
+        GLOGE("Start transaction faild");
         return errCode;
     }
     errCode = GetNextInner(isNeedCheckTable);
@@ -153,11 +145,11 @@ int ResultSet::GetNext(bool isNeedTransaction, bool isNeedCheckTable)
 int ResultSet::GetValue(char **value)
 {
     std::lock_guard<std::mutex> lock(store_->dbMutex_);
-    if (index_ == 0 || (index_ > matchDatas_.size())) {
+    if (matchData_.first.empty()) {
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;
     }
-    std::string jsonData = matchDatas_[index_ - 1].second;
+    std::string jsonData = matchData_.second;
     char *jsonstr = new char[jsonData.size() + 1];
     if (jsonstr == nullptr) {
         GLOGE("Memory allocation failed!");
@@ -173,13 +165,23 @@ int ResultSet::GetValue(char **value)
     return E_OK;
 }
 
-int ResultSet::GetKey(std::string &key)
+int ResultSet::GetValue(std::string &value)
 {
-    if (index_ == 0 || (index_ > matchDatas_.size())) {
+    if (matchData_.first.empty()) {
         GLOGE("The value vector in resultSet is empty");
         return -E_NO_DATA;
     }
-    key = matchDatas_[index_ - 1].first;
+    value = matchData_.second;
+    return E_OK;
+}
+
+int ResultSet::GetKey(std::string &key)
+{
+    key = matchData_.first;
+    if (key.empty()) {
+        GLOGE("can not get data, because it is empty");
+        return -E_NO_DATA;
+    }
     return E_OK;
 }
 
@@ -209,13 +211,44 @@ int ResultSet::CheckCutNode(JsonObject *node, std::vector<std::string> singlePat
     return E_OK;
 }
 
-int ResultSet::CutJsonBranch(std::string &jsonData)
+JsonObject CreatIdObj(const std::string &idStr, int errCode)
+{
+    std::stringstream sstream;
+    sstream << "{\"_id\":"
+            << "\"" << idStr << "\"}";
+    JsonObject idObj = JsonObject::Parse(sstream.str(), errCode, true); // cant be faild.
+    return idObj;
+}
+
+int InsertId(JsonObject &cjsonObj, std::string &jsonKey)
+{
+    if (jsonKey.empty()) {
+        GLOGE("Genalral Id faild");
+        return -E_INNER_ERROR;
+    }
+    int errCode = E_OK;
+    JsonObject idObj = CreatIdObj(jsonKey, errCode);
+    if (errCode != E_OK) {
+        GLOGE("CreatIdObj faild");
+        return errCode;
+    }
+    cjsonObj.InsertItemObject(0, idObj.GetChild()); // idObj's child is _id node
+    return E_OK;
+}
+
+int ResultSet::CutJsonBranch(std::string &jsonKey, std::string &jsonData)
 {
     int errCode;
     JsonObject cjsonObj = JsonObject::Parse(jsonData, errCode, true);
     if (errCode != E_OK) {
         GLOGE("jsonData Parsed failed");
         return errCode;
+    }
+    bool isIdExistInValue = true; // if id exsit in the value string that get from db.
+    bool isInsertIdflag = false;
+    isIdExistInValue = cjsonObj.GetObjectItem("_id", errCode).IsNull() ? false : true;
+    if (context_->ifShowId && !isIdExistInValue) {
+        isInsertIdflag = true; // ifShowId is true,and then the data taken out does not have IDs, insert id.
     }
     if (context_->viewType) {
         std::vector<std::string> singlePath;
@@ -226,10 +259,19 @@ int ResultSet::CutJsonBranch(std::string &jsonData)
             GLOGE("The node in CheckCutNode is nullptr");
             return errCode;
         }
-        for (const auto &singleCutPaht : allCutPath) {
-            if (!context_->ifShowId || singleCutPaht[0] != KEY_ID) {
-                cjsonObj.DeleteItemDeeplyOnTarget(singleCutPaht);
+        for (const auto &singleCutPath : allCutPath) {
+            if (!context_->ifShowId || singleCutPath[0] != KEY_ID) {
+                cjsonObj.DeleteItemDeeplyOnTarget(singleCutPath);
             }
+            if (singleCutPath[0] == KEY_ID && !isIdExistInValue) { // projection has Id, and its showType is true.
+                isInsertIdflag = true;
+            }
+        }
+    }
+    if (isInsertIdflag) {
+        errCode = InsertId(cjsonObj, jsonKey);
+        if (errCode != E_OK) {
+            return errCode;
         }
     }
     if (!context_->viewType) {

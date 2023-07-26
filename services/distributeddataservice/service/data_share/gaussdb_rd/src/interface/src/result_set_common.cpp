@@ -14,20 +14,26 @@
 */
 
 #include "result_set_common.h"
-
+#include "grd_format_config.h"
 #include "doc_errno.h"
 #include "grd_base/grd_error.h"
 
 namespace DocumentDB {
 class ValueObject;
-int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool ifField)
+int InitResultSet(std::shared_ptr<QueryContext> &context, DocumentStore *store, ResultSet &resultSet, bool isCutBranch)
 {
-    if (!ifField) {
+    if (isCutBranch) {
+        for (const auto &singlePath : context->projectionPath) {
+            if (singlePath[0] == KEY_ID && context->viewType == true) { // projection has Id and viewType is true
+                context->ifShowId = true;
+                break;
+            }
+        }
         if (context->projectionTree.ParseTree(context->projectionPath) == -E_INVALID_ARGS) {
             GLOGE("Parse ProjectionTree failed");
             return -E_INVALID_ARGS;
         }
     }
-    return resultSet.Init(context, store, ifField);
+    return resultSet.Init(context, store, isCutBranch);
 }
 } // namespace DocumentDB

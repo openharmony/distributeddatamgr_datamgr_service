@@ -32,7 +32,7 @@ namespace {
 std::string g_path = "./document.db";
 GRD_DB *g_db = nullptr;
 const char *g_coll = "student";
-
+constexpr int JSON_LENS_MAX = 1024 * 1024;
 class DocumentDBDataTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -133,7 +133,6 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest006, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
     std::string document = R""({"name":"Tmono","age":18,"addr":{"city":"shanghai","postal":200001}})"";
-
     for (auto flags : std::vector<unsigned int> { 2, 4, 8, 64, 1024, UINT32_MAX }) {
         EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), flags), GRD_INVALID_ARGS);
     }
@@ -174,8 +173,12 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest008, TestSize.Level0)
 HWTEST_F(DocumentDBDataTest, UpsertDataTest009, TestSize.Level0)
 {
     std::string filter = R""({"_id":"abcde"})"";
-    std::string document = R"({"field1": ")" + string(1024 * 1024 + 1, 'a') + "\"}";
-    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_REPLACE), GRD_OVER_LIMIT);
+    std::string head = R"({"field1": ")";
+    std::string document =
+        head + string(JSON_LENS_MAX - filter.size() - head.size() - 1, 'a') + "\"}"; // 13 is {"field1": size
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document.c_str(), GRD_DOC_APPEND), 1);
+    std::string document2 = head + string(JSON_LENS_MAX - filter.size() - head.size(), 'a') + "\"}";
+    EXPECT_EQ(GRD_UpsertDoc(g_db, g_coll, filter.c_str(), document2.c_str(), GRD_DOC_REPLACE), GRD_OVER_LIMIT);
 }
 
 HWTEST_F(DocumentDBDataTest, UpsertDataTest010, TestSize.Level0)
@@ -189,6 +192,32 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest011, TestSize.Level0)
     int result =
         GRD_UpsertDoc(g_db, g_coll, R"({"_id" : "abcde"})", R"({"t1":{"t22":[1,{"t23":1, "t23":1},3 ,4]}})", 0);
     ASSERT_EQ(result, GRD_INVALID_FORMAT);
+}
+
+/**
+ * @tc.name: UpdateDataTest012
+ * @tc.desc: Input parameter collectionName is null, invoke the GRD_UpsertDoc interface to update data.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: mazhao
+ */
+HWTEST_F(DocumentDBDataTest, UpsertDataTest012, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. Insert a document.
+     * @tc.expected: step1. return GRD_OK.
+     */
+    int result = GRD_InsertDoc(g_db, g_coll, "{}", 0);
+    ASSERT_EQ(result, GRD_OK);
+    /**
+     * @tc.steps: step2. Parameter collectionName is Invalid format
+     * @tc.expected: step2. return Update faild.
+     */
+    result = GRD_UpsertDoc(g_db, "null", "{}", "{}", 1);
+    ASSERT_EQ(result, GRD_INVALID_ARGS);
+
+    result = GRD_UpsertDoc(g_db, "!！ &%$^%$&*%^。m中文、、请问E：112423123", "{}", "{}", 1);
+    ASSERT_EQ(result, GRD_INVALID_ARGS);
 }
 
 /**
@@ -285,11 +314,11 @@ HWTEST_F(DocumentDBDataTest, UpdateDataTest008, TestSize.Level0)
 HWTEST_F(DocumentDBDataTest, UpdateDataTest009, TestSize.Level0)
 {
     std::string filter = R""({"_id":"1234"})"";
-    std::string document = R""({"_id":"1234", "field1":{"c_field":{"cc_field":{"ccc_field":1}}}, "field2" : 2})"";
+    std::string document = R""({"_id":"1234","field1":{"c_field":{"cc_field":{"ccc_field":1}}},"field2":2})"";
 
     EXPECT_EQ(GRD_InsertDoc(g_db, g_coll, document.c_str(), 0), GRD_OK);
 
-    std::string updata = R""({"field1":1, "FIELD1":[1, true, 1.23456789, "hello world!", null]})"";
+    std::string updata = R""({"field1":1,"FIELD1":[1,true,1.23456789,"hello world!",null]})"";
     EXPECT_EQ(GRD_UpdateDoc(g_db, g_coll, filter.c_str(), updata.c_str(), 0), 1);
 
     GRD_ResultSet *resultSet = nullptr;

@@ -75,16 +75,13 @@ bool CheckCommon::CheckCollectionName(const std::string &collectionName, std::st
     return true;
 }
 
-int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<std::vector<std::string>> &filterPath)
+int CheckCommon::CheckFilter(JsonObject &filterObj, std::vector<std::vector<std::string>> &filterPath, bool &isIdExist)
 {
     for (size_t i = 0; i < filterPath.size(); i++) {
         if (filterPath[i].size() > JSON_DEEP_MAX) {
             GLOGE("filter's json deep is deeper than JSON_DEEP_MAX");
             return -E_INVALID_ARGS;
         }
-    }
-    if (!filterObj.GetChild().GetNext().IsNull()) { // check contained other field at the same level as the id node
-        isOnlyId = false;
     }
     for (size_t i = 0; i < filterPath.size(); i++) {
         if (filterPath[i].empty()) {
@@ -104,14 +101,10 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, bool &isOnlyId, std::vector<
             return -E_INVALID_ARGS;
         }
     }
-    bool isIdExisit = false;
-    int ret = CheckIdFormat(filterObj, isIdExisit);
+    int ret = CheckIdFormat(filterObj, isIdExist);
     if (ret != E_OK) {
         GLOGE("Filter Id format is illegal");
         return ret;
-    }
-    if (!isIdExisit) {
-        isOnlyId = false;
     }
     return E_OK;
 }
@@ -132,18 +125,13 @@ int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
     return E_OK;
 }
 
-int CheckCommon::CheckDocument(JsonObject &documentObj)
+int CheckCommon::CheckDocument(JsonObject &documentObj, bool &isIdExist)
 {
     if (documentObj.GetDeep() > JSON_DEEP_MAX) {
         GLOGE("documentObj's json deep is deeper than JSON_DEEP_MAX");
         return -E_INVALID_ARGS;
     }
-    bool isIdExist = true;
     int ret = CheckIdFormat(documentObj, isIdExist);
-    if (!isIdExist) {
-        GLOGE("Document Id format is illegal");
-        return -E_INVALID_ARGS;
-    }
     if (ret != E_OK) {
         return ret;
     }
@@ -185,7 +173,7 @@ int CheckCommon::CheckUpdata(JsonObject &updataObj)
         if (errCode != E_OK) {
             return errCode;
         }
-        for (auto fieldName : allFieldsName) {
+        for (const auto &fieldName : allFieldsName) {
             for (auto oneChar : fieldName) {
                 if (!((isalpha(oneChar)) || (isdigit(oneChar)) || (oneChar == '_'))) {
                     GLOGE("updata fieldName is illegal");
@@ -226,7 +214,7 @@ int CheckCommon::CheckProjection(JsonObject &projectionObj, std::vector<std::vec
         if (path[i].empty()) {
             return -E_INVALID_JSON_FORMAT;
         }
-        for (auto fieldName : path[i]) {
+        for (const auto &fieldName : path[i]) {
             if (fieldName.empty()) {
                 return -E_INVALID_ARGS;
             }

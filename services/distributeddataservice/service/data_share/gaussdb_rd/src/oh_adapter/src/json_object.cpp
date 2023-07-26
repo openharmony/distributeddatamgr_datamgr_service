@@ -50,12 +50,6 @@ ValueObject::ValueObject(const char *val)
     stringValue = val;
 }
 
-ValueObject::ValueObject(const std::string &val)
-{
-    valueType = ValueType::VALUE_STRING;
-    stringValue = val;
-}
-
 ValueObject::ValueType ValueObject::GetValueType() const
 {
     return valueType;
@@ -103,7 +97,7 @@ JsonObject::~JsonObject()
 
 bool JsonObject::operator==(const JsonObject &other) const
 {
-    return (cJSON_Compare(this->cjson_, other.cjson_, 0) != 0);
+    return (cJSON_Compare(this->cjson_, other.cjson_, true) != 0); // CaseSensitive
 }
 
 bool JsonObject::IsNull() const
@@ -151,7 +145,7 @@ int JsonObject::GetDeep(cJSON *cjson)
     return depth;
 }
 
-void JsonObject::CheckNumber(cJSON *item, int &errCode)
+int JsonObject::CheckNumber(cJSON *item)
 {
     std::queue<cJSON *> cjsonQueue;
     cjsonQueue.push(item);
@@ -159,13 +153,12 @@ void JsonObject::CheckNumber(cJSON *item, int &errCode)
         cJSON *node = cjsonQueue.front();
         cjsonQueue.pop();
         if (node == nullptr) {
-            errCode = -E_INVALID_ARGS;
-            break;
+            return -E_INVALID_ARGS;
         }
         if (cJSON_IsNumber(node)) { // node is not null all the time
             double value = cJSON_GetNumberValue(node);
             if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
-                errCode = -E_INVALID_ARGS;
+                return -E_INVALID_ARGS;
             }
         }
         if (node->child != nullptr) {
@@ -175,6 +168,7 @@ void JsonObject::CheckNumber(cJSON *item, int &errCode)
             cjsonQueue.push(node->next);
         }
     }
+    return E_OK;
 }
 
 int JsonObject::Init(const std::string &str, bool isFilter)
@@ -192,8 +186,7 @@ int JsonObject::Init(const std::string &str, bool isFilter)
         return -E_INVALID_ARGS;
     }
 
-    int ret = 0;
-    CheckNumber(cjson_, ret);
+    int ret = CheckNumber(cjson_);
     if (ret == -E_INVALID_ARGS) {
         GLOGE("Int value is larger than double");
         return -E_INVALID_ARGS;
@@ -303,22 +296,6 @@ JsonObject JsonObject::GetObjectItem(const std::string &field, int &errCode)
     return item;
 }
 
-JsonObject JsonObject::GetArrayItem(int index, int &errCode)
-{
-    if (cjson_ == nullptr || cjson_->type != cJSON_Array) {
-        errCode = -E_INVALID_ARGS;
-        return JsonObject();
-    }
-
-    JsonObject item;
-    item.caseSensitive_ = caseSensitive_;
-    item.cjson_ = cJSON_GetArrayItem(cjson_, index);
-    if (item.cjson_ == nullptr) {
-        errCode = -E_NOT_FOUND;
-    }
-    return item;
-}
-
 JsonObject JsonObject::GetNext() const
 {
     if (cjson_ == nullptr) {
@@ -353,18 +330,6 @@ int JsonObject::DeleteItemFromObject(const std::string &field)
         return E_OK;
     }
     cJSON_DeleteItemFromObjectCaseSensitive(cjson_, field.c_str());
-    return E_OK;
-}
-
-int JsonObject::AddItemToObject(const JsonObject &item)
-{
-    if (item.IsNull()) {
-        GLOGD("Add null object.");
-        return E_OK;
-    }
-
-    cJSON *cpoyItem = cJSON_Duplicate(item.cjson_, true);
-    cJSON_AddItemToObject(cjson_, item.GetItemField().c_str(), cpoyItem);
     return E_OK;
 }
 
@@ -470,23 +435,6 @@ void JsonObject::ReplaceItemInArray(const int &index, const JsonObject &newItem,
             cJSON *copyItem = cJSON_Duplicate(newItem.cjson_, true);
             cJSON_ReplaceItemInArray(this->cjson_, index, copyItem);
         }
-    }
-}
-
-void JsonObject::SetItemValue(const ValueObject &value) const
-{
-    if (cjson_ == nullptr) {
-        return;
-    }
-    switch (value.GetValueType()) {
-        case ValueObject::ValueType::VALUE_NUMBER:
-            cJSON_SetNumberValue(cjson_, value.GetDoubleValue());
-            break;
-        case ValueObject::ValueType::VALUE_STRING:
-            cJSON_SetValuestring(cjson_, value.GetStringValue().c_str());
-            break;
-        default:
-            break;
     }
 }
 
@@ -673,38 +621,6 @@ ValueObject JsonObject::GetObjectByPath(const JsonFieldPath &jsonPath, int &errC
         return {};
     }
     return objGot.GetItemValue();
-}
-
-int JsonObject::DeleteItemOnTarget(const JsonFieldPath &path)
-{
-    if (path.empty()) {
-        return -E_INVALID_ARGS;
-    }
-
-    std::string fieldName = path.back();
-    JsonFieldPath patherPath = path;
-    patherPath.pop_back();
-
-    cJSON *nodeFather = MoveToPath(cjson_, patherPath, caseSensitive_);
-    if (nodeFather == nullptr) {
-        return -E_JSON_PATH_NOT_EXISTS;
-    }
-
-    if (nodeFather->type == cJSON_Object) {
-        if (caseSensitive_) {
-            cJSON_DeleteItemFromObjectCaseSensitive(nodeFather, fieldName.c_str());
-        } else {
-            cJSON_DeleteItemFromObject(nodeFather, fieldName.c_str());
-        }
-    } else if (nodeFather->type == cJSON_Array) {
-        if (!IsNumber(fieldName)) {
-            GLOGW("Invalid json field path, expect array index.");
-            return -E_JSON_PATH_NOT_EXISTS;
-        }
-        cJSON_DeleteItemFromArray(nodeFather, std::stoi(fieldName));
-    }
-
-    return E_OK;
 }
 
 int JsonObject::DeleteItemDeeplyOnTarget(const JsonFieldPath &path)
