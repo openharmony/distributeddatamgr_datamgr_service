@@ -367,9 +367,11 @@ void KvStoreMetaManager::MetaDeviceChangeListenerImpl::OnDeviceChanged(const App
             DeviceMatrix::GetInstance().Offline(info.uuid);
             break;
         case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
-            DeviceMatrix::GetInstance().Online(info.uuid, RefCount([deviceId = info.uuid]() {
-                DmAdapter::GetInstance().NotifyReadyEvent(deviceId);
-            }));
+            if (info.uuid != DmAdapter::CLOUD_DEVICE_UUID) {
+                DeviceMatrix::GetInstance().Online(info.uuid, RefCount([deviceId = info.uuid]() {
+                    DmAdapter::GetInstance().NotifyReadyEvent(deviceId);
+                }));
+            }
             break;
         default:
             ZLOGI("flag:%{public}d", type);
