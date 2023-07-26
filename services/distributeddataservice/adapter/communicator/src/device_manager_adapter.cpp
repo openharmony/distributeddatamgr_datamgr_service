@@ -31,8 +31,6 @@ using namespace OHOS::NetManagerStandard;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
-constexpr const char *NET_UUID = "netUuid";
-constexpr const char *NET_UDID = "netUdid";
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
     explicit DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
@@ -261,7 +259,7 @@ void DeviceManagerAdapter::TimeOut(const std::string uuid)
         ZLOGE("uuid empty!");
         return;
     }
-    if (syncTask_.Contains(uuid) && uuid != NET_UUID) {
+    if (syncTask_.Contains(uuid) && uuid != CLOUD_DEVICE_UUID) {
         ZLOGI("[TimeOutReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
         std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
         DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
@@ -473,7 +471,7 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
         return "";
     }
     if (networkId == DeviceManagerAdapter::cloudDmInfo.networkId) {
-        return NET_UUID;
+        return CLOUD_DEVICE_UUID;
     }
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(networkId, dvInfo)) {
@@ -494,7 +492,7 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
         return "";
     }
     if (networkId == DeviceManagerAdapter::cloudDmInfo.networkId) {
-        return NET_UDID;
+        return CLOUD_DEVICE_UDID;
     }
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(networkId, dvInfo)) {
