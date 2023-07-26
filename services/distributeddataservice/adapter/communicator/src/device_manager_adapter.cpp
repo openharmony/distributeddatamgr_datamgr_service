@@ -238,11 +238,11 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
-    executors_->Schedule(
-        std::chrono::milliseconds(SYNC_TIMEOUT),
-        [this, dvInfo]() {
-            TimeOut(dvInfo.uuid);
-        });
+
+    executors_->Schedule(std::chrono::milliseconds(SYNC_TIMEOUT), [this, dvInfo]() {
+        TimeOut(dvInfo.uuid);
+    });
+
     for (const auto &item : observers) { // set compatible identify, sync service meta
         if (item == nullptr) {
             continue;
@@ -259,7 +259,7 @@ void DeviceManagerAdapter::TimeOut(const std::string uuid)
         ZLOGE("uuid empty!");
         return;
     }
-    if (syncTask_.Contains(uuid)) {
+    if (syncTask_.Contains(uuid) && uuid != CLOUD_DEVICE_UUID) {
         ZLOGI("[TimeOutReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
         std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
         DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
@@ -471,7 +471,7 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
         return "";
     }
     if (networkId == DeviceManagerAdapter::cloudDmInfo.networkId) {
-        return "netUuid";
+        return CLOUD_DEVICE_UUID;
     }
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(networkId, dvInfo)) {
@@ -492,7 +492,7 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
         return "";
     }
     if (networkId == DeviceManagerAdapter::cloudDmInfo.networkId) {
-        return "netUdid";
+        return CLOUD_DEVICE_UDID;
     }
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(networkId, dvInfo)) {

@@ -141,6 +141,11 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
         return;
     }
 
+    if (info.uuid == DistributedData::DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
+        ZLOGD("This is network change");
+        return;
+    }
+
     bool isOnline = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE;
     if (isOnline) {
         (void)GetSensitiveByUuid(info.uuid);

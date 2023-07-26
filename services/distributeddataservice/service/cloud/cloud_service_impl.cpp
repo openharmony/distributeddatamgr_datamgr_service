@@ -21,6 +21,7 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
 #include "communicator/device_manager_adapter.h"
+#include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -37,7 +38,6 @@ using namespace std::chrono;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
-constexpr std::string_view NET_UUID = "netUuid";
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::Work CloudServiceImpl::HANDLERS[WORK_BUTT] = {
     &CloudServiceImpl::DoSubscribe,
@@ -243,7 +243,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
 
 int32_t CloudServiceImpl::Online(const std::string &device)
 {
-    if (device != NET_UUID) {
+    if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         ZLOGI("Not network online");
         return SUCCESS;
     }
@@ -260,7 +260,7 @@ int32_t CloudServiceImpl::Online(const std::string &device)
 
 int32_t CloudServiceImpl::Offline(const std::string &device)
 {
-    if (device != NET_UUID) {
+    if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         ZLOGI("Not network offline");
         return SUCCESS;
     }

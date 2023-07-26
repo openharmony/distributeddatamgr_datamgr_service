@@ -38,6 +38,8 @@ public:
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
     using Status = OHOS::DistributedKv::Status;
     static DeviceManagerAdapter &GetInstance();
+    static constexpr const char *CLOUD_DEVICE_UUID = "cloudDeviceUuid";
+    static constexpr const char *CLOUD_DEVICE_UDID = "cloudDeviceUdid";
 
     void Init(std::shared_ptr<ExecutorPool> executors);
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
