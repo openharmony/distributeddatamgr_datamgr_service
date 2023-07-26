@@ -361,6 +361,9 @@ void KvStoreMetaManager::KvStoreMetaObserver::HandleChanges(CHANGE_FLAG flag,
 void KvStoreMetaManager::MetaDeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     const AppDistributedKv::DeviceChangeType &type) const
 {
+    if (info.uuid == DmAdapter::CLOUD_DEVICE_UUID) {
+        return;
+    }
     EventCenter::Defer defer;
     switch (type) {
         case AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE:
