@@ -207,7 +207,7 @@ SessionAttribute SoftBusClient::GetSessionAttribute(bool isP2p)
     SessionAttribute attr;
     attr.dataType = TYPE_BYTES;
     // If the dataType is BYTES, the default strategy is wifi_5G > wifi_2.4G > BR, without P2P;
-    if (!isP2P) {
+    if (!isP2p) {
         return attr;
     }
 

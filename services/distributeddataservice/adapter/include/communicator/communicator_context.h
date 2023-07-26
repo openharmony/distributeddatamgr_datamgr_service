@@ -20,7 +20,7 @@
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
-API_EXPORT class CommunicatorContext {
+class API_EXPORT CommunicatorContext {
 public:
     API_EXPORT static CommunicatorContext &getInstance();
     API_EXPORT void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
