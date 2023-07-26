@@ -48,16 +48,20 @@ std::shared_ptr<ExtensionMgrProxy> ExtensionMgrProxy::GetInstance()
     return proxy;
 }
 
-bool ExtensionMgrProxy::Connect(
+int ExtensionMgrProxy::Connect(
     const std::string &uri, const sptr<IRemoteObject> &connect, const sptr<IRemoteObject> &callerToken)
 {
     AAFwk::Want want;
     want.SetUri(uri);
     std::lock_guard<std::mutex> lock(mutex_);
     if (ConnectSA()) {
-        return proxy_->ConnectAbilityCommon(want, connect, callerToken, AppExecFwk::ExtensionAbilityType::DATASHARE);
+        int ret = proxy_->ConnectAbilityCommon(want, connect, callerToken, AppExecFwk::ExtensionAbilityType::DATASHARE);
+        if (ret != ERR_OK) {
+            ZLOGE("ConnectAbilityCommon failed, %{public}d", ret);
+        }
+        return ret;
     }
-    return false;
+    return -1;
 }
 
 bool ExtensionMgrProxy::ConnectSA()
@@ -91,12 +95,16 @@ bool ExtensionMgrProxy::ConnectSA()
     return true;
 }
 
-bool ExtensionMgrProxy::DisConnect(sptr<IRemoteObject> connect)
+int ExtensionMgrProxy::DisConnect(sptr<IRemoteObject> connect)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (ConnectSA()) {
-        return proxy_->DisconnectAbility(connect);
+        int ret = proxy_->DisconnectAbility(connect);
+        if (ret != ERR_OK) {
+            ZLOGE("DisconnectAbility failed, %{public}d", ret);
+        }
+        return ret;
     }
-    return false;
+    return -1;
 }
 } // namespace OHOS::DataShare

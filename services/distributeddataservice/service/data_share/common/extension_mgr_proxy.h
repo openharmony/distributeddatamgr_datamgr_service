@@ -27,8 +27,8 @@ public:
     ExtensionMgrProxy() = default;
     ~ExtensionMgrProxy();
     static std::shared_ptr<ExtensionMgrProxy> GetInstance();
-    bool Connect(const std::string &uri, const sptr<IRemoteObject> &connect, const sptr<IRemoteObject> &callerToken);
-    bool DisConnect(sptr<IRemoteObject> connect);
+    int Connect(const std::string &uri, const sptr<IRemoteObject> &connect, const sptr<IRemoteObject> &callerToken);
+    int DisConnect(sptr<IRemoteObject> connect);
 private:
     using Proxy = AAFwk::ExtensionManagerProxy;
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
