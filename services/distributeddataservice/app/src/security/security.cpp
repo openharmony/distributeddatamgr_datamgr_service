@@ -29,6 +29,7 @@
 namespace OHOS::DistributedKv {
 namespace {
     constexpr const char *SECURITY_VALUE_XATTR_PARRERN = "s([01234])";
+    constexpr const char *NET_UUID = "netUuid";
 }
 using namespace DistributedDB;
 using Anonymous = DistributedData::Anonymous;
@@ -138,6 +139,11 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
 {
     if (info.networkId.empty()) {
         ZLOGD("deviceId is empty");
+        return;
+    }
+
+    if (info.uuid == NET_UUID) {
+        ZLOGD("This is network change");
         return;
     }
 
