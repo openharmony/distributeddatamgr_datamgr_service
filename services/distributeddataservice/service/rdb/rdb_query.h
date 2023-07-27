@@ -49,12 +49,12 @@ private:
     void Limit(const RdbPredicateOperation& operation);
     using PredicateHandle = void (RdbQuery::*)(const RdbPredicateOperation &operation);
     static constexpr inline PredicateHandle HANDLES[OPERATOR_MAX] = {
-        [EQUAL_TO] = &RdbQuery::EqualTo,
-        [NOT_EQUAL_TO] = &RdbQuery::NotEqualTo,
-        [AND] = &RdbQuery::And,
-        [OR] = &RdbQuery::Or,
-        [ORDER_BY] = &RdbQuery::OrderBy,
-        [LIMIT] = &RdbQuery::Limit,
+        &RdbQuery::EqualTo,
+        &RdbQuery::NotEqualTo,
+        &RdbQuery::And,
+        &RdbQuery::Or,
+        &RdbQuery::OrderBy,
+        &RdbQuery::Limit,
     };
     static constexpr inline uint32_t DECIMAL_BASE = 10;
 

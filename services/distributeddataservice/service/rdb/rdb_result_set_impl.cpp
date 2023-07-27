@@ -70,7 +70,7 @@ int RdbResultSetImpl::GetColumnIndex(const std::string &columnName, int &columnI
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    for (int i = 0; i < colNames_.size(); i++) {
+    for (size_t i = 0; i < colNames_.size(); i++) {
         if (colNames_[i] == columnName) {
             columnIndex = i;
             return NativeRdb::E_OK;
@@ -85,7 +85,7 @@ int RdbResultSetImpl::GetColumnName(int columnIndex, std::string &columnName)
     if (resultSet_ == nullptr) {
         return NativeRdb::E_STEP_RESULT_CLOSED;
     }
-    if (colNames_.size() <= columnIndex || columnIndex < 0) {
+    if (colNames_.size() <= static_cast<uint32_t>(columnIndex) || columnIndex < 0) {
         return NativeRdb::E_ERROR;
     }
     columnName = colNames_[columnIndex];
@@ -305,7 +305,7 @@ int RdbResultSetImpl::Close()
 
 ColumnType RdbResultSetImpl::ConvertColumnType(int32_t columnType) const
 {
-    if (columnType >= DistributedData::TYPE_MAX || columnType < 0) {
+    if (static_cast<uint32_t>(columnType) >= DistributedData::TYPE_MAX || columnType < 0) {
         return ColumnType::TYPE_NULL;
     }
     return COLUMNTYPES[columnType];

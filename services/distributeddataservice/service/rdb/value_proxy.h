@@ -224,7 +224,7 @@ public:
     {
         Values proxy;
         proxy.value_.resize(values.size());
-        for (int i = 0; i < values.size(); i++) {
+        for (size_t i = 0; i < values.size(); i++) {
             proxy.value_[i].value_ = static_cast<std::variant_alternative_t<CVT_INDEX<T, Proxy>, Proxy>>(values[i]);
         }
         return proxy;
