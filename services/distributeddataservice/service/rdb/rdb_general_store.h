@@ -17,6 +17,8 @@
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
 #include <atomic>
 #include <functional>
+#include <shared_mutex>
+
 #include "metadata/store_meta_data.h"
 #include "rdb_asset_loader.h"
 #include "rdb_cloud.h"

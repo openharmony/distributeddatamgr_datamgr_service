@@ -434,14 +434,6 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     return EOK;
 }
 
-int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
-{
-    RdbSubscriberManager::GetInstance().Clear();
-    PublishedDataSubscriberManager::GetInstance().Clear();
-    SchedulerManager::GetInstance().ClearTimer();
-    return EOK;
-}
-
 void DataShareServiceImpl::OnConnectDone()
 {
     std::string callerBundleName;
