@@ -56,10 +56,7 @@ std::vector<std::string> RdbQuery::GetDevices() const
 void RdbQuery::FromTable(const std::vector<std::string> &tables)
 {
     ZLOGD("table count=%{public}zu", tables.size());
-    if (tables.size() > 1) {
-        query_.FromTable(tables);
-    }
-    tables_ = tables;
+    query_.FromTable(tables);
 }
 
 void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
