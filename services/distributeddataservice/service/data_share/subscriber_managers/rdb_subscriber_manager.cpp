@@ -328,6 +328,26 @@ void RdbSubscriberManager::Clear()
     rdbCache_.Clear();
 }
 
+void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId, std::shared_ptr<Context> context)
+{
+    if (!URIUtils::IsDataProxyURI(uri)) {
+        return;
+    }
+    if (context->calledSourceDir.empty()) {
+        LoadConfigDataInfoStrategy loadDataInfo;
+        loadDataInfo(context);
+    }
+    rdbCache_.ForEach([&uri, &context, &subscriberId, this](const Key &key, std::vector<ObserverNode> &val) {
+        if (key.uri != uri || key.subscriberId != subscriberId) {
+            return false;
+        }
+        Notify(key, context->currentUserId, val, context->calledSourceDir, context->version);
+        SetObserverNotifyOnEnabled(val);
+        return false;
+    });
+    SchedulerManager::GetInstance().Execute(
+        uri, context->currentUserId, context->calledSourceDir, context->version);
+}
 RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer,
     uint32_t firstCallerTokenId, uint32_t callerTokenId)
     : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId)
