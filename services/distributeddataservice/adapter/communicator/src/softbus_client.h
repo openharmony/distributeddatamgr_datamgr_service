@@ -21,6 +21,7 @@
 
 #include "commu_types.h"
 #include "communication_strategy.h"
+#include "executor_pool.h"
 #include "session.h"
 #include "softbus_bus_center.h"
 namespace OHOS::AppDistributedKv {
@@ -42,27 +43,35 @@ private:
         DISCONNECT,
     };
 
+    using Time = std::chrono::steady_clock::time_point;
     Status OpenConnect(uint32_t totalLength);
     Status SwitchChannel(uint32_t totalLength);
     Status CreateChannel(uint32_t totalLength);
     Status Open(SessionAttribute attr);
-    SessionAttribute GetSessionAttribute(bool isP2P);
+    SessionAttribute GetSessionAttribute(bool isP2p);
     void RestoreDefaultValue();
     void UpdateMtuSize();
+    void CloseP2pSessions();
+    void UpdateP2pFinishTime(int32_t connId, uint32_t dataLength);
 
     static constexpr int32_t INVALID_CONNECT_ID = -1;
     static constexpr uint32_t WAIT_MAX_TIME = 10;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
+    static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 10; // 10 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
+    static constexpr std::chrono::steady_clock::duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
     int32_t connId_ = INVALID_CONNECT_ID;
     int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
     Strategy strategy_ = Strategy::DEFAULT;
     ConnectStatus status_ = ConnectStatus::DISCONNECT;
     std::mutex mutex_;
+    std::mutex taskMutex_;
     PipeInfo pipe_;
     DeviceId device_;
     uint32_t mtu_;
+    ConcurrentMap<int32_t, Time> p2pFinishTime_;
+    ExecutorPool::TaskId closeP2pTaskId_ = ExecutorPool::INVALID_TASK_ID;
     std::function<int32_t(int32_t)> getConnStatus_;
 };
 }

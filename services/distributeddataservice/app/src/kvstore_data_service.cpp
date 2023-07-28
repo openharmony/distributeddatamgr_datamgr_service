@@ -24,6 +24,7 @@
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
+#include "communicator_context.h"
 #include "config_factory.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
@@ -101,6 +102,7 @@ void KvStoreDataService::Initialize()
 #ifndef UT_TEST
     KvStoreDelegateManager::SetProcessLabel(Bootstrap::GetInstance().GetProcessLabel(), "default");
 #endif
+    CommunicatorContext::getInstance().SetThreadPool(executors_);
     auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>(RouteHeadHandlerImpl::Create);
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));

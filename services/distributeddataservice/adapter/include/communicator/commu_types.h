@@ -38,11 +38,11 @@ enum DeviceType {
 enum RouteType : int32_t {
     INVALID_ROUTE_TYPE = -1,
     ROUTE_TYPE_ALL = 0,
-    WIFI_STA = 1,
-    WIFI_P2P = 2,
-    BT_BR = 3,
-    BT_BLE = 4,
-    BUTT = 5,
+    WIFI_STA,
+    WIFI_P2P,
+    BT_BR,
+    BT_BLE,
+    BUTT,
 };
 
 struct DataInfo {
