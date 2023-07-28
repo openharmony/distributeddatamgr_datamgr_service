@@ -49,7 +49,7 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}s %{public}s %{public}d", context->calledBundleName.c_str(),
             DistributedData::Anonymous::Change(context->uri).c_str(), status);
-        return -1;
+        return status;
     }
     return E_OK;
 }
