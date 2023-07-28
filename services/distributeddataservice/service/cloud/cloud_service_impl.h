@@ -67,7 +67,7 @@ private:
 
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
-    static constexpr int32_t EXPIRE_INTERVAL = 7 * 24; // 7 day
+    static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
