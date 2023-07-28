@@ -37,4 +37,4 @@ private:
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedData
-#endif //DISTRIBUTEDDATAMGR_COMMUNICATOR_CONTEXT_H
+#endif // DISTRIBUTEDDATAMGR_COMMUNICATOR_CONTEXT_H

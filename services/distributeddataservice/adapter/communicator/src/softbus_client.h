@@ -60,7 +60,7 @@ private:
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
     static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 10; // 10 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
-    static constexpr std::chrono::steady_clock::duration P2P_CLOSE_DELAY = std::chrono::seconds(2);
+    static constexpr std::chrono::steady_clock::duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
     int32_t connId_ = INVALID_CONNECT_ID;
     int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
     Strategy strategy_ = Strategy::DEFAULT;
