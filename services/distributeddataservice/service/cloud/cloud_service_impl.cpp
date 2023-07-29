@@ -380,23 +380,19 @@ int32_t CloudServiceImpl::GetAppSchema(int32_t user, const std::string &bundleNa
     return SUCCESS;
 }
 
-CloudServiceImpl::Tasks CloudServiceImpl::GetCloudTask(
+CloudServiceImpl::Task CloudServiceImpl::GetCloudTask(
     int32_t retry, int32_t user, const std::initializer_list<AsyncWork> &works)
 {
-    Tasks tasks;
-    tasks.reserve(works.size() + 1);
-    for (auto work : works) {
-        tasks.push_back(GenTask(retry, user, work));
-    }
-    tasks.push_back(GenTask(retry, user, WORK_SUB));
-    return tasks;
+    std::vector<AsyncWork> asyncWork(works.begin(), works.end());
+    asyncWork.emplace_back(WORK_SUB);
+    return GenTask(retry, user, std::move(asyncWork));
 }
 
-ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncWork work)
+ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, std::vector<AsyncWork> &&works)
 {
-    return [this, retry, user, work]() -> void {
+    return [this, retry, user, works = std::move(works)]() mutable {
         auto executor = executor_;
-        if (retry >= RETRY_TIMES || executor == nullptr) {
+        if (retry >= RETRY_TIMES || executor == nullptr || works.empty()) {
             return;
         }
         if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
@@ -412,11 +408,15 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncW
         }
 
         for (auto user : users) {
-            finished = (this->*HANDLERS[work])(user) && finished;
+            finished = (this->*HANDLERS[works[0]])(user) && finished;
         }
         if (!finished) {
-            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, work));
+            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, std::move(works)));
+            return;
         }
+        auto it = works.begin();
+        works.erase(it);
+        executor->Execute(GenTask(retry, user, std::move(works)));
     };
 }
 
@@ -544,14 +544,12 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
     return subDbs.empty() && unsubDbs.empty();
 }
 
-void CloudServiceImpl::Execute(Tasks tasks)
+void CloudServiceImpl::Execute(Task task)
 {
-    for (auto &task : tasks) {
-        auto executor = executor_;
-        if (executor == nullptr) {
-            return;
-        }
-        executor->Execute(std::move(task));
+    auto executor = executor_;
+    if (executor == nullptr) {
+        return;
     }
+    executor->Execute(std::move(task));
 }
 } // namespace OHOS::CloudData

@@ -56,7 +56,7 @@ private:
     using Event = DistributedData::Event;
     using Subscription = DistributedData::Subscription;
     using Work = bool (CloudServiceImpl::*)(int32_t);
-    using Tasks = std::vector<ExecutorPool::Task>;
+    using Task = ExecutorPool::Task;
 
     enum AsyncWork : int32_t {
         WORK_SUB = 0,
@@ -78,9 +78,9 @@ private:
     int32_t GetCloudInfoFromServer(CloudInfo &cloudInfo);
     int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
     void GetSchema(const Event &event);
-    Tasks GetCloudTask(int32_t retry, int32_t user, const std::initializer_list<AsyncWork> &works = {});
-    ExecutorPool::Task GenTask(int32_t retry, int32_t user, AsyncWork work);
-    void Execute(Tasks tasks);
+    Task GetCloudTask(int32_t retry, int32_t user, const std::initializer_list<AsyncWork> &works = {});
+    ExecutorPool::Task GenTask(int32_t retry, int32_t user, std::vector<AsyncWork> &&works);
+    void Execute(Task task);
     bool DoSubscribe(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::shared_ptr<ExecutorPool> executor_;
