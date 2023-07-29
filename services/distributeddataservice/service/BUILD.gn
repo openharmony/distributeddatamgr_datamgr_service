@@ -103,7 +103,10 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_watcher.cpp",
     "rdb/value_proxy.cpp",
   ]
-  cflags = [ "-Wno-multichar" ]
+  cflags = [
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+  ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
