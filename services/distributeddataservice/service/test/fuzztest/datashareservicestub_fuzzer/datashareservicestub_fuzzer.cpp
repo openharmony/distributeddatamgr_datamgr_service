@@ -28,7 +28,7 @@ using namespace OHOS::DataShare;
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DataShare.IDataShareService";
 constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = 16;
+constexpr uint32_t CODE_MAX = 17;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
