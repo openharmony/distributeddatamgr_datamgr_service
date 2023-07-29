@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SERVICE_IMPL_H
 
 #include <mutex>
+#include <queue>
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
@@ -55,15 +56,9 @@ private:
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
     using Subscription = DistributedData::Subscription;
-    using Work = bool (CloudServiceImpl::*)(int32_t);
-    using Tasks = std::vector<ExecutorPool::Task>;
-
-    enum AsyncWork : int32_t {
-        WORK_SUB = 0,
-        WORK_CLOUD_INFO_UPDATE,
-        WORK_SCHEMA_UPDATE,
-        WORK_BUTT,
-    };
+    using Handle = bool (CloudServiceImpl::*)(int32_t);
+    using Handles = std::deque<Handle>;
+    using Task = ExecutorPool::Task;
 
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
@@ -78,14 +73,16 @@ private:
     int32_t GetCloudInfoFromServer(CloudInfo &cloudInfo);
     int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
     void GetSchema(const Event &event);
-    Tasks GetCloudTask(int32_t retry, int32_t user, const std::initializer_list<AsyncWork> &works = {});
-    ExecutorPool::Task GenTask(int32_t retry, int32_t user, AsyncWork work);
-    void Execute(Tasks tasks);
+    Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
+    void Execute(Task task);
     bool DoSubscribe(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
-    static const Work HANDLERS[WORK_BUTT];
+
+    static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
+    static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
+    static constexpr Handle WORK_SUB = &CloudServiceImpl::DoSubscribe;
 };
 } // namespace OHOS::DistributedData
 

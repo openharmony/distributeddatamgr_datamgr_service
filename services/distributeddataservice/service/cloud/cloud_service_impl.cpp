@@ -39,11 +39,6 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
-const CloudServiceImpl::Work CloudServiceImpl::HANDLERS[WORK_BUTT] = {
-    &CloudServiceImpl::DoSubscribe,
-    &CloudServiceImpl::UpdateCloudInfo,
-    &CloudServiceImpl::UpdateSchema,
-};
 
 CloudServiceImpl::Factory::Factory() noexcept
 {
@@ -84,7 +79,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GetCloudTask(0, cloudInfo.user));
+    Execute(GenTask(0, cloudInfo.user));
     syncManager_.DoCloudSync({ cloudInfo.user });
     return SUCCESS;
 }
@@ -100,7 +95,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GetCloudTask(0, cloudInfo.user));
+    Execute(GenTask(0, cloudInfo.user));
     syncManager_.StopCloudSync(cloudInfo.user);
     return SUCCESS;
 }
@@ -120,7 +115,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GetCloudTask(0, cloudInfo.user));
+    Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
         syncManager_.DoCloudSync({ cloudInfo.user, bundleName });
     }
@@ -216,7 +211,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
 int32_t CloudServiceImpl::OnInitialize()
 {
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
-    Execute(GetCloudTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE }));
+    Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     return E_OK;
 }
 
@@ -235,7 +230,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
 {
     int32_t userId = atoi(user.c_str());
     if (code == static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
-        Execute(GetCloudTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE }));
+        Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     }
     syncManager_.StopCloudSync(userId);
     return E_OK;
@@ -254,7 +249,7 @@ int32_t CloudServiceImpl::Online(const std::string &device)
     }
     auto it = users.begin();
     syncManager_.DoCloudSync({ *it });
-    Execute(GetCloudTask(0, *it, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE }));
+    Execute(GenTask(0, *it, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     return SUCCESS;
 }
 
@@ -380,23 +375,11 @@ int32_t CloudServiceImpl::GetAppSchema(int32_t user, const std::string &bundleNa
     return SUCCESS;
 }
 
-CloudServiceImpl::Tasks CloudServiceImpl::GetCloudTask(
-    int32_t retry, int32_t user, const std::initializer_list<AsyncWork> &works)
+ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handles handles)
 {
-    Tasks tasks;
-    tasks.reserve(works.size() + 1);
-    for (auto work : works) {
-        tasks.push_back(GenTask(retry, user, work));
-    }
-    tasks.push_back(GenTask(retry, user, WORK_SUB));
-    return tasks;
-}
-
-ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncWork work)
-{
-    return [this, retry, user, work]() -> void {
+    return [this, retry, user, works = std::move(handles)]() mutable {
         auto executor = executor_;
-        if (retry >= RETRY_TIMES || executor == nullptr) {
+        if (retry >= RETRY_TIMES || executor == nullptr || works.empty()) {
             return;
         }
         if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
@@ -406,16 +389,22 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, AsyncW
         std::vector<int32_t> users;
         if (user == 0) {
             auto account = Account::GetInstance();
-            finished = account == nullptr ? false : account->QueryUsers(users);
+            finished = !(account == nullptr) && account->QueryUsers(users);
         } else {
             users.push_back(user);
         }
 
+        auto handle = works.front();
         for (auto user : users) {
-            finished = (this->*HANDLERS[work])(user) && finished;
+            finished = (this->*handle)(user) && finished;
         }
-        if (!finished) {
-            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, work));
+        if (!finished || users.empty()) {
+            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, std::move(works)));
+            return;
+        }
+        works.pop_front();
+        if (!works.empty()) {
+            executor->Execute(GenTask(retry, user, std::move(works)));
         }
     };
 }
@@ -544,14 +533,12 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
     return subDbs.empty() && unsubDbs.empty();
 }
 
-void CloudServiceImpl::Execute(Tasks tasks)
+void CloudServiceImpl::Execute(Task task)
 {
-    for (auto &task : tasks) {
-        auto executor = executor_;
-        if (executor == nullptr) {
-            return;
-        }
-        executor->Execute(std::move(task));
+    auto executor = executor_;
+    if (executor == nullptr) {
+        return;
     }
+    executor->Execute(std::move(task));
 }
 } // namespace OHOS::CloudData
