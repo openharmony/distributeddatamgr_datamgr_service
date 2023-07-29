@@ -389,7 +389,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
         std::vector<int32_t> users;
         if (user == 0) {
             auto account = Account::GetInstance();
-            finished = (account != nullptr) && account->QueryUsers(users);
+            finished = !(account == nullptr) && account->QueryUsers(users);
         } else {
             users.push_back(user);
         }
@@ -398,7 +398,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
         for (auto user : users) {
             finished = (this->*handle)(user) && finished;
         }
-        if (!finished) {
+        if (!finished || users.empty()) {
             executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, std::move(works)));
             return;
         }
