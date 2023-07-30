@@ -54,6 +54,7 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
     runtime.sourcePackage = bundleName;
     runtime.createPackage = bundleName;
     runtime.deviceId = GetLocalDeviceId();
+    runtime.recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
     data.SetRuntime(runtime);
     return E_OK;
 }

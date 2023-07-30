@@ -47,6 +47,16 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     UpdateTime();
     std::vector<Entry> entries;
     std::string unifiedKey = unifiedData.GetRuntime()->key.GetUnifiedKey();
+    // add runtime info
+    std::vector<uint8_t> runtimeBytes;
+    auto runtimeTlv = TLVObject(runtimeBytes);
+    if (!TLVUtil::Writing(*unifiedData.GetRuntime(), runtimeTlv)) {
+        ZLOGE("Marshall runtime info failed, dataPrefix: %{public}s.", unifiedKey.c_str());
+        return E_WRITE_PARCEL_ERROR;
+    }
+    Entry entry = { Key(unifiedKey), Value(runtimeBytes) };
+    entries.push_back(entry);
+
     // add unified record
     for (const auto &record : unifiedData.GetRecords()) {
         if (record == nullptr) {
@@ -64,15 +74,6 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
         Entry entry = { Key(unifiedKey + "/" + record->GetUid()), Value(recordBytes) };
         entries.push_back(entry);
     }
-    // add runtime info
-    std::vector<uint8_t> runtimeBytes;
-    auto runtimeTlv = TLVObject(runtimeBytes);
-    if (!TLVUtil::Writing(*unifiedData.GetRuntime(), runtimeTlv)) {
-        ZLOGI("Marshall runtime info failed.");
-        return E_WRITE_PARCEL_ERROR;
-    }
-    Entry entry = { Key(unifiedKey), Value(runtimeBytes) };
-    entries.push_back(entry);
     auto status = PutEntries(entries);
     return status;
 }
@@ -82,12 +83,12 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     UpdateTime();
     std::vector<Entry> entries;
     if (GetEntries(key, entries) != E_OK) {
-        ZLOGI("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
+        ZLOGE("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
         return E_DB_ERROR;
     }
     if (entries.empty()) {
-        ZLOGD("entries is empty.");
-        return E_OK;
+        ZLOGW("entries is empty, dataPrefix: %{public}s", key.c_str());
+        return E_NOT_FOUND;
     }
     return UnMarshalEntries(key, entries, unifiedData);
 }
@@ -97,7 +98,7 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
     UpdateTime();
     UnifiedData unifiedData;
     if (Get(key, unifiedData) != E_OK) {
-        ZLOGE("Get unified data failed.");
+        ZLOGE("Get unified data failed, dataPrefix: %{public}s", key.c_str());
         return E_DB_ERROR;
     }
 
@@ -295,9 +296,7 @@ Status RuntimeStore::UnMarshalEntries(const std::string &key, std::vector<Entry>
                 return E_READ_PARCEL_ERROR;
             }
             unifiedData.SetRuntime(runtime);
-            break;
-        }
-        if (keyStr.find(key) == 0) {
+        } else if (keyStr.find(key) == 0) {
             std::shared_ptr<UnifiedRecord> record;
             auto recordTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value.Data()));
             if (!TLVUtil::Reading(record, recordTlv)) {

@@ -110,13 +110,17 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     }
     int32_t res = store->Get(query.key, unifiedData);
     if (res != E_OK) {
-        ZLOGE("Get data from store failed, intention: %{public}s.", key.intention.c_str());
+        ZLOGE("Get data from store failed, key: %{public}s.", query.key.c_str());
         return res;
     }
-    if (unifiedData.IsEmpty()) {
-        return E_OK;
-    }
+
     std::shared_ptr<Runtime> runtime = unifiedData.GetRuntime();
+    if (static_cast<uint32_t>(unifiedData.GetRecords().size()) != runtime->recordTotalNum) {
+        ZLOGE("Get data from DB is incomplete, key: %{public}s, expected recordsNum is %{public}u, not %{public}zu.",
+              query.key.c_str(), runtime->recordTotalNum, unifiedData.GetRecords().size());
+        return E_NOT_FOUND;
+    }
+
     CheckerManager::CheckInfo info;
     info.tokenId = query.tokenId;
     if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info)) {
