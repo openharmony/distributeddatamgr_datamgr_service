@@ -72,7 +72,7 @@ int RdbResultSetImpl::GetColumnIndex(const std::string &columnName, int &columnI
     }
     for (size_t i = 0; i < colNames_.size(); i++) {
         if (colNames_[i] == columnName) {
-            columnIndex = i;
+            columnIndex = static_cast<int>(i);
             return NativeRdb::E_OK;
         }
     }
