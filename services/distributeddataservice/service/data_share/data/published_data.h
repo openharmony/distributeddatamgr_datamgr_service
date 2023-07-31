@@ -40,7 +40,7 @@ public:
     bool Unmarshal(const json &node) override;
     std::string key;
     std::string bundleName;
-    int64_t subscriberId;
+    int64_t subscriberId = 0;
     Data value;
     int32_t userId = Id::INVALID_USER;
     std::time_t timestamp = 0;
