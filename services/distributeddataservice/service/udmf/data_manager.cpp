@@ -110,7 +110,7 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
     }
     int32_t res = store->Get(query.key, unifiedData);
     if (res != E_OK) {
-        ZLOGE("Get data from store failed, key: %{public}s.", query.key.c_str());
+        ZLOGE("Get data from store failed, res: %{public}d, key: %{public}s.", res, query.key.c_str());
         return res;
     }
 
@@ -123,7 +123,7 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
 
     CheckerManager::CheckInfo info;
     info.tokenId = query.tokenId;
-    if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info)) {
+    if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info) && !CheckPermissionInCache(query)) {
         return E_NO_PERMISSION;
     }
 
@@ -139,8 +139,19 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
         ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
+    privilegeCache_.erase(query.key);
+
     PreProcessUtils::SetRemoteData(unifiedData);
     return E_OK;
+}
+
+bool DataManager::CheckPermissionInCache(const QueryOption &query)
+{
+    auto iter = privilegeCache_.find(query.key);
+    if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId) {
+        return true;
+    }
+    return false;
 }
 
 int32_t DataManager::ProcessingUri(const QueryOption &query, UnifiedData &unifiedData)
@@ -321,16 +332,15 @@ int32_t DataManager::AddPrivilege(const QueryOption &query, const Privilege &pri
 
     UnifiedData data;
     int32_t res = store->Get(query.key, data);
+    if (res == E_NOT_FOUND) {
+        privilegeCache_[query.key] = privilege;
+        ZLOGW("Add privilege in cache, key: %{public}s.", query.key.c_str());
+        return E_OK;
+    }
     if (res != E_OK) {
-        ZLOGE("Get data from store failed, intention: %{public}s.", key.intention.c_str());
+        ZLOGE("Get data from store failed, res:%{public}d,intention: %{public}s.", res, key.intention.c_str());
         return res;
     }
-
-    if (data.IsEmpty()) {
-        ZLOGE("Invalid parameters, unified data has no record, intention: %{public}s.", key.intention.c_str());
-        return E_INVALID_PARAMETERS;
-    }
-
     data.GetRuntime()->privileges.emplace_back(privilege);
     if (store->Update(data) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());

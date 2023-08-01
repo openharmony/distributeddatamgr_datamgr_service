@@ -47,8 +47,11 @@ private:
     DataManager();
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
     int32_t ProcessingUri(const QueryOption &query, UnifiedData &unifiedData);
+    bool CheckPermissionInCache(const QueryOption &query);
+
     StoreCache storeCache_;
     std::map<std::string, std::string> authorizationMap_;
+    std::map<std::string, Privilege> privilegeCache_;
 };
 } // namespace UDMF
 } // namespace OHOS
