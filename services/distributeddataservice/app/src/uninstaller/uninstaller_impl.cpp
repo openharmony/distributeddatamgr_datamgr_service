@@ -63,7 +63,7 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 
 void UninstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
-    kvStoreDataService_->OnUninstall(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
+    kvStoreDataService_->OnUninstall(bundleName, userId, appIndex);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
@@ -87,7 +87,7 @@ void UninstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_
 
 void UninstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
-    kvStoreDataService_->OnUpdate(bundleName, userId, appIndex, IPCSkeleton::GetCallingTokenID());
+    kvStoreDataService_->OnUpdate(bundleName, userId, appIndex);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;

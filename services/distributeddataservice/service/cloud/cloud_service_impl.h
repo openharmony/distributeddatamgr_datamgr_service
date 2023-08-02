@@ -38,7 +38,7 @@ public:
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &info) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
-    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId) override;
+    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
     int32_t Online(const std::string &device) override;
     int32_t Offline(const std::string &device) override;
 

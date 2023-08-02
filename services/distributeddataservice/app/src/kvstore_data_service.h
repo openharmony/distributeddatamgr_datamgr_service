@@ -75,9 +75,9 @@ public:
 
     void OnDeviceOnReady(const AppDistributedKv::DeviceInfo &info);
 
-    int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
+    int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index);
 
-    int32_t OnUpdate(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
+    int32_t OnUpdate(const std::string &bundleName, int32_t user, int32_t index);
 
 private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);

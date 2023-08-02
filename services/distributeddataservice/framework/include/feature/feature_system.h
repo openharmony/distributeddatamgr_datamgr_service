@@ -46,8 +46,8 @@ public:
         virtual int32_t OnInitialize();
         virtual int32_t OnBind(const BindInfo &bindInfo);
         virtual int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
-        virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
-        virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId);
+        virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
+        virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
         virtual int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
         virtual int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account);
         virtual int32_t Online(const std::string &device);

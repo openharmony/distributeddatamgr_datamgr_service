@@ -462,9 +462,24 @@ CloudInfo CloudServiceImpl::GetCloudInfo(int32_t userId)
 }
 
 int32_t CloudServiceImpl::OnAppUninstall(
-    const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
+    const std::string &bundleName, int32_t user, int32_t index)
 {
-    (void)tokenId;
+    uint32_t tokenId;
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+        ZLOGE("load meta failed!");
+        return E_ERROR;
+    }
+    for (auto &meta : storeMetaData) {
+        if (meta.instanceId == index && !meta.appId.empty() && !meta.storeId.empty()) {
+            ZLOGI("uninstalled bundleName:%{public}s stordId:%{public}s", bundleName.c_str(),
+                Anonymous::Change(meta.storeId).c_str());
+            tokenId = meta.tokenId;
+            break;
+        }
+    }
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
     AutoCache::GetInstance().CloseStore(tokenId);
