@@ -19,6 +19,7 @@
 #include "ipc_skeleton.h"
 #include "itypes_util.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 #include "utils/constant.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -60,7 +61,8 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
     AppId appId;
     StoreId storeId;
     if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     appId.appId = Constant::TrimCopy(appId.appId);
@@ -75,11 +77,11 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
         return (this->*HANDLERS[code])(appId, storeId, data, reply);
     }
     ZLOGE("PERMISSION_DENIED uid:%{public}d appId:%{public}s storeId:%{public}s", info.uid, info.bundleName.c_str(),
-        info.storeId.c_str());
+        Anonymous::Change(info.storeId).c_str());
 
     if (!ITypesUtil::Marshal(reply, PERMISSION_DENIED)) {
         ZLOGE("Marshal PERMISSION_DENIED code:%{public}u appId:%{public}s storeId:%{public}s", code,
-            appId.appId.c_str(), storeId.storeId.c_str());
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -102,13 +104,14 @@ int32_t KVDBServiceStub::OnBeforeCreate(
 {
     Options options;
     if (!ITypesUtil::Unmarshal(data, options)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = BeforeCreate(appId, storeId, options);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -120,14 +123,15 @@ int32_t KVDBServiceStub::OnAfterCreate(
     Options options;
     std::vector<uint8_t> password;
     if (!ITypesUtil::Unmarshal(data, options, password)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = AfterCreate(appId, storeId, options, password);
     password.assign(password.size(), 0);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -138,7 +142,7 @@ int32_t KVDBServiceStub::OnDelete(const AppId &appId, const StoreId &storeId, Me
     int32_t status = Delete(appId, storeId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -148,13 +152,14 @@ int32_t KVDBServiceStub::OnSync(const AppId &appId, const StoreId &storeId, Mess
 {
     SyncInfo syncInfo;
     if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.mode, syncInfo.devices, syncInfo.delay, syncInfo.query)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = Sync(appId, storeId, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -165,14 +170,15 @@ int32_t KVDBServiceStub::OnRegisterCallback(
 {
     sptr<IRemoteObject> remoteObj;
     if (!ITypesUtil::Unmarshal(data, remoteObj)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto syncCallback = (remoteObj == nullptr) ? nullptr : iface_cast<IKvStoreSyncCallback>(remoteObj);
     int32_t status = RegisterSyncCallback(appId, syncCallback);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -184,7 +190,7 @@ int32_t KVDBServiceStub::OnUnregisterCallback(
     int32_t status = UnregisterSyncCallback(appId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -195,13 +201,14 @@ int32_t KVDBServiceStub::OnSetSyncParam(
 {
     KvSyncParam syncParam;
     if (!ITypesUtil::Unmarshal(data, syncParam.allowedDelayMs)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = SetSyncParam(appId, storeId, syncParam);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -214,7 +221,7 @@ int32_t KVDBServiceStub::OnGetSyncParam(
     int32_t status = GetSyncParam(appId, storeId, syncParam);
     if (!ITypesUtil::Marshal(reply, status, syncParam.allowedDelayMs)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -226,7 +233,7 @@ int32_t KVDBServiceStub::OnEnableCap(
     int32_t status = EnableCapability(appId, storeId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -238,7 +245,7 @@ int32_t KVDBServiceStub::OnDisableCap(
     int32_t status = DisableCapability(appId, storeId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -250,13 +257,14 @@ int32_t KVDBServiceStub::OnSetCapability(
     std::vector<std::string> local;
     std::vector<std::string> remote;
     if (!ITypesUtil::Unmarshal(data, local, remote)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = SetCapability(appId, storeId, local, remote);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -267,13 +275,14 @@ int32_t KVDBServiceStub::OnAddSubInfo(const AppId &appId, const StoreId &storeId
 {
     SyncInfo syncInfo;
     if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = AddSubscribeInfo(appId, storeId, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -284,13 +293,14 @@ int32_t KVDBServiceStub::OnRmvSubInfo(const AppId &appId, const StoreId &storeId
 {
     SyncInfo syncInfo;
     if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = RmvSubscribeInfo(appId, storeId, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -301,14 +311,15 @@ int32_t KVDBServiceStub::OnSubscribe(
 {
     sptr<IRemoteObject> remoteObj;
     if (!ITypesUtil::Unmarshal(data, remoteObj)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto observer = (remoteObj == nullptr) ? nullptr : iface_cast<IKvStoreObserver>(remoteObj);
     int32_t status = Subscribe(appId, storeId, observer);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -319,14 +330,15 @@ int32_t KVDBServiceStub::OnUnsubscribe(
 {
     sptr<IRemoteObject> remoteObj;
     if (!ITypesUtil::Unmarshal(data, remoteObj)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(), storeId.storeId.c_str());
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto observer = (remoteObj == nullptr) ? nullptr : iface_cast<IKvStoreObserver>(remoteObj);
     int32_t status = Unsubscribe(appId, storeId, observer);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
@@ -339,7 +351,7 @@ int32_t KVDBServiceStub::OnGetBackupPassword(
     int32_t status = GetBackupPassword(appId, storeId, password);
     if (!ITypesUtil::Marshal(reply, status, password)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
-            storeId.storeId.c_str());
+            Anonymous::Change(storeId.storeId).c_str());
         password.assign(password.size(), 0);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

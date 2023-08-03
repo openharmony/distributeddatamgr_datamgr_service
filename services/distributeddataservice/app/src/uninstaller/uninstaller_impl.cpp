@@ -26,6 +26,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "permit_delegate.h"
+#include "utils/anonymous.h"
 #include "utils/block_integer.h"
 
 namespace OHOS::DistributedKv {
@@ -95,7 +96,8 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService)
         }
         for (auto &meta : storeMetaData) {
             if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-                ZLOGI("uninstalled bundleName:%s, stordId:%s", bundleName.c_str(), meta.storeId.c_str());
+                ZLOGI("uninstalled bundleName:%s, stordId:%s", bundleName.c_str(),
+                    Anonymous::Change(meta.storeId).c_str());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());

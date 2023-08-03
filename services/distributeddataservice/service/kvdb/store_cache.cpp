@@ -22,6 +22,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "types.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 constexpr int64_t StoreCache::INTERVAL;
@@ -107,8 +108,8 @@ void StoreCache::CloseExcept(const std::set<int32_t> &users)
 void StoreCache::SetObserver(uint32_t tokenId, const std::string &storeId, std::shared_ptr<Observers> observers)
 {
     stores_.ComputeIfPresent(tokenId, [&storeId, &observers](auto &key, auto &stores) {
-        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, storeId.c_str(),
-            observers ? observers->size() : size_t(0));
+        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key,
+            Anonymous::Change(storeId).c_str(), observers ? observers->size() : size_t(0));
         auto it = stores.find(storeId);
         if (it != stores.end()) {
             it->second.SetObservers(observers);
@@ -256,7 +257,7 @@ void StoreCache::DBStoreDelegate::OnChange(const DistributedDB::KvStoreChangedDa
     auto updates = Convert(data.GetEntriesUpdated());
     auto deletes = Convert(data.GetEntriesDeleted());
     ZLOGD("C:%{public}zu U:%{public}zu D:%{public}zu storeId:%{public}s", inserts.size(), updates.size(),
-        deletes.size(), delegate_->GetStoreId().c_str());
+        deletes.size(), Anonymous::Change(delegate_->GetStoreId()).c_str());
     ChangeNotification change(std::move(inserts), std::move(updates), std::move(deletes), {}, false);
     for (auto &observer : *observers) {
         if (observer == nullptr) {
@@ -275,7 +276,8 @@ void StoreCache::DBStoreDelegate::SetObservers(std::shared_ptr<Observers> observ
     observers_ = observers;
 
     if (observers_ != nullptr && !observers_->empty()) {
-        ZLOGD("storeId:%{public}s observers:%{public}zu", delegate_->GetStoreId().c_str(), observers_->size());
+        ZLOGD("storeId:%{public}s observers:%{public}zu", Anonymous::Change(delegate_->GetStoreId()).c_str(),
+            observers_->size());
         delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, this);
     }
 }

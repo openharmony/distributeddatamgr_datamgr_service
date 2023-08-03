@@ -110,8 +110,9 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
 
     auto syncIdentifier =
         DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(compatibleUser, tuple.appId, tuple.storeId);
-    ZLOGI("set compatible identifier, store:%{public}s, user:%{public}s, device:%{public}.10s", tuple.storeId.c_str(),
-        compatibleUser.c_str(), DistributedData::Serializable::Marshall(devices).c_str());
+    ZLOGI("set compatible identifier, store:%{public}s, user:%{public}s, device:%{public}.10s",
+        Anonymous::Change(tuple.storeId).c_str(), compatibleUser.c_str(),
+        DistributedData::Serializable::Marshall(devices).c_str());
     storeDelegate->SetEqualIdentifier(syncIdentifier, devices);
 }
 
