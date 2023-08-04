@@ -19,7 +19,6 @@ namespace OHOS::DistributedData {
 enum GeneralError : int32_t {
     E_OK = 0,
     E_ERROR,
-    E_PARTIAL_ERROR,
     E_NETWORK_ERROR,
     E_CLOUD_DISABLED,
     E_LOCKED_BY_OTHERS,
@@ -33,6 +32,7 @@ enum GeneralError : int32_t {
     E_ALREADY_CLOSED,
     E_UNOPENED,
     E_RETRY_TIMEOUT,
+    E_PARTIAL_ERROR,
     E_BUTT,
 };
 }
