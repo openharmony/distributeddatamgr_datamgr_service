@@ -52,7 +52,12 @@ Status LifeCycleManager::DeleteOnStart()
     std::shared_ptr<LifeCyclePolicy> LifeCyclePolicy;
     for (const auto &intentionPolicyPair : intentionPolicyMap_) {
         LifeCyclePolicy = GetPolicy(intentionPolicyPair.first);
-        status = status == E_OK ? LifeCyclePolicy->DeleteOnStart(intentionPolicyPair.first) : status;
+        Status delStatus = LifeCyclePolicy->DeleteOnStart(intentionPolicyPair.first);
+        if (delStatus != E_OK) {
+            status = delStatus;
+            ZLOGW("DeleteOnStart fail, intentionType = %{public}s, status = %{public}d.",
+                  intentionPolicyPair.first.c_str(), delStatus);
+        }
     }
     return status;
 }
@@ -84,7 +89,12 @@ Status LifeCycleManager::DeleteOnTimeout()
     std::shared_ptr<LifeCyclePolicy> LifeCyclePolicy;
     for (const auto &intentionPolicyPair : intentionPolicyMap_) {
         LifeCyclePolicy = LifeCycleManager::GetInstance().GetPolicy(intentionPolicyPair.first);
-        status = status == E_OK ? LifeCyclePolicy->DeleteOnTimeout(intentionPolicyPair.first) : status;
+        Status delStatus = LifeCyclePolicy->DeleteOnTimeout(intentionPolicyPair.first);
+        if (delStatus != E_OK) {
+            status = delStatus;
+            ZLOGW("DeleteOnTimeout fail, intentionType = %{public}s, status = %{public}d.",
+                  intentionPolicyPair.first.c_str(), delStatus);
+        }
     }
     return status;
 }

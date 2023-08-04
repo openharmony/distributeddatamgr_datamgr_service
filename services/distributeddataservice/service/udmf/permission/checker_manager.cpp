@@ -52,6 +52,9 @@ bool CheckerManager::IsValid(const std::vector<Privilege> &privileges, const Che
     if (it == checkers_.end()) {
         return true;
     }
+    if (it->second == nullptr) {
+        return false;
+    }
     return it->second->IsValid(privileges, info);
 }
 } // namespace UDMF
