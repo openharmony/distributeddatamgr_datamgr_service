@@ -306,7 +306,7 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
     }
     if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
         option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
-        DoCloudSync(param, option, predicates, async);
+        DoCloudSync(param, option, predicates.tables_, async);
         return RDB_OK;
     }
     return DoSync(param, option, predicates, async);
@@ -347,7 +347,7 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
 }
 
 void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::Option &option,
-    const PredicatesMemo &predicates, const AsyncDetail &async)
+    const std::vector<std::string> &tables, const AsyncDetail &async)
 {
     CloudEvent::StoreInfo storeInfo;
     storeInfo.bundleName = param.bundleName_;
@@ -355,9 +355,9 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = param.storeName_;
     std::shared_ptr<RdbQuery> query = nullptr;
-    if (!predicates.tables_.empty()) {
+    if (!tables.empty()) {
         query = std::make_shared<RdbQuery>();
-        query->FromTable(predicates.tables_);
+        query->FromTable(tables);
     }
     GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](
                                  const GenDetails &result) mutable {
@@ -431,6 +431,22 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
 
 int32_t RdbServiceImpl::OnInitialize()
 {
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    AutoCache::GetInstance().CloseStore(tokenId, param.storeName_);
+    RdbSyncerParam tmpParam = param;
+    HapTokenInfo hapTokenInfo;
+    AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
+    tmpParam.bundleName_ = hapTokenInfo.bundleName;
+    auto storeMeta = GetStoreMetaData(tmpParam);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetStrategyKey());
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
     return RDB_OK;
 }
 

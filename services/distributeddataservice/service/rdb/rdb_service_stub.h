@@ -36,6 +36,8 @@ private:
 
     int32_t OnGetSchema(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnDelete(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnRemoteInitNotifier(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteSetDistributedTables(MessageParcel& data, MessageParcel& reply);
@@ -62,7 +64,8 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_SUBSCRIBE)] = &RdbServiceStub::OnRemoteDoSubscribe,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNSUBSCRIBE)] = &RdbServiceStub::OnRemoteDoUnSubscribe,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REMOTE_QUERY)] = &RdbServiceStub::OnRemoteDoRemoteQuery,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_SCHEMA)] = &RdbServiceStub::OnGetSchema
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_SCHEMA)] = &RdbServiceStub::OnGetSchema,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_DELETE)] = &RdbServiceStub::OnDelete
     };
 };
 } // namespace OHOS::DistributedRdb

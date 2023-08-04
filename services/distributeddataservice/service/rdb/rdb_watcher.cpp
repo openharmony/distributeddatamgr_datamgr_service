@@ -19,6 +19,7 @@
 
 #include "error/general_error.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -38,6 +39,10 @@ int32_t RdbWatcher::OnChange(const Origin &origin, const PRIFields &primaryField
     rdbOrigin.dataType = origin.dataType;
     rdbOrigin.id = origin.id;
     rdbOrigin.store = origin.store;
+    ZLOGD("store:%{public}s data change from :%{public}s, dataType:%{public}d, origin:%{public}d.",
+        Anonymous::Change(rdbOrigin.store).c_str(),
+        rdbOrigin.id.empty() ? "empty" : Anonymous::Change(*rdbOrigin.id.begin()).c_str(),
+        rdbOrigin.dataType, rdbOrigin.origin);
     notifier->OnChange(rdbOrigin, primaryFields, std::move(values));
     return E_OK;
 }

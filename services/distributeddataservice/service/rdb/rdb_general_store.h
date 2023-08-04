@@ -59,7 +59,6 @@ public:
     int32_t AddRef() override;
     int32_t Release() override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
-    static GenErr ConvertStatus(DistributedDB::DBStatus status);
 
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
@@ -67,6 +66,7 @@ private:
     using SyncProcess = DistributedDB::SyncProcess;
     using DBBriefCB = DistributedDB::SyncStatusCallback;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
+    static GenErr ConvertStatus(DistributedDB::DBStatus status);
     static constexpr inline uint32_t ITERATE_TIMES = 10000;
     static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
     class ObserverProxy : public DistributedDB::StoreObserver {

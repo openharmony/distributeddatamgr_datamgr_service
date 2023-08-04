@@ -67,6 +67,8 @@ public:
 
     int32_t GetSchema(const RdbSyncerParam &param) override;
 
+    int32_t Delete(const RdbSyncerParam &param) override;
+
     int32_t OnBind(const BindInfo &bindInfo) override;
 
 private:
@@ -92,7 +94,7 @@ private:
 
     static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
 
-    void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
+    void DoCloudSync(const RdbSyncerParam &param, const Option &option, const std::vector<std::string> &tables,
         const AsyncDetail &async);
 		
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
