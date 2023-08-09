@@ -498,6 +498,11 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         ZLOGW("error, there is no cloud info for user(%{public}d)", sub.userId);
         return false;
     }
+    if (!sub.id.empty() && sub.id != cloudInfo.id) {
+        CleanSubscription(sub);
+        sub.id.clear();
+        sub.expiresTime.clear();
+    }
 
     ZLOGD("begin cloud:%{public}d user:%{public}d apps:%{public}zu", cloudInfo.enableCloud, sub.userId,
         cloudInfo.apps.size());
@@ -532,6 +537,15 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
     CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
     CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
     return subDbs.empty() && unsubDbs.empty();
+}
+
+void CloudServiceImpl::CleanSubscription(const Subscription &sub)
+{
+    ZLOGD("id:%{public}s, size:%{public}zu", Anonymous::Change(sub.id).c_str(), sub.expireTime.size());
+    MetaDataManager::GetInstance().DelMeta(sub.GetKey(), true);
+    for (const auto &[bundle, expireTime] : sub.expiresTime) {
+        MetaDataManager::GetInstance().DelMeta(sub.GetRelationKey(bundle), true);
+    }
 }
 
 bool CloudServiceImpl::CleanServer(int32_t user)
