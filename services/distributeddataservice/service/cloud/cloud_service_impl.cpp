@@ -539,9 +539,9 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
     return subDbs.empty() && unsubDbs.empty();
 }
 
-void CloudServiceImpl::CleanSubscription(const Subscription &sub)
+void CloudServiceImpl::CleanSubscription(Subscription &sub)
 {
-    ZLOGD("id:%{public}s, size:%{public}zu", Anonymous::Change(sub.id).c_str(), sub.expireTime.size());
+    ZLOGD("id:%{public}s, size:%{public}zu", Anonymous::Change(sub.id).c_str(), sub.expiresTime.size());
     MetaDataManager::GetInstance().DelMeta(sub.GetKey(), true);
     for (const auto &[bundle, expireTime] : sub.expiresTime) {
         MetaDataManager::GetInstance().DelMeta(sub.GetRelationKey(bundle), true);

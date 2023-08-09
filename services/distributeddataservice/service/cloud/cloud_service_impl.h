@@ -75,7 +75,7 @@ private:
     void GetSchema(const Event &event);
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
     void Execute(Task task);
-    void CleanSubscription(const Subscription &sub);
+    void CleanSubscription(Subscription &sub);
     bool DoSubscribe(int32_t user);
     bool CleanServer(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
