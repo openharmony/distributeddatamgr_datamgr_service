@@ -414,7 +414,7 @@ SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bu
 {
     SchemaMeta schemaMeta;
     auto [status, cloudInfo] = GetCloudInfo(userId);
-    if (status == SUCCESS) {
+    if (status != SUCCESS) {
         // GetCloudInfo has print the log info. so we don`t need print again.
         return schemaMeta;
     }
