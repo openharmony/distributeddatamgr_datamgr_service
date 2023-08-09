@@ -64,8 +64,9 @@ CloudServiceImpl::CloudServiceImpl()
 
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
 {
-    CloudInfo cloudInfo;
-    auto status = GetCloudInfo(IPCSkeleton::GetCallingTokenID(), id, cloudInfo);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         return status;
     }
@@ -79,7 +80,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user));
+    Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     syncManager_.DoCloudSync({ cloudInfo.user });
     return SUCCESS;
 }
@@ -95,7 +96,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user));
+    Execute(GenTask(0, cloudInfo.user, { WORK_SUB, WORK_CLEAN }));
     syncManager_.StopCloudSync(cloudInfo.user);
     return SUCCESS;
 }
@@ -412,8 +413,8 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
 SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId)
 {
     SchemaMeta schemaMeta;
-    CloudInfo cloudInfo = GetCloudInfo(userId);
-    if (!cloudInfo.IsValid()) {
+    auto [status, cloudInfo] = GetCloudInfo(userId);
+    if (status == SUCCESS) {
         // GetCloudInfo has print the log info. so we don`t need print again.
         return schemaMeta;
     }
@@ -439,26 +440,26 @@ SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bu
     return schemaMeta;
 }
 
-CloudInfo CloudServiceImpl::GetCloudInfo(int32_t userId)
+std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
-        return cloudInfo;
+        return { SUCCESS, cloudInfo };
     }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        return cloudInfo;
+        return { SERVER_UNAVAILABLE, cloudInfo };
     }
 
     cloudInfo = instance->GetServerInfo(userId);
     if (!cloudInfo.IsValid()) {
         ZLOGE("no cloud info %{public}d", userId);
-        return cloudInfo;
+        return { ERROR, cloudInfo };
     }
 
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
-    return cloudInfo;
+    return { SUCCESS, cloudInfo };
 }
 
 int32_t CloudServiceImpl::OnAppUninstall(
@@ -531,6 +532,16 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
     CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
     CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
     return subDbs.empty() && unsubDbs.empty();
+}
+
+bool CloudServiceImpl::CleanServer(int32_t user)
+{
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        return true;
+    }
+    instance->Clean(user);
+    return true;
 }
 
 void CloudServiceImpl::Execute(Task task)
