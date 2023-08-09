@@ -462,12 +462,10 @@ CloudInfo CloudServiceImpl::GetCloudInfo(int32_t userId)
 }
 
 int32_t CloudServiceImpl::OnAppUninstall(
-    const std::string &bundleName, int32_t user, int32_t index, uint32_t tokenId)
+    const std::string &bundleName, int32_t user, int32_t index)
 {
-    (void)tokenId;
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
-    AutoCache::GetInstance().CloseStore(tokenId);
     return E_OK;
 }
 

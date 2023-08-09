@@ -149,6 +149,30 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
     return E_OK;
 }
 
+int32_t RdbServiceImpl::OnAppUninstall(
+    const std::string &bundleName, int32_t user, int32_t index)
+{
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+        ZLOGE("load meta failed! bundleName:%{public}s, user:%{public}d, index:%{public}d",
+            bundleName.c_str(), user, index);
+        return E_ERROR;
+    }
+    for (const auto &meta : storeMetaData) {
+        if (meta.storeType < StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
+            || meta.storeType > StoreMetaData::StoreType::STORE_RELATIONAL_END) {
+            continue;
+        }
+        if (meta.instanceId == index && !meta.appId.empty() && !meta.storeId.empty()) {
+            AutoCache::GetInstance().CloseStore(meta.tokenId);
+            break;
+        }
+    }
+    return E_OK;
+}
+
 void RdbServiceImpl::OnClientDied(pid_t pid)
 {
     ZLOGI("client dead pid=%{public}d", pid);
