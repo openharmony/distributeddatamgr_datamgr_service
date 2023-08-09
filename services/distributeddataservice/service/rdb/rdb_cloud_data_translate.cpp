@@ -26,7 +26,9 @@ using DataAssets = NativeRdb::ValueObject::Assets;
 std::vector<uint8_t> RdbCloudDataTranslate::AssetToBlob(const Asset &asset)
 {
     std::vector<uint8_t> rawData;
-    DataAsset dataAsset = ValueProxy::Asset(asset);
+    Asset dbAsset = asset;
+    dbAsset.flag = static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE);
+    DataAsset dataAsset = ValueProxy::Asset(std::move(dbAsset));
     InnerAsset innerAsset(dataAsset);
     auto data = Serializable::Marshall(innerAsset);
     auto size = DistributedData::HostToNet((uint16_t)data.length());
@@ -63,7 +65,7 @@ Asset RdbCloudDataTranslate::BlobToAsset(const std::vector<uint8_t> &blob)
     return ValueProxy::Convert(asset);
 }
 
-Assets RdbCloudDataTranslate::BlobToAssets(std::vector<uint8_t> &blob)
+Assets RdbCloudDataTranslate::BlobToAssets(const std::vector<uint8_t> &blob)
 {
     DataAssets assets;
     if (ParserRawData(blob.data(), blob.size(), assets) == 0) {

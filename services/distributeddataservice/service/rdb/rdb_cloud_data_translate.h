@@ -30,7 +30,7 @@ public:
     std::vector<uint8_t> AssetToBlob(const Asset &asset) override;
     std::vector<uint8_t> AssetsToBlob(const Assets &assets) override;
     Asset BlobToAsset(const std::vector<uint8_t> &blob) override;
-    Assets BlobToAssets(std::vector<uint8_t> &blob) override;
+    Assets BlobToAssets(const std::vector<uint8_t> &blob) override;
 
 private:
     using Serializable = DistributedData::Serializable;
