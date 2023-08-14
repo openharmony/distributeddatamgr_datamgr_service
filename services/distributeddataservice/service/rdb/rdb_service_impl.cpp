@@ -306,7 +306,7 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
     }
     if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
         option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
-        DoCloudSync(param, option, predicates.tables_, async);
+        DoCloudSync(param, option, predicates, async);
         return RDB_OK;
     }
     return DoSync(param, option, predicates, async);
@@ -347,7 +347,7 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
 }
 
 void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::Option &option,
-    const std::vector<std::string> &tables, const AsyncDetail &async)
+    const PredicatesMemo &predicates, const AsyncDetail &async)
 {
     CloudEvent::StoreInfo storeInfo;
     storeInfo.bundleName = param.bundleName_;
@@ -355,9 +355,9 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = param.storeName_;
     std::shared_ptr<RdbQuery> query = nullptr;
-    if (!tables.empty()) {
+    if (!predicates.tables_.empty()) {
         query = std::make_shared<RdbQuery>();
-        query->FromTable(tables);
+        query->FromTable(predicates.tables_);
     }
     GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](
                                  const GenDetails &result) mutable {
@@ -631,6 +631,39 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     return 0;
+}
+
+int32_t RdbServiceImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return CloseStore(bundleName, user, index);
+}
+
+int32_t RdbServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return CloseStore(bundleName, user, index);
+}
+
+int32_t RdbServiceImpl::CloseStore(const std::string &bundleName, int32_t user, int32_t index) const
+{
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+        ZLOGE("load meta failed! bundleName:%{public}s, user:%{public}d, index:%{public}d",
+            bundleName.c_str(), user, index);
+        return E_ERROR;
+    }
+    for (const auto &meta : storeMetaData) {
+        if (meta.storeType < StoreMetaData::STORE_RELATIONAL_BEGIN ||
+            meta.storeType > StoreMetaData::STORE_RELATIONAL_END) {
+            continue;
+        }
+        if (meta.instanceId == index && !meta.appId.empty() && !meta.storeId.empty()) {
+            AutoCache::GetInstance().CloseStore(meta.tokenId);
+            break;
+        }
+    }
+    return E_OK;
 }
 
 void RdbServiceImpl::SyncAgent::ReInit(pid_t pid, const std::string &bundleName)

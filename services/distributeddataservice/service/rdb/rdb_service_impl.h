@@ -65,6 +65,10 @@ public:
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
+    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+
+    int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
+
     int32_t GetSchema(const RdbSyncerParam &param) override;
 
     int32_t Delete(const RdbSyncerParam &param) override;
@@ -94,7 +98,7 @@ private:
 
     static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
 
-    void DoCloudSync(const RdbSyncerParam &param, const Option &option, const std::vector<std::string> &tables,
+    void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 		
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
@@ -125,6 +129,8 @@ private:
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+
+    int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index) const;
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
