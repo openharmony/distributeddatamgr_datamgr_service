@@ -149,30 +149,6 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
     return E_OK;
 }
 
-int32_t RdbServiceImpl::OnAppUninstall(
-    const std::string &bundleName, int32_t user, int32_t index)
-{
-    std::string prefix = StoreMetaData::GetPrefix(
-        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
-    std::vector<StoreMetaData> storeMetaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
-        ZLOGE("load meta failed! bundleName:%{public}s, user:%{public}d, index:%{public}d",
-            bundleName.c_str(), user, index);
-        return E_ERROR;
-    }
-    for (const auto &meta : storeMetaData) {
-        if (meta.storeType < StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
-            || meta.storeType > StoreMetaData::StoreType::STORE_RELATIONAL_END) {
-            continue;
-        }
-        if (meta.instanceId == index && !meta.appId.empty() && !meta.storeId.empty()) {
-            AutoCache::GetInstance().CloseStore(meta.tokenId);
-            break;
-        }
-    }
-    return E_OK;
-}
-
 void RdbServiceImpl::OnClientDied(pid_t pid)
 {
     ZLOGI("client dead pid=%{public}d", pid);
@@ -458,6 +434,22 @@ int32_t RdbServiceImpl::OnInitialize()
     return RDB_OK;
 }
 
+int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    AutoCache::GetInstance().CloseStore(tokenId, param.storeName_);
+    RdbSyncerParam tmpParam = param;
+    HapTokenInfo hapTokenInfo;
+    AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
+    tmpParam.bundleName_ = hapTokenInfo.bundleName;
+    auto storeMeta = GetStoreMetaData(tmpParam);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetStrategyKey());
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
+    return RDB_OK;
+}
+
 int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
@@ -639,6 +631,39 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     return 0;
+}
+
+int32_t RdbServiceImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return CloseStore(bundleName, user, index);
+}
+
+int32_t RdbServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return CloseStore(bundleName, user, index);
+}
+
+int32_t RdbServiceImpl::CloseStore(const std::string &bundleName, int32_t user, int32_t index) const
+{
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+        ZLOGE("load meta failed! bundleName:%{public}s, user:%{public}d, index:%{public}d",
+            bundleName.c_str(), user, index);
+        return E_ERROR;
+    }
+    for (const auto &meta : storeMetaData) {
+        if (meta.storeType < StoreMetaData::STORE_RELATIONAL_BEGIN ||
+            meta.storeType > StoreMetaData::STORE_RELATIONAL_END) {
+            continue;
+        }
+        if (meta.instanceId == index && !meta.appId.empty() && !meta.storeId.empty()) {
+            AutoCache::GetInstance().CloseStore(meta.tokenId);
+            break;
+        }
+    }
+    return E_OK;
 }
 
 void RdbServiceImpl::SyncAgent::ReInit(pid_t pid, const std::string &bundleName)

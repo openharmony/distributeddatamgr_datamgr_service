@@ -190,7 +190,6 @@ bool AutoCache::Delegate::Close()
         if (status == Error::E_BUSY) {
             return false;
         }
-        store_ = nullptr;
     }
     return true;
 }

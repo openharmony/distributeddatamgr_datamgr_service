@@ -67,7 +67,11 @@ public:
 
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
 
+    int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
+
     int32_t GetSchema(const RdbSyncerParam &param) override;
+
+    int32_t Delete(const RdbSyncerParam &param) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;
 
@@ -125,6 +129,8 @@ private:
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+
+    int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index) const;
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
