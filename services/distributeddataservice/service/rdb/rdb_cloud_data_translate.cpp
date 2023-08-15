@@ -63,7 +63,7 @@ Asset RdbCloudDataTranslate::BlobToAsset(const std::vector<uint8_t> &blob)
     return ValueProxy::Convert(asset);
 }
 
-Assets RdbCloudDataTranslate::BlobToAssets(std::vector<uint8_t> &blob)
+Assets RdbCloudDataTranslate::BlobToAssets(const std::vector<uint8_t> &blob)
 {
     DataAssets assets;
     if (ParserRawData(blob.data(), blob.size(), assets) == 0) {
