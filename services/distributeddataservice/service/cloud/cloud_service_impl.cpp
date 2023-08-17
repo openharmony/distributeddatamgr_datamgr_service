@@ -177,8 +177,24 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     if (id != cloudInfo.id) {
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(id).c_str());
+        return ERROR;
     }
-    return DoClean(cloudInfo, actions);
+    std::map<std::string, int32_t> genActions;
+    for (const auto &[bundleName, action] : actions) {
+        switch (action) {
+            case CloudService::Action::CLEAR_CLOUD_INFO:
+                genActions.emplace(bundleName, GeneralStore::CleanMode::CLOUD_INFO);
+                break;
+            case CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO:
+                genActions.emplace(bundleName, GeneralStore::CleanMode::CLOUD_DATA);
+                break;
+            default:
+                ZLOGE("invalid action. id:%{public}s, bundleName:%{public}s, action:%{public}d",
+                    Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str(), action);
+                return ERROR;
+        }
+    }
+    return DoClean(cloudInfo, genActions);
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
