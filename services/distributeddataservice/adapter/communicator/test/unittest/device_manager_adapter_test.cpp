@@ -39,8 +39,9 @@ public:
 
 void GrantPermissionNative()
 {
-    const char **perms = new const char *[1];
+    const char **perms = new const char *[2];
     perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
+    perms[1] = "ohos.permission.ACCERSS_SERVICE_DM";
     TokenInfoParams infoInstance = {
         .dcapsNum = 0,
         .permsNum = 2,
