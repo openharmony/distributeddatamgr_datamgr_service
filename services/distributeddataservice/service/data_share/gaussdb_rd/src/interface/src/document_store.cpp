@@ -620,43 +620,71 @@ Collection DocumentStore::GetCollection(std::string &collectionName)
     return Collection(collectionName, executor_);
 }
 
+int JudgeBoolViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
+{
+    if (leafItem.GetBoolValue()) {
+        if (index != 0 && !viewType) {
+            return -E_INVALID_ARGS;
+        }
+        viewType = true;
+    } else {
+        if (index != 0 && viewType) {
+            return E_INVALID_ARGS;
+        }
+        viewType = false;
+    }
+    return E_OK;
+}
+
+int JudgeStringViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
+{
+    if (leafItem.GetStringValue() == "") {
+        if (index != 0 && !viewType) {
+            return -E_INVALID_ARGS;
+        }
+        viewType = true;
+    } else {
+        return -E_INVALID_ARGS;
+    }
+    return E_OK;
+}
+
+int JudgeIntViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
+{
+    if (leafItem.GetIntValue() == 0) {
+        if (index != 0 && viewType) {
+            return -E_INVALID_ARGS;
+        }
+        viewType = false;
+    } else {
+        if (index != 0 && !viewType) {
+            return E_INVALID_ARGS;
+        }
+        viewType = true;
+    }
+    return E_OK;
+}
+
 int JudgeViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
 {
+    int errCode = E_OK;
     switch (leafItem.GetValueType()) {
         case ValueObject::ValueType::VALUE_BOOL:
-            if (leafItem.GetBoolValue()) {
-                if (index != 0 && !viewType) {
-                    return -E_INVALID_ARGS;
-                }
-                viewType = true;
-            } else {
-                if (index != 0 && viewType) {
-                    return E_INVALID_ARGS;
-                }
-                viewType = false;
+            errCode = JudgeBoolViewType(index, leafItem, viewType);
+            if (errCode != E_OK) {
+                return errCode;
             }
             break;
         case ValueObject::ValueType::VALUE_STRING:
-            if (leafItem.GetStringValue() == "") {
-                if (index != 0 && !viewType) {
-                    return -E_INVALID_ARGS;
-                }
-                viewType = true;
-            } else {
-                return -E_INVALID_ARGS;
+            errCode = JudgeStringViewType(index, leafItem, viewType);
+            if (errCode != E_OK) {
+                return errCode;
             }
             break;
         case ValueObject::ValueType::VALUE_NUMBER:
-            if (leafItem.GetIntValue() == 0) {
-                if (index != 0 && viewType) {
-                    return -E_INVALID_ARGS;
-                }
-                viewType = false;
-            } else {
-                if (index != 0 && !viewType) {
-                    return E_INVALID_ARGS;
-                }
-                viewType = true;
+            errCode = JudgeIntViewType(index, leafItem, viewType);
+            if (errCode != E_OK) {
+                return errCode;
             }
             break;
         default:
