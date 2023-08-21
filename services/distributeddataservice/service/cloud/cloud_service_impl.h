@@ -60,6 +60,8 @@ private:
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
 
+    static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
+
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
