@@ -665,7 +665,7 @@ int JudgeIntViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
     return E_OK;
 }
 
-int JudgeViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
+int JudgeViewType(const size_t index, ValueObject &leafItem, bool &viewType)
 {
     int errCode = E_OK;
     switch (leafItem.GetValueType()) {
