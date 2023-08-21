@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #define LOG_TAG "DBAdaptor"
 #include "db_delegate.h"
 
@@ -19,9 +20,10 @@
 #include "log_print.h"
 #include "rdb_delegate.h"
 namespace OHOS::DataShare {
-std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, bool registerFunction)
+std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, bool registerFunction,
+    bool isEncrypt, const std::string &secretMetaKey)
 {
-    return std::make_shared<RdbDelegate>(dir, version, registerFunction);
+    return std::make_shared<RdbDelegate>(dir, version, registerFunction, isEncrypt, secretMetaKey);
 }
 
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
