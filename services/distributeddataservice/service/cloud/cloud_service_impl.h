@@ -67,7 +67,7 @@ private:
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
     SchemaMeta GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
-    CloudInfo GetCloudInfo(int32_t userId);
+    std::pair<int32_t, CloudInfo> GetCloudInfo(int32_t userId);
     int32_t GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo);
     int32_t GetCloudInfoFromMeta(CloudInfo &cloudInfo);
     int32_t GetCloudInfoFromServer(CloudInfo &cloudInfo);
@@ -75,7 +75,9 @@ private:
     void GetSchema(const Event &event);
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
     void Execute(Task task);
+    void CleanSubscription(Subscription &sub);
     bool DoSubscribe(int32_t user);
+    bool CleanServer(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
@@ -83,6 +85,7 @@ private:
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
     static constexpr Handle WORK_SUB = &CloudServiceImpl::DoSubscribe;
+    static constexpr Handle WORK_CLEAN = &CloudServiceImpl::CleanServer;
 };
 } // namespace OHOS::DistributedData
 
