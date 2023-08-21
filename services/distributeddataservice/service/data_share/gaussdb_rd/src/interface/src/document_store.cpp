@@ -620,7 +620,7 @@ Collection DocumentStore::GetCollection(std::string &collectionName)
     return Collection(collectionName, executor_);
 }
 
-int JudgeBoolViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
+int JudgeBoolViewType(const size_t index, ValueObject &leafItem, bool &viewType)
 {
     if (leafItem.GetBoolValue()) {
         if (index != 0 && !viewType) {
@@ -636,7 +636,7 @@ int JudgeBoolViewType(const size_t &index, ValueObject &leafItem, bool &viewType
     return E_OK;
 }
 
-int JudgeStringViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
+int JudgeStringViewType(const size_t index, ValueObject &leafItem, bool &viewType)
 {
     if (leafItem.GetStringValue() == "") {
         if (index != 0 && !viewType) {
@@ -649,7 +649,7 @@ int JudgeStringViewType(const size_t &index, ValueObject &leafItem, bool &viewTy
     return E_OK;
 }
 
-int JudgeIntViewType(const size_t &index, ValueObject &leafItem, bool &viewType)
+int JudgeIntViewType(const size_t index, ValueObject &leafItem, bool &viewType)
 {
     if (leafItem.GetIntValue() == 0) {
         if (index != 0 && viewType) {
