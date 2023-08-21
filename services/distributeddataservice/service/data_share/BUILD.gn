@@ -28,7 +28,7 @@ config("module_public_config") {
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
-    "../crypto/include/",
+    "../crypto/include",
   ]
 }
 group("build_module") {
