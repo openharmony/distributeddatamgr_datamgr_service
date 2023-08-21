@@ -19,7 +19,7 @@
 #include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
+namespace OHOS::Test {
 class SerializableTest : public testing::Test {
 public:
     struct Normal final : public Serializable {
@@ -59,6 +59,9 @@ public:
             return name == ref.name && count == ref.count && status == ref.status && value == ref.value
                 && isClear == ref.isClear && cols == ref.cols;
         }
+
+    protected:
+        ~Normal() = default;
     };
 
     struct NormalEx final : public Serializable {
@@ -235,3 +238,46 @@ HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
     ASSERT_NE(unmarData.index, nullptr);
     ASSERT_TRUE((*marData.index == *unmarData.index)) << jsonData;
 }
+
+/**
+* @tc.name: GetTestValue
+* @tc.desc: set value with point param.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Sven Wang
+*/
+HWTEST_F(SerializableTest, GetTestValue, TestSize.Level2)
+{
+    struct Test final : public Normal {
+    public:
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(name)], &name);
+            SetValue(node[GET_NAME(count)], &count);
+            SetValue(node[GET_NAME(status)], &status);
+            SetValue(node[GET_NAME(value)], &value);
+            SetValue(node[GET_NAME(isClear)], &isClear);
+            return true;
+        }
+        bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(name), name);
+            GetValue(node, GET_NAME(count), count);
+            GetValue(node, GET_NAME(status), status);
+            GetValue(node, GET_NAME(value), value);
+            GetValue(node, GET_NAME(isClear), isClear);
+            return true;
+        }
+    };
+    Test in;
+    in.name = "input";
+    in.count = 10000;
+    in.status = 0;
+    in.value = -3;
+    in.isClear = true;
+    auto json = to_string(in.Marshall());
+    Test out;
+    out.Unmarshall(json);
+    ASSERT_TRUE(in == out) << in.name;
+}
+} // namespace OHOS::Test
