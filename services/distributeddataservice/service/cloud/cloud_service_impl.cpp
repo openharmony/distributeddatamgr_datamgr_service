@@ -178,12 +178,12 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
             Anonymous::Change(id).c_str());
         return ERROR;
     }
-    auto genActions = ConvertAction(actions);
-    if (genActions.empty()) {
+    auto dbActions = ConvertAction(actions);
+    if (dbActions.empty()) {
         ZLOGE("invalid actions. id:%{public}s", Anonymous::Change(cloudInfo.id).c_str());
         return ERROR;
     }
-    return DoClean(cloudInfo, genActions);
+    return DoClean(cloudInfo, dbActions);
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
