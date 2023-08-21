@@ -59,9 +59,6 @@ public:
             return name == ref.name && count == ref.count && status == ref.status && value == ref.value
                 && isClear == ref.isClear && cols == ref.cols;
         }
-
-    protected:
-        ~Normal() = default;
     };
 
     struct NormalEx final : public Serializable {
@@ -248,8 +245,13 @@ HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
 */
 HWTEST_F(SerializableTest, GetTestValue, TestSize.Level2)
 {
-    struct Test final : public Normal {
+    struct Test final : public Serializable {
     public:
+        std::string name = "Test";
+        int32_t count = 0;
+        uint32_t status = 1;
+        int64_t value = 2;
+        bool isClear = false;
         bool Marshal(json &node) const override
         {
             SetValue(node[GET_NAME(name)], &name);
@@ -267,6 +269,11 @@ HWTEST_F(SerializableTest, GetTestValue, TestSize.Level2)
             GetValue(node, GET_NAME(value), value);
             GetValue(node, GET_NAME(isClear), isClear);
             return true;
+        }
+        bool operator==(const Test &test) const
+        {
+            return name == test.name && count == test.count && status == test.status &&
+                value == test.value && isClear == test.isClear;
         }
     };
     Test in;
