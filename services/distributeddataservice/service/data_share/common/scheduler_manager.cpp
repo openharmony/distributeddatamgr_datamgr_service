@@ -21,6 +21,7 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
+static constexpr int64_t MAX_MILLISECONDS = 31536000000; // 365 days
 SchedulerManager &SchedulerManager::GetInstance()
 {
     static SchedulerManager instance;
@@ -64,7 +65,7 @@ void SchedulerManager::SetTimer(
     int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     // reminder time must is in future
-    if (reminderTime <= now) {
+    if (reminderTime <= now || reminderTime - now >= MAX_MILLISECONDS) {
         ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64, reminderTime, now);
         return;
     }
@@ -81,8 +82,11 @@ void SchedulerManager::SetTimer(
     // not find task in map, create new timer
     auto taskId = executor_->Schedule(duration, [key, dbPath, version, userId, this]() {
         ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
-            "%{public}s", key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
-        timerCache_.erase(key);
+              "%{public}s", key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            timerCache_.erase(key);
+        }
         // 1. execute schedulerSQL in next time
         Execute(key, userId, dbPath, version);
         // 2. notify
