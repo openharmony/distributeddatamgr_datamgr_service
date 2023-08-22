@@ -54,6 +54,7 @@ void GrantPermissionNative()
     uint64_t tokenId = GetAccessTokenId(&infoInstance);
     SetSelfTokenID(tokenId);
     AccessTokenKit::ReloadNativeTokenInfo();
+    delete []perms;
 }
 
 class SessionManagerTest : public testing::Test {
