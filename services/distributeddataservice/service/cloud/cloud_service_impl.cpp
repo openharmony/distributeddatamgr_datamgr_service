@@ -21,7 +21,6 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
 #include "communicator/device_manager_adapter.h"
-#include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -178,8 +177,14 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     if (id != cloudInfo.id) {
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(id).c_str());
+        return ERROR;
     }
-    return DoClean(cloudInfo, actions);
+    auto dbActions = ConvertAction(actions);
+    if (dbActions.empty()) {
+        ZLOGE("invalid actions. id:%{public}s", Anonymous::Change(cloudInfo.id).c_str());
+        return ERROR;
+    }
+    return DoClean(cloudInfo, dbActions);
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
@@ -563,5 +568,24 @@ void CloudServiceImpl::Execute(Task task)
         return;
     }
     executor->Execute(std::move(task));
+}
+
+std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<std::string, int32_t> &actions)
+{
+    std::map<std::string, int32_t> genActions;
+    for (const auto &[bundleName, action] : actions) {
+        switch (action) {
+            case CloudService::Action::CLEAR_CLOUD_INFO:
+                genActions.emplace(bundleName, GeneralStore::CleanMode::CLOUD_INFO);
+                break;
+            case CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO:
+                genActions.emplace(bundleName, GeneralStore::CleanMode::CLOUD_DATA);
+                break;
+            default:
+                ZLOGE("invalid action. action:%{public}d, bundleName:%{public}s", action, bundleName.c_str());
+                return {};
+        }
+    }
+    return genActions;
 }
 } // namespace OHOS::CloudData
