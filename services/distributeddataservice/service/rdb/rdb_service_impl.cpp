@@ -630,6 +630,9 @@ std::pair<int32_t, int32_t> RdbServiceImpl::GetInstIndexAndUser(uint32_t tokenId
 int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
+    if (!AutoCache::GetInstance().IsBind()) {
+        AutoCache::GetInstance().Bind(executors_);
+    }
     return 0;
 }
 

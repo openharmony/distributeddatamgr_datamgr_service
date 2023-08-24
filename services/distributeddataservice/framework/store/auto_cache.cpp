@@ -71,7 +71,7 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
                 return !stores.empty();
             }
             auto *dbStore = creators_[meta.storeType](meta);
-            if (dbStore == nullptr) {
+            if (dbStore == nullptr || !dbStore->IsValid()) {
                 return !stores.empty();
             }
             auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(meta.storeId),
@@ -136,7 +136,7 @@ void AutoCache::GarbageCollect(bool isForce)
     auto current = std::chrono::steady_clock::now();
     stores_.EraseIf([&current, isForce](auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
-            // if the kv store is BUSY we wait more INTERVAL minutes again
+            // if the store is BUSY we wait more INTERVAL minutes again
             if ((isForce || it->second < current) && it->second.Close()) {
                 it = delegates.erase(it);
             } else {
@@ -145,6 +145,11 @@ void AutoCache::GarbageCollect(bool isForce)
         }
         return delegates.empty();
     });
+}
+
+bool AutoCache::IsBind()
+{
+    return executor_ != nullptr;
 }
 
 AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user)

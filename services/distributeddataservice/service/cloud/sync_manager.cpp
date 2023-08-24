@@ -133,6 +133,9 @@ SyncManager::~SyncManager()
 int32_t SyncManager::Bind(std::shared_ptr<ExecutorPool> executor)
 {
     executor_ = executor;
+    if (!AutoCache::GetInstance().IsBind()) {
+        AutoCache::GetInstance().Bind(executor_);
+    }
     return E_OK;
 }
 
@@ -204,6 +207,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             }
 
             for (const auto &database : schema.databases) {
+                if (!info.tables_.empty() && info.tables_.find(database.name) == info.tables_.end()) {
+                    continue;
+                }
                 CloudEvent::StoreInfo storeInfo;
                 storeInfo.bundleName = schema.bundleName;
                 storeInfo.user = cloud.user;
@@ -362,8 +368,8 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
         auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
         if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
-            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId, dbMeta.name.c_str(),
-                dbMeta.alias.c_str());
+            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
+                Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
             return nullptr;
         }
 

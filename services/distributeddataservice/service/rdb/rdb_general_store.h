@@ -43,9 +43,11 @@ public:
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
+    bool IsValid() override;
     int32_t Bind(const Database &database, BindInfo bindInfo) override;
     bool IsBound() override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
@@ -58,7 +60,6 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
-    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
 
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;

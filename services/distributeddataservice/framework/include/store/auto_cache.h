@@ -44,6 +44,8 @@ public:
 
     API_EXPORT void Bind(std::shared_ptr<Executor> executor);
 
+    API_EXPORT bool IsBind();
+
     API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers);
 
     API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId);

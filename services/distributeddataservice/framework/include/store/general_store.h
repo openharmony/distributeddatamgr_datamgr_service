@@ -61,13 +61,15 @@ public:
     };
     virtual ~GeneralStore() = default;
 
+    virtual bool IsValid() = 0;
+
     virtual int32_t Bind(const Database &database, BindInfo bindInfo) = 0;
 
     virtual bool IsBound() = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
-    virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type);
+    virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type) = 0;
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values) = 0;
 
