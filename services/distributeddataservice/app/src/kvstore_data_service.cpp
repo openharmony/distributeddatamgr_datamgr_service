@@ -155,6 +155,7 @@ sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &n
     });
     if (isFirstCreate) {
         feature->OnInitialize(executors_);
+        RegisterCleaner(feature);
     }
     return feature != nullptr ? feature->AsObject() : nullptr;
 }
@@ -701,5 +702,59 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
             return false;
         });
     return 0;
+}
+
+int32_t KvStoreDataService::ClearData(const std::string &bundleName, int32_t userId, int32_t appIndex)
+{
+    std::vector<StoreMetaData> metaData;
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("Clear data load meta failed, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
+            bundleName.c_str(), userId, appIndex);
+        return ERROR;
+    }
+    for (auto &meta : metaData) {
+        if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
+            ZLOGI("data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d", bundleName.c_str(),
+                Anonymous::Change(meta.storeId).c_str(), appIndex);
+            auto cleaner = cleaners_[GetStore(meta)];
+            if (!cleaner) {
+                cleaner(meta.tokenId, meta.storeId);
+            }
+            MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
+            MetaDataManager::GetInstance().DelMeta(meta.appId, true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+            PermitDelegate::GetInstance().DelCache(meta.GetKey());
+        }
+    }
+    return SUCCESS;
+}
+
+std::string KvStoreDataService::GetStore(const StoreMetaData &metaData) const
+{
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN
+        && metaData.storeType <= StoreMetaData::StoreType::STORE_KV_END) {
+        return "kv_store";
+    }
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
+        && metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END) {
+        return "relational_store";
+    }
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_OBJECT_BEGIN
+        && metaData.storeType <= StoreMetaData::StoreType::STORE_OBJECT_END) {
+        return "data_object";
+    }
+    return "other";
+}
+
+void KvStoreDataService::RegisterCleaner(sptr<FeatureStubImpl> feature)
+{
+    auto [name, cleaner] = feature->GetCleaner();
+    if (cleaner) {
+        cleaners_.InsertOrAssign(name, cleaner);
+    }
 }
 } // namespace OHOS::DistributedKv

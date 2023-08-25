@@ -104,5 +104,10 @@ int32_t FeatureSystem::Feature::OnBind(const FeatureSystem::Feature::BindInfo &b
 {
     return E_OK;
 }
+
+std::pair<std::string, FeatureSystem::Feature::Cleaner> FeatureSystem::Feature::GetCleaner()
+{
+    return { "", nullptr };
+}
 } // namespace DistributedData
 } // namespace OHOS

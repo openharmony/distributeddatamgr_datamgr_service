@@ -21,6 +21,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
 
   include_dirs = [
     "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/config/include",

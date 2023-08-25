@@ -75,6 +75,8 @@ public:
 
     int32_t OnBind(const BindInfo &bindInfo) override;
 
+    std::pair<std::string, Cleaner> GetCleaner() override;
+
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     struct SyncAgent {
@@ -100,7 +102,7 @@ private:
 
     void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
-		
+
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 

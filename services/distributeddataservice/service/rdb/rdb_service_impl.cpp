@@ -694,4 +694,12 @@ void RdbServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<RdbWatcher> watcher)
         }
     }
 }
+
+std::pair<std::string, RdbServiceImpl::Cleaner> RdbServiceImpl::GetCleaner()
+{
+    auto cleaner = [](uint32_t &tokenId, const std::string &storeId) {
+            AutoCache::GetInstance().CloseStore(tokenId, storeId);
+        };
+    return { RdbServiceImpl::SERVICE_NAME, std::move(cleaner) };
+}
 } // namespace OHOS::DistributedRdb

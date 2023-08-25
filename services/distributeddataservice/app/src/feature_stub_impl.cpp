@@ -108,4 +108,12 @@ int32_t FeatureStubImpl::OnReady(const std::string &device)
     }
     return featureImpl_->OnReady(device);
 }
+
+std::pair<std::string, FeatureStubImpl::Cleaner> FeatureStubImpl::GetCleaner()
+{
+    if (featureImpl_ == nullptr) {
+        return { "", nullptr };
+    }
+    return featureImpl_->GetCleaner();
+}
 }

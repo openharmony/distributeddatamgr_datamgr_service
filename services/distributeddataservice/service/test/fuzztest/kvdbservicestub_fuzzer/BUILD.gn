@@ -32,6 +32,7 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",
     "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
     "${kv_store_distributeddb_path}",

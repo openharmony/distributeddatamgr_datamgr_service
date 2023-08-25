@@ -29,6 +29,7 @@ namespace DistributedData {
 class API_EXPORT FeatureSystem {
 public:
     using Error = GeneralError;
+
     inline static constexpr int32_t STUB_SUCCESS = Error::E_OK;
     enum BindFlag : int32_t {
         BIND_LAZY,
@@ -36,6 +37,7 @@ public:
     };
     class API_EXPORT Feature {
     public:
+        using Cleaner = std::function<void(uint32_t &, std::string &)>;
         struct BindInfo {
             std::string selfName;
             uint32_t selfTokenId;
@@ -53,6 +55,7 @@ public:
         virtual int32_t Online(const std::string &device);
         virtual int32_t Offline(const std::string &device);
         virtual int32_t OnReady(const std::string &device);
+        virtual std::pair<std::string, Cleaner> GetCleaner();
     };
     using Creator = std::function<std::shared_ptr<Feature>()>;
     static FeatureSystem &GetInstance();
