@@ -20,7 +20,7 @@ config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",

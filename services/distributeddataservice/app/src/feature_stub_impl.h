@@ -26,7 +26,6 @@ public:
 
 class FeatureStubImpl final : public IRemoteStub<FeatureStub> {
 public:
-    using Cleaner = FeatureSystem::Cleaner;
     explicit FeatureStubImpl(std::shared_ptr<FeatureSystem::Feature> feature);
     ~FeatureStubImpl();
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
@@ -40,7 +39,6 @@ public:
     int32_t Online(const std::string &device);
     int32_t Offline(const std::string &device);
     int32_t OnReady(const std::string &device);
-    std::pair<std::string, Cleaner> GetCleaner();
 private:
     std::shared_ptr<FeatureSystem::Feature> featureImpl_;
 };

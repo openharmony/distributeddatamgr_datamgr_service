@@ -75,7 +75,9 @@ public:
 
     int32_t OnBind(const BindInfo &bindInfo) override;
 
-    std::pair<std::string, Cleaner> GetCleaner() override;
+    class RdbHandler : public Feature::Handler {
+        int32_t ClearData(uint32_t &tokenId, std::string &storeId) override;
+    };
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;

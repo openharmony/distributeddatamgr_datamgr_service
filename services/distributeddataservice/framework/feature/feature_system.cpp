@@ -16,6 +16,7 @@
 #include "feature/feature_system.h"
 namespace OHOS {
 namespace DistributedData {
+ConcurrentMap<std::string, FeatureSystem::Feature::Handler> FeatureSystem::handlers_;
 FeatureSystem &FeatureSystem::GetInstance()
 {
     static FeatureSystem instance;
@@ -25,6 +26,12 @@ FeatureSystem &FeatureSystem::GetInstance()
 int32_t FeatureSystem::RegisterCreator(const std::string &name, Creator creator, int32_t flag)
 {
     creators_.InsertOrAssign(name, std::pair{ std::move(creator), flag });
+    return E_OK;
+}
+
+int32_t FeatureSystem::RegisterHandler(const std::string &name, Feature::Handler handler)
+{
+    handlers_.InsertOrAssign(name, std::move(handler));
     return E_OK;
 }
 
@@ -49,6 +56,12 @@ std::vector<std::string> FeatureSystem::GetFeatureName(int32_t flag)
         return false;
     });
     return features;
+}
+
+FeatureSystem::Feature::Handler FeatureSystem::GetHandler(const std::string &name)
+{
+    auto [isHandlerFound, handler] = handlers_.Find(name);
+    return isHandlerFound ? handler : Feature::Handler();
 }
 
 FeatureSystem::Feature::~Feature()
@@ -105,9 +118,9 @@ int32_t FeatureSystem::Feature::OnBind(const FeatureSystem::Feature::BindInfo &b
     return E_OK;
 }
 
-std::pair<std::string, FeatureSystem::Feature::Cleaner> FeatureSystem::Feature::GetCleaner()
+int32_t FeatureSystem::Feature::Handler::ClearData(uint32_t &tokenId, std::string &storeId)
 {
-    return { "", nullptr };
+    return E_OK;
 }
 } // namespace DistributedData
 } // namespace OHOS

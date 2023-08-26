@@ -29,7 +29,6 @@ namespace DistributedData {
 class API_EXPORT FeatureSystem {
 public:
     using Error = GeneralError;
-
     inline static constexpr int32_t STUB_SUCCESS = Error::E_OK;
     enum BindFlag : int32_t {
         BIND_LAZY,
@@ -37,11 +36,14 @@ public:
     };
     class API_EXPORT Feature {
     public:
-        using Cleaner = std::function<void(uint32_t &, std::string &)>;
         struct BindInfo {
             std::string selfName;
             uint32_t selfTokenId;
             std::shared_ptr<ExecutorPool> executors;
+        };
+        class Handler {
+        public:
+            virtual int32_t ClearData(uint32_t &tokenId, std::string &storeId);
         };
         virtual ~Feature();
         virtual int OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply) = 0;
@@ -55,12 +57,13 @@ public:
         virtual int32_t Online(const std::string &device);
         virtual int32_t Offline(const std::string &device);
         virtual int32_t OnReady(const std::string &device);
-        virtual std::pair<std::string, Cleaner> GetCleaner();
     };
     using Creator = std::function<std::shared_ptr<Feature>()>;
     static FeatureSystem &GetInstance();
     int32_t RegisterCreator(const std::string &name, Creator creator, int32_t flag = BIND_LAZY);
+    int32_t RegisterHandler(const std::string &name, Feature::Handler handler);
     Creator GetCreator(const std::string &name);
+    Feature::Handler GetHandler(const std::string &name);
     std::vector<std::string> GetFeatureName(int32_t flag);
 
 private:
@@ -71,6 +74,7 @@ private:
     FeatureSystem &operator=(FeatureSystem &&) = delete;
 
     ConcurrentMap<std::string, std::pair<Creator, int32_t>> creators_;
+    static ConcurrentMap<std::string, Feature::Handler> handlers_;
 };
 } // namespace DistributedData
 }

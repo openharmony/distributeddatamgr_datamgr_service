@@ -64,6 +64,7 @@ RdbServiceImpl::Factory::Factory()
     AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData &metaData) -> GeneralStore* {
         return new (std::nothrow) RdbGeneralStore(metaData);
     });
+    FeatureSystem::GetInstance().RegisterHandler(RdbServiceImpl::SERVICE_NAME, std::move(RdbHandler()));
 }
 
 RdbServiceImpl::Factory::~Factory()
@@ -695,11 +696,9 @@ void RdbServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<RdbWatcher> watcher)
     }
 }
 
-std::pair<std::string, RdbServiceImpl::Cleaner> RdbServiceImpl::GetCleaner()
+int32_t RdbServiceImpl::RdbHandler::ClearData(uint32_t &tokenId, std::string &storeId)
 {
-    auto cleaner = [](uint32_t &tokenId, const std::string &storeId) {
-            AutoCache::GetInstance().CloseStore(tokenId, storeId);
-        };
-    return { RdbServiceImpl::SERVICE_NAME, std::move(cleaner) };
+    AutoCache::GetInstance().CloseStore(tokenId, storeId);
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

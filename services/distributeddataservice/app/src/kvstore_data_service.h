@@ -44,9 +44,6 @@ class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
 
 public:
     using StoreMetaData = DistributedData::StoreMetaData;
-    using Cleaner = DistributedData::FeatureSystem::Feature::Cleaner;
-    using FeatureStubImpl = DistributedData::FeatureStubImpl;
-
     // record kvstore meta version for compatible, should update when modify kvstore meta structure.
     static constexpr uint32_t STORE_VERSION = 0x03000001;
 
@@ -133,8 +130,7 @@ private:
     static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
     static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
                           DistributedDB::KvStoreNbDelegate::Option &dbOption);
-    std::string GetStore(const StoreMetaData &metaData) const;
-    void RegisterCleaner(sptr<FeatureStubImpl> feature);
+    std::string GetStore(const int32_t &storeType) const;
 
     static constexpr int TEN_SEC = 10;
 
@@ -146,7 +142,6 @@ private:
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
     std::shared_ptr<ExecutorPool> executors_;
-    ConcurrentMap<std::string, Cleaner> cleaners_;
 };
 }
 #endif  // KVSTORE_DATASERVICE_H
