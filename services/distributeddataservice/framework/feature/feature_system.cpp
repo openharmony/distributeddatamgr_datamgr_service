@@ -16,7 +16,6 @@
 #include "feature/feature_system.h"
 namespace OHOS {
 namespace DistributedData {
-ConcurrentMap<std::string, FeatureSystem::Feature::Handler> FeatureSystem::handlers_;
 FeatureSystem &FeatureSystem::GetInstance()
 {
     static FeatureSystem instance;
@@ -29,12 +28,6 @@ int32_t FeatureSystem::RegisterCreator(const std::string &name, Creator creator,
     return E_OK;
 }
 
-int32_t FeatureSystem::RegisterHandler(const std::string &name, Feature::Handler handler)
-{
-    handlers_.InsertOrAssign(name, std::move(handler));
-    return E_OK;
-}
-
 FeatureSystem::Creator FeatureSystem::GetCreator(const std::string &name)
 {
     auto [success, pair] = creators_.Find(name);
@@ -43,6 +36,17 @@ FeatureSystem::Creator FeatureSystem::GetCreator(const std::string &name)
     }
     auto [creator, flag] = std::move(pair);
     return creator;
+}
+
+int32_t FeatureSystem::RegisterStaticActs(const std::string &name, std::shared_ptr<StaticActs> staticActs)
+{
+    staticActs_.InsertOrAssign(name, std::move(staticActs));
+    return E_OK;
+}
+
+ConcurrentMap<std::string, std::shared_ptr<StaticActs>> &FeatureSystem::GetStaticActs()
+{
+    return staticActs_;
 }
 
 std::vector<std::string> FeatureSystem::GetFeatureName(int32_t flag)
@@ -58,12 +62,6 @@ std::vector<std::string> FeatureSystem::GetFeatureName(int32_t flag)
     return features;
 }
 
-FeatureSystem::Feature::Handler FeatureSystem::GetHandler(const std::string &name)
-{
-    auto [isHandlerFound, handler] = handlers_.Find(name);
-    return isHandlerFound ? handler : Feature::Handler();
-}
-
 FeatureSystem::Feature::~Feature()
 {
 }
@@ -74,16 +72,6 @@ int32_t FeatureSystem::Feature::OnInitialize()
 }
 
 int32_t FeatureSystem::Feature::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
-{
-    return E_OK;
-}
-
-int32_t FeatureSystem::Feature::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
-{
-    return E_OK;
-}
-
-int32_t FeatureSystem::Feature::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
     return E_OK;
 }
@@ -114,11 +102,6 @@ int32_t FeatureSystem::Feature::OnReady(const std::string &device)
 }
 
 int32_t FeatureSystem::Feature::OnBind(const FeatureSystem::Feature::BindInfo &bindInfo)
-{
-    return E_OK;
-}
-
-int32_t FeatureSystem::Feature::Handler::ClearData(uint32_t &tokenId, std::string &storeId)
 {
     return E_OK;
 }

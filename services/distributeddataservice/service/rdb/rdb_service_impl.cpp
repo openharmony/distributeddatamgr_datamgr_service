@@ -64,7 +64,9 @@ RdbServiceImpl::Factory::Factory()
     AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData &metaData) -> GeneralStore* {
         return new (std::nothrow) RdbGeneralStore(metaData);
     });
-    FeatureSystem::GetInstance().RegisterHandler(RdbServiceImpl::SERVICE_NAME, std::move(RdbHandler()));
+    staticActs_ = std::make_shared<RdbStatic>();
+    FeatureSystem::GetInstance().RegisterStaticActs(RdbServiceImpl::SERVICE_NAME,
+        staticActs_);
 }
 
 RdbServiceImpl::Factory::~Factory()
@@ -634,37 +636,19 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
     return 0;
 }
 
-int32_t RdbServiceImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
+int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     return CloseStore(bundleName, user, index);
 }
 
-int32_t RdbServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
+int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
     return CloseStore(bundleName, user, index);
 }
 
-int32_t RdbServiceImpl::CloseStore(const std::string &bundleName, int32_t user, int32_t index) const
+int32_t RdbServiceImpl::RdbStatic::OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index)
 {
-    std::string prefix = StoreMetaData::GetPrefix(
-        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
-    std::vector<StoreMetaData> storeMetaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
-        ZLOGE("load meta failed! bundleName:%{public}s, user:%{public}d, index:%{public}d",
-            bundleName.c_str(), user, index);
-        return E_ERROR;
-    }
-    for (const auto &meta : storeMetaData) {
-        if (meta.storeType < StoreMetaData::STORE_RELATIONAL_BEGIN ||
-            meta.storeType > StoreMetaData::STORE_RELATIONAL_END) {
-            continue;
-        }
-        if (meta.instanceId == index && !meta.appId.empty() && !meta.storeId.empty()) {
-            AutoCache::GetInstance().CloseStore(meta.tokenId);
-            break;
-        }
-    }
-    return E_OK;
+    return CloseStore(bundleName, user, index);
 }
 
 void RdbServiceImpl::SyncAgent::ReInit(pid_t pid, const std::string &bundleName)
@@ -696,9 +680,26 @@ void RdbServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<RdbWatcher> watcher)
     }
 }
 
-int32_t RdbServiceImpl::RdbHandler::ClearData(uint32_t &tokenId, std::string &storeId)
+int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int32_t user, int32_t index) const
 {
-    AutoCache::GetInstance().CloseStore(tokenId, storeId);
-    return RDB_OK;
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+        ZLOGE("load meta failed! bundleName:%{public}s, user:%{public}d, index:%{public}d",
+            bundleName.c_str(), user, index);
+        return E_ERROR;
+    }
+    for (const auto &meta : storeMetaData) {
+        if (meta.storeType < StoreMetaData::STORE_RELATIONAL_BEGIN ||
+            meta.storeType > StoreMetaData::STORE_RELATIONAL_END) {
+            continue;
+        }
+        if (meta.instanceId == index && !meta.appId.empty() && !meta.storeId.empty()) {
+            AutoCache::GetInstance().CloseStore(meta.tokenId);
+            break;
+        }
+    }
+    return E_OK;
 }
 } // namespace OHOS::DistributedRdb

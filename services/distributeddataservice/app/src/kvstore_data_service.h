@@ -55,7 +55,7 @@ public:
 
     sptr<IRemoteObject> GetFeatureInterface(const std::string &name) override;
 
-    int32_t ClearData(const std::string &bundleName, int32_t userId, int32_t appIndex) override;
+    int32_t ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex) override;
 
     void OnDump() override;
 
@@ -130,7 +130,6 @@ private:
     static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
     static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
                           DistributedDB::KvStoreNbDelegate::Option &dbOption);
-    std::string GetStore(const int32_t &storeType) const;
 
     static constexpr int TEN_SEC = 10;
 

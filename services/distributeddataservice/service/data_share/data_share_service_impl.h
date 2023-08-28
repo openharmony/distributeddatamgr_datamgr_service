@@ -25,6 +25,7 @@
 #include "datashare_template.h"
 #include "db_delegate.h"
 #include "delete_strategy.h"
+#include "feature/static_acts.h"
 #include "get_data_strategy.h"
 #include "insert_strategy.h"
 #include "publish_strategy.h"
@@ -68,15 +69,22 @@ public:
         const int64_t subscriberId) override;
     void OnConnectDone() override;
     int32_t OnBind(const BindInfo &binderInfo) override;
-    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
     void NotifyObserver(const std::string &uri) override;
 
 private:
+    using StaticActs = DistributedData::StaticActs;
+    class DataShareStatic : public StaticActs {
+    public:
+        ~DataShareStatic() override {};
+        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+    };
     class Factory {
     public:
         Factory();
         ~Factory();
+    private:
+        std::shared_ptr<DataShareStatic> staticActs_;
     };
     class TimerReceiver : public EventFwk::CommonEventSubscriber {
     public:

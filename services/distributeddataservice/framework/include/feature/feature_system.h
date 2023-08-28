@@ -19,6 +19,7 @@
 #include "concurrent_map.h"
 #include "error/general_error.h"
 #include "executor_pool.h"
+#include "static_acts.h"
 #include "visibility.h"
 namespace DistributedDB {
 struct AutoLaunchParam;
@@ -41,17 +42,11 @@ public:
             uint32_t selfTokenId;
             std::shared_ptr<ExecutorPool> executors;
         };
-        class Handler {
-        public:
-            virtual int32_t ClearData(uint32_t &tokenId, std::string &storeId);
-        };
         virtual ~Feature();
         virtual int OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply) = 0;
         virtual int32_t OnInitialize();
         virtual int32_t OnBind(const BindInfo &bindInfo);
         virtual int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
-        virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
-        virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
         virtual int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
         virtual int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account);
         virtual int32_t Online(const std::string &device);
@@ -61,9 +56,9 @@ public:
     using Creator = std::function<std::shared_ptr<Feature>()>;
     static FeatureSystem &GetInstance();
     int32_t RegisterCreator(const std::string &name, Creator creator, int32_t flag = BIND_LAZY);
-    int32_t RegisterHandler(const std::string &name, Feature::Handler handler);
     Creator GetCreator(const std::string &name);
-    Feature::Handler GetHandler(const std::string &name);
+    int32_t RegisterStaticActs(const std::string &name, std::shared_ptr<StaticActs> staticActs);
+    ConcurrentMap<std::string, std::shared_ptr<StaticActs>> &GetStaticActs();
     std::vector<std::string> GetFeatureName(int32_t flag);
 
 private:
@@ -74,7 +69,7 @@ private:
     FeatureSystem &operator=(FeatureSystem &&) = delete;
 
     ConcurrentMap<std::string, std::pair<Creator, int32_t>> creators_;
-    static ConcurrentMap<std::string, Feature::Handler> handlers_;
+    ConcurrentMap<std::string, std::shared_ptr<StaticActs>> staticActs_;
 };
 } // namespace DistributedData
 }

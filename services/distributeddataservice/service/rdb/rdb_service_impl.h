@@ -22,6 +22,7 @@
 #include <mutex>
 #include <string>
 #include "concurrent_map.h"
+#include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_notifier_proxy.h"
@@ -31,6 +32,7 @@
 #include "store_observer.h"
 #include "visibility.h"
 #include "store/general_value.h"
+
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
@@ -61,13 +63,7 @@ public:
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
-    int32_t OnInitialize() override;
-
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
-
-    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
-
-    int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
 
     int32_t GetSchema(const RdbSyncerParam &param) override;
 
@@ -75,12 +71,11 @@ public:
 
     int32_t OnBind(const BindInfo &bindInfo) override;
 
-    class RdbHandler : public Feature::Handler {
-        int32_t ClearData(uint32_t &tokenId, std::string &storeId) override;
-    };
+    int32_t OnInitialize() override;
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
+    using StaticActs = DistributedData::StaticActs;
     struct SyncAgent {
         pid_t pid_ = 0;
         int32_t count_ = 0;
@@ -92,12 +87,23 @@ private:
         void SetWatcher(std::shared_ptr<RdbWatcher> watcher);
     };
 
+    class RdbStatic : public StaticActs {
+    public:
+        ~RdbStatic() override {};
+        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index) override;
+    private:
+        int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index) const;
+    };
+
     class Factory {
     public:
         Factory();
         ~Factory();
     private:
         std::shared_ptr<RdbServiceImpl> product_;
+        std::shared_ptr<RdbStatic> staticActs_;
     };
 
     static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
@@ -133,8 +139,6 @@ private:
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
-
-    int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index) const;
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;

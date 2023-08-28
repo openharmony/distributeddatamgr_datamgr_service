@@ -16,6 +16,7 @@
 #ifndef DISTRIBUTEDDATASERVICE_OBJECT_SERVICE_H
 #define DISTRIBUTEDDATASERVICE_OBJECT_SERVICE_H
 
+#include "feature/static_acts.h"
 #include "object_manager.h"
 #include "object_service_stub.h"
 #include "visibility.h"
@@ -43,14 +44,21 @@ public:
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t OnInitialize() override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
-    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
     int32_t OnBind(const BindInfo &bindInfo) override;
 
 private:
+    using StaticActs = DistributedData::StaticActs;
+    class ObjectStatic : public StaticActs {
+    public:
+        ~ObjectStatic() override {};
+        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+    };
     class Factory {
     public:
         Factory();
         ~Factory();
+    private:
+        std::shared_ptr<ObjectStatic> staticActs_;
     };
     static Factory factory_;
     std::shared_ptr<ExecutorPool> executors_;

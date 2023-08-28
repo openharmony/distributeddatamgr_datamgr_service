@@ -685,26 +685,32 @@ void KvStoreDataService::OnDeviceOnReady(const AppDistributedKv::DeviceInfo &inf
 
 int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    features_.ForEachCopies(
-        [bundleName, user, index](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
-            value->OnAppUninstall(bundleName, user, index);
-            return false;
-        });
-    return 0;
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
+        acts->OnAppUninstall(bundleName, user, index);
+        return false;
+    });
+    return SUCCESS;
 }
 
 int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
-    features_.ForEachCopies(
-        [bundleName, user, index](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
-            value->OnAppUpdate(bundleName, user, index);
-            return false;
-        });
-    return 0;
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
+        acts->OnAppUpdate(bundleName, user, index);
+        return false;
+    });
+    return SUCCESS;
 }
 
-int32_t KvStoreDataService::ClearData(const std::string &bundleName, int32_t userId, int32_t appIndex)
+int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies([bundleName, userId, appIndex](const auto &, const std::shared_ptr<StaticActs>& acts) {
+        acts->OnClearAppStorage(bundleName, userId, appIndex);
+        return false;
+    });
+
     std::vector<StoreMetaData> metaData;
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
@@ -713,11 +719,11 @@ int32_t KvStoreDataService::ClearData(const std::string &bundleName, int32_t use
             bundleName.c_str(), userId, appIndex);
         return ERROR;
     }
+
     for (auto &meta : metaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
             ZLOGI("data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d", bundleName.c_str(),
                 Anonymous::Change(meta.storeId).c_str(), appIndex);
-            FeatureSystem::GetInstance().GetHandler(GetStore(meta.storeType)).ClearData(meta.tokenId, meta.storeId);
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
@@ -727,22 +733,5 @@ int32_t KvStoreDataService::ClearData(const std::string &bundleName, int32_t use
         }
     }
     return SUCCESS;
-}
-
-std::string KvStoreDataService::GetStore(const int32_t &storeType) const
-{
-    if (storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN
-        && storeType <= StoreMetaData::StoreType::STORE_KV_END) {
-        return "kv_store";
-    }
-    if (storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
-        && storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END) {
-        return "relational_store";
-    }
-    if (storeType >= StoreMetaData::StoreType::STORE_OBJECT_BEGIN
-        && storeType <= StoreMetaData::StoreType::STORE_OBJECT_END) {
-        return "data_object";
-    }
-    return "other";
 }
 } // namespace OHOS::DistributedKv
