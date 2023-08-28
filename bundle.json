@@ -95,7 +95,57 @@
                 "//foundation/distributeddatamgr/datamgr_service/conf:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module"
             ],
-            "inner_kits": [],
+            "inner_kits": [
+                {
+                    "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+                    "header": {
+                        "header_files": [
+                            "backuprule/backup_rule_manager.h",
+                            "checker/checker_manager.h",
+                            "cloud/asset_loader.h",
+                            "cloud/change_event.h",
+                            "cloud/cloud_db.h",
+                            "cloud/cloud_event.h",
+                            "cloud/cloud_info.h",
+                            "cloud/cloud_server.h",
+                            "cloud/schema_meta.h",
+                            "cloud/subscription.h",
+                            "cloud/sync_event.h",
+                            "directory/directory_manager.h",
+                            "error/general_error.h",
+                            "eventcenter/event.h",
+                            "eventcenter/event_center.h",
+                            "feature/feature_system.h",
+                            "metadata/appid_meta_data.h",
+                            "metadata/capability_meta_data.h",
+                            "metadata/capability_range.h",
+                            "metadata/corrupted_meta_data.h",
+                            "metadata/matrix_meta_data.h",
+                            "metadata/meta_data.h",
+                            "metadata/meta_data_manager.h",
+                            "metadata/secret_key_meta_data.h",
+                            "metadata/store_meta_data.h",
+                            "metadata/store_meta_data_local.h",
+                            "metadata/strategy_meta_data.h",
+                            "metadata/user_meta_data.h",
+                            "serializable/serializable.h",
+                            "store/auto_cache.h",
+                            "store/cursor.h",
+                            "store/general_store.h",
+                            "store/general_value.h",
+                            "store/general_watcher.h",
+                            "utils/anonymous.h",
+                            "utils/block_integer.h",
+                            "utils/constant.h",
+                            "utils/converter.h",
+                            "utils/crypto.h",
+                            "utils/endian_converter.h",
+                            "utils/ref_count.h"
+                        ],
+                        "header_base": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include"
+                    }
+                }
+            ],
             "test": [
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/test:fuzztest",
                 "//foundation/distributeddatamgr/datamgr_service:fuzztest",
