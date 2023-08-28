@@ -43,6 +43,7 @@
 #include "reporter.h"
 #include "route_head_handler_impl.h"
 #include "runtime_config.h"
+#include "store/auto_cache.h"
 #include "string_ex.h"
 #include "system_ability_definition.h"
 #include "task_manager.h"
@@ -250,6 +251,7 @@ void KvStoreDataService::OnStart()
     AccountDelegate::GetInstance()->BindExecutor(executors_);
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     DmAdapter::GetInstance().Init(executors_);
+    AutoCache::GetInstance().Bind(executors_);
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
