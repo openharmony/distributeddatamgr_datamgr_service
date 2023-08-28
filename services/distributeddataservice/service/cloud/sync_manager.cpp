@@ -133,9 +133,6 @@ SyncManager::~SyncManager()
 int32_t SyncManager::Bind(std::shared_ptr<ExecutorPool> executor)
 {
     executor_ = executor;
-    if (!AutoCache::GetInstance().IsBind()) {
-        AutoCache::GetInstance().Bind(executor_);
-    }
     return E_OK;
 }
 
