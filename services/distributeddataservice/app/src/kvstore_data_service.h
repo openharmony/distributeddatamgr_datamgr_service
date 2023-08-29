@@ -28,7 +28,6 @@
 #include "kvstore_device_listener.h"
 #include "kvstore_meta_manager.h"
 #include "kvstore_data_service_stub.h"
-#include "kvstore_data_service_proxy.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "runtime_config.h"
@@ -55,7 +54,7 @@ public:
 
     sptr<IRemoteObject> GetFeatureInterface(const std::string &name) override;
 
-    int32_t ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex) override;
+    int32_t ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex, int32_t tokenId) override;
 
     void OnDump() override;
 

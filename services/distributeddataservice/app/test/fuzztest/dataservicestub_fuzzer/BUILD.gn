@@ -21,8 +21,8 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
 
   include_dirs = [
     "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
@@ -66,6 +66,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
     "${data_service_path}/app/src/kvstore_data_service.cpp",
+    "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
     "${data_service_path}/app/src/kvstore_device_listener.cpp",
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "${data_service_path}/app/src/security/security.cpp",
@@ -103,6 +104,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

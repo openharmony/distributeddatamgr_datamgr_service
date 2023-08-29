@@ -636,21 +636,6 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
     return 0;
 }
 
-int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
-{
-    return CloseStore(bundleName, user, index);
-}
-
-int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
-{
-    return CloseStore(bundleName, user, index);
-}
-
-int32_t RdbServiceImpl::RdbStatic::OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index)
-{
-    return CloseStore(bundleName, user, index);
-}
-
 void RdbServiceImpl::SyncAgent::ReInit(pid_t pid, const std::string &bundleName)
 {
     pid_ = pid;
@@ -680,8 +665,13 @@ void RdbServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<RdbWatcher> watcher)
     }
 }
 
-int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int32_t user, int32_t index) const
+int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int32_t user, int32_t index,
+    int32_t tokenId) const
 {
+    if (tokenId != RdbServiceImpl::RdbStatic::INVALID_TOKENID) {
+        AutoCache::GetInstance().CloseStore(tokenId);
+        return E_OK;
+    }
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
@@ -701,5 +691,21 @@ int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int
         }
     }
     return E_OK;
+}
+
+int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return CloseStore(bundleName, user, index);
+}
+
+int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return CloseStore(bundleName, user, index);
+}
+
+int32_t RdbServiceImpl::RdbStatic::OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index,
+    int32_t tokenId)
+{
+    return CloseStore(bundleName, user, index, tokenId);
 }
 } // namespace OHOS::DistributedRdb

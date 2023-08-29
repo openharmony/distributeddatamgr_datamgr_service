@@ -19,6 +19,7 @@
 #include <ipc_skeleton.h>
 #include <thread>
 
+#include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
@@ -58,6 +59,7 @@ namespace OHOS::DistributedKv {
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedDataDfx;
+using namespace Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
@@ -703,13 +705,20 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
     return SUCCESS;
 }
 
-int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex)
+int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
+    int32_t tokenId)
 {
+    HapTokenInfo hapTokenInfo;
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS || hapTokenInfo.tokenID != tokenId) {
+        ZLOGE("passed wrong tokenId: %{public}d", tokenId);
+        return ERROR;
+    }
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
-    staticActs.ForEachCopies([bundleName, userId, appIndex](const auto &, const std::shared_ptr<StaticActs>& acts) {
-        acts->OnClearAppStorage(bundleName, userId, appIndex);
-        return false;
-    });
+    staticActs.ForEachCopies(
+        [bundleName, userId, appIndex, tokenId](const auto &, const std::shared_ptr<StaticActs> &acts) {
+            acts->OnClearAppStorage(bundleName, userId, appIndex, tokenId);
+            return false;
+        });
 
     std::vector<StoreMetaData> metaData;
     std::string prefix = StoreMetaData::GetPrefix(

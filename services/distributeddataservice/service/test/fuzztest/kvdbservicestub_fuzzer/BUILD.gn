@@ -32,8 +32,8 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",
     "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
     "${kv_store_distributeddb_path}",
     "${kv_store_distributeddb_path}/include/",
@@ -102,6 +102,7 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
   ]
 }
 

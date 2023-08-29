@@ -28,7 +28,7 @@ int32_t StaticActs::OnAppUpdate(const std::string &bundleName, int32_t user, int
     return E_OK;
 }
 
-int32_t StaticActs::OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index)
+int32_t StaticActs::OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId)
 {
     return E_OK;
 }

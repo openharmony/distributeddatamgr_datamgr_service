@@ -47,6 +47,8 @@ public:
         virtual int32_t OnInitialize();
         virtual int32_t OnBind(const BindInfo &bindInfo);
         virtual int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
+        virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
+        virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
         virtual int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
         virtual int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account);
         virtual int32_t Online(const std::string &device);
@@ -58,7 +60,7 @@ public:
     int32_t RegisterCreator(const std::string &name, Creator creator, int32_t flag = BIND_LAZY);
     Creator GetCreator(const std::string &name);
     int32_t RegisterStaticActs(const std::string &name, std::shared_ptr<StaticActs> staticActs);
-    ConcurrentMap<std::string, std::shared_ptr<StaticActs>> &GetStaticActs();
+    const ConcurrentMap<std::string, std::shared_ptr<StaticActs>> &GetStaticActs();
     std::vector<std::string> GetFeatureName(int32_t flag);
 
 private:

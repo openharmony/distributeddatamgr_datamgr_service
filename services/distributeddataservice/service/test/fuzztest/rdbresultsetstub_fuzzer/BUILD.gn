@@ -25,8 +25,8 @@ ohos_fuzztest("RdbResultSetStubFuzzTest") {
     "${data_service_path}/framework/include",
     "${data_service_path}/service/rdb",
     "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
     "${kv_store_distributeddb_path}",
     "${kv_store_distributeddb_path}/include/",
@@ -75,6 +75,7 @@ ohos_fuzztest("RdbResultSetStubFuzzTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",
   ]
 }

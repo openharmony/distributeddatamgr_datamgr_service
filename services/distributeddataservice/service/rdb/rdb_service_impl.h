@@ -92,9 +92,11 @@ private:
         ~RdbStatic() override {};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
-        int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId) override;
     private:
-        int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index) const;
+        static constexpr inline int32_t INVALID_TOKENID = 0;
+        int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index,
+            int32_t tokenId = INVALID_TOKENID) const;
     };
 
     class Factory {
