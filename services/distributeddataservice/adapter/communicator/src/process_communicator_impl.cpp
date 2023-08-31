@@ -203,7 +203,7 @@ void ProcessCommunicatorImpl::OnMessage(const DeviceInfo &info, const uint8_t *p
 
 void ProcessCommunicatorImpl::OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const
 {
-    if (type == DeviceChangeType::DEVICE_ONREADY) {
+    if (type == DeviceChangeType::DEVICE_ONREADY || info.uuid == DmAdapter::CLOUD_DEVICE_UUID) {
         return;
     }
     std::lock_guard<std::mutex> onDeviceChangeLockGuard(onDeviceChangeMutex_);
