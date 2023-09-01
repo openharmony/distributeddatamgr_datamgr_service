@@ -19,6 +19,7 @@
 #include <ipc_skeleton.h>
 #include <thread>
 
+#include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
@@ -58,6 +59,7 @@ namespace OHOS::DistributedKv {
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedDataDfx;
+using namespace Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
@@ -685,21 +687,60 @@ void KvStoreDataService::OnDeviceOnReady(const AppDistributedKv::DeviceInfo &inf
 
 int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    features_.ForEachCopies(
-        [bundleName, user, index](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
-            value->OnAppUninstall(bundleName, user, index);
-            return false;
-        });
-    return 0;
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
+        acts->OnAppUninstall(bundleName, user, index);
+        return false;
+    });
+    return SUCCESS;
 }
 
 int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
-    features_.ForEachCopies(
-        [bundleName, user, index](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
-            value->OnAppUpdate(bundleName, user, index);
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
+        acts->OnAppUpdate(bundleName, user, index);
+        return false;
+    });
+    return SUCCESS;
+}
+
+int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
+    int32_t tokenId)
+{
+    HapTokenInfo hapTokenInfo;
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS || hapTokenInfo.tokenID != tokenId) {
+        ZLOGE("passed wrong tokenId: %{public}d", tokenId);
+        return ERROR;
+    }
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies(
+        [bundleName, userId, appIndex, tokenId](const auto &, const std::shared_ptr<StaticActs> &acts) {
+            acts->OnClearAppStorage(bundleName, userId, appIndex, tokenId);
             return false;
         });
-    return 0;
+
+    std::vector<StoreMetaData> metaData;
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("Clear data load meta failed, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
+            bundleName.c_str(), userId, appIndex);
+        return ERROR;
+    }
+
+    for (auto &meta : metaData) {
+        if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
+            ZLOGI("data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d", bundleName.c_str(),
+                Anonymous::Change(meta.storeId).c_str(), appIndex);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
+            MetaDataManager::GetInstance().DelMeta(meta.appId, true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+            PermitDelegate::GetInstance().DelCache(meta.GetKey());
+        }
+    }
+    return SUCCESS;
 }
 } // namespace OHOS::DistributedKv

@@ -44,6 +44,8 @@ ObjectServiceImpl::Factory::Factory()
             return std::make_shared<ObjectServiceImpl>();
         },
         FeatureSystem::BIND_NOW);
+    staticActs_ = std::make_shared<ObjectStatic>();
+    FeatureSystem::GetInstance().RegisterStaticActs("data_object", staticActs_);
 }
 
 ObjectServiceImpl::Factory::~Factory()
@@ -219,7 +221,7 @@ void ObjectServiceImpl::Clear()
     return;
 }
 
-int32_t ObjectServiceImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
+int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     ZLOGI("begin. %{public}s", bundleName.c_str());
     int32_t result = ObjectStoreManager::GetInstance()->DeleteByAppId(bundleName);

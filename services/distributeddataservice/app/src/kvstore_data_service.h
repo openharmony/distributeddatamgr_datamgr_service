@@ -27,6 +27,7 @@
 #include "ithread_pool.h"
 #include "kvstore_device_listener.h"
 #include "kvstore_meta_manager.h"
+#include "kvstore_data_service_stub.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "runtime_config.h"
@@ -52,6 +53,8 @@ public:
     Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer) override;
 
     sptr<IRemoteObject> GetFeatureInterface(const std::string &name) override;
+
+    int32_t ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex, int32_t tokenId) override;
 
     void OnDump() override;
 

@@ -19,6 +19,7 @@
 #include "concurrent_map.h"
 #include "error/general_error.h"
 #include "executor_pool.h"
+#include "static_acts.h"
 #include "visibility.h"
 namespace DistributedDB {
 struct AutoLaunchParam;
@@ -58,6 +59,8 @@ public:
     static FeatureSystem &GetInstance();
     int32_t RegisterCreator(const std::string &name, Creator creator, int32_t flag = BIND_LAZY);
     Creator GetCreator(const std::string &name);
+    int32_t RegisterStaticActs(const std::string &name, std::shared_ptr<StaticActs> staticActs);
+    const ConcurrentMap<std::string, std::shared_ptr<StaticActs>> &GetStaticActs();
     std::vector<std::string> GetFeatureName(int32_t flag);
 
 private:
@@ -68,6 +71,7 @@ private:
     FeatureSystem &operator=(FeatureSystem &&) = delete;
 
     ConcurrentMap<std::string, std::pair<Creator, int32_t>> creators_;
+    ConcurrentMap<std::string, std::shared_ptr<StaticActs>> staticActs_;
 };
 } // namespace DistributedData
 }

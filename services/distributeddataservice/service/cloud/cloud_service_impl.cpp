@@ -50,6 +50,9 @@ CloudServiceImpl::Factory::Factory() noexcept
             return product_;
         },
         FeatureSystem::BIND_NOW);
+    staticActs_ = std::make_shared<CloudStatic>();
+    FeatureSystem::GetInstance().RegisterStaticActs(CloudServiceImpl::SERVICE_NAME,
+        staticActs_);
 }
 
 CloudServiceImpl::Factory::~Factory() {}
@@ -467,7 +470,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
     return { SUCCESS, cloudInfo };
 }
 
-int32_t CloudServiceImpl::OnAppUninstall(
+int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(
     const std::string &bundleName, int32_t user, int32_t index)
 {
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);

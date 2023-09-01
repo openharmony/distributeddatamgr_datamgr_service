@@ -38,6 +38,17 @@ FeatureSystem::Creator FeatureSystem::GetCreator(const std::string &name)
     return creator;
 }
 
+int32_t FeatureSystem::RegisterStaticActs(const std::string &name, std::shared_ptr<StaticActs> staticActs)
+{
+    staticActs_.InsertOrAssign(name, std::move(staticActs));
+    return E_OK;
+}
+
+const ConcurrentMap<std::string, std::shared_ptr<StaticActs>> &FeatureSystem::GetStaticActs()
+{
+    return staticActs_;
+}
+
 std::vector<std::string> FeatureSystem::GetFeatureName(int32_t flag)
 {
     std::vector<std::string> features;
