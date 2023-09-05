@@ -19,6 +19,7 @@ module_output_path = "datamgr_service/distributeddataservice"
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/src",
@@ -69,6 +70,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_data_service.cpp",
+    "../src/kvstore_data_service_stub.cpp",
     "../src/kvstore_device_listener.cpp",
     "../src/kvstore_meta_manager.cpp",
     "../src/security/security.cpp",
@@ -104,6 +106,7 @@ ohos_unittest("KvStoreDataServiceTest") {
   }
 
   deps = [
+    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
@@ -135,6 +138,8 @@ ohos_unittest("SessionManagerTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
@@ -152,6 +157,7 @@ ohos_unittest("SessionManagerTest") {
   }
 
   deps = [
+    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
@@ -191,6 +197,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   }
 
   deps = [
+    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",

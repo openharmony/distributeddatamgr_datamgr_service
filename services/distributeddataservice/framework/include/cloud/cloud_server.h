@@ -33,6 +33,7 @@ public:
     virtual int32_t Unsubscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs);
     virtual std::shared_ptr<AssetLoader> ConnectAssetLoader(uint32_t tokenId, const Database &dbMeta);
     virtual std::shared_ptr<CloudDB> ConnectCloudDB(uint32_t tokenId, const Database &dbMeta);
+    virtual void Clean(int32_t userId);
 
 private:
     static CloudServer *instance_;

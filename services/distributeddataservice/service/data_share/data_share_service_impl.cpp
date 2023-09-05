@@ -43,6 +43,8 @@ DataShareServiceImpl::Factory::Factory()
     FeatureSystem::GetInstance().RegisterCreator("data_share", []() {
         return std::make_shared<DataShareServiceImpl>();
     });
+    staticActs_ = std::make_shared<DataShareStatic>();
+    FeatureSystem::GetInstance().RegisterStaticActs("data_share", staticActs_);
 }
 
 DataShareServiceImpl::Factory::~Factory() {}
@@ -444,8 +446,8 @@ void DataShareServiceImpl::OnConnectDone()
     AppConnectManager::Notify(callerBundleName);
 }
 
-int32_t DataShareServiceImpl::OnAppUninstall(
-    const std::string &bundleName, int32_t user, int32_t index)
+int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string &bundleName, int32_t user,
+    int32_t index)
 {
     ZLOGI("%{public}s uninstalled", bundleName.c_str());
     PublishedData::Delete(bundleName, user);
