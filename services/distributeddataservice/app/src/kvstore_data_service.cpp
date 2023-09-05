@@ -709,7 +709,8 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
     int32_t tokenId)
 {
     HapTokenInfo hapTokenInfo;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS || hapTokenInfo.tokenID != tokenId) {
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS ||
+        hapTokenInfo.tokenID != static_cast<uint32_t>(tokenId)) {
         ZLOGE("passed wrong tokenId: %{public}d", tokenId);
         return ERROR;
     }
