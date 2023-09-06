@@ -88,6 +88,54 @@ public:
             return normals == normalEx.normals && count == normalEx.count && name == normalEx.name;
         }
     };
+
+    struct PtrSerializable final : public Serializable {
+    public:
+        int32_t *count = nullptr;
+        int64_t *value = nullptr;
+        uint32_t *status = nullptr;
+        bool *isClear = nullptr;
+        ~PtrSerializable()
+        {
+            if (count != nullptr) {
+                delete count;
+                count = nullptr;
+            }
+            if (value != nullptr) {
+                delete value;
+                value = nullptr;
+            }
+            if (status != nullptr) {
+                delete status;
+                status = nullptr;
+            }
+            if (isClear != nullptr) {
+                delete isClear;
+                isClear = nullptr;
+            }
+        }
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(count)], count);
+            SetValue(node[GET_NAME(status)], status);
+            SetValue(node[GET_NAME(value)], value);
+            SetValue(node[GET_NAME(isClear)], isClear);
+            return true;
+        }
+        bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(count), count);
+            GetValue(node, GET_NAME(status), status);
+            GetValue(node, GET_NAME(value), value);
+            GetValue(node, GET_NAME(isClear), isClear);
+            return true;
+        }
+        bool operator==(const PtrSerializable &test) const
+        {
+            return *count == *(test.count) && *status == *(test.status) &&
+                *value == *(test.value) && *isClear == *(test.isClear);
+        }
+    };
     static void SetUpTestCase(void)
     {
     }
@@ -245,60 +293,13 @@ HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
 */
 HWTEST_F(SerializableTest, GetTestValue, TestSize.Level2)
 {
-    struct Test final : public Serializable {
-    public:
-        int32_t *count = nullptr;
-        int64_t *value = nullptr;
-        uint32_t *status = nullptr;
-        bool *isClear = nullptr;
-        ~Test()
-        {
-            if (count != nullptr) {
-                delete count;
-                count = nullptr;
-            }
-            if (value != nullptr) {
-                delete value;
-                value = nullptr;
-            }
-            if (status != nullptr) {
-                delete status;
-                status = nullptr;
-            }
-            if (isClear != nullptr) {
-                delete isClear;
-                isClear = nullptr;
-            }
-        }
-        bool Marshal(json &node) const override
-        {
-            SetValue(node[GET_NAME(count)], count);
-            SetValue(node[GET_NAME(status)], status);
-            SetValue(node[GET_NAME(value)], value);
-            SetValue(node[GET_NAME(isClear)], isClear);
-            return true;
-        }
-        bool Unmarshal(const json &node) override
-        {
-            GetValue(node, GET_NAME(count), count);
-            GetValue(node, GET_NAME(status), status);
-            GetValue(node, GET_NAME(value), value);
-            GetValue(node, GET_NAME(isClear), isClear);
-            return true;
-        }
-        bool operator==(const Test &test) const
-        {
-            return *count == *(test.count) && *status == *(test.status) &&
-                *value == *(test.value) && *isClear == *(test.isClear);
-        }
-    };
-    Test in;
+    PtrSerializable in;
     in.count = new int32_t(100);
     in.value = new int64_t(-100);
     in.status = new uint32_t(110);
     in.isClear = new bool(true);
     auto json = to_string(in.Marshall());
-    Test out;
+    PtrSerializable out;
     out.Unmarshall(json);
     ASSERT_TRUE(in == out) << in.count;
 }
