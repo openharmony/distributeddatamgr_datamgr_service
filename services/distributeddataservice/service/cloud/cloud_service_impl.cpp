@@ -98,7 +98,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user, { WORK_SUB, WORK_CLEAN }));
+    Execute(GenTask(0, cloudInfo.user));
     syncManager_.StopCloudSync(cloudInfo.user);
     return SUCCESS;
 }
@@ -552,16 +552,6 @@ void CloudServiceImpl::CleanSubscription(Subscription &sub)
     for (const auto &[bundle, expireTime] : sub.expiresTime) {
         MetaDataManager::GetInstance().DelMeta(sub.GetRelationKey(bundle), true);
     }
-}
-
-bool CloudServiceImpl::CleanServer(int32_t user)
-{
-    auto instance = CloudServer::GetInstance();
-    if (instance == nullptr) {
-        return true;
-    }
-    instance->Clean(user);
-    return true;
 }
 
 void CloudServiceImpl::Execute(Task task)
