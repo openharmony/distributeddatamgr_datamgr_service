@@ -32,10 +32,6 @@ RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB)
 DBStatus RdbCloud::BatchInsert(
     const std::string &tableName, std::vector<DBVBucket> &&record, std::vector<DBVBucket> &extend)
 {
-    if (record.size() != extend.size()) {
-        ZLOGE("The size of record:{public}d is not equal to the size of extend:{public}d", record.size(), extend.size());
-        return CLOUD_ERROR;
-    }
     DistributedData::VBuckets extends = ValueProxy::Convert(std::move(extend));
     auto error = cloudDB_->BatchInsert(tableName, ValueProxy::Convert(std::move(record)), extends);
     if (error == GeneralError::E_OK) {
