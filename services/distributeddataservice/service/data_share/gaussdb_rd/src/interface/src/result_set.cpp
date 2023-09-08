@@ -220,7 +220,7 @@ JsonObject CreatIdObj(const std::string &idStr, int errCode)
     return idObj;
 }
 
-int InsertId(JsonObject &cjsonObj, std::string &jsonKey)
+int InsertId(JsonObject &cjsonObj, const std::string &jsonKey)
 {
     if (jsonKey.empty()) {
         GLOGE("Genalral Id faild");

@@ -118,10 +118,6 @@ HWTEST_F(DocumentDBDataTest, UpsertDataTest003, TestSize.Level0)
     }
 }
 
-HWTEST_F(DocumentDBDataTest, UpsertDataTest004, TestSize.Level0) {}
-
-HWTEST_F(DocumentDBDataTest, UpsertDataTest005, TestSize.Level0) {}
-
 /**
  * @tc.name: UpsertDataTest006
  * @tc.desc: Test upsert data with invalid flags
