@@ -226,7 +226,7 @@ std::string GeneralInsertSql(const std::string &collName, Key &key, int isIdExis
     }
 }
 
-void AssignValueToData(std::string &keyStr, std::string &valueStr, std::pair<std::string, std::string> &values,
+void AssignValueToData(std::string &keyStr, const std::string &valueStr, std::pair<std::string, std::string> &values,
     int &innerErrorCode, bool &isMatchOneData)
 {
     keyStr.pop_back(); // get id from really key.
