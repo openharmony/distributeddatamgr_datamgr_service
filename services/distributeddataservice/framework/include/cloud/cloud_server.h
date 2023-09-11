@@ -34,6 +34,7 @@ public:
     virtual std::shared_ptr<AssetLoader> ConnectAssetLoader(uint32_t tokenId, const Database &dbMeta);
     virtual std::shared_ptr<CloudDB> ConnectCloudDB(uint32_t tokenId, const Database &dbMeta);
     virtual void Clean(int32_t userId);
+    virtual void ReleaseUserInfo(int32_t userId);
 
 private:
     static CloudServer *instance_;

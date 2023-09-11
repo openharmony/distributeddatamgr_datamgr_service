@@ -98,7 +98,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user));
+    Execute(GenTask(0, cloudInfo.user, { WORK_SUB, WORK_RELEASE }));
     syncManager_.StopCloudSync(cloudInfo.user);
     return SUCCESS;
 }
@@ -485,6 +485,16 @@ void CloudServiceImpl::GetSchema(const Event &event)
     ZLOGD("Start GetSchema, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
         storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
     GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
+}
+
+bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
+{
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        return true;
+    }
+    instance->ReleaseUserInfo(user);
+    return true;
 }
 
 bool CloudServiceImpl::DoSubscribe(int32_t user)
