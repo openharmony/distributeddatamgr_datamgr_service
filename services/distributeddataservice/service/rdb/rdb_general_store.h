@@ -43,9 +43,9 @@ public:
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
-    bool IsValid() override;
     int32_t Bind(const Database &database, BindInfo bindInfo) override;
     bool IsBound() override;
+    bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;

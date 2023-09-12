@@ -70,9 +70,8 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
                 return !stores.empty();
             }
             auto *dbStore = creators_[meta.storeType](meta);
-            if (dbStore == nullptr || !dbStore->IsValid()) {
-                ZLOGE("creator failed. storeName:%{public}s, dbStore is %{public}s", meta.GetStoreAlias().c_str(),
-                    dbStore == nullptr ? "null" : "invalid");
+            if (dbStore == nullptr) {
+                ZLOGE("creator failed. storeName:%{public}s", meta.GetStoreAlias().c_str());
                 return !stores.empty();
             }
             auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(meta.storeId),

@@ -61,8 +61,6 @@ public:
     };
     virtual ~GeneralStore() = default;
 
-    virtual bool IsValid() = 0;
-
     virtual int32_t Bind(const Database &database, BindInfo bindInfo) = 0;
 
     virtual bool IsBound() = 0;
