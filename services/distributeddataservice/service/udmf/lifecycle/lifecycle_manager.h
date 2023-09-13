@@ -38,8 +38,7 @@ public:
 
 private:
     static std::shared_ptr<ExecutorPool> executorPool_;
-    static std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> intentionPolicyMap_;
-    static std::shared_ptr<LifeCyclePolicy> GetPolicy(const std::string &intention);
+    static std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> intentionPolicy_;
     static Status DeleteOnTimeout();
 };
 } // namespace UDMF
