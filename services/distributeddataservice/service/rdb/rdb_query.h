@@ -25,7 +25,6 @@ public:
     using Predicates = NativeRdb::RdbPredicates;
     static constexpr uint64_t TYPE_ID = 0x20000001;
     RdbQuery() = default;
-    explicit RdbQuery(bool isRemote);
 
     ~RdbQuery() override = default;
 
@@ -35,10 +34,9 @@ public:
     DistributedDB::Query GetQuery() const;
     DistributedDB::RemoteCondition GetRemoteCondition() const;
     bool IsRemoteQuery();
-    void SetDevices(const std::vector<std::string> &devices);
-    void SetSql(const std::string &sql, DistributedData::Values &&args);
     void FromTable(const std::vector<std::string> &tables);
     void MakeQuery(const PredicatesMemo &predicates);
+    void MakeRemoteQuery(const std::string &devices, const std::string &sql, DistributedData::Values &&args);
 
 private:
     void EqualTo(const RdbPredicateOperation& operation);

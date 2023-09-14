@@ -19,9 +19,6 @@
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
-
-RdbQuery::RdbQuery(bool isRemote) : isRemote_(isRemote) {}
-
 bool RdbQuery::IsEqual(uint64_t tid)
 {
     return tid == TYPE_ID;
@@ -32,13 +29,10 @@ std::vector<std::string> RdbQuery::GetTables()
     return tables_;
 }
 
-void RdbQuery::SetDevices(const std::vector<std::string> &devices)
+void RdbQuery::MakeRemoteQuery(const std::string& devices, const std::string& sql, Values&& args)
 {
-    devices_ = devices;
-}
-
-void RdbQuery::SetSql(const std::string &sql, DistributedData::Values &&args)
-{
+    isRemote_ = true;
+    devices_ = { devices };
     sql_ = sql;
     args_ = std::move(args);
 }

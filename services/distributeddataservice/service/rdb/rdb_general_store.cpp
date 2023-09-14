@@ -278,6 +278,7 @@ int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
 
 RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
 {
+    async = async ? async : detailAsync_;
     if (!async) {
         return [](auto &) {};
     }
@@ -299,6 +300,7 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
 
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async)
 {
+    async = async ? async : detailAsync_;
     if (!async) {
         return [](auto &) {};
     }
@@ -407,6 +409,18 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
 bool RdbGeneralStore::IsValid()
 {
     return delegate_ != nullptr;
+}
+
+int32_t RdbGeneralStore::RegisterCallback(DetailAsync detailAsync)
+{
+    detailAsync_ = std::move(detailAsync);
+    return GenErr::E_OK;
+}
+
+int32_t RdbGeneralStore::UnRegisterCallback()
+{
+    detailAsync_ = nullptr;
+    return GenErr::E_OK;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

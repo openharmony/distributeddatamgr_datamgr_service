@@ -15,7 +15,6 @@
 #define LOG_TAG "SyncManager"
 #include "sync_manager.h"
 
-#include "cloud/cloud_info.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"

@@ -105,6 +105,7 @@ RdbServiceImpl::RdbServiceImpl()
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
+        store->RegisterCallback(GetCallbacks(meta.tokenId, meta.storeId));
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
 }
@@ -153,22 +154,16 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
 
 int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
 {
-    OnClientDied(pid);
-    return E_OK;
-}
-
-void RdbServiceImpl::OnClientDied(pid_t pid)
-{
-    ZLOGI("client dead pid=%{public}d", pid);
-    syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) {
-        if (agent.pid_ != pid) {
-            return false;
+    ZLOGI("client dead, tokenId:%{public}d, pid:%{public}d ", tokenId, pid);
+    syncAgents_.ComputeIfPresent(tokenId, [pid](auto, SyncAgents& agents) {
+        auto it = agents.find(pid);
+        if (it != agents.end()) {
+            it->second.SetNotifier(nullptr);
+            agents.erase(it);
         }
-        if (agent.watcher_ != nullptr) {
-            agent.watcher_->SetNotifier(nullptr);
-        }
-        return true;
+        return agents.empty();
     });
+    return E_OK;
 }
 
 bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::string& storeName)
@@ -210,11 +205,12 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
     auto notifierProxy = iface_cast<RdbNotifierProxy>(notifier);
     pid_t pid = IPCSkeleton::GetCallingPid();
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    syncAgents_.Compute(tokenId, [&param, notifierProxy, pid](auto, SyncAgent &agent) {
-        if (pid != agent.pid_) {
-            agent.ReInit(pid, param.bundleName_);
+    syncAgents_.Compute(tokenId, [&param, notifierProxy, pid](auto, SyncAgents &agents) {
+        auto [it, _] = agents.insert_or_assign(pid, SyncAgent());
+        if (it != agents.end()) {
+            it->second.ReInit(param.bundleName_);
+            it->second.SetNotifier(notifierProxy);
         }
-        agent.SetNotifier(notifierProxy);
         return true;
     });
     ZLOGI("success tokenId:%{public}x, pid=%{public}d", tokenId, pid);
@@ -251,12 +247,22 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     return store->SetDistributedTables(tables, type);
 }
 
-void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
+void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t pid, uint32_t seqNum, Details &&result)
 {
     ZLOGI("tokenId=%{public}x seqnum=%{public}u", tokenId, seqNum);
-    auto [success, agent] = syncAgents_.Find(tokenId);
-    if (success && agent.notifier_ != nullptr) {
-        agent.notifier_->OnComplete(seqNum, std::move(result));
+    if (seqNum == 0) {
+        return;
+    }
+    sptr<RdbNotifierProxy> notifier = nullptr;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifier, pid](auto, SyncAgents& syncAgents) {
+        auto it = syncAgents.find(pid);
+        if (it != syncAgents.end()) {
+            notifier = it->second.notifier_;
+        }
+        return true;
+    });
+    if (notifier != nullptr) {
+        notifier->OnComplete(seqNum, std::move(result));
     }
 }
 
@@ -277,11 +283,37 @@ std::string RdbServiceImpl::TransferStringToHex(const std::string &origStr)
 
 AutoCache::Watchers RdbServiceImpl::GetWatchers(uint32_t tokenId, const std::string &storeName)
 {
-    auto [success, agent] = syncAgents_.Find(tokenId);
-    if (agent.watcher_ == nullptr) {
-        return {};
-    }
-    return { agent.watcher_ };
+    AutoCache::Watchers watchers;
+    syncAgents_.ComputeIfPresent(tokenId, [&storeName, &watchers](auto, SyncAgents &syncAgents) {
+        std::for_each(syncAgents.begin(), syncAgents.end(), [&storeName, &watchers](const auto& item) {
+            if (item.second.watcher_ != nullptr && item.second.obsStores_.count(storeName) != 0) {
+                watchers.insert(item.second.watcher_);
+            }
+        });
+        return true;
+    });
+    return watchers;
+}
+
+RdbServiceImpl::DetailAsync RdbServiceImpl::GetCallbacks(uint32_t tokenId, const std::string& storeName)
+{
+    std::list<DetailAsync> asyncs;
+    syncAgents_.ComputeIfPresent(tokenId, [&storeName, &asyncs](auto, SyncAgents& syncAgents) {
+        std::for_each(syncAgents.begin(), syncAgents.end(), [&storeName, &asyncs](const auto& item) {
+            if (item.second.callBackStores_.count(storeName) != 0 && item.second.detailAsync_ != nullptr) {
+                asyncs.push_back(item.second.detailAsync_);
+            }
+        });
+        return true;
+    });
+    return [asyncs](const GenDetails& details) {
+        for (auto& async : asyncs) {
+            if (async == nullptr) {
+                continue;
+            }
+            async(details);
+        }
+    };
 }
 
 int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
@@ -296,10 +328,8 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
         ZLOGE("store is null");
         return RDB_ERROR;
     }
-    auto values = ValueProxy::Convert(selectionArgs);
-    RdbQuery rdbQuery(true);
-    rdbQuery.SetDevices({ device });
-    rdbQuery.SetSql(sql, std::move(values));
+    RdbQuery rdbQuery;
+    rdbQuery.MakeRemoteQuery(device, sql, ValueProxy::Convert(selectionArgs));
     auto cursor = store->Query("", rdbQuery);
     if (cursor == nullptr) {
         ZLOGE("Query failed, cursor is null");
@@ -354,10 +384,11 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     }
     ZLOGD("seqNum=%{public}u", option.seqNum);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto pid = IPCSkeleton::GetCallingPid();
     return store->Sync(
         DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
-        [this, tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
-            OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+        [this, tokenId, pid, seqNum = option.seqNum](const GenDetails &result) mutable {
+            OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
         },
         false);
 }
@@ -375,9 +406,10 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
         query = std::make_shared<RdbQuery>();
         query->FromTable(predicates.tables_);
     }
-    GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](
+    auto pid = IPCSkeleton::GetCallingPid();
+    GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, pid, seqNum = option.seqNum](
                                  const GenDetails &result) mutable {
-        OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+        OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
     };
     GenAsync syncCallback = [async, &param](const GenDetails &details) {
         ZLOGD("Cloud Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
@@ -387,8 +419,8 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
         }
     };
 
-    auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME),
-        (option.isAsync && option.seqNum == 0), query, (option.isAsync ? asyncCallback : syncCallback));
+    auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME), option.isAutoSync, query,
+        option.isAutoSync ? nullptr : (option.isAsync ? asyncCallback : syncCallback));
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
@@ -402,21 +434,19 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
     }
     pid_t pid = IPCSkeleton::GetCallingPid();
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    bool isCreate = false;
-    syncAgents_.Compute(tokenId, [pid, &param, &isCreate](auto &key, SyncAgent &agent) {
-        if (pid != agent.pid_) {
-            agent.ReInit(pid, param.bundleName_);
+    auto storeName = RemoveSuffix(param.storeName_);
+    syncAgents_.Compute(tokenId, [pid, &param, &storeName](auto, SyncAgents& agents) {
+        auto [it, success] = agents.try_emplace(pid, param.bundleName_);
+        if (it == agents.end()) {
+            return !agents.empty();
         }
-        if (agent.watcher_ == nullptr) {
-            isCreate = true;
-            agent.SetWatcher(std::make_shared<RdbWatcher>());
+        if (it->second.watcher_ == nullptr) {
+            it->second.SetWatcher(std::make_shared<RdbWatcher>());
         }
-        agent.count_++;
+        it->second.obsStores_.insert(storeName);
         return true;
     });
-    if (isCreate) {
-        AutoCache::GetInstance().SetObserver(tokenId, param.storeName_, GetWatchers(tokenId, param.storeName_));
-    }
+    AutoCache::GetInstance().SetObserver(tokenId, storeName, GetWatchers(tokenId, storeName));
     return RDB_OK;
 }
 
@@ -427,21 +457,18 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         ZLOGE("mode:%{public}d error", option.mode);
         return RDB_ERROR;
     }
-    bool destroyed = false;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    syncAgents_.ComputeIfPresent(tokenId, [&destroyed](auto &key, SyncAgent &agent) {
-        if (agent.count_ > 0) {
-            agent.count_--;
+    auto pid = IPCSkeleton::GetCallingPid();
+    auto storeName = RemoveSuffix(param.storeName_);
+    syncAgents_.ComputeIfPresent(tokenId, [pid, &storeName](auto, SyncAgents& agents) {
+        auto it = agents.find(pid);
+        if (it != agents.end()) {
+            it->second.obsStores_.insert(storeName);
+            it->second.SetWatcher(nullptr);
         }
-        if (agent.count_ == 0) {
-            destroyed = true;
-            agent.SetWatcher(nullptr);
-        }
-        return true;
+        return !agents.empty();
     });
-    if (destroyed) {
-        AutoCache::GetInstance().SetObserver(tokenId, param.storeName_, GetWatchers(tokenId, param.storeName_));
-    }
+    AutoCache::GetInstance().SetObserver(tokenId, storeName, GetWatchers(tokenId, storeName));
     return RDB_OK;
 }
 
@@ -649,12 +676,13 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
     return 0;
 }
 
-void RdbServiceImpl::SyncAgent::ReInit(pid_t pid, const std::string &bundleName)
+void RdbServiceImpl::SyncAgent::ReInit(const std::string &bundleName)
 {
-    pid_ = pid;
-    count_ = 0;
+    obsStores_.clear();
+    callBackStores_.clear();
     bundleName_ = bundleName;
     notifier_ = nullptr;
+    detailAsync_ = nullptr;
     if (watcher_ != nullptr) {
         watcher_->SetNotifier(nullptr);
     }
@@ -704,6 +732,13 @@ int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int
         }
     }
     return E_OK;
+}
+
+RdbServiceImpl::SyncAgent::SyncAgent(std::string bundleName) : bundleName_(bundleName)
+{
+    notifier_ = nullptr;
+    watcher_ = nullptr;
+    notifier_ = nullptr;
 }
 
 int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)

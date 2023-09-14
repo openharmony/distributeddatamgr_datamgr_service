@@ -310,5 +310,12 @@ DBStatus DBStoreMock::UpdateKey(const UpdateKeyCallback &callback)
 {
     return NOT_SUPPORT;
 }
+
+void DBStoreMock::Reset()
+{
+    entries_.Clear();
+    localEntries_.Clear();
+    observers_.Clear();
+}
 } // namespace DistributedData
 } // namespace OHOS

@@ -89,6 +89,7 @@ public:
     DBStatus GetKeys(const Key &keyPrefix, std::vector<Key> &keys) const override;
     size_t GetSyncDataSize(const std::string &device) const override;
     DBStatus UpdateKey(const UpdateKeyCallback &callback) override;
+    void Reset();
 
 private:
     static const uint32_t DEFAULT_SIZE = 0;

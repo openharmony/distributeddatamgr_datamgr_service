@@ -38,9 +38,8 @@ class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
+    using DetailAsync = DistributedData::GeneralStore::DetailAsync;
     RdbServiceImpl();
-
-    void OnClientDied(pid_t pid);
 
     /* IPC interface */
     std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
@@ -77,15 +76,20 @@ private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
     struct SyncAgent {
-        pid_t pid_ = 0;
-        int32_t count_ = 0;
+        SyncAgent() = default;
+        SyncAgent(std::string bundleName);
+        std::set<std::string> obsStores_;
+        std::set<std::string> callBackStores_;
         std::string bundleName_;
         sptr<RdbNotifierProxy> notifier_ = nullptr;
         std::shared_ptr<RdbWatcher> watcher_ = nullptr;
-        void ReInit(pid_t pid, const std::string &bundleName);
+        DetailAsync detailAsync_ = nullptr;
+        void ReInit(const std::string &bundleName);
         void SetNotifier(sptr<RdbNotifierProxy> notifier);
         void SetWatcher(std::shared_ptr<RdbWatcher> watcher);
     };
+    using SyncAgents = std::map<uint32_t, SyncAgent>;
+
 
     class RdbStatic : public StaticActs {
     public:
@@ -118,11 +122,13 @@ private:
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 
+    DetailAsync GetCallbacks(uint32_t tokenId, const std::string &storeName);
+
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
-    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details&& result);
+    void OnAsyncComplete(uint32_t tokenId, uint32_t pid, uint32_t seqNum, Details&& result);
 
     int32_t CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old);
 
@@ -143,7 +149,7 @@ private:
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
     static Factory factory_;
-    ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
+    ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedRdb

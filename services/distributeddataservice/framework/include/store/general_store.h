@@ -87,6 +87,10 @@ public:
 
     virtual int32_t Unwatch(int32_t origin, Watcher &watcher) = 0;
 
+    virtual int32_t RegisterCallback(DetailAsync detailAsync) = 0;
+
+    virtual int32_t UnRegisterCallback() = 0;
+
     virtual int32_t Close() = 0;
 
     virtual int32_t AddRef() = 0;

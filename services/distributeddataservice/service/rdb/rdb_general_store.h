@@ -57,6 +57,8 @@ public:
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
+    int32_t RegisterCallback(DetailAsync detailAsync) override;
+    int32_t UnRegisterCallback() override;
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
@@ -93,6 +95,7 @@ private:
         const DistributedDB::RemoteCondition &remoteCondition);
 
     ObserverProxy observer_;
+    DetailAsync detailAsync_;
     RdbManager manager_;
     RdbDelegate *delegate_ = nullptr;
     std::shared_ptr<RdbCloud> rdbCloud_ {};
