@@ -50,6 +50,7 @@ public:
         uint32_t totalLength) override;
     uint32_t GetMtuSize() override;
     uint32_t GetMtuSize(const DeviceInfos &devInfo) override;
+    uint32_t GetTimeout(const DeviceInfos &devInfo) override;
     DeviceInfos GetLocalDeviceInfos() override;
     std::vector<DeviceInfos> GetRemoteOnlineDeviceInfosList() override;
     bool IsSameProcessLabelStartedOnPeerDevice(const DeviceInfos &peerDevInfo) override;
