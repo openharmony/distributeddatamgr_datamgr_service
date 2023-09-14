@@ -61,8 +61,13 @@ RdbServiceImpl::Factory::Factory()
         }
         return product_;
     });
-    AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData &metaData) -> GeneralStore* {
-        return new (std::nothrow) RdbGeneralStore(metaData);
+    AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData& metaData) -> GeneralStore* {
+        auto store = new (std::nothrow) RdbGeneralStore(metaData);
+        if (store != nullptr && !store->IsValid()) {
+            delete store;
+            store = nullptr;
+        }
+        return store;
     });
     staticActs_ = std::make_shared<RdbStatic>();
     FeatureSystem::GetInstance().RegisterStaticActs(RdbServiceImpl::SERVICE_NAME,
@@ -155,7 +160,15 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
 void RdbServiceImpl::OnClientDied(pid_t pid)
 {
     ZLOGI("client dead pid=%{public}d", pid);
-    syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) { return agent.pid_ == pid; });
+    syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) {
+        if (agent.pid_ != pid) {
+            return false;
+        }
+        if (agent.watcher_ != nullptr) {
+            agent.watcher_->SetNotifier(nullptr);
+        }
+        return true;
+    });
 }
 
 bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::string& storeName)
@@ -356,7 +369,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     storeInfo.bundleName = param.bundleName_;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-    storeInfo.storeName = param.storeName_;
+    storeInfo.storeName = RemoveSuffix(param.storeName_);
     std::shared_ptr<RdbQuery> query = nullptr;
     if (!predicates.tables_.empty()) {
         query = std::make_shared<RdbQuery>();
@@ -440,7 +453,7 @@ int32_t RdbServiceImpl::OnInitialize()
 int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    AutoCache::GetInstance().CloseStore(tokenId, param.storeName_);
+    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_));
     RdbSyncerParam tmpParam = param;
     HapTokenInfo hapTokenInfo;
     AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);

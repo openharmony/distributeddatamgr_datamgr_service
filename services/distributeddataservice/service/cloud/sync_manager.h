@@ -47,6 +47,7 @@ public:
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
+        bool Contains(const std::string& storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
 
     private:

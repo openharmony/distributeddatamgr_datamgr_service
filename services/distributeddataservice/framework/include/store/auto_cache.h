@@ -58,6 +58,7 @@ private:
     AutoCache();
     ~AutoCache();
     void GarbageCollect(bool isForce);
+    void StartTimer();
     struct Delegate : public GeneralWatcher {
         Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user);
         ~Delegate();

@@ -114,6 +114,11 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     return std::make_shared<SyncQuery>(syncTables.empty() ? tables : syncTables);
 }
 
+bool SyncManager::SyncInfo::Contains(const std::string& storeName)
+{
+    return tables_.empty() || tables_.find(storeName) != tables_.end();
+}
+
 SyncManager::SyncManager()
 {
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
@@ -171,18 +176,15 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         activeInfos_.Erase(info.syncId_);
         CloudInfo cloud;
         cloud.user = info.user_;
-        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-            info.SetError(E_CLOUD_DISABLED);
-            ZLOGE("no cloud info for user:%{public}d", info.user_);
-            return;
-        }
-
-        if (!cloud.enableCloud || (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_) ||
+        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) || !cloud.enableCloud ||
+            (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_) ||
             (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
             info.SetError(E_CLOUD_DISABLED);
+            ZLOGE("cloudInfo invalid:%{public}d, enable:%{public}d, bundleName:%{public}s, <syncId:%{public}s, "
+                  "metaId:%{public}s>", cloud.IsValid(), cloud.enableCloud, info.bundleName_.c_str(),
+                  Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
             return;
         }
-
         if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
             info.SetError(E_NETWORK_ERROR);
             return;
@@ -199,11 +201,10 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
 
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
         for (auto &schema : schemas) {
-            if (!cloud.IsOn(schema.bundleName)) {
-                continue;
-            }
-
             for (const auto &database : schema.databases) {
+                if (!info.Contains(database.name)) {
+                    continue;
+                }
                 CloudEvent::StoreInfo storeInfo;
                 storeInfo.bundleName = schema.bundleName;
                 storeInfo.user = cloud.user;
@@ -362,8 +363,8 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
         auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
         if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
-            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId, dbMeta.name.c_str(),
-                dbMeta.alias.c_str());
+            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
+                Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
             return nullptr;
         }
 
