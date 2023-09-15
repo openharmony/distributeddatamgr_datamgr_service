@@ -74,6 +74,7 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         if (err != E_OK) {
             break;
         }
+        AddUri(entry);
         data.emplace_back(ValueProxy::Convert(std::move(entry)));
         err = cursor->MoveToNext();
         count--;
