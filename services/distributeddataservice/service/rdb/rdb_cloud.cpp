@@ -36,9 +36,7 @@ DBStatus RdbCloud::BatchInsert(
     DistributedData::VBuckets records = ValueProxy::Convert(std::move(record));
     RemoveDeletedAsset(records);
     auto error = cloudDB_->BatchInsert(tableName, std::move(records), extends);
-    if (error == GeneralError::E_OK) {
-        extend = ValueProxy::Convert(std::move(extends));
-    }
+    extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
@@ -152,7 +150,7 @@ void RdbCloud::RemoveDeletedAsset(DistributedData::VBuckets &buckets)
                         result.emplace_back(asset);
                     }
                 }
-                value = result;
+                value = std::move(result);
             }
         }
     }
