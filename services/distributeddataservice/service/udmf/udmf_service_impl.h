@@ -18,6 +18,7 @@
 
 #include <vector>
 
+#include "executor_pool.h"
 #include "udmf_service_stub.h"
 
 namespace OHOS {
@@ -39,6 +40,7 @@ public:
     int32_t AddPrivilege(const QueryOption &query, Privilege &privilege) override;
     int32_t Sync(const QueryOption &query, const std::vector<std::string> &devices) override;
     int32_t OnInitialize() override;
+    int32_t OnBind(const BindInfo &bindInfo) override;
 
 private:
     class Factory {
@@ -50,6 +52,7 @@ private:
         std::shared_ptr<UdmfServiceImpl> product_;
     };
     static Factory factory_;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace UDMF
 } // namespace OHOS

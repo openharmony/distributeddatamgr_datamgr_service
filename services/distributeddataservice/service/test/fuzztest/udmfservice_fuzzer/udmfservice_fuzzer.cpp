@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "ipc_skeleton.h"
 #include "udmf_service_impl.h"
 #include "message_parcel.h"
 #include "securec.h"
@@ -28,9 +29,16 @@ namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
 constexpr uint32_t CODE_MIN = 0;
 constexpr uint32_t CODE_MAX = 10;
+constexpr size_t NUM_MIN = 5;
+constexpr size_t NUM_MAX = 12;
 
 bool OnRemoteRequestFuzz(const uint8_t* data, size_t size)
 {
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);

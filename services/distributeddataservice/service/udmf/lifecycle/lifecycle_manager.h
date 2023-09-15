@@ -35,11 +35,11 @@ public:
     Status DeleteOnGet(const UnifiedKey &key);
     Status DeleteOnStart();
     Status DeleteOnSchedule();
-
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 private:
-    static std::shared_ptr<ExecutorPool> executorPool_;
     static std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> intentionPolicy_;
     static Status DeleteOnTimeout();
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace UDMF
 } // namespace OHOS

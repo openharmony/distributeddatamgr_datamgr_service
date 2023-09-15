@@ -29,8 +29,17 @@ namespace UDMF {
 class StoreCache {
 public:
     std::shared_ptr<Store> GetStore(std::string intention);
+    static StoreCache &GetInstance();
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 
 private:
+    StoreCache() {}
+
+    ~StoreCache() {}
+
+    StoreCache(const StoreCache &obj) = delete;
+    StoreCache &operator=(const StoreCache &obj) = delete;
+
     void GarbageCollect();
 
     ConcurrentMap<std::string, std::shared_ptr<Store>> stores_;
@@ -38,7 +47,7 @@ private:
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
 
     static constexpr int64_t INTERVAL = 1;  // 1 min
-    static std::shared_ptr<ExecutorPool> executorPool_;
+    std::shared_ptr<ExecutorPool> executorPool_;
 };
 } // namespace UDMF
 } // namespace OHOS

@@ -23,7 +23,6 @@
 
 namespace OHOS {
 namespace UDMF {
-std::shared_ptr<ExecutorPool> LifeCycleManager::executorPool_ = std::make_shared<ExecutorPool>(2, 1);
 std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> LifeCycleManager::intentionPolicy_ = {
     { UD_INTENTION_MAP.at(UD_INTENTION_DRAG), std::make_shared<CleanAfterGet>() },
 };
@@ -67,8 +66,11 @@ Status LifeCycleManager::DeleteOnStart()
 
 Status LifeCycleManager::DeleteOnSchedule()
 {
-    ExecutorPool::TaskId taskId =
-        executorPool_->Schedule(&LifeCycleManager::DeleteOnTimeout, LifeCyclePolicy::INTERVAL);
+    if (executors_ == nullptr) {
+        ZLOGE("Executors_ is nullptr.");
+        return E_ERROR;
+    }
+    ExecutorPool::TaskId taskId = executors_->Schedule(&LifeCycleManager::DeleteOnTimeout, LifeCyclePolicy::INTERVAL);
     if (taskId == ExecutorPool::INVALID_TASK_ID) {
         ZLOGE("ExecutorPool Schedule failed.");
         return E_ERROR;
@@ -96,6 +98,11 @@ Status LifeCycleManager::DeleteOnTimeout()
         ZLOGW("fail, status = %{public}d, intention = [%{public}s].", status, errorInfo.c_str());
     }
     return status;
+}
+
+void LifeCycleManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
 }
 } // namespace UDMF
 } // namespace OHOS
