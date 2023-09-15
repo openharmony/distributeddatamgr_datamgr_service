@@ -143,7 +143,7 @@ int32_t RdbGeneralStore::Close()
     bindInfo_.db_ = nullptr;
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
-    return 0;
+    return GeneralError::E_OK;
 }
 
 int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sql)
@@ -402,6 +402,11 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             break;
     }
     return GenErr::E_ERROR;
+}
+
+bool RdbGeneralStore::IsValid()
+{
+    return delegate_ != nullptr;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

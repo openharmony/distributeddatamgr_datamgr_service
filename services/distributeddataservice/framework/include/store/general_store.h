@@ -67,7 +67,7 @@ public:
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
-    virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type);
+    virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type) = 0;
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values) = 0;
 

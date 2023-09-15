@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #define LOG_TAG "AutoCache"
-#include "store/auto_cache.h"
+#include <cinttypes>
 #include "utils/anonymous.h"
+#include "store/auto_cache.h"
 
 #include "log_print.h"
 namespace OHOS::DistributedData {
@@ -39,8 +40,6 @@ void AutoCache::Bind(std::shared_ptr<Executor> executor)
         return;
     }
     executor_ = executor;
-    taskId_ = executor_->Schedule(std::bind(&AutoCache::GarbageCollect, this, false), std::chrono::minutes(INTERVAL),
-        std::chrono::minutes(INTERVAL));
 }
 
 AutoCache::AutoCache() {}
@@ -72,14 +71,38 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
             }
             auto *dbStore = creators_[meta.storeType](meta);
             if (dbStore == nullptr) {
+                ZLOGE("creator failed. storeName:%{public}s", meta.GetStoreAlias().c_str());
                 return !stores.empty();
             }
             auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(meta.storeId),
                 std::forward_as_tuple(dbStore, watchers, atoi(meta.user.c_str())));
             store = result.first->second;
+            StartTimer();
             return !stores.empty();
         });
     return store;
+}
+
+// Should be used within stores_'s thread safe methods
+void AutoCache::StartTimer()
+{
+    if (executor_ == nullptr || taskId_ != Executor::INVALID_TASK_ID) {
+        return;
+    }
+    taskId_ = executor_->Schedule(
+        [this]() {
+            GarbageCollect(false);
+            stores_.DoActionIfEmpty([this]() {
+                if (executor_ == nullptr || taskId_ == Executor::INVALID_TASK_ID) {
+                    return;
+                }
+                executor_->Remove(taskId_);
+                ZLOGD("remove timer,taskId: %{public}" PRIu64, taskId_);
+                taskId_ = Executor::INVALID_TASK_ID;
+            });
+        },
+        std::chrono::minutes(INTERVAL), std::chrono::minutes(INTERVAL));
+    ZLOGD("start timer,taskId: %{public}" PRIu64, taskId_);
 }
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
@@ -136,7 +159,7 @@ void AutoCache::GarbageCollect(bool isForce)
     auto current = std::chrono::steady_clock::now();
     stores_.EraseIf([&current, isForce](auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
-            // if the kv store is BUSY we wait more INTERVAL minutes again
+            // if the store is BUSY we wait more INTERVAL minutes again
             if ((isForce || it->second < current) && it->second.Close()) {
                 it = delegates.erase(it);
             } else {
