@@ -368,7 +368,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
 
         if (cloudDB != nullptr || assetLoader != nullptr) {
-            store->Bind(dbMeta, { std::move(cloudDB), std::move(assetLoader) });
+            store->Bind(dbMeta, schemaMeta.bundleName, { std::move(cloudDB), std::move(assetLoader) });
         }
     }
     return store;

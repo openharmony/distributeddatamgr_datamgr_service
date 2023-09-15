@@ -24,16 +24,18 @@
 namespace OHOS::DistributedRdb {
 using namespace DistributedDB;
 using namespace DistributedData;
-RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB)
-    : cloudDB_(std::move(cloudDB))
+RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDBm, const std::string &bundleName)
+    : cloudDB_(std::move(cloudDB)), prefix_(PREFIX + bundleName + SUFFIX)
 {
 }
 
 DBStatus RdbCloud::BatchInsert(
     const std::string &tableName, std::vector<DBVBucket> &&record, std::vector<DBVBucket> &extend)
 {
-    DistributedData::VBuckets extends;
-    auto error = cloudDB_->BatchInsert(tableName, ValueProxy::Convert(std::move(record)), extends);
+    DistributedData::VBuckets extends = ValueProxy::Convert(std::move(extend));
+    DistributedData::VBuckets records = ValueProxy::Convert(std::move(record));
+    RemoveDeletedAsset(records);
+    auto error = cloudDB_->BatchInsert(tableName, std::move(records), extends);
     if (error == GeneralError::E_OK) {
         extend = ValueProxy::Convert(std::move(extends));
     }
@@ -131,5 +133,45 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             break;
     }
     return DBStatus::CLOUD_ERROR;
+}
+
+void RdbCloud::RemoveDeletedAsset(DistributedData::VBuckets &buckets)
+{
+    for (auto &bucket : buckets) {
+        for (auto &[key, value] : bucket) {
+            if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
+                DistributedData::Asset asset = std::get<DistributedData::Asset>(value);
+                if (asset.status == DistributedData::Asset::Status::STATUS_DELETE) {
+                    value = Value();
+                }
+            } else if (value.index() == TYPE_INDEX<DistributedData::Assets>) {
+                DistributedData::Assets assets = std::get<DistributedData::Assets>(value);
+                DistributedData::Assets result;
+                for (auto &asset : assets) {
+                    if (asset.status != DistributedData::Asset::Status::STATUS_DELETE) {
+                        result.emplace_back(asset);
+                    }
+                }
+                value = result;
+            }
+        }
+    }
+}
+
+void RdbCloud::AddUri(DistributedData::VBucket &bucket)
+{
+    for (auto &[key, value] : bucket) {
+        if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
+            DistributedData::Asset asset = std::get<DistributedData::Asset>(value);
+            asset.uri = prefix_ + asset.path;
+            value = std::move(asset);
+        } else if (value.index() == TYPE_INDEX<DistributedData::Assets>) {
+            DistributedData::Assets assets = std::get<DistributedData::Assets>(value);
+            for (auto &asset : assets) {
+                asset.uri = prefix_ + asset.path;
+            }
+            value = std::move(assets);
+        }
+    }
 }
 } // namespace OHOS::DistributedRdb
