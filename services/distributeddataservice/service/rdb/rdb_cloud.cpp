@@ -24,7 +24,7 @@
 namespace OHOS::DistributedRdb {
 using namespace DistributedDB;
 using namespace DistributedData;
-RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDBm, const std::string &bundleName)
+RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, const std::string &bundleName)
     : cloudDB_(std::move(cloudDB)), prefix_(PREFIX + bundleName + SUFFIX)
 {
 }
