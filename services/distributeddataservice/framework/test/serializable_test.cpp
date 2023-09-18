@@ -60,7 +60,7 @@ public:
         bool operator == (const Normal &ref) const
         {
             return name == ref.name && count == ref.count && status == ref.status && value == ref.value
-                 && isClear == ref.isClear && cols == ref.cols;
+                && isClear == ref.isClear && cols == ref.cols;
         }
     };
 
