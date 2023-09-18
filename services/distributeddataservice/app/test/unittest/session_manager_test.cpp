@@ -19,8 +19,10 @@
 #include "kvstore_meta_manager.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "nativetoken_kit.h"
 #include "session_manager/route_head_handler_impl.h"
 #include "session_manager/upgrade_manager.h"
+#include "token_setproc.h"
 #include "user_delegate.h"
 #include "gtest/gtest.h"
 
@@ -33,6 +35,26 @@ using namespace OHOS::Security::AccessToken;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
 constexpr int PEER_USER_ID1 = 101;
 constexpr int PEER_USER_ID2 = 100;
+void GrantPermissionNative()
+{
+    const char *perms[2] = {
+        "ohos.permission.DISTRIBUTED_DATASYNC",
+        "ohos.permission.ACCESS_SERVICE_DM"
+    };
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 2,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    AccessTokenKit::ReloadNativeTokenInfo();
+}
 class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
@@ -75,6 +97,7 @@ public:
         metaData.uid = 2000000;
         metaData.storeType = 1;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        GrantPermissionNative();
     }
     static void TearDownTestCase()
     {
