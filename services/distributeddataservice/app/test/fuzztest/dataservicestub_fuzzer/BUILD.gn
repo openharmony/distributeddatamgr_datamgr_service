@@ -17,7 +17,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ##############################fuzztest##########################################
 ohos_fuzztest("DataServiceStubFuzzTest") {
-  module_out_path = "datamgr_service/app"
+  module_out_path = "datamgr_service/datamgr_service"
 
   include_dirs = [
     "${kv_store_common_path}",

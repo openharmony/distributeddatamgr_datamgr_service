@@ -17,7 +17,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ##############################fuzztest##########################################
 ohos_fuzztest("UdmfServiceFuzzTest") {
-  module_out_path = "datamgr_service/service"
+  module_out_path = "datamgr_service/datamgr_service"
 
   include_dirs = [
     "${udmf_path}/framework/common",
