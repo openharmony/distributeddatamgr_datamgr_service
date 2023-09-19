@@ -18,27 +18,33 @@
 
 #include <algorithm>
 #include <vector>
+#include<unistd.h>
 
 #include "log_print.h"
-#include "same_process_ipc_guard.h"
+#include "ipc_skeleton.h"
 #include "tlv_util.h"
+#include "account/account_delegate.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/appid_meta_data.h"
+#include "device_manager_adapter.h"
+#include "bootstrap.h"
+#include "directory/directory_manager.h"
 
 namespace OHOS {
 namespace UDMF {
-using namespace DistributedKv;
-const AppId RuntimeStore::APP_ID = { "distributeddata" };
-const std::string RuntimeStore::DATA_PREFIX = "udmf://";
-const std::string RuntimeStore::BASE_DIR = "/data/service/el1/public/database/distributeddata";
+using namespace DistributedDB;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
-RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_({ storeId })
+RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
 {
     UpdateTime();
-    ZLOGI("Construct runtimeStore: %{public}s.", storeId_.storeId.c_str());
+    ZLOGD("Construct runtimeStore: %{public}s.", storeId_.c_str());
 }
 
 RuntimeStore::~RuntimeStore()
 {
-    ZLOGI("Destruct runtimeStore: %{public}s.", storeId_.storeId.c_str());
+    ZLOGD("Destruct runtimeStore: %{public}s.", storeId_.c_str());
     Close();
 }
 
@@ -54,7 +60,8 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
         ZLOGE("Marshall runtime info failed, dataPrefix: %{public}s.", unifiedKey.c_str());
         return E_WRITE_PARCEL_ERROR;
     }
-    Entry entry = { Key(unifiedKey), Value(runtimeBytes) };
+    std::vector<uint8_t> udKeyBytes = {unifiedKey.begin(), unifiedKey.end()};
+    Entry entry = {udKeyBytes, runtimeBytes};
     entries.push_back(entry);
 
     // add unified record
@@ -65,8 +72,9 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
             ZLOGI("Marshall unified record failed.");
             return E_WRITE_PARCEL_ERROR;
         }
-
-        Entry entry = { Key(unifiedKey + "/" + record->GetUid()), Value(recordBytes) };
+        std::string recordKey = unifiedKey + "/" + record->GetUid();
+        std::vector<uint8_t> keyBytes = {recordKey.begin(), recordKey.end() };
+        Entry entry = { keyBytes, recordBytes };
         entries.push_back(entry);
     }
     auto status = PutEntries(entries);
@@ -85,7 +93,7 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
         ZLOGW("entries is empty, dataPrefix: %{public}s", key.c_str());
         return E_NOT_FOUND;
     }
-    return UnMarshalEntries(key, entries, unifiedData);
+    return UnmarshalEntries(key, entries, unifiedData);
 }
 
 Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
@@ -164,9 +172,16 @@ Status RuntimeStore::DeleteBatch(const std::vector<std::string> &unifiedKeys)
 Status RuntimeStore::Sync(const std::vector<std::string> &devices)
 {
     UpdateTime();
-    SameProcessIpcGuard ipcGuard;
-    DistributedKv::Status status = kvStore_->Sync(devices, SyncMode::PULL);
-    if (status != DistributedKv::Status::SUCCESS) {
+    if (devices.empty()) {
+        ZLOGE("devices empty, no need sync.");
+        return E_INVALID_PARAMETERS;
+    }
+    std::vector<std::string> syncDevices = DmAdapter::ToUUID(devices);
+    auto onComplete = [this](const std::map<std::string, DBStatus> &) {
+        ZLOGI("sync complete, %{public}s.", storeId_.c_str());
+    };
+    DBStatus status = kvStore_->Sync(syncDevices, SyncMode::SYNC_MODE_PULL_ONLY, onComplete);
+    if (status != DBStatus::OK) {
         ZLOGE("Sync kvStore failed, status: %{public}d.", status);
         return E_DB_ERROR;
     }
@@ -194,7 +209,7 @@ Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<Uni
     }
     std::vector<std::string> keySet;
     for (const auto &entry : entries) {
-        std::string keyStr = entry.key.ToString();
+        std::string keyStr = {entry.key.begin(), entry.key.end()};
         if (std::count(keyStr.begin(), keyStr.end(), '/') == SLASH_COUNT_IN_KEY) {
             keySet.emplace_back(keyStr);
         }
@@ -202,7 +217,7 @@ Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<Uni
 
     for (const std::string &key : keySet) {
         UnifiedData data;
-        if (UnMarshalEntries(key, entries, data) != E_OK) {
+        if (UnmarshalEntries(key, entries, data) != E_OK) {
             return E_READ_PARCEL_ERROR;
         }
         unifiedDataSet.emplace_back(data);
@@ -212,36 +227,105 @@ Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<Uni
 
 void RuntimeStore::Close()
 {
-    dataManager_.CloseKvStore(APP_ID, storeId_);
+    delegateManager_->CloseKvStore(kvStore_.get());
 }
 
 bool RuntimeStore::Init()
 {
-    Options options;
-    options.autoSync = false;
-    options.createIfMissing = true;
-    options.rebuild = true;
-    options.backup = false;
-    options.securityLevel = SecurityLevel::S1;
-    options.baseDir = BASE_DIR;
-    options.area = Area::EL1;
-    options.kvStoreType = KvStoreType::SINGLE_VERSION;
-    SameProcessIpcGuard ipcGuard;
-    DistributedKv::Status status = dataManager_.GetSingleKvStore(options, APP_ID, storeId_, kvStore_);
-    if (status != DistributedKv::Status::SUCCESS) {
-        ZLOGE("GetKvStore: %{public}s failed, status: %{public}d.", storeId_.storeId.c_str(), status);
+    SaveMetaData();
+    DistributedDB::KvStoreNbDelegate::Option option;
+    option.createIfNecessary = true;
+    option.isMemoryDb = false;
+    option.createDirByStoreIdOnly = true;
+    option.isEncryptedDb = false;
+    option.isNeedRmCorruptedDb = true;
+    option.syncDualTupleMode = true;
+    option.secOption = {DistributedKv::SecurityLevel::S1, DistributedDB::ECE};
+    DistributedDB::KvStoreNbDelegate *delegate = nullptr;
+    DBStatus status = DBStatus::NOT_SUPPORT;
+    delegateManager_->GetKvStore(storeId_, option,
+                                 [&delegate, &status](DBStatus dbStatus, KvStoreNbDelegate *nbDelegate) {
+                                     delegate = nbDelegate;
+                                     status = dbStatus;
+                                 });
+    if (status != DBStatus::OK) {
+        ZLOGE("GetKvStore fail, status: %{public}d.", static_cast<int>(status));
         return false;
     }
+
+    auto release = [this](KvStoreNbDelegate *delegate) {
+        ZLOGI("Release runtime kvStore.");
+        if (delegate == nullptr) {
+            return;
+        }
+        auto retStatus = delegateManager_->CloseKvStore(delegate);
+        if (retStatus != DBStatus::OK) {
+            ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
+        }
+    };
+    kvStore_ = std::shared_ptr<KvStoreNbDelegate>(delegate, release);
     return true;
+}
+
+void RuntimeStore::SaveMetaData()
+{
+    auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (localDeviceId.empty()) {
+        ZLOGE("failed to get local device id");
+        return;
+    }
+
+    uint32_t token = IPCSkeleton::GetSelfTokenID();
+    const std::string userId = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token));
+    DistributedData::StoreMetaData saveMeta;
+    saveMeta.appType = "harmony";
+    saveMeta.deviceId = localDeviceId;
+    saveMeta.storeId = storeId_;
+    saveMeta.isAutoSync = false;
+    saveMeta.isBackup = false;
+    saveMeta.isEncrypt = false;
+    saveMeta.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    saveMeta.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    saveMeta.user =  userId;
+    saveMeta.account = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    saveMeta.tokenId = token;
+    saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
+    saveMeta.area = DistributedKv::Area::EL1;
+    saveMeta.uid = getuid();
+    saveMeta.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
+    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
+
+    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, userId);
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
+    if (!saved) {
+        ZLOGE("SaveMeta failed");
+        return;
+    }
+    DistributedData::AppIDMetaData appIdMeta;
+    appIdMeta.bundleName = saveMeta.bundleName;
+    appIdMeta.appId = saveMeta.appId;
+    saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
+    if (!saved) {
+        ZLOGE("Save appIdMeta failed");
+        return;
+    }
+}
+
+void RuntimeStore::SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId)
+{
+    delegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>(appId, userId);
+    DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
+    delegateManager_->SetKvStoreConfig(kvStoreConfig);
 }
 
 Status RuntimeStore::GetEntries(const std::string &dataPrefix, std::vector<Entry> &entries)
 {
-    DataQuery query;
-    query.KeyPrefix(dataPrefix);
-    query.OrderByWriteTime(true);
-    auto status = kvStore_->GetEntries(query, entries);
-    if (status != DistributedKv::Status::SUCCESS) {
+    Query dbQuery = Query::Select();
+    std::vector<uint8_t> prefix = {dataPrefix.begin(), dataPrefix.end()};
+    dbQuery.PrefixKey(prefix);
+    dbQuery.OrderByWriteTime(true);
+    DBStatus status = kvStore_->GetEntries(dbQuery, entries);
+    if (status != DBStatus::OK && status != DBStatus::NOT_FOUND) {
         ZLOGE("KvStore getEntries failed, status: %{public}d.", static_cast<int>(status));
         return E_DB_ERROR;
     }
@@ -251,12 +335,12 @@ Status RuntimeStore::GetEntries(const std::string &dataPrefix, std::vector<Entry
 Status RuntimeStore::PutEntries(const std::vector<Entry> &entries)
 {
     size_t size = entries.size();
-    DistributedKv::Status status;
+    DBStatus status;
     for (size_t index = 0; index < size; index += MAX_BATCH_SIZE) {
-        std::vector<Entry> batchEntries(
+        std::vector<Entry> dbEntries(
             entries.begin() + index, entries.begin() + std::min(index + MAX_BATCH_SIZE, size));
-        status = kvStore_->PutBatch(batchEntries);
-        if (status != DistributedKv::Status::SUCCESS) {
+        status = kvStore_->PutBatch(dbEntries);
+        if (status != DBStatus::OK) {
             ZLOGE("KvStore putBatch failed, status: %{public}d.", status);
             return E_DB_ERROR;
         }
@@ -267,11 +351,11 @@ Status RuntimeStore::PutEntries(const std::vector<Entry> &entries)
 Status RuntimeStore::DeleteEntries(const std::vector<Key> &keys)
 {
     size_t size = keys.size();
-    DistributedKv::Status status;
+    DBStatus status;
     for (size_t index = 0; index < size; index += MAX_BATCH_SIZE) {
-        std::vector<Key> batchKeys(keys.begin() + index, keys.begin() + std::min(index + MAX_BATCH_SIZE, size));
-        status = kvStore_->DeleteBatch(batchKeys);
-        if (status != DistributedKv::Status::SUCCESS) {
+        std::vector<Key> dbKeys(keys.begin() + index, keys.begin() + std::min(index + MAX_BATCH_SIZE, size));
+        status = kvStore_->DeleteBatch(dbKeys);
+        if (status != DBStatus::OK) {
             ZLOGE("KvStore deleteBatch failed, status: %{public}d.", status);
             return E_DB_ERROR;
         }
@@ -279,13 +363,13 @@ Status RuntimeStore::DeleteEntries(const std::vector<Key> &keys)
     return E_OK;
 }
 
-Status RuntimeStore::UnMarshalEntries(const std::string &key, std::vector<Entry> &entries, UnifiedData &unifiedData)
+Status RuntimeStore::UnmarshalEntries(const std::string &key, std::vector<Entry> &entries, UnifiedData &unifiedData)
 {
     for (const auto &entry : entries) {
-        std::string keyStr = entry.key.ToString();
+        std::string keyStr = {entry.key.begin(), entry.key.end()};
         if (keyStr == key) {
             Runtime runtime;
-            auto runtimeTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value.Data()));
+            auto runtimeTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
             if (!TLVUtil::Reading(runtime, runtimeTlv)) {
                 ZLOGE("Unmarshall runtime info failed.");
                 return E_READ_PARCEL_ERROR;
@@ -293,7 +377,7 @@ Status RuntimeStore::UnMarshalEntries(const std::string &key, std::vector<Entry>
             unifiedData.SetRuntime(runtime);
         } else if (keyStr.find(key) == 0) {
             std::shared_ptr<UnifiedRecord> record;
-            auto recordTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value.Data()));
+            auto recordTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
             if (!TLVUtil::Reading(record, recordTlv)) {
                 ZLOGE("Unmarshall unified record failed.");
                 return E_READ_PARCEL_ERROR;

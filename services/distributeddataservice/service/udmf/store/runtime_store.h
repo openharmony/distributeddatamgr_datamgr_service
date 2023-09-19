@@ -16,10 +16,8 @@
 #ifndef UDMF_RUNTIMESTORE_H
 #define UDMF_RUNTIMESTORE_H
 
-#include "distributed_kv_data_manager.h"
-#include "single_kvstore.h"
-
 #include "store.h"
+#include "kv_store_delegate_manager.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -40,19 +38,19 @@ public:
     bool Init() override;
 
 private:
-    static const DistributedKv::AppId APP_ID;
-    static const std::string DATA_PREFIX;
-    static const std::string BASE_DIR;
+    static constexpr const char *DATA_PREFIX = "udmf://";
     static constexpr std::int32_t SLASH_COUNT_IN_KEY = 4;
     static constexpr std::int32_t MAX_BATCH_SIZE = 128;
-    DistributedKv::DistributedKvDataManager dataManager_;
-    std::shared_ptr<DistributedKv::SingleKvStore> kvStore_;
-    DistributedKv::StoreId storeId_;
-    Status GetEntries(const std::string &dataPrefix, std::vector<DistributedKv::Entry> &entries);
-    Status PutEntries(const std::vector<DistributedKv::Entry> &entries);
-    Status DeleteEntries(const std::vector<DistributedKv::Key> &keys);
-    Status UnMarshalEntries(
-        const std::string &key, std::vector<DistributedKv::Entry> &entries, UnifiedData &unifiedData);
+    std::shared_ptr<DistributedDB::KvStoreDelegateManager> delegateManager_ = nullptr;
+    std::shared_ptr<DistributedDB::KvStoreNbDelegate> kvStore_;
+    std::string storeId_;
+    void SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId);
+    void SaveMetaData();
+    Status GetEntries(const std::string &dataPrefix, std::vector<DistributedDB::Entry> &entries);
+    Status PutEntries(const std::vector<DistributedDB::Entry> &entries);
+    Status DeleteEntries(const std::vector<DistributedDB::Key> &keys);
+    Status UnmarshalEntries(
+        const std::string &key, std::vector<DistributedDB::Entry> &entries, UnifiedData &unifiedData);
 };
 } // namespace UDMF
 } // namespace OHOS
