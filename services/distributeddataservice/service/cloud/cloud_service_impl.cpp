@@ -493,10 +493,7 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
     if (instance == nullptr) {
         return true;
     }
-    CloudInfo cloudInfo;
-    cloudInfo.user = user;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true);
-    instance->OnCloudSwitchChanged(user, cloudInfo.id);
+    instance->ReleaseUserInfo(user);
     return true;
 }
 

@@ -64,7 +64,7 @@ void CloudServer::Clean(int32_t userId)
 {
 }
 
-void CloudServer::OnCloudSwitchChanged(int32_t userId, const std::string &id)
+void CloudServer::ReleaseUserInfo(int32_t userId)
 {
 }
 } // namespace OHOS::DistributedData
