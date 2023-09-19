@@ -153,12 +153,12 @@ uint32_t ProcessCommunicatorImpl::GetMtuSize()
 
 uint32_t ProcessCommunicatorImpl::GetMtuSize(const DeviceInfos &devInfo)
 {
-    ZLOGI("GetMtuSize start");
-    DeviceId deviceId = {
-        .deviceId = devInfo.identifier
-    };
+    return SoftBusAdapter::GetInstance()->GetMtuSize({ devInfo.identifier });
+}
 
-    return SoftBusAdapter::GetInstance()->GetMtuSize(deviceId);
+uint32_t ProcessCommunicatorImpl::GetTimeout(const DeviceInfos &devInfo)
+{
+    return SoftBusAdapter::GetInstance()->GetTimeout({ devInfo.identifier });
 }
 
 DeviceInfos ProcessCommunicatorImpl::GetLocalDeviceInfos()

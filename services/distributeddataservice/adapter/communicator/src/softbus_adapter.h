@@ -70,6 +70,7 @@ public:
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo, std::function<void(const std::string &, uint16_t)> listener);
 
     uint32_t GetMtuSize(const DeviceId &deviceId);
+    uint32_t GetTimeout(const DeviceId &deviceId);
     std::shared_ptr<SoftBusClient> GetConnect(const std::string &deviceId);
 
     class SofBusDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
@@ -81,7 +82,7 @@ private:
     std::string DelConnect(int32_t connId);
     void DelSessionStatus(int32_t connId);
     void AfterStrategyUpdate(const std::string &deviceId);
-    static constexpr uint32_t WAIT_MAX_TIME = 10;
+    static constexpr uint32_t WAIT_MAX_TIME = 19;
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
     std::mutex connMutex_{};

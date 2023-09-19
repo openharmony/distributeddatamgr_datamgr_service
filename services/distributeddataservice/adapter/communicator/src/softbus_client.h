@@ -36,6 +36,7 @@ public:
     bool operator==(int32_t connId) const;
     bool operator==(const std::string &deviceId) const;
     uint32_t GetMtuSize() const;
+    uint32_t GetTimeout() const;
     void AfterStrategyUpdate(Strategy strategy);
 private:
     enum class ConnectStatus : int32_t {
@@ -55,6 +56,8 @@ private:
     void UpdateP2pFinishTime(int32_t connId, uint32_t dataLength);
 
     static constexpr int32_t INVALID_CONNECT_ID = -1;
+    static constexpr uint32_t WIFI_TIMEOUT = 8 * 1000;
+    static constexpr uint32_t BR_TIMEOUT = 15 * 1000;
     static constexpr uint32_t WAIT_MAX_TIME = 10;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB

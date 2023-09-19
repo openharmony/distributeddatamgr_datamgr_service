@@ -64,6 +64,11 @@ uint32_t SoftBusClient::GetMtuSize() const
     return mtu_;
 }
 
+uint32_t SoftBusClient::GetTimeout() const
+{
+    return (routeType_ == RouteType::BT_BR || routeType_ == RouteType::BT_BLE) ? BR_TIMEOUT : WIFI_TIMEOUT;
+}
+
 Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
 {
     std::lock_guard<std::mutex> lock(mutex_);
