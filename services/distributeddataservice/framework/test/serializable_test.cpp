@@ -18,8 +18,6 @@
 #include "serializable/serializable.h"
 #include "gtest/gtest.h"
 
-#define EQUAL_PTR(src, target) (((src) == (target)) || ((src) != nullptr && (target) != nullptr && *(src) == *(target)))
-
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
@@ -104,6 +102,12 @@ public:
     void TearDown()
     {
         Test::TearDown();
+    }
+
+    template<typename T>
+    static inline bool EqualPtr(const T *src, const T *target)
+    {
+        return (((src) == (target)) || ((src) != nullptr && (target) != nullptr && *(src) == *(target)));
     }
 };
 
@@ -283,8 +287,8 @@ HWTEST_F(SerializableTest, SetPointerValue, TestSize.Level2)
         }
         bool operator==(const Test &test) const
         {
-            return (EQUAL_PTR(count, test.count)) && (EQUAL_PTR(status, test.status)) &&
-                (EQUAL_PTR(value, test.value)) && (EQUAL_PTR(isClear, test.isClear));
+            return (EqualPtr(count, test.count)) && (EqualPtr(status, test.status)) &&
+                (EqualPtr(value, test.value)) && (EqualPtr(isClear, test.isClear));
         }
     };
     Test in;
