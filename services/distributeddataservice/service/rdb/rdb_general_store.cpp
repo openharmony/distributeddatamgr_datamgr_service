@@ -77,7 +77,7 @@ RdbGeneralStore::~RdbGeneralStore()
     rdbLoader_ = nullptr;
 }
 
-int32_t RdbGeneralStore::Bind(const Database &database, const std::string &bundleName, BindInfo bindInfo)
+int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
 {
     if (bindInfo.db_ == nullptr || bindInfo.loader_ == nullptr) {
         return GeneralError::E_INVALID_ARGS;
@@ -88,7 +88,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::string &bundl
     }
 
     bindInfo_ = std::move(bindInfo);
-    rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, bundleName);
+    rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_);
     rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_);
     DBSchema schema;
     schema.tables.resize(database.tables.size());

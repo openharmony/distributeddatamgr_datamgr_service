@@ -43,7 +43,7 @@ public:
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
-    int32_t Bind(const Database &database, const std::string &bundleName, BindInfo bindInfo) override;
+    int32_t Bind(const Database &database, BindInfo bindInfo) override;
     bool IsBound() override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;

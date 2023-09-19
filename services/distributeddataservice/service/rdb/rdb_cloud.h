@@ -26,7 +26,7 @@ public:
     using DBStatus = DistributedDB::DBStatus;
     using DBVBucket = DistributedDB::VBucket;
 
-    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, const std::string &bundleName);
+    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB);
     virtual ~RdbCloud() = default;
     DBStatus BatchInsert(const std::string &tableName, std::vector<DBVBucket> &&record,
         std::vector<DBVBucket> &extend) override;
@@ -42,13 +42,7 @@ public:
 
 private:
     static constexpr int32_t TO_MS = 1000; // s > ms
-    static constexpr const char *PREFIX = "file://";
-    static constexpr const char *SUFFIX = "/data/storage/el2/distributedfiles/";
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
-    std::string prefix_;
-
-    void RemoveDeletedAsset(DistributedData::VBuckets &buckets);
-    void AddUri(DistributedData::VBucket &bucket);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
