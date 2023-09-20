@@ -16,12 +16,16 @@
 #include "device_manager_adapter.h"
 
 #include "gtest/gtest.h"
+#include "accesstoken_kit.h"
 #include "executor_pool.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 #include "types.h"
 namespace {
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 class DeviceChangerListener final : public AppDeviceChangeListener {
 public:
     void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override
@@ -33,12 +37,34 @@ public:
     }
 };
 
+void GrantPermissionNative()
+{
+    const char *perms[2] = {
+        "ohos.permission.DISTRIBUTED_DATASYNC",
+        "ohos.permission.ACCESS_SERVICE_DM"
+    };
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 2,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    AccessTokenKit::ReloadNativeTokenInfo();
+}
+
 class DeviceManagerAdapterTest : public testing::Test {
 public:
   static void SetUpTestCase(void)
     {
         size_t max = 12;
         size_t min = 5;
+        GrantPermissionNative();
         DeviceManagerAdapter::GetInstance().Init(std::make_shared<OHOS::ExecutorPool>(max, min));
     }
     static void TearDownTestCase(void) {}
