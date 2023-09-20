@@ -298,7 +298,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
     }
     auto values = ValueProxy::Convert(selectionArgs);
     RdbQuery rdbQuery(true);
-    rdbQuery.SetDevices({ device });
+    rdbQuery.SetDevices(DmAdapter::ToUUID({ device }));
     rdbQuery.SetSql(sql, std::move(values));
     auto cursor = store->Query("", rdbQuery);
     if (cursor == nullptr) {
