@@ -19,8 +19,10 @@
 #include "iservice_registry.h"
 
 #include "data_manager.h"
+#include "distributed_kv_data_manager.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
+#include "store_cache.h"
 #include "preprocess_utils.h"
 #include "reporter.h"
 
@@ -142,6 +144,16 @@ int32_t UdmfServiceImpl::OnInitialize()
         ZLOGE("ScheduleTask start failed, status: %{public}d", status);
     }
     return DistributedData::FeatureSystem::STUB_SUCCESS;
+}
+
+int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
+{
+    executors_ = bindInfo.executors;
+    DistributedKv::DistributedKvDataManager manager;
+    manager.SetExecutors(bindInfo.executors);
+    StoreCache::GetInstance().SetThreadPool(bindInfo.executors);
+    LifeCycleManager::GetInstance().SetThreadPool(bindInfo.executors);
+    return 0;
 }
 } // namespace UDMF
 } // namespace OHOS

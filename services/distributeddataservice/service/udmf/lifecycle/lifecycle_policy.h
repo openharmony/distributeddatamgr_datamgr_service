@@ -37,7 +37,6 @@ private:
         const std::shared_ptr<Store> &store, Duration interval, std::vector<std::string> &timeoutKeys);
 
     static const std::string DATA_PREFIX;
-    StoreCache storeCache_;
 };
 } // namespace UDMF
 } // namespace OHOS

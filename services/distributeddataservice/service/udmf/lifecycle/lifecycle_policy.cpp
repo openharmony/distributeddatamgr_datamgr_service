@@ -29,7 +29,7 @@ const std::string LifeCyclePolicy::DATA_PREFIX = "udmf://";
 
 Status LifeCyclePolicy::DeleteOnGet(const UnifiedKey &key)
 {
-    auto store = storeCache_.GetStore(key.intention);
+    auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -43,7 +43,7 @@ Status LifeCyclePolicy::DeleteOnGet(const UnifiedKey &key)
 
 Status LifeCyclePolicy::DeleteOnStart(const std::string &intention)
 {
-    auto store = storeCache_.GetStore(intention);
+    auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
@@ -57,7 +57,7 @@ Status LifeCyclePolicy::DeleteOnStart(const std::string &intention)
 
 Status LifeCyclePolicy::DeleteOnTimeout(const std::string &intention)
 {
-    auto store = storeCache_.GetStore(intention);
+    auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
