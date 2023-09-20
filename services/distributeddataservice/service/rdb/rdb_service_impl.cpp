@@ -337,10 +337,12 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     }
     RdbQuery rdbQuery;
     rdbQuery.MakeQuery(predicates);
+    auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
+                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
     if (!option.isAsync) {
         Details details = {};
         auto status = store->Sync(
-            DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
+            devices, option.mode, rdbQuery,
             [&details, &param](const GenDetails &result) mutable {
                 ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
                     Anonymous::Change(param.storeName_).c_str());
@@ -355,7 +357,7 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     ZLOGD("seqNum=%{public}u", option.seqNum);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     return store->Sync(
-        DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
+        devices, option.mode, rdbQuery,
         [this, tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
             OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
         },
