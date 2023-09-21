@@ -111,7 +111,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
         std::vector<std::string> tables_;
     };
     auto it = tables_.find(store);
-    const auto &syncTables = it == tables_.end() ? std::vector<std::string>() : it->second;
+    return std::make_shared<SyncQuery>(it == tables_.end() || it->second.empty() ? tables : it->second);
 }
 
 bool SyncManager::SyncInfo::Contains(const std::string& storeName)
