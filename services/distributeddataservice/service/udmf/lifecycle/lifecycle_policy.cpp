@@ -16,18 +16,14 @@
 
 #include "lifecycle_policy.h"
 
-#include <algorithm>
-
 #include "log_print.h"
 #include "preprocess/preprocess_utils.h"
 
 namespace OHOS {
 namespace UDMF {
 using namespace std::chrono;
-const LifeCyclePolicy::Duration LifeCyclePolicy::INTERVAL = milliseconds(60 * 60 * 1000);
-const std::string LifeCyclePolicy::DATA_PREFIX = "udmf://";
 
-Status LifeCyclePolicy::DeleteOnGet(const UnifiedKey &key)
+Status LifeCyclePolicy::OnGot(const UnifiedKey &key)
 {
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
@@ -41,7 +37,7 @@ Status LifeCyclePolicy::DeleteOnGet(const UnifiedKey &key)
     return E_OK;
 }
 
-Status LifeCyclePolicy::DeleteOnStart(const std::string &intention)
+Status LifeCyclePolicy::OnStart(const std::string &intention)
 {
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
@@ -55,7 +51,7 @@ Status LifeCyclePolicy::DeleteOnStart(const std::string &intention)
     return E_OK;
 }
 
-Status LifeCyclePolicy::DeleteOnTimeout(const std::string &intention)
+Status LifeCyclePolicy::OnTimeout(const std::string &intention)
 {
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
@@ -88,7 +84,7 @@ Status LifeCyclePolicy::GetTimeoutKeys(
         ZLOGD("entries is empty.");
         return E_OK;
     }
-    auto curTime = PreProcessUtils::GetTimeStamp();
+    auto curTime = PreProcessUtils::GetTimestamp();
     for (const auto &data : datas) {
         if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
             || curTime < data.GetRuntime()->createTime) {

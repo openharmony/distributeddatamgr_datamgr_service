@@ -17,12 +17,12 @@
 
 namespace OHOS {
 namespace UDMF {
-Status CleanOnTimeout::DeleteOnStart(const std::string &intention)
+Status CleanOnTimeout::OnStart(const std::string &intention)
 {
-    return LifeCyclePolicy::DeleteOnTimeout(intention);
+    return LifeCyclePolicy::OnTimeout(intention);
 }
 
-Status CleanOnTimeout::DeleteOnGet(const UnifiedKey &key)
+Status CleanOnTimeout::OnGot(const UnifiedKey &key)
 {
     return E_OK;
 }

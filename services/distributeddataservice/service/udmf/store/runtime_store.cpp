@@ -39,7 +39,6 @@ RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_({ storeId })
 RuntimeStore::~RuntimeStore()
 {
     ZLOGI("Destruct runtimeStore: %{public}s.", storeId_.storeId.c_str());
-    Close();
 }
 
 Status RuntimeStore::Put(const UnifiedData &unifiedData)

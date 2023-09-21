@@ -15,6 +15,7 @@
 #ifndef UDMF_LIFECYCLE_POLICY_H
 #define UDMF_LIFECYCLE_POLICY_H
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 
@@ -26,17 +27,16 @@ namespace UDMF {
 class LifeCyclePolicy {
 public:
     using Duration = std::chrono::steady_clock::duration;
-    static const Duration INTERVAL;
+    static constexpr Duration INTERVAL = std::chrono::milliseconds(60 * 60 * 1000);
     virtual ~LifeCyclePolicy() = default;
-    virtual Status DeleteOnGet(const UnifiedKey &key);
-    virtual Status DeleteOnStart(const std::string &intention);
-    virtual Status DeleteOnTimeout(const std::string &intention);
-
-private:
+    virtual Status OnGot(const UnifiedKey &key);
+    virtual Status OnStart(const std::string &intention);
+    virtual Status OnTimeout(const std::string &intention);
     virtual Status GetTimeoutKeys(
         const std::shared_ptr<Store> &store, Duration interval, std::vector<std::string> &timeoutKeys);
 
-    static const std::string DATA_PREFIX;
+private:
+    static constexpr const char *DATA_PREFIX = "udmf://";
 };
 } // namespace UDMF
 } // namespace OHOS

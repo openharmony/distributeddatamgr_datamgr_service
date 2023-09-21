@@ -16,10 +16,16 @@
 #ifndef UDMF_SERVICE_IMPL_H
 #define UDMF_SERVICE_IMPL_H
 
+#include <map>
+#include <memory>
+#include <mutex>
 #include <vector>
 
-#include "executor_pool.h"
+#include "error_code.h"
+#include "store_cache.h"
 #include "udmf_service_stub.h"
+#include "unified_data.h"
+#include "unified_types.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -28,7 +34,7 @@ namespace UDMF {
  */
 class UdmfServiceImpl final : public UdmfServiceStub {
 public:
-    UdmfServiceImpl() = default;
+    UdmfServiceImpl();
     ~UdmfServiceImpl() = default;
 
     int32_t SetData(CustomOption &option, UnifiedData &unifiedData, std::string &key) override;
@@ -43,6 +49,12 @@ public:
     int32_t OnBind(const BindInfo &bindInfo) override;
 
 private:
+    int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
+    int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
+    int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
+    int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
+    void SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records);
+    bool IsPermissionInCache(const QueryOption &query);
     class Factory {
     public:
         Factory();
@@ -52,6 +64,8 @@ private:
         std::shared_ptr<UdmfServiceImpl> product_;
     };
     static Factory factory_;
+    std::map<std::string, std::string> authorizationMap_;
+    std::map<std::string, Privilege> privilegeCache_;
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace UDMF

@@ -45,12 +45,6 @@ private:
     int32_t OnAddPrivilege(MessageParcel &data, MessageParcel &reply);
     int32_t OnSync(MessageParcel &data, MessageParcel &reply);
 
-    bool VerifyPermission(const std::string &permission);
-
-    const std::string READ_PERMISSION = "ohos.permission.READ_UDMF_DATA";
-    const std::string WRITE_PERMISSION = "ohos.permission.WRITE_UDMF_DATA";
-    const std::string SYNC_PERMISSION = "ohos.permission.SYNC_UDMF_DATA";
-
     using Handler = int32_t (UdmfServiceStub::*)(MessageParcel &data, MessageParcel &reply);
     static constexpr Handler HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)] = {
         &UdmfServiceStub::OnSetData,
