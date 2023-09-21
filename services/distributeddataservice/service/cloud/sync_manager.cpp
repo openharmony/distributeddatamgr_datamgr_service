@@ -110,8 +110,8 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     private:
         std::vector<std::string> tables_;
     };
-    auto &syncTables = tables_[store];
-    return std::make_shared<SyncQuery>(syncTables.empty() ? tables : syncTables);
+    auto it = tables_.find(store);
+    const auto &syncTables = it == tables_.end() ? std::vector<std::string>() : it->second;
 }
 
 bool SyncManager::SyncInfo::Contains(const std::string& storeName)
@@ -201,6 +201,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
 
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
         for (auto &schema : schemas) {
+            if (!cloud.IsOn(schema.bundleName)) {
+                continue;
+            }
             for (const auto &database : schema.databases) {
                 if (!info.Contains(database.name)) {
                     continue;
