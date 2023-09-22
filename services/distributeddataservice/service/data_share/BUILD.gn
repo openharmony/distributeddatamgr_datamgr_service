@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
-import("datamgr_service_data_share.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
