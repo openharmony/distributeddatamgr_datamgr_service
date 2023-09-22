@@ -12,12 +12,5 @@
 # limitations under the License.
 
 declare_args() {
-  gaussrd_path = "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share/gaussdb_rd"
-  if (defined(global_parts_info) &&
-      defined(global_parts_info.distributeddatamgr_kv_store_lite)) {
-    gaussrd_path = "//foundation/distributeddatamgr/kv_store_lite/gaussdb_rd"
-    gaussrd_enchance = true
-  } else {
-    gaussrd_enchance = false
-  }
+  gaussrd_path = "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb/gaussdb_rd"
 }
