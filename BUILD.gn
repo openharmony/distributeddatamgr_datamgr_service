@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share/datamgr_service_data_share.gni")
+
 group("build_native_test") {
   testonly = true
   deps = [
