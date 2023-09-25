@@ -98,8 +98,8 @@ private:
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
 {
     ZLOGI("OnNetworkAvailable");
-    dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     dmAdapter_.isNetAvailable_ = true;
+    dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
 
