@@ -19,7 +19,6 @@
 #include "iservice_registry.h"
 
 #include "data_manager.h"
-#include "distributed_kv_data_manager.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
 #include "store_cache.h"
@@ -149,8 +148,6 @@ int32_t UdmfServiceImpl::OnInitialize()
 int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
-    DistributedKv::DistributedKvDataManager manager;
-    manager.SetExecutors(bindInfo.executors);
     StoreCache::GetInstance().SetThreadPool(bindInfo.executors);
     LifeCycleManager::GetInstance().SetThreadPool(bindInfo.executors);
     return 0;
