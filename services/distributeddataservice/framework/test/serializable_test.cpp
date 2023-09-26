@@ -17,9 +17,10 @@
 #include "log_print.h"
 #include "serializable/serializable.h"
 #include "gtest/gtest.h"
+
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
+namespace OHOS::Test {
 class SerializableTest : public testing::Test {
 public:
     struct Normal final : public Serializable {
@@ -101,6 +102,12 @@ public:
     void TearDown()
     {
         Test::TearDown();
+    }
+
+    template<typename T>
+    static inline bool EqualPtr(const T *src, const T *target)
+    {
+        return (((src) == (target)) || ((src) != nullptr && (target) != nullptr && *(src) == *(target)));
     }
 };
 
@@ -235,3 +242,63 @@ HWTEST_F(SerializableTest, GetMapInStruct, TestSize.Level2)
     ASSERT_NE(unmarData.index, nullptr);
     ASSERT_TRUE((*marData.index == *unmarData.index)) << jsonData;
 }
+
+/**
+* @tc.name: GetTestValue
+* @tc.desc: set value with point param.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Sven Wang
+*/
+HWTEST_F(SerializableTest, SetPointerValue, TestSize.Level2)
+{
+    struct Test final : public Serializable {
+    public:
+        int32_t *count = nullptr;
+        int64_t *value = nullptr;
+        uint32_t *status = nullptr;
+        bool *isClear = nullptr;
+        ~Test()
+        {
+            delete count;
+            count = nullptr;
+            delete value;
+            value = nullptr;
+            delete status;
+            status = nullptr;
+            delete isClear;
+            isClear = nullptr;
+        }
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(count)], count);
+            SetValue(node[GET_NAME(status)], status);
+            SetValue(node[GET_NAME(value)], value);
+            SetValue(node[GET_NAME(isClear)], isClear);
+            return true;
+        }
+        bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(count), count);
+            GetValue(node, GET_NAME(status), status);
+            GetValue(node, GET_NAME(value), value);
+            GetValue(node, GET_NAME(isClear), isClear);
+            return true;
+        }
+        bool operator==(const Test &test) const
+        {
+            return (EqualPtr(count, test.count)) && (EqualPtr(status, test.status)) &&
+                (EqualPtr(value, test.value)) && (EqualPtr(isClear, test.isClear));
+        }
+    };
+    Test in;
+    in.count = new int32_t(100);
+    in.value = new int64_t(-100);
+    in.status = new uint32_t(110);
+    in.isClear = new bool(true);
+    auto json = to_string(in.Marshall());
+    Test out;
+    out.Unmarshall(json);
+    ASSERT_TRUE(in == out) << in.count;
+}
+} // namespace OHOS::Test

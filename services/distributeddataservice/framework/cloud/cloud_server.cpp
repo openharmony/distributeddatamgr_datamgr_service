@@ -63,4 +63,8 @@ std::shared_ptr<CloudDB> CloudServer::ConnectCloudDB(uint32_t tokenId, const Clo
 void CloudServer::Clean(int32_t userId)
 {
 }
+
+void CloudServer::ReleaseUserInfo(int32_t userId)
+{
+}
 } // namespace OHOS::DistributedData

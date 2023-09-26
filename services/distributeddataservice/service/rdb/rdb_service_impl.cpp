@@ -329,7 +329,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
         return RDB_ERROR;
     }
     RdbQuery rdbQuery;
-    rdbQuery.MakeRemoteQuery(device, sql, ValueProxy::Convert(selectionArgs));
+    rdbQuery.MakeRemoteQuery(DmAdapter::ToUUID({ device }), sql, ValueProxy::Convert(selectionArgs));
     auto cursor = store->Query("", rdbQuery);
     if (cursor == nullptr) {
         ZLOGE("Query failed, cursor is null");
@@ -367,10 +367,12 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     }
     RdbQuery rdbQuery;
     rdbQuery.MakeQuery(predicates);
+    auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
+                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
     if (!option.isAsync) {
         Details details = {};
         auto status = store->Sync(
-            DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
+            devices, option.mode, rdbQuery,
             [&details, &param](const GenDetails &result) mutable {
                 ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
                     Anonymous::Change(param.storeName_).c_str());

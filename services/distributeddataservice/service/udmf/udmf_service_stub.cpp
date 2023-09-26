@@ -63,10 +63,6 @@ int32_t UdmfServiceStub::OnSetData(MessageParcel &data, MessageParcel &reply)
         return E_INVALID_PARAMETERS;
     }
     for (const auto &record : unifiedData.GetRecords()) {
-        if (record == nullptr) {
-            ZLOGE("record is nullptr!");
-            return E_INVALID_PARAMETERS;
-        }
         if (record->GetSize() > UdmfService::MAX_RECORD_SIZE) {
             ZLOGE("Exceeded record limit!");
             return E_INVALID_PARAMETERS;

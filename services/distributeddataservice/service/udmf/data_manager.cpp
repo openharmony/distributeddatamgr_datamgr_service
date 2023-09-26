@@ -76,7 +76,7 @@ int32_t DataManager::SaveData(CustomOption &option, UnifiedData &unifiedData, st
         record->SetUid(PreProcessUtils::IdGenerator());
     }
 
-    auto store = storeCache_.GetStore(intention);
+    auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
@@ -103,7 +103,7 @@ int32_t DataManager::RetrieveData(const QueryOption &query, UnifiedData &unified
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
-    auto store = storeCache_.GetStore(key.intention);
+    auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -230,7 +230,7 @@ int32_t DataManager::UpdateData(const QueryOption &query, UnifiedData &unifiedDa
         ZLOGE("Invalid parameters, unified data has no record.");
         return E_INVALID_PARAMETERS;
     }
-    auto store = storeCache_.GetStore(key.intention);
+    auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -293,7 +293,7 @@ int32_t DataManager::GetSummary(const QueryOption &query, Summary &summary)
         return E_INVALID_PARAMETERS;
     }
 
-    auto store = storeCache_.GetStore(key.intention);
+    auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -324,7 +324,7 @@ int32_t DataManager::AddPrivilege(const QueryOption &query, const Privilege &pri
         return E_NO_PERMISSION;
     }
 
-    auto store = storeCache_.GetStore(key.intention);
+    auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -357,7 +357,7 @@ int32_t DataManager::Sync(const QueryOption &query, const std::vector<std::strin
         return E_INVALID_PARAMETERS;
     }
 
-    auto store = storeCache_.GetStore(key.intention);
+    auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -387,7 +387,7 @@ int32_t DataManager::QueryDataCommon(
         intention = key.intention;
     }
     ZLOGD("dataPrefix = %{public}s, intention: %{public}s.", dataPrefix.c_str(), intention.c_str());
-    store = storeCache_.GetStore(intention);
+    store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;

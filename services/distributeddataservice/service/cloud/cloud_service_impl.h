@@ -86,7 +86,7 @@ private:
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     bool DoSubscribe(int32_t user);
-    bool CleanServer(int32_t user);
+    bool ReleaseUserInfo(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
@@ -94,7 +94,7 @@ private:
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
     static constexpr Handle WORK_SUB = &CloudServiceImpl::DoSubscribe;
-    static constexpr Handle WORK_CLEAN = &CloudServiceImpl::CleanServer;
+    static constexpr Handle WORK_RELEASE = &CloudServiceImpl::ReleaseUserInfo;
 };
 } // namespace OHOS::DistributedData
 

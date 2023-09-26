@@ -59,11 +59,6 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
 
     // add unified record
     for (const auto &record : unifiedData.GetRecords()) {
-        if (record == nullptr) {
-            ZLOGE("record is nullptr.");
-            return E_INVALID_PARAMETERS;
-        }
-
         std::vector<uint8_t> recordBytes;
         auto recordTlv = TLVObject(recordBytes);
         if (!TLVUtil::Writing(record, recordTlv)) {
@@ -104,11 +99,12 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
 
     for (const auto &record : unifiedData.GetRecords()) {
         int64_t recordSize = record->GetSize();
-        auto it = summary.summary.find(UD_TYPE_MAP.at(record->GetType()));
+        auto udType = UD_TYPE_MAP.at(record->GetType());
+        auto it = summary.summary.find(udType);
         if (it == summary.summary.end()) {
-            summary.summary[UD_TYPE_MAP.at(record->GetType())] = recordSize;
+            summary.summary[udType] = recordSize;
         } else {
-            summary.summary[UD_TYPE_MAP.at(record->GetType())] += recordSize;
+            summary.summary[udType] += recordSize;
         }
         summary.totalSize += recordSize;
     }
@@ -117,14 +113,14 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
 
 Status RuntimeStore::Update(const UnifiedData &unifiedData)
 {
-    UpdateTime();
     std::string key = unifiedData.GetRuntime()->key.key;
     if (Delete(key) != E_OK) {
-        ZLOGE("Delete unified data failed.");
+        UpdateTime();
+        ZLOGE("Delete unified data failed, dataPrefix: %{public}s.", key.c_str());
         return E_DB_ERROR;
     }
     if (Put(unifiedData) != E_OK) {
-        ZLOGE("Put unified data failed.");
+        ZLOGE("Update unified data failed, dataPrefix: %{public}s.", key.c_str());
         return E_DB_ERROR;
     }
     return E_OK;
@@ -132,7 +128,6 @@ Status RuntimeStore::Update(const UnifiedData &unifiedData)
 
 Status RuntimeStore::Delete(const std::string &key)
 {
-    UpdateTime();
     std::vector<Entry> entries;
     if (GetEntries(key, entries) != E_OK) {
         ZLOGE("GetEntries failed, dataPrefix: %{public}s.", key.c_str());

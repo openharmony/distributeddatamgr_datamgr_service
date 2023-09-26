@@ -23,7 +23,11 @@
 
 namespace OHOS {
 namespace UDMF {
-std::shared_ptr<ExecutorPool> StoreCache::executorPool_ = std::make_shared<ExecutorPool>(2, 1);
+StoreCache &StoreCache::GetInstance()
+{
+    static StoreCache instance;
+    return instance;
+}
 
 std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
 {
@@ -48,7 +52,7 @@ std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
     });
 
     std::unique_lock<std::mutex> lock(taskMutex_);
-    if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
+    if (taskId_ == ExecutorPool::INVALID_TASK_ID && executorPool_ != nullptr) {
         taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     }
     return store;
@@ -65,12 +69,17 @@ void StoreCache::GarbageCollect()
         return false;
     });
     std::unique_lock<std::mutex> lock(taskMutex_);
-    if (!stores_.Empty()) {
+    if (!stores_.Empty() && executorPool_ != nullptr) {
         ZLOGE("GarbageCollect, stores size:%{public}zu", stores_.Size());
         taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     } else {
         taskId_ = ExecutorPool::INVALID_TASK_ID;
     }
+}
+
+void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executorPool_ = executors;
 }
 } // namespace UDMF
 } // namespace OHOS

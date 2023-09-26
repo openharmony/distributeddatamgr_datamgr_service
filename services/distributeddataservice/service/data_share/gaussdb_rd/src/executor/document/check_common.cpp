@@ -109,10 +109,10 @@ int CheckCommon::CheckFilter(JsonObject &filterObj, std::vector<std::vector<std:
     return E_OK;
 }
 
-int CheckCommon::CheckIdFormat(JsonObject &filterJson, bool &isIdExisit)
+int CheckCommon::CheckIdFormat(JsonObject &idObj, bool &isIdExisit)
 {
-    JsonObject filterObjChild = filterJson.GetChild();
-    ValueObject idValue = JsonCommon::GetValueInSameLevel(filterObjChild, KEY_ID, isIdExisit);
+    JsonObject idObjChild = idObj.GetChild();
+    ValueObject idValue = JsonCommon::GetValueInSameLevel(idObjChild, KEY_ID, isIdExisit);
     if ((idValue.GetValueType() == ValueObject::ValueType::VALUE_NULL) && isIdExisit == false) {
         return E_OK;
     }

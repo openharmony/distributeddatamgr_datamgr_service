@@ -43,6 +43,7 @@ enum SoftBusAdapterErrorCode : int32_t {
 constexpr int32_t SESSION_NAME_SIZE_MAX = 65;
 constexpr int32_t DEVICE_ID_SIZE_MAX = 65;
 constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
+constexpr uint32_t DEFAULT_TIMEOUT = 8 * 1000;
 using namespace std;
 using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::DistributedKv;
@@ -204,6 +205,15 @@ uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
     return DEFAULT_MTU_SIZE;
 }
 
+uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
+{
+    std::shared_ptr<SoftBusClient> conn = GetConnect(deviceId.deviceId);
+    if (conn != nullptr) {
+        return conn->GetTimeout();
+    }
+    return DEFAULT_TIMEOUT;
+}
+
 std::string SoftBusAdapter::DelConnect(int32_t connId)
 {
     lock_guard<mutex> lock(connMutex_);
@@ -212,7 +222,6 @@ std::string SoftBusAdapter::DelConnect(int32_t connId)
         if (*conn.second == connId) {
             name = conn.first;
             connects_.erase(conn.first);
-            break;
         }
     }
     return name;
