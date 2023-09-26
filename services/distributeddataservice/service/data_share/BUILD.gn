@@ -89,7 +89,6 @@ ohos_shared_library("data_share_service") {
   ]
 
   external_deps = [
-    "kv_store:distributeddb",
     "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:dataobs_manager",
@@ -104,6 +103,7 @@ ohos_shared_library("data_share_service") {
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_bms_adapter",
     "relational_store:rdb_data_share_adapter",
