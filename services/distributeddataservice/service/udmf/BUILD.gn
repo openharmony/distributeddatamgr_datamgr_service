@@ -39,8 +39,6 @@ config("module_public_config") {
 
 ohos_shared_library("udmf_server") {
   sources = [
-    "data_manager.cpp",
-    "lifecycle/clean_after_get.cpp",
     "lifecycle/clean_on_startup.cpp",
     "lifecycle/clean_on_timeout.cpp",
     "lifecycle/lifecycle_manager.cpp",

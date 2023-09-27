@@ -24,7 +24,8 @@ class Crypto {
 public:
     API_EXPORT static std::string Sha256(const std::string &text, bool isUpper = false);
     API_EXPORT static std::string Sha256(const void *data, size_t size, bool isUpper = false);
-    API_EXPORT static std::vector<uint8_t> Random(int32_t len);
+    API_EXPORT static std::vector<uint8_t> Random(int32_t len, int32_t minimum = 0,
+        int32_t maximum = std::numeric_limits<uint8_t>::max());
 };
 } // namespace DistributedData
 } // namespace OHOS

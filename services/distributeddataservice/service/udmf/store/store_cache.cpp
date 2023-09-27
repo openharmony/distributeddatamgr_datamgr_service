@@ -64,6 +64,7 @@ void StoreCache::GarbageCollect()
     stores_.EraseIf([&current](auto &key, std::shared_ptr<Store> &storePtr) {
         if (*storePtr < current) {
             ZLOGD("GarbageCollect, stores:%{public}s time limit, will be close.", key.c_str());
+            storePtr->Close();
             return true;
         }
         return false;
