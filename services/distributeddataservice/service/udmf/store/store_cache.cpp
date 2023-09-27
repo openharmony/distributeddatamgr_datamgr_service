@@ -71,7 +71,7 @@ void StoreCache::GarbageCollect()
     });
     std::unique_lock<std::mutex> lock(taskMutex_);
     if (!stores_.Empty() && executorPool_ != nullptr) {
-        ZLOGE("GarbageCollect, stores size:%{public}zu", stores_.Size());
+        ZLOGD("GarbageCollect, stores size:%{public}zu", stores_.Size());
         taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     } else {
         taskId_ = ExecutorPool::INVALID_TASK_ID;

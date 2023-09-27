@@ -505,8 +505,6 @@ int32_t UdmfServiceImpl::QueryDataCommon(
 int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
-    DistributedKv::DistributedKvDataManager manager;
-    manager.SetExecutors(bindInfo.executors);
     StoreCache::GetInstance().SetThreadPool(bindInfo.executors);
     LifeCycleManager::GetInstance().SetThreadPool(bindInfo.executors);
     return 0;

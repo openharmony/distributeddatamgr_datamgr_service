@@ -222,7 +222,6 @@ std::string SoftBusAdapter::DelConnect(int32_t connId)
         if (*conn.second == connId) {
             name = conn.first;
             connects_.erase(conn.first);
-            break;
         }
     }
     return name;
