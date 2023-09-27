@@ -513,6 +513,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = param.hapName_;
+    metaData.customDir = param.customDir_;
     metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;

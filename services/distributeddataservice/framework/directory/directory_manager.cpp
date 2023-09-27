@@ -30,7 +30,7 @@ DirectoryManager::DirectoryManager()
     : actions_({ { "{security}", &DirectoryManager::GetSecurity }, { "{store}", &DirectoryManager::GetStore },
         { "{type}", &DirectoryManager::GetType }, { "{area}", &DirectoryManager::GetArea },
         { "{userId}", &DirectoryManager::GetUserId }, { "{bundleName}", &DirectoryManager::GetBundleName },
-        { "{hapName}", &DirectoryManager::GetHapName } })
+        { "{hapName}", &DirectoryManager::GetHapName }, { "{customDir}", &DirectoryManager::GetCustomDir } })
 {
 }
 
@@ -174,6 +174,11 @@ std::string DirectoryManager::GetBundleName(const StoreMetaData &metaData) const
 std::string DirectoryManager::GetHapName(const StoreMetaData &metaData) const
 {
     return metaData.hapName;
+}
+
+std::string DirectoryManager::GetCustomDir(const StoreMetaData &metaData) const
+{
+    return metaData.customDir;
 }
 
 std::vector<std::string> DirectoryManager::Split(const std::string &source, const std::string &pattern) const
