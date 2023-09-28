@@ -17,9 +17,11 @@
 
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
+#include "cloud/store_message.h"
 #include "cloud/sync_event.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
+#include "eventcenter/provider_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "store/auto_cache.h"
@@ -29,29 +31,24 @@ using namespace DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
-SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Store &store, const Tables &tables)
-    : user_(user), bundleName_(bundleName)
+SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string& bundleName, const Store& store, const Tables& tables)
 {
-    if (!store.empty()) {
-        tables_[store] = tables;
-    }
+    user_ = user;
     syncId_ = SyncManager::GenerateId(user);
+    if (!bundleName.empty()) {
+        stores_.push_back({ bundleName, store });
+    }
 }
 
-SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores)
-    : user_(user), bundleName_(bundleName)
+SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string& bundleName, const Stores& stores)
 {
-    for (auto &store : stores) {
-        tables_[store] = {};
+    user_ = user;
+    syncId_ = SyncManager::GenerateId(user);
+    if (!bundleName.empty()) {
+        for (auto& store : stores) {
+            stores_.push_back({ bundleName, store });
+        }
     }
-    syncId_ = SyncManager::GenerateId(user);
-}
-
-SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables)
-    : user_(user), bundleName_(bundleName), tables_(tables)
-{
-    tables_ = tables;
-    syncId_ = SyncManager::GenerateId(user);
 }
 
 void SyncManager::SyncInfo::SetMode(int32_t mode)
@@ -64,37 +61,67 @@ void SyncManager::SyncInfo::SetWait(int32_t wait)
     wait_ = wait;
 }
 
-void SyncManager::SyncInfo::SetAsyncDetail(GenAsync asyncDetail)
+void SyncManager::SyncInfo::SetAsync(const std::string &bundleName, const Store& store, GenAsync asyncDetail)
 {
-    async_ = std::move(asyncDetail);
+    auto iterator = GetStoreInfo(bundleName, store);
+    if (iterator != Iterator()) {
+        iterator->async = std::move(asyncDetail);
+    }
 }
 
-void SyncManager::SyncInfo::SetQuery(std::shared_ptr<GenQuery> query)
+SyncManager::SyncInfo::Iterator SyncManager::SyncInfo::GetStoreInfo(const std::string& bundleName, const Store& store)
 {
-    query_ = query;
+    for (auto it = stores_.begin(); it != stores_.end(); ++it) {
+        if (it->bundleName == bundleName && it->storeName == store) {
+            return it;
+        }
+    }
+    return Iterator();
+}
+
+GenAsync SyncManager::SyncInfo::GetAsync(const std::string& bundleName, const Store& store)
+{
+    auto iterator = GetStoreInfo(bundleName, store);
+    return iterator != Iterator() ? iterator->async : nullptr;
+}
+
+void SyncManager::SyncInfo::SetQuery(const std::string& bundleName, const Store& store,
+    std::shared_ptr<GenQuery> query)
+{
+    auto iterator = GetStoreInfo(bundleName, store);
+    if (iterator != Iterator()) {
+        iterator->query = std::move(query);
+    }
 }
 
 void SyncManager::SyncInfo::SetError(int32_t code) const
 {
-    if (async_) {
-        GenDetails details;
-        auto &detail = details[id_];
-        detail.progress = SYNC_FINISH;
-        detail.code = code;
-        async_(std::move(details));
+    GenDetails details;
+    auto& detail = details[id_];
+    detail.progress = SYNC_FINISH;
+    detail.code = code;
+    SetDetails(std::move(details));
+}
+
+void SyncManager::SyncInfo::SetDetails(GenDetails&& details, const std::string& bundleName, const Store& store) const
+{
+    for (auto& storeInfo : stores_) {
+        if ((storeInfo.bundleName != bundleName && !bundleName.empty()) ||
+            (storeInfo.storeName != store && !store.empty())) {
+            continue;
+        }
+        if (!storeInfo.async) {
+            storeInfo.async(details);
+        }
     }
 }
 
-std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string &store, const Tables &tables)
+std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string& bundleName, const std::string& store,
+    const Tables& tables)
 {
-    if (query_ != nullptr) {
-        return query_;
-    }
     class SyncQuery final : public GenQuery {
     public:
-        explicit SyncQuery(const std::vector<std::string> &tables) : tables_(tables)
-        {
-        }
+        explicit SyncQuery(const std::vector<std::string>& tables) : tables_(tables) {}
 
         bool IsEqual(uint64_t tid) override
         {
@@ -109,13 +136,44 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     private:
         std::vector<std::string> tables_;
     };
-    auto it = tables_.find(store);
-    return std::make_shared<SyncQuery>(it == tables_.end() || it->second.empty() ? tables : it->second);
+    auto it = GetStoreInfo(bundleName, store);
+    if (it != Iterator() && it->query != nullptr) {
+        return it->query;
+    }
+    return std::make_shared<SyncQuery>(it == Iterator() || it->tables.empty() ? tables : it->tables);
 }
 
-bool SyncManager::SyncInfo::Contains(const std::string& storeName)
+bool SyncManager::SyncInfo::Contains(const std::string& bundleName, const std::string& storeName)
 {
-    return tables_.empty() || tables_.find(storeName) != tables_.end();
+    if (stores_.empty()) {
+        return true;
+    }
+    for (auto& storeInfo : stores_) {
+        if (storeInfo.bundleName == bundleName && (storeInfo.storeName.empty() || storeInfo.storeName == storeName)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void SyncManager::SyncInfo::SetStoreInfo(StoreInfo&& storeInfo)
+{
+    if (storeInfo.bundleName.empty()) {
+        return;
+    }
+    stores_.clear();
+    stores_.push_back(std::move(storeInfo));
+}
+
+SyncManager::SyncInfo SyncManager::SyncInfo::CreateSyncInfo()
+{
+    SyncInfo info(user_);
+    info.syncId_ = syncId_;
+    info.mode_ = mode_;
+    info.wait_ = wait_;
+    info.id_ = id_;
+
+    return info;
 }
 
 SyncManager::SyncManager()
@@ -147,7 +205,7 @@ int32_t SyncManager::DoCloudSync(SyncInfo syncInfo)
     }
 
     actives_.Compute(GenerateId(syncInfo.user_), [this, &syncInfo](const uint64_t &key, TaskId &taskId) mutable {
-        taskId = executor_->Execute(GetSyncTask(0, true, GenSyncRef(key), std::move(syncInfo)));
+        taskId = executor_->Execute(GetSyncTask(RETRY_TIMES, GenSyncRef(key), std::move(syncInfo)));
         return true;
     });
 
@@ -168,57 +226,78 @@ int32_t SyncManager::StopCloudSync(int32_t user)
     return E_OK;
 }
 
-ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo)
+ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, RefCount ref, SyncInfo &&syncInfo)
 {
-    times++;
-    return [this, times, retry, ref = std::move(ref), info = std::move(syncInfo)]() mutable {
-        activeInfos_.Erase(info.syncId_);
+    times--;
+    return [this, times, ref = std::move(ref), info = std::move(syncInfo)]() mutable {
         CloudInfo cloud;
         cloud.user = info.user_;
         if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) || !cloud.enableCloud ||
-            (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_) ||
-            (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
+            (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_)) {
             info.SetError(E_CLOUD_DISABLED);
-            ZLOGE("cloudInfo invalid:%{public}d, enable:%{public}d, bundleName:%{public}s, <syncId:%{public}s, "
-                  "metaId:%{public}s>", cloud.IsValid(), cloud.enableCloud, info.bundleName_.c_str(),
-                  Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
+            ZLOGE("cloudInfo invalid:%{public}d, enable:%{public}d, <syncId:%{public}s, metaId:%{public}s>",
+                cloud.IsValid(), cloud.enableCloud, Anonymous::Change(info.id_).c_str(),
+                Anonymous::Change(cloud.id).c_str());
             return;
         }
         if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
             info.SetError(E_NETWORK_ERROR);
             return;
         }
+        ExecuteSync(times, std::move(info), cloud);
+    };
+}
 
-        std::vector<SchemaMeta> schemas;
-        auto key = cloud.GetSchemaPrefix(info.bundleName_);
-        auto retryer = GetRetryer(times, info);
-        if (!MetaDataManager::GetInstance().LoadMeta(key, schemas, true) || schemas.empty()) {
-            UpdateSchema(info);
-            retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
-            return;
+void SyncManager::ExecuteSync(int32_t times, SyncManager::SyncInfo&& info, CloudInfo& cloud)
+{
+    auto schemas = GetSchemas(info, cloud);
+    Defer defer(GetSyncHandler(GetRetryer(times, info.CreateSyncInfo())), CloudEvent::CLOUD_SYNC);
+    for (auto& schema : schemas) {
+        if (!cloud.IsOn(schema.bundleName)) {
+            continue;
         }
-
-        Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
-        for (auto &schema : schemas) {
-            if (!cloud.IsOn(schema.bundleName)) {
+        for (const auto& database : schema.databases) {
+            if (!info.Contains(schema.bundleName, database.name)) {
                 continue;
             }
-            for (const auto &database : schema.databases) {
-                if (!info.Contains(database.name)) {
-                    continue;
-                }
-                CloudEvent::StoreInfo storeInfo;
-                storeInfo.bundleName = schema.bundleName;
-                storeInfo.user = cloud.user;
-                storeInfo.storeName = database.name;
-                storeInfo.instanceId = cloud.apps[schema.bundleName].instanceId;
-                auto query = info.GenerateQuery(database.name, database.GetTableNames());
-                auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                    SyncEvent::EventInfo { info.mode_, info.wait_, retry, std::move(query), info.async_ });
-                EventCenter::GetInstance().PostEvent(std::move(evt));
+            CloudEvent::StoreInfo storeInfo;
+            storeInfo.bundleName = schema.bundleName;
+            storeInfo.user = cloud.user;
+            storeInfo.storeName = database.name;
+            storeInfo.instanceId = cloud.apps[schema.bundleName].instanceId;
+            auto async = info.GetAsync(storeInfo.bundleName, storeInfo.storeName);
+            if (!async) {
+                StoreMessage input(StoreMessage::GET_CALLBACK, { storeInfo.user,
+                    storeInfo.bundleName, storeInfo.instanceId, storeInfo.storeName });
+                StoreMessage output(StoreMessage::GET_CALLBACK);
+                ProviderCenter::GetInstance().Send(input, output);
+                async = output.GetAsync();
             }
+            auto query = info.GenerateQuery(storeInfo.bundleName, storeInfo.storeName, database.GetTableNames());
+            auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
+                SyncEvent::EventInfo{ info.mode_, info.wait_, times > 0, std::move(query), std::move(async) });
+            EventCenter::GetInstance().PostEvent(std::move(evt));
         }
-    };
+    }
+}
+std::vector<SchemaMeta> SyncManager::GetSchemas(const SyncManager::SyncInfo& info, const CloudInfo& cloud)
+{
+    std::vector<SchemaMeta> schemas;
+    if (info.stores_.empty()) {
+        MetaDataManager::GetInstance().LoadMeta(cloud.GetSchemaPrefix(""), schemas, true);
+        return schemas;
+    }
+    for (auto& store : info.stores_) {
+        auto key = cloud.GetSchemaPrefix(store.bundleName);
+        std::vector<SchemaMeta> tmpSchemas;
+        if (!MetaDataManager::GetInstance().LoadMeta(key, tmpSchemas, true) || schemas.empty()) {
+            UpdateSchema(info.user_, store.bundleName);
+        }
+        MetaDataManager::GetInstance().LoadMeta(cloud.GetSchemaPrefix(""), schemas, true);
+        schemas.insert(schemas.end(), std::make_move_iterator(tmpSchemas.begin()),
+            std::make_move_iterator(tmpSchemas.end()));
+    }
+    return schemas;
 }
 
 std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
@@ -232,36 +311,34 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         meta.user = std::to_string(storeInfo.user);
         meta.instanceId = storeInfo.instanceId;
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        StoreInfo retryStore(storeInfo.bundleName, storeInfo.storeName, evt.GetAsyncDetail());
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
             ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
+            retryer(RETRY_INTERVAL, { storeInfo.storeName, E_UNOPENED }, std::move(retryStore));
             return;
         }
         auto store = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
-            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            retryer(RETRY_INTERVAL, {storeInfo.storeName, E_UNOPENED}, std::move(retryStore));
             return;
         }
 
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
-        auto status = store->Sync({ SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.AutoRetry()
-            ? [retryer](const GenDetails &details) {
-                if (details.empty()) {
-                    ZLOGE("retry, details empty");
-                    return;
-                }
-                int32_t code = details.begin()->second.code;
-                retryer(code == E_LOCKED_BY_OTHERS ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
-            }
-            : evt.GetAsyncDetail(), evt.GetWait());
-        GenAsync async = evt.GetAsyncDetail();
-        if (status != E_OK && async) {
+        auto status = store->Sync(
+            { SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()),
+            [retryer, retryStore](const GenDetails& details) mutable {
+                int32_t code = details.empty() ? E_ERROR : details.begin()->second.code;
+                retryer(code == E_LOCKED_BY_OTHERS ? LOCKED_INTERVAL : RETRY_INTERVAL, details, std::move(retryStore));
+            },
+            evt.GetWait());
+        if (status != E_OK) {
             GenDetails details;
-            auto &detail = details[SyncInfo::DEFAULT_ID];
+            auto& detail = details[SyncInfo::DEFAULT_ID];
             detail.progress = SYNC_FINISH;
             detail.code = status;
-            async(std::move(details));
+            retryer(RETRY_INTERVAL, std::move(details), std::move(retryStore));
         }
     };
 }
@@ -274,37 +351,42 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         SyncInfo syncInfo(store.user, store.bundleName, store.storeName);
         syncInfo.SetMode(evt.GetMode());
         syncInfo.SetWait(evt.GetWait());
-        syncInfo.SetAsyncDetail(evt.GetAsyncDetail());
-        syncInfo.SetQuery(evt.GetQuery());
-        auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
-        auto task = GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo));
+        syncInfo.SetAsync(store.bundleName, store.storeName, evt.GetAsyncDetail());
+        syncInfo.SetQuery(store.bundleName, store.storeName, evt.GetQuery());
+        auto times = evt.AutoRetry() ? CLIENT_RETRY_TIMES : ONCE_TIME;
+        auto task = GetSyncTask(times, RefCount(), std::move(syncInfo));
         task();
     };
 }
 
-SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &syncInfo)
+SyncManager::Retryer SyncManager::GetRetryer(int32_t times, SyncInfo&& syncInfo)
 {
-    if (times >= RETRY_TIMES) {
-        return  [info = SyncInfo(syncInfo)](Duration, int32_t code) mutable {
-            if (code == E_OK) {
-                return true;
+    if (times <= 0) {
+        return [info = std::move(syncInfo)](Duration, GenDetails&& details, StoreInfo&& storeInfo) mutable {
+            for (auto& [key, value] : details) {
+                value.progress = SYNC_FINISH;
             }
-            info.SetError(code);
+            info.SetStoreInfo(std::move(storeInfo));
+            info.SetDetails(std::move(details));
             return true;
         };
     }
-    return [this, times, info = SyncInfo(syncInfo)](Duration interval, int32_t code) mutable {
-        if (code == E_OK) {
+    return [this, times, info = std::move(syncInfo)](Duration interval, GenDetails&& details,
+               StoreInfo&& storeInfo) mutable {
+        if (!details.empty() && details.begin()->second.code == E_OK) {
+            for (auto& [key, value] : details) {
+                value.progress = SYNC_FINISH;
+            }
+            info.SetStoreInfo(std::move(storeInfo));
+            info.SetDetails(std::move(details));
             return true;
         }
 
-        activeInfos_.ComputeIfAbsent(info.syncId_, [this, times, interval, &info](uint64_t key) mutable {
-            auto syncId = GenerateId(info.user_);
-            actives_.Compute(syncId, [this, times, interval, &info](const uint64_t &key, TaskId &value) mutable {
-                value = executor_->Schedule(interval, GetSyncTask(times, true, GenSyncRef(key), std::move(info)));
-                return true;
-            });
-            return syncId;
+        auto syncId = GenerateId(info.user_);
+        info.SetStoreInfo(std::move(storeInfo));
+        actives_.Compute(syncId, [this, times, interval, &info](const uint64_t& key, TaskId& value) mutable {
+            value = executor_->Schedule(interval, GetSyncTask(times, GenSyncRef(key), std::move(info)));
+            return true;
         });
         return true;
     };
@@ -329,11 +411,11 @@ int32_t SyncManager::Compare(uint64_t syncId, int32_t user)
     return (syncId & USER_MARK) == (inner << MV_BIT);
 }
 
-void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
+void SyncManager::UpdateSchema(int32_t user, const std::string& bundleName)
 {
     CloudEvent::StoreInfo storeInfo;
-    storeInfo.user = syncInfo.user_;
-    storeInfo.bundleName = syncInfo.bundleName_;
+    storeInfo.user = user;
+    storeInfo.bundleName = bundleName;
     EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo));
 }
 
@@ -375,5 +457,29 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
     }
     return store;
+}
+
+SyncManager::Details::Details(int32_t code)
+{
+    details_[SyncInfo::DEFAULT_ID].code = code;
+}
+
+SyncManager::Details::Details(const std::string& storeName, int32_t code)
+{
+    details_[storeName].code = code;
+}
+
+SyncManager::Details::Details(GenDetails&& details) : details_(std::move(details)) {}
+
+SyncManager::Details::Details(const GenDetails& details) : details_(details) {}
+
+SyncManager::Details::operator GenDetails() const
+{
+    return details_;
+}
+
+SyncManager::Details::operator GenDetails()
+{
+    return std::move(details_);
 }
 } // namespace OHOS::CloudData

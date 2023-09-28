@@ -115,6 +115,8 @@
                             "error/general_error.h",
                             "eventcenter/event.h",
                             "eventcenter/event_center.h",
+                            "eventcenter/message.h",
+                            "eventcenter/provider_center.h",
                             "feature/feature_system.h",
                             "metadata/appid_meta_data.h",
                             "metadata/capability_meta_data.h",

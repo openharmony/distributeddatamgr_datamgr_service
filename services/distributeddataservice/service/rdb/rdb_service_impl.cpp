@@ -19,10 +19,12 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
 #include "cloud/change_event.h"
+#include "cloud/store_message.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
+#include "eventcenter/provider_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -87,7 +89,7 @@ RdbServiceImpl::RdbServiceImpl()
         });
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
-        auto storeInfo = evt.GetStoreInfo();
+        auto &storeInfo = evt.GetStoreInfo();
         StoreMetaData meta;
         meta.storeId = storeInfo.storeName;
         meta.bundleName = storeInfo.bundleName;
@@ -105,9 +107,19 @@ RdbServiceImpl::RdbServiceImpl()
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
-        store->RegisterCallback(GetCallbacks(meta.tokenId, meta.storeId));
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
+
+    auto getCallbacks = [this](const Message& message, Message& reply) {
+        auto& msg = static_cast<const StoreMessage&>(message);
+        auto& storeInfo = msg.GetStoreInfo();
+        StoreMessage storeMessage(msg);
+        auto tokenId = AccessTokenKit::GetHapTokenID(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
+        storeMessage.SetAsync(GetCallbacks(tokenId, storeInfo.storeName));
+        reply = storeMessage;
+        return ProviderCenter::PROVIDER_CENTER_OK;
+    };
+    ProviderCenter::GetInstance().Subscribe(StoreMessage::GET_CALLBACK, getCallbacks);
 }
 
 int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
@@ -329,7 +341,7 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
         return RDB_ERROR;
     }
     RdbQuery rdbQuery;
-    rdbQuery.MakeRemoteQuery(DmAdapter::ToUUID({ device }), sql, ValueProxy::Convert(selectionArgs));
+    rdbQuery.MakeRemoteQuery(device, sql, ValueProxy::Convert(selectionArgs));
     auto cursor = store->Query("", rdbQuery);
     if (cursor == nullptr) {
         ZLOGE("Query failed, cursor is null");
@@ -388,7 +400,7 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto pid = IPCSkeleton::GetCallingPid();
     return store->Sync(
-        DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), option.mode, rdbQuery,
+        devices, option.mode, rdbQuery,
         [this, tokenId, pid, seqNum = option.seqNum](const GenDetails &result) mutable {
             OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
         },
@@ -422,7 +434,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     };
 
     auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME), option.isAutoSync, query,
-        option.isAutoSync ? nullptr : (option.isAsync ? asyncCallback : syncCallback));
+        option.isAsync ? asyncCallback : syncCallback);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
