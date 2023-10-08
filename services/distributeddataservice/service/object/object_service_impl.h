@@ -25,8 +25,9 @@
 namespace OHOS::DistributedObject {
 class API_EXPORT ObjectServiceImpl : public ObjectServiceStub {
 public:
+    using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     ObjectServiceImpl();
-
+    virtual ~ObjectServiceImpl();
     int32_t ObjectStoreSave(const std::string &bundleName, const std::string &sessionId,
         const std::string &deviceId, const std::map<std::string, std::vector<uint8_t>> &data,
         sptr<IRemoteObject> callback) override;
@@ -45,6 +46,7 @@ public:
     int32_t OnInitialize() override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnBind(const BindInfo &bindInfo) override;
+    void DumpObjectServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -60,6 +62,8 @@ private:
     private:
         std::shared_ptr<ObjectStatic> staticActs_;
     };
+    void RegisterObjectServiceInfo();
+    void RegisterHandler();
     static Factory factory_;
     std::shared_ptr<ExecutorPool> executors_;
 };

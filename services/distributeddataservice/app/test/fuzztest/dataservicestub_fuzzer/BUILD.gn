@@ -38,6 +38,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src/uninstaller",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/dumper/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/permission",
@@ -62,7 +63,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
   ]
 
   sources = [
-    "${data_service_path}/app/src/dump_helper.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
     "${data_service_path}/app/src/kvstore_data_service.cpp",

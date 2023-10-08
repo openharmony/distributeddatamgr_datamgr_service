@@ -60,6 +60,7 @@ config("module_private_config") {
     "../adapter/include/utils",
     "../adapter/include/dfx",
     "../adapter/include",
+    "../service/dumper/include",
 
     # for ipc_core interfaces.
     "include",
@@ -76,7 +77,6 @@ config("module_private_config") {
 
 ohos_shared_library("distributeddataservice") {
   sources = [
-    "src/dump_helper.cpp",
     "src/feature_stub_impl.cpp",
     "src/kvstore_account_observer.cpp",
     "src/kvstore_data_service.cpp",

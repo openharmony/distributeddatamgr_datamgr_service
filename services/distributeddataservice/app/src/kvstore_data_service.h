@@ -21,7 +21,6 @@
 #include <set>
 
 #include "account_delegate.h"
-#include "dump_helper.h"
 #include "feature_stub_impl.h"
 #include "ikvstore_data_service.h"
 #include "ithread_pool.h"
@@ -40,8 +39,22 @@ namespace OHOS::DistributedKv {
 class KvStoreAccountObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
+    using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
 
 public:
+    struct UserInfo {
+        std::string userId;
+        std::set<std::string> bundles;
+    };
+    struct BundleInfo {
+        std::string bundleName;
+        std::string appId;
+        std::string type;
+        int32_t uid;
+        uint32_t tokenId;
+        std::string userId;
+        std::set<std::string> storeIDs;
+    };
     using StoreMetaData = DistributedData::StoreMetaData;
     // record kvstore meta version for compatible, should update when modify kvstore meta structure.
     static constexpr uint32_t STORE_VERSION = 0x03000001;
@@ -49,6 +62,25 @@ public:
     explicit KvStoreDataService(bool runOnCreate = false);
     explicit KvStoreDataService(int32_t systemAbilityId, bool runOnCreate = false);
     virtual ~KvStoreDataService();
+
+    void RegisterHandler(const std::string &name, Handler &handler);
+    void RegisterStoreInfo();
+    bool IsExist(const std::string &infoName, std::map<std::string, std::vector<std::string>> &filterInfo,
+        std::string &metaParam);
+    void DumpStoreInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
+    void FilterData(std::vector<StoreMetaData> &metas, std::map<std::string, std::vector<std::string>> &params);
+    void PrintfInfo(int fd, const std::vector<StoreMetaData> &metas);
+    std::string GetIndentation(int size);
+
+    void RegisterUserInfo();
+    void BuildData(std::map<std::string, UserInfo> &datas, const std::vector<StoreMetaData> &metas);
+    void PrintfInfo(int fd, const std::map<std::string, UserInfo> &datas);
+    void DumpUserInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
+
+    void RegisterBundleInfo();
+    void BuildData(std::map<std::string, BundleInfo> &datas, const std::vector<StoreMetaData> &metas);
+    void PrintfInfo(int fd, const std::map<std::string, BundleInfo> &datas);
+    void DumpBundleInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
     Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer) override;
 
@@ -140,6 +172,12 @@ private:
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
     std::shared_ptr<ExecutorPool> executors_;
+    static constexpr int VERSION_WIDTH = 11;
+    static constexpr const char *INDENTATION = "    ";
+    static constexpr int32_t FORMAT_BLANK_SIZE = 32;
+    static constexpr char FORMAT_BLANK_SPACE = ' ';
+    static constexpr int32_t PRINTF_COUNT_2 = 2;
+    static constexpr int MAXIMUM_PARAMETER_LIMIT = 3;
 };
 }
 #endif  // KVSTORE_DATASERVICE_H

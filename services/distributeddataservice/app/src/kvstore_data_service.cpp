@@ -30,6 +30,8 @@
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
+#include "dump/dump_manager.h"
+#include "dump_helper.h"
 #include "eventcenter/event_center.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
@@ -280,6 +282,18 @@ void KvStoreDataService::OnStart()
         }
     }
     AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
+    RegisterStoreInfo();
+    Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
+        std::placeholders::_2);
+    DumpManager::GetInstance().AddHandler("STORE_INFO", uintptr_t(this), handlerStoreInfo);
+    RegisterUserInfo();
+    Handler handlerUserInfo = std::bind(&KvStoreDataService::DumpUserInfo, this, std::placeholders::_1,
+        std::placeholders::_2);
+    DumpManager::GetInstance().AddHandler("USER_INFO", uintptr_t(this), handlerUserInfo);
+    RegisterBundleInfo();
+    Handler handlerBundleInfo = std::bind(&KvStoreDataService::DumpBundleInfo, this, std::placeholders::_1,
+        std::placeholders::_2);
+    DumpManager::GetInstance().AddHandler("BUNDLE_INFO", uintptr_t(this), handlerBundleInfo);
     StartService();
 }
 
@@ -314,7 +328,7 @@ void KvStoreDataService::StartService()
     LoadFeatures();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
-        DumpHelper::GetInstance().AddErrorInfo("StartService: Service publish failed.");
+        DumpHelper::GetInstance().AddErrorInfo(SERVER_UNAVAILABLE, "StartService: Service publish failed.");
     }
     // Initialize meta db delegate manager.
     KvStoreMetaManager::GetInstance().SubscribeMeta(StoreMetaData::GetKey({}),
@@ -745,5 +759,289 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
         }
     }
     return SUCCESS;
+}
+
+void KvStoreDataService::RegisterStoreInfo()
+{
+    OHOS::DistributedData::DumpManager::Config storeInfoConfig;
+    storeInfoConfig.fullCmd = "--store-info";
+    storeInfoConfig.abbrCmd = "-s";
+    storeInfoConfig.dumpName = "STORE_INFO";
+    storeInfoConfig.countPrintf = PRINTF_COUNT_2;
+    storeInfoConfig.infoName = " <STORE_INFO>";
+    storeInfoConfig.minParamsNum = 0;
+    storeInfoConfig.maxParamsNum = MAXIMUM_PARAMETER_LIMIT; // Store contains no more than three parameters
+    storeInfoConfig.parentNode = "BUNDLE_INFO";
+    storeInfoConfig.dumpCaption = { "| Display all the store statistics", "| Display the store statistics  by "
+                                                                          "StoreID" };
+    DumpManager::GetInstance().AddConfig(storeInfoConfig.dumpName, storeInfoConfig);
+}
+
+void KvStoreDataService::DumpStoreInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
+{
+    std::vector<StoreMetaData> metas;
+    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas)) {
+        ZLOGE("get full meta failed");
+        return;
+    }
+    FilterData(metas, params);
+    PrintfInfo(fd, metas);
+}
+
+void KvStoreDataService::FilterData(std::vector<StoreMetaData> &metas,
+    std::map<std::string, std::vector<std::string>> &filterInfo)
+{
+    for (auto iter = metas.begin(); iter != metas.end();) {
+        if ((IsExist("USER_INFO", filterInfo, iter->user)) || (IsExist("BUNDLE_INFO", filterInfo, iter->bundleName)) ||
+            (IsExist("STORE_INFO", filterInfo, iter->storeId))) {
+            iter = metas.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+}
+
+bool KvStoreDataService::IsExist(const std::string &infoName,
+    std::map<std::string, std::vector<std::string>> &filterInfo, std::string &metaParam)
+{
+    auto info = filterInfo.find(infoName);
+    if (info != filterInfo.end()) {
+        if (!info->second.empty()) {
+            auto it = find(info->second.begin(), info->second.end(), metaParam);
+            if (it == info->second.end()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void KvStoreDataService::PrintfInfo(int fd, const std::vector<StoreMetaData> &metas)
+{
+    std::string info;
+    int indentation = 0;
+    if (metas.size() > 1) {
+        info.append("Stores: ").append(std::to_string(metas.size())).append("\n");
+        indentation++;
+    }
+    for (auto &data : metas) {
+        char version[VERSION_WIDTH];
+        auto flag = sprintf_s(version, sizeof(version), "0x%08X", data.version);
+        if (flag < 0) {
+            ZLOGE("get version failed");
+            return;
+        }
+        info.append(GetIndentation(indentation))
+            .append("--------------------------------------------------------------------------\n")
+            .append(GetIndentation(indentation)).append("StoreID           : ").append(data.storeId).append("\n")
+            .append(GetIndentation(indentation)).append("UId               : ").append(data.user).append("\n")
+            .append(GetIndentation(indentation)).append("BundleName        : ").append(data.bundleName).append("\n")
+            .append(GetIndentation(indentation)).append("AppID             : ").append(data.appId).append("\n")
+            .append(GetIndentation(indentation)).append("StorePath         : ").append(data.dataDir).append("\n")
+            .append(GetIndentation(indentation)).append("StoreType         : ")
+            .append(std::to_string(data.storeType)).append("\n")
+            .append(GetIndentation(indentation)).append("encrypt           : ")
+            .append(std::to_string(data.isEncrypt)).append("\n")
+            .append(GetIndentation(indentation)).append("autoSync          : ")
+            .append(std::to_string(data.isAutoSync)).append("\n")
+            .append(GetIndentation(indentation)).append("schema            : ").append(data.schema).append("\n")
+            .append(GetIndentation(indentation)).append("securityLevel     : ")
+            .append(std::to_string(data.securityLevel)).append("\n")
+            .append(GetIndentation(indentation)).append("area              : ")
+            .append(std::to_string(data.area)).append("\n")
+            .append(GetIndentation(indentation)).append("instanceID        : ")
+            .append(std::to_string(data.instanceId)).append("\n")
+            .append(GetIndentation(indentation)).append("version           : ").append(version).append("\n");
+    }
+    dprintf(fd, "--------------------------------------StoreInfo-------------------------------------\n%s\n",
+        info.c_str());
+}
+
+std::string KvStoreDataService::GetIndentation(int size)
+{
+    std::string indentation;
+    for (int i = 0; i < size; i++) {
+        indentation.append(INDENTATION);
+    }
+    return indentation;
+}
+
+void KvStoreDataService::RegisterUserInfo()
+{
+    DumpManager::Config userInfoConfig;
+    userInfoConfig.fullCmd = "--user-info";
+    userInfoConfig.abbrCmd = "-u";
+    userInfoConfig.dumpName = "USER_INFO";
+    userInfoConfig.countPrintf = PRINTF_COUNT_2;
+    userInfoConfig.infoName = " <UId>";
+    userInfoConfig.minParamsNum = 0;
+    userInfoConfig.maxParamsNum = MAXIMUM_PARAMETER_LIMIT; // User contains no more than three parameters
+    userInfoConfig.childNode = "BUNDLE_INFO";
+    userInfoConfig.dumpCaption = { "| Display all the user statistics", "| Display the user statistics by UserId" };
+    DumpManager::GetInstance().AddConfig(userInfoConfig.dumpName, userInfoConfig);
+}
+
+void KvStoreDataService::BuildData(std::map<std::string, UserInfo> &datas, const std::vector<StoreMetaData> &metas)
+{
+    for (auto &meta : metas) {
+        auto it = datas.find(meta.user);
+        if (it == datas.end()) {
+            UserInfo userInfo;
+            userInfo.userId = meta.user;
+            userInfo.bundles.insert(meta.bundleName);
+            datas[meta.user] = userInfo;
+        } else {
+            std::set<std::string> bundles_ = datas[meta.user].bundles;
+            auto iter = std::find(bundles_.begin(), bundles_.end(), meta.bundleName);
+            if (iter == bundles_.end()) {
+                datas[meta.user].bundles.insert(meta.bundleName);
+            }
+        }
+    }
+}
+
+void KvStoreDataService::PrintfInfo(int fd, const std::map<std::string, UserInfo> &datas)
+{
+    std::string info;
+    int indentation = 0;
+    if (datas.size() > 1) {
+        info.append("Users : ").append(std::to_string(datas.size())).append("\n");
+        indentation++;
+    }
+
+    for (auto &data : datas) {
+        info.append(GetIndentation(indentation))
+            .append("------------------------------------------------------------------------------\n")
+            .append("UID        : ")
+            .append(data.second.userId)
+            .append("\n");
+        info.append(GetIndentation(indentation))
+            .append("Bundles       : ")
+            .append(std::to_string(data.second.bundles.size()))
+            .append("\n");
+        indentation++;
+        info.append("------------------------------------------------------------------------------\n");
+        for (auto &bundle : data.second.bundles) {
+            info.append(GetIndentation(indentation)).append("BundleName    : ").append(bundle).append("\n");
+        }
+        indentation--;
+    }
+    dprintf(fd, "--------------------------------------UserInfo--------------------------------------\n%s\n",
+        info.c_str());
+}
+
+void KvStoreDataService::DumpUserInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
+{
+    std::vector<StoreMetaData> metas;
+    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas)) {
+        ZLOGE("get full meta failed");
+        return;
+    }
+    FilterData(metas, params);
+    std::map<std::string, UserInfo> datas;
+    BuildData(datas, metas);
+    PrintfInfo(fd, datas);
+}
+
+void KvStoreDataService::RegisterBundleInfo()
+{
+    DumpManager::Config bundleInfoConfig;
+    bundleInfoConfig.fullCmd = "--bundle-info";
+    bundleInfoConfig.abbrCmd = "-b";
+    bundleInfoConfig.dumpName = "BUNDLE_INFO";
+    bundleInfoConfig.countPrintf = PRINTF_COUNT_2;
+    bundleInfoConfig.infoName = " <BundleName>";
+    bundleInfoConfig.minParamsNum = 0;
+    bundleInfoConfig.maxParamsNum = MAXIMUM_PARAMETER_LIMIT; // Bundle contains no more than three parameters
+    bundleInfoConfig.parentNode = "USER_INFO";
+    bundleInfoConfig.childNode = "STORE_INFO";
+    bundleInfoConfig.dumpCaption = { "| Display all the bundle statistics", "| Display the bundle statistics by "
+                                                                            "BundleName" };
+    DumpManager::GetInstance().AddConfig(bundleInfoConfig.dumpName, bundleInfoConfig);
+}
+
+void KvStoreDataService::BuildData(std::map<std::string, BundleInfo> &datas, const std::vector<StoreMetaData> &metas)
+{
+    for (auto &meta : metas) {
+        auto it = datas.find(meta.bundleName);
+        if (it == datas.end()) {
+            BundleInfo bundleInfo;
+            bundleInfo.bundleName = meta.bundleName;
+            bundleInfo.appId = meta.appId;
+            bundleInfo.type = meta.appType;
+            bundleInfo.uid = meta.uid;
+            bundleInfo.tokenId = meta.tokenId;
+            bundleInfo.userId = meta.user;
+            std::string storeId = meta.storeId;
+            storeId.resize(FORMAT_BLANK_SIZE, FORMAT_BLANK_SPACE);
+            bundleInfo.storeIDs.insert(storeId);
+            datas[meta.bundleName] = bundleInfo;
+        } else {
+            std::set<std::string> storeIDs_ = datas[meta.bundleName].storeIDs;
+            std::string storeId = meta.storeId;
+            storeId.resize(FORMAT_BLANK_SIZE, FORMAT_BLANK_SPACE);
+            auto iter = std::find(storeIDs_.begin(), storeIDs_.end(), storeId);
+            if (iter == storeIDs_.end()) {
+                datas[meta.bundleName].storeIDs.insert(storeId);
+            }
+        }
+    }
+}
+
+void KvStoreDataService::PrintfInfo(int fd, const std::map<std::string, BundleInfo> &datas)
+{
+    std::string info;
+    int indentation = 0;
+    if (datas.size() > 1) {
+        info.append("Bundles: ").append(std::to_string(datas.size())).append("\n");
+        indentation++;
+    }
+    for (auto &data : datas) {
+        info.append(GetIndentation(indentation))
+            .append("--------------------------------------------------------------------------\n");
+        info.append(GetIndentation(indentation)).append("BundleName     : ")
+            .append(data.second.bundleName).append("\n");
+        info.append(GetIndentation(indentation)).append("AppID          : ")
+            .append(data.second.appId).append("\n");
+        info.append(GetIndentation(indentation)).append("Type           : ")
+            .append(data.second.type).append("\n");
+        info.append(GetIndentation(indentation))
+            .append("UId            : ")
+            .append(std::to_string(data.second.uid))
+            .append("\n");
+        info.append(GetIndentation(indentation))
+            .append("TokenID        : ")
+            .append(std::to_string(data.second.tokenId))
+            .append("\n");
+        info.append(GetIndentation(indentation)).append("UserID         : ").append(data.second.userId).append("\n");
+        info.append(GetIndentation(indentation))
+            .append("Stores         : ")
+            .append(std::to_string(data.second.storeIDs.size()))
+            .append("\n");
+        indentation++;
+        info.append("----------------------------------------------------------------------\n");
+        for (auto &store : data.second.storeIDs) {
+            info.append(GetIndentation(indentation)).append("StoreID    : ").append(store).append("\n");
+        }
+        indentation--;
+    }
+    dprintf(fd, "-------------------------------------BundleInfo-------------------------------------\n%s\n",
+        info.c_str());
+}
+
+void KvStoreDataService::DumpBundleInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
+{
+    std::vector<StoreMetaData> metas;
+    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas)) {
+        ZLOGE("get full meta failed");
+        return;
+    }
+    FilterData(metas, params);
+    std::map<std::string, BundleInfo> datas;
+    BuildData(datas, metas);
+    PrintfInfo(fd, datas);
 }
 } // namespace OHOS::DistributedKv
