@@ -93,7 +93,6 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/data_share:data_share_service",
-    "${data_service_path}/service/data_share/gaussdb_rd:gaussdb_rd",
   ]
 
   external_deps = [
@@ -111,6 +110,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_bms_adapter",
     "relational_store:rdb_data_share_adapter",

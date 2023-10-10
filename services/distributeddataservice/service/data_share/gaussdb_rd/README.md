@@ -1,1 +1,0 @@
-# Gauss DB RD
