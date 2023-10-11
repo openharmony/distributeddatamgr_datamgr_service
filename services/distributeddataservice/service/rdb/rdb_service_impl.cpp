@@ -417,7 +417,8 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         return true;
     });
     if (isCreate) {
-        AutoCache::GetInstance().SetObserver(tokenId, param.storeName_, GetWatchers(tokenId, param.storeName_));
+        AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
+                                             GetWatchers(tokenId, param.storeName_));
     }
     return RDB_OK;
 }
