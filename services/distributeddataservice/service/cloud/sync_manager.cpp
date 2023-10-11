@@ -110,7 +110,7 @@ void SyncManager::SyncInfo::SetDetails(GenDetails&& details, const std::string& 
             (storeInfo.storeName != store && !store.empty())) {
             continue;
         }
-        if (!storeInfo.async) {
+        if (storeInfo.async) {
             storeInfo.async(details);
         }
     }

@@ -31,6 +31,8 @@ public:
 
     int32_t OnComplete(uint32_t seqNum, Details &&result) override;
 
+    int32_t OnComplete(const std::string& storeName, Details &&result) override;
+
     int32_t OnChange(const Origin &origin, const PrimaryFields &primaries, ChangeInfo &&changeInfo) override;
 
 private:

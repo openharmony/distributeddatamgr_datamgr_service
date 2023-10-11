@@ -60,6 +60,12 @@ public:
     int32_t UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
         RdbStoreObserver *observer) override;
 
+    int32_t RegisterAutoSyncCallback(const RdbSyncerParam& param,
+        std::shared_ptr<RdbSyncObserver> syncObserver) override;
+
+    int32_t UnRegisterAutoSyncCallback(const RdbSyncerParam& param,
+        std::shared_ptr<RdbSyncObserver> syncObserver) override;
+
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
@@ -83,7 +89,6 @@ private:
         std::string bundleName_;
         sptr<RdbNotifierProxy> notifier_ = nullptr;
         std::shared_ptr<RdbWatcher> watcher_ = nullptr;
-        DetailAsync detailAsync_ = nullptr;
         void ReInit(const std::string &bundleName);
         void SetNotifier(sptr<RdbNotifierProxy> notifier);
         void SetWatcher(std::shared_ptr<RdbWatcher> watcher);
