@@ -40,6 +40,11 @@ config("distributeddata_adapter_public_config") {
 }
 
 ohos_shared_library("distributeddata_adapter") {
+  sanitize = {
+    boundary_sanitize = true
+    integer_overflow = true
+    ubsan = true
+  }
   sources = []
 
   configs = [ ":distributeddata_adapter_private_config" ]
