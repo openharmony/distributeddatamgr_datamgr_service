@@ -58,6 +58,7 @@ private:
     std::string GetUserId(const StoreMetaData &metaData) const;
     std::string GetBundleName(const StoreMetaData &metaData) const;
     std::string GetHapName(const StoreMetaData &metaData) const;
+    std::string GetCustomDir(const StoreMetaData &metaData) const;
     std::vector<std::string> Split(const std::string &source, const std::string &pattern) const;
     int32_t GetVersionIndex(uint32_t version) const;
     std::string GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath = "") const;

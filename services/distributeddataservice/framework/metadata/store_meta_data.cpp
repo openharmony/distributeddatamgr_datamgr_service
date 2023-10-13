@@ -54,6 +54,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(deviceAccountID)], user);
     SetValue(node[GET_NAME(userId)], account);
     SetValue(node[GET_NAME(UID)], uid);
+    SetValue(node[GET_NAME(customDir)], customDir);
 
     return true;
 }
@@ -89,6 +90,7 @@ bool StoreMetaData::Unmarshal(const json &node)
         GetValue(node, GET_NAME(deviceAccountID), user);
         GetValue(node, GET_NAME(userId), account);
     }
+    GetValue(node, GET_NAME(customDir), customDir);
     return true;
 }
 
