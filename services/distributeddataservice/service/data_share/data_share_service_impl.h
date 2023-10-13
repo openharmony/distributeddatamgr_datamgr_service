@@ -40,7 +40,9 @@
 namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
 public:
+    using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     DataShareServiceImpl() = default;
+    virtual ~DataShareServiceImpl();
     int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;
     int32_t Update(const std::string &uri, const DataSharePredicates &predicate,
                    const DataShareValuesBucket &valuesBucket) override;
@@ -71,6 +73,8 @@ public:
     int32_t OnBind(const BindInfo &binderInfo) override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
     void NotifyObserver(const std::string &uri) override;
+    void DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
+    int32_t OnInitialize() override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -93,6 +97,8 @@ private:
         virtual ~TimerReceiver() = default;
         virtual void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
     };
+    void RegisterDataShareServiceInfo();
+    void RegisterHandler();
     bool SubscribeTimeChanged();
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);

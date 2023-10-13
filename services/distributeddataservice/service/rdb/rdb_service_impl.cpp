@@ -22,6 +22,7 @@
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory/directory_manager.h"
+#include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -48,6 +49,7 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DistributedDB::RelationalStoreManager;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using DumpManager = OHOS::DistributedData::DumpManager;
 using system_clock = std::chrono::system_clock;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
@@ -448,11 +450,6 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::OnInitialize()
-{
-    return RDB_OK;
-}
-
 int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -723,5 +720,40 @@ int32_t RdbServiceImpl::RdbStatic::OnClearAppStorage(const std::string &bundleNa
     int32_t tokenId)
 {
     return CloseStore(bundleName, user, index, tokenId);
+}
+
+void RdbServiceImpl::RegisterRdbServiceInfo()
+{
+    DumpManager::Config serviceInfoConfig;
+    serviceInfoConfig.fullCmd = "--feature-info";
+    serviceInfoConfig.abbrCmd = "-f";
+    serviceInfoConfig.dumpName = "FEATURE_INFO";
+    serviceInfoConfig.dumpCaption = { "| Display all the service statistics" };
+    DumpManager::GetInstance().AddConfig("FEATURE_INFO", serviceInfoConfig);
+}
+
+void RdbServiceImpl::RegisterHandler()
+{
+    Handler handler =
+        std::bind(&RdbServiceImpl::DumpRdbServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
+}
+void RdbServiceImpl::DumpRdbServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
+{
+    (void)params;
+    std::string info;
+    dprintf(fd, "-------------------------------------RdbServiceInfo------------------------------\n%s\n",
+        info.c_str());
+}
+int32_t RdbServiceImpl::OnInitialize()
+{
+    RegisterRdbServiceInfo();
+    RegisterHandler();
+    return RDB_OK;
+}
+
+RdbServiceImpl::~RdbServiceImpl()
+{
+    DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
 } // namespace OHOS::DistributedRdb

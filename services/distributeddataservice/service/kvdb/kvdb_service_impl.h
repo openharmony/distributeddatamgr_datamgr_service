@@ -32,6 +32,7 @@ namespace OHOS::DistributedKv {
 class API_EXPORT KVDBServiceImpl final : public KVDBServiceStub {
 public:
     using DBLaunchParam = DistributedDB::AutoLaunchParam;
+    using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using RefCount = DistributedData::RefCount;
     API_EXPORT KVDBServiceImpl();
     virtual ~KVDBServiceImpl();
@@ -55,6 +56,7 @@ public:
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password) override;
     int32_t OnBind(const BindInfo &bindInfo) override;
+    int32_t OnInitialize() override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
@@ -103,6 +105,9 @@ private:
     std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
+    void RegisterKvServiceInfo();
+    void RegisterHandler();
+    void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     StoreCache storeCache_;

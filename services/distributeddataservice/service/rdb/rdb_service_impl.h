@@ -38,7 +38,9 @@ class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
+    using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     RdbServiceImpl();
+    virtual ~RdbServiceImpl();
 
     void OnClientDied(pid_t pid);
 
@@ -109,6 +111,12 @@ private:
     };
 
     static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
+
+    void RegisterRdbServiceInfo();
+
+    void RegisterHandler();
+
+    void DumpRdbServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
     void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);

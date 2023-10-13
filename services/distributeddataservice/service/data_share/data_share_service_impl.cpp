@@ -26,6 +26,7 @@
 #include "datashare_errno.h"
 #include "datashare_template.h"
 #include "directory/directory_manager.h"
+#include "dump/dump_manager.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -37,6 +38,7 @@
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
+using DumpManager = OHOS::DistributedData::DumpManager;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
 DataShareServiceImpl::Factory::Factory()
 {
@@ -511,5 +513,42 @@ void DataShareServiceImpl::TimerReceiver::OnReceiveEvent(const EventFwk::CommonE
 DataShareServiceImpl::TimerReceiver::TimerReceiver(const EventFwk::CommonEventSubscribeInfo &subscriberInfo)
     : CommonEventSubscriber(subscriberInfo)
 {
+}
+
+void DataShareServiceImpl::RegisterDataShareServiceInfo()
+{
+    DumpManager::Config serviceInfoConfig;
+    serviceInfoConfig.fullCmd = "--feature-info";
+    serviceInfoConfig.abbrCmd = "-f";
+    serviceInfoConfig.dumpName = "FEATURE_INFO";
+    serviceInfoConfig.dumpCaption = { "| Display all the service statistics" };
+    DumpManager::GetInstance().AddConfig("FEATURE_INFO", serviceInfoConfig);
+}
+
+void DataShareServiceImpl::RegisterHandler()
+{
+    Handler handler =
+        std::bind(&DataShareServiceImpl::DumpDataShareServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
+}
+
+void DataShareServiceImpl::DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
+{
+    (void)params;
+    std::string info;
+    dprintf(fd, "-------------------------------------DataShareServiceInfo------------------------------\n%s\n",
+        info.c_str());
+}
+
+int32_t DataShareServiceImpl::OnInitialize()
+{
+    RegisterDataShareServiceInfo();
+    RegisterHandler();
+    return 0;
+}
+
+DataShareServiceImpl::~DataShareServiceImpl()
+{
+    DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
 } // namespace OHOS::DataShare
