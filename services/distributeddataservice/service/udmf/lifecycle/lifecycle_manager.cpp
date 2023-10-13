@@ -85,7 +85,6 @@ ExecutorPool::Task LifeCycleManager::GetTask()
     return [this] {
         Status status = E_OK;
         std::string errorInfo;
-        std::shared_ptr<LifeCyclePolicy> lifeCyclePolicy;
         for (auto &[intention, lifeCyclePolicy] : intentionPolicy_) {
             if (lifeCyclePolicy == nullptr) {
                 continue;

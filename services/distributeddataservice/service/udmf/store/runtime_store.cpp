@@ -290,7 +290,7 @@ void RuntimeStore::SaveMetaData()
     saveMeta.tokenId = token;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = DistributedKv::Area::EL1;
-    saveMeta.uid = getuid();
+    saveMeta.uid = static_cast<int32_t>(getuid());
     saveMeta.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
 
