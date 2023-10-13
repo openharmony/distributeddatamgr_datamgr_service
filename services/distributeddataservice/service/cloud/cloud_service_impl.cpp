@@ -421,8 +421,9 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
 SchemaMeta CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId)
 {
     SchemaMeta schemaMeta;
-    auto [status, cloudInfo] = GetCloudInfo(userId);
-    if (status != SUCCESS) {
+    CloudInfo cloudInfo;
+    cloudInfo.user = userId;
+    if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS) {
         // GetCloudInfo has print the log info. so we don`t need print again.
         return schemaMeta;
     }
