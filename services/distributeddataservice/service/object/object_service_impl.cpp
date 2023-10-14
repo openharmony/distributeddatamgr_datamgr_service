@@ -24,6 +24,7 @@
 #include "checker/checker_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
+#include "dump/dump_manager.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
@@ -35,6 +36,7 @@ namespace OHOS::DistributedObject {
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
+using DumpManager = OHOS::DistributedData::DumpManager;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
 ObjectServiceImpl::Factory::Factory()
 {
@@ -116,6 +118,8 @@ int32_t ObjectServiceImpl::OnInitialize()
     }
     ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s",
         saveMeta.appId.c_str(), saveMeta.GetStoreAlias().c_str());
+    RegisterObjectServiceInfo();
+    RegisterHandler();
     return OBJECT_SUCCESS;
 }
 
@@ -279,6 +283,35 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
 
 ObjectServiceImpl::ObjectServiceImpl()
 {
+}
+
+void ObjectServiceImpl::RegisterObjectServiceInfo()
+{
+    DumpManager::Config serviceInfoConfig;
+    serviceInfoConfig.fullCmd = "--feature-info";
+    serviceInfoConfig.abbrCmd = "-f";
+    serviceInfoConfig.dumpName = "FEATURE_INFO";
+    serviceInfoConfig.dumpCaption = { "| Display all the service statistics" };
+    DumpManager::GetInstance().AddConfig("FEATURE_INFO", serviceInfoConfig);
+}
+
+void ObjectServiceImpl::RegisterHandler()
+{
+    Handler handler =
+        std::bind(&ObjectServiceImpl::DumpObjectServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
+}
+
+void ObjectServiceImpl::DumpObjectServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
+{
+    (void)params;
+    std::string info;
+    dprintf(fd, "-------------------------------------ObjectServiceInfo------------------------------\n%s\n",
+        info.c_str());
+}
+ObjectServiceImpl::~ObjectServiceImpl()
+{
+    DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
 
 int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)

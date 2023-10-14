@@ -28,8 +28,8 @@ namespace UDMF {
 class PreProcessUtils {
 public:
     static int32_t RuntimeDataImputation(UnifiedData &data, CustomOption &option);
-    static std::string IdGenerator();
-    static time_t GetTimeStamp();
+    static std::string GenerateId();
+    static time_t GetTimestamp();
     static int32_t GetHapUidByToken(uint32_t tokenId);
     static bool GetHapBundleNameByToken(int tokenId, std::string &bundleName);
     static bool GetNativeProcessNameByToken(int tokenId, std::string &processName);

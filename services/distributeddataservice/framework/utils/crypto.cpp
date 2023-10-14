@@ -22,10 +22,10 @@ std::string Crypto::Sha256(const std::string &text, bool isUpper)
     return Sha256(text.data(), text.size(), isUpper);
 }
 
-std::vector<uint8_t> Crypto::Random(int32_t len)
+std::vector<uint8_t> Crypto::Random(int32_t len, int32_t minimum, int32_t maximum)
 {
     std::random_device randomDevice;
-    std::uniform_int_distribution<int> distribution(0, std::numeric_limits<uint8_t>::max());
+    std::uniform_int_distribution<int> distribution(minimum, maximum);
     std::vector<uint8_t> key(len);
     for (int32_t i = 0; i < len; i++) {
         key[i] = static_cast<uint8_t>(distribution(randomDevice));

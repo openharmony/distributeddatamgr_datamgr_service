@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace UDMF {
+using CleanAfterGet = LifeCyclePolicy;
 std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> LifeCycleManager::intentionPolicy_ = {
     { UD_INTENTION_MAP.at(UD_INTENTION_DRAG), std::make_shared<CleanAfterGet>() },
 };
@@ -33,7 +34,7 @@ LifeCycleManager &LifeCycleManager::GetInstance()
     return instance;
 }
 
-Status LifeCycleManager::DeleteOnGet(const UnifiedKey &key)
+Status LifeCycleManager::OnGot(const UnifiedKey &key)
 {
     auto findPolicy = intentionPolicy_.find(key.intention);
     if (findPolicy == intentionPolicy_.end()) {
@@ -41,10 +42,10 @@ Status LifeCycleManager::DeleteOnGet(const UnifiedKey &key)
         return E_INVALID_PARAMETERS;
     }
     auto policy = findPolicy->second;
-    return policy->DeleteOnGet(key);
+    return policy->OnGot(key);
 }
 
-Status LifeCycleManager::DeleteOnStart()
+Status LifeCycleManager::OnStart()
 {
     Status status = E_OK;
     std::string errorInfo;
@@ -52,10 +53,10 @@ Status LifeCycleManager::DeleteOnStart()
         if (lifeCyclePolicy == nullptr) {
             continue;
         }
-        Status delStatus = lifeCyclePolicy->DeleteOnStart(intention);
+        Status delStatus = lifeCyclePolicy->OnStart(intention);
         if (delStatus != E_OK) {
             status = delStatus;
-            errorInfo +=  intention + " ";
+            errorInfo += intention + " ";
         }
     }
     if (status != E_OK) {
@@ -64,13 +65,13 @@ Status LifeCycleManager::DeleteOnStart()
     return status;
 }
 
-Status LifeCycleManager::DeleteOnSchedule()
+Status LifeCycleManager::StartLifeCycleTimer()
 {
     if (executors_ == nullptr) {
         ZLOGE("Executors_ is nullptr.");
         return E_ERROR;
     }
-    ExecutorPool::TaskId taskId = executors_->Schedule(&LifeCycleManager::DeleteOnTimeout, LifeCyclePolicy::INTERVAL);
+    ExecutorPool::TaskId taskId = executors_->Schedule(GetTask(), LifeCyclePolicy::INTERVAL);
     if (taskId == ExecutorPool::INVALID_TASK_ID) {
         ZLOGE("ExecutorPool Schedule failed.");
         return E_ERROR;
@@ -79,25 +80,27 @@ Status LifeCycleManager::DeleteOnSchedule()
     return E_OK;
 }
 
-Status LifeCycleManager::DeleteOnTimeout()
+ExecutorPool::Task LifeCycleManager::GetTask()
 {
-    Status status = E_OK;
-    std::string errorInfo;
-    std::shared_ptr<LifeCyclePolicy> lifeCyclePolicy;
-    for (auto &[intention, lifeCyclePolicy] : intentionPolicy_) {
-        if (lifeCyclePolicy == nullptr) {
-            continue;
+    return [this] {
+        Status status = E_OK;
+        std::string errorInfo;
+        std::shared_ptr<LifeCyclePolicy> lifeCyclePolicy;
+        for (auto &[intention, lifeCyclePolicy] : intentionPolicy_) {
+            if (lifeCyclePolicy == nullptr) {
+                continue;
+            }
+            Status delStatus = lifeCyclePolicy->OnTimeout(intention);
+            if (delStatus != E_OK) {
+                status = delStatus;
+                errorInfo += intention + " ";
+            }
         }
-        Status delStatus = lifeCyclePolicy->DeleteOnTimeout(intention);
-        if (delStatus != E_OK) {
-            status = delStatus;
-            errorInfo +=  intention + " ";
+        if (status != E_OK) {
+            ZLOGW("fail, status = %{public}d, intention = [%{public}s].", status, errorInfo.c_str());
         }
-    }
-    if (status != E_OK) {
-        ZLOGW("fail, status = %{public}d, intention = [%{public}s].", status, errorInfo.c_str());
-    }
-    return status;
+        return status;
+    };
 }
 
 void LifeCycleManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)

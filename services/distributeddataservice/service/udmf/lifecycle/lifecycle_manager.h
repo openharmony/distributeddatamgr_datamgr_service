@@ -21,24 +21,24 @@
 #include <unordered_map>
 #include <vector>
 
-#include "clean_after_get.h"
 #include "clean_on_startup.h"
 #include "clean_on_timeout.h"
 #include "executor_pool.h"
-#include "lifecycle_policy.h"
 
 namespace OHOS {
 namespace UDMF {
 class LifeCycleManager {
 public:
     static LifeCycleManager &GetInstance();
-    Status DeleteOnGet(const UnifiedKey &key);
-    Status DeleteOnStart();
-    Status DeleteOnSchedule();
+    Status OnGot(const UnifiedKey &key);
+    Status OnStart();
+    Status StartLifeCycleTimer();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
 private:
+    ExecutorPool::Task GetTask();
     static std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> intentionPolicy_;
-    static Status DeleteOnTimeout();
+    static constexpr const char *DATA_PREFIX = "udmf://";
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace UDMF

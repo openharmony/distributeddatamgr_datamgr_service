@@ -28,7 +28,6 @@
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
-#include "dump_helper.h"
 #include "eventcenter/event_center.h"
 #include "kvstore_data_service.h"
 #include "log_print.h"

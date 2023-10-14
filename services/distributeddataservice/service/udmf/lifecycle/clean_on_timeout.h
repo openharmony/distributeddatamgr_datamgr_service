@@ -20,8 +20,8 @@ namespace OHOS {
 namespace UDMF {
 class CleanOnTimeout : public LifeCyclePolicy {
 public:
-    Status DeleteOnStart(const std::string &intention) override;
-    Status DeleteOnGet(const UnifiedKey &key) override;
+    Status OnStart(const std::string &intention) override;
+    Status OnGot(const UnifiedKey &key) override;
 };
 } // namespace UDMF
 } // namespace OHOS

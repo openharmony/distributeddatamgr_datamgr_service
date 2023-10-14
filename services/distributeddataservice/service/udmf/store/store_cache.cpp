@@ -64,13 +64,14 @@ void StoreCache::GarbageCollect()
     stores_.EraseIf([&current](auto &key, std::shared_ptr<Store> &storePtr) {
         if (*storePtr < current) {
             ZLOGD("GarbageCollect, stores:%{public}s time limit, will be close.", key.c_str());
+            storePtr->Close();
             return true;
         }
         return false;
     });
     std::unique_lock<std::mutex> lock(taskMutex_);
     if (!stores_.Empty() && executorPool_ != nullptr) {
-        ZLOGE("GarbageCollect, stores size:%{public}zu", stores_.Size());
+        ZLOGD("GarbageCollect, stores size:%{public}zu", stores_.Size());
         taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
     } else {
         taskId_ = ExecutorPool::INVALID_TASK_ID;

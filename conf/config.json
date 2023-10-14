@@ -75,6 +75,11 @@
         "version": 50331651,
         "pattern": "/data/{type}/{area}/{userId}/database/{bundleName}/{hapName}/{store}",
         "metaPath": "/data/service/el1/public/database/distributeddata/meta"
+      },
+      {
+        "version": 50331653,
+        "pattern": "/data/{type}/{area}/{userId}/database/{bundleName}/{hapName}/{store}/{customDir}",
+        "metaPath": "/data/service/el1/public/database/distributeddata/meta"
       }
     ]
   },

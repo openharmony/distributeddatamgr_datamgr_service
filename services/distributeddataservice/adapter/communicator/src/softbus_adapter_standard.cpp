@@ -218,10 +218,13 @@ std::string SoftBusAdapter::DelConnect(int32_t connId)
 {
     lock_guard<mutex> lock(connMutex_);
     std::string name;
-    for (const auto& conn : connects_) {
-        if (*conn.second == connId) {
-            name = conn.first;
-            connects_.erase(conn.first);
+    for (auto iter = connects_.begin(); iter != connects_.end();) {
+        if (*iter->second == connId) {
+            name += iter->first;
+            name += " ";
+            connects_.erase(iter++);
+        } else {
+            iter++;
         }
     }
     return name;

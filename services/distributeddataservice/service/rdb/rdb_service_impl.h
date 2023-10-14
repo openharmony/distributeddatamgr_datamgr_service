@@ -39,7 +39,9 @@ public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     using DetailAsync = DistributedData::GeneralStore::DetailAsync;
+    using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     RdbServiceImpl();
+    virtual ~RdbServiceImpl();
 
     /* IPC interface */
     std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
@@ -118,6 +120,12 @@ private:
     };
 
     static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
+
+    void RegisterRdbServiceInfo();
+
+    void RegisterHandler();
+
+    void DumpRdbServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
     void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);

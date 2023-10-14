@@ -17,6 +17,7 @@
 #include "udmf_service_stub.h"
 
 #include <vector>
+#include <string_ex.h>
 
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
@@ -31,11 +32,13 @@ constexpr UdmfServiceStub::Handler
     UdmfServiceStub::HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)];
 int UdmfServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
-    ZLOGI("start##code = %{public}u", code);
+    ZLOGI("start##code = %{public}u callingPid:%{public}u callingUid:%{public}u.", code, IPCSkeleton::GetCallingPid(),
+        IPCSkeleton::GetCallingUid());
     std::u16string myDescripter = UdmfServiceStub::GetDescriptor();
     std::u16string remoteDescripter = data.ReadInterfaceToken();
     if (myDescripter != remoteDescripter) {
-        ZLOGE("end##descriptor checked fail");
+        ZLOGE("end##descriptor checked fail,myDescripter = %{public}s,remoteDescripter = %{public}s.",
+            Str16ToStr8(myDescripter).c_str(), Str16ToStr8(remoteDescripter).c_str());
         return -1;
     }
     if (static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_HEAD) > code ||
@@ -53,20 +56,6 @@ int32_t UdmfServiceStub::OnSetData(MessageParcel &data, MessageParcel &reply)
     if (!ITypesUtil::Unmarshal(data, customOption, unifiedData)) {
         ZLOGE("Unmarshal customOption or unifiedData failed!");
         return E_READ_PARCEL_ERROR;
-    }
-    if (unifiedData.IsEmpty()) {
-        ZLOGE("Empty data without any record!");
-        return E_INVALID_PARAMETERS;
-    }
-    if (unifiedData.GetSize() > UdmfService::MAX_DATA_SIZE) {
-        ZLOGE("Exceeded data limit!");
-        return E_INVALID_PARAMETERS;
-    }
-    for (const auto &record : unifiedData.GetRecords()) {
-        if (record->GetSize() > UdmfService::MAX_RECORD_SIZE) {
-            ZLOGE("Exceeded record limit!");
-            return E_INVALID_PARAMETERS;
-        }
     }
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     customOption.tokenId = token;
@@ -125,20 +114,6 @@ int32_t UdmfServiceStub::OnUpdateData(MessageParcel &data, MessageParcel &reply)
     if (!ITypesUtil::Unmarshal(data, query, unifiedData)) {
         ZLOGE("Unmarshal queryOption or unifiedData failed!");
         return E_READ_PARCEL_ERROR;
-    }
-    if (unifiedData.IsEmpty()) {
-        ZLOGE("Empty data without any record!");
-        return E_INVALID_PARAMETERS;
-    }
-    if (unifiedData.GetSize() > UdmfService::MAX_DATA_SIZE) {
-        ZLOGE("Exceeded data limit!");
-        return E_INVALID_PARAMETERS;
-    }
-    for (const auto &record : unifiedData.GetRecords()) {
-        if (record->GetSize() > UdmfService::MAX_RECORD_SIZE) {
-            ZLOGE("Exceeded record limit!");
-            return E_INVALID_PARAMETERS;
-        }
     }
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.tokenId = token;
@@ -224,20 +199,6 @@ int32_t UdmfServiceStub::OnSync(MessageParcel &data, MessageParcel &reply)
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
-}
-
-/*
- * Check whether the caller has the permission to access data.
- */
-bool UdmfServiceStub::VerifyPermission(const std::string &permission)
-{
-#ifdef UDMF_PERMISSION_ENABLED
-    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    int32_t result = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permission);
-    return result == Security::AccessToken::TypePermissionState::PERMISSION_GRANTED;
-#else
-    return true;
-#endif // UDMF_PERMISSION_ENABLED
 }
 } // namespace UDMF
 } // namespace OHOS

@@ -27,6 +27,7 @@
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
+#include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -45,6 +46,7 @@ using namespace OHOS::AppDistributedKv;
 using namespace OHOS::Security::AccessToken;
 using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
+using DumpManager = OHOS::DistributedData::DumpManager;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
@@ -111,6 +113,32 @@ KVDBServiceImpl::KVDBServiceImpl()
 
 KVDBServiceImpl::~KVDBServiceImpl()
 {
+    DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
+}
+
+void KVDBServiceImpl::RegisterKvServiceInfo()
+{
+    OHOS::DistributedData::DumpManager::Config serviceInfoConfig;
+    serviceInfoConfig.fullCmd = "--feature-info";
+    serviceInfoConfig.abbrCmd = "-f";
+    serviceInfoConfig.dumpName = "FEATURE_INFO";
+    serviceInfoConfig.dumpCaption = { "| Display all the service statistics" };
+    DumpManager::GetInstance().AddConfig("FEATURE_INFO", serviceInfoConfig);
+}
+
+void KVDBServiceImpl::RegisterHandler()
+{
+    Handler handler =
+        std::bind(&KVDBServiceImpl::DumpKvServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
+}
+
+void KVDBServiceImpl::DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
+{
+    (void)params;
+    std::string info;
+    dprintf(fd, "-------------------------------------KVDBServiceInfo------------------------------\n%s\n",
+        info.c_str());
 }
 
 Status KVDBServiceImpl::GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds)
@@ -793,11 +821,19 @@ size_t KVDBServiceImpl::GetSyncDataSize(const std::string &deviceId)
 
     return totalSize;
 }
+
 int32_t KVDBServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     storeCache_.SetThreadPool(bindInfo.executors);
     KvStoreSyncManager::GetInstance()->SetThreadPool(bindInfo.executors);
     return 0;
+}
+
+int32_t KVDBServiceImpl::OnInitialize()
+{
+    RegisterKvServiceInfo();
+    RegisterHandler();
+    return SUCCESS;
 }
 } // namespace OHOS::DistributedKv
