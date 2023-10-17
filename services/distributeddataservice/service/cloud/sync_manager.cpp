@@ -17,11 +17,9 @@
 
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
-#include "cloud/store_message.h"
 #include "cloud/sync_event.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
-#include "eventcenter/provider_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "store/auto_cache.h"
@@ -266,16 +264,9 @@ void SyncManager::ExecuteSync(int32_t times, SyncManager::SyncInfo&& info, Cloud
             storeInfo.storeName = database.name;
             storeInfo.instanceId = cloud.apps[schema.bundleName].instanceId;
             auto async = info.GetAsync(storeInfo.bundleName, storeInfo.storeName);
-            if (!async) {
-                StoreMessage input(StoreMessage::GET_CALLBACK, { storeInfo.user,
-                    storeInfo.bundleName, storeInfo.instanceId, storeInfo.storeName });
-                StoreMessage output(StoreMessage::GET_CALLBACK);
-                ProviderCenter::GetInstance().Send(input, output);
-                async = output.GetAsync();
-            }
             auto query = info.GenerateQuery(storeInfo.bundleName, storeInfo.storeName, database.GetTableNames());
             auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                SyncEvent::EventInfo{ info.mode_, info.wait_, times > 0, std::move(query), std::move(async) });
+                SyncEvent::EventInfo{ info.mode_, info.wait_, std::move(query), std::move(async)});
             EventCenter::GetInstance().PostEvent(std::move(evt));
         }
     }
@@ -353,7 +344,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetWait(evt.GetWait());
         syncInfo.SetAsync(store.bundleName, store.storeName, evt.GetAsyncDetail());
         syncInfo.SetQuery(store.bundleName, store.storeName, evt.GetQuery());
-        auto times = evt.AutoRetry() ? CLIENT_RETRY_TIMES : ONCE_TIME;
+        auto times = evt.AutoSync() ? CLIENT_RETRY_TIMES : ONCE_TIME;
         auto task = GetSyncTask(times, RefCount(), std::move(syncInfo));
         task();
     };

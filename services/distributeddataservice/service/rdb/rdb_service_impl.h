@@ -63,10 +63,10 @@ public:
         RdbStoreObserver *observer) override;
 
     int32_t RegisterAutoSyncCallback(const RdbSyncerParam& param,
-        std::shared_ptr<RdbSyncObserver> syncObserver) override;
+        std::shared_ptr<DetailProgressObserver> observer) override;
 
     int32_t UnRegisterAutoSyncCallback(const RdbSyncerParam& param,
-        std::shared_ptr<RdbSyncObserver> syncObserver) override;
+        std::shared_ptr<DetailProgressObserver> observer) override;
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 

@@ -19,13 +19,11 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
 #include "cloud/change_event.h"
-#include "cloud/store_message.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
-#include "eventcenter/provider_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -109,19 +107,9 @@ RdbServiceImpl::RdbServiceImpl()
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
+        store->RegisterDetailProgress(GetCallbacks(meta.tokenId, storeInfo.storeName));
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
-
-    auto getCallbacks = [this](const Message& message, Message& reply) {
-        auto& msg = static_cast<const StoreMessage&>(message);
-        auto& storeInfo = msg.GetStoreInfo();
-        StoreMessage storeMessage(msg);
-        auto tokenId = AccessTokenKit::GetHapTokenID(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
-        storeMessage.SetAsync(GetCallbacks(tokenId, storeInfo.storeName));
-        reply = storeMessage;
-        return ProviderCenter::PROVIDER_CENTER_OK;
-    };
-    ProviderCenter::GetInstance().Subscribe(StoreMessage::GET_CALLBACK, getCallbacks);
 }
 
 int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
@@ -434,10 +422,11 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
         }
     };
 
-    auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME), option.isAutoSync, query,
+    auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME), query,
         option.isAutoSync ? GetCallbacks(storeInfo.tokenId, storeInfo.storeName)
         : option.isAsync  ? asyncCallback
-                          : syncCallback);
+                          : syncCallback,
+        option.isAutoSync, !predicates.operations_.empty());
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
@@ -490,7 +479,7 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
 }
 
 int32_t RdbServiceImpl::RegisterAutoSyncCallback(const RdbSyncerParam& param,
-    std::shared_ptr<RdbSyncObserver> syncObserver)
+    std::shared_ptr<DetailProgressObserver> observer)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -503,11 +492,12 @@ int32_t RdbServiceImpl::RegisterAutoSyncCallback(const RdbSyncerParam& param,
         it->second.callBackStores_.insert(storeName);
         return true;
     });
+    AutoCache::GetInstance().SetDetailProgress(tokenId, storeName, GetCallbacks(tokenId, storeName));
     return RDB_OK;
 }
 
 int32_t RdbServiceImpl::UnRegisterAutoSyncCallback(const RdbSyncerParam& param,
-    std::shared_ptr<RdbSyncObserver> syncObserver)
+    std::shared_ptr<DetailProgressObserver> observer)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto pid = IPCSkeleton::GetCallingPid();
@@ -519,6 +509,7 @@ int32_t RdbServiceImpl::UnRegisterAutoSyncCallback(const RdbSyncerParam& param,
         }
         return !agents.empty();
     });
+    AutoCache::GetInstance().SetDetailProgress(tokenId, storeName, GetCallbacks(tokenId, storeName));
     return RDB_OK;
 }
 

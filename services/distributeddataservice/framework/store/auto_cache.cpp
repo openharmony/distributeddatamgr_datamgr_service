@@ -170,6 +170,18 @@ void AutoCache::GarbageCollect(bool isForce)
     });
 }
 
+void AutoCache::SetDetailProgress(uint32_t tokenId, const std::string& storeId, AutoCache::Async async)
+{
+    stores_.ComputeIfPresent(tokenId, [&storeId, &async](auto &key, auto &stores) {
+        ZLOGD("SetDetailProgress tokenId:0x%{public}x storeId:%{public}s", key, Anonymous::Change(storeId).c_str());
+        auto it = stores.find(storeId);
+        if (it != stores.end()) {
+            it->second.SetDetailProgress(async);
+        }
+        return true;
+    });
+}
+
 AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user)
     : store_(delegate), watchers_(watchers), user_(user)
 {
@@ -244,5 +256,13 @@ int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &pri
         watcher->OnChange(origin, primaryFields, (remain != 0) ? ChangeInfo(values) : std::move(values));
     }
     return Error::E_OK;
+}
+
+void AutoCache::Delegate::SetDetailProgress(AutoCache::Async async)
+{
+    std::unique_lock<decltype(mutex_)> lock(mutex_);
+    if (store_ != nullptr) {
+        store_->RegisterDetailProgress(async);
+    }
 }
 } // namespace OHOS::DistributedData

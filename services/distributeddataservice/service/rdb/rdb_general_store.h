@@ -57,6 +57,8 @@ public:
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
+    int32_t RegisterDetailProgress(DetailAsync async) override;
+    int32_t UnRegisterDetailProgress() override;
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
@@ -88,13 +90,14 @@ private:
         std::string storeId_;
     };
     DBBriefCB GetDBBriefCB(DetailAsync async);
-    DBProcessCB GetDBProcessCB(DetailAsync async);
+    DBProcessCB GetDBProcessCB(DetailAsync async, bool isAutoSync = false);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
 
     ObserverProxy observer_;
     RdbManager manager_;
     RdbDelegate *delegate_ = nullptr;
+    DetailAsync async_ = nullptr;
     std::shared_ptr<RdbCloud> rdbCloud_ {};
     std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
     BindInfo bindInfo_;

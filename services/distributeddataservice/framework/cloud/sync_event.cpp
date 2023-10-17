@@ -14,11 +14,13 @@
  */
 
 #include "cloud/sync_event.h"
-
+#include "store/general_store.h"
 namespace OHOS::DistributedData {
-SyncEvent::EventInfo::EventInfo(int32_t mode, int32_t wait, bool retry, std::shared_ptr<GenQuery> query, GenAsync async)
-    : retry_(retry), mode_(mode), wait_(wait), query_(std::move(query)), asyncDetail_(std::move(async))
+SyncEvent::EventInfo::EventInfo(int32_t mode, int32_t wait, std::shared_ptr<GenQuery> query, GenAsync async,
+    bool autoSync, bool priority)
+    : mode_(mode), wait_(wait), query_(std::move(query)), asyncDetail_(std::move(async))
 {
+    mode_ = GeneralStore::MixMode(mode, autoSync, priority);
 }
 
 SyncEvent::EventInfo::EventInfo(SyncEvent::EventInfo &&info) noexcept
@@ -31,7 +33,6 @@ SyncEvent::EventInfo &SyncEvent::EventInfo::operator=(SyncEvent::EventInfo &&inf
     if (this == &info) {
         return *this;
     }
-    retry_ = info.retry_;
     mode_ = info.mode_;
     wait_ = info.wait_;
     query_ = std::move(info.query_);
@@ -59,9 +60,9 @@ int32_t SyncEvent::GetWait() const
     return info_.wait_;
 }
 
-bool SyncEvent::AutoRetry() const
+bool SyncEvent::AutoSync() const
 {
-    return info_.retry_;
+    return GeneralStore::IsAutoSync(info_.mode_);
 }
 
 std::shared_ptr<GenQuery> SyncEvent::GetQuery() const

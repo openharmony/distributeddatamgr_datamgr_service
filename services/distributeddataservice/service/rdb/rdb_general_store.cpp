@@ -204,7 +204,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     } else {
         dbQuery = rdbQuery->GetQuery();
     }
-    auto dbMode = DistributedDB::SyncMode(mode);
+    auto dbMode = DistributedDB::SyncMode(GeneralStore::GetSyncMode(mode));
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
@@ -215,7 +215,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     auto status = (mode < NEARBY_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0)
                   : (mode > NEARBY_END && mode < CLOUD_END)
-                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async)), wait)
+                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async), IsAutoSync(mode)), wait)
                   : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
@@ -297,13 +297,13 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
     };
 }
 
-RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async)
+RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, bool isAutoSync)
 {
-    if (!async) {
-        return [](auto &) {};
+    if (!async && (!isAutoSync || !async_)) {
+        return [](auto&) {};
     }
 
-    return [async = std::move(async)](const std::map<std::string, SyncProcess> &processes) {
+    return [async = std::move(async), autoAsync = async_](const std::map<std::string, SyncProcess>& processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
@@ -321,7 +321,12 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async)
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
             }
         }
-        async(details);
+        if (async) {
+            async(details);
+        }
+        if (autoAsync) {
+            autoAsync(details);
+        }
     };
 }
 
@@ -407,6 +412,18 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
 bool RdbGeneralStore::IsValid()
 {
     return delegate_ != nullptr;
+}
+
+int32_t RdbGeneralStore::RegisterDetailProgress(GeneralStore::DetailAsync async)
+{
+    async_ = async;
+    return GenErr::E_OK;
+}
+
+int32_t RdbGeneralStore::UnRegisterDetailProgress()
+{
+    async_ = nullptr;
+    return GenErr::E_OK;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
