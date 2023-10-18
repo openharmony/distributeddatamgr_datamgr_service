@@ -52,7 +52,7 @@ AutoCache::~AutoCache()
     }
 }
 
-AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers, bool create)
+AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
     if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType]) {
@@ -60,16 +60,13 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
     }
 
     stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store, create](auto &, std::map<std::string, Delegate> &stores) -> bool {
+        [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
             auto it = stores.find(meta.storeId);
             if (it != stores.end()) {
                 if (!watchers.empty()) {
                     it->second.SetObservers(watchers);
                 }
                 store = it->second;
-                return !stores.empty();
-            }
-            if (!create) {
                 return !stores.empty();
             }
             auto *dbStore = creators_[meta.storeType](meta);
@@ -84,6 +81,25 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
             return !stores.empty();
         });
     return store;
+}
+
+AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::string& storeName)
+{
+    Stores stores;
+    stores_.ComputeIfPresent(tokenId, [&stores, &storeName](auto&, std::map<std::string, Delegate>& delegates) -> bool {
+        if (storeName.empty()) {
+            for (auto& [_, delegate] : delegates) {
+                stores.push_back(delegate);
+            }
+        } else {
+            auto it = delegates.find(storeName);
+            if (it != delegates.end()) {
+                stores.push_back(it->second);
+            }
+        }
+        return !stores.empty();
+    });
+    return stores;
 }
 
 // Should be used within stores_'s thread safe methods

@@ -164,6 +164,12 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
         if (agent.watcher_ != nullptr) {
             agent.watcher_->SetNotifier(nullptr);
         }
+        auto stores = AutoCache::GetInstance().GetStoresIfPresent(key);
+        for (auto store : stores) {
+            if (store != nullptr) {
+                store->UnregisterDetailProgressObserver();
+            }
+        }
         return true;
     });
     return E_OK;
@@ -220,14 +226,14 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
     return RDB_OK;
 }
 
-std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const RdbSyncerParam &param, bool create)
+std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const RdbSyncerParam &param)
 {
     StoreMetaData storeMetaData = GetStoreMetaData(param);
     MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData);
     auto watchers = GetWatchers(storeMetaData.tokenId, storeMetaData.storeId);
-    auto store = AutoCache::GetInstance().GetStore(storeMetaData, watchers, create);
+    auto store = AutoCache::GetInstance().GetStore(storeMetaData, watchers);
     if (store == nullptr) {
-        ZLOGE("store null, storeId:%{public}s, create:%{public}d", storeMetaData.GetStoreAlias().c_str(), create);
+        ZLOGE("store null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
     }
     return store;
 }
@@ -251,17 +257,10 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
 {
-    ZLOGI("tokenId=%{public}x seqNum=%{public}u", tokenId, seqNum);
-    if (seqNum == 0) {
-        return;
-    }
-    sptr<RdbNotifierProxy> notifier = nullptr;
-    syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent& syncAgent) {
-        notifier = syncAgent.notifier_;
-        return true;
-    });
-    if (notifier != nullptr) {
-        notifier->OnComplete(seqNum, std::move(result));
+    ZLOGI("tokenId=%{public}x seqnum=%{public}u", tokenId, seqNum);
+    auto [success, agent] = syncAgents_.Find(tokenId);
+    if (success && agent.notifier_ != nullptr) {
+        agent.notifier_->OnComplete(seqNum, std::move(result));
     }
 }
 
@@ -413,7 +412,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     auto mixMode = GeneralStore::MixMode(option.mode,
         option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
     auto info = ChangeEvent::EventInfo(mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isAutoSync, query,
-        option.isAutoSync ? GetCallbacks(storeInfo.tokenId, storeInfo.storeName)
+        option.isAutoSync ? nullptr
         : option.isAsync  ? asyncCallback
                           : syncCallback);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
@@ -487,22 +486,22 @@ int32_t RdbServiceImpl::RegisterAutoSyncCallback(const RdbSyncerParam& param,
         }
         auto it = agent.callBackStores_.find(storeName);
         if (it == agent.callBackStores_.end()) {
-            agent.callBackStores_.insert({ storeName, 0 });
+            agent.callBackStores_.insert(std::make_pair(storeName, 0));
             isCreate = true;
         }
         agent.callBackStores_[storeName]++;
         return true;
     });
     if (isCreate) {
-        auto store = GetStore(param, false);
-        if (store != nullptr) {
-            store->RegisterDetailProgressObserver(GetCallbacks(tokenId, storeName));
+        auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, storeName);
+        if (!stores.empty() && *stores.begin() != nullptr) {
+            (*stores.begin())->RegisterDetailProgressObserver(GetCallbacks(tokenId, storeName));
         }
     }
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::UnRegisterAutoSyncCallback(const RdbSyncerParam& param,
+int32_t RdbServiceImpl::UnregisterAutoSyncCallback(const RdbSyncerParam& param,
     std::shared_ptr<DetailProgressObserver> observer)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -514,16 +513,16 @@ int32_t RdbServiceImpl::UnRegisterAutoSyncCallback(const RdbSyncerParam& param,
             return true;
         }
         it->second--;
-        if (it->second == 0) {
+        if (it->second <= 0) {
             agent.callBackStores_.erase(it);
             destroyed = true;
         }
         return true;
     });
     if (destroyed) {
-        auto store = GetStore(param, false);
-        if (store != nullptr) {
-            store->UnregisterDetailProgressObserver();
+        auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, storeName);
+        if (!stores.empty() && *stores.begin() != nullptr) {
+            (*stores.begin())->UnregisterDetailProgressObserver();
         }
     }
     return RDB_OK;

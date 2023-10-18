@@ -65,7 +65,7 @@ public:
     int32_t RegisterAutoSyncCallback(const RdbSyncerParam& param,
         std::shared_ptr<DetailProgressObserver> observer) override;
 
-    int32_t UnRegisterAutoSyncCallback(const RdbSyncerParam& param,
+    int32_t UnregisterAutoSyncCallback(const RdbSyncerParam& param,
         std::shared_ptr<DetailProgressObserver> observer) override;
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
@@ -94,7 +94,6 @@ private:
         void SetNotifier(sptr<RdbNotifierProxy> notifier);
         void SetWatcher(std::shared_ptr<RdbWatcher> watcher);
     };
-
 
     class RdbStatic : public StaticActs {
     public:
@@ -137,7 +136,7 @@ private:
 
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
-    std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param, bool create = true);
+    std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
     void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details&& result);
 

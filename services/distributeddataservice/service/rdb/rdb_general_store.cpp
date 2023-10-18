@@ -204,7 +204,8 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     } else {
         dbQuery = rdbQuery->GetQuery();
     }
-    auto dbMode = DistributedDB::SyncMode(GeneralStore::GetSyncMode(mode));
+    auto syncMode = GeneralStore::GetSyncMode(mode);
+    auto dbMode = DistributedDB::SyncMode(syncMode);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
@@ -212,9 +213,9 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
             devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode, wait);
         return GeneralError::E_ALREADY_CLOSED;
     }
-    auto status = (mode < NEARBY_END)
+    auto status = (syncMode < NEARBY_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0)
-                  : (mode > NEARBY_END && mode < CLOUD_END)
+                  : (syncMode > NEARBY_END && syncMode < CLOUD_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async), GetHighMode(mode)), wait)
                   : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
@@ -321,9 +322,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
             }
         }
-        if (highMode == MANUAL_SYNC_MODE && async) {
-            async(details);
-        }
+        async(details);
         if (highMode == AUTO_SYNC_MODE && autoAsync) {
             autoAsync(details);
         }
@@ -416,7 +415,7 @@ bool RdbGeneralStore::IsValid()
 
 int32_t RdbGeneralStore::RegisterDetailProgressObserver(GeneralStore::DetailAsync async)
 {
-    async_ = async;
+    async_ = std::move(async);
     return GenErr::E_OK;
 }
 

@@ -254,7 +254,7 @@ int32_t RdbServiceStub::OnRemoteUnregisterDetailProgressObserver(MessageParcel& 
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = UnRegisterAutoSyncCallback(param, nullptr);
+    auto status = UnregisterAutoSyncCallback(param, nullptr);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

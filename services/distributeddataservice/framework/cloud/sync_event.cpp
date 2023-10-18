@@ -31,6 +31,7 @@ SyncEvent::EventInfo &SyncEvent::EventInfo::operator=(SyncEvent::EventInfo &&inf
     if (this == &info) {
         return *this;
     }
+    retry_ = info.retry_;
     mode_ = info.mode_;
     wait_ = info.wait_;
     query_ = std::move(info.query_);
