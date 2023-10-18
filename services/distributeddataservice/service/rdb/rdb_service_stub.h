@@ -50,9 +50,9 @@ private:
 
     int32_t OnRemoteDoUnSubscribe(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnRemoteRegisterDetailProgress(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteRegisterDetailProgressObserver(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnRemoteUnRegisterDetailProgress(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteUnregisterDetailProgressObserver(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel& reply);
 
@@ -70,10 +70,10 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REMOTE_QUERY)] = &RdbServiceStub::OnRemoteDoRemoteQuery,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_SCHEMA)] = &RdbServiceStub::OnGetSchema,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_DELETE)] = &RdbServiceStub::OnDelete,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REGISTER_DETAIL_PROGRESS)] =
-            &RdbServiceStub::OnRemoteRegisterDetailProgress,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNREGISTER_DETAIL_PROGRESS)] =
-            &RdbServiceStub::OnRemoteUnRegisterDetailProgress
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REGISTER_AUTOSYNC_PROGRESS_OBSERVER)] =
+            &RdbServiceStub::OnRemoteRegisterDetailProgressObserver,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNREGISTER_AUTOSYNC_PROGRESS_OBSERVER)] =
+            &RdbServiceStub::OnRemoteUnregisterDetailProgressObserver
     };
 };
 } // namespace OHOS::DistributedRdb

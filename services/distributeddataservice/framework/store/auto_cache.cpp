@@ -52,7 +52,7 @@ AutoCache::~AutoCache()
     }
 }
 
-AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
+AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers, bool create)
 {
     Store store;
     if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType]) {
@@ -60,13 +60,16 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
     }
 
     stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
+        [this, &meta, &watchers, &store, create](auto &, std::map<std::string, Delegate> &stores) -> bool {
             auto it = stores.find(meta.storeId);
             if (it != stores.end()) {
                 if (!watchers.empty()) {
                     it->second.SetObservers(watchers);
                 }
                 store = it->second;
+                return !stores.empty();
+            }
+            if (!create) {
                 return !stores.empty();
             }
             auto *dbStore = creators_[meta.storeType](meta);
@@ -170,18 +173,6 @@ void AutoCache::GarbageCollect(bool isForce)
     });
 }
 
-void AutoCache::SetDetailProgress(uint32_t tokenId, const std::string& storeId, AutoCache::Async async)
-{
-    stores_.ComputeIfPresent(tokenId, [&storeId, &async](auto &key, auto &stores) {
-        ZLOGD("SetDetailProgress tokenId:0x%{public}x storeId:%{public}s", key, Anonymous::Change(storeId).c_str());
-        auto it = stores.find(storeId);
-        if (it != stores.end()) {
-            it->second.SetDetailProgress(async);
-        }
-        return true;
-    });
-}
-
 AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user)
     : store_(delegate), watchers_(watchers), user_(user)
 {
@@ -256,13 +247,5 @@ int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &pri
         watcher->OnChange(origin, primaryFields, (remain != 0) ? ChangeInfo(values) : std::move(values));
     }
     return Error::E_OK;
-}
-
-void AutoCache::Delegate::SetDetailProgress(AutoCache::Async async)
-{
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
-    if (store_ != nullptr) {
-        store_->RegisterDetailProgress(async);
-    }
 }
 } // namespace OHOS::DistributedData

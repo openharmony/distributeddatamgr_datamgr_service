@@ -71,7 +71,7 @@ using DBConfig = DistributedDB::RuntimeConfig;
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
-    : SystemAbility(runOnCreate), clients_()
+    : SystemAbility(runOnCreate), mutex_(), clients_()
 {
     ZLOGI("begin.");
     if (executors_ == nullptr) {
@@ -83,7 +83,7 @@ KvStoreDataService::KvStoreDataService(bool runOnCreate)
 }
 
 KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate)
-    : SystemAbility(systemAbilityId, runOnCreate),  clients_()
+    : SystemAbility(systemAbilityId, runOnCreate), mutex_(), clients_()
 {
     ZLOGI("begin");
     if (executors_ == nullptr) {
@@ -97,7 +97,7 @@ KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate
 KvStoreDataService::~KvStoreDataService()
 {
     ZLOGI("begin.");
-    clients_.Clear();
+    clients_.clear();
     features_.Clear();
 }
 
@@ -192,23 +192,22 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         ZLOGW("check bundleName:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
         return Status::PERMISSION_DENIED;
     }
-    auto pid = IPCSkeleton::GetCallingPid();
-    bool isSuccess = true;
-    clients_.Compute(info.tokenId,
-        [&isSuccess, &appId, &info, pid, this, obs = std::move(observer)](const auto tokenId, auto &clients) {
-            auto res = clients.try_emplace(info.tokenId, appId, *this, std::move(obs));
-            isSuccess = res.second;
-            if (!isSuccess) {
-                ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.",
-                    appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid());
-            } else {
-                ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d insert success.", appId.appId.c_str(),
-                    info.uid, pid);
-            }
-            return !clients.empty();
-    });
 
-    return isSuccess ? Status::SUCCESS : Status::ERROR;
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
+    auto iter = clients_.find(info.tokenId);
+    // Ignore register with same tokenId and pid
+    if (iter != clients_.end() && IPCSkeleton::GetCallingPid() == iter->second.GetPid()) {
+        ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.",
+            appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid());
+        return Status::SUCCESS;
+    }
+
+    clients_.erase(info.tokenId);
+    auto it = clients_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
+        std::forward_as_tuple(appId, *this, std::move(observer)));
+    ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.",
+        appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid(), it.second ? "success" : "failed");
+    return it.second ? Status::SUCCESS : Status::ERROR;
 }
 
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
@@ -217,10 +216,8 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    clients_.ComputeIfPresent(token, [pid](const auto tokenId, auto &clients) {
-        clients.erase(pid);
-        return !clients.empty();
-    });
+    std::lock_guard<decltype(mutex_)> lg(mutex_);
+    clients_.erase(token);
     return Status::SUCCESS;
 }
 

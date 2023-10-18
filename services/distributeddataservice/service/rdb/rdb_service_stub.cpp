@@ -228,7 +228,7 @@ int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageP
     return RDB_ERROR;
 }
 
-int32_t RdbServiceStub::OnRemoteRegisterDetailProgress(MessageParcel& data, MessageParcel& reply)
+int32_t RdbServiceStub::OnRemoteRegisterDetailProgressObserver(MessageParcel& data, MessageParcel& reply)
 {
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {
@@ -245,7 +245,7 @@ int32_t RdbServiceStub::OnRemoteRegisterDetailProgress(MessageParcel& data, Mess
     return RDB_OK;
 }
 
-int32_t RdbServiceStub::OnRemoteUnRegisterDetailProgress(MessageParcel& data, MessageParcel& reply)
+int32_t RdbServiceStub::OnRemoteUnregisterDetailProgressObserver(MessageParcel& data, MessageParcel& reply)
 {
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {

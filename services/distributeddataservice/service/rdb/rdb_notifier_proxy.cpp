@@ -87,7 +87,7 @@ int32_t RdbNotifierProxy::OnComplete(const std::string& storeName, Details&& res
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     if (Remote()->SendRequest(
-            static_cast<uint32_t>(NotifierIFCode::RDB_NOTIFIER_CMD_AUTO_SYNC_COMPLETE), data, reply, option) != 0) {
+        static_cast<uint32_t>(NotifierIFCode::RDB_NOTIFIER_CMD_AUTO_SYNC_COMPLETE), data, reply, option) != 0) {
         ZLOGE("storeName:%{public}s, send request failed", DistributedData::Anonymous::Change(storeName).c_str());
         return RDB_ERROR;
     }

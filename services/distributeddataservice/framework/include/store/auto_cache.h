@@ -34,7 +34,6 @@ public:
     using Store = std::shared_ptr<GeneralStore>;
     using Watcher = GeneralWatcher;
     using Watchers = std::set<std::shared_ptr<GeneralWatcher>>;
-    using Async = GenAsync;
     using Time = std::chrono::steady_clock::time_point;
     using Executor = ExecutorPool;
     using TaskId = ExecutorPool::TaskId;
@@ -45,7 +44,7 @@ public:
 
     API_EXPORT void Bind(std::shared_ptr<Executor> executor);
 
-    API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers);
+    API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers, bool create = true);
 
     API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId);
 
@@ -54,8 +53,6 @@ public:
     API_EXPORT void CloseExcept(const std::set<int32_t> &users);
 
     API_EXPORT void SetObserver(uint32_t tokenId, const std::string &storeId, const Watchers &watchers);
-
-    API_EXPORT void SetDetailProgress(uint32_t tokenId, const std::string &storeId, Async async);
 
 private:
     AutoCache();
@@ -70,7 +67,6 @@ private:
         bool Close();
         int32_t GetUser() const;
         void SetObservers(const Watchers &watchers);
-        void SetDetailProgress(Async async);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
 
     private:

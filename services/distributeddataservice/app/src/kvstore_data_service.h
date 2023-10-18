@@ -164,7 +164,8 @@ private:
 
     static constexpr int TEN_SEC = 10;
 
-    ConcurrentMap<uint32_t, std::map<uint32_t, KvStoreClientDeathObserverImpl>> clients_;
+    std::mutex mutex_;
+    std::map<uint32_t, KvStoreClientDeathObserverImpl> clients_;
     std::shared_ptr<KvStoreAccountObserver> accountEventObserver_;
 
     std::shared_ptr<Security> security_;

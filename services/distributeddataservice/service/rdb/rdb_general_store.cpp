@@ -215,7 +215,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
     auto status = (mode < NEARBY_END)
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0)
                   : (mode > NEARBY_END && mode < CLOUD_END)
-                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async), IsAutoSync(mode)), wait)
+                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBProcessCB(std::move(async), GetHighMode(mode)), wait)
                   : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
@@ -297,13 +297,13 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
     };
 }
 
-RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, bool isAutoSync)
+RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, int32_t highMode)
 {
-    if (!async && (!isAutoSync || !async_)) {
+    if (!async && (highMode == MANUAL_SYNC_MODE || !async_)) {
         return [](auto&) {};
     }
 
-    return [async = std::move(async), autoAsync = async_](const std::map<std::string, SyncProcess>& processes) {
+    return [async, autoAsync = async_, highMode](const std::map<std::string, SyncProcess>& processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
@@ -321,10 +321,10 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
             }
         }
-        if (async) {
+        if (highMode == MANUAL_SYNC_MODE && async) {
             async(details);
         }
-        if (autoAsync) {
+        if (highMode == AUTO_SYNC_MODE && autoAsync) {
             autoAsync(details);
         }
     };
@@ -414,13 +414,13 @@ bool RdbGeneralStore::IsValid()
     return delegate_ != nullptr;
 }
 
-int32_t RdbGeneralStore::RegisterDetailProgress(GeneralStore::DetailAsync async)
+int32_t RdbGeneralStore::RegisterDetailProgressObserver(GeneralStore::DetailAsync async)
 {
     async_ = async;
     return GenErr::E_OK;
 }
 
-int32_t RdbGeneralStore::UnRegisterDetailProgress()
+int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
 {
     async_ = nullptr;
     return GenErr::E_OK;

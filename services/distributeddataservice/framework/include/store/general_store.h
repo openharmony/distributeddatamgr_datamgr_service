@@ -43,8 +43,10 @@ public:
         CLOUD_END,
         MODE_BUTT = CLOUD_END,
     };
-    static inline int32_t AUTO_SYNC_MODE = 1 << 17;     // 0:manualSync, 1:autoSync
-    static inline int32_t PRIORITY_SYNC_MODE = 1 << 18; // 0:nonPrioritySync, 1:prioritySync
+    enum HighMode {
+        MANUAL_SYNC_MODE = 0x00000,
+        AUTO_SYNC_MODE = 0x10000,
+    };
     enum CleanMode {
         NEARBY_DATA = 0,
         CLOUD_DATA,
@@ -53,21 +55,19 @@ public:
         CLEAN_MODE_BUTT
     };
 
-    static inline int32_t MixMode(int32_t lowMode, bool autoSync = false, bool prioritySync = false)
+    static inline int32_t MixMode(int32_t syncMode, int32_t HighMode)
     {
-        return (int32_t)lowMode | (autoSync ? AUTO_SYNC_MODE : 0) | (prioritySync ? PRIORITY_SYNC_MODE : 0);
+        return syncMode | HighMode;
     }
+
     static inline int32_t GetSyncMode(int32_t mixMode)
     {
         return mixMode & 0xFFFF;
     }
-    static inline bool IsAutoSync(int32_t midMode)
+
+    static inline int32_t GetHighMode(int32_t mixMode)
     {
-        return midMode & AUTO_SYNC_MODE;
-    }
-    static inline bool IsPrioritySync(int32_t midMode)
-    {
-        return midMode & PRIORITY_SYNC_MODE;
+        return mixMode & ~0xFFFF;
     }
 
     struct BindInfo {
@@ -106,9 +106,9 @@ public:
 
     virtual int32_t Unwatch(int32_t origin, Watcher &watcher) = 0;
 
-    virtual int32_t RegisterDetailProgress(DetailAsync async) = 0;
+    virtual int32_t RegisterDetailProgressObserver(DetailAsync async) = 0;
 
-    virtual int32_t UnRegisterDetailProgress() = 0;
+    virtual int32_t UnregisterDetailProgressObserver() = 0;
 
     virtual int32_t Close() = 0;
 
