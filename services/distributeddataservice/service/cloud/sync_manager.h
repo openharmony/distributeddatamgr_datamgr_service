@@ -53,7 +53,7 @@ public:
     private:
         friend SyncManager;
         uint64_t syncId_ = 0;
-        int32_t mode_ = GenStore::CLOUD_TIME_FIRST;
+        int32_t mode_ = GenStore::MixMode(GenStore::CLOUD_TIME_FIRST, GenStore::AUTO_SYNC_MODE);
         int32_t user_ = 0;
         int32_t wait_ = 0;
         std::string id_ = DEFAULT_ID;

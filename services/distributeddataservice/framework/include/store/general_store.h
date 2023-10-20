@@ -43,6 +43,10 @@ public:
         CLOUD_END,
         MODE_BUTT = CLOUD_END,
     };
+    enum HighMode {
+        MANUAL_SYNC_MODE = 0x00000,
+        AUTO_SYNC_MODE = 0x10000,
+    };
     enum CleanMode {
         NEARBY_DATA = 0,
         CLOUD_DATA,
@@ -50,6 +54,21 @@ public:
         LOCAL_DATA,
         CLEAN_MODE_BUTT
     };
+
+    static inline int32_t MixMode(int32_t syncMode, int32_t HighMode)
+    {
+        return syncMode | HighMode;
+    }
+
+    static inline int32_t GetSyncMode(int32_t mixMode)
+    {
+        return mixMode & 0xFFFF;
+    }
+
+    static inline int32_t GetHighMode(int32_t mixMode)
+    {
+        return mixMode & ~0xFFFF;
+    }
 
     struct BindInfo {
         BindInfo(std::shared_ptr<CloudDB> db = nullptr, std::shared_ptr<AssetLoader> loader = nullptr)
@@ -86,6 +105,10 @@ public:
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 
     virtual int32_t Unwatch(int32_t origin, Watcher &watcher) = 0;
+
+    virtual int32_t RegisterDetailProgressObserver(DetailAsync async) = 0;
+
+    virtual int32_t UnregisterDetailProgressObserver() = 0;
 
     virtual int32_t Close() = 0;
 

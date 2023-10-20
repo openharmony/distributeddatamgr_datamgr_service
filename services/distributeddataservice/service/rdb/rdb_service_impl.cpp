@@ -89,7 +89,7 @@ RdbServiceImpl::RdbServiceImpl()
         });
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
-        auto storeInfo = evt.GetStoreInfo();
+        auto &storeInfo = evt.GetStoreInfo();
         StoreMetaData meta;
         meta.storeId = storeInfo.storeName;
         meta.bundleName = storeInfo.bundleName;
@@ -107,6 +107,7 @@ RdbServiceImpl::RdbServiceImpl()
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
+        store->RegisterDetailProgressObserver(GetCallbacks(meta.tokenId, storeInfo.storeName));
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
 }
@@ -155,22 +156,23 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
 
 int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
 {
-    OnClientDied(pid);
-    return E_OK;
-}
-
-void RdbServiceImpl::OnClientDied(pid_t pid)
-{
-    ZLOGI("client dead pid=%{public}d", pid);
-    syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) {
+    ZLOGI("client dead, tokenId:%{public}d, pid:%{public}d ", tokenId, pid);
+    syncAgents_.EraseIf([pid](auto& key, SyncAgent& agent) {
         if (agent.pid_ != pid) {
             return false;
         }
         if (agent.watcher_ != nullptr) {
             agent.watcher_->SetNotifier(nullptr);
         }
+        auto stores = AutoCache::GetInstance().GetStoresIfPresent(key);
+        for (auto store : stores) {
+            if (store != nullptr) {
+                store->UnregisterDetailProgressObserver();
+            }
+        }
         return true;
     });
+    return E_OK;
 }
 
 bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::string& storeName)
@@ -286,6 +288,25 @@ AutoCache::Watchers RdbServiceImpl::GetWatchers(uint32_t tokenId, const std::str
     return { agent.watcher_ };
 }
 
+RdbServiceImpl::DetailAsync RdbServiceImpl::GetCallbacks(uint32_t tokenId, const std::string& storeName)
+{
+    sptr<RdbNotifierProxy> notifier = nullptr;
+    syncAgents_.ComputeIfPresent(tokenId, [&storeName, &notifier](auto, SyncAgent& syncAgent) {
+        if (syncAgent.callBackStores_.count(storeName) != 0) {
+            notifier = syncAgent.notifier_;
+        }
+        return true;
+    });
+    if (notifier == nullptr) {
+        return nullptr;
+    }
+    return [notifier, storeName](const GenDetails& details) {
+        if (notifier != nullptr) {
+            notifier->OnComplete(storeName, HandleGenDetails(details));
+        }
+    };
+}
+
 int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
                                     const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet)
 {
@@ -298,10 +319,8 @@ int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::stri
         ZLOGE("store is null");
         return RDB_ERROR;
     }
-    auto values = ValueProxy::Convert(selectionArgs);
-    RdbQuery rdbQuery(true);
-    rdbQuery.SetDevices(DmAdapter::ToUUID({ device }));
-    rdbQuery.SetSql(sql, std::move(values));
+    RdbQuery rdbQuery;
+    rdbQuery.MakeRemoteQuery(device, sql, ValueProxy::Convert(selectionArgs));
     auto cursor = store->Query("", rdbQuery);
     if (cursor == nullptr) {
         ZLOGE("Query failed, cursor is null");
@@ -390,9 +409,12 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
             async(HandleGenDetails(details));
         }
     };
-
-    auto info = ChangeEvent::EventInfo(option.mode, (option.isAsync ? 0 : WAIT_TIME),
-        (option.isAsync && option.seqNum == 0), query, (option.isAsync ? asyncCallback : syncCallback));
+    auto mixMode = GeneralStore::MixMode(option.mode,
+        option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
+    auto info = ChangeEvent::EventInfo(mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isAutoSync, query,
+        option.isAutoSync ? nullptr
+        : option.isAsync  ? asyncCallback
+                          : syncCallback);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
@@ -420,7 +442,7 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
     });
     if (isCreate) {
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-                                             GetWatchers(tokenId, param.storeName_));
+            GetWatchers(tokenId, param.storeName_));
     }
     return RDB_OK;
 }
@@ -445,7 +467,63 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         return true;
     });
     if (destroyed) {
-        AutoCache::GetInstance().SetObserver(tokenId, param.storeName_, GetWatchers(tokenId, param.storeName_));
+        AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
+            GetWatchers(tokenId, param.storeName_));
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::RegisterAutoSyncCallback(const RdbSyncerParam& param,
+    std::shared_ptr<DetailProgressObserver> observer)
+{
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto storeName = RemoveSuffix(param.storeName_);
+    bool isCreate = false;
+    syncAgents_.Compute(tokenId, [pid, &param, &storeName, &isCreate](auto, SyncAgent& agent) {
+        if (pid != agent.pid_) {
+            agent.ReInit(pid, param.bundleName_);
+        }
+        auto it = agent.callBackStores_.find(storeName);
+        if (it == agent.callBackStores_.end()) {
+            agent.callBackStores_.insert(std::make_pair(storeName, 0));
+            isCreate = true;
+        }
+        agent.callBackStores_[storeName]++;
+        return true;
+    });
+    if (isCreate) {
+        auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, storeName);
+        if (!stores.empty() && *stores.begin() != nullptr) {
+            (*stores.begin())->RegisterDetailProgressObserver(GetCallbacks(tokenId, storeName));
+        }
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::UnregisterAutoSyncCallback(const RdbSyncerParam& param,
+    std::shared_ptr<DetailProgressObserver> observer)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto storeName = RemoveSuffix(param.storeName_);
+    bool destroyed = false;
+    syncAgents_.ComputeIfPresent(tokenId, [&storeName, &destroyed](auto, SyncAgent& agent) {
+        auto it = agent.callBackStores_.find(storeName);
+        if (it == agent.callBackStores_.end()) {
+            return true;
+        }
+        it->second--;
+        if (it->second <= 0) {
+            agent.callBackStores_.erase(it);
+            destroyed = true;
+        }
+        return true;
+    });
+    if (destroyed) {
+        auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, storeName);
+        if (!stores.empty() && *stores.begin() != nullptr) {
+            (*stores.begin())->UnregisterDetailProgressObserver();
+        }
     }
     return RDB_OK;
 }
@@ -654,6 +732,7 @@ void RdbServiceImpl::SyncAgent::ReInit(pid_t pid, const std::string &bundleName)
 {
     pid_ = pid;
     count_ = 0;
+    callBackStores_.clear();
     bundleName_ = bundleName;
     notifier_ = nullptr;
     if (watcher_ != nullptr) {

@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_STORE_AUTO_CACHE_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_STORE_AUTO_CACHE_H
+#include <list>
 #include <memory>
 #include <shared_mutex>
 #include <set>
@@ -32,6 +33,7 @@ class AutoCache {
 public:
     using Error = GeneralError;
     using Store = std::shared_ptr<GeneralStore>;
+    using Stores = std::list<std::shared_ptr<GeneralStore>>;
     using Watcher = GeneralWatcher;
     using Watchers = std::set<std::shared_ptr<GeneralWatcher>>;
     using Time = std::chrono::steady_clock::time_point;
@@ -45,6 +47,8 @@ public:
     API_EXPORT void Bind(std::shared_ptr<Executor> executor);
 
     API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers);
+
+    API_EXPORT Stores GetStoresIfPresent(uint32_t tokenId, const std::string &storeName = "");
 
     API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId);
 

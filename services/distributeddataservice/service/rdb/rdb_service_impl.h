@@ -38,11 +38,10 @@ class API_EXPORT RdbServiceImpl : public RdbServiceStub {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
+    using DetailAsync = DistributedData::GeneralStore::DetailAsync;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     RdbServiceImpl();
     virtual ~RdbServiceImpl();
-
-    void OnClientDied(pid_t pid);
 
     /* IPC interface */
     std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
@@ -63,6 +62,12 @@ public:
     int32_t UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
         RdbStoreObserver *observer) override;
 
+    int32_t RegisterAutoSyncCallback(const RdbSyncerParam& param,
+        std::shared_ptr<DetailProgressObserver> observer) override;
+
+    int32_t UnregisterAutoSyncCallback(const RdbSyncerParam& param,
+        std::shared_ptr<DetailProgressObserver> observer) override;
+
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
@@ -81,6 +86,7 @@ private:
     struct SyncAgent {
         pid_t pid_ = 0;
         int32_t count_ = 0;
+        std::map<std::string, int> callBackStores_;
         std::string bundleName_;
         sptr<RdbNotifierProxy> notifier_ = nullptr;
         std::shared_ptr<RdbWatcher> watcher_ = nullptr;
@@ -125,6 +131,8 @@ private:
         const AsyncDetail &async);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
+
+    DetailAsync GetCallbacks(uint32_t tokenId, const std::string &storeName);
 
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 

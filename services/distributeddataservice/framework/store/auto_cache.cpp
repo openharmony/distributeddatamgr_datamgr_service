@@ -83,6 +83,25 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
     return store;
 }
 
+AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::string& storeName)
+{
+    Stores stores;
+    stores_.ComputeIfPresent(tokenId, [&stores, &storeName](auto&, std::map<std::string, Delegate>& delegates) -> bool {
+        if (storeName.empty()) {
+            for (auto& [_, delegate] : delegates) {
+                stores.push_back(delegate);
+            }
+        } else {
+            auto it = delegates.find(storeName);
+            if (it != delegates.end()) {
+                stores.push_back(it->second);
+            }
+        }
+        return !stores.empty();
+    });
+    return stores;
+}
+
 // Should be used within stores_'s thread safe methods
 void AutoCache::StartTimer()
 {

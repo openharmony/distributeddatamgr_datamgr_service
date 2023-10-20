@@ -610,7 +610,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 if (meta.user != eventInfo.userId) {
                     continue;
                 }
-                ZLOGI("bundlname:%s, user:%s", meta.bundleName.c_str(), meta.user.c_str());
+                ZLOGI("bundleName:%{public}s, user:%{public}s", meta.bundleName.c_str(), meta.user.c_str());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
