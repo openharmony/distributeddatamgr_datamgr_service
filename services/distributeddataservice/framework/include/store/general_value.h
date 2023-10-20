@@ -74,23 +74,6 @@ struct Asset {
     std::string hash;
     std::string path;
 };
-
-struct GenQuery {
-    virtual ~GenQuery() = default;
-    virtual bool IsEqual(uint64_t tid) = 0;
-    virtual std::vector<std::string> GetTables() = 0;
-
-    template<typename T>
-    int32_t QueryInterface(T *&query)
-    {
-        if (!IsEqual(T::TYPE_ID)) {
-            return E_INVALID_ARGS;
-        }
-        query = static_cast<T *>(this);
-        return E_OK;
-    };
-};
-
 using Assets = std::vector<Asset>;
 using Bytes = std::vector<uint8_t>;
 using Value = std::variant<std::monostate, int64_t, double, std::string, bool, Bytes, Asset, Assets>;
@@ -103,6 +86,44 @@ template<typename T>
 inline constexpr size_t TYPE_INDEX = Traits::variant_index_of_v<T, Value>;
 
 inline constexpr size_t TYPE_MAX = Traits::variant_size_of_v<Value>;
+
+enum class QueryOperation : uint32_t {
+    ILLEGAL = 0,
+    IN = 1,
+    OR = 0x101,
+    AND,
+    EQUAL_TO = 0x201,
+    BEGIN_GROUP = 0x301,
+    END_GROUP
+};
+
+struct QueryNode {
+    QueryOperation op = QueryOperation::ILLEGAL;
+    std::string fieldName;
+    std::vector<Value> fieldValue;
+};
+using QueryNodes = std::vector<QueryNode>;
+
+struct GenQuery {
+    virtual ~GenQuery() = default;
+    virtual bool IsEqual(uint64_t tid) = 0;
+    virtual std::vector<std::string> GetTables() = 0;
+    virtual void SetQueryNodes(const std::string& tableName, QueryNodes&& nodes) {};
+    virtual QueryNodes GetQueryNodes(const std::string& tableName)
+    {
+        return {};
+    };
+
+    template<typename T>
+    int32_t QueryInterface(T *&query)
+    {
+        if (!IsEqual(T::TYPE_ID)) {
+            return E_INVALID_ARGS;
+        }
+        query = static_cast<T *>(this);
+        return E_OK;
+    };
+};
 
 template<typename T, typename O>
 bool GetItem(T &&input, O &output)

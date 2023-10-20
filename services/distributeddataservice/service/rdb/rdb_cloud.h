@@ -25,6 +25,7 @@ class RdbCloud : public DistributedDB::ICloudDb {
 public:
     using DBStatus = DistributedDB::DBStatus;
     using DBVBucket = DistributedDB::VBucket;
+    using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
 
     explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB);
     virtual ~RdbCloud() = default;
@@ -41,6 +42,11 @@ public:
     static DBStatus ConvertStatus(DistributedData::GeneralError error);
 
 private:
+    static constexpr const char *TYPE_FIELD = "#_type";
+    static constexpr const char *QUERY_FIELD = "#_query";
+    using QueryNodes = std::vector<DistributedData::QueryNode>;
+    static std::pair<QueryNodes, DistributedData::GeneralError> ConvertQuery(DBVBucket& extend);
+    static QueryNodes ConvertQuery(DBQueryNodes&& nodes);
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
 };

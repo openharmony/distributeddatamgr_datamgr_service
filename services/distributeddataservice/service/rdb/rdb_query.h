@@ -30,13 +30,17 @@ public:
 
     bool IsEqual(uint64_t tid) override;
     std::vector<std::string> GetTables() override;
+    void SetQueryNodes(const std::string& tableName, DistributedData::QueryNodes&& nodes) override;
+    DistributedData::QueryNodes GetQueryNodes(const std::string& tableName) override;
     std::vector<std::string> GetDevices() const;
     DistributedDB::Query GetQuery() const;
     DistributedDB::RemoteCondition GetRemoteCondition() const;
     bool IsRemoteQuery();
+    bool IsPriority();
     void FromTable(const std::vector<std::string> &tables);
     void MakeQuery(const PredicatesMemo &predicates);
     void MakeRemoteQuery(const std::string &devices, const std::string &sql, DistributedData::Values &&args);
+    void MakeCloudQuery(const PredicatesMemo &predicates);
 
 private:
     void EqualTo(const RdbPredicateOperation& operation);
@@ -45,6 +49,9 @@ private:
     void Or(const RdbPredicateOperation& operation);
     void OrderBy(const RdbPredicateOperation& operation);
     void Limit(const RdbPredicateOperation& operation);
+    void In(const RdbPredicateOperation& operation);
+    void BeginGroup(const RdbPredicateOperation& operation);
+    void EndGroup(const RdbPredicateOperation& operation);
     using PredicateHandle = void (RdbQuery::*)(const RdbPredicateOperation &operation);
     static constexpr inline PredicateHandle HANDLES[OPERATOR_MAX] = {
         &RdbQuery::EqualTo,
@@ -53,15 +60,20 @@ private:
         &RdbQuery::Or,
         &RdbQuery::OrderBy,
         &RdbQuery::Limit,
+        &RdbQuery::BeginGroup,
+        &RdbQuery::EndGroup,
+        &RdbQuery::In,
     };
     static constexpr inline uint32_t DECIMAL_BASE = 10;
 
     DistributedDB::Query query_;
     bool isRemote_ = false;
+    bool isPriority_ = false;
     std::string sql_;
     DistributedData::Values args_;
     std::vector<std::string> devices_;
     std::vector<std::string> tables_;
+    DistributedData::QueryNodes queryNodes_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_QUERY_H

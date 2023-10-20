@@ -58,6 +58,16 @@ ValueProxy::Values ValueProxy::Convert(std::vector<NativeRdb::ValueObject> &&val
     return proxy;
 }
 
+ValueProxy::Values ValueProxy::Convert(std::vector<DistributedDB::Type> &&values)
+{
+    Values proxy;
+    proxy.value_.reserve(values.size());
+    for (auto &value : values) {
+        proxy.value_.emplace_back(Convert(std::move(value)));
+    }
+    return proxy;
+}
+
 ValueProxy::Bucket ValueProxy::Convert(DistributedData::VBucket &&bucket)
 {
     ValueProxy::Bucket proxy;

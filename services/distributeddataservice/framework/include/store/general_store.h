@@ -55,9 +55,9 @@ public:
         CLEAN_MODE_BUTT
     };
 
-    static inline int32_t MixMode(int32_t syncMode, int32_t HighMode)
+    static inline int32_t MixMode(int32_t syncMode, int32_t highMode)
     {
-        return syncMode | HighMode;
+        return syncMode | highMode;
     }
 
     static inline int32_t GetSyncMode(int32_t mixMode)

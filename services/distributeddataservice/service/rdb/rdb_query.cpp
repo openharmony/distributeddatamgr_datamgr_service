@@ -49,13 +49,15 @@ std::vector<std::string> RdbQuery::GetDevices() const
 
 void RdbQuery::FromTable(const std::vector<std::string> &tables)
 {
-    ZLOGD("table count=%{public}zu", tables.size());
+    ZLOGD("table size:%{public}zu", tables.size());
+    tables_ = tables;
     query_.FromTable(tables);
 }
 
 void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
 {
-    ZLOGD("table=%{public}zu", predicates.tables_.size());
+    ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
+        predicates.devices_.size(), predicates.operations_.size());
     query_ = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
                                             : DistributedDB::Query::Select();
     if (predicates.tables_.size() > 1) {
@@ -70,6 +72,28 @@ void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
     tables_ = predicates.tables_;
 }
 
+void RdbQuery::MakeCloudQuery(const PredicatesMemo& predicates)
+{
+    ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
+        predicates.devices_.size(), predicates.operations_.size());
+    devices_ = predicates.devices_;
+    tables_ = predicates.tables_;
+    if (predicates.operations_.empty() || predicates.tables_.size() != 1) {
+        query_ = DistributedDB::Query::Select();
+        if (!predicates.tables_.empty()) {
+            query_.FromTable(predicates.tables_);
+        }
+        return;
+    }
+    query_ = DistributedDB::Query::Select().From(*predicates.tables_.begin());
+    isPriority_ = true;
+    for (const auto& operation : predicates.operations_) {
+        if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
+            (this->*HANDLES[operation.operator_])(operation);
+        }
+    }
+}
+
 bool RdbQuery::IsRemoteQuery()
 {
     return isRemote_;
@@ -80,6 +104,17 @@ DistributedDB::RemoteCondition RdbQuery::GetRemoteCondition() const
     auto args = args_;
     std::vector<std::string> bindArgs = ValueProxy::Convert(std::move(args));
     return { sql_, bindArgs };
+}
+
+void RdbQuery::SetQueryNodes(const std::string& tableName, QueryNodes&& nodes)
+{
+    tables_ = { tableName };
+    queryNodes_ = std::move(nodes);
+}
+
+DistributedData::QueryNodes RdbQuery::GetQueryNodes(const std::string& tableName)
+{
+    return queryNodes_;
 }
 
 void RdbQuery::EqualTo(const RdbPredicateOperation &operation)
@@ -120,5 +155,25 @@ void RdbQuery::Limit(const RdbPredicateOperation &operation)
         offset = 0;
     }
     query_.Limit(limit, offset);
+}
+
+void RdbQuery::In(const RdbPredicateOperation& operation)
+{
+    query_.In(operation.field_, operation.values_);
+}
+
+void RdbQuery::BeginGroup(const RdbPredicateOperation& operation)
+{
+    query_.BeginGroup();
+}
+
+void RdbQuery::EndGroup(const RdbPredicateOperation& operation)
+{
+    query_.EndGroup();
+}
+
+bool RdbQuery::IsPriority()
+{
+    return isPriority_;
 }
 } // namespace OHOS::DistributedRdb
