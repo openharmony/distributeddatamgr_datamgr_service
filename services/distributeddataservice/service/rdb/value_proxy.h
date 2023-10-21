@@ -197,6 +197,7 @@ public:
     static Value Convert(DistributedDB::Type &&value);
     static Values Convert(DistributedData::Values &&values);
     static Values Convert(std::vector<NativeRdb::ValueObject> &&values);
+    static Values Convert(std::vector<DistributedDB::Type> &&values);
     static Bucket Convert(DistributedData::VBucket &&bucket);
     static Bucket Convert(NativeRdb::ValuesBucket &&bucket);
     static Bucket Convert(DistributedDB::VBucket &&bucket);

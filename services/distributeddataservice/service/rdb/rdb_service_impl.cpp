@@ -396,7 +396,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     std::shared_ptr<RdbQuery> query = nullptr;
     if (!predicates.tables_.empty()) {
         query = std::make_shared<RdbQuery>();
-        query->FromTable(predicates.tables_);
+        query->MakeCloudQuery(predicates);
     }
     GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](
                                  const GenDetails &result) mutable {
