@@ -146,12 +146,12 @@ int32_t SyncManager::DoCloudSync(SyncInfo syncInfo)
     if (executor_ == nullptr) {
         return E_NOT_INIT;
     }
-
-    actives_.Compute(GenerateId(syncInfo.user_), [this, &syncInfo](const uint64_t &key, TaskId &taskId) mutable {
-        taskId = executor_->Execute(GetSyncTask(0, true, GenSyncRef(key), std::move(syncInfo)));
+    auto syncId = GenerateId(syncInfo.user_);
+    auto ref = GenSyncRef(syncId);
+    actives_.Compute(syncId, [this, &ref, &syncInfo](const uint64_t &key, TaskId &taskId) mutable {
+        taskId = executor_->Execute(GetSyncTask(0, true, ref, std::move(syncInfo)));
         return true;
     });
-
     return E_OK;
 }
 
@@ -172,7 +172,7 @@ int32_t SyncManager::StopCloudSync(int32_t user)
 ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo)
 {
     times++;
-    return [this, times, retry, ref = std::move(ref), info = std::move(syncInfo)]() mutable {
+    return [this, times, retry, keep = std::move(ref), info = std::move(syncInfo)]() mutable {
         activeInfos_.Erase(info.syncId_);
         CloudInfo cloud;
         cloud.user = info.user_;
