@@ -23,6 +23,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/data_share/data",
     "${data_service_path}/service/data_share/strategies",
@@ -45,6 +46,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/base64_utils.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
@@ -109,6 +111,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "relational_store:native_rdb",

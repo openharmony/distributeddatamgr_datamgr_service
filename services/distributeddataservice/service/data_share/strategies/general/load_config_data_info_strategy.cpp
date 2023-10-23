@@ -62,6 +62,10 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
         }
     }
     context->calledSourceDir = metaData.dataDir;
+    context->isEncryptDb = metaData.isEncrypt;
+    if (context->isEncryptDb) {
+        context->secretMetaKey = metaData.GetSecretKey();
+    }
     return true;
 }
 

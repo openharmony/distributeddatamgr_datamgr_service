@@ -45,11 +45,13 @@ public:
     std::string calledStoreName;
     std::string calledTableName;
     std::string calledSourceDir; // the dir of db
+    std::string secretMetaKey;
     int version = -1;
     int errCode = -1;
     bool isRead = false;
     bool isAllowCrossPer = false; // can cross permission check, for special SA
     bool needAutoLoadCallerBundleName = false;
+    bool isEncryptDb = false;
     AccessSystemMode accessSystemMode = AccessSystemMode::UNDEFINED;
     OHOS::AppExecFwk::BundleInfo bundleInfo;
     std::string type = "rdb";

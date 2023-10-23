@@ -15,6 +15,11 @@
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
+#include "crypto_manager.h"
+#include "device_manager_adapter.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/secret_key_meta_data.h"
 #include "resultset_json_formatter.h"
 #include "log_print.h"
 #include "rdb_utils.h"
@@ -50,10 +55,19 @@ std::string RemindTimerFunc(const std::vector<std::string> &args)
     return args[ARG_TIME];
 }
 
-RdbDelegate::RdbDelegate(const std::string &dir, int version, bool registerFunction)
+RdbDelegate::RdbDelegate(const std::string &dir, int version, bool registerFunction,
+    bool isEncrypt, const std::string &secretMetaKey)
 {
     RdbStoreConfig config(dir);
     config.SetCreateNecessary(false);
+    if (isEncrypt) {
+        DistributedData::SecretKeyMetaData secretKeyMeta;
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(secretMetaKey, secretKeyMeta, true);
+        std::vector<uint8_t> decryptKey;
+        DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        config.SetEncryptKey(decryptKey);
+        std::fill(decryptKey.begin(), decryptKey.end(), 0);
+    }
     if (registerFunction) {
         config.SetScalarFunction("remindTimer", ARGS_SIZE, RemindTimerFunc);
     }

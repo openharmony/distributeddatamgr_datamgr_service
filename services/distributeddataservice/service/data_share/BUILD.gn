@@ -27,6 +27,7 @@ config("module_public_config") {
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
+    "../crypto/include",
   ]
 }
 group("build_module") {
@@ -86,6 +87,7 @@ ohos_shared_library("data_share_service") {
     "../../adapter:distributeddata_adapter",
     "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",
+    "../../service:distributeddatasvc",
   ]
 
   external_deps = [

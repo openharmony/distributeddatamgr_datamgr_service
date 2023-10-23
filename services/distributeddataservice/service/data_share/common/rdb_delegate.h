@@ -31,7 +31,8 @@ namespace OHOS::DataShare {
 using namespace OHOS::NativeRdb;
 class RdbDelegate final : public DBDelegate {
 public:
-    explicit RdbDelegate(const std::string &dir, int version, bool registerFunction);
+    explicit RdbDelegate(const std::string &dir, int version, bool registerFunction,
+        bool isEncrypt, const std::string &secretMetaKey);
     int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) override;
     int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) override;

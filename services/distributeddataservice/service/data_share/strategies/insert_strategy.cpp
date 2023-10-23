@@ -37,7 +37,8 @@ int64_t InsertStrategy::Execute(std::shared_ptr<Context> context, const DataShar
         ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return -1;
     }
-    auto delegate = DBDelegate::Create(context->calledSourceDir, context->version);
+    auto delegate = DBDelegate::Create(context->calledSourceDir, context->version, true,
+        context->isEncryptDb, context->secretMetaKey);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s %{public}s", context->calledBundleName.c_str(), context->calledTableName.c_str());
         return -1;
