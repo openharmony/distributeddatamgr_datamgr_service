@@ -303,7 +303,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             auto syncId = GenerateId(info.user_);
             auto ref = GenSyncRef(syncId);
             actives_.Compute(syncId, [this, times, interval, &ref, &info](const uint64_t &key, TaskId &value) mutable {
-              value = executor_->Schedule(interval, GetSyncTask(times, true, ref, std::move(info)));
+                value = executor_->Schedule(interval, GetSyncTask(times, true, ref, std::move(info)));
                 return true;
             });
             return syncId;
