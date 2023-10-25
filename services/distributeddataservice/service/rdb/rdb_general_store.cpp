@@ -62,6 +62,9 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     }
     option.observer = &observer_;
     manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
+    if (delegate_ != nullptr && meta.isRetain) {
+        delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, true);
+    }
 }
 
 RdbGeneralStore::~RdbGeneralStore()
