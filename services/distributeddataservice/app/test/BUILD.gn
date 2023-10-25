@@ -32,6 +32,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/broadcaster",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/utils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include/metadata",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/bootstrap/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/crypto/include",
@@ -208,6 +209,69 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   part_name = "datamgr_service"
 }
 
+ohos_unittest("KvStoreDataServiceClearTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../src/feature_stub_impl.cpp",
+    "../src/kvstore_account_observer.cpp",
+    "../src/kvstore_data_service.cpp",
+    "../src/kvstore_data_service_stub.cpp",
+    "../src/kvstore_device_listener.cpp",
+    "../src/kvstore_meta_manager.cpp",
+    "../src/security/security.cpp",
+    "../src/security/sensitive.cpp",
+    "../src/session_manager/route_head_handler_impl.cpp",
+    "../src/session_manager/session_manager.cpp",
+    "../src/session_manager/upgrade_manager.cpp",
+    "../src/task_manager.cpp",
+    "unittest/kvstore_data_service_clear_test.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtokenid_sdk",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  if (datamgr_service_power) {
+    external_deps += [
+      "battery_manager:batterysrv_client",
+      "power_manager:powermgr_client",
+    ]
+  }
+
+  deps = [
+    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//third_party/googletest:gtest_main",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+
+  ]
+  part_name = "datamgr_service"
+}
+
 ###############################################################################
 
 group("unittest") {
@@ -218,6 +282,7 @@ group("unittest") {
     ":KvStoreDataServiceTest",
     ":KvStoreFlowCtrlManagerTest",
     ":SessionManagerTest",
+    ":KvStoreDataServiceClearTest",
   ]
 }
 
