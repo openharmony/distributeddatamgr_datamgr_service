@@ -32,7 +32,6 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/broadcaster",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/utils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include/metadata",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/bootstrap/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/config/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/crypto/include",
@@ -266,8 +265,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-
   ]
   part_name = "datamgr_service"
 }
