@@ -262,8 +262,8 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "../src/uninstaller:distributeddata_uninstaller_static",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "../../../../../kv_store/frameworks/libs/distributeddb:distributeddb",
+    "../../../../../kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
   ]
   

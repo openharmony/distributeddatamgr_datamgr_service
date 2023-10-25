@@ -17,14 +17,14 @@
 
 #include <memory>
 #include <vector>
-#include "kvstore_client_death_observer.h"
-#include "kvstore_data_service.h"
 #include "bootstrap.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "types.h"
 #include "device_manager_adapter.h"
+#include "kvstore_data_service.h"
+#include "kvstore_client_death_observer.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
@@ -43,21 +43,21 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using MetaDataManager = OHOS::DistributedData::MetaDataManager;
 using KvStoreDataService = OHOS::DistributedKv::KvStoreDataService;
 namespace OHOS::Test {
-class KvStoreDataServiceClearTest : public testing::Test
-{
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
+class KvStoreDataServiceClearTest : public testing::Test{
 
-    void SetUp();
-    void TearDown();
+    public:
+        static void SetUpTestCase(void);
+        static void TearDownTestCase(void);
 
-    NativeTokenInfoParams infoInstance {0};
-protected:
-    KvStoreDataService::StoreMetaData metaData;
-    DistributedData::StoreMetaDataLocal localMeta_;
+        void SetUp();
+        void TearDown();
 
-    void InitMetaData();
+        NativeTokenInfoParams infoInstance {0};
+    protected:       
+        KvStoreDataService::StoreMetaData metaData;
+        DistributedData::StoreMetaDataLocal localMeta_;
+
+        void InitMetaData();
 };
 
 const std::string bundleNameSuccess = "ohos.test.demo";
@@ -76,11 +76,9 @@ void KvStoreDataServiceClearTest::SetUpTestCase(void)
     DistributedData::Bootstrap::GetInstance().LoadCheckers();
     KvStoreMetaManager::GetInstance().BindExecutor(executors);
     KvStoreMetaManager::GetInstance().InitMetaParameter();
-    // KvStoreMetaManager::GetInstance().InitMetaListener();
+    
     DmAdapter::GetInstance().Init(executors);
-
 }
-
 
 void KvStoreDataServiceClearTest::TearDownTestCase(void)
 {
@@ -129,16 +127,14 @@ void KvStoreDataServiceClearTest::SetUp(void)
     AccessTokenKit::AllocHapToken(info, policy);
 
     InitMetaData();
-
 }
 
 void KvStoreDataServiceClearTest::TearDown(void)
 {  
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
 
-    auto tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);    
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);   
     AccessTokenKit::DeleteToken(tokenId);
-
 }
 
 void KvStoreDataServiceClearTest::InitMetaData()
@@ -149,19 +145,17 @@ void KvStoreDataServiceClearTest::InitMetaData()
     metaData.storeId = "test_store";
     metaData.appId = "ohos.test.demo";
     metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-    metaData.uid = 2000000;
     metaData.storeType = 1;
     metaData.area = EL1;
     metaData.instanceId = 0;
     metaData.isAutoSync = true;
     metaData.version = 1;
-    metaData.securityLevel = 2;
     metaData.appType = "default";
     metaData.dataDir = "/data/service/el1/public/database/kvstore_data_service_clear_test";
+
     DistributedData::PolicyValue value;
     value.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
     localMeta_.policies = { std::move(value) };
-
 }
 
 /**
@@ -175,16 +169,20 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level0)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-    auto dataRetTokenId = kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdError);
+    auto dataRetTokenId = 
+        kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdError);
     EXPECT_EQ(dataRetTokenId, Status::ERROR);
     
-    auto dataRetBundleName = kvDataService.ClearAppStorage(bundleNameError, userIDSuccess, appInDexSuccess, tokenIdSuccess);
+    auto dataRetBundleName = 
+        kvDataService.ClearAppStorage(bundleNameError, userIDSuccess, appInDexSuccess, tokenIdSuccess);
     EXPECT_EQ(dataRetBundleName, Status::ERROR);
     
-    auto dataRetUserId = kvDataService.ClearAppStorage(bundleNameSuccess, userIDError, appInDexSuccess, tokenIdSuccess);
+    auto dataRetUserId = 
+        kvDataService.ClearAppStorage(bundleNameSuccess, userIDError, appInDexSuccess, tokenIdSuccess);
     EXPECT_EQ(dataRetUserId, Status::ERROR);
     
-    auto dataRetAppInDex = kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexError, tokenIdSuccess);
+    auto dataRetAppInDex = 
+        kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexError, tokenIdSuccess);
     EXPECT_EQ(dataRetAppInDex, Status::ERROR);
 }
 /**
@@ -198,9 +196,10 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level0)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-    auto metaDataError = kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdSuccess);
-    EXPECT_EQ(metaDataError, Status::ERROR);
 
+    auto metaDataError = 
+        kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdSuccess);
+    EXPECT_EQ(metaDataError, Status::ERROR);
 }
 /**
  * @tc.name: ClearAppStorage003
@@ -228,7 +227,8 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level0)
 
     const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto metaDataSuccess = kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdSuccess);
+    auto metaDataSuccess = 
+        kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdSuccess);
     EXPECT_EQ(metaDataSuccess, Status::SUCCESS);
 
     EXPECT_FALSE(
@@ -237,6 +237,5 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level0)
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     EXPECT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData));
-        
 }
 } // namespace OHOS::Test
