@@ -768,7 +768,7 @@ void KvStoreDataService::RegisterStoreInfo()
     storeInfoConfig.abbrCmd = "-s";
     storeInfoConfig.dumpName = "STORE_INFO";
     storeInfoConfig.countPrintf = PRINTF_COUNT_2;
-    storeInfoConfig.infoName = " <STORE_INFO>";
+    storeInfoConfig.infoName = " <StoreId>";
     storeInfoConfig.minParamsNum = 0;
     storeInfoConfig.maxParamsNum = MAXIMUM_PARAMETER_LIMIT; // Store contains no more than three parameters
     storeInfoConfig.parentNode = "BUNDLE_INFO";

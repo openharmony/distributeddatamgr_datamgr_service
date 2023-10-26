@@ -68,7 +68,7 @@ public:
     bool IsExist(const std::string &infoName, std::map<std::string, std::vector<std::string>> &filterInfo,
         std::string &metaParam);
     void DumpStoreInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
-    void FilterData(std::vector<StoreMetaData> &metas, std::map<std::string, std::vector<std::string>> &params);
+    void FilterData(std::vector<StoreMetaData> &metas, std::map<std::string, std::vector<std::string>> &filterInfo);
     void PrintfInfo(int fd, const std::vector<StoreMetaData> &metas);
     std::string GetIndentation(int size);
 

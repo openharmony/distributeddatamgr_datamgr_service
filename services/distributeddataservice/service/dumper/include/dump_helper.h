@@ -35,8 +35,8 @@ public:
     struct CommandNode {
         std::string dumpName;
         std::vector<std::string> param;
-        int minParamsNum = 0;
-        int maxParamsNum = 0;
+        uint32_t minParamsNum = 0;
+        uint32_t maxParamsNum = 0;
         std::string parentNode;
         std::string childNode;
         std::vector<Handler> handlers;
@@ -64,7 +64,7 @@ private:
     void AddHeadNode(std::shared_ptr<CommandNode> &command, std::shared_ptr<CommandNode> &realHeadNode, bool &isAdded);
     void AddNode(std::shared_ptr<CommandNode> &command, std::shared_ptr<CommandNode> &realHeadNode, bool &isAdded);
     void ParseCommand(const std::vector<std::string> &args, std::vector<std::shared_ptr<CommandNode>> &filterInfo);
-    int GetFormatMaxSize();
+    uint32_t GetFormatMaxSize();
 
     void RegisterErrorInfo();
     void DumpErrorInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
@@ -74,7 +74,7 @@ private:
     void DumpAllInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
     std::string FormatHelpInfo(const std::string &cmdAbbr, const std::string &cmd, const std::string &paraExt,
-        const std::string &info, int &formatMaxSize);
+        const std::string &info, uint32_t &formatMaxSize);
     mutable std::mutex hidumperMutex_;
     static constexpr int32_t MAX_FILTER_COUNT = 3;
     static constexpr int32_t MAX_RECORED_ERROR = 10;
