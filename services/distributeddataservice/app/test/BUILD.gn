@@ -251,7 +251,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
       "power_manager:powermgr_client",
     ]
   }
-  
+
   deps = [
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "../../adapter:distributeddata_adapter",
@@ -266,7 +266,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "../../../../../kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
   ]
-  
+
   part_name = "datamgr_service"
 }
 

@@ -17,6 +17,8 @@
 
 #include <memory>
 #include <vector>
+
+#include "gtest/gtest.h"
 #include "bootstrap.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
@@ -33,7 +35,6 @@
 #include "feature/feature_system.h"
 #include "hap_token_info.h"
 #include "log_print.h"
-#include "gtest/gtest.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -43,23 +44,28 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using MetaDataManager = OHOS::DistributedData::MetaDataManager;
 using KvStoreDataService = OHOS::DistributedKv::KvStoreDataService;
 namespace OHOS::Test {
-class KvStoreDataServiceClearTest : public testing::Test{
+class KvStoreDataServiceClearTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
 
-    public:
-        static void SetUpTestCase(void);
-        static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
 
-        void SetUp();
-        void TearDown();
+    NativeTokenInfoParams infoInstance {0};
+protected:
+    static constexpr const char *TEST_USER = "100";
+    static constexpr const char *TEST_BUNDLE = "ohos.test.demo";
+    static constexpr const char *TEST_STORE = "test_store";
 
-        NativeTokenInfoParams infoInstance {0};
-    protected:       
-        KvStoreDataService::StoreMetaData metaData;
-        DistributedData::StoreMetaDataLocal localMeta_;
+    KvStoreDataService::StoreMetaData metaData;
+    DistributedData::StoreMetaDataLocal localMeta_;
 
-        void InitMetaData();
+    void InitMetaData();
 };
 
+const int32_t TEST_UID = 2000000;
+const int32_t TEST_USERID = 100;
 const std::string bundleNameSuccess = "ohos.test.demo";
 const std::string bundleNameError = "com.sample.helloworld";
 const int32_t userIDSuccess = 100;
@@ -76,7 +82,7 @@ void KvStoreDataServiceClearTest::SetUpTestCase(void)
     DistributedData::Bootstrap::GetInstance().LoadCheckers();
     KvStoreMetaManager::GetInstance().BindExecutor(executors);
     KvStoreMetaManager::GetInstance().InitMetaParameter();
-    
+
     DmAdapter::GetInstance().Init(executors);
 }
 
@@ -96,14 +102,14 @@ void KvStoreDataServiceClearTest::SetUp(void)
     infoInstance.aplStr = "system_core";
 
     HapInfoParams info = {
-        .userID = 100,
-        .bundleName = "ohos.test.demo",
+        .userID = TEST_USERID,
+        .bundleName = TEST_BUNDLE,
         .instIndex = 0,
-        .appIDDesc = "ohos.test.demo"
+        .appIDDesc = TEST_BUNDLE
     };
     PermissionDef infoManagerTestPermDef = {
         .permissionName = "ohos.permission.test",
-        .bundleName = "ohos.test.demo",
+        .bundleName = TEST_BUNDLE,
         .grantMode = 1,
         .availableLevel = APL_NORMAL,
         .label = "label",
@@ -130,21 +136,22 @@ void KvStoreDataServiceClearTest::SetUp(void)
 }
 
 void KvStoreDataServiceClearTest::TearDown(void)
-{  
+{
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
 
-    auto tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);   
+    auto tokenId = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
     AccessTokenKit::DeleteToken(tokenId);
 }
 
 void KvStoreDataServiceClearTest::InitMetaData()
 {
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData.user = "100";
-    metaData.bundleName = "ohos.test.demo";
-    metaData.storeId = "test_store";
-    metaData.appId = "ohos.test.demo";
-    metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    metaData.user = TEST_USER;
+    metaData.bundleName = TEST_BUNDLE;
+    metaData.storeId = TEST_STORE;
+    metaData.appId = TEST_BUNDLE;
+    metaData.tokenId = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    metaData.uid = TEST_UID;
     metaData.storeType = 1;
     metaData.area = EL1;
     metaData.instanceId = 0;
@@ -168,20 +175,20 @@ void KvStoreDataServiceClearTest::InitMetaData()
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level0)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-    auto dataRetTokenId = 
+    const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    auto dataRetTokenId =
         kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdError);
     EXPECT_EQ(dataRetTokenId, Status::ERROR);
-    
-    auto dataRetBundleName = 
+
+    auto dataRetBundleName =
         kvDataService.ClearAppStorage(bundleNameError, userIDSuccess, appInDexSuccess, tokenIdSuccess);
     EXPECT_EQ(dataRetBundleName, Status::ERROR);
-    
-    auto dataRetUserId = 
+
+    auto dataRetUserId =
         kvDataService.ClearAppStorage(bundleNameSuccess, userIDError, appInDexSuccess, tokenIdSuccess);
     EXPECT_EQ(dataRetUserId, Status::ERROR);
-    
-    auto dataRetAppInDex = 
+
+    auto dataRetAppInDex =
         kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexError, tokenIdSuccess);
     EXPECT_EQ(dataRetAppInDex, Status::ERROR);
 }
@@ -195,9 +202,9 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level0)
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level0)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
 
-    auto metaDataError = 
+    auto metaDataError =
         kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdSuccess);
     EXPECT_EQ(metaDataError, Status::ERROR);
 }
@@ -225,9 +232,9 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level0)
     EXPECT_TRUE(
         MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData));
 
-    const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    const int32_t tokenIdSuccess = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto metaDataSuccess = 
+    auto metaDataSuccess =
         kvDataService.ClearAppStorage(bundleNameSuccess, userIDSuccess, appInDexSuccess, tokenIdSuccess);
     EXPECT_EQ(metaDataSuccess, Status::SUCCESS);
 
