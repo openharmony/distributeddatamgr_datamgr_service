@@ -730,7 +730,7 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
         return ERROR;
     }
     if (hapTokenInfo.bundleName != bundleName || hapTokenInfo.userID != userId ||
-            hapTokenInfo.instIndex != appIndex) {
+        hapTokenInfo.instIndex != appIndex) {
         ZLOGE("passed wrong, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
             bundleName.c_str(), userId, appIndex);
         return ERROR;
