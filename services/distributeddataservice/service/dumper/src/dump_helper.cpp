@@ -50,13 +50,13 @@ bool DumpHelper::Dump(int fd, const std::vector<std::string> &args)
     GetCommandNodes(fd, commands);
     if (!(commands.empty())) {
         std::shared_ptr<CommandNode> tmpCommandNode;
-        for (auto& command : commands) {
+        for (auto const &command : commands) {
             std::map<std::string, std::vector<std::string>> params;
             tmpCommandNode = command;
             while (tmpCommandNode != nullptr) {
                 params.emplace(tmpCommandNode->dumpName, tmpCommandNode->param);
                 if (tmpCommandNode->nextNode == nullptr) {
-                    for (auto& handler : tmpCommandNode->handlers) {
+                    for (auto const &handler : tmpCommandNode->handlers) {
                         handler(fd, params);
                     }
                 }
@@ -125,18 +125,14 @@ DumpHelper::CommandNode DumpHelper::GetCommand(const std::string &name)
 
 void DumpHelper::GetCommandNodes(int fd, std::vector<std::shared_ptr<CommandNode>> &commands)
 {
-    for (auto i = 0; i < commands.size();) {
+    for (uint32_t i = 1; i < commands.size();) {
         bool isAdded = false;
-        if (i == 0) {
-            i++;
-            continue;
-        }
         if (commands[i]->parentNode.empty()) {
-            for (auto j = 0; j < i; j++) {
+            for (uint32_t j = 0; j < i; j++) {
                 AddHeadNode(commands[i], commands[j], isAdded);
             }
         } else {
-            for (auto j = 0; j < i; j++) {
+            for (uint32_t j = 0; j < i; j++) {
                 AddNode(commands[i], commands[j], isAdded);
             }
         }
@@ -205,7 +201,7 @@ void DumpHelper::DumpErrorInfo(int fd, std::map<std::string, std::vector<std::st
 }
 
 std::string DumpHelper::FormatHelpInfo(const std::string &cmd, const std::string &cmdAbbr, const std::string &paraExt,
-    const std::string &info, int &formatMaxSize)
+    const std::string &info, uint32_t &formatMaxSize)
 {
     std::string formatInfo;
     formatInfo.append(" ").append(cmdAbbr).append(paraExt).append(", ").append(cmd).append(paraExt);
@@ -214,9 +210,9 @@ std::string DumpHelper::FormatHelpInfo(const std::string &cmd, const std::string
     return formatInfo;
 }
 
-int DumpHelper::GetFormatMaxSize()
+uint32_t DumpHelper::GetFormatMaxSize()
 {
-    int formatMaxSize = 0;
+    uint32_t formatMaxSize = 0;
     auto dumpFactory = DumpManager::GetInstance().LoadConfig();
     dumpFactory.ForEach([&formatMaxSize](const auto &key, auto &value) {
         if (key == "ALL_INFO") {
@@ -247,15 +243,13 @@ void DumpHelper::RegisterHelpInfo()
     helpInfoConfig.abbrCmd = "-h";
     helpInfoConfig.dumpName = "HELP_INFO";
     helpInfoConfig.dumpCaption = { "| Display this help message" };
-    std::vector<std::string> dumpCaption = { "| Display all the user statistics\n", "| Display the user statistics by "
-                                                                                    "UserId\n" };
     DumpManager::GetInstance().AddConfig(helpInfoConfig.dumpName, helpInfoConfig);
 }
 
 void DumpHelper::DumpHelpInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
 {
     std::string info;
-    int formatMaxSize = GetFormatMaxSize();
+    uint32_t formatMaxSize = GetFormatMaxSize();
     auto dumpFactory = DumpManager::GetInstance().LoadConfig();
     dumpFactory.ForEach([this, &info, &formatMaxSize](const auto &key, auto &value) {
         if (key == "ALL_INFO") {
@@ -308,7 +302,7 @@ void DumpHelper::AddErrorInfo(int32_t errorCode, const std::string &errorInfo)
     error.errorCode = errorCode;
     error.errorInfo = errorInfo;
     auto now = std::chrono::system_clock::now();
-    uint64_t millSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
+    int64_t millSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
                            (std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count() * 1000);
     time_t tt = std::chrono::system_clock::to_time_t(now);
     auto ptm = localtime(&tt);

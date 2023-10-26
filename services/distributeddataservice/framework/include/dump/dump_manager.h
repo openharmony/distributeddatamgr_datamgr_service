@@ -35,8 +35,8 @@ public:
         std::string abbrCmd;
         int countPrintf = 1;
         std::string infoName;
-        int minParamsNum = 0;
-        int maxParamsNum = 0;
+        uint32_t minParamsNum = 0;
+        uint32_t maxParamsNum = 0;
         std::string parentNode;
         std::string childNode;
         std::vector<std::string> dumpCaption;
