@@ -168,6 +168,38 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
     return SUCCESS;
 }
 
+int32_t CloudServiceImpl::Convert(const std::string extraData, ExInfo &exInfo)
+{
+    auto isJson = Serializable::IsJson(extraData);
+    if (!isJson) {
+        ZLOGE("extraData cannot be parsed to valid JSON");
+        return ERROR;
+    }
+    auto root = Serializable::ToJson(extraData);
+    if (!root.contains("data")) {
+        return ERROR;
+    }
+    nlohmann::json data;
+    root["data"].get_to(data);
+    if (!Serializable::GetValue(data, "accountId", exInfo.accountId)) {
+        ZLOGE("Failed to get accountId");
+        return ERROR;
+    }
+    if (!Serializable::GetValue(data, "bundleName", exInfo.bundleName)) {
+        ZLOGE("Failed to get bundleName");
+        return ERROR;
+    }
+    if (!Serializable::GetValue(data, "containerName", exInfo.databaseAlias)) {
+        ZLOGE("Failed to get databaseAlias");
+        return ERROR;
+    }
+    if (!data.contains("recordTypes") || !data["recordTypes"].is_array()) {
+        return ERROR;
+    }
+    data["recordTypes"].get_to(exInfo.tableAlias);
+    return SUCCESS;
+}
+
 int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::string, int32_t> &actions)
 {
     CloudInfo cloudInfo;
@@ -190,9 +222,8 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     return DoClean(cloudInfo, dbActions);
 }
 
-int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
+int32_t CloudServiceImpl::checkStatus(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo)
 {
-    CloudInfo cloudInfo;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS) {
@@ -213,7 +244,58 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     if (!cloudInfo.apps[bundleName].cloudSwitch) {
         return CLOUD_DISABLE_SWITCH;
     }
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
+{
+    CloudInfo cloudInfo;
+    int32_t status = checkStatus(id, bundleName, cloudInfo);
+    if (status == ERROR) {
+        return INVALID_ARGUMENT;
+    }
     syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::NotifyChange(const std::string &eventId, const std::string &extraData)
+{
+    if (eventId != DATA_CHANGE_EVENT_ID) {
+        return CLOUD_DISABLE;
+    }
+    if (extraData.empty()) {
+        return INVALID_ARGUMENT;
+    }
+    ExInfo exInfo;
+    int32_t status = Convert(extraData, exInfo);
+    if (status == ERROR) {
+        return INVALID_ARGUMENT;
+    }
+    CloudInfo cloudInfo;
+    status = checkStatus(exInfo.accountId, exInfo.bundleName, cloudInfo);
+    if (status == ERROR) {
+        return INVALID_ARGUMENT;
+    }
+    auto schemaKey = cloudInfo.GetSchemaKey(cloudInfo.user, exInfo.bundleName);
+    SchemaMeta schemaMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        ZLOGE("no exist meta, user:%{public}d", cloudInfo.user);
+        return ERROR;
+    }
+    std::string storeId;
+    std::vector<std::string> table;
+    for (auto &db : schemaMeta.databases) {
+        if (db.alias != exInfo.databaseAlias) {
+            continue;
+        }
+        storeId = db.name;
+        for (auto &tb : db.tables) {
+            if (std::find(exInfo.tableAlias.begin(), exInfo.tableAlias.end(), tb.alias) != exInfo.tableAlias.end()) {
+                table.emplace_back(tb.name);
+            }
+        }
+    }
+    syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exInfo.bundleName, storeId, table));
     return SUCCESS;
 }
 
