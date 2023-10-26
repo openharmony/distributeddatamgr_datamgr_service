@@ -80,7 +80,7 @@ private:
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
-    static constexpr const char * DATA_CHANGE_EVENT_ID = "cloud_data_change";
+    static constexpr const char *DATA_CHANGE_EVENT_ID = "cloud_data_change";
     
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
