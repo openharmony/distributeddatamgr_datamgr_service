@@ -126,7 +126,7 @@ int32_t CloudServiceStub::OnNotifyChange(const std::string &id, MessageParcel &d
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto result = NotifyChange(id,extraData);
+    auto result = NotifyChange(id, extraData);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData
