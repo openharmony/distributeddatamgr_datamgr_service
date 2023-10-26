@@ -63,23 +63,6 @@ bool Constant::NotEqual(bool first, bool second)
 
 bool Constant::IsBackground(pid_t pid)
 {
-    std::ifstream ifs("/proc/" + std::to_string(pid) + "/cgroup", std::ios::in);
-    ZLOGD("pid %d open %d", pid, ifs.good());
-    if (!ifs.good()) {
-        return false;
-    }
-
-    while (!ifs.eof()) {
-        const int MAX_LEN = 256; // enough
-        char buffer[MAX_LEN] = { 0 };
-        ifs.getline(buffer, sizeof(buffer));
-        std::string line = buffer;
-
-        size_t pos = line.find("background");
-        if (pos != std::string::npos) {
-            return true;
-        }
-    }
     return false;
 }
 
