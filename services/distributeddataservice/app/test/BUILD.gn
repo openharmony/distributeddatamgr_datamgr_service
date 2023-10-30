@@ -241,6 +241,8 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -262,8 +264,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "../src/checker:distributeddata_checker_static",
     "../src/flowctrl_manager:distributeddata_flowctrl_static",
     "../src/uninstaller:distributeddata_uninstaller_static",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
   ]
 
