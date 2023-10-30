@@ -211,18 +211,18 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
 ohos_unittest("KvStoreDataServiceClearTest") {
   module_out_path = module_output_path
   sources = [
-    "../src/feature_stub_impl.cpp",
-    "../src/kvstore_account_observer.cpp",
-    "../src/kvstore_data_service.cpp",
-    "../src/kvstore_data_service_stub.cpp",
-    "../src/kvstore_device_listener.cpp",
-    "../src/kvstore_meta_manager.cpp",
-    "../src/security/security.cpp",
-    "../src/security/sensitive.cpp",
-    "../src/session_manager/route_head_handler_impl.cpp",
-    "../src/session_manager/session_manager.cpp",
-    "../src/session_manager/upgrade_manager.cpp",
-    "../src/task_manager.cpp",
+    "${data_service_path}/app/src/feature_stub_impl.cpp",
+    "${data_service_path}/app/src/kvstore_account_observer.cpp",
+    "${data_service_path}/app/src/kvstore_data_service.cpp",
+    "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
+    "${data_service_path}/app/src/kvstore_device_listener.cpp",
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/app/src/security/security.cpp",
+    "${data_service_path}/app/src/security/sensitive.cpp",
+    "${data_service_path}/app/src/session_manager/route_head_handler_impl.cpp",
+    "${data_service_path}/app/src/session_manager/session_manager.cpp",
+    "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
+    "${data_service_path}/app/src/task_manager.cpp",
     "unittest/kvstore_data_service_clear_test.cpp",
   ]
 
@@ -242,6 +242,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -255,15 +256,14 @@ ohos_unittest("KvStoreDataServiceClearTest") {
   }
 
   deps = [
-    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "../../adapter:distributeddata_adapter",
-    "../../adapter/broadcaster:distributeddata_broadcaster_static",
-    "../../adapter/utils:distributeddata_utils_static",
-    "../../framework:distributeddatasvcfwk",
-    "../../service:distributeddatasvc",
-    "../src/checker:distributeddata_checker_static",
-    "../src/flowctrl_manager:distributeddata_flowctrl_static",
-    "../src/uninstaller:distributeddata_uninstaller_static",
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/app/src/checker:distributeddata_checker_static",
+    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl_static",
+    "${data_service_path}/app/src/uninstaller:distributeddata_uninstaller_static",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
   ]
 
