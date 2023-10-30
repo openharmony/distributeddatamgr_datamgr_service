@@ -91,6 +91,7 @@ ohos_shared_library("distributeddatasvc") {
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
     "permission/src/permit_delegate.cpp",
+    "rdb/cache_cursor.cpp",
     "rdb/rdb_asset_loader.cpp",
     "rdb/rdb_cloud.cpp",
     "rdb/rdb_cloud_data_translate.cpp",
