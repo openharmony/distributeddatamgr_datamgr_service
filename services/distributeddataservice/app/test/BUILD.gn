@@ -211,18 +211,18 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
 ohos_unittest("KvStoreDataServiceClearTest") {
   module_out_path = module_output_path
   sources = [
-    "../src/feature_stub_impl.cpp",
-    "../src/kvstore_account_observer.cpp",
-    "../src/kvstore_data_service.cpp",
-    "../src/kvstore_data_service_stub.cpp",
-    "../src/kvstore_device_listener.cpp",
-    "../src/kvstore_meta_manager.cpp",
-    "../src/security/security.cpp",
-    "../src/security/sensitive.cpp",
-    "../src/session_manager/route_head_handler_impl.cpp",
-    "../src/session_manager/session_manager.cpp",
-    "../src/session_manager/upgrade_manager.cpp",
-    "../src/task_manager.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/feature_stub_impl.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/kvstore_account_observer.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/kvstore_data_service.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/kvstore_data_service_stub.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/kvstore_device_listener.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/kvstore_meta_manager.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/security/security.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/security/sensitive.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/session_manager/route_head_handler_impl.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/session_manager/session_manager.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/session_manager/upgrade_manager.cpp",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/task_manager.cpp",
     "unittest/kvstore_data_service_clear_test.cpp",
   ]
 
@@ -254,16 +254,16 @@ ohos_unittest("KvStoreDataServiceClearTest") {
 
   deps = [
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "../../../../../kv_store/frameworks/libs/distributeddb:distributeddb",
-    "../../../../../kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "../../adapter:distributeddata_adapter",
-    "../../adapter/broadcaster:distributeddata_broadcaster_static",
-    "../../adapter/utils:distributeddata_utils_static",
-    "../../framework:distributeddatasvcfwk",
-    "../../service:distributeddatasvc",
-    "../src/checker:distributeddata_checker_static",
-    "../src/flowctrl_manager:distributeddata_flowctrl_static",
-    "../src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/uninstaller:distributeddata_uninstaller_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
   ]
 

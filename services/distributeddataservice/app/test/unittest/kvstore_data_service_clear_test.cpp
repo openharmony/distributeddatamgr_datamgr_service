@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "KvStoreDataServiceClearTest"
-
 #include <memory>
 #include <vector>
 
@@ -34,7 +32,6 @@
 #include "metadata/secret_key_meta_data.h"
 #include "feature/feature_system.h"
 #include "hap_token_info.h"
-#include "log_print.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -58,7 +55,7 @@ protected:
     static constexpr const char *TEST_BUNDLE = "ohos.test.demo";
     static constexpr const char *TEST_STORE = "test_store";
 
-    KvStoreDataService::StoreMetaData metaData;
+    DistributedData::StoreMetaData metaData;
     DistributedData::StoreMetaDataLocal localMeta_;
 
     void InitMetaData();
@@ -175,21 +172,21 @@ void KvStoreDataServiceClearTest::InitMetaData()
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level1)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto tokenId_ok = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
     auto dataRetTokenId =
         kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_OK, APPINDEX_OK, TOKENID_NO);
     EXPECT_EQ(dataRetTokenId, Status::ERROR);
 
     auto dataRetBundleName =
-        kvDataService.ClearAppStorage(BUNDLENAME_NO, USERID_OK, APPINDEX_OK, tokenId_ok);
+        kvDataService.ClearAppStorage(BUNDLENAME_NO, USERID_OK, APPINDEX_OK, tokenIdOk);
     EXPECT_EQ(dataRetBundleName, Status::ERROR);
 
     auto dataRetUserId =
-        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_NO, APPINDEX_OK, tokenId_ok);
+        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_NO, APPINDEX_OK, tokenIdOk);
     EXPECT_EQ(dataRetUserId, Status::ERROR);
 
     auto dataRetAppInDex =
-        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_OK, APPINDEX_NO, tokenId_ok);
+        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_OK, APPINDEX_NO, tokenIdOk);
     EXPECT_EQ(dataRetAppInDex, Status::ERROR);
 }
 /**
@@ -202,10 +199,10 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level1)
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level1)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto tokenId_ok = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
 
     auto metaDataError =
-        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_OK, APPINDEX_OK, tokenId_ok);
+        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_OK, APPINDEX_OK, tokenIdOk);
     EXPECT_EQ(metaDataError, Status::ERROR);
 }
 /**
@@ -227,14 +224,14 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level1)
 
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData));
 
-    auto tokenId_ok = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     auto metaDataSuccess =
-        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_OK, APPINDEX_OK, tokenId_ok);
+        kvDataService.ClearAppStorage(BUNDLENAME_OK, USERID_OK, APPINDEX_OK, tokenIdOk);
     EXPECT_EQ(metaDataSuccess, Status::SUCCESS);
 
     EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData));
-    
+
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData));
 }

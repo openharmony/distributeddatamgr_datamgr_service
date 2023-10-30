@@ -725,16 +725,14 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
     int32_t tokenId)
 {
     HapTokenInfo hapTokenInfo;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS) {
-        ZLOGE("passed wrong tokenId: %{public}d", tokenId);
-        return ERROR;
-    }
-    if (hapTokenInfo.bundleName != bundleName || hapTokenInfo.userID != userId ||
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS ||
+        hapTokenInfo.bundleName != bundleName || hapTokenInfo.userID != userId ||
         hapTokenInfo.instIndex != appIndex) {
-        ZLOGE("passed wrong, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
-            bundleName.c_str(), userId, appIndex);
+        ZLOGE("passed wrong, tokenId: %{public}d, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
+            tokenId, bundleName.c_str(), userId, appIndex);
         return ERROR;
     }
+
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies(
         [bundleName, userId, appIndex, tokenId](const auto &, const std::shared_ptr<StaticActs> &acts) {
