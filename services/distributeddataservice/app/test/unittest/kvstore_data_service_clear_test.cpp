@@ -206,7 +206,7 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level1)
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level1)
 {
     auto executors = std::make_shared<ExecutorPool>(12, 5);
-    //Create an object of the ExecutorPool class and pass 12 and 5 as arguments to the constructor of the class
+    // Create an object of the ExecutorPool class and pass 12 and 5 as arguments to the constructor of the class
     KvStoreMetaManager::GetInstance().BindExecutor(executors);
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     DmAdapter::GetInstance().Init(executors);
@@ -233,5 +233,4 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level1)
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
     EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
 }
-
 } // namespace OHOS::Test
