@@ -89,7 +89,7 @@ Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
         std::lock_guard<std::mutex> lock(taskMutex_);
         if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
             taskId_ = Context::getInstance().
-                GetThreadPool()->Execute(std::bind(&SoftBusClient::CloseP2pSessions, this));
+                GetThreadPool()->Execute(std::bind(&SoftBusClient::CloseSessions, this));
         }
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && routeType_ == RouteType::WIFI_P2P) {
             taskId_ = Context::getInstance().GetThreadPool()->Reset(taskId_, P2P_CLOSE_DELAY);
@@ -245,13 +245,14 @@ void SoftBusClient::AfterStrategyUpdate(Strategy strategy)
     }
 }
 
-void SoftBusClient::CloseP2pSessions()
+void SoftBusClient::0CloseSessions()
 {
     Time now = std::chrono::steady_clock::now();
     Time nextClose = std::chrono::steady_clock::time_point::max();
     finishTime_.EraseIf([&now, &nextClose](const auto &connId, auto &finishTime) -> bool {
         if (finishTime <= now) {
-            ZLOGD("[timeout] close session connId:%{public}d", connId);
+            ZLOGD("[timeout] close session connId:%{public}d, routeType:%{public}d",
+                connId, finishTime.routeType_);
             CloseSession(connId);
             return true;
         }
@@ -265,7 +266,7 @@ void SoftBusClient::CloseP2pSessions()
     std::lock_guard<std::mutex> lock(taskMutex_);
     if (!finishTime_.Empty()) {
         taskId_ = Context::getInstance().GetThreadPool()->Schedule(nextClose - now,
-            std::bind(&SoftBusClient::CloseP2pSessions, this));
+            std::bind(&SoftBusClient::CloseSessions, this));
     } else {
         taskId_ = ExecutorPool::INVALID_TASK_ID;
     }

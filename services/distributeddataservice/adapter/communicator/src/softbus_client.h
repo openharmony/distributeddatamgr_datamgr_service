@@ -65,7 +65,7 @@ private:
     SessionAttribute GetSessionAttribute(bool isP2p);
     void RestoreDefaultValue();
     void UpdateMtuSize();
-    void CloseP2pSessions();
+    void CloseSessions();
     void UpdateFinishTime(int32_t connId, uint32_t dataLength);
 
     static constexpr int32_t INVALID_CONNECT_ID = -1;
