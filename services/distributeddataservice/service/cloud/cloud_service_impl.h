@@ -68,20 +68,28 @@ private:
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
 
-    static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
-
-    struct ExInfo {
-        std::string accountId;
-        std::string bundleName;
-        std::string databaseAlias;
-        std::vector<std::string> tableAlias;
+    struct ExtraData final : public DistributedData::Serializable {
+        struct ExtInfo final : public Serializable {
+            std::string accountId;
+            std::string bundleName;
+            std::string containerName;
+            std::vector<std::string> recordTypes;
+            bool Marshal(json &node) const override;
+            bool Unmarshal(const json &node) override;
+        };
+		std::string head;
+        ExtInfo data;
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
     };
+
+    static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
 
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
     static constexpr const char *DATA_CHANGE_EVENT_ID = "cloud_data_change";
-    
+
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
     SchemaMeta GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
