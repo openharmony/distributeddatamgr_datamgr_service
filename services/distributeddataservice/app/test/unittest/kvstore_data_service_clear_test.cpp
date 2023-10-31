@@ -54,15 +54,15 @@ protected:
     static constexpr const char *TEST_USER = "100";
     static constexpr const char *TEST_BUNDLE = "ohos.test.demo";
     static constexpr const char *TEST_STORE = "test_store";
-    constexpr int32_t TEST_UID = 2000000;
-    constexpr int32_t TEST_USERID = 100;
-    constexpr std::string BUNDLE_NAME = "ohos.test.demo";
-    constexpr std::string BUNDLENAME_NO = "com.sample.helloworld";
-    constexpr int32_t USER_ID = 100;
-    constexpr int32_t USERID_NO = 10;
-    constexpr int32_t APP_INDEX = 0;
-    constexpr int32_t APPINDEX_NO = 2;
-    constexpr int32_t INVALID_TOKEN = 222;
+    static constexpr int32_t TEST_UID = 2000000;
+    static constexpr int32_t TEST_USERID = 100;
+    static constexpr const char *BUNDLE_NAME = "ohos.test.demo";
+    static constexpr const char *BUNDLENAME_NO = "com.sample.helloworld";
+    static constexpr int32_t USER_ID = 100;
+    static constexpr int32_t USERID_NO = 10;
+    static constexpr int32_t APP_INDEX = 0;
+    static constexpr int32_t APPINDEX_NO = 2;
+    static constexpr int32_t INVALID_TOKEN = 222;
 
     DistributedData::StoreMetaData metaData_;
     DistributedData::StoreMetaDataLocal localMeta_;
