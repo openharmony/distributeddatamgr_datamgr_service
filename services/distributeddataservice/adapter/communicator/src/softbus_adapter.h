@@ -78,10 +78,13 @@ public:
                              const AppDistributedKv::DeviceChangeType &type) const override;
     };
 private:
+    using Time = std::chrono::steady_clock::time_point;
+    using Duration = std::chrono::steady_clock::duration;
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
     std::string DelConnect(int32_t connId);
     void DelSessionStatus(int32_t connId);
     void AfterStrategyUpdate(const std::string &deviceId);
+    void CloseSessionTask();
     static constexpr uint32_t WAIT_MAX_TIME = 19;
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
@@ -93,6 +96,8 @@ private:
     std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
     std::function<void(const std::string &, uint16_t)> onBroadcast_;
     static SofBusDeviceChangeListenerImpl listener_;
+    std::mutex taskMutex_;
+    ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

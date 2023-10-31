@@ -15,6 +15,7 @@
 #include <mutex>
 #include <thread>
 
+#include "communicator_context.h"
 #include "device_manager_adapter.h"
 #include "dfx_types.h"
 #include "kvstore_utils.h"
@@ -32,6 +33,7 @@
 
 namespace OHOS {
 namespace AppDistributedKv {
+using Context = DistributedData::CommunicatorContext;
 enum SoftBusAdapterErrorCode : int32_t {
     SESSION_ID_INVALID = 2,
     MY_SESSION_NAME_INVALID,
@@ -168,7 +170,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
 {
     std::shared_ptr<SoftBusClient> conn;
     {
-        lock_guard<mutex> lock(connMutex_);
+        lock_guard<decltype(connMutex_)> lock(connMutex_);
         std::string key = pipeInfo.pipeId + deviceId.deviceId;
         if (connects_.find(key) == connects_.end()) {
             connects_.emplace(key, std::make_shared<SoftBusClient>(pipeInfo, deviceId, [this](int32_t connId) {
@@ -177,17 +179,54 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         }
         conn = connects_[key];
     }
-
-    if (conn != nullptr) {
-        return conn->Send(dataInfo, totalLength);
+    if (conn == nullptr) {
+        return Status::ERROR;
     }
+    auto status = conn->Send(dataInfo, totalLength);
+    if (status != Status::NETWORK_ERROR) {
+        lock_guard<decltype(taskMutex_)> lock(taskMutex_);
+        Time now = std::chrono::steady_clock::now();
+        if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
+            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(conn->GetExpireTime() - now,
+                std::bind(&SoftBusAdapter::CloseSessionTask, this));
+        }
+        if (taskId_ != ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() == RouteType::WIFI_P2P) {
+            taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, conn->GetExpireTime() - now);
+        }
+    }
+    return status;
+}
 
-    return Status::ERROR;
+void SoftBusAdapter::CloseSessionTask()
+{
+    Time now = std::chrono::steady_clock::now();
+    Time next = std::chrono::steady_clock::time_point::max();
+    lock_guard<decltype(connMutex_)> lock(connMutex_);
+    for (auto it = connects_.begin(); it != connects_.end();) {
+        auto connect = it->second;
+        auto expireTime = connect->GetExpireTime();
+        if (expireTime <= now) {
+            ZLOGD("[timeout] close session connId:%{public}d", connect->GetConnId());
+            it = connects_.erase(it);
+            continue;
+        }
+        if (expireTime < next) {
+            next = expireTime;
+        }
+        it++;
+    }
+    lock_guard<decltype(taskMutex_)> lg(taskMutex_);
+    if (!connects_.empty()) {
+        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
+            next - now, std::bind(&SoftBusAdapter::CloseSessionTask, this));
+    } else {
+        taskId_ = ExecutorPool::INVALID_TASK_ID;
+    }
 }
 
 std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const std::string &deviceId)
 {
-    lock_guard<mutex> lock(connMutex_);
+    lock_guard<decltype(connMutex_)> lock(connMutex_);
     for (const auto& conn : connects_) {
         if (*conn.second == deviceId) {
             return conn.second;
@@ -216,7 +255,7 @@ uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
 
 std::string SoftBusAdapter::DelConnect(int32_t connId)
 {
-    lock_guard<mutex> lock(connMutex_);
+    lock_guard<decltype(connMutex_)> lock(connMutex_);
     std::string name;
     for (auto iter = connects_.begin(); iter != connects_.end();) {
         if (*iter->second == connId) {
@@ -250,6 +289,16 @@ void SoftBusAdapter::OnSessionOpen(int32_t connId, int32_t status)
 {
     auto semaphore = GetSemaphore(connId);
     semaphore->SetValue(status);
+    if (status != SOFTBUS_OK) {
+        return;
+    }
+    lock_guard<decltype(connMutex_)> lock(connMutex_);
+    for (auto it = connects_.begin(); it != connects_.end(); ++it) {
+        if (it->second->GetConnId() != connId) {
+            continue;
+        }
+        it->second->UpdateExpireTime();
+    }
 }
 
 std::string SoftBusAdapter::OnSessionClose(int32_t connId)

@@ -22,7 +22,7 @@
 namespace OHOS::DistributedData {
 class API_EXPORT CommunicatorContext {
 public:
-    API_EXPORT static CommunicatorContext &getInstance();
+    API_EXPORT static CommunicatorContext &GetInstance();
     API_EXPORT void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     std::shared_ptr<ExecutorPool> GetThreadPool();
 

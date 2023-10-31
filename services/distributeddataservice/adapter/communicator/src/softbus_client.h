@@ -32,11 +32,18 @@ public:
     ~SoftBusClient();
 
     using Strategy = CommunicationStrategy::Strategy;
+    using Time = std::chrono::steady_clock::time_point;
+    using Duration = std::chrono::steady_clock::duration;
+    static constexpr Duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
     Status Send(const DataInfo &dataInfo, uint32_t totalLength);
     bool operator==(int32_t connId) const;
     bool operator==(const std::string &deviceId) const;
     uint32_t GetMtuSize() const;
     uint32_t GetTimeout() const;
+    Time GetExpireTime() const;
+    int32_t GetConnId() const;
+    int32_t GetRoutType()const;
+    void UpdateExpireTime();
     void AfterStrategyUpdate(Strategy strategy);
 private:
     enum class ConnectStatus : int32_t {
@@ -44,20 +51,6 @@ private:
         DISCONNECT,
     };
 
-    using Time = std::chrono::steady_clock::time_point;
-    using Duration = std::chrono::steady_clock::duration;
-    struct FinishTime {
-        bool operator <= (const Time time) const
-        {
-            return time_ <= time;
-        }
-        bool operator < (const Time time) const
-        {
-            return time_ < time;
-        }
-        Time time_;
-        int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
-    };
     Status OpenConnect(uint32_t totalLength);
     Status SwitchChannel(uint32_t totalLength);
     Status CreateChannel(uint32_t totalLength);
@@ -65,8 +58,7 @@ private:
     SessionAttribute GetSessionAttribute(bool isP2p);
     void RestoreDefaultValue();
     void UpdateMtuSize();
-    void CloseSessions();
-    void UpdateFinishTime(int32_t connId, uint32_t dataLength);
+    Duration GetDelayTime(uint32_t dataLength);
 
     static constexpr int32_t INVALID_CONNECT_ID = -1;
     static constexpr uint32_t WIFI_TIMEOUT = 8 * 1000;
@@ -74,24 +66,20 @@ private:
     static constexpr uint32_t WAIT_MAX_TIME = 10;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
-    static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 10; // 10 bytes per microsecond
+    static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 8; // 8 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
-    static constexpr Duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
     static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(60);
     int32_t connId_ = INVALID_CONNECT_ID;
     int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
     Strategy strategy_ = Strategy::DEFAULT;
     ConnectStatus status_ = ConnectStatus::DISCONNECT;
     std::mutex mutex_;
-    std::mutex taskMutex_;
     PipeInfo pipe_;
     DeviceId device_;
     uint32_t mtu_;
-    ConcurrentMap<int32_t, FinishTime> finishTime_;
-    ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     std::function<int32_t(int32_t)> getConnStatus_;
+    Time expireTime_ = std::chrono::steady_clock::now();
 };
 }
-
 
 #endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_SOFTBUS_CLIENT_H
