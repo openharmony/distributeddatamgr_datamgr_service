@@ -214,12 +214,16 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level1)
     InitMetaData();
 
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_));
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetStrategyKey(), metaData_));
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.appId, metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.appId, metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
     auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
@@ -228,6 +232,10 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level1)
     EXPECT_EQ(ret, Status::SUCCESS);
 
     EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
     EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
