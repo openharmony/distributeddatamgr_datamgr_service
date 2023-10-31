@@ -245,7 +245,7 @@ void SoftBusClient::AfterStrategyUpdate(Strategy strategy)
     }
 }
 
-void SoftBusClient::0CloseSessions()
+void SoftBusClient::CloseSessions()
 {
     Time now = std::chrono::steady_clock::now();
     Time nextClose = std::chrono::steady_clock::time_point::max();
