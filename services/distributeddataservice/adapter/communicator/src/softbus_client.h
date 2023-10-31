@@ -46,7 +46,7 @@ private:
 
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
-    struct FinshTime {
+    struct FinishTime {
         bool operator <= (const Time time) const
         {
             return time_ <= time;
@@ -87,7 +87,7 @@ private:
     PipeInfo pipe_;
     DeviceId device_;
     uint32_t mtu_;
-    ConcurrentMap<int32_t, FinshTime> finishTime_;
+    ConcurrentMap<int32_t, FinishTime> finishTime_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     std::function<int32_t(int32_t)> getConnStatus_;
 };

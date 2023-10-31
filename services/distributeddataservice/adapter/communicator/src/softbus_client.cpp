@@ -281,11 +281,7 @@ void SoftBusClient::UpdateFinishTime(int32_t connId, uint32_t dataLength)
         }
         Duration duration = finishTime.routeType_ == RouteType::WIFI_P2P ?
             P2P_CLOSE_DELAY + delay : SESSION_CLOSE_DELAY;
-        if (finishTime <= now) {
-            finishTime.time_ = now + duration;
-        } else {
-            finishTime.time_ += duration;
-        }
+        finishTime.time_ = now + duration;
         return true;
     });
 }
