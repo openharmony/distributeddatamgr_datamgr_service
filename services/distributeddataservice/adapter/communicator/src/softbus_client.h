@@ -45,6 +45,19 @@ private:
     };
 
     using Time = std::chrono::steady_clock::time_point;
+    using Duration = std::chrono::steady_clock::duration;
+    struct FinshTime {
+        bool operator <= (const Time time) const
+        {
+            return time_ <= time;
+        }
+        bool operator < (const Time time) const
+        {
+            return time_ < time;
+        }
+        Time time_;
+        int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
+    };
     Status OpenConnect(uint32_t totalLength);
     Status SwitchChannel(uint32_t totalLength);
     Status CreateChannel(uint32_t totalLength);
@@ -53,7 +66,7 @@ private:
     void RestoreDefaultValue();
     void UpdateMtuSize();
     void CloseP2pSessions();
-    void UpdateP2pFinishTime(int32_t connId, uint32_t dataLength);
+    void UpdateFinishTime(int32_t connId, uint32_t dataLength);
 
     static constexpr int32_t INVALID_CONNECT_ID = -1;
     static constexpr uint32_t WIFI_TIMEOUT = 8 * 1000;
@@ -63,7 +76,8 @@ private:
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
     static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 10; // 10 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
-    static constexpr std::chrono::steady_clock::duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
+    static constexpr Duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
+    static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(60);
     int32_t connId_ = INVALID_CONNECT_ID;
     int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
     Strategy strategy_ = Strategy::DEFAULT;
@@ -73,8 +87,8 @@ private:
     PipeInfo pipe_;
     DeviceId device_;
     uint32_t mtu_;
-    ConcurrentMap<int32_t, Time> p2pFinishTime_;
-    ExecutorPool::TaskId closeP2pTaskId_ = ExecutorPool::INVALID_TASK_ID;
+    ConcurrentMap<int32_t, FinshTime> finishTime_;
+    ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     std::function<int32_t(int32_t)> getConnStatus_;
 };
 }
