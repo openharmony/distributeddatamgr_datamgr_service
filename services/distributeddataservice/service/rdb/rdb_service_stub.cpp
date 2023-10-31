@@ -261,4 +261,22 @@ int32_t RdbServiceStub::OnRemoteUnregisterDetailProgressObserver(MessageParcel& 
     }
     return RDB_OK;
 }
+
+int32_t RdbServiceStub::OnRemoteNotifyDataChange(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    ClientChangedData clientChangedData;
+    if (!ITypesUtil::Unmarshal(data, param, clientChangedData)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s ", param.bundleName_.c_str(),
+              Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto status = NotifyDataChange(param, clientChangedData);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

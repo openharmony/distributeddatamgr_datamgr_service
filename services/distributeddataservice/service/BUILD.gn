@@ -119,6 +119,7 @@ ohos_shared_library("distributeddatasvc") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
   ]
+  deps += [ "//third_party/sqlite:sqlite" ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
