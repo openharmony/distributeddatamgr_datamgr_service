@@ -80,11 +80,12 @@ public:
 private:
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
+    using Task = ExecutorPool::Task;
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
     std::string DelConnect(int32_t connId);
     void DelSessionStatus(int32_t connId);
     void AfterStrategyUpdate(const std::string &deviceId);
-    void CloseSessionTask();
+    Task GetCloseSessionTask(bool isP2p = false);
     static constexpr uint32_t WAIT_MAX_TIME = 19;
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
@@ -98,6 +99,7 @@ private:
     static SofBusDeviceChangeListenerImpl listener_;
     std::mutex taskMutex_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
+    ExecutorPool::TaskId p2pTaskId_ = ExecutorPool::INVALID_TASK_ID;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

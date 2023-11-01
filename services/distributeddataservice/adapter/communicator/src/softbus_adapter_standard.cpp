@@ -186,42 +186,48 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     if (status != Status::NETWORK_ERROR) {
         lock_guard<decltype(taskMutex_)> lock(taskMutex_);
         Time now = std::chrono::steady_clock::now();
-        if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
-            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(conn->GetExpireTime() - now,
-                std::bind(&SoftBusAdapter::CloseSessionTask, this));
+        if (taskId_ == ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() != RouteType::WIFI_P2P) {
+            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
+                conn->GetExpireTime() - now,GetCloseSessionTask());
         }
-        if (taskId_ != ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() == RouteType::WIFI_P2P) {
-            taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, conn->GetExpireTime() - now);
+        if (p2pTaskId_ == ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() == RouteType::WIFI_P2P) {
+            p2pTaskId_ = Context::GetInstance().GetThreadPool()->Schedule(
+                conn->GetExpireTime() - now,GetCloseSessionTask(true));
         }
     }
     return status;
 }
 
-void SoftBusAdapter::CloseSessionTask()
+SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask(bool isP2p)
 {
-    Time now = std::chrono::steady_clock::now();
-    Time next = std::chrono::steady_clock::time_point::max();
-    lock_guard<decltype(connMutex_)> lock(connMutex_);
-    for (auto it = connects_.begin(); it != connects_.end();) {
-        auto connect = it->second;
-        auto expireTime = connect->GetExpireTime();
-        if (expireTime <= now) {
-            ZLOGD("[timeout] close session connId:%{public}d", connect->GetConnId());
-            it = connects_.erase(it);
-            continue;
+    return [this, isP2p]() mutable {
+        Time now = std::chrono::steady_clock::now();
+        Time next = std::chrono::steady_clock::time_point::max();
+        lock_guard<decltype(connMutex_)> lock(connMutex_);
+        bool hasP2p = false;
+        for (auto it = connects_.begin(); it != connects_.end();) {
+            auto connect = it->second;
+            auto expireTime = connect->GetExpireTime();
+            if (expireTime <= now) {
+                ZLOGD("[timeout] close session connId:%{public}d", connect->GetConnId());
+                it = connects_.erase(it);
+                continue;
+            }
+            if (expireTime < next) {
+                next = expireTime;
+            }
+            hasP2p = connect->GetRoutType() == RouteType::WIFI_P2P;
+            it++;
         }
-        if (expireTime < next) {
-            next = expireTime;
+        lock_guard<decltype(taskMutex_)> lg(taskMutex_);
+        auto &taskId = isP2p ? p2pTaskId_ : taskId_;
+        if ((isP2p && hasP2p) || (!isP2p && !connects_.empty())) {
+            taskId = Context::GetInstance().GetThreadPool()->Schedule(
+                next - now, GetCloseSessionTask(isP2p));
+        } else {
+            taskId = ExecutorPool::INVALID_TASK_ID;
         }
-        it++;
-    }
-    lock_guard<decltype(taskMutex_)> lg(taskMutex_);
-    if (!connects_.empty()) {
-        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
-            next - now, std::bind(&SoftBusAdapter::CloseSessionTask, this));
-    } else {
-        taskId_ = ExecutorPool::INVALID_TASK_ID;
-    }
+    };
 }
 
 std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const std::string &deviceId)

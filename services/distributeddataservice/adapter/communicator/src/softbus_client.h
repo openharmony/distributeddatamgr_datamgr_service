@@ -42,7 +42,7 @@ public:
     uint32_t GetTimeout() const;
     Time GetExpireTime() const;
     int32_t GetConnId() const;
-    int32_t GetRoutType()const;
+    int32_t GetRoutType() const;
     void UpdateExpireTime();
     void AfterStrategyUpdate(Strategy strategy);
 private:
@@ -66,7 +66,7 @@ private:
     static constexpr uint32_t WAIT_MAX_TIME = 10;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
-    static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 8; // 8 bytes per microsecond
+    static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 3; // 2^3 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
     static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(60);
     int32_t connId_ = INVALID_CONNECT_ID;

@@ -257,7 +257,7 @@ void SoftBusClient::UpdateExpireTime()
 SoftBusClient::Duration SoftBusClient::GetDelayTime(uint32_t dataLength)
 {
     if (routeType_ == RouteType::WIFI_P2P) {
-        return P2P_CLOSE_DELAY + std::chrono::microseconds(dataLength / P2P_TRANSFER_PER_MICROSECOND);
+        return P2P_CLOSE_DELAY + std::chrono::microseconds(dataLength > P2P_TRANSFER_PER_MICROSECOND);
     }
     return SESSION_CLOSE_DELAY;
 }
