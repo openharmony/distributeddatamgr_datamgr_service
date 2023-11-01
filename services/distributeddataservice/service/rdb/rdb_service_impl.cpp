@@ -40,9 +40,6 @@
 #include "cloud/schema_meta.h"
 #include "rdb_general_store.h"
 #include "rdb_result_set_impl.h"
-#include "search/data_sync_scheduler.h"
-#include "search/search_schema_cache.h"
-#include <unordered_set>
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -572,12 +569,6 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
             return;
         });
     }
-    auto instance = SearchSchemaCache::GetInstance();
-    if (instance == nullptr) {
-        ZLOGI("not support data search");
-        return RDB_OK;
-    }
-    instance->LoadSchema(param.bundleName_);
     return RDB_OK;
 }
 
@@ -846,19 +837,8 @@ RdbServiceImpl::~RdbServiceImpl()
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
 
-int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const ClientChangedData &clientChangedData)
+int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData)
 {
-    auto instance = DataSyncScheduler::GetInstance();
-    if (instance == nullptr) {
-        ZLOGI("not support data sync");
-        return RDB_OK;
-    }
-    std::unordered_set<std::string> tables;
-    for(const auto& pair : clientChangedData.tableData) {
-        const std::string& key = pair.first;
-        tables.insert(key);
-    }
-    instance->AddTask(param, tables);
     return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

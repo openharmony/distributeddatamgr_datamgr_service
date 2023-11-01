@@ -80,7 +80,7 @@ public:
 
     int32_t OnInitialize() override;
 
-    int32_t NotifyDataChange(const RdbSyncerParam &param, const ClientChangedData &clientChangedData) override;
+    int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData) override;
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;

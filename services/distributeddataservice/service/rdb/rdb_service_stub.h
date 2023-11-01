@@ -76,7 +76,8 @@ private:
             &RdbServiceStub::OnRemoteRegisterDetailProgressObserver,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNREGISTER_AUTOSYNC_PROGRESS_OBSERVER)] =
             &RdbServiceStub::OnRemoteUnregisterDetailProgressObserver,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_NOTIFY_DATA_CHANGE)] = &RdbServiceStub::OnRemoteNotifyDataChange
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_NOTIFY_DATA_CHANGE)] =
+            &RdbServiceStub::OnRemoteNotifyDataChange
     };
 };
 } // namespace OHOS::DistributedRdb
