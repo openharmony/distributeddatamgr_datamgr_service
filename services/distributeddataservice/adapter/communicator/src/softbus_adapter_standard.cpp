@@ -188,11 +188,11 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         Time now = std::chrono::steady_clock::now();
         if (taskId_ == ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() != RouteType::WIFI_P2P) {
             taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
-                conn->GetExpireTime() - now,GetCloseSessionTask());
+                conn->GetExpireTime() - now, GetCloseSessionTask());
         }
         if (p2pTaskId_ == ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() == RouteType::WIFI_P2P) {
             p2pTaskId_ = Context::GetInstance().GetThreadPool()->Schedule(
-                conn->GetExpireTime() - now,GetCloseSessionTask(true));
+                conn->GetExpireTime() - now, GetCloseSessionTask(true));
         }
     }
     return status;
