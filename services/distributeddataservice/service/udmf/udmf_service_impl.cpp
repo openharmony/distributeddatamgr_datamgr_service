@@ -409,7 +409,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
             ZLOGE("Process: %{public}s has no permission to intention: drag", processName.c_str());
             return E_NO_PERMISSION;
         }
-    } else { 
+    } else {
         ZLOGE("Invaild intention");
         return E_NO_PERMISSION;
     }
