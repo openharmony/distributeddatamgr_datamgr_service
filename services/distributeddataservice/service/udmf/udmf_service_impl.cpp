@@ -403,13 +403,15 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         return E_ERROR;
     }
 
-    if (key.intention == "drag") {
-        auto size = std::end(DRAG_AUTHORIZED_PROCESSES) - std::begin(DRAG_AUTHORIZED_PROCESSES);
-        if (find(DRAG_AUTHORIZED_PROCESSES, DRAG_AUTHORIZED_PROCESSES + size, processName) ==
-            DRAG_AUTHORIZED_PROCESSES + size) {
+    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        if (find(DRAG_AUTHORIZED_PROCESSES, std::end(DRAG_AUTHORIZED_PROCESSES), processName) ==
+            std::end(DRAG_AUTHORIZED_PROCESSES)) {
             ZLOGE("Process: %{public}s has no permission to intention: drag", processName.c_str());
             return E_NO_PERMISSION;
         }
+    } else { 
+        ZLOGE("Invaild intention");
+        return E_NO_PERMISSION;
     }
 
     auto store = StoreCache::GetInstance().GetStore(key.intention);
