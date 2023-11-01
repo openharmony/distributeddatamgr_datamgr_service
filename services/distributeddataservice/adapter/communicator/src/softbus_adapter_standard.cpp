@@ -128,7 +128,7 @@ SoftBusAdapter::~SoftBusAdapter()
     if (onBroadcast_) {
         UnregNodeDeviceStateCb(&g_callback);
     }
-    connects_.clear();
+    connects_.Clear();
 }
 
 std::shared_ptr<SoftBusAdapter> SoftBusAdapter::GetInstance()
@@ -169,76 +169,97 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     uint32_t totalLength, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
-    {
-        lock_guard<decltype(connMutex_)> lock(connMutex_);
-        std::string key = pipeInfo.pipeId + deviceId.deviceId;
-        if (connects_.find(key) == connects_.end()) {
-            connects_.emplace(key, std::make_shared<SoftBusClient>(pipeInfo, deviceId, [this](int32_t connId) {
+    std::string key = pipeInfo.pipeId + deviceId.deviceId;
+    connects_.Compute(key,
+        [this, &pipeInfo, &deviceId, &conn](const auto &key, std::shared_ptr<SoftBusClient> &connect) -> bool {
+            if (connect != nullptr) {
+                conn = connect;
+                return true;
+            }
+            connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId,[this](int32_t connId) {
                 return GetSessionStatus(connId);
-            }));
-        }
-        conn = connects_[key];
-    }
+            });
+            conn = connect;
+            return true;
+    });
     if (conn == nullptr) {
         return Status::ERROR;
     }
     auto status = conn->Send(dataInfo, totalLength);
     if (status != Status::NETWORK_ERROR) {
-        lock_guard<decltype(taskMutex_)> lock(taskMutex_);
         Time now = std::chrono::steady_clock::now();
-        if (taskId_ == ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() != RouteType::WIFI_P2P) {
+        lock_guard<decltype(taskMutex_)> lock(taskMutex_);
+        if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
             taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
-                conn->GetExpireTime() - now, GetCloseSessionTask());
+                conn->GetExpireTime() - now,GetCloseSessionTask());
         }
-        if (p2pTaskId_ == ExecutorPool::INVALID_TASK_ID && conn->GetRoutType() == RouteType::WIFI_P2P) {
-            p2pTaskId_ = Context::GetInstance().GetThreadPool()->Schedule(
-                conn->GetExpireTime() - now, GetCloseSessionTask(true));
+        if (taskId_ != ExecutorPool::INVALID_TASK_ID && conn->GetExpireTime() < next_) {
+            auto taskId = Context::GetInstance().GetThreadPool()->Reset(taskId_, conn->GetExpireTime() - now);
+            if (taskId != ExecutorPool::INVALID_TASK_ID) {
+                taskId_ = taskId;
+                next_ = conn->GetExpireTime();
+            }
         }
     }
     return status;
 }
 
-SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask(bool isP2p)
+SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
 {
-    return [this, isP2p]() mutable {
+    return [this]() mutable {
         Time now = std::chrono::steady_clock::now();
-        Time next = std::chrono::steady_clock::time_point::max();
-        lock_guard<decltype(connMutex_)> lock(connMutex_);
-        bool hasP2p = false;
-        for (auto it = connects_.begin(); it != connects_.end();) {
-            auto connect = it->second;
-            auto expireTime = connect->GetExpireTime();
-            if (expireTime <= now) {
-                ZLOGD("[timeout] close session connId:%{public}d", connect->GetConnId());
-                it = connects_.erase(it);
-                continue;
+        std::vector<std::shared_ptr<SoftBusClient>> connToClose;
+        connects_.EraseIf([&now, &connToClose](const auto &key, const auto &conn) -> bool {
+            if (conn == nullptr) {
+                return true;
             }
+            auto expireTime = conn->GetExpireTime();
+            if (expireTime <= now) {
+                ZLOGD("[timeout] close session connId:%{public}d", conn->GetConnId());
+                connToClose.emplace_back(conn);
+                return true;
+            }
+        });
+
+        lock_guard<decltype(taskMutex_)> lg(taskMutex_);
+        Time next = std::chrono::steady_clock::time_point::max();
+        connects_.ForEach([&next](const auto &key, const auto &conn) -> bool {
+            if (conn == nullptr) {
+                return true;
+            }
+            auto expireTime = conn->GetExpireTime();
             if (expireTime < next) {
                 next = expireTime;
             }
-            hasP2p = connect->GetRoutType() == RouteType::WIFI_P2P;
-            it++;
+            return false;
+        });
+        if (connects_.Empty()) {
+            taskId_ = ExecutorPool::INVALID_TASK_ID;
+            return;
         }
-        lock_guard<decltype(taskMutex_)> lg(taskMutex_);
-        auto &taskId = isP2p ? p2pTaskId_ : taskId_;
-        if ((isP2p && hasP2p) || (!isP2p && !connects_.empty())) {
-            taskId = Context::GetInstance().GetThreadPool()->Schedule(
-                next - now, GetCloseSessionTask(isP2p));
-        } else {
-            taskId = ExecutorPool::INVALID_TASK_ID;
+        if (next_ < now) {
+            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(next - now, GetCloseSessionTask());
+            next_ = next;
+            return;
+        }
+        if (next_ < next) {
+            taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, next - now);
+            next_ = next;
         }
     };
 }
 
 std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const std::string &deviceId)
 {
-    lock_guard<decltype(connMutex_)> lock(connMutex_);
-    for (const auto& conn : connects_) {
-        if (*conn.second == deviceId) {
-            return conn.second;
+    std::shared_ptr<SoftBusClient> conn = nullptr;
+    connects_.ForEach([&deviceId, &conn](const auto &key, const auto &value) -> bool {
+        if (value != nullptr && *value == deviceId) {
+            conn = value;
+            return true;
         }
-    }
-    return nullptr;
+        return false;
+    });
+    return conn;
 }
 
 uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
@@ -261,17 +282,15 @@ uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
 
 std::string SoftBusAdapter::DelConnect(int32_t connId)
 {
-    lock_guard<decltype(connMutex_)> lock(connMutex_);
     std::string name;
-    for (auto iter = connects_.begin(); iter != connects_.end();) {
-        if (*iter->second == connId) {
-            name += iter->first;
+    connects_.EraseIf([connId, &name](const auto &key, const auto &value) -> bool{
+        if (value != nullptr && *value == connId) {
+            name += key;
             name += " ";
-            connects_.erase(iter++);
-        } else {
-            iter++;
+            return true;
         }
-    }
+        return false;
+    });
     return name;
 }
 
@@ -298,13 +317,12 @@ void SoftBusAdapter::OnSessionOpen(int32_t connId, int32_t status)
     if (status != SOFTBUS_OK) {
         return;
     }
-    lock_guard<decltype(connMutex_)> lock(connMutex_);
-    for (auto it = connects_.begin(); it != connects_.end(); ++it) {
-        if (it->second->GetConnId() != connId) {
-            continue;
+    connects_.ForEach([connId](const auto &key, const auto &value) -> bool {
+        if (value != nullptr && *value == connId) {
+            value->UpdateExpireTime();
         }
-        it->second->UpdateExpireTime();
-    }
+        return false;
+    });
 }
 
 std::string SoftBusAdapter::OnSessionClose(int32_t connId)

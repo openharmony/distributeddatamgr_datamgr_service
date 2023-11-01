@@ -85,12 +85,11 @@ private:
     std::string DelConnect(int32_t connId);
     void DelSessionStatus(int32_t connId);
     void AfterStrategyUpdate(const std::string &deviceId);
-    Task GetCloseSessionTask(bool isP2p = false);
+    Task GetCloseSessionTask();
     static constexpr uint32_t WAIT_MAX_TIME = 19;
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
-    std::mutex connMutex_{};
-    std::map<std::string, std::shared_ptr<SoftBusClient>> connects_ {};
+    ConcurrentMap<std::string, std::shared_ptr<SoftBusClient>> connects_{};
     bool flag_ = true; // only for br flag
     ISessionListener sessionListener_{};
     std::mutex statusMutex_{};
@@ -99,7 +98,7 @@ private:
     static SofBusDeviceChangeListenerImpl listener_;
     std::mutex taskMutex_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
-    ExecutorPool::TaskId p2pTaskId_ = ExecutorPool::INVALID_TASK_ID;
+    Time next_ = std::chrono::steady_clock::now();
 };
 } // namespace AppDistributedKv
 } // namespace OHOS
