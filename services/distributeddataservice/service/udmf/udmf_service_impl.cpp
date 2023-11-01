@@ -405,7 +405,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
     if (key.intention == "drag") {
         auto size = std::end(DRAG_AUTHORIZED_PROCESSES) - std::begin(DRAG_AUTHORIZED_PROCESSES);
-        if (find(DRAG_AUTHORIZED_PROCESSES, DRAG_AUTHORIZED_PROCESSES + size, processName) !=
+        if (find(DRAG_AUTHORIZED_PROCESSES, DRAG_AUTHORIZED_PROCESSES + size, processName) ==
             DRAG_AUTHORIZED_PROCESSES + size) {
             ZLOGE("Process: %{public}s has no permission to intention: drag", processName.c_str());
             return E_NO_PERMISSION;
