@@ -189,16 +189,13 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     if (status != Status::NETWORK_ERROR) {
         Time now = std::chrono::steady_clock::now();
         lock_guard<decltype(taskMutex_)> lock(taskMutex_);
+        auto expireTime = conn->GetExpireTime();
         if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
-            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
-                conn->GetExpireTime() - now, GetCloseSessionTask());
+            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
         }
-        if (taskId_ != ExecutorPool::INVALID_TASK_ID && conn->GetExpireTime() < next_) {
-            auto taskId = Context::GetInstance().GetThreadPool()->Reset(taskId_, conn->GetExpireTime() - now);
-            if (taskId != ExecutorPool::INVALID_TASK_ID) {
-                taskId_ = taskId;
-                next_ = conn->GetExpireTime();
-            }
+        if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
+            taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
+            next_ = expireTime;
         }
     }
     return status;
@@ -222,8 +219,8 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
             return false;
         });
 
+        Time next = INVALID_NEXT;
         lock_guard<decltype(taskMutex_)> lg(taskMutex_);
-        Time next = std::chrono::steady_clock::time_point::max();
         connects_.ForEach([&next](const auto &key, const auto &conn) -> bool {
             if (conn == nullptr) {
                 return true;
@@ -234,7 +231,7 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
             }
             return false;
         });
-        if (connects_.Empty()) {
+        if (next == INVALID_NEXT) {
             taskId_ = ExecutorPool::INVALID_TASK_ID;
             return;
         }

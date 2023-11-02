@@ -87,6 +87,7 @@ private:
     void AfterStrategyUpdate(const std::string &deviceId);
     Task GetCloseSessionTask();
     static constexpr uint32_t WAIT_MAX_TIME = 19;
+    static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
     ConcurrentMap<std::string, std::shared_ptr<SoftBusClient>> connects_{};
