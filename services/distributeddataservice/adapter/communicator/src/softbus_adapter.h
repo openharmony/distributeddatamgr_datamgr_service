@@ -99,7 +99,7 @@ private:
     static SofBusDeviceChangeListenerImpl listener_;
     std::mutex taskMutex_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
-    Time next_ = std::chrono::steady_clock::now();
+    Time next_ = INVALID_NEXT;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

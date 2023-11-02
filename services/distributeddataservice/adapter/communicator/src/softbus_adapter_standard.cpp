@@ -169,8 +169,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     uint32_t totalLength, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
-    std::string key = pipeInfo.pipeId + deviceId.deviceId;
-    connects_.Compute(key,
+    connects_.Compute(deviceId.deviceId,
         [this, &pipeInfo, &deviceId, &conn](const auto &key, std::shared_ptr<SoftBusClient> &connect) -> bool {
             if (connect != nullptr) {
                 conn = connect;
@@ -190,11 +189,12 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         Time now = std::chrono::steady_clock::now();
         lock_guard<decltype(taskMutex_)> lock(taskMutex_);
         auto expireTime = conn->GetExpireTime();
-        if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
-            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
-        }
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
             taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
+            next_ = expireTime;
+        }
+        if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
+            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
             next_ = expireTime;
         }
     }
@@ -235,22 +235,15 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
             taskId_ = ExecutorPool::INVALID_TASK_ID;
             return;
         }
-        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(next - now, GetCloseSessionTask());
+        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(next > now ? next - now : 0, GetCloseSessionTask());
         next_ = next;
     };
 }
 
 std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const std::string &deviceId)
 {
-    std::shared_ptr<SoftBusClient> conn = nullptr;
-    connects_.ForEach([&deviceId, &conn](const auto &key, const auto &value) -> bool {
-        if (value != nullptr && *value == deviceId) {
-            conn = value;
-            return true;
-        }
-        return false;
-    });
-    return conn;
+    auto [status, vlaue] = connects_.Find(deviceId);
+    return vlaue;
 }
 
 uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
