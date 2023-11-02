@@ -187,8 +187,8 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     auto status = conn->Send(dataInfo, totalLength);
     if (status != Status::NETWORK_ERROR) {
         Time now = std::chrono::steady_clock::now();
-        lock_guard<decltype(taskMutex_)> lock(taskMutex_);
         auto expireTime = conn->GetExpireTime();
+        lock_guard<decltype(taskMutex_)> lock(taskMutex_);
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
             taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
             next_ = expireTime;
