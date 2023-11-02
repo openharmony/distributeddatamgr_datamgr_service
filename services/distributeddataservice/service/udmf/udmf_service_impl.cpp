@@ -410,7 +410,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
             return E_NO_PERMISSION;
         }
     } else {
-        ZLOGE("Invaild intention");
+        ZLOGE("Intention: %{public}s has no authorized processes", key.intention.c_str());
         return E_NO_PERMISSION;
     }
 
