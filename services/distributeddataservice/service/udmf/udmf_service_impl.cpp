@@ -34,7 +34,7 @@ namespace UDMF {
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
-constexpr const char *MSDP_PROCESS_NAME = "msdp_sa";
+constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
@@ -55,7 +55,6 @@ UdmfServiceImpl::Factory::~Factory()
 
 UdmfServiceImpl::UdmfServiceImpl()
 {
-    authorizationMap_[UD_INTENTION_MAP.at(UD_INTENTION_DRAG)] = MSDP_PROCESS_NAME;
     CheckerManager::GetInstance().LoadCheckers();
 }
 
@@ -404,8 +403,14 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         return E_ERROR;
     }
 
-    if (processName != authorizationMap_[key.intention]) {
-        ZLOGE("Process: %{public}s have no permission", processName.c_str());
+    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        if (find(DRAG_AUTHORIZED_PROCESSES, std::end(DRAG_AUTHORIZED_PROCESSES), processName) ==
+            std::end(DRAG_AUTHORIZED_PROCESSES)) {
+            ZLOGE("Process: %{public}s has no permission to intention: drag", processName.c_str());
+            return E_NO_PERMISSION;
+        }
+    } else {
+        ZLOGE("Intention: %{public}s has no authorized processes", key.intention.c_str());
         return E_NO_PERMISSION;
     }
 
