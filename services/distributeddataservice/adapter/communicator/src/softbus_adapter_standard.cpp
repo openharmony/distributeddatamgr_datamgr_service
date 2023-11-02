@@ -235,7 +235,8 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
             taskId_ = ExecutorPool::INVALID_TASK_ID;
             return;
         }
-        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(next > now ? next - now : 0, GetCloseSessionTask());
+        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
+            next > now ? next - now : ExecutorPool::INVALID_DELAY, GetCloseSessionTask());
         next_ = next;
     };
 }
