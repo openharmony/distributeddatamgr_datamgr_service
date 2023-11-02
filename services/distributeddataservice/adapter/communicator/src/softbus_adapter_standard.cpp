@@ -223,7 +223,7 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
         lock_guard<decltype(taskMutex_)> lg(taskMutex_);
         connects_.ForEach([&next](const auto &key, const auto &conn) -> bool {
             if (conn == nullptr) {
-                return true;
+                return false;
             }
             auto expireTime = conn->GetExpireTime();
             if (expireTime < next) {
