@@ -176,7 +176,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
                 conn = connect;
                 return true;
             }
-            connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId,[this](int32_t connId) {
+            connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, [this](int32_t connId) {
                 return GetSessionStatus(connId);
             });
             conn = connect;
@@ -191,7 +191,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         lock_guard<decltype(taskMutex_)> lock(taskMutex_);
         if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
             taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
-                conn->GetExpireTime() - now,GetCloseSessionTask());
+                conn->GetExpireTime() - now, GetCloseSessionTask());
         }
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && conn->GetExpireTime() < next_) {
             auto taskId = Context::GetInstance().GetThreadPool()->Reset(taskId_, conn->GetExpireTime() - now);
@@ -219,6 +219,7 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
                 connToClose.emplace_back(conn);
                 return true;
             }
+            return false;
         });
 
         lock_guard<decltype(taskMutex_)> lg(taskMutex_);
@@ -283,7 +284,7 @@ uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
 std::string SoftBusAdapter::DelConnect(int32_t connId)
 {
     std::string name;
-    connects_.EraseIf([connId, &name](const auto &key, const auto &value) -> bool{
+    connects_.EraseIf([connId, &name](const auto &key, const auto &value) -> bool {
         if (value != nullptr && *value == connId) {
             name += key;
             name += " ";
