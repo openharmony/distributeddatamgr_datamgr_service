@@ -31,7 +31,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(isAutoSync)], isAutoSync);
     SetValue(node[GET_NAME(isBackup)], isBackup);
     SetValue(node[GET_NAME(isEncrypt)], isEncrypt);
-    SetValue(node[GET_NAME(isRetain)], isRetain);
+    SetValue(node[GET_NAME(isAutoClean)], isAutoClean);
     SetValue(node[GET_NAME(isDirty)], isDirty);
     SetValue(node[GET_NAME(storeType)], storeType);
     SetValue(node[GET_NAME(securityLevel)], securityLevel);
@@ -66,7 +66,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(isBackup), isBackup);
     GetValue(node, GET_NAME(isDirty), isDirty);
     GetValue(node, GET_NAME(isEncrypt), isEncrypt);
-    GetValue(node, GET_NAME(isRetain), isRetain);
+    GetValue(node, GET_NAME(isAutoClean), isAutoClean);
     GetValue(node, GET_NAME(storeType), storeType);
     GetValue(node, GET_NAME(securityLevel), securityLevel);
     GetValue(node, GET_NAME(area), area);

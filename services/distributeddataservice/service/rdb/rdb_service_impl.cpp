@@ -516,7 +516,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;
-    metaData.isRetain = param.isRetain_;
+    metaData.isAutoClean = param.isAutoClean_;
     return metaData;
 }
 
