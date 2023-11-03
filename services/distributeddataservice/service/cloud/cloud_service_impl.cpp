@@ -168,10 +168,10 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::Convert(const std::string extraData, ExtraData &exInfo)
+int32_t CloudServiceImpl::Convert(const std::string &extraData, ExtraData &exData)
 {
-    if (!exInfo.Unmarshall(extraData)) {
-	    ZLOGE("extraData cannot be parsed to valid JSON");
+    if (!exData.Unmarshall(extraData)) {
+        ZLOGE("extraData cannot be parsed to valid JSON");
         return ERROR;
     }
     return SUCCESS;
@@ -199,10 +199,8 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     return DoClean(cloudInfo, dbActions);
 }
 
-int32_t CloudServiceImpl::checkStatus(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo)
+int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo)
 {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS) {
         return ERROR;
     }
@@ -227,7 +225,9 @@ int32_t CloudServiceImpl::checkStatus(const std::string &id, const std::string &
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
 {
     CloudInfo cloudInfo;
-    int32_t status = checkStatus(id, bundleName, cloudInfo);
+	auto tokenId = IPCSkeleton::GetCallingTokenID();
+    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    int32_t status = CheckNotifyConditions(id, bundleName, cloudInfo);
     if (status == ERROR) {
         return INVALID_ARGUMENT;
     }
@@ -240,17 +240,19 @@ int32_t CloudServiceImpl::NotifyChange(const std::string &eventId, const std::st
     if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
         return INVALID_ARGUMENT;
     }
-    ExtraData exInfo;
-    int32_t status = Convert(extraData, exInfo);
+    ExtraData exData;
+    int32_t status = Convert(extraData, exData);
     if (status != E_OK) {
         return INVALID_ARGUMENT;
     }
     CloudInfo cloudInfo;
-    status = checkStatus(exInfo.data.accountId, exInfo.data.bundleName, cloudInfo);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    status = CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo);
     if (status != E_OK) {
         return INVALID_ARGUMENT;
     }
-    auto schemaKey = cloudInfo.GetSchemaKey(cloudInfo.user, exInfo.data.bundleName);
+    auto schemaKey = cloudInfo.GetSchemaKey(cloudInfo.user, exData.extInfo.bundleName);
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
         ZLOGE("no exist meta, user:%{public}d", cloudInfo.user);
@@ -259,18 +261,18 @@ int32_t CloudServiceImpl::NotifyChange(const std::string &eventId, const std::st
     std::string storeId;
     std::vector<std::string> table;
     for (auto &db : schemaMeta.databases) {
-        if (db.alias != exInfo.data.containerName) {
+        if (db.alias != exData.extInfo.containerName) {
             continue;
         }
         storeId = db.name;
         for (auto &tb : db.tables) {
-            if (std::find(exInfo.data.recordTypes.begin(), exInfo.data.recordTypes.end(), tb.alias) !=
-                exInfo.data.recordTypes.end()) {
+            if (std::find(exData.extInfo.table.tables.begin(), exData.extInfo.table.tables.end(), tb.alias) !=
+                exData.extInfo.table.tables.end()) {
                 table.emplace_back(tb.name);
             }
         }
     }
-    syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exInfo.data.bundleName, storeId, table));
+    syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
     return SUCCESS;
 }
 
@@ -651,16 +653,16 @@ std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<st
 
 bool CloudServiceImpl::ExtraData::Marshal(Serializable::json& node) const
 {
-    SetValue(node[GET_NAME(head)], head);
+    SetValue(node[GET_NAME(header)], header);
     SetValue(node[GET_NAME(data)], data);
     return true;
 }
 
 bool CloudServiceImpl::ExtraData::Unmarshal(const Serializable::json& node)
 {
-    GetValue(node, GET_NAME(head), head);
+    GetValue(node, GET_NAME(header), header);
     GetValue(node, GET_NAME(data), data);
-    return true;
+    return extInfo.Unmarshall(data);
 }
 
 bool CloudServiceImpl::ExtraData::ExtInfo::Marshal(Serializable::json& node) const
@@ -678,6 +680,15 @@ bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json& n
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(containerName), containerName);
     GetValue(node, GET_NAME(recordTypes), recordTypes);
+    return table.Unmarshall(recordTypes);
+}
+bool CloudServiceImpl::ExtraData::Table::Marshal(Serializable::json& node) const
+{
+    return true;
+}
+bool CloudServiceImpl::ExtraData::Table::Unmarshal(const Serializable::json& node)
+{
+    GetValue(node, "", tables);
     return true;
 }
 } // namespace OHOS::CloudData

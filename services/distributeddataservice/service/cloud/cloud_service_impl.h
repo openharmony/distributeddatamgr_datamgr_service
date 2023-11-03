@@ -69,16 +69,23 @@ private:
     using Task = ExecutorPool::Task;
 
     struct ExtraData final : public DistributedData::Serializable {
+        struct Table : public Serializable {
+            std::vector<std::string> tables;
+            bool Marshal(json &node) const override;
+            bool Unmarshal(const json &node) override;
+        };
         struct ExtInfo final : public Serializable {
             std::string accountId;
             std::string bundleName;
             std::string containerName;
-            std::vector<std::string> recordTypes;
-            bool Marshal(json &node) const override;
-            bool Unmarshal(const json &node) override;
+            std::string recordTypes;
+            Table table;
+            bool Marshal(json& node) const override;
+            bool Unmarshal(const json& node) override;
         };
-		std::string head;
-        ExtInfo data;
+        std::string header;
+        std::string data;
+        ExtInfo extInfo;
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
     };
@@ -105,8 +112,8 @@ private:
     bool DoSubscribe(int32_t user);
     bool ReleaseUserInfo(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
-    int32_t Convert(const std::string extraData, ExInfo &exInfo);
-    int32_t checkStatus(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
+    int32_t Convert(const std::string &extraData, ExtraData &exInfo);
+    int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
 
