@@ -16,7 +16,7 @@
 #include "communicator_context.h"
 
 namespace OHOS::DistributedData {
-CommunicatorContext &CommunicatorContext::getInstance()
+CommunicatorContext &CommunicatorContext::GetInstance()
 {
     static CommunicatorContext context;
     return context;
