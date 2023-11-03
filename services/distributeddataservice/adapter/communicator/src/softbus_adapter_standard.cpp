@@ -192,6 +192,9 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
             taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
             next_ = expireTime;
+            if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
+                return status;
+            }
         }
         if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
             taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
