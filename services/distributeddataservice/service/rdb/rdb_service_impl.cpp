@@ -409,8 +409,8 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
             async(HandleGenDetails(details));
         }
     };
-    auto mixMode = GeneralStore::MixMode(option.mode,
-        option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
+    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode,
+        option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
     auto info = ChangeEvent::EventInfo(mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isAutoSync, query,
         option.isAutoSync ? nullptr
         : option.isAsync  ? asyncCallback

@@ -43,7 +43,7 @@ public:
         CLOUD_END,
         MODE_BUTT = CLOUD_END,
     };
-    enum HighMode {
+    enum HighMode : uint32_t {
         MANUAL_SYNC_MODE = 0x00000,
         AUTO_SYNC_MODE = 0x10000,
     };
@@ -55,17 +55,17 @@ public:
         CLEAN_MODE_BUTT
     };
 
-    static inline int32_t MixMode(int32_t syncMode, int32_t highMode)
+    static inline uint32_t MixMode(uint32_t syncMode, uint32_t highMode)
     {
         return syncMode | highMode;
     }
 
-    static inline int32_t GetSyncMode(int32_t mixMode)
+    static inline uint32_t GetSyncMode(uint32_t mixMode)
     {
         return mixMode & 0xFFFF;
     }
 
-    static inline int32_t GetHighMode(int32_t mixMode)
+    static inline uint32_t GetHighMode(uint32_t mixMode)
     {
         return mixMode & ~0xFFFF;
     }

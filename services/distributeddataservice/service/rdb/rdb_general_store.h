@@ -90,7 +90,7 @@ private:
         std::string storeId_;
     };
     DBBriefCB GetDBBriefCB(DetailAsync async);
-    DBProcessCB GetDBProcessCB(DetailAsync async, int32_t highMode = AUTO_SYNC_MODE);
+    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t highMode = AUTO_SYNC_MODE);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
 

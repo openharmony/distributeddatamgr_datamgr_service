@@ -219,7 +219,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
                   ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0)
                   : (syncMode > NEARBY_END && syncMode < CLOUD_END)
                   ? delegate_->Sync({ devices, dbMode, dbQuery, wait, isPriority }, GetDBProcessCB(std::move(async),
-                      GetHighMode(mode)))
+                      GetHighMode(static_cast<uint32_t>(mode))))
                   : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
@@ -301,7 +301,7 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
     };
 }
 
-RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, int32_t highMode)
+RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t highMode)
 {
     if (!async && (highMode == MANUAL_SYNC_MODE || !async_)) {
         return [](auto&) {};
