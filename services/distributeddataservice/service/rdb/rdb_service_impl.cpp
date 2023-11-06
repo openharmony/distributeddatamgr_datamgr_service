@@ -837,4 +837,9 @@ RdbServiceImpl::~RdbServiceImpl()
 {
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
+
+int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData)
+{
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb
