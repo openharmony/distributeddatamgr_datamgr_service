@@ -256,7 +256,7 @@ int32_t CloudServiceImpl::GetSchemaMetaInfo(const ExtraData &exData, CloudInfo &
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
 {
     CloudInfo cloudInfo;
-	auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
     cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     int32_t status = CheckNotifyConditions(id, bundleName, cloudInfo);
     if (status == ERROR) {
@@ -279,27 +279,24 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
     CloudInfo cloudInfo;
     if (userId != INVALID_USER_ID) {
         cloudInfo.user = userId;
-        if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS)
-        {
+        if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS) {
             return INVALID_ARGUMENT;
         }
         return SUCCESS;
-    } else {
-        std::vector<int32_t> users;
-        Account::GetInstance()->QueryUsers(users);
-        if (users.empty()) {
-            return SUCCESS;
+    }
+    std::vector<int32_t> users;
+    Account::GetInstance()->QueryUsers(users);
+    if (users.empty()) {
+        return SUCCESS;
+    }
+    for (auto user : users) {
+        if (user == 0) {
+            continue;
         }
-        for (auto user : users) {
-            if (user == 0) {
-                continue;
-            } else {
-                if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS) {
-                    return INVALID_ARGUMENT;
-                }
-                return SUCCESS;
-            }
+        if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS) {
+            return INVALID_ARGUMENT;
         }
+        return SUCCESS;
     }
     return SUCCESS;
 }

@@ -112,7 +112,7 @@ private:
     bool DoSubscribe(int32_t user);
     bool ReleaseUserInfo(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
-    int32_t Convert(const std::string &extraData, ExtraData &exInfo);
+    int32_t Convert(const std::string &extraData, ExtraData &exData);
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
     int32_t GetSchemaMetaInfo(const ExtraData &exData, CloudInfo &cloudInfo);
     std::shared_ptr<ExecutorPool> executor_;
