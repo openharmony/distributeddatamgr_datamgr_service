@@ -259,7 +259,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     int32_t status = CheckNotifyConditions(id, bundleName, cloudInfo);
-    if (status == ERROR) {
+    if (status != E_OK) {
         return INVALID_ARGUMENT;
     }
     syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
