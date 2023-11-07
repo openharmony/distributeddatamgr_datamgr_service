@@ -224,8 +224,8 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     if (unifiedData.GetRuntime() == nullptr) {
         return E_DB_ERROR;
     }
-    std::string runtimeDeviceId = unifiedData.GetRuntime()->deviceId;
-    if (localDeviceId != runtimeDeviceId) {
+    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
+    if (localDeviceId != sourceDeviceId) {
         SetRemoteUri(query, records);
     }
 
@@ -246,8 +246,8 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
                 ZLOGW("Get authority is empty, key=%{public}s.", query.key.c_str());
                 continue;
             }
-            if (localDeviceId == runtimeDeviceId && bundleName == unifiedData.GetRuntime()->sourcePackage) {
-                ZLOGE("No need to grant uri permissions, DeviceId=%{public}s, bundleName=%{public}s ",
+            if (localDeviceId == sourceDeviceId && bundleName == unifiedData.GetRuntime()->sourcePackage) {
+                ZLOGW("No need to grant uri permissions, DeviceId=%{public}s, bundleName=%{public}s.",
                     localDeviceId.c_str(), bundleName.c_str());
                 continue;
             }
