@@ -62,9 +62,18 @@ public:
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
     };
+    class UserStatus {
+    public:
+        bool IsUnLocked(int32_t user);
+        void Remove(int32_t user);
+    private:
+        std::mutex mutex_;
+        std::map<int32_t, bool> userStatus_;
+    };
     SyncManager();
     ~SyncManager();
     int32_t Bind(std::shared_ptr<ExecutorPool> executor);
+    int32_t SetUserStatus(std::shared_ptr<UserStatus> userStatus);
     int32_t DoCloudSync(SyncInfo syncInfo);
     int32_t StopCloudSync(int32_t user = 0);
 
@@ -93,6 +102,7 @@ private:
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
+    std::shared_ptr<UserStatus> userStatus_;
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
 };

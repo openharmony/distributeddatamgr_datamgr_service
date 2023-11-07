@@ -24,7 +24,6 @@
 #include "accesstoken_kit.h"
 #include "log_print.h"
 #include "ohos_account_kits.h"
-#include "os_account_manager.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -77,15 +76,23 @@ bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)
     return AccountSA::OsAccountManager::QueryActiveOsAccountIds(users) == 0;
 }
 
+bool AccountDelegateNormalImpl::IsVerified(int userId)
+{
+    bool res = false;
+    auto status = AccountSA::OsAccountManager::IsOsAccountVerified(userId, res);
+    return status == 0 && res;
+}
+
 void AccountDelegateNormalImpl::SubscribeAccountEvent()
 {
     ZLOGI("Subscribe account event listener start.");
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
     CommonEventSubscribeInfo info(matchingSkills);
     eventSubscriber_ = std::make_shared<EventSubscriber>(info);
-    eventSubscriber_->SetEventCallback([&](AccountEventInfo &account) {
+    eventSubscriber_->SetEventCallback([&](AccountEventInfo& account) {
         account.harmonyAccountId = GetCurrentAccountId();
         NotifyAccountChanged(account);
     });

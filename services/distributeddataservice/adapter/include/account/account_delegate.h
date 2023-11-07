@@ -30,6 +30,7 @@ enum class AccountStatus {
     HARMONY_ACCOUNT_DELETE, // the openHarmony account is deleted
     DEVICE_ACCOUNT_DELETE, // the device account is deleted
     DEVICE_ACCOUNT_SWITCHED, // the device account is switched
+    DEVICE_ACCOUNT_UNLOCKED, // the device account is unlocked
 };
 
 struct AccountEventInfo {
@@ -62,6 +63,7 @@ public:
     API_EXPORT virtual void SubscribeAccountEvent() = 0;
     API_EXPORT virtual void UnsubscribeAccountEvent() = 0;
     API_EXPORT virtual bool QueryUsers(std::vector<int> &users) = 0;
+    API_EXPORT virtual bool IsVerified(int userId) = 0;
     API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
     API_EXPORT virtual void BindExecutor(std::shared_ptr<ExecutorPool> executors) = 0;
     API_EXPORT static AccountDelegate *GetInstance();

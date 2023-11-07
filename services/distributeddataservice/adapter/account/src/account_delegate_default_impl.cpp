@@ -49,6 +49,12 @@ bool AccountDelegateDefaultImpl::QueryUsers(std::vector<int> &users)
     return true;
 }
 
+bool AccountDelegateDefaultImpl::IsVerified(int userId)
+{
+    ZLOGD("no account part.");
+    return true;
+}
+
 void AccountDelegateDefaultImpl::SubscribeAccountEvent()
 {
     ZLOGD("no account part.");

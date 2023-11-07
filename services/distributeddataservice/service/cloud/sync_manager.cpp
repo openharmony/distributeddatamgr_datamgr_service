@@ -15,6 +15,7 @@
 #define LOG_TAG "SyncManager"
 #include "sync_manager.h"
 
+#include "account/account_delegate.h"
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
@@ -27,6 +28,8 @@
 #include "utils/anonymous.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
+using namespace DistributedKv;
+using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
@@ -189,7 +192,10 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             info.SetError(E_NETWORK_ERROR);
             return;
         }
-
+        if (userStatus_ == nullptr || !userStatus_->IsUnLocked(info.user_)) {
+            info.SetError(E_ERROR);
+            return;
+        }
         std::vector<SchemaMeta> schemas;
         auto key = cloud.GetSchemaPrefix(info.bundleName_);
         auto retryer = GetRetryer(times, info);
@@ -198,7 +204,6 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
             return;
         }
-
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
         for (auto &schema : schemas) {
             if (!cloud.IsOn(schema.bundleName)) {
@@ -208,11 +213,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                 if (!info.Contains(database.name)) {
                     continue;
                 }
-                CloudEvent::StoreInfo storeInfo;
-                storeInfo.bundleName = schema.bundleName;
-                storeInfo.user = cloud.user;
-                storeInfo.storeName = database.name;
-                storeInfo.instanceId = cloud.apps[schema.bundleName].instanceId;
+                CloudEvent::StoreInfo storeInfo = { 0, schema.bundleName, database.name,
+                    cloud.apps[schema.bundleName].instanceId, cloud.user };
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo { info.mode_, info.wait_, retry, std::move(query), info.async_ });
@@ -376,5 +378,27 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
     }
     return store;
+}
+
+int32_t SyncManager::SetUserStatus(std::shared_ptr<UserStatus> userStatus)
+{
+    userStatus_ = userStatus;
+    return E_OK;
+}
+
+bool SyncManager::UserStatus::IsUnLocked(int32_t user)
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    auto it = userStatus_.find(user);
+    if (it == userStatus_.end() || !it->second) {
+        userStatus_.insert_or_assign(user, Account::GetInstance()->IsVerified(user));
+    }
+    return userStatus_[user];
+}
+
+void SyncManager::UserStatus::Remove(int32_t user)
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    userStatus_.erase(user);
 }
 } // namespace OHOS::CloudData

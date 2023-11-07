@@ -75,26 +75,33 @@ private:
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
-    SchemaMeta GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
+    bool DoSubscribe(int32_t user);
+    bool ReleaseUserInfo(int32_t user);
+    bool DoCloudSync(int32_t user);
+    bool StopCloudSync(int32_t user);
+
     std::pair<int32_t, CloudInfo> GetCloudInfo(int32_t userId);
-    int32_t GetCloudInfo(uint32_t tokenId, const std::string &id, CloudInfo &cloudInfo);
-    int32_t GetCloudInfoFromMeta(CloudInfo &cloudInfo);
-    int32_t GetCloudInfoFromServer(CloudInfo &cloudInfo);
-    int32_t GetAppSchema(int32_t user, const std::string &bundleName, SchemaMeta &schemaMeta);
+    std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);
+    std::pair<int32_t, CloudInfo> GetCloudInfoFromServer(int32_t userId);
+
+    std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
+    std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
+
     void GetSchema(const Event &event);
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
-    bool DoSubscribe(int32_t user);
-    bool ReleaseUserInfo(int32_t user);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
+    std::shared_ptr<SyncManager::UserStatus> userStatus_ = nullptr;
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
     static constexpr Handle WORK_SUB = &CloudServiceImpl::DoSubscribe;
     static constexpr Handle WORK_RELEASE = &CloudServiceImpl::ReleaseUserInfo;
+    static constexpr Handle WORK_DO_CLOUD_SYNC = &CloudServiceImpl::DoCloudSync;
+    static constexpr Handle WORK_STOP_CLOUD_SYNC = &CloudServiceImpl::StopCloudSync;
 };
 } // namespace OHOS::DistributedData
 
