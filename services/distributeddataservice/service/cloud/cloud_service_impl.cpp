@@ -199,7 +199,8 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     return DoClean(cloudInfo, dbActions);
 }
 
-int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo)
+int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName,
+    CloudInfo &cloudInfo)
 {
     if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS) {
         return ERROR;
@@ -222,33 +223,9 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
+int32_t CloudServiceImpl::GetSchemaMetaInfo(const ExtraData &exData, CloudInfo &cloudInfo)
 {
-    CloudInfo cloudInfo;
-	auto tokenId = IPCSkeleton::GetCallingTokenID();
-    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    int32_t status = CheckNotifyConditions(id, bundleName, cloudInfo);
-    if (status == ERROR) {
-        return INVALID_ARGUMENT;
-    }
-    syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
-    return SUCCESS;
-}
-
-int32_t CloudServiceImpl::NotifyChange(const std::string &eventId, const std::string &extraData)
-{
-    if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
-        return INVALID_ARGUMENT;
-    }
-    ExtraData exData;
-    int32_t status = Convert(extraData, exData);
-    if (status != E_OK) {
-        return INVALID_ARGUMENT;
-    }
-    CloudInfo cloudInfo;
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    status = CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo);
+    int status = CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo);
     if (status != E_OK) {
         return INVALID_ARGUMENT;
     }
@@ -273,6 +250,57 @@ int32_t CloudServiceImpl::NotifyChange(const std::string &eventId, const std::st
         }
     }
     syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
+{
+    CloudInfo cloudInfo;
+	auto tokenId = IPCSkeleton::GetCallingTokenID();
+    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    int32_t status = CheckNotifyConditions(id, bundleName, cloudInfo);
+    if (status == ERROR) {
+        return INVALID_ARGUMENT;
+    }
+    syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::string& extraData, int32_t userId)
+{
+    if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
+        return INVALID_ARGUMENT;
+    }
+    ExtraData exData;
+    int32_t status = Convert(extraData, exData);
+    if (status != E_OK) {
+        return INVALID_ARGUMENT;
+    }
+    CloudInfo cloudInfo;
+    if (userId != INVALID_USER_ID) {
+        cloudInfo.user = userId;
+        if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS)
+        {
+            return INVALID_ARGUMENT;
+        }
+        return SUCCESS;
+    } else {
+        std::vector<int32_t> users;
+        Account::GetInstance()->QueryUsers(users);
+        if (users.empty()) {
+            return SUCCESS;
+        }
+        for (auto user : users) {
+            if (user == 0) {
+                continue;
+            } else {
+                if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS) {
+                    return INVALID_ARGUMENT;
+                }
+                return SUCCESS;
+            }
+        }
+    }
     return SUCCESS;
 }
 
@@ -682,10 +710,12 @@ bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json& n
     GetValue(node, GET_NAME(recordTypes), recordTypes);
     return table.Unmarshall(recordTypes);
 }
+
 bool CloudServiceImpl::ExtraData::Table::Marshal(Serializable::json& node) const
 {
     return true;
 }
+
 bool CloudServiceImpl::ExtraData::Table::Unmarshal(const Serializable::json& node)
 {
     GetValue(node, "", tables);
