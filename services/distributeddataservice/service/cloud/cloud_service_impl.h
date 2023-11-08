@@ -94,7 +94,6 @@ private:
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
-    std::shared_ptr<SyncManager::UserStatus> userStatus_ = nullptr;
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;

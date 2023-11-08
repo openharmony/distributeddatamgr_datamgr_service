@@ -192,7 +192,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             info.SetError(E_NETWORK_ERROR);
             return;
         }
-        if (userStatus_ == nullptr || !userStatus_->IsUnLocked(info.user_)) {
+        if (!Account::GetInstance()->IsVerified(info.user_)) {
             info.SetError(E_ERROR);
             return;
         }
@@ -378,27 +378,5 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
     }
     return store;
-}
-
-int32_t SyncManager::SetUserStatus(std::shared_ptr<UserStatus> userStatus)
-{
-    userStatus_ = userStatus;
-    return E_OK;
-}
-
-bool SyncManager::UserStatus::IsUnLocked(int32_t user)
-{
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    auto it = userStatus_.find(user);
-    if (it == userStatus_.end() || !it->second) {
-        userStatus_.insert_or_assign(user, Account::GetInstance()->IsVerified(user));
-    }
-    return userStatus_[user];
-}
-
-void SyncManager::UserStatus::Remove(int32_t user)
-{
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    userStatus_.erase(user);
 }
 } // namespace OHOS::CloudData

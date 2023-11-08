@@ -63,8 +63,6 @@ CloudServiceImpl::CloudServiceImpl()
     EventCenter::GetInstance().Subscribe(CloudEvent::GET_SCHEMA, [this](const Event &event) {
         GetSchema(event);
     });
-    userStatus_ = std::make_shared<SyncManager::UserStatus>();
-    syncManager_.SetUserStatus(userStatus_);
 }
 
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
@@ -252,7 +250,6 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
             Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
-            userStatus_->Remove(userId);
             Execute(GenTask(0, userId, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
@@ -401,7 +398,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
 
         auto handle = works.front();
         for (auto user : users) {
-            if (user == 0 || !userStatus_->IsUnLocked(user)) {
+            if (user == 0 || !Account::GetInstance()->IsVerified(user)) {
                 continue;
             }
             finished = (this->*handle)(user) && finished;
@@ -417,7 +414,8 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
     };
 }
 
-std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string& bundleName, int32_t instanceId)
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string& bundleName,
+    int32_t instanceId)
 {
     SchemaMeta schemaMeta;
     auto [status, cloudInfo] = GetCloudInfoFromMeta(userId);
@@ -433,6 +431,9 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
     if (MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
         return { SUCCESS, schemaMeta };
     }
+    if (!Account::GetInstance()->IsVerified(userId)) {
+        return { ERROR, schemaMeta };
+    }
     std::tie(status, schemaMeta) = GetAppSchemaFromServer(userId, bundleName);
     if (status != SUCCESS) {
         return { status, schemaMeta };
@@ -447,7 +448,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
     if (status == SUCCESS) {
         return { status, cloudInfo };
     }
-    if (!userStatus_->IsUnLocked(userId)) {
+    if (!Account::GetInstance()->IsVerified(userId)) {
         ZLOGW("user:%{public}d is locked!", userId);
         return { ERROR, cloudInfo };
     }

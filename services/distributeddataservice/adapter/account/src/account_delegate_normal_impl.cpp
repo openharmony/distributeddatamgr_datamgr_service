@@ -24,6 +24,7 @@
 #include "accesstoken_kit.h"
 #include "log_print.h"
 #include "ohos_account_kits.h"
+#include "os_account_manager.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -78,8 +79,14 @@ bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)
 
 bool AccountDelegateNormalImpl::IsVerified(int userId)
 {
-    bool res = false;
+    auto [success, res] = userStatus_.Find(userId);
+    if (success && res) {
+        return true;
+    }
     auto status = AccountSA::OsAccountManager::IsOsAccountVerified(userId, res);
+    if (status == 0) {
+        userStatus_.InsertOrAssign(userId, res);
+    }
     return status == 0 && res;
 }
 
@@ -92,11 +99,27 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
     CommonEventSubscribeInfo info(matchingSkills);
     eventSubscriber_ = std::make_shared<EventSubscriber>(info);
-    eventSubscriber_->SetEventCallback([&](AccountEventInfo& account) {
+    eventSubscriber_->SetEventCallback([this](AccountEventInfo& account) {
+        UpdateUserStatus(account);
         account.harmonyAccountId = GetCurrentAccountId();
         NotifyAccountChanged(account);
     });
     executors_->Execute(GetTask(0));
+}
+
+void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo& account)
+{
+    uint32_t status = static_cast<uint32_t>(account.status);
+    switch (status) {
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
+            userStatus_.Erase(atoi(account.userId.c_str()));
+            break;
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
+            userStatus_.InsertOrAssign(atoi(account.userId.c_str()), true);
+            break;
+        default:
+            break;
+    }
 }
 
 ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
