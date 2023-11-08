@@ -247,8 +247,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
                 continue;
             }
             if (localDeviceId == sourceDeviceId && bundleName == unifiedData.GetRuntime()->sourcePackage) {
-                ZLOGW("No need to grant uri permissions, DeviceId=%{public}s, bundleName=%{public}s.",
-                    localDeviceId.c_str(), bundleName.c_str());
+                ZLOGW("No need to grant uri permissions, bundleName=%{public}s.", bundleName.c_str());
                 continue;
             }
             if (UriPermissionManager::GetInstance().GrantUriPermission(file->GetUri(), bundleName) != E_OK) {
