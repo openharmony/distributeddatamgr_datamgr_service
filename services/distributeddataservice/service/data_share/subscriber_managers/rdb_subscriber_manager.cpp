@@ -152,7 +152,7 @@ int RdbSubscriberManager::Delete(const Key &key, uint32_t firstCallerTokenId)
                     it++;
                 }
             }
-            if (GetEnableObserverCount(key) == 0) {
+            if (value.empty()) {
                 SchedulerManager::GetInstance().RemoveTimer(key);
             }
             return !value.empty();
@@ -172,7 +172,7 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId)
                 it++;
             }
         }
-        if (GetEnableObserverCount(key) == 0) {
+        if (value.empty()) {
             SchedulerManager::GetInstance().RemoveTimer(key);
         }
         return value.empty();
