@@ -40,6 +40,9 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
     } else if (action == CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
         accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_SWITCHED;
         accountEventInfo.userId = std::to_string(event.GetCode());
+    } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
+        accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_UNLOCKED;
+        accountEventInfo.userId = std::to_string(event.GetCode());
     } else {
         return;
     }
