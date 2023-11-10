@@ -401,6 +401,22 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
+int32_t RdbGeneralStore::SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
+    const std::string& extendColName)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! tables name:%{public}s", tableName.c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto status = delegate_->SetTrackerTable({ tableName, extendColName, trackerColNames });
+    if (status != DBStatus::OK) {
+        ZLOGE("Set tracker table failed! ret:%{public}d", status);
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
 std::shared_ptr<Cursor> RdbGeneralStore::RemoteQuery(const std::string &device,
     const DistributedDB::RemoteCondition &remoteCondition)
 {
