@@ -27,6 +27,7 @@ public:
         GET_SCHEMA,
         LOCAL_CHANGE,
         CLOUD_SYNC,
+        DATA_CHANGE,
         CLOUD_BUTT
     };
 
@@ -36,6 +37,7 @@ public:
         std::string storeName;
         int32_t instanceId = 0;
         int32_t user = 0;
+        std::string deviceId;
     };
 
     CloudEvent(int32_t evtId, StoreInfo storeInfo);

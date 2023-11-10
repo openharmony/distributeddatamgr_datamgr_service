@@ -19,7 +19,7 @@
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
 
-CacheCursor::CacheCursor(std::vector<DistributedData::VBucket>&& records)
+CacheCursor::CacheCursor(std::vector<DistributedData::VBucket> &&records)
     : row_(0), maxCol_(0), records_(std::move(records))
 {
     maxRow_ = records_.size();

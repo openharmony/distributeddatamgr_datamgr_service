@@ -20,7 +20,7 @@
 namespace OHOS::DistributedRdb {
 class CacheCursor : public DistributedData::Cursor {
 public:
-    explicit CacheCursor(std::vector<DistributedData::VBucket>&& records);
+    explicit CacheCursor(std::vector<DistributedData::VBucket> &&records);
     ~CacheCursor() = default;
     int32_t GetColumnNames(std::vector<std::string> &names) const override;
     int32_t GetColumnName(int32_t col, std::string &name) const override;
