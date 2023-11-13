@@ -30,6 +30,7 @@ public:
     std::string GetCurrentAccountId() const override;
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
+    bool IsVerified(int userId) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
@@ -38,10 +39,12 @@ private:
     ~AccountDelegateNormalImpl();
     std::string Sha256AccountId(const std::string &plainText) const;
     ExecutorPool::Task GetTask(uint32_t retry);
+    void UpdateUserStatus(const AccountEventInfo& account);
     static constexpr int MAX_RETRY_TIME = 300;
     static constexpr int RETRY_WAIT_TIME_S = 1;
     std::shared_ptr<EventSubscriber> eventSubscriber_ {};
     std::shared_ptr<ExecutorPool> executors_;
+    ConcurrentMap<int32_t, bool> userStatus_ {};
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

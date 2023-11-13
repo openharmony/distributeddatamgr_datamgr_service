@@ -14,9 +14,11 @@
  */
 #define LOG_TAG "RdbGeneralStore"
 #include "rdb_general_store.h"
+#include "cache_cursor.h"
 #include "cloud_service.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
+#include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
 #include "crypto_manager.h"
 #include "log_print.h"
@@ -62,6 +64,11 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     }
     option.observer = &observer_;
     manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
+    if (delegate_ != nullptr && meta.isAutoClean) {
+        PragmaData data =
+            static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isAutoClean)));
+        delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
+    }
 }
 
 RdbGeneralStore::~RdbGeneralStore()
@@ -166,9 +173,23 @@ int32_t RdbGeneralStore::Delete(const std::string &table, const std::string &sql
     return 0;
 }
 
-std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, const std::string &sql, Values &&args)
+std::shared_ptr<Cursor> RdbGeneralStore::Query(__attribute__((unused))const std::string &table,
+    const std::string &sql, Values &&args)
 {
-    return std::shared_ptr<Cursor>();
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed!");
+        return nullptr;
+    }
+    std::vector<DistributedDB::VBucket> changedData;
+    std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
+    auto status = delegate_->ExecuteSql({sql, std::move(bindArgs)}, changedData);
+    if (status != DBStatus::OK) {
+        ZLOGE("Failed! ret:%{public}d, sql:%{public}s", status, Anonymous::Change(sql).c_str());
+        return nullptr;
+    }
+    std::vector<VBucket> records = ValueProxy::Convert(std::move(changedData));
+    return std::make_shared<CacheCursor>(std::move(records));
 }
 
 std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuery &query)
@@ -376,6 +397,22 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
                 Anonymous::Change(table).c_str(), dBStatus);
             return GeneralError::E_ERROR;
         }
+    }
+    return GeneralError::E_OK;
+}
+
+int32_t RdbGeneralStore::SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
+    const std::string& extendColName)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! tables name:%{public}s", tableName.c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto status = delegate_->SetTrackerTable({ tableName, extendColName, trackerColNames });
+    if (status != DBStatus::OK) {
+        ZLOGE("Set tracker table failed! ret:%{public}d", status);
+        return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
 }

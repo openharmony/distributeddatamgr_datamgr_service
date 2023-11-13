@@ -218,7 +218,7 @@ bool RdbServiceStub::CheckInterfaceToken(MessageParcel& data)
 
 int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply)
 {
-    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
+    ZLOGI("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
         return RDB_ERROR;
     }
@@ -255,6 +255,24 @@ int32_t RdbServiceStub::OnRemoteUnregisterDetailProgressObserver(MessageParcel& 
     }
 
     auto status = UnregisterAutoSyncCallback(param, nullptr);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceStub::OnRemoteNotifyDataChange(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    RdbChangedData rdbChangedData;
+    if (!ITypesUtil::Unmarshal(data, param, rdbChangedData)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s ", param.bundleName_.c_str(),
+              Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto status = NotifyDataChange(param, rdbChangedData);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

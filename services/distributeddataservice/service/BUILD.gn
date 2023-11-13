@@ -52,6 +52,12 @@ config("module_public_config") {
 }
 
 ohos_shared_library("distributeddatasvc") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   include_dirs = [
     "../../../../data_object/frameworks/innerkitsimpl/include",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
@@ -91,6 +97,7 @@ ohos_shared_library("distributeddatasvc") {
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
     "permission/src/permit_delegate.cpp",
+    "rdb/cache_cursor.cpp",
     "rdb/rdb_asset_loader.cpp",
     "rdb/rdb_cloud.cpp",
     "rdb/rdb_cloud_data_translate.cpp",

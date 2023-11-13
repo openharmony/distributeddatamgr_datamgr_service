@@ -76,17 +76,13 @@ Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
     if (result != Status::SUCCESS) {
         return result;
     }
-
+    expireTime_ = std::chrono::steady_clock::now() + GetDelayTime(totalLength);
     ZLOGD("send data connId:%{public}d, data size:%{public}u, total length:%{public}u.",
         connId_, dataInfo.length, totalLength);
     int32_t ret = SendBytes(connId_, dataInfo.data, dataInfo.length);
     if (ret != SOFTBUS_OK) {
         ZLOGE("send data to connId%{public}d failed, ret:%{public}d.", connId_, ret);
         return Status::ERROR;
-    }
-
-    if (routeType_ == RouteType::WIFI_P2P) {
-        UpdateP2pFinishTime(connId_, dataInfo.length);
     }
     return Status::SUCCESS;
 }
@@ -143,13 +139,6 @@ Status SoftBusClient::SwitchChannel(uint32_t totalLength)
 
         ZLOGD("switch %{public}s,session:%{public}s,connId:%{public}d,routeType:%{public}d to ble or br.",
             KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
-        {
-            std::lock_guard<std::mutex> lock(taskMutex_);
-            if (closeP2pTaskId_ == ExecutorPool::INVALID_TASK_ID) {
-                closeP2pTaskId_ = Context::getInstance().
-                                  GetThreadPool()->Execute(std::bind(&SoftBusClient::CloseP2pSessions, this));
-            }
-        }
         RestoreDefaultValue();
         return Open(GetSessionAttribute(false));
     }
@@ -245,43 +234,31 @@ void SoftBusClient::AfterStrategyUpdate(Strategy strategy)
     }
 }
 
-void SoftBusClient::CloseP2pSessions()
+SoftBusClient::Time SoftBusClient::GetExpireTime() const
 {
-    Time now = std::chrono::steady_clock::now();
-    Time nextClose = std::chrono::steady_clock::time_point::max();
-    p2pFinishTime_.EraseIf([&now, &nextClose](const int32_t &connId, Time &finishTime) -> bool {
-        if (finishTime + P2P_CLOSE_DELAY <= now) {
-            ZLOGD("close timeout p2p connId:%{public}d", connId);
-            CloseSession(connId);
-            return true;
-        }
-
-        if (finishTime + P2P_CLOSE_DELAY < nextClose) {
-            nextClose = finishTime + P2P_CLOSE_DELAY;
-        }
-        return false;
-    });
-
-    std::lock_guard<std::mutex> lock(taskMutex_);
-    if (!p2pFinishTime_.Empty()) {
-        closeP2pTaskId_ = Context::getInstance().GetThreadPool()->Schedule(nextClose - now,
-            std::bind(&SoftBusClient::CloseP2pSessions, this));
-    } else {
-        closeP2pTaskId_ = ExecutorPool::INVALID_TASK_ID;
-    }
+    return expireTime_;
 }
 
-void SoftBusClient::UpdateP2pFinishTime(int32_t connId, uint32_t dataLength)
+int32_t SoftBusClient::GetConnId() const
 {
-    Time now = std::chrono::steady_clock::now();
-    auto delay = std::chrono::microseconds(dataLength / P2P_TRANSFER_PER_MICROSECOND);
-    p2pFinishTime_.Compute(connId, [&now, &delay](const auto &id, auto &finishTime) -> bool {
-        if (finishTime < now) {
-            finishTime = now + delay;
-        } else {
-            finishTime += delay;
-        }
-        return true;
-    });
+    return connId_;
+}
+
+int32_t SoftBusClient::GetRoutType() const
+{
+    return routeType_;
+}
+
+void SoftBusClient::UpdateExpireTime()
+{
+    expireTime_ = std::chrono::steady_clock::now() + GetDelayTime(0);
+}
+
+SoftBusClient::Duration SoftBusClient::GetDelayTime(uint32_t dataLength)
+{
+    if (routeType_ == RouteType::WIFI_P2P) {
+        return P2P_CLOSE_DELAY + std::chrono::microseconds(dataLength >> P2P_TRANSFER_PER_MICROSECOND);
+    }
+    return SESSION_CLOSE_DELAY;
 }
 }

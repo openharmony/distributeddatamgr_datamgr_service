@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
 #include <functional>
 #include <memory>
+#include <set>
 
 #include "store/cursor.h"
 #include "store/general_value.h"
@@ -87,6 +88,9 @@ public:
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
     virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type) = 0;
+
+    virtual int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
+        const std::string& extendColName) = 0;
 
     virtual int32_t BatchInsert(const std::string &table, VBuckets &&values) = 0;
 

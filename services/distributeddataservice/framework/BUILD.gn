@@ -23,7 +23,7 @@ config("module_config") {
     "include",
     "//third_party/json/single_include",
     "//third_party/openssl/include/",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
+    "${data_service_path}/adapter/include",
     "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "${kv_store_common_path}",
     "${kv_store_distributeddb_path}/interfaces/include/",
@@ -41,6 +41,12 @@ config("module_public_config") {
 }
 
 ohos_shared_library("distributeddatasvcfwk") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "backuprule/backup_rule_manager.cpp",
     "checker/checker_manager.cpp",

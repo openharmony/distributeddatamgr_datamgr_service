@@ -107,7 +107,7 @@ void KvStoreDataService::Initialize()
 #ifndef UT_TEST
     KvStoreDelegateManager::SetProcessLabel(Bootstrap::GetInstance().GetProcessLabel(), "default");
 #endif
-    CommunicatorContext::getInstance().SetThreadPool(executors_);
+    CommunicatorContext::GetInstance().SetThreadPool(executors_);
     auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>(RouteHeadHandlerImpl::Create);
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
@@ -726,10 +726,13 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
 {
     HapTokenInfo hapTokenInfo;
     if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS ||
-        hapTokenInfo.tokenID != static_cast<uint32_t>(tokenId)) {
-        ZLOGE("passed wrong tokenId: %{public}d", tokenId);
+        hapTokenInfo.bundleName != bundleName || hapTokenInfo.userID != userId ||
+        hapTokenInfo.instIndex != appIndex) {
+        ZLOGE("passed wrong, tokenId: %{public}u, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
+            tokenId, bundleName.c_str(), userId, appIndex);
         return ERROR;
     }
+
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies(
         [bundleName, userId, appIndex, tokenId](const auto &, const std::shared_ptr<StaticActs> &acts) {
@@ -768,7 +771,7 @@ void KvStoreDataService::RegisterStoreInfo()
     storeInfoConfig.abbrCmd = "-s";
     storeInfoConfig.dumpName = "STORE_INFO";
     storeInfoConfig.countPrintf = PRINTF_COUNT_2;
-    storeInfoConfig.infoName = " <STORE_INFO>";
+    storeInfoConfig.infoName = " <StoreId>";
     storeInfoConfig.minParamsNum = 0;
     storeInfoConfig.maxParamsNum = MAXIMUM_PARAMETER_LIMIT; // Store contains no more than three parameters
     storeInfoConfig.parentNode = "BUNDLE_INFO";

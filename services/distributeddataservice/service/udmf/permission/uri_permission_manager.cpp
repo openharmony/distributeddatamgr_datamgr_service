@@ -33,9 +33,8 @@ UriPermissionManager &UriPermissionManager::GetInstance()
 Status UriPermissionManager::GrantUriPermission(const std::string &path, const std::string &bundleName)
 {
     Uri uri(path);
-    int autoRemove = 1;
     auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermission(
-        uri, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName, autoRemove);
+        uri, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName);
     if (status != ERR_OK) {
         ZLOGE("GrantUriPermission failed, %{public}d", status);
         return E_ERROR;

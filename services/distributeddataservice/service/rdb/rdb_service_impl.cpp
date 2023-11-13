@@ -19,6 +19,7 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
 #include "cloud/change_event.h"
+#include "commonevent/data_change_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory/directory_manager.h"
@@ -563,6 +564,7 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
         auto [instanceId,  user]= GetInstIndexAndUser(storeInfo.tokenId, param.bundleName_);
         storeInfo.instanceId = instanceId;
         storeInfo.user = user;
+        storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         executors_->Execute([storeInfo]() {
             auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo));
             EventCenter::GetInstance().PostEvent(move(event));
@@ -593,6 +595,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;
+    metaData.isAutoClean = param.isAutoClean_;
     return metaData;
 }
 
@@ -835,5 +838,27 @@ int32_t RdbServiceImpl::OnInitialize()
 RdbServiceImpl::~RdbServiceImpl()
 {
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
+}
+
+int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData)
+{
+    CloudEvent::StoreInfo storeInfo;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.bundleName = param.bundleName_;
+    storeInfo.storeName = RemoveSuffix(param.storeName_);
+    auto [instanceId,  user]= GetInstIndexAndUser(storeInfo.tokenId, param.bundleName_);
+    storeInfo.instanceId = instanceId;
+    storeInfo.user = user;
+    storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+
+    DataChangeEvent::EventInfo eventInfo;
+    for (const auto& [key, value] : rdbChangedData.tableData) {
+        DataChangeEvent::TableChangeProperties tableChangeProperties = {value.isTrackedDataChange};
+        eventInfo.tableProperties.insert_or_assign(key, std::move(tableChangeProperties));
+    }
+
+    auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

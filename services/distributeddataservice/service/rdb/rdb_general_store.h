@@ -48,6 +48,8 @@ public:
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
+    int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
+        const std::string& extendColName) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
     int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;

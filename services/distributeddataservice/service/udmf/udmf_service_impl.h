@@ -64,7 +64,6 @@ private:
         std::shared_ptr<UdmfServiceImpl> product_;
     };
     static Factory factory_;
-    std::map<std::string, std::string> authorizationMap_;
     std::map<std::string, Privilege> privilegeCache_;
     std::shared_ptr<ExecutorPool> executors_;
 };

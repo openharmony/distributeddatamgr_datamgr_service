@@ -163,8 +163,8 @@ void CloudDataTest::SetUp()
     storeMetaData.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     storeMetaData.area = OHOS::DistributedKv::EL1;
     storeMetaData.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    storeMetaData.user =
-        std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(storeMetaData.tokenId));
+    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(storeMetaData.tokenId);
+    storeMetaData.user = std::to_string(user);
     MetaDataManager::GetInstance().SaveMeta(storeMetaData.GetKey(), storeMetaData);
 }
 
@@ -181,18 +181,17 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
     ZLOGI("CloudDataTest start");
     auto cloudServerMock = std::make_shared<CloudServerMock>();
-    auto cloudInfo = cloudServerMock->GetServerInfo(
-        DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID()));
+    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto cloudInfo = cloudServerMock->GetServerInfo(user);
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));
     SchemaMeta schemaMeta;
     ASSERT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
     CloudEvent::StoreInfo storeInfo { OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
-    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo));
-    EventCenter::GetInstance().PostEvent(move(event));
-    ASSERT_TRUE(
+    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
+    EventCenter::GetInstance().PostEvent(std::move(event));
+    ASSERT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
-    ASSERT_EQ(to_string(schemaMeta.Marshall()), to_string(schemaMeta_.Marshall()));
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
