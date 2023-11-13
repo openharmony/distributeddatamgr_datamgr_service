@@ -209,16 +209,9 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
 int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName,
     CloudInfo &cloudInfo)
 {
-    if (GetCloudInfoFromMeta(cloudInfo) != SUCCESS) {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto user = Account::GetInstance()->GetUserByToken(tokenId);
-    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
-    if (status != SUCCESS) {
-        return ERROR;
-    }
     if (cloudInfo.id != id) {
         ZLOGE("invalid args, [input] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(id).c_str(),
-            Anonymous::Change(cloudInfo.id).c_str());
+              Anonymous::Change(cloudInfo.id).c_str());
         return INVALID_ARGUMENT;
     }
     if (!cloudInfo.enableCloud) {
@@ -234,20 +227,14 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::GetSchemaMetaInfo(const ExtraData &exData, CloudInfo &cloudInfo)
+int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, CloudInfo &cloudInfo)
 {
-    int status = CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo);
-    if (status != E_OK) {
-        return INVALID_ARGUMENT;
-    }
     auto schemaKey = cloudInfo.GetSchemaKey(cloudInfo.user, exData.extInfo.bundleName);
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
         ZLOGE("no exist meta, user:%{public}d", cloudInfo.user);
         return ERROR;
     }
-    std::string storeId;
-    std::vector<std::string> table;
     for (auto &db : schemaMeta.databases) {
         if (db.alias != exData.extInfo.containerName) {
             continue;
@@ -260,17 +247,15 @@ int32_t CloudServiceImpl::GetSchemaMetaInfo(const ExtraData &exData, CloudInfo &
             }
         }
     }
-    syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
     return SUCCESS;
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
 {
-    CloudInfo cloudInfo;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    cloudInfo.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    int32_t status = CheckNotifyConditions(id, bundleName, cloudInfo);
-    if (status != E_OK) {
+    auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+    if (CheckNotifyConditions(id, bundleName, cloudInfo) != E_OK) {
         return INVALID_ARGUMENT;
     }
     syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
@@ -283,16 +268,21 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
         return INVALID_ARGUMENT;
     }
     ExtraData exData;
-    int32_t status = Convert(extraData, exData);
-    if (status != E_OK) {
+    if (Convert(extraData, exData) != E_OK) {
         return INVALID_ARGUMENT;
     }
     CloudInfo cloudInfo;
+    std::string storeId;
+    std::vector<std::string> table;
     if (userId != INVALID_USER_ID) {
         cloudInfo.user = userId;
-        if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS) {
+        if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
             return INVALID_ARGUMENT;
         }
+        if (GetDbInfoFromExtraData(exData, cloudInfo, storeId, table) != E_OK) {
+            return INVALID_ARGUMENT;
+        }
+        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
         return SUCCESS;
     }
     std::vector<int32_t> users;
@@ -304,10 +294,14 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
         if (user == 0) {
             continue;
         }
-        if (GetSchemaMetaInfo(exData, cloudInfo) != SUCCESS) {
+        cloudInfo.user = user;
+        if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
             return INVALID_ARGUMENT;
         }
-        return SUCCESS;
+        if (GetDbInfoFromExtraData(exData, cloudInfo, storeId, table) != E_OK) {
+            return INVALID_ARGUMENT;
+        }
+        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
     }
     return SUCCESS;
 }
