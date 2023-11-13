@@ -228,7 +228,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
 }
 
 int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, CloudInfo &cloudInfo, std::string &storeId,
-                                             std::vector<std::string> &table)
+    std::vector<std::string> &table)
 {
     auto schemaKey = cloudInfo.GetSchemaKey(cloudInfo.user, exData.extInfo.bundleName);
     SchemaMeta schemaMeta;
