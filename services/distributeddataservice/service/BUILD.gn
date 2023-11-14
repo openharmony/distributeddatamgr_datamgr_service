@@ -52,12 +52,6 @@ config("module_public_config") {
 }
 
 ohos_shared_library("distributeddatasvc") {
-  branch_protector_ret = "pac_ret"
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
   include_dirs = [
     "../../../../data_object/frameworks/innerkitsimpl/include",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",

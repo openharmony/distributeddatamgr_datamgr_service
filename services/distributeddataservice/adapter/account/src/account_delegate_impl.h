@@ -43,8 +43,8 @@ private:
 class AccountDelegateImpl : public AccountDelegate {
 public:
     ~AccountDelegateImpl();
-    Status Subscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
-    Status Unsubscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
+    Status Subscribe(std::shared_ptr<Observer> observer) override;
+    Status Unsubscribe(std::shared_ptr<Observer> observer) override;
     void NotifyAccountChanged(const AccountEventInfo &accountEventInfo);
     bool RegisterHashFunc(HashFunc hash) override;
 
