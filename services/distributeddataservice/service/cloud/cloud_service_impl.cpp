@@ -227,13 +227,13 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, CloudInfo &cloudInfo, std::string &storeId,
+int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
                                                  std::vector<std::string> &table)
 {
-    auto schemaKey = cloudInfo.GetSchemaKey(cloudInfo.user, exData.extInfo.bundleName);
+    auto schemaKey = OHOS::DistributedData::CloudInfo::GetSchemaKey(userId, exData.extInfo.bundleName);
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
-        ZLOGE("no exist meta, user:%{public}d", cloudInfo.user);
+        ZLOGE("no exist meta, user:%{public}d", userId);
         return ERROR;
     }
     for (auto &db : schemaMeta.databases) {
@@ -277,7 +277,7 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
     std::vector<std::string> table;
     std::vector<int32_t> users;
     if (userId != INVALID_USER_ID) {
-       users.emplace_back(userId);
+        users.emplace_back(userId);
     } else {
         Account::GetInstance()->QueryUsers(users);
     }
@@ -292,7 +292,7 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
         if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
             return INVALID_ARGUMENT;
         }
-        if (GetDbInfoFromExtraData(exData, cloudInfo, storeId, table) != E_OK) {
+        if (GetDbInfoFromExtraData(exData, userId, storeId, table) != E_OK) {
             return INVALID_ARGUMENT;
         }
         syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));

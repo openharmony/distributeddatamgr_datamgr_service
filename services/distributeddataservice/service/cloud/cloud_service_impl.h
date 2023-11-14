@@ -119,7 +119,7 @@ private:
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     int32_t Convert(const std::string &extraData, ExtraData &exData);
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
-    int32_t GetDbInfoFromExtraData(const ExtraData &exData, CloudInfo &cloudInfo, std::string &storeId,
+    int32_t GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
                                    std::vector<std::string> &table);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
