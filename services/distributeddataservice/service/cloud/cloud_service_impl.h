@@ -95,6 +95,7 @@ private:
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
+    static constexpr int32_t ZERO_USER = 0;
     static constexpr const char *DATA_CHANGE_EVENT_ID = "cloud_data_change";
 
     bool UpdateCloudInfo(int32_t user);
@@ -119,7 +120,7 @@ private:
     int32_t Convert(const std::string &extraData, ExtraData &exData);
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
     int32_t GetDbInfoFromExtraData(const ExtraData &exData, CloudInfo &cloudInfo, std::string &storeId,
-                               std::vector<std::string> &table);
+                                   std::vector<std::string> &table);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
 

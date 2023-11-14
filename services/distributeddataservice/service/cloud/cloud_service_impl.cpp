@@ -207,7 +207,7 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
 }
 
 int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName,
-    CloudInfo &cloudInfo)
+                                                CloudInfo &cloudInfo)
 {
     if (cloudInfo.id != id) {
         ZLOGE("invalid args, [input] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(id).c_str(),
@@ -228,7 +228,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
 }
 
 int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, CloudInfo &cloudInfo, std::string &storeId,
-    std::vector<std::string> &table)
+                                                 std::vector<std::string> &table)
 {
     auto schemaKey = cloudInfo.GetSchemaKey(cloudInfo.user, exData.extInfo.bundleName);
     SchemaMeta schemaMeta;
@@ -275,27 +275,20 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
     CloudInfo cloudInfo;
     std::string storeId;
     std::vector<std::string> table;
-    if (userId != INVALID_USER_ID) {
-        cloudInfo.user = userId;
-        if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
-            return INVALID_ARGUMENT;
-        }
-        if (GetDbInfoFromExtraData(exData, cloudInfo, storeId, table) != E_OK) {
-            return INVALID_ARGUMENT;
-        }
-        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
-        return SUCCESS;
-    }
     std::vector<int32_t> users;
-    Account::GetInstance()->QueryUsers(users);
+    if (userId != INVALID_USER_ID) {
+       users.emplace_back(userId);
+    } else {
+        Account::GetInstance()->QueryUsers(users);
+    }
     if (users.empty()) {
         return SUCCESS;
     }
     for (auto user : users) {
-        if (user == 0) {
+        if (user == ZERO_USER) {
             continue;
         }
-        cloudInfo.user = user;
+        auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
         if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
             return INVALID_ARGUMENT;
         }
