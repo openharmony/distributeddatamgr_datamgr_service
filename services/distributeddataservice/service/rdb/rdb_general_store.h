@@ -56,6 +56,7 @@ public:
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
     int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) override;
+    std::shared_ptr<Cursor> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
@@ -74,6 +75,8 @@ private:
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
     static constexpr inline uint32_t ITERATE_TIMES = 10000;
     static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
+    static constexpr const char* CLOUD_GID = "cloud_gid";
+    static constexpr const char* DATE_KEY = "data_key";
     class ObserverProxy : public DistributedDB::StoreObserver {
     public:
         using DBChangedIF = DistributedDB::StoreChangedData;
@@ -95,6 +98,9 @@ private:
     DBProcessCB GetDBProcessCB(DetailAsync async, int32_t highMode = AUTO_SYNC_MODE);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
+    std::string BuildSql(const std::string& table, const std::string& statement,
+        const std::vector<std::string>& columns) const;
+    VBuckets ExecuteSql(const std::string& sql, Values &&args);
 
     ObserverProxy observer_;
     RdbManager manager_;

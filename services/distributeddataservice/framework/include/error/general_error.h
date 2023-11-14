@@ -33,6 +33,8 @@ enum GeneralError : int32_t {
     E_UNOPENED,
     E_RETRY_TIMEOUT,
     E_PARTIAL_ERROR,
+    E_USER_UNLOCK,
+    E_VERSION_CONFLICT,
     E_BUTT,
 };
 }

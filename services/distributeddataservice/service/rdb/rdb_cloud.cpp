@@ -94,6 +94,11 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     return ConvertStatus(static_cast<GeneralError>(err));
 }
 
+DistributedData::GeneralError RdbCloud::PreSharing(const std::string& tableName, VBuckets& data)
+{
+    return static_cast<GeneralError>(cloudDB_->PreSharing(tableName, data));
+}
+
 std::pair<DBStatus, uint32_t> RdbCloud::Lock()
 {
     auto error = cloudDB_->Lock();

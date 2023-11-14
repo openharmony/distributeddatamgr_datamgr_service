@@ -60,6 +60,7 @@ bool Database::Unmarshal(const Serializable::json &node)
 bool Table::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(sharedTableName)], sharedTableName);
     SetValue(node[GET_NAME(alias)], alias);
     SetValue(node[GET_NAME(fields)], fields);
     return true;
@@ -68,6 +69,7 @@ bool Table::Marshal(Serializable::json &node) const
 bool Table::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
     GetValue(node, GET_NAME(alias), alias);
     GetValue(node, GET_NAME(fields), fields);
     return true;

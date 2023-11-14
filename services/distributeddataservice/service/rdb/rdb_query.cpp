@@ -47,13 +47,6 @@ std::vector<std::string> RdbQuery::GetDevices() const
     return devices_;
 }
 
-void RdbQuery::FromTable(const std::vector<std::string> &tables)
-{
-    ZLOGD("table size:%{public}zu", tables.size());
-    tables_ = tables;
-    query_.FromTable(tables);
-}
-
 void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
 {
     ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
@@ -62,6 +55,9 @@ void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
                                             : DistributedDB::Query::Select();
     if (predicates.tables_.size() > 1) {
         query_.FromTable(predicates.tables_);
+    }
+    if (!predicates.tables_.empty()) {
+        predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
     }
     for (const auto &operation : predicates.operations_) {
         if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
@@ -85,6 +81,7 @@ void RdbQuery::MakeCloudQuery(const PredicatesMemo& predicates)
         }
         return;
     }
+    predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
     query_ = DistributedDB::Query::Select().From(*predicates.tables_.begin());
     isPriority_ = true;
     for (const auto& operation : predicates.operations_) {
@@ -106,6 +103,16 @@ DistributedDB::RemoteCondition RdbQuery::GetRemoteCondition() const
     return { sql_, bindArgs };
 }
 
+std::string RdbQuery::GetStatement() const
+{
+    return predicates_ != nullptr ? predicates_->GetStatement() : "";
+}
+
+DistributedData::Values RdbQuery::GetBindArgs() const
+{
+    return predicates_ != nullptr ? ValueProxy::Convert(predicates_->GetBindArgs()) : DistributedData::Values();
+}
+
 void RdbQuery::SetQueryNodes(const std::string& tableName, QueryNodes&& nodes)
 {
     tables_ = { tableName };
@@ -119,28 +126,42 @@ DistributedData::QueryNodes RdbQuery::GetQueryNodes(const std::string& tableName
 
 void RdbQuery::EqualTo(const RdbPredicateOperation &operation)
 {
+    if (operation.values_.empty()) {
+        return;
+    }
     query_.EqualTo(operation.field_, operation.values_[0]);
+    predicates_->EqualTo(operation.field_, operation.values_[0]);
 }
 
 void RdbQuery::NotEqualTo(const RdbPredicateOperation &operation)
 {
+    if (operation.values_.empty()) {
+        return;
+    }
     query_.NotEqualTo(operation.field_, operation.values_[0]);
+    predicates_->NotEqualTo(operation.field_, operation.values_[0]);
 }
 
 void RdbQuery::And(const RdbPredicateOperation &operation)
 {
     query_.And();
+    predicates_->And();
 }
 
 void RdbQuery::Or(const RdbPredicateOperation &operation)
 {
     query_.Or();
+    predicates_->Or();
 }
 
 void RdbQuery::OrderBy(const RdbPredicateOperation &operation)
 {
+    if (operation.values_.empty()) {
+        return;
+    }
     bool isAsc = operation.values_[0] == "true";
     query_.OrderBy(operation.field_, isAsc);
+    isAsc ? predicates_->OrderByAsc(operation.field_) : predicates_->OrderByDesc(operation.field_);
 }
 
 void RdbQuery::Limit(const RdbPredicateOperation &operation)
@@ -155,25 +176,164 @@ void RdbQuery::Limit(const RdbPredicateOperation &operation)
         offset = 0;
     }
     query_.Limit(limit, offset);
+    predicates_->Limit(limit, offset);
 }
 
 void RdbQuery::In(const RdbPredicateOperation& operation)
 {
     query_.In(operation.field_, operation.values_);
+    predicates_->In(operation.field_, operation.values_);
 }
 
 void RdbQuery::BeginGroup(const RdbPredicateOperation& operation)
 {
     query_.BeginGroup();
+    predicates_->BeginWrap();
 }
 
 void RdbQuery::EndGroup(const RdbPredicateOperation& operation)
 {
     query_.EndGroup();
+    predicates_->EndWrap();
+}
+
+void RdbQuery::NotIn(const RdbPredicateOperation& operation)
+{
+    query_.NotIn(operation.field_, operation.values_);
+    predicates_->NotIn(operation.field_, operation.values_);
+}
+
+void RdbQuery::Contain(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.Like(operation.field_, "%" + operation.values_[0] + "%");
+    predicates_->Contains(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::BeginWith(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.Like(operation.field_, operation.values_[0] + "%");
+    predicates_->BeginsWith(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::EndWith(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.Like(operation.field_, "%" + operation.values_[0]);
+    predicates_->EndsWith(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::IsNull(const RdbPredicateOperation& operation)
+{
+    query_.IsNull(operation.field_);
+    predicates_->IsNull(operation.field_);
+}
+
+void RdbQuery::IsNotNull(const RdbPredicateOperation& operation)
+{
+    query_.IsNotNull(operation.field_);
+    predicates_->IsNotNull(operation.field_);
+}
+
+void RdbQuery::Like(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.Like(operation.field_, operation.values_[0]);
+    predicates_->Like(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::Glob(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    predicates_->Glob(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::Between(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.size() != 2) {
+        return;
+    }
+    predicates_->Between(operation.field_, operation.values_[0], operation.values_[1]);
+}
+
+void RdbQuery::NotBetween(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.size() != 2) {
+        return;
+    }
+    predicates_->NotBetween(operation.field_, operation.values_[0], operation.values_[1]);
+}
+
+void RdbQuery::GreaterThan(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.GreaterThan(operation.field_, operation.field_[0]);
+    predicates_->GreaterThan(operation.field_, operation.field_[0]);
+}
+
+void RdbQuery::GreaterThanOrEqual(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.GreaterThanOrEqualTo(operation.field_, operation.field_[0]);
+    predicates_->GreaterThanOrEqualTo(operation.field_, operation.field_[0]);
+}
+
+void RdbQuery::LessThan(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.LessThan(operation.field_, operation.field_[0]);
+    predicates_->LessThan(operation.field_, operation.field_[0]);
+}
+
+void RdbQuery::LessThanOrEqual(const RdbPredicateOperation& operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.LessThanOrEqualTo(operation.field_, operation.field_[0]);
+    predicates_->LessThanOrEqualTo(operation.field_, operation.field_[0]);
+}
+
+void RdbQuery::Distinct(const RdbPredicateOperation& operation)
+{
+    predicates_->Distinct();
+}
+
+void RdbQuery::IndexedBy(const RdbPredicateOperation& operation)
+{
+    predicates_->IndexedBy(operation.field_);
+    query_.SuggestIndex(operation.field_);
 }
 
 bool RdbQuery::IsPriority()
 {
     return isPriority_;
+}
+
+void RdbQuery::SetColumns(std::vector<std::string> &&columns)
+{
+    columns_ = std::move(columns);
+}
+
+std::vector<std::string> RdbQuery::GetColumns() const
+{
+    return columns_;
 }
 } // namespace OHOS::DistributedRdb

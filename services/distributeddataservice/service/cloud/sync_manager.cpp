@@ -193,7 +193,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             return;
         }
         if (!Account::GetInstance()->IsVerified(info.user_)) {
-            info.SetError(E_ERROR);
+            info.SetError(E_USER_UNLOCK);
             return;
         }
         std::vector<SchemaMeta> schemas;
@@ -343,6 +343,10 @@ void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
 
 AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, bool mustBind)
 {
+    if (!Account::GetInstance()->IsVerified(user)) {
+        ZLOGD("user:%{public}d is locked!", user);
+        return nullptr;
+    }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         ZLOGD("not support cloud sync");

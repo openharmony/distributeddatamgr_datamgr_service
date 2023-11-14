@@ -545,6 +545,24 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
+std::pair<int32_t, sptr<IRemoteObject>> RdbServiceImpl::QuerySharingResource(const RdbSyncerParam& param,
+    const PredicatesMemo& predicates, const std::vector<std::string>& columns)
+{
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("permission error");
+        return { RDB_ERROR, nullptr };
+    }
+    auto store = GetStore(param);
+    if (predicates.tables_.empty() || store == nullptr) {
+        ZLOGE("tables size:%{public}zu", predicates.tables_.size());
+        return { RDB_ERROR, nullptr };
+    }
+    RdbQuery rdbQuery;
+    rdbQuery.MakeQuery(predicates);
+    auto cursor = store->PreSharing(rdbQuery);
+    return { RDB_OK, new (std::nothrow) RdbResultSetImpl(cursor) };
+}
+
 int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {

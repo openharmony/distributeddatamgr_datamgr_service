@@ -58,6 +58,8 @@ private:
 
     int32_t OnRemoteNotifyDataChange(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnRemoteQuerySharingResource(MessageParcel& data, MessageParcel& reply);
+
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)] = {
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_TABLE)] =
@@ -77,7 +79,9 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNREGISTER_AUTOSYNC_PROGRESS_OBSERVER)] =
             &RdbServiceStub::OnRemoteUnregisterDetailProgressObserver,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_NOTIFY_DATA_CHANGE)] =
-            &RdbServiceStub::OnRemoteNotifyDataChange
+            &RdbServiceStub::OnRemoteNotifyDataChange,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_QUERY_SHARING_RESOURCE)] =
+            &RdbServiceStub::OnRemoteQuerySharingResource
     };
 };
 } // namespace OHOS::DistributedRdb

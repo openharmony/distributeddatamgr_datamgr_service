@@ -35,6 +35,7 @@ public:
         std::vector<DBVBucket> &extend) override;
     DBStatus BatchDelete(const std::string &tableName, std::vector<DBVBucket> &extend) override;
     DBStatus Query(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data) override;
+    DistributedData::GeneralError PreSharing(const std::string &tableName, DistributedData::VBuckets &data);
     std::pair<DBStatus, uint32_t> Lock() override;
     DBStatus UnLock() override;
     DBStatus HeartBeat() override;
