@@ -211,7 +211,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
 {
     if (cloudInfo.id != id) {
         ZLOGE("invalid args, [input] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(id).c_str(),
-              Anonymous::Change(cloudInfo.id).c_str());
+            Anonymous::Change(cloudInfo.id).c_str());
         return INVALID_ARGUMENT;
     }
     if (!cloudInfo.enableCloud) {
@@ -242,7 +242,7 @@ int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_
         }
         storeId = db.name;
         for (auto &tb : db.tables) {
-            auto const &tbs = exData.extInfo.tables;
+            const auto &tbs = exData.extInfo.tables;
             if (std::find(tbs.begin(), tbs.end(), tb.alias) == tbs.end()) {
                 continue;
             }
@@ -279,11 +279,8 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
     } else {
         Account::GetInstance()->QueryUsers(users);
     }
-    if (users.empty()) {
-        return SUCCESS;
-    }
     for (auto user : users) {
-        if (user == ZERO_USER) {
+        if (user == DEFAULT_USER) {
             continue;
         }
         auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
