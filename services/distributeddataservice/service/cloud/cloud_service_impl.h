@@ -69,17 +69,12 @@ private:
     using Task = ExecutorPool::Task;
 
     struct ExtraData final : public DistributedData::Serializable {
-        struct Table : public Serializable {
-            std::vector<std::string> tables;
-            bool Marshal(json &node) const override;
-            bool Unmarshal(const json &node) override;
-        };
         struct ExtInfo final : public Serializable {
             std::string accountId;
             std::string bundleName;
             std::string containerName;
             std::string recordTypes;
-            Table table;
+            std::vector<std::string> tables;
             bool Marshal(json& node) const override;
             bool Unmarshal(const json& node) override;
         };

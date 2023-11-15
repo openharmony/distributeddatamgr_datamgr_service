@@ -230,7 +230,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
 int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
                                                  std::vector<std::string> &table)
 {
-    auto schemaKey = OHOS::DistributedData::CloudInfo::GetSchemaKey(userId, exData.extInfo.bundleName);
+    auto schemaKey = CloudInfo::GetSchemaKey(userId, exData.extInfo.bundleName);
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
         ZLOGE("no exist meta, user:%{public}d", userId);
@@ -242,10 +242,11 @@ int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_
         }
         storeId = db.name;
         for (auto &tb : db.tables) {
-            if (std::find(exData.extInfo.table.tables.begin(), exData.extInfo.table.tables.end(), tb.alias) !=
-                exData.extInfo.table.tables.end()) {
-                table.emplace_back(tb.name);
+            auto const &tbs = exData.extInfo.tables;
+            if (std::find(tbs.begin(), tbs.end(), tb.alias) == tbs.end()) {
+                continue;
             }
+            table.emplace_back(tb.name);
         }
     }
     return SUCCESS;
@@ -272,9 +273,6 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
     if (Convert(extraData, exData) != E_OK) {
         return INVALID_ARGUMENT;
     }
-    CloudInfo cloudInfo;
-    std::string storeId;
-    std::vector<std::string> table;
     std::vector<int32_t> users;
     if (userId != INVALID_USER_ID) {
         users.emplace_back(userId);
@@ -292,6 +290,8 @@ int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::st
         if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
             return INVALID_ARGUMENT;
         }
+        std::string storeId;
+        std::vector<std::string> table;
         if (GetDbInfoFromExtraData(exData, userId, storeId, table) != E_OK) {
             return INVALID_ARGUMENT;
         }
@@ -699,17 +699,6 @@ bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json& n
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(containerName), containerName);
     GetValue(node, GET_NAME(recordTypes), recordTypes);
-    return table.Unmarshall(recordTypes);
-}
-
-bool CloudServiceImpl::ExtraData::Table::Marshal(Serializable::json& node) const
-{
-    return true;
-}
-
-bool CloudServiceImpl::ExtraData::Table::Unmarshal(const Serializable::json& node)
-{
-    GetValue(node, "", tables);
-    return true;
+    return Unmarshall(recordTypes, tables);
 }
 } // namespace OHOS::CloudData
