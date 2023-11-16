@@ -188,7 +188,7 @@ Status SoftBusClient::OpenSessionByAsync(SessionAttribute attr)
         (void)client->Open(attr);
         client->sessionFlag_.store(false);
     };
-    client->sessionFlag_.store(true);
+    sessionFlag_.store(true);
     Context::GetInstance().GetThreadPool()->Execute(openSessionTask);
     return Status::RATE_LIMIT;
 }
