@@ -45,7 +45,7 @@ enum SoftBusAdapterErrorCode : int32_t {
 constexpr int32_t SESSION_NAME_SIZE_MAX = 65;
 constexpr int32_t DEVICE_ID_SIZE_MAX = 65;
 constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
-constexpr uint32_t DEFAULT_TIMEOUT = 8 * 1000;
+constexpr uint32_t DEFAULT_TIMEOUT = 15 * 1000;
 using namespace std;
 using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::DistributedKv;

@@ -66,7 +66,24 @@ uint32_t SoftBusClient::GetMtuSize() const
 
 uint32_t SoftBusClient::GetTimeout() const
 {
-    return (routeType_ == RouteType::BT_BR || routeType_ == RouteType::BT_BLE) ? BR_TIMEOUT : WIFI_TIMEOUT;
+    uint32_t timeout = DEFAULT_TIMEOUT;
+    switch (routeType_) {
+        case RouteType::WIFI_STA:
+            timeout = WIFI_TIMEOUT;
+            break;
+        case RouteType::WIFI_P2P:
+            timeout = WIFI_TIMEOUT;
+            break;
+        case RouteType::BT_BR:
+            timeout = BR_TIMEOUT;
+            break;
+        case RouteType::BT_BLE:
+            timeout = BR_TIMEOUT;
+            break;
+        default:
+            break;
+    }
+    return timeout;
 }
 
 Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
@@ -98,13 +115,14 @@ Status SoftBusClient::OpenConnect(uint32_t totalLength)
         }
         return result;
     }
-
-    auto result = CreateChannel(totalLength);
-    if (result != Status::SUCCESS) {
-        return result;
+    if (!sessionFlag_ && routeType_ == RouteType::INVALID_ROUTE_TYPE) {
+        return CreateChannel(totalLength);
     }
-    status_ = ConnectStatus::CONNECT_OK;
-    return Status::SUCCESS;
+    if (routeType_ != RouteType::INVALID_ROUTE_TYPE) {
+        status_ = ConnectStatus::CONNECT_OK;
+        return Status::SUCCESS;
+    }
+    return Status::RATE_LIMIT;
 }
 
 Status SoftBusClient::SwitchChannel(uint32_t totalLength)
@@ -129,7 +147,7 @@ Status SoftBusClient::SwitchChannel(uint32_t totalLength)
         ZLOGD("switch %{public}s,session:%{public}s,connId:%{public}d,routeType:%{public}d to wifi or p2p.",
             KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
         RestoreDefaultValue();
-        return Open(GetSessionAttribute(true));
+        return OpenSessionByAsync(GetSessionAttribute(true));
     }
 
     if (routeType_ == RouteType::WIFI_P2P) {
@@ -140,7 +158,7 @@ Status SoftBusClient::SwitchChannel(uint32_t totalLength)
         ZLOGD("switch %{public}s,session:%{public}s,connId:%{public}d,routeType:%{public}d to ble or br.",
             KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
         RestoreDefaultValue();
-        return Open(GetSessionAttribute(false));
+        return OpenSessionByAsync(GetSessionAttribute(false));
     }
 
     return Status::NETWORK_ERROR;
@@ -151,15 +169,28 @@ Status SoftBusClient::CreateChannel(uint32_t totalLength)
     if (strategy_ == Strategy::BUTT) {
         return Status::NETWORK_ERROR;
     }
-
     if (strategy_ == Strategy::ON_LINE_SELECT_CHANNEL) {
-        return Open(GetSessionAttribute(true));
+        return OpenSessionByAsync(GetSessionAttribute(true));
     }
-
     if (totalLength < P2P_SIZE_THRESHOLD) {
-        return Open(GetSessionAttribute(false));
+        return OpenSessionByAsync(GetSessionAttribute(false));
     }
-    return Open(GetSessionAttribute(true));
+    return OpenSessionByAsync(GetSessionAttribute(true));
+}
+
+Status SoftBusClient::OpenSessionByAsync(SessionAttribute attr)
+{
+    auto openSessionTask = [attr, client = shared_from_this()]() {
+        if (client == nullptr) {
+            ZLOGE("OpenSessionByAsync client is nullptr.");
+            return;
+        }
+        (void)client->Open(attr);
+        client->sessionFlag_ = false;
+    };
+    Context::GetInstance().GetThreadPool()->Execute(openSessionTask);
+    sessionFlag_ = true;
+    return Status::RATE_LIMIT;
 }
 
 Status SoftBusClient::Open(SessionAttribute attr)

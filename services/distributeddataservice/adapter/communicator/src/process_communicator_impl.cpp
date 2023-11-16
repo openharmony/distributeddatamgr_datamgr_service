@@ -124,11 +124,14 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     DeviceId destination;
     destination.deviceId = dstDevInfo.identifier;
     Status errCode = CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
+    if (errCode == Status::RATE_LIMIT) {
+        ZLOGE("commProvider_ opening session.");
+        return DBStatus::RATE_LIMIT;
+    }
     if (errCode != Status::SUCCESS) {
         ZLOGE("commProvider_ SendData Fail.");
         return DBStatus::DB_ERROR;
     }
-
     return DBStatus::OK;
 }
 
