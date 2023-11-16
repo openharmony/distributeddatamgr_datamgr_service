@@ -16,6 +16,7 @@
 #ifndef DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_SOFTBUS_CLIENT_H
 #define DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_SOFTBUS_CLIENT_H
 
+#include <atomic>
 #include <map>
 #include <mutex>
 
@@ -71,7 +72,7 @@ private:
     static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 3; // 2^3 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
     static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(60);
-    bool sessionFlag_ = false;
+    std::atomic_bool sessionFlag_ = false;
     int32_t connId_ = INVALID_CONNECT_ID;
     int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
     Strategy strategy_ = Strategy::DEFAULT;

@@ -115,7 +115,7 @@ Status SoftBusClient::OpenConnect(uint32_t totalLength)
         }
         return result;
     }
-    if (!sessionFlag_ && routeType_ == RouteType::INVALID_ROUTE_TYPE) {
+    if (routeType_ == RouteType::INVALID_ROUTE_TYPE) {
         return CreateChannel(totalLength);
     }
     if (routeType_ != RouteType::INVALID_ROUTE_TYPE) {
@@ -186,10 +186,12 @@ Status SoftBusClient::OpenSessionByAsync(SessionAttribute attr)
             return;
         }
         (void)client->Open(attr);
-        client->sessionFlag_ = false;
+        client->sessionFlag_.store(false);
     };
     Context::GetInstance().GetThreadPool()->Execute(openSessionTask);
-    sessionFlag_ = true;
+    if (sessionFlag_.exchange(true)) {
+        return Status::SUCCESS;
+    }
     return Status::RATE_LIMIT;
 }
 
