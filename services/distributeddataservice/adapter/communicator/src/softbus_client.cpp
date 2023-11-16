@@ -118,11 +118,8 @@ Status SoftBusClient::OpenConnect(uint32_t totalLength)
     if (routeType_ == RouteType::INVALID_ROUTE_TYPE) {
         return CreateChannel(totalLength);
     }
-    if (routeType_ != RouteType::INVALID_ROUTE_TYPE) {
-        status_ = ConnectStatus::CONNECT_OK;
-        return Status::SUCCESS;
-    }
-    return Status::RATE_LIMIT;
+    status_ = ConnectStatus::CONNECT_OK;
+    return Status::SUCCESS;
 }
 
 Status SoftBusClient::SwitchChannel(uint32_t totalLength)
