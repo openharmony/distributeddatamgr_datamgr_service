@@ -34,9 +34,9 @@ public:
     DBStatus Download(const std::string &tableName, const std::string &gid, const Type &prefix,
         std::map<std::string, std::vector<Asset>> &assets) override;
 
-private:
-    DBStatus ConvertStatus(DistributedData::GeneralError error);
+    DBStatus RemoveLocalAssets(const std::vector<Asset> &assets) override;
 
+private:
     std::shared_ptr<DistributedData::AssetLoader> assetLoader_;
 };
 } // namespace OHOS::DistributedRdb

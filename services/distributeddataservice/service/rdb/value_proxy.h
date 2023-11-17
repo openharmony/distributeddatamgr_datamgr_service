@@ -62,9 +62,19 @@ public:
         operator DistributedData::Asset();
         operator DistributedDB::Asset();
         static uint32_t ConvertToDataStatus(const DistributedDB::Asset &asset);
-        static uint32_t ConvertToDBStatus(const DistributedData::Asset &asset);
+        static uint32_t ConvertToDBStatus(const uint32_t &status);
 
     private:
+        DistributedData::Asset asset_;
+    };
+
+    class TempAsset {
+    public:
+        explicit TempAsset(DistributedDB::Asset asset);
+        operator NativeRdb::AssetValue();
+
+    private:
+        static uint32_t ConvertToDataStatus(const uint32_t &status);
         DistributedData::Asset asset_;
     };
 
@@ -234,6 +244,15 @@ public:
 private:
     ValueProxy() = delete;
     ~ValueProxy() = delete;
+    static inline uint32_t GetHighStatus(uint32_t status)
+    {
+        return status & 0xF0000000;
+    }
+
+    static inline uint32_t GetLowStatus(uint32_t status)
+    {
+        return status & ~0xF0000000;
+    }
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_VALUE_PROXY_H
