@@ -183,7 +183,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
         context->calledBundleName = bundleNameOfProvider;
         int32_t result = publishStrategy_.Execute(context, item);
         results.emplace_back(item.key_, result);
-        if (result != EOK) {
+        if (result != E_OK) {
             ZLOGE("publish error, key is %{public}s", DistributedData::Anonymous::Change(item.key_).c_str());
             continue;
         }
@@ -435,7 +435,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     SubscribeTimeChanged();
-    return EOK;
+    return E_OK;
 }
 
 void DataShareServiceImpl::OnConnectDone()
@@ -456,7 +456,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string 
     PublishedData::ClearAging();
     TemplateData::Delete(bundleName, user);
     RdbHelper::ClearCache();
-    return EOK;
+    return E_OK;
 }
 
 int32_t DataShareServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
@@ -465,7 +465,7 @@ int32_t DataShareServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, 
         uid, pid, tokenId, bundleName.c_str());
     RdbSubscriberManager::GetInstance().Delete(tokenId);
     PublishedDataSubscriberManager::GetInstance().Delete(tokenId);
-    return EOK;
+    return E_OK;
 }
 
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
