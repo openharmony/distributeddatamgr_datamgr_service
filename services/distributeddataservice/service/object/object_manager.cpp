@@ -23,10 +23,16 @@
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "object_data_listener.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
+#include "account/account_delegate.h"
 
 namespace OHOS {
 namespace DistributedObject {
 using namespace OHOS::DistributedKv;
+using StoreMetaData = OHOS::DistributedData::StoreMetaData;
+using AccountDelegate = DistributedKv::AccountDelegate;
+
 ObjectStoreManager::ObjectStoreManager() {}
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
@@ -97,6 +103,7 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     }
 
     ZLOGD("start SaveToStore");
+    SaveUserToMeta();
     result = SaveToStore(appId, sessionId, deviceId, data);
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Save to store failed, please check DB errCode, errCode = %{public}d", result);
@@ -194,6 +201,29 @@ int32_t ObjectStoreManager::Retrieve(
 int32_t ObjectStoreManager::Clear()
 {
     ZLOGI("enter");
+    std::string userId = GetCurrentUser();
+    if (userId.empty()) {
+        return OBJECT_INNER_ERROR;
+    }
+    std::vector<StoreMetaData> metaData;
+    std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    std::string metaKey = GetMetaUserIdKey(userId, appId);
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(metaKey, metaData, true)) {
+        ZLOGE("no store of %{public}s", appId.c_str());
+        return OBJECT_STORE_NOT_FOUND;
+    }
+    for (const auto &storeMeta : metaData) {
+        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_OBJECT_BEGIN
+            || storeMeta.storeType > StoreMetaData::StoreType::STORE_OBJECT_END) {
+            continue;
+        }
+        if (storeMeta.user == userId) {
+            ZLOGI("user is same, not need to change, mate user:%{public}s::user:%{public}s.",
+                storeMeta.user.c_str(), userId.c_str());
+            return OBJECT_SUCCESS;
+        }
+    }
+    ZLOGD("user is change, need to change");
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open objectStore DB failed,please check DB status");
@@ -217,6 +247,13 @@ int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId)
         ZLOGE("RevokeSaveToStore failed");
     }
     Close();
+
+    std::string userId = GetCurrentUser();
+    if (userId.empty()) {
+        return OBJECT_INNER_ERROR;
+    }
+    std::string metaKey = GetMetaUserIdKey(userId, appId);
+    DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true);
     return result;
 }
 
@@ -269,6 +306,7 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
 void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData)
 {
     ZLOGD("ObjectStoreManager::NotifyChange start");
+    SaveUserToMeta();
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     for (const auto &item : changedData) {
         std::string prefix = GetBundleName(item.first) + GetSessionId(item.first);
@@ -528,6 +566,34 @@ void ObjectStoreManager::ProcessKeyByIndex(std::string &key, uint8_t index)
         key.erase(0, pos + 1);
         i++;
     } while (i < index);
+}
+std::string ObjectStoreManager::GetCurrentUser()
+{
+    std::vector<int> users;
+    AccountDelegate::GetInstance()->QueryUsers(users);
+    if (users.empty()) {
+        return "";
+    }
+    return std::to_string(users[0]);
+}
+
+void ObjectStoreManager::SaveUserToMeta()
+{
+    ZLOGD("start.");
+    std::string userId = GetCurrentUser();
+    if (userId.empty()) {
+        return;
+    }
+    std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    StoreMetaData userMeta;
+    userMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
+    userMeta.user = userId;
+    userMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
+    std::string userMetaKey = GetMetaUserIdKey(userId, appId);
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(userMetaKey, userMeta, true);
+    if (!saved) {
+        ZLOGE("userMeta save failed");
+    }
 }
 
 std::string ObjectStoreManager::GetPropertyName(const std::string &key)
