@@ -35,7 +35,7 @@ using namespace Security::AccessToken;
 static const int SYSTEM_USER_ID = 1000;
 
 static const int WAIT_TIME_FOR_ACCOUNT_OPERATION = 2; // indicates the wait time in seconds
-
+namespace OHOS::Test {
 class DistributedDataAccountEventTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -51,7 +51,7 @@ public:
 
 void DistributedDataAccountEventTest::SetTokenPermission()
 {
-    const char **perms = new const char*[1];
+    const char **perms = new const char *[1];
     perms[0] = "ohos.permission.PUBLISH_SYSTEM_COMMON_EVENT";
     NativeTokenInfoParams instance = {
         .dcapsNum = 0,
@@ -126,3 +126,4 @@ void DistributedDataAccountEventTest::ChangeUser(int uid)
         std::cout << "error to set uid " << uid << "errno is " << errno << std::endl;
     }
 }
+} // namespace OHOS::Test
