@@ -14,18 +14,23 @@
  */
 
 #include <thread>
+#include "accesstoken_kit.h"
+#include "access_token.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_data_service.h"
+#include "token_setproc.h"
 #include "types.h"
 #include "common_event_subscriber.h"
 #include "common_event_support.h"
 #include "common_event_manager.h"
 #include "gtest/gtest.h"
+#include "nativetoken_kit.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
 using namespace OHOS;
 using namespace OHOS::EventFwk;
+using namespace Security::AccessToken;
 
 static const int SYSTEM_USER_ID = 1000;
 
@@ -39,10 +44,34 @@ public:
     static void HarmonyAccountLogin();
     static void HarmonyAccountLogout();
     static void HarmonyAccountDelete();
+
+    static void SetTokenPermission();
+    static uint64_t tokenId_;
 };
+
+void DistributedDataAccountEventTest::SetTokenPermission()
+{
+    const char **perms = new const char*[1];
+    perms[0] = "ohos.permission.PUBLISH_SYSTEM_COMMON_EVENT";
+    NativeTokenInfoParams instance = {
+        .dcapsNum = 0,
+        .permsNum = 1,
+        .aclsNum = 0,
+        .dcaps = nullptr;
+        .perms = perms;
+        .acls = nullptr;
+        .aplStr = "system_core",
+    };
+    instance.processName = 'AccountEventTest';
+    tokenId_ = GetAccessTokenId(&instance);
+    SetSelfTokenID(tokenId_);
+    AccessTokenKit::ReloadNativeTokenInfo();
+    delete[] perms;
+}
 
 void DistributedDataAccountEventTest::SetUpTestCase()
 {
+    DistributedDataAccountEventTest::SetTokenPermission();
     DistributedDataAccountEventTest::ChangeUser(SYSTEM_USER_ID);
 }
 
