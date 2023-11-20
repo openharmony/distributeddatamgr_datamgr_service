@@ -185,7 +185,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         return Status::ERROR;
     }
     auto status = conn->Send(dataInfo, totalLength);
-    if (status != Status::NETWORK_ERROR) {
+    if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
         Time now = std::chrono::steady_clock::now();
         auto expireTime = conn->GetExpireTime();
         lock_guard<decltype(taskMutex_)> lock(taskMutex_);
