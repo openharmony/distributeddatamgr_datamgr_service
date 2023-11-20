@@ -62,7 +62,7 @@ void DistributedDataAccountEventTest::SetTokenPermission()
         .acls = nullptr;
         .aplStr = "system_core",
     };
-    instance.processName = 'AccountEventTest';
+    instance.processName = "AccountEventTest";
     tokenId_ = GetAccessTokenId(&instance);
     SetSelfTokenID(tokenId_);
     AccessTokenKit::ReloadNativeTokenInfo();
