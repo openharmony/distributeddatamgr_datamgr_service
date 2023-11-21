@@ -21,12 +21,14 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include "cloud/cloud_event.h"
 #include "concurrent_map.h"
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_watcher.h"
+#include "rdb_query.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "store_observer.h"
@@ -76,7 +78,7 @@ public:
 
     int32_t Delete(const RdbSyncerParam &param) override;
 
-    std::pair<int32_t, sptr<IRemoteObject>> QuerySharingResource(const RdbSyncerParam& param, const PredicatesMemo& predicates,
+    std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> QuerySharingResource(const RdbSyncerParam& param, const PredicatesMemo& predicates,
         const std::vector<std::string>& columns) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;
@@ -122,6 +124,7 @@ private:
     };
 
     static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
+    static constexpr inline uint32_t SHARE_WAIT_TIME = 60; // seconds
 
     void RegisterRdbServiceInfo();
 
@@ -152,6 +155,9 @@ private:
     int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
 
     int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
+
+    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(
+        DistributedData::CloudEvent::StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
 

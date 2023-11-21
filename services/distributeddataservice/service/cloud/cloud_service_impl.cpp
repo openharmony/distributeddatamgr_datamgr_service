@@ -18,14 +18,19 @@
 #include "cloud_service_impl.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "block_data.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
+#include "cloud/rdb_share_event.h"
+#include "cloud/share_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "rdb_cloud_data_translate.h"
+#include "rdb_types.h"
+#include "values_bucket.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
@@ -38,6 +43,7 @@ using namespace std::chrono;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
+using namespace OHOS::Security::AccessToken;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 
 CloudServiceImpl::Factory::Factory() noexcept
@@ -592,5 +598,90 @@ std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<st
         }
     }
     return genActions;
+}
+std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::AllocResourceAndShare(
+    const std::string& storeId, const DistributedRdb::PredicatesMemo& predicates,
+    const std::vector<std::string>& columns, const std::vector<Participant>& participants)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto [bundleName, instanceId] = GetHapInfo(tokenId);
+    if (bundleName.empty()) {
+        ZLOGE("bundleName is empty, storeId:%{public}s", Anonymous::Change(storeId).c_str());
+        return { E_ERROR, {} };
+    }
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    if (predicates.tables_.empty()) {
+        ZLOGE("tables size:%{public}zu, storeId:%{public}s", predicates.tables_.size(),
+            Anonymous::Change(storeId).c_str());
+        return { E_ERROR, {} };
+    }
+    auto memo = std::make_shared<DistributedRdb::PredicatesMemo>(predicates);
+    CloudEvent::StoreInfo storeInfo;
+    storeInfo.bundleName = bundleName;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.storeName = storeId;
+    auto blockData = std::make_shared<BlockData<std::pair<int32_t, std::shared_ptr<Cursor>>>>(WAIT_TIME,
+        std::pair{ E_ERROR, nullptr });
+    RdbShareEvent::Callback asyncCallback = [blockData](int32_t status, std::shared_ptr<Cursor> cursor) mutable {
+        blockData->SetValue({ status, cursor });
+    };
+    auto evt = std::make_unique<RdbShareEvent>(storeInfo, memo, columns, asyncCallback);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    auto [status, cursor] = blockData->GetValue();
+    if (status != E_OK || cursor == nullptr) {
+        ZLOGE("preShare failed, storeId:%{public}s, status:%{public}d", Anonymous::Change(storeId).c_str(), status);
+        return { E_ERROR, {} };
+    }
+    auto valueBuckets = Convert(cursor);
+    Result<std::vector<Result<Participant>>> res;
+    for (auto& valueBucket : valueBuckets) {
+        NativeRdb::ValueObject object;
+        if (!valueBucket.GetObject(SchemaMeta::SHARING_RESOURCE, object)) {
+            continue;
+        }
+        Share(object, participants, res);
+    }
+    return { status, std::move(valueBuckets) };
+}
+
+std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::Convert(std::shared_ptr<Cursor> cursor) const
+{
+    std::vector<NativeRdb::ValuesBucket> valueBuckets;
+    int32_t count = cursor->GetCount();
+    valueBuckets.reserve(count);
+    auto err = cursor->MoveToFirst();
+    while (err == E_OK && count > 0) {
+        VBucket entry;
+        err = cursor->GetEntry(entry);
+        if (err != E_OK) {
+            break;
+        }
+        NativeRdb::ValuesBucket bucket;
+        for (auto& [key, value] : entry) {
+            NativeRdb::ValueObject object;
+            DistributedData::Convert(std::move(value), object.value);
+            bucket.values_.insert_or_assign(key, std::move(object));
+        }
+        valueBuckets.emplace_back(std::move(bucket));
+        err = cursor->MoveToNext();
+        count--;
+    }
+    return valueBuckets;
+}
+std::pair<std::string, int32_t> CloudServiceImpl::GetHapInfo(uint32_t tokenId)
+{
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        return { "", -1 };
+    }
+    HapTokenInfo tokenInfo;
+    tokenInfo.instIndex = -1;
+    int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (errCode != RET_SUCCESS) {
+        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x bundleName:%{public}s", errCode, tokenId,
+            tokenInfo.bundleName.c_str());
+        return { tokenInfo.bundleName, tokenInfo.instIndex };
+    }
+    return { tokenInfo.bundleName, tokenInfo.instIndex };
 }
 } // namespace OHOS::CloudData

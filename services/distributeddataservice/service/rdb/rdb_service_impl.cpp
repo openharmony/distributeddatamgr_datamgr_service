@@ -16,9 +16,12 @@
 #include "rdb_service_impl.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "block_data.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
 #include "cloud/change_event.h"
+#include "cloud/share_event.h"
+#include "cloud/rdb_share_event.h"
 #include "commonevent/data_change_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
@@ -32,7 +35,6 @@
 #include "metadata/store_meta_data.h"
 #include "rdb_watcher.h"
 #include "rdb_notifier_proxy.h"
-#include "rdb_query.h"
 #include "store/general_store.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
@@ -111,6 +113,20 @@ RdbServiceImpl::RdbServiceImpl()
         store->RegisterDetailProgressObserver(GetCallbacks(meta.tokenId, storeInfo.storeName));
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
+
+    EventCenter::GetInstance().Subscribe(CloudEvent::RDB_SHARE, [this](const Event& event) {
+        auto& evt = static_cast<const RdbShareEvent&>(event);
+        auto predict = evt.GetPredicts();
+        auto rdbQuery = std::make_shared<RdbQuery>();
+        rdbQuery->MakeQuery(*predict);
+        rdbQuery->SetColumns(evt.GetColumns());
+        auto storeInfo = evt.GetStoreInfo();
+        auto [status, result] = PreShare(storeInfo, rdbQuery);
+        auto callback = evt.GetCallback();
+        if (callback != nullptr) {
+            callback(status == RDB_OK ? GeneralError::E_OK : GeneralError::E_ERROR, result);
+        }
+    });
 }
 
 int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
@@ -545,22 +561,64 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-std::pair<int32_t, sptr<IRemoteObject>> RdbServiceImpl::QuerySharingResource(const RdbSyncerParam& param,
+std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> RdbServiceImpl::QuerySharingResource(const RdbSyncerParam& param,
     const PredicatesMemo& predicates, const std::vector<std::string>& columns)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
-        return { RDB_ERROR, nullptr };
+        return { RDB_ERROR, {} };
     }
-    auto store = GetStore(param);
-    if (predicates.tables_.empty() || store == nullptr) {
-        ZLOGE("tables size:%{public}zu", predicates.tables_.size());
-        return { RDB_ERROR, nullptr };
+    if (predicates.tables_.empty()) {
+        ZLOGE("tables size:%{public}zu, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str(), predicates.tables_.size());
+        return { RDB_ERROR, {} };
     }
-    RdbQuery rdbQuery;
-    rdbQuery.MakeQuery(predicates);
-    auto cursor = store->PreSharing(rdbQuery);
-    return { RDB_OK, new (std::nothrow) RdbResultSetImpl(cursor) };
+    auto rdbQuery = std::make_shared<RdbQuery>();
+    rdbQuery->MakeQuery(predicates);
+    rdbQuery->SetColumns(columns);
+    CloudEvent::StoreInfo storeInfo;
+    storeInfo.bundleName = param.bundleName_;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.storeName = param.storeName_;
+    auto [status, cursor] = PreShare(storeInfo, rdbQuery);
+    if (cursor == nullptr) {
+        ZLOGE("cursor is null, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return { RDB_ERROR, {} };
+    }
+    std::vector<NativeRdb::ValuesBucket> valueBuckets;
+    int32_t count = cursor->GetCount();
+    valueBuckets.reserve(count);
+    auto err = cursor->MoveToFirst();
+    while (err == E_OK && count > 0) {
+        DistributedData::VBucket entry;
+        err = cursor->GetEntry(entry);
+        if (err != E_OK) {
+            break;
+        }
+        valueBuckets.emplace_back(ValueProxy::Convert(std::move(entry)));
+        err = cursor->MoveToNext();
+        count--;
+    }
+    return { RDB_OK, valueBuckets };
+}
+
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::PreShare(CloudEvent::StoreInfo& storeInfo,
+    std::shared_ptr<RdbQuery> rdbQuery)
+{
+    auto blockData = std::make_shared<BlockData<std::pair<int32_t, std::shared_ptr<Cursor>>>>(SHARE_WAIT_TIME);
+    ShareEvent::Callback asyncCallback = [blockData](int32_t status, std::shared_ptr<Cursor> cursor) mutable {
+        blockData->SetValue({ status, cursor });
+    };
+    storeInfo.storeName = RemoveSuffix(storeInfo.storeName);
+    auto evt = std::make_unique<ShareEvent>(std::move(storeInfo), rdbQuery, asyncCallback);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    auto value = blockData->GetValue();
+    if (value.first == E_OK) {
+        return { RDB_OK, value.second };
+    }
+    return { RDB_ERROR, nullptr };
 }
 
 int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)

@@ -25,6 +25,9 @@
 #include "cloud_service_stub.h"
 #include "feature/static_acts.h"
 #include "sync_manager.h"
+namespace OHOS::NativeRdb {
+class ValuesBucket;
+}
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
@@ -41,6 +44,9 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t Online(const std::string &device) override;
     int32_t Offline(const std::string &device) override;
+    std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string& storeId,
+        const DistributedRdb::PredicatesMemo& predicates, const std::vector<std::string>& columns,
+        const std::vector<Participant>& participants) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -62,16 +68,19 @@ private:
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
+    using CloudEvent = DistributedData::CloudEvent;
     using Subscription = DistributedData::Subscription;
     using Handle = bool (CloudServiceImpl::*)(int32_t);
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
+    static std::pair<std::string, int32_t> GetHapInfo(uint32_t tokenId);
 
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
+    static constexpr int32_t WAIT_TIME = 30; // 30 seconds
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
@@ -88,6 +97,11 @@ private:
     std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
 
     void GetSchema(const Event &event);
+    void CloudShare(const Event &event);
+    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudShare(const CloudEvent::StoreInfo& storeInfo,
+        DistributedData::GenQuery& query);
+    std::vector<NativeRdb::ValuesBucket> Convert(std::shared_ptr<Cursor> cursor) const;
+
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);

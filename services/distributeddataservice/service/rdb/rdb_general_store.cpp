@@ -182,14 +182,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(__attribute__((unused))const std:
         ZLOGE("database already closed!");
         return nullptr;
     }
-    std::vector<DistributedDB::VBucket> changedData;
-    std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    auto status = delegate_->ExecuteSql({sql, std::move(bindArgs)}, changedData);
-    if (status != DBStatus::OK) {
-        ZLOGE("Failed! ret:%{public}d, sql:%{public}s", status, Anonymous::Change(sql).c_str());
-        return nullptr;
-    }
-    std::vector<VBucket> records = ValueProxy::Convert(std::move(changedData));
+    std::vector<VBucket> records = ExecuteSql(sql, std::move(args));
     return std::make_shared<CacheCursor>(std::move(records));
 }
 
@@ -267,13 +260,8 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
         return nullptr;
     }
     rdbCloud_->PreSharing(*tables.begin(), values);
-    for (auto value = values.begin(); value != values.end();) {
-        if (value->find(CLOUD_GID) == value->end()) {
-            value = values.erase(value);
-            // this record are not synchronized
-        } else {
-            ++value;
-        }
+    for (auto& value : values) {
+        value.erase(CLOUD_GID);
     }
     return std::make_shared<CacheCursor>(std::move(values));
 }

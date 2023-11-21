@@ -30,6 +30,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnChangeAppSwitch,
     &CloudServiceStub::OnClean,
     &CloudServiceStub::OnNotifyDataChange,
+    &CloudServiceStub::OnAllocResourceAndShare,
 };
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
@@ -116,5 +117,18 @@ int32_t CloudServiceStub::OnNotifyDataChange(const std::string &id, MessageParce
     }
     auto result = NotifyDataChange(id, bundleName);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+int32_t CloudServiceStub::OnAllocResourceAndShare(const std::string& storeId, MessageParcel& data,
+    MessageParcel& reply)
+{
+    DistributedRdb::PredicatesMemo predicatesMemo;
+    std::vector<std::string> columns;
+    std::vector<Participant> participants;
+    if (!ITypesUtil::Unmarshal(data, predicatesMemo, columns, participants)) {
+        ZLOGE("Unmarshal storeId:%{public}s", Anonymous::Change(storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [status, resultSet] = AllocResourceAndShare(storeId, predicatesMemo, columns, participants);
+    return ITypesUtil::Marshal(reply, status, resultSet) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData
