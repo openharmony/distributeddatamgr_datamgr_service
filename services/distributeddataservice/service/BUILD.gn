@@ -69,6 +69,7 @@ ohos_shared_library("distributeddatasvc") {
     "bootstrap/src/bootstrap.cpp",
     "cloud/cloud_service_impl.cpp",
     "cloud/cloud_service_stub.cpp",
+    "cloud/cloud_value_util.cpp",
     "cloud/sync_manager.cpp",
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",

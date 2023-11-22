@@ -42,6 +42,7 @@ public:
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     using DetailAsync = DistributedData::GeneralStore::DetailAsync;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
+    using StoreInfo = DistributedData::CloudEvent::StoreInfo;
     RdbServiceImpl();
     virtual ~RdbServiceImpl();
 
@@ -157,9 +158,11 @@ private:
     int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
 
     std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(
-        DistributedData::CloudEvent::StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
+        StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
+
+    static std::vector<NativeRdb::ValuesBucket> HandleCursor(std::shared_ptr<DistributedData::Cursor> cursor);
 
     static std::string TransferStringToHex(const std::string& origStr);
 

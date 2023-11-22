@@ -18,11 +18,10 @@
 #include "cloud_service_impl.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "block_data.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
-#include "cloud/rdb_share_event.h"
-#include "cloud/share_event.h"
+#include "cloud/query_shared_resource_event.h"
+#include "cloud/cloud_share_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
@@ -68,6 +67,9 @@ CloudServiceImpl::CloudServiceImpl()
 {
     EventCenter::GetInstance().Subscribe(CloudEvent::GET_SCHEMA, [this](const Event &event) {
         GetSchema(event);
+    });
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SHARE, [this](const Event &event) {
+        CloudShare(event);
     });
 }
 
@@ -483,6 +485,50 @@ void CloudServiceImpl::GetSchema(const Event &event)
     GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
 }
 
+void CloudServiceImpl::CloudShare(const Event& event)
+{
+    auto& cloudShareEvent = static_cast<const CloudShareEvent&>(event);
+    auto& storeInfo = cloudShareEvent.GetStoreInfo();
+    auto query = cloudShareEvent.GetQuery();
+    auto callback = cloudShareEvent.GetCallback();
+    if (query == nullptr) {
+        ZLOGE("query is null, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
+            storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
+        if (callback) {
+            callback(GeneralError::E_ERROR, nullptr);
+        }
+    }
+    ZLOGD("Start CloudShare, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
+        storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
+    auto [status, cursor] = CloudShare(storeInfo, *query);
+
+    if (callback) {
+        callback(status, cursor);
+    }
+}
+
+std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>>
+CloudServiceImpl::CloudShare(const CloudEvent::StoreInfo& storeInfo, GenQuery& query)
+{
+    StoreMetaData meta;
+    meta.bundleName = storeInfo.bundleName;
+    meta.storeId = storeInfo.storeName;
+    meta.user = std::to_string(storeInfo.user);
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.instanceId = storeInfo.instanceId;
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+        ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+            meta.GetStoreAlias().c_str());
+        return { GeneralError::E_ERROR, nullptr };
+    }
+    AutoCache::Store store = SyncManager::GetStore(meta, storeInfo.user, true);
+    if (store == nullptr) {
+        ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+        return { GeneralError::E_ERROR, nullptr };
+    }
+    return { GeneralError::E_OK, store->PreSharing(query) };
+}
+
 bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
 {
     auto instance = CloudServer::GetInstance();
@@ -599,6 +645,7 @@ std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<st
     }
     return genActions;
 }
+
 std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::AllocResourceAndShare(
     const std::string& storeId, const DistributedRdb::PredicatesMemo& predicates,
     const std::vector<std::string>& columns, const std::vector<Participant>& participants)
@@ -609,7 +656,6 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
         ZLOGE("bundleName is empty, storeId:%{public}s", Anonymous::Change(storeId).c_str());
         return { E_ERROR, {} };
     }
-    auto user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     if (predicates.tables_.empty()) {
         ZLOGE("tables size:%{public}zu, storeId:%{public}s", predicates.tables_.size(),
             Anonymous::Change(storeId).c_str());
@@ -621,19 +667,18 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = storeId;
-    auto blockData = std::make_shared<BlockData<std::pair<int32_t, std::shared_ptr<Cursor>>>>(WAIT_TIME,
-        std::pair{ E_ERROR, nullptr });
-    RdbShareEvent::Callback asyncCallback = [blockData](int32_t status, std::shared_ptr<Cursor> cursor) mutable {
-        blockData->SetValue({ status, cursor });
+    std::pair<int32_t, std::shared_ptr<Cursor>> queryRes;
+    QuerySharedResourceEvent::Callback asyncCallback = [&queryRes](int32_t status, std::shared_ptr<Cursor> cursor) mutable {
+        queryRes.first = status;
+        queryRes.second = cursor;
     };
-    auto evt = std::make_unique<RdbShareEvent>(storeInfo, memo, columns, asyncCallback);
+    auto evt = std::make_unique<QuerySharedResourceEvent>(storeInfo, memo, columns, asyncCallback);
     EventCenter::GetInstance().PostEvent(std::move(evt));
-    auto [status, cursor] = blockData->GetValue();
-    if (status != E_OK || cursor == nullptr) {
-        ZLOGE("preShare failed, storeId:%{public}s, status:%{public}d", Anonymous::Change(storeId).c_str(), status);
+    if (queryRes.first != E_OK || queryRes.second == nullptr) {
+        ZLOGE("preShare failed, storeId:%{public}s, status:%{public}d", Anonymous::Change(storeId).c_str(), queryRes.first);
         return { E_ERROR, {} };
     }
-    auto valueBuckets = Convert(cursor);
+    auto valueBuckets = Convert(queryRes.second);
     Result<std::vector<Result<Participant>>> res;
     for (auto& valueBucket : valueBuckets) {
         NativeRdb::ValueObject object;
@@ -642,7 +687,7 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
         }
         Share(object, participants, res);
     }
-    return { status, std::move(valueBuckets) };
+    return { queryRes.first, std::move(valueBuckets) };
 }
 
 std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::Convert(std::shared_ptr<Cursor> cursor) const
@@ -669,6 +714,7 @@ std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::Convert(std::shared_ptr<C
     }
     return valueBuckets;
 }
+
 std::pair<std::string, int32_t> CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 {
     if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {

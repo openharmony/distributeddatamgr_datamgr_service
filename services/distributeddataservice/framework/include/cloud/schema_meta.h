@@ -59,7 +59,7 @@ public:
     static constexpr const char *VERSION_FIELD = "#_version";
     static constexpr const char *CLOUD_OWNER = "cloud_owner";
     static constexpr const char *CLOUD_PRIVILEGE = "cloud_privilege";
-    static constexpr const char *SHARING_RESOURCE = "SHARING_RESOURCE";
+    static constexpr const char *SHARING_RESOURCE = "sharing_resource";
     int32_t version = 0;
     std::string bundleName;
     std::vector<Database> databases;

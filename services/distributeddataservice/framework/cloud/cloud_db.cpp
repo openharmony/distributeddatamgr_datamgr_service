@@ -50,7 +50,7 @@ std::shared_ptr<Cursor> CloudDB::Query(GenQuery& query, const VBucket& extend)
     return nullptr;
 }
 
-int32_t CloudDB::PreSharing(const std::string& table, VBuckets& values)
+int32_t CloudDB::PreSharing(const std::string& table, VBuckets& extend)
 {
     return E_NOT_SUPPORT;
 }

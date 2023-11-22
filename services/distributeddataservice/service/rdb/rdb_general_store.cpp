@@ -259,26 +259,47 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
         ZLOGE("rdbCloud is nullptr:%{public}d, values size:%{public}zu", rdbCloud_ == nullptr, values.size());
         return nullptr;
     }
-    rdbCloud_->PreSharing(*tables.begin(), values);
-    for (auto& value : values) {
-        value.erase(CLOUD_GID);
+    VBuckets extends = ExtractExtend(values);
+    rdbCloud_->PreSharing(*tables.begin(), extends);
+    for (auto value = values.begin(), extend = extends.begin(); value != values.end() && extend != extends.end();
+         ++value, ++extend) {
+        value->insert_or_assign(DistributedRdb::Field::SHARING_RESOURCE_FIELD, (*extend)[SchemaMeta::SHARING_RESOURCE]);
+        value->erase(CLOUD_GID);
     }
     return std::make_shared<CacheCursor>(std::move(values));
+}
+
+VBuckets RdbGeneralStore::ExtractExtend(VBuckets& values) const
+{
+    VBuckets extends(values.size());
+    for (auto value = values.begin(), extend = extends.begin(); value != values.end() && extend != extends.end();
+         ++value, ++extend) {
+        auto it = value->find(CLOUD_GID);
+        if (it == value->end()) {
+            continue;
+        }
+        auto gid = std::get_if<std::string>(&(it->second));
+        if (gid == nullptr || gid->empty()) {
+            continue;
+        }
+        extend->insert_or_assign(SchemaMeta::GID_FIELD, std::move(*gid));
+    }
+    return extends;
 }
 
 std::string RdbGeneralStore::BuildSql(const std::string& table, const std::string& statement,
     const std::vector<std::string>& columns) const
 {
     std::string sql = "select ";
-    sql.append(CLOUD_GID).append(" as ").append(SchemaMeta::GID_FIELD);
+    sql.append(CLOUD_GID);
     std::string sqlNode = "select rowid";
     for (auto& column : columns) {
         sql.append(", ").append(column);
         sqlNode.append(", ").append(column);
     }
-    sqlNode.append("from ").append(table).append(statement);
+    sqlNode.append(" from ").append(table).append(statement);
     auto logTable = RelationalStoreManager::GetDistributedLogTableName(table);
-    sql.append("from ").append(logTable).append(", (").append(sqlNode);
+    sql.append(" from ").append(logTable).append(", (").append(sqlNode);
     sql.append(") where ").append(DATE_KEY).append(" = rowid");
     return sql;
 }

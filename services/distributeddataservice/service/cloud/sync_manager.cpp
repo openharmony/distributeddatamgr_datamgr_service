@@ -344,7 +344,7 @@ void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
 AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, bool mustBind)
 {
     if (!Account::GetInstance()->IsVerified(user)) {
-        ZLOGD("user:%{public}d is locked!", user);
+        ZLOGW("user:%{public}d is locked!", user);
         return nullptr;
     }
     auto instance = CloudServer::GetInstance();

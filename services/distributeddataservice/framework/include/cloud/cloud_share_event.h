@@ -20,11 +20,11 @@
 #include "store/cursor.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT ShareEvent : public CloudEvent {
+class API_EXPORT CloudShareEvent : public CloudEvent {
 public:
     using Callback = std::function<void(int32_t, std::shared_ptr<DistributedData::Cursor>)>;
-    ShareEvent(StoreInfo storeInfo, std::shared_ptr<GenQuery> query, Callback callback);
-    ~ShareEvent() override = default;
+    CloudShareEvent(StoreInfo storeInfo, std::shared_ptr<GenQuery> query, Callback callback);
+    ~CloudShareEvent() override = default;
    std::shared_ptr<GenQuery> GetQuery() const;
    Callback GetCallback() const;
 private:

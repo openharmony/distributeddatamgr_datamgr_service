@@ -101,6 +101,7 @@ private:
     std::string BuildSql(const std::string& table, const std::string& statement,
         const std::vector<std::string>& columns) const;
     VBuckets ExecuteSql(const std::string& sql, Values &&args);
+    VBuckets ExtractExtend(VBuckets& values) const;
 
     ObserverProxy observer_;
     RdbManager manager_;

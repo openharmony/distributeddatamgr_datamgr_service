@@ -19,6 +19,7 @@
 #include "itypes_util.h"
 #include "log_print.h"
 #include "permission/permission_validator.h"
+#include "rdb_types.h"
 #include "utils/anonymous.h"
 #include "tokenid_kit.h"
 namespace OHOS::CloudData {
@@ -118,6 +119,7 @@ int32_t CloudServiceStub::OnNotifyDataChange(const std::string &id, MessageParce
     auto result = NotifyDataChange(id, bundleName);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
+
 int32_t CloudServiceStub::OnAllocResourceAndShare(const std::string& storeId, MessageParcel& data,
     MessageParcel& reply)
 {

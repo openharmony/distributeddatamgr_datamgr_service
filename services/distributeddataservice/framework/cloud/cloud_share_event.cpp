@@ -13,18 +13,18 @@
 * limitations under the License.
 */
 
-#include "cloud/share_event.h"
+#include "cloud/cloud_share_event.h"
 
 namespace OHOS::DistributedData {
-ShareEvent::ShareEvent(StoreInfo storeInfo, std::shared_ptr<GenQuery> query, Callback callback)
-   : CloudEvent(CLOUD_SYNC, std::move(storeInfo)), query_(std::move(query)), callback_(std::move(callback))
+CloudShareEvent::CloudShareEvent(StoreInfo storeInfo, std::shared_ptr<GenQuery> query, Callback callback)
+   : CloudEvent(CLOUD_SHARE, std::move(storeInfo)), query_(std::move(query)), callback_(std::move(callback))
 {
 }
-std::shared_ptr<GenQuery> ShareEvent::GetQuery() const
+std::shared_ptr<GenQuery> CloudShareEvent::GetQuery() const
 {
     return query_;
 }
-ShareEvent::Callback ShareEvent::GetCallback() const
+CloudShareEvent::Callback CloudShareEvent::GetCallback() const
 {
     return callback_;
 }

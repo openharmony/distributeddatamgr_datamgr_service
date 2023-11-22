@@ -35,7 +35,8 @@ public:
     std::vector<std::string> GetDevices() const;
     std::string GetStatement() const;
     DistributedData::Values GetBindArgs() const;
-    void SetColumns(std::vector<std::string>&& columns);
+    void SetColumns(std::vector<std::string> &&columns);
+    void SetColumns(const std::vector<std::string> &columns);
     std::vector<std::string> GetColumns() const;
     DistributedDB::Query GetQuery() const;
     DistributedDB::RemoteCondition GetRemoteCondition() const;

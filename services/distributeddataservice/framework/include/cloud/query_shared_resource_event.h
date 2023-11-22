@@ -24,13 +24,13 @@ namespace DistributedRdb {
 struct PredicatesMemo;
 }
 namespace DistributedData {
-class API_EXPORT RdbShareEvent : public CloudEvent {
+class API_EXPORT QuerySharedResourceEvent : public CloudEvent {
 public:
     using Callback = std::function<void(int32_t, std::shared_ptr<Cursor>)>;
-    RdbShareEvent(StoreInfo storeInfo, std::shared_ptr<DistributedRdb::PredicatesMemo> predicates,
+    QuerySharedResourceEvent(StoreInfo storeInfo, std::shared_ptr<DistributedRdb::PredicatesMemo> predicates,
         const std::vector<std::string>& columns, Callback callback);
-    ~RdbShareEvent() override = default;
-    std::shared_ptr<DistributedRdb::PredicatesMemo> GetPredicts() const;
+    ~QuerySharedResourceEvent() override = default;
+    std::shared_ptr<DistributedRdb::PredicatesMemo> GetPredicates() const;
     std::vector<std::string> GetColumns() const;
     Callback GetCallback() const;
 

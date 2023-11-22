@@ -332,6 +332,11 @@ void RdbQuery::SetColumns(std::vector<std::string> &&columns)
     columns_ = std::move(columns);
 }
 
+void RdbQuery::SetColumns(const std::vector<std::string> &columns)
+{
+    columns_ = columns;
+}
+
 std::vector<std::string> RdbQuery::GetColumns() const
 {
     return columns_;

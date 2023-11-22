@@ -25,9 +25,7 @@
 #include "cloud_service_stub.h"
 #include "feature/static_acts.h"
 #include "sync_manager.h"
-namespace OHOS::NativeRdb {
-class ValuesBucket;
-}
+#include "values_bucket.h"
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
@@ -44,6 +42,7 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t Online(const std::string &device) override;
     int32_t Offline(const std::string &device) override;
+
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string& storeId,
         const DistributedRdb::PredicatesMemo& predicates, const std::vector<std::string>& columns,
         const std::vector<Participant>& participants) override;
@@ -98,14 +97,14 @@ private:
 
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);
-    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudShare(const CloudEvent::StoreInfo& storeInfo,
-        DistributedData::GenQuery& query);
-    std::vector<NativeRdb::ValuesBucket> Convert(std::shared_ptr<Cursor> cursor) const;
 
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
+    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudShare(const CloudEvent::StoreInfo& storeInfo,
+        DistributedData::GenQuery& query);
+    std::vector<NativeRdb::ValuesBucket> Convert(std::shared_ptr<Cursor> cursor) const;
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
 

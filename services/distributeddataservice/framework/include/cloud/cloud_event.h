@@ -29,7 +29,7 @@ public:
         CLOUD_SYNC,
         DATA_CHANGE,
         CLOUD_SHARE,
-        RDB_SHARE,
+        QUERY_SHARED_RESOURCE,
         CLOUD_BUTT
     };
 
