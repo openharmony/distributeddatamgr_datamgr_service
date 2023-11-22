@@ -51,8 +51,7 @@ public:
 
 void DistributedDataAccountEventTest::SetTokenPermission()
 {
-    const char **perms = new const char *[1];
-    perms[0] = "ohos.permission.PUBLISH_SYSTEM_COMMON_EVENT";
+    const char *perms[] = { "ohos.permission.PUBLISH_SYSTEM_COMMON_EVENT" };
     NativeTokenInfoParams instance = {
         .dcapsNum = 0,
         .permsNum = 1,
@@ -66,7 +65,6 @@ void DistributedDataAccountEventTest::SetTokenPermission()
     tokenId_ = GetAccessTokenId(&instance);
     SetSelfTokenID(tokenId_);
     AccessTokenKit::ReloadNativeTokenInfo();
-    delete[] perms;
 }
 
 void DistributedDataAccountEventTest::SetUpTestCase()
