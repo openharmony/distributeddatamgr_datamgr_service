@@ -34,7 +34,8 @@ bool SchemaMeta::Unmarshal(const Serializable::json &node)
 std::vector<std::string> Database::GetTableNames() const
 {
     std::vector<std::string> tableNames;
-    tableNames.reserve(tables.size() * 2);
+    auto sharedTableSize = tables.size();
+    tableNames.reserve(tables.size() + sharedTableSize);
     for (auto &table : tables) {
         tableNames.push_back(table.name);
         tableNames.push_back(table.sharedTableName);

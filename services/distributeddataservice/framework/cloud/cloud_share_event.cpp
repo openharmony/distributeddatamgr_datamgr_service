@@ -17,7 +17,7 @@
 
 namespace OHOS::DistributedData {
 CloudShareEvent::CloudShareEvent(StoreInfo storeInfo, std::shared_ptr<GenQuery> query, Callback callback)
-   : CloudEvent(CLOUD_SHARE, std::move(storeInfo)), query_(std::move(query)), callback_(std::move(callback))
+    : CloudEvent(CLOUD_SHARE, std::move(storeInfo)), query_(std::move(query)), callback_(std::move(callback))
 {
 }
 std::shared_ptr<GenQuery> CloudShareEvent::GetQuery() const

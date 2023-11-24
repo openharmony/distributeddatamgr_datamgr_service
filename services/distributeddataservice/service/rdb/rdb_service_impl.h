@@ -79,8 +79,8 @@ public:
 
     int32_t Delete(const RdbSyncerParam &param) override;
 
-    std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> QuerySharingResource(const RdbSyncerParam& param, const PredicatesMemo& predicates,
-        const std::vector<std::string>& columns) override;
+    std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> QuerySharingResource(const RdbSyncerParam& param,
+        const PredicatesMemo& predicates, const std::vector<std::string>& columns) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;
 

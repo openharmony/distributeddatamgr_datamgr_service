@@ -103,7 +103,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         const Table &table = database.tables[i];
         DBTable &dbTable = schema.tables[i];
         dbTable.name = table.name;
-        dbTable.sharedTableName = table.sharedTableName;
+        // dbTable.sharedTableName = table.sharedTableName;
         for (auto &field : table.fields) {
             DBField dbField;
             dbField.colName = field.colName;
@@ -254,7 +254,15 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
         return nullptr;
     }
     std::string sql = BuildSql(*tables.begin(), statement, rdbQuery->GetColumns());
-    VBuckets values = ExecuteSql(sql, rdbQuery->GetBindArgs());
+    VBuckets values;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            ZLOGE("database already closed!");
+            return nullptr;
+        }
+        values = ExecuteSql(sql, rdbQuery->GetBindArgs());
+    }
     if (rdbCloud_ == nullptr || values.empty()) {
         ZLOGE("rdbCloud is nullptr:%{public}d, values size:%{public}zu", rdbCloud_ == nullptr, values.size());
         return nullptr;

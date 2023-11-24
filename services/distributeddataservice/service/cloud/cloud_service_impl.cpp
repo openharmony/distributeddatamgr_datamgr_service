@@ -20,7 +20,7 @@
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
-#include "cloud/query_shared_resource_event.h"
+#include "cloud/make_query_event.h"
 #include "cloud/cloud_share_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -498,17 +498,17 @@ void CloudServiceImpl::CloudShare(const Event& event)
             callback(GeneralError::E_ERROR, nullptr);
         }
     }
-    ZLOGD("Start CloudShare, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
+    ZLOGD("Start PreShare, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
         storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
-    auto [status, cursor] = CloudShare(storeInfo, *query);
+    auto [status, cursor] = PreShare(storeInfo, *query);
 
     if (callback) {
         callback(status, cursor);
     }
 }
 
-std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>>
-CloudServiceImpl::CloudShare(const CloudEvent::StoreInfo& storeInfo, GenQuery& query)
+std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::PreShare(
+    const CloudEvent::StoreInfo& storeInfo, GenQuery& query)
 {
     StoreMetaData meta;
     meta.bundleName = storeInfo.bundleName;
@@ -667,27 +667,40 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = storeId;
-    std::pair<int32_t, std::shared_ptr<Cursor>> queryRes;
-    QuerySharedResourceEvent::Callback asyncCallback = [&queryRes](int32_t status, std::shared_ptr<Cursor> cursor) mutable {
-        queryRes.first = status;
-        queryRes.second = cursor;
+    std::shared_ptr<GenQuery> query;
+    MakeQueryEvent::Callback asyncCallback = [&query](std::shared_ptr<GenQuery> genQuery) {
+        query = genQuery;
     };
-    auto evt = std::make_unique<QuerySharedResourceEvent>(storeInfo, memo, columns, asyncCallback);
+    auto evt = std::make_unique<MakeQueryEvent>(storeInfo, memo, columns, asyncCallback);
     EventCenter::GetInstance().PostEvent(std::move(evt));
-    if (queryRes.first != E_OK || queryRes.second == nullptr) {
-        ZLOGE("preShare failed, storeId:%{public}s, status:%{public}d", Anonymous::Change(storeId).c_str(), queryRes.first);
+    if (query == nullptr) {
+        ZLOGE("query is null, storeId:%{public}s,", Anonymous::Change(storeId).c_str());
         return { E_ERROR, {} };
     }
-    auto valueBuckets = Convert(queryRes.second);
-    Result<std::vector<Result<Participant>>> res;
-    for (auto& valueBucket : valueBuckets) {
-        NativeRdb::ValueObject object;
-        if (!valueBucket.GetObject(SchemaMeta::SHARING_RESOURCE, object)) {
-            continue;
-        }
-        Share(object, participants, res);
+    auto [status, cursor] = PreShare(storeInfo, *query);
+    if (status != GeneralError::E_OK || cursor == nullptr) {
+        ZLOGE("PreShare fail, storeId:%{public}s, status:%{public}d", Anonymous::Change(storeId).c_str(), status);
+        //return { E_ERROR, {} };
     }
-    return { queryRes.first, std::move(valueBuckets) };
+//    auto valueBuckets = Convert(cursor);
+//    Result<std::vector<Result<Participant>>> res;
+//    for (auto& valueBucket : valueBuckets) {
+//        NativeRdb::ValueObject object;
+//        if (!valueBucket.GetObject(SchemaMeta::SHARING_RESOURCE, object)) {
+//            continue;
+//        }
+//        Share(object, participants, res);
+//    }
+    std::vector<NativeRdb::ValuesBucket> valueBuckets;
+    for (int i = 0; i < 10; ++i) {
+        NativeRdb::ValuesBucket vb;
+        for (auto& column : columns) {
+            vb.PutString(column, "test_" + std::to_string(i));
+        }
+        vb.PutString("sharing_resouce", "uri_" + std::to_string(i));
+        valueBuckets.emplace_back(std::move(vb));
+    }
+    return { SUCCESS, std::move(valueBuckets) };
 }
 
 std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::Convert(std::shared_ptr<Cursor> cursor) const

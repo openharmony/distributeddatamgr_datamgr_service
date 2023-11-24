@@ -55,18 +55,22 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
         return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
     }
 
-    if (!DistributedKv::PermissionValidator::GetInstance().IsCloudConfigPermit(IPCSkeleton::GetCallingTokenID())) {
-        ZLOGE("cloud config permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
-        auto result = static_cast<int32_t>(CLOUD_CONFIG_PERMISSION_DENIED);
-        return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+    if (code >= TRANS_HEAD && code < TRANS_ALLOC_RESOURCE_AND_SHARE) {
+        auto permit =
+            DistributedKv::PermissionValidator::GetInstance().IsCloudConfigPermit(IPCSkeleton::GetCallingTokenID());
+        if (!permit) {
+            ZLOGE("cloud config permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
+            auto result = static_cast<int32_t>(CLOUD_CONFIG_PERMISSION_DENIED);
+            return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+        }
     }
 
-    std::string id;
-    if (!ITypesUtil::Unmarshal(data, id)) {
-        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
+    std::string first;
+    if (!ITypesUtil::Unmarshal(data, first)) {
+        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(first).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    return (this->*HANDLERS[code])(id, data, reply);
+    return (this->*HANDLERS[code])(first, data, reply);
 }
 
 int32_t CloudServiceStub::OnEnableCloud(const std::string &id, MessageParcel &data, MessageParcel &reply)

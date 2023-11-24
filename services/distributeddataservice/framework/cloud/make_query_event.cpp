@@ -13,26 +13,26 @@
 * limitations under the License.
 */
 
-#include "cloud/query_shared_resource_event.h"
+#include "cloud/make_query_event.h"
 
 namespace OHOS::DistributedData {
-QuerySharedResourceEvent::QuerySharedResourceEvent(CloudEvent::StoreInfo storeInfo,
+MakeQueryEvent::MakeQueryEvent(CloudEvent::StoreInfo storeInfo,
     std::shared_ptr<DistributedRdb::PredicatesMemo> predicates, const std::vector<std::string>& columns,
     Callback callback)
-    : CloudEvent(QUERY_SHARED_RESOURCE, std::move(storeInfo)), predicates_(std::move(predicates)), columns_(columns),
+    : CloudEvent(MAKE_QUERY, std::move(storeInfo)), predicates_(std::move(predicates)), columns_(columns),
       callback_(std::move(callback))
 {
 }
-std::shared_ptr<DistributedRdb::PredicatesMemo> QuerySharedResourceEvent::GetPredicates() const
+std::shared_ptr<DistributedRdb::PredicatesMemo> MakeQueryEvent::GetPredicates() const
 {
     return predicates_;
 }
-std::vector<std::string> QuerySharedResourceEvent::GetColumns() const
+std::vector<std::string> MakeQueryEvent::GetColumns() const
 {
     return columns_;
 }
 
-QuerySharedResourceEvent::Callback QuerySharedResourceEvent::GetCallback() const
+MakeQueryEvent::Callback MakeQueryEvent::GetCallback() const
 {
     return callback_;
 }

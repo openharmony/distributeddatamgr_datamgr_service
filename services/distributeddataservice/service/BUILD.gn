@@ -65,11 +65,11 @@ ohos_shared_library("distributeddatasvc") {
     "${kv_store_distributeddb_path}",
   ]
   sources = [
+    "${cloud_data_path}/src/cloud_types_util.cpp",
     "backup/src/backup_manager.cpp",
     "bootstrap/src/bootstrap.cpp",
     "cloud/cloud_service_impl.cpp",
     "cloud/cloud_service_stub.cpp",
-    "cloud/cloud_value_util.cpp",
     "cloud/sync_manager.cpp",
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",

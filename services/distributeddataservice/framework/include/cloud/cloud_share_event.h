@@ -25,8 +25,9 @@ public:
     using Callback = std::function<void(int32_t, std::shared_ptr<DistributedData::Cursor>)>;
     CloudShareEvent(StoreInfo storeInfo, std::shared_ptr<GenQuery> query, Callback callback);
     ~CloudShareEvent() override = default;
-   std::shared_ptr<GenQuery> GetQuery() const;
-   Callback GetCallback() const;
+    std::shared_ptr<GenQuery> GetQuery() const;
+    Callback GetCallback() const;
+
 private:
     std::shared_ptr<GenQuery> query_;
     Callback callback_;

@@ -102,9 +102,9 @@ private:
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
-    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudShare(const CloudEvent::StoreInfo& storeInfo,
+    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(const CloudEvent::StoreInfo& storeInfo,
         DistributedData::GenQuery& query);
-    std::vector<NativeRdb::ValuesBucket> Convert(std::shared_ptr<Cursor> cursor) const;
+    std::vector<NativeRdb::ValuesBucket> Convert(std::shared_ptr<DistributedData::Cursor> cursor) const;
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
 
