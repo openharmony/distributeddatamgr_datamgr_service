@@ -596,6 +596,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;
     metaData.isManualClean = !param.isAutoClean_;
+    metaData.isSearchable = param.isSearchable_;
     return metaData;
 }
 
