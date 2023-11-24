@@ -41,12 +41,6 @@ config("module_public_config") {
 }
 
 ohos_shared_library("distributeddatasvcfwk") {
-  branch_protector_ret = "pac_ret"
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
   sources = [
     "backuprule/backup_rule_manager.cpp",
     "checker/checker_manager.cpp",
