@@ -266,6 +266,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
 
 int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::string& extraData, int32_t userId)
 {
+    ZLOGI("notify data change, user:%{public}d", userId);
     if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
         return INVALID_ARGUMENT;
     }
