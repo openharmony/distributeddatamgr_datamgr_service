@@ -74,9 +74,17 @@ struct Asset {
     std::string hash;
     std::string path;
 };
+
+struct Reference {
+    std::string sourceTable;
+    std::string targetTable;
+    std::map<std::string, std::string> refFields;
+};
+
 using Assets = std::vector<Asset>;
 using Bytes = std::vector<uint8_t>;
-using Value = std::variant<std::monostate, int64_t, double, std::string, bool, Bytes, Asset, Assets>;
+using Relations = std::map<std::string, std::string>;
+using Value = std::variant<std::monostate, int64_t, double, std::string, bool, Bytes, Asset, Assets, Relations>;
 using Values = std::vector<Value>;
 using VBucket = std::map<std::string, Value>;
 using VBuckets = std::vector<VBucket>;

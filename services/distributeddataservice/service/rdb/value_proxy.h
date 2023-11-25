@@ -91,7 +91,8 @@ public:
     private:
         std::vector<Asset> assets_;
     };
-    using Proxy = std::variant<std::monostate, int64_t, double, std::string, bool, Bytes, Asset, Assets>;
+    using Relations = std::map<std::string, std::string>;
+    using Proxy = std::variant<std::monostate, int64_t, double, std::string, bool, Bytes, Asset, Assets, Relations>;
 
     class Value {
     public:
