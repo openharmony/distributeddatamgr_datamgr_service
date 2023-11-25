@@ -175,15 +175,6 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::Convert(const std::string &extraData, ExtraData &exData)
-{
-    if (!exData.Unmarshall(extraData)) {
-        ZLOGE("extraData cannot be parsed to valid JSON");
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
 int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::string, int32_t> &actions)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -264,14 +255,14 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::NotifyChange(const std::string& eventId, const std::string& extraData, int32_t userId)
+int32_t CloudServiceImpl::NotifyDataChange(const std::string& eventId, const std::string& extraData, int32_t userId)
 {
     ZLOGI("notify data change, user:%{public}d", userId);
     if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
         return INVALID_ARGUMENT;
     }
     ExtraData exData;
-    if (Convert(extraData, exData) != E_OK) {
+    if (exData.Unmarshall(extraData) != E_OK) {
         return INVALID_ARGUMENT;
     }
     std::vector<int32_t> users;

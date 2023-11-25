@@ -36,7 +36,7 @@ public:
     int32_t ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch) override;
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
-    int32_t NotifyChange(const std::string& eventId, const std::string& extraData, int32_t userId) override;
+    int32_t NotifyDataChange(const std::string& eventId, const std::string& extraData, int32_t userId) override;
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &info) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
@@ -112,7 +112,6 @@ private:
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
-    int32_t Convert(const std::string &extraData, ExtraData &exData);
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
     int32_t GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
                                    std::vector<std::string> &table);
