@@ -255,7 +255,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::NotifyDataChange(const std::string& eventId, const std::string& extraData, int32_t userId)
+int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std::string &extraData, int32_t userId)
 {
     ZLOGI("notify data change, user:%{public}d", userId);
     if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
@@ -659,21 +659,21 @@ std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<st
     return genActions;
 }
 
-bool CloudServiceImpl::ExtraData::Marshal(Serializable::json& node) const
+bool CloudServiceImpl::ExtraData::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(header)], header);
     SetValue(node[GET_NAME(data)], data);
     return true;
 }
 
-bool CloudServiceImpl::ExtraData::Unmarshal(const Serializable::json& node)
+bool CloudServiceImpl::ExtraData::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(header), header);
     GetValue(node, GET_NAME(data), data);
     return extInfo.Unmarshall(data);
 }
 
-bool CloudServiceImpl::ExtraData::ExtInfo::Marshal(Serializable::json& node) const
+bool CloudServiceImpl::ExtraData::ExtInfo::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(accountId)], accountId);
     SetValue(node[GET_NAME(bundleName)], bundleName);
@@ -682,7 +682,7 @@ bool CloudServiceImpl::ExtraData::ExtInfo::Marshal(Serializable::json& node) con
     return true;
 }
 
-bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json& node)
+bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(accountId), accountId);
     GetValue(node, GET_NAME(bundleName), bundleName);

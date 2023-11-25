@@ -75,8 +75,8 @@ private:
             std::string containerName;
             std::string recordTypes;
             std::vector<std::string> tables;
-            bool Marshal(json& node) const override;
-            bool Unmarshal(const json& node) override;
+            bool Marshal(json &node) const override;
+            bool Unmarshal(const json &node) override;
         };
         std::string header;
         std::string data;
