@@ -86,6 +86,11 @@ int32_t FeatureSystem::Feature::OnAppUpdate(const std::string &bundleName, int32
     return E_OK;
 }
 
+int32_t FeatureSystem::Feature::OnAppInstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return E_OK;
+}
+
 int32_t FeatureSystem::Feature::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
     return E_OK;

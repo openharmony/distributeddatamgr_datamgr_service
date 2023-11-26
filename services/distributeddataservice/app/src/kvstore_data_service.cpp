@@ -50,7 +50,7 @@
 #include "string_ex.h"
 #include "system_ability_definition.h"
 #include "task_manager.h"
-#include "uninstaller/uninstaller.h"
+#include "installer/installer.h"
 #include "upgrade.h"
 #include "upgrade_manager.h"
 #include "user_delegate.h"
@@ -305,7 +305,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         return;
     }
     AccountDelegate::GetInstance()->SubscribeAccountEvent();
-    Uninstaller::GetInstance().Init(this, executors_);
+    Installer::GetInstance().Init(this, executors_);
 }
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -316,7 +316,7 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
         return;
     }
     AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
-    Uninstaller::GetInstance().UnsubscribeEvent();
+    Installer::GetInstance().UnsubscribeEvent();
 }
 
 void KvStoreDataService::StartService()
@@ -716,6 +716,16 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppUpdate(bundleName, user, index);
+        return false;
+    });
+    return SUCCESS;
+}
+
+int32_t KvStoreDataService::OnInstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
+        acts->OnAppInstall(bundleName, user, index);
         return false;
     });
     return SUCCESS;

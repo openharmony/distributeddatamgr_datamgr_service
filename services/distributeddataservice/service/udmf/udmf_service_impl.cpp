@@ -28,6 +28,7 @@
 #include "reporter.h"
 #include "uri_permission_manager.h"
 #include "uri.h"
+#include "utd/custom_utd_installer.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -45,7 +46,9 @@ UdmfServiceImpl::Factory::Factory()
             product_ = std::make_shared<UdmfServiceImpl>();
         }
         return product_;
-    });
+    }, FeatureSystem::BIND_NOW);
+    staticActs_ = std::make_shared<UdmfStatic>();
+    FeatureSystem::GetInstance().RegisterStaticActs("udmf", staticActs_);
 }
 
 UdmfServiceImpl::Factory::~Factory()
@@ -518,6 +521,22 @@ int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
     StoreCache::GetInstance().SetThreadPool(bindInfo.executors);
     LifeCycleManager::GetInstance().SetThreadPool(bindInfo.executors);
     return 0;
+}
+
+int32_t UdmfServiceImpl::UdmfStatic::OnAppInstall(const std::string &bundleName, int32_t user,
+    int32_t index)
+{
+    ZLOGD("Bundle: %{public}s installed.", bundleName.c_str());
+    auto status = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
+    return status;
+}
+
+int32_t UdmfServiceImpl::UdmfStatic::OnAppUninstall(const std::string &bundleName, int32_t user,
+    int32_t index)
+{
+    ZLOGD("Bundle: %{public}s uninstalled.", bundleName.c_str());
+    auto status = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
+    return status;
 }
 } // namespace UDMF
 } // namespace OHOS

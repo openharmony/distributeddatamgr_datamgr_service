@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "UninstallerImpl"
+#define LOG_TAG "InstallerImpl"
 
-#include "uninstaller_impl.h"
+#include "installer_impl.h"
 #include <thread>
 #include <unistd.h>
 #include "bundle_common_event.h"
@@ -37,18 +37,20 @@ using namespace OHOS::AppExecFwk;
 using namespace OHOS::DistributedData;
 using namespace OHOS::EventFwk;
 
-UninstallEventSubscriber::UninstallEventSubscriber(const CommonEventSubscribeInfo &info,
+InstallEventSubscriber::InstallEventSubscriber(const CommonEventSubscribeInfo &info,
     KvStoreDataService *kvStoreDataService)
     : CommonEventSubscriber(info), kvStoreDataService_(kvStoreDataService)
 {
-    callbacks_ = { { CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED, &UninstallEventSubscriber::OnUninstall },
-        { OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED, &UninstallEventSubscriber::OnUninstall },
-        { CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED, &UninstallEventSubscriber::OnUpdate } };
+    callbacks_ = { { CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED, &InstallEventSubscriber::OnUninstall },
+        { OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED, &InstallEventSubscriber::OnUninstall },
+        { CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED, &InstallEventSubscriber::OnUpdate },
+        { CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED, &InstallEventSubscriber::OnInstall },
+        { OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_ADDED, &InstallEventSubscriber::OnInstall }};
 }
 
-void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
+void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 {
-    ZLOGI("Intent Action Rec");
+    ZLOGI("Intent Action Rec === zyh");
     Want want = event.GetWant();
     std::string action = want.GetAction();
     auto it = callbacks_.find(action);
@@ -61,8 +63,9 @@ void UninstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
     }
 }
 
-void UninstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
+void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
+    ZLOGE("========onuninstall==========!");
     kvStoreDataService_->OnUninstall(bundleName, userId, appIndex);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
@@ -85,7 +88,7 @@ void UninstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_
     }
 }
 
-void UninstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
+void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
     kvStoreDataService_->OnUpdate(bundleName, userId, appIndex);
     std::string prefix = StoreMetaData::GetPrefix(
@@ -103,7 +106,14 @@ void UninstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t u
         }
     }
 }
-UninstallerImpl::~UninstallerImpl()
+
+void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
+{
+    ZLOGE("========oninstall==========!");
+    kvStoreDataService_->OnInstall(bundleName, userId, appIndex);
+}
+
+InstallerImpl::~InstallerImpl()
 {
     ZLOGD("destruct");
     auto res = CommonEventManager::UnSubscribeCommonEvent(subscriber_);
@@ -112,7 +122,7 @@ UninstallerImpl::~UninstallerImpl()
     }
 }
 
-void UninstallerImpl::UnsubscribeEvent()
+void InstallerImpl::UnsubscribeEvent()
 {
     auto res = CommonEventManager::UnSubscribeCommonEvent(subscriber_);
     if (!res) {
@@ -120,7 +130,7 @@ void UninstallerImpl::UnsubscribeEvent()
     }
 }
 
-Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared_ptr<ExecutorPool> executors)
+Status InstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared_ptr<ExecutorPool> executors)
 {
     if (kvStoreDataService == nullptr) {
         ZLOGW("kvStoreDataService is null.");
@@ -130,21 +140,23 @@ Status UninstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     matchingSkills.AddEvent(OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED);
+    matchingSkills.AddEvent(OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_ADDED);
     CommonEventSubscribeInfo info(matchingSkills);
 
-    auto subscriber = std::make_shared<UninstallEventSubscriber>(info, kvStoreDataService);
+    auto subscriber = std::make_shared<InstallEventSubscriber>(info, kvStoreDataService);
     subscriber_ = subscriber;
     executors_ = executors;
     executors_->Execute(GetTask());
     return Status::SUCCESS;
 }
 
-ExecutorPool::Task UninstallerImpl::GetTask()
+ExecutorPool::Task InstallerImpl::GetTask()
 {
     return [this] {
         auto succ = CommonEventManager::SubscribeCommonEvent(subscriber_);
         if (succ) {
-            ZLOGI("subscribe uninstall event success");
+            ZLOGI("subscribe install event success");
             return;
         }
         ZLOGE("subscribe common event fail, try times:%{public}d", retryTime_);

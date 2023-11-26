@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#include "uninstaller.h"
-#include "uninstaller_impl.h"
+#include "installer.h"
+#include "installer_impl.h"
 
 namespace OHOS::DistributedKv {
-Uninstaller &Uninstaller::GetInstance()
+Installer &Installer::GetInstance()
 {
-    static UninstallerImpl uninstaller;
-    return uninstaller;
+    static InstallerImpl Installer;
+    return Installer;
 }
 } // namespace OHOS::DistributedKv
