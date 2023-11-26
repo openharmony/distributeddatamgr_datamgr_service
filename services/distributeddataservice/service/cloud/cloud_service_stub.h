@@ -34,6 +34,14 @@ private:
     int32_t OnNotifyChange(const std::string &id, MessageParcel &data, MessageParcel &reply);
 
     int32_t OnAllocResourceAndShare(const std::string &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnShare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnshare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
+    int32_t OnExit(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
+    int32_t OnChangePrivilege(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
+    int32_t OnQuery(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
+    int32_t OnQueryByInvitation(const std::string &invitation, MessageParcel &data, MessageParcel &reply);
+    int32_t OnConfirmInvitation(const std::string &invitation, MessageParcel &data, MessageParcel &reply);
+    int32_t OnChangeConfirmation(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[TRANS_BUTT];
 };
 } // namespace OHOS::CloudData

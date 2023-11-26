@@ -22,8 +22,10 @@
 #include "cloud/cloud_server.h"
 #include "cloud/make_query_event.h"
 #include "cloud/cloud_share_event.h"
+#include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
 #include "eventcenter/event_center.h"
+#include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -39,10 +41,11 @@ namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace DistributedKv;
 using namespace std::chrono;
+using namespace SharingUtil;
+using namespace Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
-using namespace OHOS::Security::AccessToken;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 
 CloudServiceImpl::Factory::Factory() noexcept
@@ -713,7 +716,7 @@ std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<st
 
 std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::AllocResourceAndShare(
     const std::string& storeId, const DistributedRdb::PredicatesMemo& predicates,
-    const std::vector<std::string>& columns, const std::vector<Participant>& participants)
+    const std::vector<std::string>& columns, const Participants& participants)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto [bundleName, instanceId] = GetHapInfo(tokenId);
@@ -747,12 +750,23 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
         ZLOGE("PreShare fail, storeId:%{public}s, status:%{public}d", Anonymous::Change(storeId).c_str(), status);
         return { E_ERROR, {} };
     }
-    auto valueBuckets = Convert(cursor);
-    // doShare
+    auto valueBuckets = ConvertCursor(cursor);
+    Results results;
+    for (auto& valueBucket : valueBuckets) {
+        NativeRdb::ValueObject object;
+        if (!valueBucket.GetObject(SchemaMeta::SHARING_RESOURCE, object)) {
+            continue;
+        }
+        std::string shareRes;
+        if (object.GetString(shareRes) != E_OK) {
+            continue;
+        }
+        Share(shareRes, participants, results);
+    }
     return { SUCCESS, std::move(valueBuckets) };
 }
 
-std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::Convert(std::shared_ptr<Cursor> cursor) const
+std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::ConvertCursor(std::shared_ptr<Cursor> cursor) const
 {
     std::vector<NativeRdb::ValuesBucket> valueBuckets;
     int32_t count = cursor->GetCount();
@@ -823,5 +837,125 @@ bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json &n
     GetValue(node, GET_NAME(containerName), containerName);
     GetValue(node, GET_NAME(recordTypes), recordTypes);
     return Unmarshall(recordTypes, tables);
+}
+
+int32_t CloudServiceImpl::Share(
+    const std::string &sharingRes, const Participants &participants, Results &results)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    results = instance->Share(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
+    int32_t status = std::get<0>(results);
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+int32_t CloudServiceImpl::Unshare(
+    const std::string &sharingRes, const Participants &participants, Results &results)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    results = instance->Unshare(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
+    int32_t status = std::get<0>(results);
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    result = instance->Exit(hapInfo.user, hapInfo.bundleName, sharingRes);
+    int32_t status = result.first;
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+int32_t CloudServiceImpl::ChangePrivilege(
+    const std::string &sharingRes, const Participants &participants, Results &results)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    results = instance->ChangePrivilege(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
+    int32_t status = std::get<0>(results);
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &results)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    auto queryResults = instance->Query(hapInfo.user, hapInfo.bundleName, sharingRes);
+    results = Convert(queryResults);
+    int32_t status = std::get<0>(queryResults);
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, QueryResults &results)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    auto queryResults = instance->QueryByInvitation(hapInfo.user, hapInfo.bundleName, invitation);
+    results = Convert(queryResults);
+    int32_t status = std::get<0>(queryResults);
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32_t confirmation,
+    std::tuple<int32_t, std::string, std::string> &result)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    result = instance->ConfirmInvitation(hapInfo.user, hapInfo.bundleName, invitation, confirmation);
+    int32_t status = std::get<0>(result);
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+int32_t CloudServiceImpl::ChangeConfirmation(
+    const std::string &sharingRes, int32_t confirmation, std::pair<int32_t, std::string> &result)
+{
+    auto [instance, hapInfo] = GetSharingHandle();
+    if (instance == nullptr) {
+        return NOT_SUPPORT;
+    }
+    result = instance->ChangeConfirmation(hapInfo.user, hapInfo.bundleName, sharingRes, confirmation);
+    int32_t status = result.first;
+    ZLOGD("status:%{public}d", status);
+    return Convert(static_cast<CenterCode>(status));
+}
+
+std::pair<std::shared_ptr<SharingCenter>, CloudServiceImpl::HapInfo> CloudServiceImpl::GetSharingHandle()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    HapTokenInfo tokenInfo;
+    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (status != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
+        return { nullptr, {} };
+    }
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        return { nullptr, {} };
+    }
+    auto handle = instance->ConnectSharingCenter(tokenInfo.userID, tokenInfo.bundleName);
+    return { handle, { tokenInfo.userID, tokenInfo.bundleName } };
 }
 } // namespace OHOS::CloudData

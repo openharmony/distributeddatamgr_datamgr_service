@@ -52,6 +52,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/cloud_share_event.cpp",
     "cloud/make_query_event.cpp",
     "cloud/schema_meta.cpp",
+    "cloud/sharing_center.cpp",
     "cloud/subscription.cpp",
     "cloud/sync_event.cpp",
     "directory/directory_manager.cpp",

@@ -19,6 +19,7 @@
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
+#include "cloud/sharing_center.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
 class API_EXPORT CloudServer {
@@ -33,6 +34,7 @@ public:
     virtual int32_t Unsubscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs);
     virtual std::shared_ptr<AssetLoader> ConnectAssetLoader(uint32_t tokenId, const Database &dbMeta);
     virtual std::shared_ptr<CloudDB> ConnectCloudDB(uint32_t tokenId, const Database &dbMeta);
+    virtual std::shared_ptr<SharingCenter> ConnectSharingCenter(int32_t userId, const std::string &bunleName);
     virtual void Clean(int32_t userId);
     virtual void ReleaseUserInfo(int32_t userId);
 
