@@ -32,6 +32,8 @@ private:
     int32_t OnClean(const std::string &id, MessageParcel &data, MessageParcel &reply);
     int32_t OnNotifyDataChange(const std::string &id, MessageParcel &data, MessageParcel &reply);
     int32_t OnNotifyChange(const std::string &id, MessageParcel &data, MessageParcel &reply);
+
+    int32_t OnAllocResourceAndShare(const std::string &storeId, MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[TRANS_BUTT];
 };
 } // namespace OHOS::CloudData

@@ -44,6 +44,8 @@ public:
 
     virtual std::shared_ptr<Cursor> Query(GenQuery &query, const VBucket &extend);
 
+    virtual int32_t PreSharing(const std::string &table, VBuckets &extend);
+
     virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait);
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher);

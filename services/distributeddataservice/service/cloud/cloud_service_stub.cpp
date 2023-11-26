@@ -19,6 +19,7 @@
 #include "itypes_util.h"
 #include "log_print.h"
 #include "permission/permission_validator.h"
+#include "rdb_types.h"
 #include "utils/anonymous.h"
 #include "tokenid_kit.h"
 namespace OHOS::CloudData {
@@ -31,6 +32,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnClean,
     &CloudServiceStub::OnNotifyDataChange,
     &CloudServiceStub::OnNotifyChange,
+    &CloudServiceStub::OnAllocResourceAndShare,
 };
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
@@ -54,18 +56,22 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
         return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
     }
 
-    if (!DistributedKv::PermissionValidator::GetInstance().IsCloudConfigPermit(IPCSkeleton::GetCallingTokenID())) {
-        ZLOGE("cloud config permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
-        auto result = static_cast<int32_t>(CLOUD_CONFIG_PERMISSION_DENIED);
-        return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+    if (code >= TRANS_HEAD && code < TRANS_ALLOC_RESOURCE_AND_SHARE) {
+        auto permit =
+            DistributedKv::PermissionValidator::GetInstance().IsCloudConfigPermit(IPCSkeleton::GetCallingTokenID());
+        if (!permit) {
+            ZLOGE("cloud config permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
+            auto result = static_cast<int32_t>(CLOUD_CONFIG_PERMISSION_DENIED);
+            return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+        }
     }
 
-    std::string id;
-    if (!ITypesUtil::Unmarshal(data, id)) {
-        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
+    std::string first;
+    if (!ITypesUtil::Unmarshal(data, first)) {
+        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(first).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    return (this->*HANDLERS[code])(id, data, reply);
+    return (this->*HANDLERS[code])(first, data, reply);
 }
 
 int32_t CloudServiceStub::OnEnableCloud(const std::string &id, MessageParcel &data, MessageParcel &reply)
@@ -117,6 +123,20 @@ int32_t CloudServiceStub::OnNotifyDataChange(const std::string &id, MessageParce
     }
     auto result = NotifyDataChange(id, bundleName);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnAllocResourceAndShare(const std::string& storeId, MessageParcel& data,
+    MessageParcel& reply)
+{
+    DistributedRdb::PredicatesMemo predicatesMemo;
+    std::vector<std::string> columns;
+    std::vector<Participant> participants;
+    if (!ITypesUtil::Unmarshal(data, predicatesMemo, columns, participants)) {
+        ZLOGE("Unmarshal storeId:%{public}s", Anonymous::Change(storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [status, resultSet] = AllocResourceAndShare(storeId, predicatesMemo, columns, participants);
+    return ITypesUtil::Marshal(reply, status, resultSet) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
 int32_t CloudServiceStub::OnNotifyChange(const std::string &id, MessageParcel &data, MessageParcel &reply)

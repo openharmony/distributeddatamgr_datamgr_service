@@ -33,11 +33,15 @@ public:
     void SetQueryNodes(const std::string& tableName, DistributedData::QueryNodes&& nodes) override;
     DistributedData::QueryNodes GetQueryNodes(const std::string& tableName) override;
     std::vector<std::string> GetDevices() const;
+    std::string GetStatement() const;
+    DistributedData::Values GetBindArgs() const;
+    void SetColumns(std::vector<std::string> &&columns);
+    void SetColumns(const std::vector<std::string> &columns);
+    std::vector<std::string> GetColumns() const;
     DistributedDB::Query GetQuery() const;
     DistributedDB::RemoteCondition GetRemoteCondition() const;
     bool IsRemoteQuery();
     bool IsPriority();
-    void FromTable(const std::vector<std::string> &tables);
     void MakeQuery(const PredicatesMemo &predicates);
     void MakeRemoteQuery(const std::string &devices, const std::string &sql, DistributedData::Values &&args);
     void MakeCloudQuery(const PredicatesMemo &predicates);
@@ -50,6 +54,22 @@ private:
     void OrderBy(const RdbPredicateOperation& operation);
     void Limit(const RdbPredicateOperation& operation);
     void In(const RdbPredicateOperation& operation);
+    void NotIn(const RdbPredicateOperation& operation);
+    void Contain(const RdbPredicateOperation& operation);
+    void BeginWith(const RdbPredicateOperation& operation);
+    void EndWith(const RdbPredicateOperation& operation);
+    void IsNull(const RdbPredicateOperation& operation);
+    void IsNotNull(const RdbPredicateOperation& operation);
+    void Like(const RdbPredicateOperation& operation);
+    void Glob(const RdbPredicateOperation& operation);
+    void Between(const RdbPredicateOperation& operation);
+    void NotBetween(const RdbPredicateOperation& operation);
+    void GreaterThan(const RdbPredicateOperation& operation);
+    void GreaterThanOrEqual(const RdbPredicateOperation& operation);
+    void LessThan(const RdbPredicateOperation& operation);
+    void LessThanOrEqual(const RdbPredicateOperation& operation);
+    void Distinct(const RdbPredicateOperation& operation);
+    void IndexedBy(const RdbPredicateOperation& operation);
     void BeginGroup(const RdbPredicateOperation& operation);
     void EndGroup(const RdbPredicateOperation& operation);
     using PredicateHandle = void (RdbQuery::*)(const RdbPredicateOperation &operation);
@@ -63,10 +83,28 @@ private:
         &RdbQuery::BeginGroup,
         &RdbQuery::EndGroup,
         &RdbQuery::In,
+        &RdbQuery::NotIn,
+        &RdbQuery::Contain,
+        &RdbQuery::BeginWith,
+        &RdbQuery::EndWith,
+        &RdbQuery::IsNull,
+        &RdbQuery::IsNotNull,
+        &RdbQuery::Like,
+        &RdbQuery::Glob,
+        &RdbQuery::Between,
+        &RdbQuery::NotBetween,
+        &RdbQuery::GreaterThan,
+        &RdbQuery::GreaterThanOrEqual,
+        &RdbQuery::LessThan,
+        &RdbQuery::LessThanOrEqual,
+        &RdbQuery::Distinct,
+        &RdbQuery::IndexedBy
     };
     static constexpr inline uint32_t DECIMAL_BASE = 10;
 
     DistributedDB::Query query_;
+    std::shared_ptr<Predicates> predicates_;
+    std::vector<std::string> columns_;
     bool isRemote_ = false;
     bool isPriority_ = false;
     std::string sql_;

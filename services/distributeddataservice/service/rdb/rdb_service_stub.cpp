@@ -280,4 +280,23 @@ int32_t RdbServiceStub::OnRemoteNotifyDataChange(MessageParcel &data, MessagePar
     }
     return RDB_OK;
 }
+
+int32_t RdbServiceStub::OnRemoteQuerySharingResource(MessageParcel& data, MessageParcel& reply)
+{
+    RdbSyncerParam param;
+    PredicatesMemo predicates;
+    std::vector<std::string> columns;
+    if (!ITypesUtil::Unmarshal(data, param, predicates, columns)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto [status, resultSet] = QuerySharingResource(param, predicates, columns);
+    if (!ITypesUtil::Marshal(reply, status, resultSet)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

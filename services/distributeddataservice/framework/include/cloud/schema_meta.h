@@ -29,6 +29,7 @@ struct API_EXPORT Field final : public Serializable {
 
 struct API_EXPORT Table final : public Serializable {
     std::string name;
+    std::string sharedTableName;
     std::string alias;
     std::vector<Field> fields;
     bool Marshal(json &node) const override;
@@ -55,6 +56,10 @@ public:
     static constexpr const char *MODIFY_FIELD = "#_modifyTime";
     static constexpr const char *CURSOR_FIELD = "#_cursor";
     static constexpr const char *ERROR_FIELD = "#_error";
+    static constexpr const char *VERSION_FIELD = "#_version";
+    static constexpr const char *CLOUD_OWNER = "cloud_owner";
+    static constexpr const char *CLOUD_PRIVILEGE = "cloud_privilege";
+    static constexpr const char *SHARING_RESOURCE = "sharing_resource";
     int32_t version = 0;
     std::string bundleName;
     std::vector<Database> databases;

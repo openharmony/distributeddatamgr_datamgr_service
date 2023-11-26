@@ -34,9 +34,11 @@ bool SchemaMeta::Unmarshal(const Serializable::json &node)
 std::vector<std::string> Database::GetTableNames() const
 {
     std::vector<std::string> tableNames;
-    tableNames.reserve(tables.size());
+    auto sharedTableSize = tables.size();
+    tableNames.reserve(tables.size() + sharedTableSize);
     for (auto &table : tables) {
         tableNames.push_back(table.name);
+        tableNames.push_back(table.sharedTableName);
     }
     return tableNames;
 }
@@ -60,6 +62,7 @@ bool Database::Unmarshal(const Serializable::json &node)
 bool Table::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(name)], name);
+    SetValue(node[GET_NAME(sharedTableName)], sharedTableName);
     SetValue(node[GET_NAME(alias)], alias);
     SetValue(node[GET_NAME(fields)], fields);
     return true;
@@ -68,6 +71,7 @@ bool Table::Marshal(Serializable::json &node) const
 bool Table::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(name), name);
+    GetValue(node, GET_NAME(sharedTableName), sharedTableName);
     GetValue(node, GET_NAME(alias), alias);
     GetValue(node, GET_NAME(fields), fields);
     return true;

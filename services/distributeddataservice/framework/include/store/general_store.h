@@ -105,6 +105,8 @@ public:
 
     virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) = 0;
 
+    virtual std::shared_ptr<Cursor> PreSharing(GenQuery &query) = 0;
+
     virtual int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) = 0;
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;

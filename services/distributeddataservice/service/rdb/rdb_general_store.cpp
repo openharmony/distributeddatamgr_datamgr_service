@@ -103,6 +103,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         const Table &table = database.tables[i];
         DBTable &dbTable = schema.tables[i];
         dbTable.name = table.name;
+        dbTable.sharedTableName = table.sharedTableName;
         for (auto &field : table.fields) {
             DBField dbField;
             dbField.colName = field.colName;
@@ -181,14 +182,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(__attribute__((unused))const std:
         ZLOGE("database already closed!");
         return nullptr;
     }
-    std::vector<DistributedDB::VBucket> changedData;
-    std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    auto status = delegate_->ExecuteSql({sql, std::move(bindArgs)}, changedData);
-    if (status != DBStatus::OK) {
-        ZLOGE("Failed! ret:%{public}d, sql:%{public}s", status, Anonymous::Change(sql).c_str());
-        return nullptr;
-    }
-    std::vector<VBucket> records = ValueProxy::Convert(std::move(changedData));
+    std::vector<VBucket> records = ExecuteSql(sql, std::move(args));
     return std::make_shared<CacheCursor>(std::move(records));
 }
 
@@ -243,6 +237,79 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
                       GetHighMode(mode)))
                   : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+}
+
+std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
+{
+    RdbQuery* rdbQuery = nullptr;
+    auto ret = query.QueryInterface(rdbQuery);
+    if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
+        ZLOGE("not RdbQuery!");
+        return nullptr;
+    }
+    auto tables = rdbQuery->GetTables();
+    auto statement = rdbQuery->GetStatement();
+    if (statement.empty() || tables.empty()) {
+        ZLOGE("statement size:%{public}zu, tables size:%{public}zu", statement.size(), tables.size());
+        return nullptr;
+    }
+    std::string sql = BuildSql(*tables.begin(), statement, rdbQuery->GetColumns());
+    VBuckets values;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            ZLOGE("database already closed!");
+            return nullptr;
+        }
+        values = ExecuteSql(sql, rdbQuery->GetBindArgs());
+    }
+    if (rdbCloud_ == nullptr || values.empty()) {
+        ZLOGE("rdbCloud is nullptr:%{public}d, values size:%{public}zu", rdbCloud_ == nullptr, values.size());
+        return nullptr;
+    }
+    VBuckets extends = ExtractExtend(values);
+    rdbCloud_->PreSharing(*tables.begin(), extends);
+    for (auto value = values.begin(), extend = extends.begin(); value != values.end() && extend != extends.end();
+         ++value, ++extend) {
+        value->insert_or_assign(DistributedRdb::Field::SHARING_RESOURCE_FIELD, (*extend)[SchemaMeta::SHARING_RESOURCE]);
+        value->erase(CLOUD_GID);
+    }
+    return std::make_shared<CacheCursor>(std::move(values));
+}
+
+VBuckets RdbGeneralStore::ExtractExtend(VBuckets& values) const
+{
+    VBuckets extends(values.size());
+    for (auto value = values.begin(), extend = extends.begin(); value != values.end() && extend != extends.end();
+         ++value, ++extend) {
+        auto it = value->find(CLOUD_GID);
+        if (it == value->end()) {
+            continue;
+        }
+        auto gid = std::get_if<std::string>(&(it->second));
+        if (gid == nullptr || gid->empty()) {
+            continue;
+        }
+        extend->insert_or_assign(SchemaMeta::GID_FIELD, std::move(*gid));
+    }
+    return extends;
+}
+
+std::string RdbGeneralStore::BuildSql(const std::string& table, const std::string& statement,
+    const std::vector<std::string>& columns) const
+{
+    std::string sql = "select ";
+    sql.append(CLOUD_GID);
+    std::string sqlNode = "select rowid";
+    for (auto& column : columns) {
+        sql.append(", ").append(column);
+        sqlNode.append(", ").append(column);
+    }
+    sqlNode.append(" from ").append(table).append(statement);
+    auto logTable = RelationalStoreManager::GetDistributedLogTableName(table);
+    sql.append(" from ").append(logTable).append(", (").append(sqlNode);
+    sql.append(") where ").append(DATE_KEY).append(" = rowid");
+    return sql;
 }
 
 int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
@@ -488,6 +555,19 @@ int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
 {
     async_ = nullptr;
     return GenErr::E_OK;
+}
+
+VBuckets RdbGeneralStore::ExecuteSql(const std::string& sql, Values &&args)
+{
+    std::vector<DistributedDB::VBucket> changedData;
+    std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
+    if (status != DBStatus::OK) {
+        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
+            changedData.size());
+        return {};
+    }
+    return ValueProxy::Convert(std::move(changedData));
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

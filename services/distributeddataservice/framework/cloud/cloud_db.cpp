@@ -50,6 +50,11 @@ std::shared_ptr<Cursor> CloudDB::Query(GenQuery& query, const VBucket& extend)
     return nullptr;
 }
 
+int32_t CloudDB::PreSharing(const std::string& table, VBuckets& extend)
+{
+    return E_NOT_SUPPORT;
+}
+
 int32_t CloudDB::Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait)
 {
     return E_NOT_SUPPORT;

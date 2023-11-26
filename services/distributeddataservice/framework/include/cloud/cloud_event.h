@@ -28,6 +28,8 @@ public:
         LOCAL_CHANGE,
         CLOUD_SYNC,
         DATA_CHANGE,
+        CLOUD_SHARE,
+        MAKE_QUERY,
         CLOUD_BUTT
     };
 
