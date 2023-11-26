@@ -753,12 +753,15 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     auto valueBuckets = ConvertCursor(cursor);
     Results results;
     for (auto& valueBucket : valueBuckets) {
-        VBucket object;
-        auto sharingRes = std::get_if<std::string>(&valueBucket[SchemaMeta::SHARING_RESOURCE]);
-        if (sharingRes == nullptr) {
+        NativeRdb::VBucket object;
+        if (!valueBucket.GetObject(SchemaMeta::SHARING_RESOURCE, object)) {
             continue;
         }
-        Share(sharingRes, participants, results);
+        std::string shareRes;
+        if (object.GetString(shareRes) != NativeRdb::E_OK) {
+            continue;
+        }
+        Share(shareRes, participants, results);
     }
     return { SUCCESS, std::move(valueBuckets) };
 }
