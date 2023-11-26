@@ -40,6 +40,7 @@ public:
     using Database = DistributedData::Database;
     using GenErr = DistributedData::GeneralError;
     using RdbStore = OHOS::NativeRdb::RdbStore;
+    using Reference = DistributedData::Reference;
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
@@ -47,7 +48,8 @@ public:
     bool IsBound() override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
-    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type) override;
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
+	    const std::vector<Reference> &references) override;
     int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
         const std::string& extendColName) override;
     int32_t BatchInsert(const std::string &table, VBuckets &&values) override;

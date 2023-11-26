@@ -49,7 +49,7 @@ public:
     int32_t InitNotifier(const RdbSyncerParam &param, sptr<IRemoteObject> notifier) override;
 
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
-        int32_t type = DISTRIBUTED_DEVICE) override;
+        const std::vector<Reference> &references, int32_t type = DISTRIBUTED_DEVICE) override;
 
     int32_t RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
                         const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet) override;

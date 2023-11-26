@@ -262,9 +262,19 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
     switch (mode) {
         case CLOUD_INFO:
             status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_INFO));
+            if (status == DistributedDB::OK) {
+                status = delegate_->RemoveDeviceData("", ClearMode::CLEAR_SHARED_TABLE);
+                break;
+            }
+            (void)delegate_->RemoveDeviceData("", ClearMode::CLEAR_SHARED_TABLE);
             break;
         case CLOUD_DATA:
             status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
+            if (status == DistributedDB::OK) {
+                status = delegate_->RemoveDeviceData("", ClearMode::CLEAR_SHARED_TABLE);
+                break;
+            }
+            (void)delegate_->RemoveDeviceData("", ClearMode::CLEAR_SHARED_TABLE);
             break;
         case NEARBY_DATA:
             if (devices.empty()) {
@@ -349,7 +359,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
         if (async) {
             async(details);
         }
-		
+
         if (highMode == AUTO_SYNC_MODE && autoAsync) {
             autoAsync(details);
         }
@@ -382,7 +392,8 @@ int32_t RdbGeneralStore::AddRef()
     return ++ref_;
 }
 
-int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type)
+int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
+    const std::vector<Reference> &references)
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -397,6 +408,17 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
                 Anonymous::Change(table).c_str(), dBStatus);
             return GeneralError::E_ERROR;
         }
+    }
+    std::vector<DistributedDB::TableReferenceProperty> properties;
+    for (const auto &reference : references) {
+        DistributedDB::TableReferenceProperty referenceProperty =
+            { reference.sourceTable, reference.targetTable, reference.refFields };
+        properties.emplace_back(referenceProperty);
+    }
+    auto status = delegate_->SetReference(properties);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("distributed table set reference failed, err:%{public}d", status);
+        return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
 }

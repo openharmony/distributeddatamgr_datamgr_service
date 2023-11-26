@@ -240,7 +240,7 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
 }
 
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
-    int32_t type)
+    const std::vector<Reference> &references, int32_t type)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
@@ -253,7 +253,12 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    return store->SetDistributedTables(tables, type);
+    std::vector<DistributedData::Reference> relationships;
+    for (const auto &reference : references) {
+        DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
+        relationships.emplace_back(relationship);
+    }
+    return store->SetDistributedTables(tables, type, relationships);
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
