@@ -55,6 +55,14 @@ private:
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
     void SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records);
     bool IsPermissionInCache(const QueryOption &query);
+
+    using StaticActs = DistributedData::StaticActs;
+    class UdmfStatic : public StaticActs {
+    public:
+        ~UdmfStatic() override {};
+        int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+    };
     class Factory {
     public:
         Factory();
@@ -62,6 +70,7 @@ private:
 
     private:
         std::shared_ptr<UdmfServiceImpl> product_;
+        std::shared_ptr<UdmfStatic> staticActs_;
     };
     static Factory factory_;
     std::map<std::string, Privilege> privilegeCache_;

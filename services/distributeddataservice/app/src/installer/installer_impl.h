@@ -13,21 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H
-#define DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H
+#ifndef DISTRIBUTEDDATAMGR_INSTALLER_IMPL_H
+#define DISTRIBUTEDDATAMGR_INSTALLER_IMPL_H
 
 #include "common_event_subscriber.h"
 #include "kvstore_data_service.h"
-#include "uninstaller.h"
+#include "installer.h"
 
 namespace OHOS::DistributedKv {
-class UninstallEventSubscriber : public EventFwk::CommonEventSubscriber {
+class InstallEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
-using UninstallEventCallback = void (UninstallEventSubscriber::*)
+using InstallEventCallback = void (InstallEventSubscriber::*)
     (const std::string &bundleName, int32_t userId, int32_t appIndex);
-    UninstallEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info, KvStoreDataService *kvStoreDataService);
+    InstallEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info, KvStoreDataService *kvStoreDataService);
 
-    ~UninstallEventSubscriber() {}
+    ~InstallEventSubscriber() {}
     void OnReceiveEvent(const EventFwk::CommonEventData &event) override;
 
 private:
@@ -35,14 +35,15 @@ private:
     static constexpr const char *SANDBOX_APP_INDEX = "sandbox_app_index";
     void OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
     void OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex);
-    std::map<std::string, UninstallEventCallback> callbacks_;
+    void OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
+    std::map<std::string, InstallEventCallback> callbacks_;
     KvStoreDataService *kvStoreDataService_;
 };
 
-class UninstallerImpl : public Uninstaller {
+class InstallerImpl : public Installer {
 public:
-    UninstallerImpl() = default;
-    ~UninstallerImpl();
+    InstallerImpl() = default;
+    ~InstallerImpl();
 
     Status Init(KvStoreDataService *kvStoreDataService, std::shared_ptr<ExecutorPool> executors) override;
 
@@ -53,8 +54,8 @@ private:
     static constexpr int32_t RETRY_INTERVAL = 100;
     int32_t retryTime_ = 0;
     ExecutorPool::Task GetTask();
-    std::shared_ptr<UninstallEventSubscriber> subscriber_ {};
+    std::shared_ptr<InstallEventSubscriber> subscriber_ {};
     std::shared_ptr<ExecutorPool> executors_ {};
 };
 } // namespace OHOS::DistributedKv
-#endif // DISTRIBUTEDDATAMGR_UNINSTALLER_IMPL_H
+#endif // DISTRIBUTEDDATAMGR_INSTALLER_IMPL_H

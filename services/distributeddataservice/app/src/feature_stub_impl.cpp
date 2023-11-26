@@ -69,6 +69,14 @@ int32_t FeatureStubImpl::OnAppUpdate(const std::string &bundleName, int32_t user
     return featureImpl_->OnAppUpdate(bundleName, user, index);
 }
 
+int32_t FeatureStubImpl::OnAppInstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    if (featureImpl_ == nullptr) {
+        return -1;
+    }
+    return featureImpl_->OnAppInstall(bundleName, user, index);
+}
+
 int32_t FeatureStubImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
     if (featureImpl_ == nullptr) {

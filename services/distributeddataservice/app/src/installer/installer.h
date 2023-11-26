@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_UNINSTALLER_H
-#define DISTRIBUTEDDATAMGR_UNINSTALLER_H
+#ifndef DISTRIBUTEDDATAMGR_INSTALLER_H
+#define DISTRIBUTEDDATAMGR_INSTALLER_H
 
 #include <memory>
 #include <mutex>
@@ -24,13 +24,13 @@
 namespace OHOS::DistributedKv {
 class KvStoreDataService;
 enum Status : int32_t;
-class Uninstaller {
+class Installer {
 public:
     KVSTORE_API virtual Status Init(KvStoreDataService *kvStoreDataService,
         std::shared_ptr<ExecutorPool> executors) = 0;
     KVSTORE_API virtual void UnsubscribeEvent() = 0;
-    KVSTORE_API virtual ~Uninstaller() {}
-    KVSTORE_API static Uninstaller &GetInstance();
+    KVSTORE_API virtual ~Installer() {}
+    KVSTORE_API static Installer &GetInstance();
 };
 } // namespace OHOS::DistributedKv
-#endif // DISTRIBUTEDDATAMGR_UNINSTALLER_H
+#endif // DISTRIBUTEDDATAMGR_INSTALLER_H

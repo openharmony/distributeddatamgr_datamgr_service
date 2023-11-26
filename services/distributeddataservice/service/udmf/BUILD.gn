@@ -24,6 +24,7 @@ config("module_public_config") {
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf/utd",
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/bootstrap/include",
     "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
@@ -51,6 +52,7 @@ ohos_shared_library("udmf_server") {
     "store/store_cache.cpp",
     "udmf_service_impl.cpp",
     "udmf_service_stub.cpp",
+    "utd/custom_utd_installer.cpp",
   ]
 
   configs = [ ":module_public_config" ]
@@ -66,11 +68,14 @@ ohos_shared_library("udmf_server") {
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 
