@@ -197,14 +197,9 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     return DoClean(cloudInfo, dbActions);
 }
 
-int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
+int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName,
+                                                CloudInfo &cloudInfo)
 {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto user = Account::GetInstance()->GetUserByToken(tokenId);
-    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
-    if (status != SUCCESS) {
-        return ERROR;
-    }
     if (cloudInfo.id != id) {
         ZLOGE("invalid args, [input] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(id).c_str(),
             Anonymous::Change(cloudInfo.id).c_str());
@@ -220,7 +215,77 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     if (!cloudInfo.apps[bundleName].cloudSwitch) {
         return CLOUD_DISABLE_SWITCH;
     }
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
+                                                 std::vector<std::string> &table)
+{
+    auto schemaKey = CloudInfo::GetSchemaKey(userId, exData.extInfo.bundleName);
+    SchemaMeta schemaMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        ZLOGE("no exist meta, user:%{public}d", userId);
+        return ERROR;
+    }
+    for (auto &db : schemaMeta.databases) {
+        if (db.alias != exData.extInfo.containerName) {
+            continue;
+        }
+        storeId = db.name;
+        for (auto &tb : db.tables) {
+            const auto &tbs = exData.extInfo.tables;
+            if (std::find(tbs.begin(), tbs.end(), tb.alias) == tbs.end()) {
+                continue;
+            }
+            table.emplace_back(tb.name);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+    if (CheckNotifyConditions(id, bundleName, cloudInfo) != E_OK) {
+        return INVALID_ARGUMENT;
+    }
     syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std::string &extraData, int32_t userId)
+{
+    ZLOGI("notify data change, user:%{public}d", userId);
+    if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
+        return INVALID_ARGUMENT;
+    }
+    ExtraData exData;
+    if (exData.Unmarshall(extraData) != E_OK) {
+        return INVALID_ARGUMENT;
+    }
+    std::vector<int32_t> users;
+    if (userId != INVALID_USER_ID) {
+        users.emplace_back(userId);
+    } else {
+        Account::GetInstance()->QueryUsers(users);
+    }
+    for (auto user : users) {
+        if (user == DEFAULT_USER) {
+            continue;
+        }
+        auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+        if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
+            return INVALID_ARGUMENT;
+        }
+        std::string storeId;
+        std::vector<std::string> table;
+        if (GetDbInfoFromExtraData(exData, userId, storeId, table) != E_OK) {
+            return INVALID_ARGUMENT;
+        }
+        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
+    }
     return SUCCESS;
 }
 
@@ -592,5 +657,37 @@ std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<st
         }
     }
     return genActions;
+}
+
+bool CloudServiceImpl::ExtraData::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(header)], header);
+    SetValue(node[GET_NAME(data)], data);
+    return true;
+}
+
+bool CloudServiceImpl::ExtraData::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(header), header);
+    GetValue(node, GET_NAME(data), data);
+    return extInfo.Unmarshall(data);
+}
+
+bool CloudServiceImpl::ExtraData::ExtInfo::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(accountId)], accountId);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(containerName)], containerName);
+    SetValue(node[GET_NAME(recordTypes)], recordTypes);
+    return true;
+}
+
+bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(accountId), accountId);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    GetValue(node, GET_NAME(containerName), containerName);
+    GetValue(node, GET_NAME(recordTypes), recordTypes);
+    return Unmarshall(recordTypes, tables);
 }
 } // namespace OHOS::CloudData

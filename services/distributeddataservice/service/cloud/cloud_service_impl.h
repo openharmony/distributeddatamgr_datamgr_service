@@ -36,6 +36,7 @@ public:
     int32_t ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch) override;
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
+    int32_t NotifyDataChange(const std::string& eventId, const std::string& extraData, int32_t userId) override;
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &info) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
@@ -67,11 +68,30 @@ private:
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
 
+    struct ExtraData final : public DistributedData::Serializable {
+        struct ExtInfo final : public Serializable {
+            std::string accountId;
+            std::string bundleName;
+            std::string containerName;
+            std::string recordTypes;
+            std::vector<std::string> tables;
+            bool Marshal(json &node) const override;
+            bool Unmarshal(const json &node) override;
+        };
+        std::string header;
+        std::string data;
+        ExtInfo extInfo;
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
+    };
+
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
 
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
+    static constexpr int32_t DEFAULT_USER = 0;
+    static constexpr const char *DATA_CHANGE_EVENT_ID = "cloud_data_change";
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
@@ -92,6 +112,9 @@ private:
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
+    int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
+    int32_t GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
+                                   std::vector<std::string> &table);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
 
