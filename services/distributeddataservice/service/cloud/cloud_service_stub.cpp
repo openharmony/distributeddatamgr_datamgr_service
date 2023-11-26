@@ -33,7 +33,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnNotifyDataChange,
     &CloudServiceStub::OnNotifyChange,
     &CloudServiceStub::OnAllocResourceAndShare,
-	&CloudServiceStub::OnShare,
+    &CloudServiceStub::OnShare,
     &CloudServiceStub::OnUnshare,
     &CloudServiceStub::OnExit,
     &CloudServiceStub::OnChangePrivilege,
