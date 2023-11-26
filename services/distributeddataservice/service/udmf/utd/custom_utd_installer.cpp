@@ -74,7 +74,7 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
                 bundleName.c_str());
             continue;
         }
-        //Update customTyepCfgs used for subsequent persistence of type definitions.
+        // Update customTyepCfgs used for subsequent persistence of type definitions.
         for (TypeDescriptorCfg &declarationType : utdTypes.first) {
             for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
                 if (iter->typeId == declarationType.typeId) {
