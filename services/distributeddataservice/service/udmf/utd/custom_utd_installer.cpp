@@ -69,7 +69,8 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
     for (std::string module : modules) {
         auto utdTypes = GetModuleCustomUtdTypes(bundleName, module, user);
         if (!UtdCfgsChecker::GetInstance().CheckTypeDescriptors(utdTypes, presetTypes, customTyepCfgs, bundleName)) {
-            ZLOGE("Parse json failed, moduleJson: %{public}s, bundleName: %{public}s.", module.c_str(), module.c_str());
+            ZLOGE("Parse json failed, moduleJson: %{public}s, bundleName: %{public}s.", module.c_str(),
+			    bundleName.c_str());
             continue;
         }
         //Update customTyepCfgs used for subsequent persistence of type definitions.
