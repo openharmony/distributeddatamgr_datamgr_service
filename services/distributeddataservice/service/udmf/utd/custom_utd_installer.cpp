@@ -61,16 +61,17 @@ sptr<AppExecFwk::IBundleMgr> CustomUtdInstaller::GetBundleManager()
     return iface_cast<AppExecFwk::IBundleMgr>(bmsProxy);
 }
 
-int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t user) {
+int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t user)
+{
     std::string path = CUSTOM_UTD_PATH + std::to_string(user) + CUSTOM_UTD_FILE;
     std::vector<TypeDescriptorCfg> customTyepCfgs = CustomUtdStore::GetInstance().GetTypeCfgs(path);
     std::vector <TypeDescriptorCfg> presetTypes = PresetTypeDescriptors::GetInstance().GetPresetTypes();
-    std::vector <std::string> modules = GetModulesFromBundleName(bundleName, user);
+    std::vector <std::string> modules = GetHapModules(bundleName, user);
     for (std::string module : modules) {
         auto utdTypes = GetModuleCustomUtdTypes(bundleName, module, user);
         if (!UtdCfgsChecker::GetInstance().CheckTypeDescriptors(utdTypes, presetTypes, customTyepCfgs, bundleName)) {
             ZLOGE("Parse json failed, moduleName: %{public}s, bundleName: %{public}s.", module.c_str(),
-			    bundleName.c_str());
+                bundleName.c_str());
             continue;
         }
         //Update customTyepCfgs used for subsequent persistence of type definitions.
@@ -127,7 +128,7 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
     }
     std::vector <TypeDescriptorCfg> presetTypes = PresetTypeDescriptors::GetInstance().GetPresetTypes();
     if (!UtdCfgsChecker::GetInstance().CheckBelongingToTypes(deletionMock, presetTypes)) {
-        ZLOGW("Uninstall error, because of types dependency check failed.");
+        ZLOGW("Uninstall error, because of belongingToTypes check failed.");
         return E_ERROR;
     }
     for (auto customIter = customTyepCfgs.begin(); customIter != customTyepCfgs.end();) {
@@ -146,7 +147,7 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
     return E_OK;
 }
 
-std::vector<std::string> CustomUtdInstaller::GetModulesFromBundleName(const std::string &bundleName, int32_t user)
+std::vector<std::string> CustomUtdInstaller::GetHapModules(const std::string &bundleName, int32_t user)
 {
     std::vector<std::string> modules;
     auto bundlemgr = GetBundleManager();
@@ -157,8 +158,8 @@ std::vector<std::string> CustomUtdInstaller::GetModulesFromBundleName(const std:
     return bundleInfo.hapModuleNames;
 }
 
-UtdCfgsChecker::CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bundleName, const std::string &moduleName,
-    int32_t user)
+std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> CustomUtdInstaller::GetModuleCustomUtdTypes(
+    const std::string &bundleName, const std::string &moduleName, int32_t user)
 {
     auto bundlemgr = GetBundleManager();
     std::string jsonStr;
@@ -166,7 +167,7 @@ UtdCfgsChecker::CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const 
     auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
         user);
     if (status != NO_ERROR) {
-        ZLOGE("get local bundle info failed, jsonStr is %{public}s", jsonStr.c_str());
+        ZLOGE("get local bundle info failed, jsonStr is %{public}s.", jsonStr.c_str());
         return typeCfgs;
     }
     std::vector<TypeDescriptorCfg> declarationType;
