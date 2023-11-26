@@ -24,8 +24,8 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "utd_graph.h"
-#include "utd_json_parse.h"
-#include "utd_custom_persistence.h"
+#include "custom_utd_json_parser.h"
+#include "custom_utd_store.h"
 #include "preset_type_descriptors.h"
 #include "custom_utd_installer.h"
 
@@ -63,88 +63,85 @@ sptr<AppExecFwk::IBundleMgr> CustomUtdInstaller::GetBundleManager()
 
 int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t user) {
     std::string path = CUSTOM_UTD_PATH + std::to_string(user) + CUSTOM_UTD_FILE;
-    ZLOGE("===ZYH=== PATH IS %{public}s", path.c_str());
-    std::vector<TypeDescriptorCfg> customTyepCfgs = UtdCustomPersistence::GetInstance().GetCustomTypesFromCfg(path);
+    std::vector<TypeDescriptorCfg> customTyepCfgs = CustomUtdStore::GetInstance().GetTypeCfgs(path);
     std::vector <TypeDescriptorCfg> presetTypes = PresetTypeDescriptors::GetInstance().GetPresetTypes();
     std::vector <std::string> modules = GetModulesFromBundleName(bundleName, user);
     for (std::string module : modules) {
-        ZLOGE("===ZYH=== module is %{public}s", module.c_str());
         auto utdTypes = GetModuleCustomUtdTypes(bundleName, module, user);
-        ZLOGE("===ZYH=== declarationTypes size : %{public}d referenceType size : %{public}d", utdTypes.first.size(), utdTypes.second.size());
         if (!UtdCfgsChecker::GetInstance().CheckTypeDescriptors(utdTypes, presetTypes, customTyepCfgs, bundleName)) {
-            ZLOGE("Parse json failed, moduleJson: %{public}s.", module.c_str());
+            ZLOGE("Parse json failed, moduleJson: %{public}s, bundleName: %{public}s.", module.c_str(), module.c_str());
             continue;
         }
-        ZLOGE("===ZYH=== check end ");
         //Update customTyepCfgs used for subsequent persistence of type definitions.
         for (TypeDescriptorCfg &declarationType : utdTypes.first) {
-            ZLOGE("===ZYH=== get GetValidDeclarationType failed, typeId: %{public}s, declarationTypes size : %{public}d", declarationType.typeId.c_str(), utdTypes.first.size());
             for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
-                ZLOGE("===ZYH=== get 111111GetValidDeclarationType failed, typeId: %{public}s, customTyepCfgs size : %{public}d", declarationType.typeId.c_str(), customTyepCfgs.size());
                 if (iter->typeId == declarationType.typeId) {
-                    declarationType.installers = iter->installers;
+                    declarationType.installerBundles = iter->installerBundles;
                     iter = customTyepCfgs.erase(iter);
-                    ZLOGE("===ZYH=== get GetValidDeclarationType failed, typeId1: %{public}s, typeId2: %{public}s,",
-                          declarationType.typeId.c_str(), iter->typeId.c_str());
                 } else {
-                    ZLOGE("===ZYH=== not equal");
                     iter ++;
                 }
             }
-            declarationType.installers.emplace(bundleName);
-            declarationType.owner = bundleName;
-            ZLOGE("===ZYH=== get 222222GetValidDeclarationType failed, typeId: %{public}s, customTyepCfgs size : %{public}d", declarationType.typeId.c_str(), customTyepCfgs.size());
+            declarationType.installerBundles.emplace(bundleName);
+            declarationType.ownerBundle = bundleName;
             customTyepCfgs.push_back(declarationType);
         }
         for (TypeDescriptorCfg &referenceType : utdTypes.second) {
-            for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
-                if (iter->typeId == referenceType.typeId) {
-                    referenceType.installers = iter->installers;
-                    iter = customTyepCfgs.erase(iter);
-                    ZLOGE("===ZYH=== get GetValidDeclarationType failed, typeId1: %{public}s, typeId2: %{public}s,",
-                        referenceType.typeId.c_str(), iter->typeId.c_str());
-                } else {
-                    iter ++;
+            bool found = false;
+            for (auto &typeCfg : customTyepCfgs) {
+                if (typeCfg.typeId == referenceType.typeId) {
+                    typeCfg.installerBundles.emplace(bundleName);
+                    found = true;
+                    break;
                 }
             }
-            referenceType.installers.emplace(bundleName);
-            ZLOGE("===ZYH=== get GetValidDeclarationType failed, typeId: %{public}s. customTyepCfgs size : %{public}d", referenceType.typeId.c_str(), customTyepCfgs.size());
-            customTyepCfgs.push_back(referenceType);
+            if (!found) {
+                referenceType.installerBundles.emplace(bundleName);
+                customTyepCfgs.push_back(referenceType);
+            }
         }
-        UtdCustomPersistence::GetInstance().PersistingCustomUtdData(customTyepCfgs, path);
+        CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
     }
     return E_OK;
 }
 
 int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t user)
 {
-    ZLOGE("===ZYH=== Uninstall");
     std::string path = CUSTOM_UTD_PATH + std::to_string(user) + CUSTOM_UTD_FILE;
-    std::vector<TypeDescriptorCfg> customTyepCfgs = UtdCustomPersistence::GetInstance().GetCustomTypesFromCfg(path);
-    std::vector<TypeDescriptorCfg> deleteTypes;
-    for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
-        auto it = find (iter->installers.begin(), iter->installers.end(), bundleName);
-        if (it != iter->installers.end()) {
-            iter->installers.erase(it);
-        }
-        if (iter->installers.empty()) {
-            deleteTypes.push_back(*iter);
-        }
-        iter++;
+    std::vector<TypeDescriptorCfg> customTyepCfgs = CustomUtdStore::GetInstance().GetTypeCfgs(path);
+    std::vector<TypeDescriptorCfg> deletionMock;
+    if (!customTyepCfgs.empty()) {
+        deletionMock.insert(deletionMock.end(), customTyepCfgs.begin(), customTyepCfgs.end());
     }
-    for (auto dtype: deleteTypes) {
-        for (auto customIt = customTyepCfgs.begin(); customIt != customTyepCfgs.end();) {
-            auto delIt = find(customIt->belongingToTypes.begin(), customIt->belongingToTypes.end(), dtype.typeId);
-            if (delIt != customIt->belongingToTypes.end() && customIt->typeId == dtype.typeId) {
-                customIt = customTyepCfgs.erase(customIt);
-            } else {
-                customIt++;
-            }
+    for (auto iter = deletionMock.begin(); iter != deletionMock.end();) {
+        auto it = find (iter->installerBundles.begin(), iter->installerBundles.end(), bundleName);
+        if (it != iter->installerBundles.end()) {
+            iter->installerBundles.erase(it);
+        }
+        if (iter->installerBundles.empty()) {
+            iter = deletionMock.erase(iter);
+        } else {
+            iter++;
         }
     }
-    ZLOGE("===ZYH=== READY TO WRITE!!!!!! ");
-    UtdCustomPersistence::GetInstance().PersistingCustomUtdData(customTyepCfgs, path);
-    ZLOGE("===ZYH===  WRITE DONE!!!!!! ");
+    std::vector <TypeDescriptorCfg> presetTypes = PresetTypeDescriptors::GetInstance().GetPresetTypes();
+    if (!UtdCfgsChecker::GetInstance().CheckBelongingToTypes(deletionMock, presetTypes)) {
+        ZLOGW("Uninstall error, because of types dependency check failed");
+        return E_ERROR;
+    }
+    for (auto customIter = customTyepCfgs.begin(); customIter != customTyepCfgs.end();) {
+        auto InstallerIter = find (customIter->installerBundles.begin(), customIter->installerBundles.end(),
+            bundleName);
+        if (InstallerIter != customIter->installerBundles.end()) {
+            customIter->installerBundles.erase(InstallerIter);
+        }
+        if (customIter->installerBundles.empty()) {
+            customIter = customTyepCfgs.erase(customIter);
+        } else {
+            customIter++;
+        }
+    }
+    CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
     return E_OK;
 }
 
@@ -154,7 +151,7 @@ std::vector<std::string> CustomUtdInstaller::GetModulesFromBundleName(const std:
     auto bundlemgr = GetBundleManager();
     AppExecFwk::BundleInfo bundleInfo;
     if (!bundlemgr->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT, bundleInfo, user)) {
-        ZLOGE("===ZYH=== get local bundle info failed");
+        ZLOGE("Get local bundle info failed, bundleName: %{public}s.", bundleName.c_str());
     }
     return bundleInfo.hapModuleNames;
 }
@@ -164,26 +161,22 @@ UtdCfgsChecker::CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const 
 {
     auto bundlemgr = GetBundleManager();
     std::string jsonStr;
+    std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> typeCfgs;
     auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
         user);
     if (status != NO_ERROR) {
-        ZLOGE("===ZYH=== get local bundle info failed");
+        ZLOGE("get local bundle info failed, jsonStr is %{public}s", jsonStr.c_str());
+        return typeCfgs;
     }
-    ZLOGE("===ZYH=== jsonStr is %{public}s", jsonStr.c_str());
-
     std::vector<TypeDescriptorCfg> declarationType;
     std::vector<TypeDescriptorCfg> referenceType;
-    std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> typeCfgs;
-    UtdJsonParse utdJsonParse_;
-    int32_t res = utdJsonParse_.ParseJsonData(jsonStr, declarationType, referenceType);
-    ZLOGE("===ZYH=== res: %{public}d", res);
+
+    CustomUtdJsonParser customUtdJsonParser_;
+    int32_t res = customUtdJsonParser_.ParseUserCustomUtdJson(jsonStr, declarationType, referenceType);
     if (!jsonStr.empty() && res == E_OK) {
-        ZLOGE("===ZYH=== declarationTypes size : %{public}d referenceType size : %{public}d", declarationType.size(), referenceType.size());
         typeCfgs.first = declarationType;
         typeCfgs.second = referenceType;
     }
-    ZLOGE("===ZYH=== declarationTypes size : %{public}d referenceType size : %{public}d", typeCfgs.first.size(), typeCfgs.second.size());
-
     return typeCfgs;
 }
 }
