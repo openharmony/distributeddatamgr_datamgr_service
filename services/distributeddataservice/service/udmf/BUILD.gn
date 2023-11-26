@@ -74,9 +74,9 @@ ohos_shared_library("udmf_server") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddb",
-    "udmf:udmf_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "udmf:udmf_client",
   ]
 
   subsystem_name = "distributeddatamgr"
