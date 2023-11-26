@@ -225,51 +225,66 @@ ValueProxy::Asset::operator DistributedDB::Asset()
         .createTime = std::move(asset_.createTime),
         .size = std::move(asset_.size),
         .hash = std::move(asset_.hash),
-        .status = ConvertToDBStatus(asset_) };
+        .status = ConvertToDBStatus(asset_.status) };
 }
 
 uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asset)
 {
-    if (asset.status == DistributedDB::AssetStatus::DOWNLOADING) {
+    auto highStatus = GetHighStatus(asset.status);
+    auto lowStatus = GetLowStatus(asset.status);
+    if (lowStatus == DistributedDB::AssetStatus::DOWNLOADING) {
         if (asset.flag == static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE)) {
-            return DistributedData::Asset::STATUS_DELETE;
+            lowStatus = DistributedData::Asset::STATUS_DELETE;
+        } else {
+            lowStatus = DistributedData::Asset::STATUS_DOWNLOADING;
         }
-        return DistributedData::Asset::STATUS_DOWNLOADING;
-    } else if (asset.status == DistributedDB::AssetStatus::ABNORMAL) {
-        return DistributedData::Asset::STATUS_ABNORMAL;
+    } else if (lowStatus == DistributedDB::AssetStatus::ABNORMAL) {
+        lowStatus = DistributedData::Asset::STATUS_ABNORMAL;
     } else {
         switch (asset.flag) {
             case static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT):
-                return DistributedData::Asset::STATUS_INSERT;
+                lowStatus = DistributedData::Asset::STATUS_INSERT;
+                break;
             case static_cast<uint32_t>(DistributedDB::AssetOpType::UPDATE):
-                return DistributedData::Asset::STATUS_UPDATE;
+                lowStatus = DistributedData::Asset::STATUS_UPDATE;
+                break;
             case static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE):
-                return DistributedData::Asset::STATUS_DELETE;
+                lowStatus = DistributedData::Asset::STATUS_DELETE;
+                break;
             default:
-                return DistributedData::Asset::STATUS_NORMAL;
+                lowStatus = DistributedData::Asset::STATUS_NORMAL;
         }
     }
-    return DistributedData::Asset::STATUS_UNKNOWN;
+    return lowStatus | highStatus;
 }
 
-uint32_t ValueProxy::Asset::ConvertToDBStatus(const DistributedData::Asset &asset)
+uint32_t ValueProxy::Asset::ConvertToDBStatus(const uint32_t &status)
 {
-    switch (asset.status) {
+    auto highStatus = GetHighStatus(status);
+    auto lowStatus = GetLowStatus(status);
+    switch (lowStatus) {
         case DistributedData::Asset::STATUS_NORMAL:
-            return static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
+            break;
         case DistributedData::Asset::STATUS_ABNORMAL:
-            return static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
+            break;
         case DistributedData::Asset::STATUS_INSERT:
-            return static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT);
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT);
+            break;
         case DistributedData::Asset::STATUS_UPDATE:
-            return static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE);
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE);
+            break;
         case DistributedData::Asset::STATUS_DELETE:
-            return static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE);
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE);
+            break;
         case DistributedData::Asset::STATUS_DOWNLOADING:
-            return static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING);
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING);
+            break;
         default:
-            return static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
     }
+    return lowStatus | highStatus;
 }
 
 ValueProxy::Assets::Assets(DistributedData::Assets assets)
@@ -412,5 +427,64 @@ ValueProxy::Buckets &ValueProxy::Buckets::operator=(Buckets &&buckets) noexcept
     }
     value_ = std::move(buckets.value_);
     return *this;
+}
+
+ValueProxy::TempAsset::TempAsset(DistributedDB::Asset asset)
+{
+    asset_ = DistributedData::Asset { .version = asset.version,
+        .status = ConvertToDataStatus(asset.status),
+        .expiresTime = DistributedData::Asset::NO_EXPIRES_TIME,
+        .id = std::move(asset.assetId),
+        .name = std::move(asset.name),
+        .uri = std::move(asset.uri),
+        .createTime = std::move(asset.createTime),
+        .modifyTime = std::move(asset.modifyTime),
+        .size = std::move(asset.size),
+        .hash = std::move(asset.hash),
+        .path = std::move(asset.subpath) };
+}
+
+ValueProxy::TempAsset::operator NativeRdb::AssetValue()
+{
+    return NativeRdb::AssetValue { .version = asset_.version,
+        .status = asset_.status,
+        .expiresTime = asset_.expiresTime,
+        .id = std::move(asset_.id),
+        .name = std::move(asset_.name),
+        .uri = std::move(asset_.uri),
+        .createTime = std::move(asset_.createTime),
+        .modifyTime = std::move(asset_.modifyTime),
+        .size = std::move(asset_.size),
+        .hash = std::move(asset_.hash),
+        .path = std::move(asset_.path) };
+}
+
+uint32_t ValueProxy::TempAsset::ConvertToDataStatus(const uint32_t &status)
+{
+    auto highStatus = GetHighStatus(status);
+    auto lowStatus = GetLowStatus(status);
+    switch (lowStatus) {
+        case DistributedDB::AssetStatus::NORMAL:
+            lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_NORMAL);
+            break;
+        case DistributedDB::AssetStatus::ABNORMAL:
+            lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_ABNORMAL);
+            break;
+        case DistributedDB::AssetStatus::INSERT:
+            lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_INSERT);
+            break;
+        case DistributedDB::AssetStatus::UPDATE:
+            lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_UPDATE);
+            break;
+        case DistributedDB::AssetStatus::DELETE:
+            lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_DELETE);
+            break;
+        case DistributedDB::AssetStatus::DOWNLOADING:
+            lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_DOWNLOADING);
+            break;
+        default:
+            lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_NORMAL);
+    }
+    return lowStatus | highStatus;
 }
 } // namespace OHOS::DistributedRdb

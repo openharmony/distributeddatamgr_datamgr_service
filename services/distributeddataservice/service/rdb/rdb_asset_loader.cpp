@@ -39,4 +39,11 @@ DBStatus RdbAssetLoader::Download(const std::string &tableName, const std::strin
     }
     return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
 }
+
+DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)
+{
+    DistributedData::VBucket deleteAssets = ValueProxy::Convert(std::map<std::string, Assets>{{ "", assets }});
+    auto error = assetLoader_->RemoveLocalAssets("", "", {}, deleteAssets);
+    return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
+}
 } // namespace OHOS::DistributedRdb
