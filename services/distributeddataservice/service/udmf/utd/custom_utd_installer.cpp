@@ -51,12 +51,12 @@ sptr<AppExecFwk::IBundleMgr> CustomUtdInstaller::GetBundleManager()
 {
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
-        ZLOGE("samgrProxy is null");
+        ZLOGE("samgrProxy is null.");
         return nullptr;
     }
     auto bmsProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (bmsProxy == nullptr) {
-        ZLOGE("failed to get bms from samgrProxy");
+        ZLOGE("failed to get bms from samgrProxy.");
     }
     return iface_cast<AppExecFwk::IBundleMgr>(bmsProxy);
 }
@@ -126,7 +126,7 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
     }
     std::vector <TypeDescriptorCfg> presetTypes = PresetTypeDescriptors::GetInstance().GetPresetTypes();
     if (!UtdCfgsChecker::GetInstance().CheckBelongingToTypes(deletionMock, presetTypes)) {
-        ZLOGW("Uninstall error, because of types dependency check failed");
+        ZLOGW("Uninstall error, because of types dependency check failed.");
         return E_ERROR;
     }
     for (auto customIter = customTyepCfgs.begin(); customIter != customTyepCfgs.end();) {
