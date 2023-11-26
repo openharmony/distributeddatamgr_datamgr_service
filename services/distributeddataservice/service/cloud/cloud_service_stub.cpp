@@ -33,6 +33,14 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnNotifyDataChange,
     &CloudServiceStub::OnNotifyChange,
     &CloudServiceStub::OnAllocResourceAndShare,
+	&CloudServiceStub::OnShare,
+    &CloudServiceStub::OnUnshare,
+    &CloudServiceStub::OnExit,
+    &CloudServiceStub::OnChangePrivilege,
+    &CloudServiceStub::OnQuery,
+    &CloudServiceStub::OnQueryByInvitation,
+    &CloudServiceStub::OnConfirmInvitation,
+    &CloudServiceStub::OnChangeConfirmation,
 };
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
@@ -66,12 +74,12 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
         }
     }
 
-    std::string first;
-    if (!ITypesUtil::Unmarshal(data, first)) {
-        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(first).c_str());
+    std::string id;
+    if (!ITypesUtil::Unmarshal(data, id)) {
+        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    return (this->*HANDLERS[code])(first, data, reply);
+    return (this->*HANDLERS[code])(id, data, reply);
 }
 
 int32_t CloudServiceStub::OnEnableCloud(const std::string &id, MessageParcel &data, MessageParcel &reply)
@@ -149,5 +157,89 @@ int32_t CloudServiceStub::OnNotifyChange(const std::string &id, MessageParcel &d
     }
     auto result = NotifyDataChange(id, extraData, userId);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnShare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+{
+    Participants participants;
+    if (!ITypesUtil::Unmarshal(data, participants)) {
+        ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    Results results;
+    auto status = Share(sharingRes, participants, results);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnUnshare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+{
+    Participants participants;
+    if (!ITypesUtil::Unmarshal(data, participants)) {
+        ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    Results results;
+    auto status = Unshare(sharingRes, participants, results);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnExit(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+{
+    std::pair<int32_t, std::string> result;
+    auto status = Exit(sharingRes, result);
+    return ITypesUtil::Marshal(reply, status, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnChangePrivilege(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+{
+    Participants participants;
+    if (!ITypesUtil::Unmarshal(data, participants)) {
+        ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    Results results;
+    auto status = ChangePrivilege(sharingRes, participants, results);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnQuery(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+{
+    QueryResults results;
+    auto status = Query(sharingRes, results);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnQueryByInvitation(
+    const std::string &invitation, MessageParcel &data, MessageParcel &reply)
+{
+    QueryResults results;
+    auto status = QueryByInvitation(invitation, results);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnConfirmInvitation(
+    const std::string &invitation, MessageParcel &data, MessageParcel &reply)
+{
+    int32_t confirmation;
+    if (!ITypesUtil::Unmarshal(data, confirmation)) {
+        ZLOGE("Unmarshal invitation:%{public}s", Anonymous::Change(invitation).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::tuple<int32_t, std::string, std::string> result;
+    auto status = ConfirmInvitation(invitation, confirmation, result);
+    return ITypesUtil::Marshal(reply, status, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnChangeConfirmation(
+    const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+{
+    int32_t confirmation;
+    if (!ITypesUtil::Unmarshal(data, confirmation)) {
+        ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::pair<int32_t, std::string> result;
+    auto status = ChangeConfirmation(sharingRes, confirmation, result);
+    return ITypesUtil::Marshal(reply, status, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData

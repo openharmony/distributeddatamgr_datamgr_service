@@ -40,21 +40,6 @@ template<>
 bool Unmarshalling(Privilege &output, MessageParcel &data);
 
 template<>
-bool Marshalling(const Role &input, MessageParcel &data);
-template<>
-bool Unmarshalling(Role &output, MessageParcel &data);
-
-template<>
-bool Marshalling(const Confirmation &input, MessageParcel &data);
-template<>
-bool Unmarshalling(Confirmation &output, MessageParcel &data);
-
-template<>
-bool Marshalling(const SharingCode &input, MessageParcel &data);
-template<>
-bool Unmarshalling(SharingCode &output, MessageParcel &data);
-
-template<>
 bool Marshalling(const Asset &input, MessageParcel &data);
 template<>
 bool Unmarshalling(Asset &output, MessageParcel &data);

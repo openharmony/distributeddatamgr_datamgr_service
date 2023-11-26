@@ -60,6 +60,11 @@ std::shared_ptr<CloudDB> CloudServer::ConnectCloudDB(uint32_t tokenId, const Clo
     return nullptr;
 }
 
+std::shared_ptr<SharingCenter> CloudServer::ConnectSharingCenter(int32_t userId, const std::string &bunleName)
+{
+    return nullptr;
+}
+
 void CloudServer::Clean(int32_t userId)
 {
 }

@@ -22,6 +22,7 @@
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
 #include "cloud/subscription.h"
+#include "cloud/sharing_center.h"
 #include "cloud_service_stub.h"
 #include "feature/static_acts.h"
 #include "sync_manager.h"
@@ -46,7 +47,18 @@ public:
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string& storeId,
         const DistributedRdb::PredicatesMemo& predicates, const std::vector<std::string>& columns,
-        const std::vector<Participant>& participants) override;
+        const Participants& participants) override;
+    int32_t Share(const std::string &sharingRes, const Participants &participants, Results &results) override;
+    int32_t Unshare(const std::string &sharingRes, const Participants &participants, Results &results) override;
+    int32_t Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result) override;
+    int32_t ChangePrivilege(
+        const std::string &sharingRes, const Participants &participants, Results &results) override;
+    int32_t Query(const std::string &sharingRes, QueryResults &results) override;
+    int32_t QueryByInvitation(const std::string &invitation, QueryResults &results) override;
+    int32_t ConfirmInvitation(const std::string &invitation, int32_t confirmation,
+        std::tuple<int32_t, std::string, std::string> &result) override;
+    int32_t ChangeConfirmation(
+        const std::string &sharingRes, int32_t confirmation, std::pair<int32_t, std::string> &result) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -100,6 +112,10 @@ private:
     static constexpr int32_t WAIT_TIME = 30; // 30 seconds
     static constexpr int32_t DEFAULT_USER = 0;
     static constexpr const char *DATA_CHANGE_EVENT_ID = "cloud_data_change";
+    struct HapInfo {
+        int32_t user;
+        std::string bundleName;
+    };
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
@@ -124,10 +140,11 @@ private:
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(const CloudEvent::StoreInfo& storeInfo,
         DistributedData::GenQuery& query);
-    std::vector<NativeRdb::ValuesBucket> Convert(std::shared_ptr<DistributedData::Cursor> cursor) const;
+    std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
     int32_t GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
                                    std::vector<std::string> &table);
+    std::pair<std::shared_ptr<DistributedData::SharingCenter>, HapInfo> GetSharingHandle();
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
 
