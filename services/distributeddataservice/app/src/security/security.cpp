@@ -146,13 +146,17 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
         return;
     }
 
-    bool isOnline = type == AppDistributedKv::DeviceChangeType::DEVICE_ONLINE;
-    if (isOnline) {
-        (void)GetSensitiveByUuid(info.uuid);
-        ZLOGD("device is online, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
-    } else {
-        EraseSensitiveByUuid(info.uuid);
-        ZLOGD("device is offline, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
+    switch (type) {
+        case AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE:
+            ZLOGD("device is offline, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
+            EraseSensitiveByUuid(info.uuid);
+            break;
+        case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
+            ZLOGD("device is online, deviceId:%{public}s", Anonymous::Change(info.uuid).c_str());
+            (void)GetSensitiveByUuid(info.uuid);
+            break;
+        default:
+            break;
     }
 }
 

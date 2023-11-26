@@ -64,9 +64,9 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     }
     option.observer = &observer_;
     manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
-    if (delegate_ != nullptr && meta.isAutoClean) {
+    if (delegate_ != nullptr && meta.isManualClean) {
         PragmaData data =
-            static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isAutoClean)));
+            static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
         delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
     }
 }
@@ -103,7 +103,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         const Table &table = database.tables[i];
         DBTable &dbTable = schema.tables[i];
         dbTable.name = table.name;
-        // dbTable.sharedTableName = table.sharedTableName;
+        dbTable.sharedTableName = table.sharedTableName;
         for (auto &field : table.fields) {
             DBField dbField;
             dbField.colName = field.colName;

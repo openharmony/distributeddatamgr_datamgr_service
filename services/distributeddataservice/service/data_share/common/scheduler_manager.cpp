@@ -16,6 +16,8 @@
 
 #include "scheduler_manager.h"
 
+#include <cinttypes>
+
 #include "log_print.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"

@@ -52,12 +52,6 @@ config("module_public_config") {
 }
 
 ohos_shared_library("distributeddatasvc") {
-  branch_protector_ret = "pac_ret"
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
   include_dirs = [
     "../../../../data_object/frameworks/innerkitsimpl/include",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
@@ -65,11 +59,11 @@ ohos_shared_library("distributeddatasvc") {
     "${kv_store_distributeddb_path}",
   ]
   sources = [
-    "${cloud_data_path}/src/cloud_types_util.cpp",
     "backup/src/backup_manager.cpp",
     "bootstrap/src/bootstrap.cpp",
     "cloud/cloud_service_impl.cpp",
     "cloud/cloud_service_stub.cpp",
+    "cloud/cloud_types_util.cpp",
     "cloud/sync_manager.cpp",
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",

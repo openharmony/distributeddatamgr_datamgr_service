@@ -16,6 +16,8 @@
 
 #include "rdb_subscriber_manager.h"
 
+#include <cinttypes>
+
 #include "ipc_skeleton.h"
 #include "general/load_config_data_info_strategy.h"
 #include "log_print.h"

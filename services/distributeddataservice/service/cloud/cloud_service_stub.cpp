@@ -31,6 +31,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnChangeAppSwitch,
     &CloudServiceStub::OnClean,
     &CloudServiceStub::OnNotifyDataChange,
+    &CloudServiceStub::OnNotifyChange,
     &CloudServiceStub::OnAllocResourceAndShare,
 };
 
@@ -136,5 +137,17 @@ int32_t CloudServiceStub::OnAllocResourceAndShare(const std::string& storeId, Me
     }
     auto [status, resultSet] = AllocResourceAndShare(storeId, predicatesMemo, columns, participants);
     return ITypesUtil::Marshal(reply, status, resultSet) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnNotifyChange(const std::string &id, MessageParcel &data, MessageParcel &reply)
+{
+    std::string extraData;
+    int32_t userId;
+    if (!ITypesUtil::Unmarshal(data, extraData, userId)) {
+        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto result = NotifyDataChange(id, extraData, userId);
+    return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData

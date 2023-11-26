@@ -55,6 +55,8 @@ template<>
 bool Unmarshalling(SharingCode &output, MessageParcel &data);
 
 template<>
+bool Marshalling(const Asset &input, MessageParcel &data);
+template<>
 bool Unmarshalling(Asset &output, MessageParcel &data);
 template<>
 bool Marshalling(const ValueObject &input, MessageParcel &data);
