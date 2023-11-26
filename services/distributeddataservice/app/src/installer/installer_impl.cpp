@@ -50,7 +50,7 @@ InstallEventSubscriber::InstallEventSubscriber(const CommonEventSubscribeInfo &i
 
 void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 {
-    ZLOGI("Intent Action Rec === zyh");
+    ZLOGI("Intent Action Rec");
     Want want = event.GetWant();
     std::string action = want.GetAction();
     auto it = callbacks_.find(action);
@@ -65,7 +65,6 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 
 void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
-    ZLOGE("========onuninstall==========!");
     kvStoreDataService_->OnUninstall(bundleName, userId, appIndex);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
@@ -109,7 +108,6 @@ void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t use
 
 void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
-    ZLOGE("========oninstall==========!");
     kvStoreDataService_->OnInstall(bundleName, userId, appIndex);
 }
 

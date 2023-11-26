@@ -173,8 +173,8 @@ UtdCfgsChecker::CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const 
     std::vector<TypeDescriptorCfg> referenceType;
 
     CustomUtdJsonParser customUtdJsonParser_;
-    int32_t res = customUtdJsonParser_.ParseUserCustomUtdJson(jsonStr, declarationType, referenceType);
-    if (!jsonStr.empty() && res == E_OK) {
+    bool res = customUtdJsonParser_.ParseUserCustomUtdJson(jsonStr, declarationType, referenceType);
+    if (!jsonStr.empty() && res) {
         typeCfgs.first = declarationType;
         typeCfgs.second = referenceType;
     }
