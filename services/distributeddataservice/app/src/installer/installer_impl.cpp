@@ -50,7 +50,7 @@ InstallEventSubscriber::InstallEventSubscriber(const CommonEventSubscribeInfo &i
 
 void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 {
-    ZLOGI("Intent Action Rec");
+    ZLOGI("Action Rec");
     Want want = event.GetWant();
     std::string action = want.GetAction();
     auto it = callbacks_.find(action);
