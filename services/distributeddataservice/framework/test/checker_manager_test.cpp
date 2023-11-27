@@ -40,7 +40,7 @@ void CheckerManagerTest::SetUp(void)
     infoInstance.dcaps = nullptr;
     infoInstance.perms = nullptr;
     infoInstance.acls = nullptr;
-    infoInstance.processName = "foundation";
+    infoInstance.processName = "CheckerManagerTest";
     infoInstance.aplStr = "system_core";
 
     HapInfoParams info = {
