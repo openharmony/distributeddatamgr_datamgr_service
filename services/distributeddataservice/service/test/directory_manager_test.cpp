@@ -67,7 +67,7 @@ public:
     }
     void SetUp()
     {
-        tokenParam_.processName = "foundation";
+        tokenParam_.processName = "DirectoryManagerTest";
         tokenParam_.aplStr = "system_core";
 
         Bootstrap::GetInstance().LoadDirectory();
