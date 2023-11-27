@@ -273,7 +273,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         return INVALID_ARGUMENT;
     }
     ExtraData exData;
-    if (exData.Unmarshall(extraData) != E_OK) {
+    if (!exData.Unmarshall(extraData)) {
         return INVALID_ARGUMENT;
     }
     std::vector<int32_t> users;
