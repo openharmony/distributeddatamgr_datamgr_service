@@ -57,6 +57,7 @@ public:
     static constexpr const char *CURSOR_FIELD = "#_cursor";
     static constexpr const char *ERROR_FIELD = "#_error";
     static constexpr const char *VERSION_FIELD = "#_version";
+    static constexpr const char *REFERENCE_FIELD = "#_reference";
     static constexpr const char *CLOUD_OWNER = "cloud_owner";
     static constexpr const char *CLOUD_PRIVILEGE = "cloud_privilege";
     static constexpr const char *SHARING_RESOURCE = "sharing_resource";
