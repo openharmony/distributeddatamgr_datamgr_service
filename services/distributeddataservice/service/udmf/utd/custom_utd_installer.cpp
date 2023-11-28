@@ -74,7 +74,11 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
                 bundleName.c_str());
             continue;
         }
-        SaveCustomUtds(customTyepCfgs, utdTypes, bundleName, path);
+        if (SaveCustomUtds(utdTypes, customTyepCfgs, bundleName, path) != E_OK) {
+            ZLOGE("Install save custom utds failed, moduleName: %{public}s, bundleName: %{public}s.", module.c_str(),
+                bundleName.c_str());
+            continue;
+        }
     }
     return E_OK;
 }
@@ -115,7 +119,10 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
             customIter++;
         }
     }
-    CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
+    if (CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path) != E_OK) {
+        ZLOGE("Uninstall save custom utds failed, bundleName: %{public}s.", bundleName.c_str());
+        return E_ERROR;
+    }
     return E_OK;
 }
 
@@ -130,12 +137,12 @@ std::vector<std::string> CustomUtdInstaller::GetHapModules(const std::string &bu
     return bundleInfo.hapModuleNames;
 }
 
-std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> CustomUtdInstaller::GetModuleCustomUtdTypes(
-    const std::string &bundleName, const std::string &moduleName, int32_t user)
+CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bundleName,
+    const std::string &moduleName, int32_t user)
 {
     auto bundlemgr = GetBundleManager();
     std::string jsonStr;
-    std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> typeCfgs;
+    CustomUtdCfgs typeCfgs;
     auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
         user);
     if (status != NO_ERROR) {
@@ -154,8 +161,7 @@ std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> Custom
     return typeCfgs;
 }
 
-void CustomUtdInstaller::SaveCustomUtds(std::vector<TypeDescriptorCfg> customTyepCfgs,
-    const std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> &utdTypes,
+int32_t CustomUtdInstaller::SaveCustomUtds(const CustomUtdCfgs &utdTypes, std::vector<TypeDescriptorCfg> customTyepCfgs,
     const std::string &bundleName, const std::string &path)
 {
     for (TypeDescriptorCfg declarationType : utdTypes.first) {
@@ -164,9 +170,9 @@ void CustomUtdInstaller::SaveCustomUtds(std::vector<TypeDescriptorCfg> customTye
                 declarationType.installerBundles = iter->installerBundles;
                 iter = customTyepCfgs.erase(iter);
             } else {
-                    iter ++;
-                }
+                iter ++;
             }
+        }
         declarationType.installerBundles.emplace(bundleName);
         declarationType.ownerBundle = bundleName;
         customTyepCfgs.push_back(declarationType);
@@ -185,7 +191,11 @@ void CustomUtdInstaller::SaveCustomUtds(std::vector<TypeDescriptorCfg> customTye
             customTyepCfgs.push_back(referenceType);
         }
     }
-    CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
+    if (CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path) != E_OK) {
+        ZLOGE("Install save type configs failed, bundleName: %{public}s.", bundleName.c_str());
+        return E_ERROR;
+    }
+    return E_OK;
 }
 }
 }

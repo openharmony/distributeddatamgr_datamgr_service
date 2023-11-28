@@ -39,10 +39,8 @@ private:
     CustomUtdInstaller &operator=(const CustomUtdInstaller &obj) = delete;
     sptr<AppExecFwk::IBundleMgr> GetBundleManager();
     std::vector<std::string> GetHapModules(const std::string &bundleName, int32_t user);
-    std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> GetModuleCustomUtdTypes(
-        const std::string &bundleName, const std::string &moduleName, int32_t user);
-    void SaveCustomUtds(std::vector<TypeDescriptorCfg> customTyepCfgs,
-        const std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> &utdTypes,
+    CustomUtdCfgs GetModuleCustomUtdTypes(const std::string &bundleName, const std::string &moduleName, int32_t user);
+    int32_t SaveCustomUtds(const CustomUtdCfgs &utdTypes, std::vector<TypeDescriptorCfg> customTyepCfgs,
         const std::string &bundleName, const std::string &path);
 };
 } // namespace UDMF

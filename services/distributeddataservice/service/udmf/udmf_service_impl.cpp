@@ -536,6 +536,10 @@ int32_t UdmfServiceImpl::UdmfStatic::OnAppUpdate(const std::string &bundleName, 
 {
     ZLOGD("Bundle: %{public}s Update.", bundleName.c_str());
     auto status = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
+    if (status != E_OK) {
+        ZLOGE("App update failed, bundleName: %{public}s, status: %{public}d", bundleName.c_str(), status);
+        return status;
+    }
     status = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
     return status;
 }
