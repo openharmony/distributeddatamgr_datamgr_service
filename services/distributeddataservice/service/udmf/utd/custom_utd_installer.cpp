@@ -74,35 +74,7 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
                 bundleName.c_str());
             continue;
         }
-        // Update customTyepCfgs used for subsequent persistence of type definitions.
-        for (TypeDescriptorCfg &declarationType : utdTypes.first) {
-            for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
-                if (iter->typeId == declarationType.typeId) {
-                    declarationType.installerBundles = iter->installerBundles;
-                    iter = customTyepCfgs.erase(iter);
-                } else {
-                    iter ++;
-                }
-            }
-            declarationType.installerBundles.emplace(bundleName);
-            declarationType.ownerBundle = bundleName;
-            customTyepCfgs.push_back(declarationType);
-        }
-        for (TypeDescriptorCfg &referenceType : utdTypes.second) {
-            bool found = false;
-            for (auto &typeCfg : customTyepCfgs) {
-                if (typeCfg.typeId == referenceType.typeId) {
-                    typeCfg.installerBundles.emplace(bundleName);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                referenceType.installerBundles.emplace(bundleName);
-                customTyepCfgs.push_back(referenceType);
-            }
-        }
-        CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
+        SaveCustomUtds(customTyepCfgs, utdTypes, bundleName, path);
     }
     return E_OK;
 }
@@ -180,6 +152,40 @@ std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> Custom
         typeCfgs.second = referenceType;
     }
     return typeCfgs;
+}
+
+void CustomUtdInstaller::SaveCustomUtds(std::vector<TypeDescriptorCfg> customTyepCfgs,
+    const std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> &utdTypes,
+    const std::string &bundleName, const std::string &path)
+{
+    for (TypeDescriptorCfg declarationType : utdTypes.first) {
+        for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
+            if (iter->typeId == declarationType.typeId) {
+                declarationType.installerBundles = iter->installerBundles;
+                iter = customTyepCfgs.erase(iter);
+            } else {
+                    iter ++;
+                }
+            }
+        declarationType.installerBundles.emplace(bundleName);
+        declarationType.ownerBundle = bundleName;
+        customTyepCfgs.push_back(declarationType);
+    }
+    for (TypeDescriptorCfg referenceType : utdTypes.second) {
+        bool found = false;
+        for (auto &typeCfg : customTyepCfgs) {
+            if (typeCfg.typeId == referenceType.typeId) {
+                typeCfg.installerBundles.emplace(bundleName);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            referenceType.installerBundles.emplace(bundleName);
+            customTyepCfgs.push_back(referenceType);
+        }
+    }
+    CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
 }
 }
 }

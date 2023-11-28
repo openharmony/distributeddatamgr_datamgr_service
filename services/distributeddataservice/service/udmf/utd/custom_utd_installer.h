@@ -41,6 +41,9 @@ private:
     std::vector<std::string> GetHapModules(const std::string &bundleName, int32_t user);
     std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> GetModuleCustomUtdTypes(
         const std::string &bundleName, const std::string &moduleName, int32_t user);
+    void SaveCustomUtds(std::vector<TypeDescriptorCfg> customTyepCfgs,
+        const std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> &utdTypes,
+        const std::string &bundleName, const std::string &path);
 };
 } // namespace UDMF
 } // namespace OHOS
