@@ -534,7 +534,7 @@ int32_t UdmfServiceImpl::UdmfStatic::OnAppInstall(const std::string &bundleName,
 int32_t UdmfServiceImpl::UdmfStatic::OnAppUpdate(const std::string &bundleName, int32_t user,
     int32_t index)
 {
-    ZLOGE("Bundle: %{public}s Update.", bundleName.c_str());
+    ZLOGD("Bundle: %{public}s Update.", bundleName.c_str());
     auto status = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
     status = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
     return status;
