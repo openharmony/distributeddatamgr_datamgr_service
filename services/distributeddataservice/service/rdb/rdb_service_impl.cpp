@@ -582,7 +582,7 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> RdbServiceImpl::QuerySh
     storeInfo.bundleName = param.bundleName_;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-    storeInfo.storeName = RemoveSuffix(storeInfo.storeName);
+    storeInfo.storeName = RemoveSuffix(param.storeName_);
     auto [status, cursor] = PreShare(storeInfo, rdbQuery);
     if (cursor == nullptr) {
         ZLOGE("cursor is null, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
