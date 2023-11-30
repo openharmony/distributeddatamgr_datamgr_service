@@ -95,6 +95,7 @@ public:
 private:
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *LOCAL_DEVICE = "local";
+    constexpr static const char *USERID = "USERID";
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
     struct CallbackInfo {
@@ -127,6 +128,8 @@ private:
     void ProcessOldEntry(const std::string &appId);
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
         const std::string &sessionId, const std::string &deviceId);
+    void SaveUserToMeta();
+    std::string GetCurrentUser();
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
@@ -140,6 +143,11 @@ private:
     inline std::string GetPrefixWithoutDeviceId(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR;
+    };
+    inline std::string GetMetaUserIdKey(const std::string &userId, const std::string &appId)
+    {
+        return std::string(USERID) + SEPERATOR + userId + SEPERATOR + appId + SEPERATOR
+             + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
     std::recursive_mutex kvStoreMutex_;
     std::mutex mutex_;
