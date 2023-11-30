@@ -279,9 +279,12 @@ group("unittest") {
 
   deps = []
 
+  if (datamgr_service_config) {
+    deps += [ ":ConfigFactoryTest" ]
+  }
+
   deps += [
     ":CloudDataTest",
-    ":ConfigFactoryTest",
     ":CryptoManagerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
