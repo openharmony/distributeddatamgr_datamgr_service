@@ -232,23 +232,30 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
 int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
                                                  std::vector<std::string> &table)
 {
-    auto schemaKey = CloudInfo::GetSchemaKey(userId, exData.extInfo.bundleName);
+    auto schemaKey = CloudInfo::GetSchemaKey(userId, exData.info.bundleName);
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
         ZLOGE("no exist meta, user:%{public}d", userId);
         return ERROR;
     }
     for (auto &db : schemaMeta.databases) {
-        if (db.alias != exData.extInfo.containerName) {
+        if (db.alias != exData.info.containerName) {
             continue;
         }
         storeId = db.name;
         for (auto &tb : db.tables) {
-            const auto &tbs = exData.extInfo.tables;
+            const auto &tbs = exData.info.tables;
             if (std::find(tbs.begin(), tbs.end(), tb.alias) == tbs.end()) {
                 continue;
             }
-            table.emplace_back(tb.name);
+            if (exData.isPrivate()) {
+                ZLOGI("private data change");
+                table.emplace_back(tb.name);
+            }
+            if (exData.isShared()) {
+                ZLOGI("sharing data change");
+                table.emplace_back(tb.sharedTableName);
+            }
         }
     }
     return SUCCESS;
@@ -287,7 +294,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             continue;
         }
         auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
-        if (CheckNotifyConditions(exData.extInfo.accountId, exData.extInfo.bundleName, cloudInfo) != E_OK) {
+        if (CheckNotifyConditions(exData.info.accountId, exData.info.bundleName, cloudInfo) != E_OK) {
             return INVALID_ARGUMENT;
         }
         std::string storeId;
@@ -295,7 +302,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         if (GetDbInfoFromExtraData(exData, userId, storeId, table) != E_OK) {
             return INVALID_ARGUMENT;
         }
-        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.extInfo.bundleName, storeId, table));
+        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, storeId, table));
     }
     return SUCCESS;
 }
@@ -805,38 +812,6 @@ std::pair<std::string, int32_t> CloudServiceImpl::GetHapInfo(uint32_t tokenId)
         return { tokenInfo.bundleName, tokenInfo.instIndex };
     }
     return { tokenInfo.bundleName, tokenInfo.instIndex };
-}
-
-bool CloudServiceImpl::ExtraData::Marshal(Serializable::json &node) const
-{
-    SetValue(node[GET_NAME(header)], header);
-    SetValue(node[GET_NAME(data)], data);
-    return true;
-}
-
-bool CloudServiceImpl::ExtraData::Unmarshal(const Serializable::json &node)
-{
-    GetValue(node, GET_NAME(header), header);
-    GetValue(node, GET_NAME(data), data);
-    return extInfo.Unmarshall(data);
-}
-
-bool CloudServiceImpl::ExtraData::ExtInfo::Marshal(Serializable::json &node) const
-{
-    SetValue(node[GET_NAME(accountId)], accountId);
-    SetValue(node[GET_NAME(bundleName)], bundleName);
-    SetValue(node[GET_NAME(containerName)], containerName);
-    SetValue(node[GET_NAME(recordTypes)], recordTypes);
-    return true;
-}
-
-bool CloudServiceImpl::ExtraData::ExtInfo::Unmarshal(const Serializable::json &node)
-{
-    GetValue(node, GET_NAME(accountId), accountId);
-    GetValue(node, GET_NAME(bundleName), bundleName);
-    GetValue(node, GET_NAME(containerName), containerName);
-    GetValue(node, GET_NAME(recordTypes), recordTypes);
-    return Unmarshall(recordTypes, tables);
 }
 
 int32_t CloudServiceImpl::Share(

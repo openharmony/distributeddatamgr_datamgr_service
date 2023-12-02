@@ -19,6 +19,7 @@
 #include <mutex>
 #include <queue>
 #include "cloud/cloud_event.h"
+#include "cloud/cloud_extra_data.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
 #include "cloud/subscription.h"
@@ -86,23 +87,6 @@ private:
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
 
-    struct ExtraData final : public DistributedData::Serializable {
-        struct ExtInfo final : public Serializable {
-            std::string accountId;
-            std::string bundleName;
-            std::string containerName;
-            std::string recordTypes;
-            std::vector<std::string> tables;
-            bool Marshal(json &node) const override;
-            bool Unmarshal(const json &node) override;
-        };
-        std::string header;
-        std::string data;
-        ExtInfo extInfo;
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-    };
-
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static std::pair<std::string, int32_t> GetHapInfo(uint32_t tokenId);
 
@@ -142,8 +126,8 @@ private:
         DistributedData::GenQuery& query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
-    int32_t GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
-                                   std::vector<std::string> &table);
+    int32_t GetDbInfoFromExtraData(const DistributedData::ExtraData &exData, int32_t userId,
+        std::string &storeId, std::vector<std::string> &table);
     std::pair<std::shared_ptr<DistributedData::SharingCenter>, HapInfo> GetSharingHandle();
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
