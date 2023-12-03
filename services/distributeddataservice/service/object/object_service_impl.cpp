@@ -29,9 +29,9 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "object_asset_loader.h"
 #include "permission/permission_validator.h"
 #include "utils/anonymous.h"
-#include "object_asset_loader.h"
 
 namespace OHOS::DistributedObject {
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
