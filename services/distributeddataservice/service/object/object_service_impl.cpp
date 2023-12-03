@@ -93,17 +93,16 @@ int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const s
     bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, bundleName, deviceId, assetValue);
     if (isSuccess) {
         status = OBJECT_SUCCESS;
-    }
-    else{
+    } else {
         ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, \
-        asset name : %{public}s", userId, bundleName.c_str(), deviceId.c_str(), assetValue.name.c_str());
+            asset name : %{public}s", userId, bundleName.c_str(), deviceId.c_str(), assetValue.name.c_str());
         status = OBJECT_INNER_ERROR;
     }
     return status;
 }
 
 int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const std::string &sessionId,
-        ObjectStore::Asset &asset, ObjectStore::AssetBindInfo &bindInfo)
+    ObjectStore::Asset &asset, ObjectStore::AssetBindInfo &bindInfo)
 {
     return OBJECT_SUCCESS;
 }

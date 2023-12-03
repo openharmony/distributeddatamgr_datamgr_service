@@ -15,22 +15,22 @@
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 
-#include "object_types.h"
 #include <string>
 #include <mutex>
+#include "object_types.h"
 
 namespace OHOS {
 namespace DistributedObject {
 class ObjectAssetLoader {
 public:
     static ObjectAssetLoader *GetInstance();
-    bool DownLoad(const int32_t userId, const std::string &bundleName, 
+    bool DownLoad(const int32_t userId, const std::string &bundleName,
         const std::string &deviceId, const ObjectStore::Asset &assetValue);
 
 private:
     std::mutex mutex_;
     std::condition_variable cv;
-    static constexpr int WAIT_TIME = 60; // unit second
+    static constexpr int WAIT_TIME = 60;
 };
 } // namespace DistributedObject
 } // namespace OHOS

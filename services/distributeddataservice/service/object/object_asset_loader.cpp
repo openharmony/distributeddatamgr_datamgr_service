@@ -21,13 +21,13 @@
 
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
-ObjectAssetLoader * ObjectAssetLoader::GetInstance()
+ObjectAssetLoader *ObjectAssetLoader::GetInstance()
 {
     static ObjectAssetLoader *loader = new ObjectAssetLoader();
     return loader;
 }
 
-bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundleName, 
+bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundleName,
     const std::string &deviceId, const ObjectStore::Asset &assetValue)
 {
     bool result = false;
@@ -38,7 +38,7 @@ bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundle
     assetInfo.assetName = assetValue.name;
     ZLOGD("start download file userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, \
         asset name : %{public}s", userId, bundleName.c_str(), deviceId.c_str(), assetValue.name.c_str());
-    auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo, 
+    auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [&](const std::string &uri, int32_t status) {
             std::unique_lock<std::mutex> lock(mutex_);
             complete = true;
@@ -49,7 +49,7 @@ bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundle
             cv.notify_one();
         });
     if (res != OBJECT_SUCCESS) {
-        ZLOGE("DownloadFile fail, status: %{public}d, bundleName: %{public}s, asset name : %{public}s", 
+        ZLOGE("DownloadFile fail, status: %{public}d, bundleName: %{public}s, asset name : %{public}s",
             res, bundleName.c_str(), assetValue.name.c_str());
         return false;
     }
@@ -58,8 +58,8 @@ bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundle
     cv.wait_for(lock, std::chrono::seconds(WAIT_TIME), [&complete]() {
         return complete;
     });
-    if(!complete){
-        ZLOGE("DownloadFile time out, status: %{public}d, bundleName: %{public}s, asset name : %{public}s", 
+    if (!complete) {
+        ZLOGE("DownloadFile time out, status: %{public}d, bundleName: %{public}s, asset name : %{public}s",
             res, bundleName.c_str(), assetValue.name.c_str());
     }
     return result;
