@@ -31,6 +31,7 @@
 #include "metadata/store_meta_data.h"
 #include "permission/permission_validator.h"
 #include "utils/anonymous.h"
+#include "object_asset_loader.h"
 
 namespace OHOS::DistributedObject {
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -73,6 +74,38 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
         ZLOGE("save fail %{public}d", status);
     }
     return status;
+}
+
+int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const std::string &sessionId,
+    const std::string &deviceId, const ObjectStore::Asset &assetValue)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        ZLOGE("OnAssetChanged object bundleName wrong, status %{public}d", status);
+        return status;
+    }
+    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
+        ZLOGE("object sync permission denied, tokenId %{public}d", tokenId);
+        return OBJECT_PERMISSION_DENIED;
+    }
+    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, bundleName, deviceId, assetValue);
+    if (isSuccess) {
+        status = OBJECT_SUCCESS;
+    }
+    else{
+        ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, \
+        asset name : %{public}s", userId, bundleName.c_str(), deviceId.c_str(), assetValue.name.c_str());
+        status = OBJECT_INNER_ERROR;
+    }
+    return status;
+}
+
+int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const std::string &sessionId,
+        ObjectStore::Asset &asset, ObjectStore::AssetBindInfo &bindInfo)
+{
+    return OBJECT_SUCCESS;
 }
 
 int32_t ObjectServiceImpl::OnInitialize()

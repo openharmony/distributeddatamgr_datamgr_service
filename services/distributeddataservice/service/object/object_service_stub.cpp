@@ -50,6 +50,30 @@ int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageP
     return 0;
 }
 
+int32_t ObjectServiceStub::OnAssetChangedOnRemote(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    std::string deviceId;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, deviceId)) {
+        ZLOGE("Unmarshal fail sessionId:%{public}s bundleName:%{public}s deviceId:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(),
+            DistributedData::Anonymous::Change(deviceId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    ObjectStore::Asset assetValue;
+    if (!ITypesUtil::Unmarshalling(assetValue, data)) {
+        ZLOGE("Unmarshal assetValue fail, asset name: %{public}s", assetValue.name.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = OnAssetChanged(bundleName, sessionId, deviceId, assetValue);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return status;
+}
+
 int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, MessageParcel &reply)
 {
     std::string sessionId;

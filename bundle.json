@@ -62,6 +62,7 @@
                 "data_share",
                 "device_auth",
                 "device_manager",
+                "dfs_service",
                 "dsoftbus",
                 "hilog",
                 "hisysevent",
