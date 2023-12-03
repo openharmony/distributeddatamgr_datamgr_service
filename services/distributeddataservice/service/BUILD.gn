@@ -138,6 +138,7 @@ ohos_shared_library("distributeddatasvc") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "relational_store:common_type",
     "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"
