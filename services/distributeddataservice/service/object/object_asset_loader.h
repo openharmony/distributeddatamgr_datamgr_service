@@ -15,9 +15,8 @@
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 
-#include <string>
-#include <mutex>
 #include "object_types.h"
+#include <string>
 
 namespace OHOS {
 namespace DistributedObject {
@@ -28,8 +27,11 @@ public:
         const std::string &deviceId, const ObjectStore::Asset &assetValue);
 
 private:
-    std::mutex mutex_;
-    std::condition_variable cv;
+    ObjectAssetLoader() = default;
+    ~ObjectAssetLoader() = default;
+    ObjectAssetLoader(const ObjectAssetLoader &) = delete;
+    ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
+
     static constexpr int WAIT_TIME = 60;
 };
 } // namespace DistributedObject
