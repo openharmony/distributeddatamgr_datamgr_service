@@ -15,8 +15,8 @@
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 
-#include "object_types.h"
 #include <string>
+#include "object_types.h"
 
 namespace OHOS {
 namespace DistributedObject {

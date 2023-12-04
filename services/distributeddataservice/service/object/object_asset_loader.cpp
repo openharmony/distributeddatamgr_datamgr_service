@@ -14,15 +14,15 @@
  */
 #define LOG_TAG "ObjectAssetLoader"
 
+#include "object_asset_loader.h"
 #include "block_data.h"
 #include "cloud_sync_asset_manager.h"
 #include "log_print.h"
-#include "object_asset_loader.h"
 #include "object_manager.h"
 
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
-ObjectAssetLoader * ObjectAssetLoader::GetInstance()
+ObjectAssetLoader *ObjectAssetLoader::GetInstance()
 {
     static ObjectAssetLoader *loader = new ObjectAssetLoader();
     return loader;
@@ -50,7 +50,7 @@ bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundle
     auto [timeout, status] = block->GetValue();
     if (timeout || status != OBJECT_SUCCESS) {
         ZLOGE("DownloadFile fail, bundleName: %{public}s, asset name : %{public}s, timeout: %{public}d, \
-           status: %{public}d", bundleName.c_str(), assetValue.name.c_str(), timeout, status);
+            status: %{public}d", bundleName.c_str(), assetValue.name.c_str(), timeout, status);
         return false;
     }
     return true;
