@@ -754,7 +754,7 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     Results results;
     for (auto& valueBucket : valueBuckets) {
         NativeRdb::ValueObject object;
-        if (!valueBucket.GetObject(SchemaMeta::SHARING_RESOURCE, object)) {
+        if (!valueBucket.GetObject(DistributedRdb::Field::SHARING_RESOURCE_FIELD, object)) {
             continue;
         }
         std::string shareRes;

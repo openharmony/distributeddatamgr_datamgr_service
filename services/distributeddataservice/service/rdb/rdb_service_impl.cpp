@@ -563,7 +563,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> RdbServiceImpl::QuerySharingResource(
+std::pair<int32_t, sptr<IRemoteObject>> RdbServiceImpl::QuerySharingResource(
     const RdbSyncerParam& param, const PredicatesMemo& predicates, const std::vector<std::string>& columns)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
@@ -583,16 +583,16 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> RdbServiceImpl::QuerySh
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = RemoveSuffix(param.storeName_);
-    auto [status, cursor] = PreShare(storeInfo, rdbQuery);
+    auto [status, cursor] = AllocResource(storeInfo, rdbQuery);
     if (cursor == nullptr) {
         ZLOGE("cursor is null, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, {} };
     }
-    return { RDB_OK, HandleCursor(cursor) };
+    return { RDB_OK, new (std::nothrow) RdbResultSetImpl(cursor) };
 }
 
-std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::PreShare(CloudEvent::StoreInfo& storeInfo,
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(CloudEvent::StoreInfo& storeInfo,
     std::shared_ptr<RdbQuery> rdbQuery)
 {
     std::pair<int32_t, std::shared_ptr<Cursor>> result;
@@ -737,28 +737,6 @@ Details RdbServiceImpl::HandleGenDetails(const GenDetails &details)
         }
     }
     return dbDetails;
-}
-
-std::vector<NativeRdb::ValuesBucket> RdbServiceImpl::HandleCursor(std::shared_ptr<DistributedData::Cursor> cursor)
-{
-    std::vector<NativeRdb::ValuesBucket> valueBuckets;
-    if (cursor == nullptr) {
-        return valueBuckets;
-    }
-    int32_t count = cursor->GetCount();
-    valueBuckets.reserve(count);
-    auto err = cursor->MoveToFirst();
-    while (err == E_OK && count > 0) {
-        DistributedData::VBucket entry;
-        err = cursor->GetEntry(entry);
-        if (err != E_OK) {
-            break;
-        }
-        valueBuckets.emplace_back(ValueProxy::Convert(std::move(entry)));
-        err = cursor->MoveToNext();
-        count--;
-    }
-    return valueBuckets;
 }
 
 bool RdbServiceImpl::GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
