@@ -22,30 +22,30 @@
 namespace OHOS::DistributedData {
 class API_EXPORT ExtensionInfo final : public Serializable {
 public:
-  std::string accountId;
-  std::string bundleName;
-  std::string containerName;
-  std::string databaseScopes;
-  std::vector<std::string> scopes;
-  std::string recordTypes;
-  std::vector<std::string> tables;
-  bool Marshal(json &node) const override;
-  bool Unmarshal(const json &node) override;
+    std::string accountId;
+    std::string bundleName;
+    std::string containerName;
+    std::string databaseScopes;
+    std::vector<std::string> scopes;
+    std::string recordTypes;
+    std::vector<std::string> tables;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 };
 
 class API_EXPORT ExtraData final : public Serializable {
 public:
-  std::string header;
-  std::string data;
-  ExtensionInfo info;
+    std::string header;
+    std::string data;
+    ExtensionInfo info;
 
-  bool Marshal(json &node) const override;
-  bool Unmarshal(const json &node) override;
-  bool isPrivate() const;
-  bool isShared() const;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+    bool isPrivate() const;
+    bool isShared() const;
 
-  static constexpr const char *PRIVATE_TABLE = "private";
-  static constexpr const char *SHARED_TABLE = "shared";
+    static constexpr const char *PRIVATE_TABLE = "private";
+    static constexpr const char *SHARED_TABLE = "shared";
 };
 }
 #endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE5_CLOUD_EXTRA_DATA_H

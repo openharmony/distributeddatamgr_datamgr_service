@@ -18,39 +18,39 @@
 namespace OHOS::DistributedData {
 bool ExtensionInfo::Marshal(Serializable::json &node) const
 {
-  SetValue(node[GET_NAME(accountId)], accountId);
-  SetValue(node[GET_NAME(bundleName)], bundleName);
-  SetValue(node[GET_NAME(containerName)], containerName);
-  SetValue(node[GET_NAME(databaseScopes)], databaseScopes);
-  SetValue(node[GET_NAME(recordTypes)], recordTypes);
-  return true;
+    SetValue(node[GET_NAME(accountId)], accountId);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(containerName)], containerName);
+    SetValue(node[GET_NAME(databaseScopes)], databaseScopes);
+    SetValue(node[GET_NAME(recordTypes)], recordTypes);
+    return true;
 }
 
 bool ExtensionInfo::Unmarshal(const Serializable::json &node)
 {
-  GetValue(node, GET_NAME(accountId), accountId);
-  GetValue(node, GET_NAME(bundleName), bundleName);
-  GetValue(node, GET_NAME(containerName), containerName);
-  GetValue(node, GET_NAME(databaseScopes), databaseScopes);
-  if (!Unmarshall(databaseScopes, scopes)) {
-      return false;
-  }
-  GetValue(node, GET_NAME(recordTypes), recordTypes);
-  return Unmarshall(recordTypes, tables);
+    GetValue(node, GET_NAME(accountId), accountId);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    GetValue(node, GET_NAME(containerName), containerName);
+    GetValue(node, GET_NAME(databaseScopes), databaseScopes);
+    if (!Unmarshall(databaseScopes, scopes)) {
+        return false;
+    }
+    GetValue(node, GET_NAME(recordTypes), recordTypes);
+    return Unmarshall(recordTypes, tables);
 }
 
 bool ExtraData::Marshal(Serializable::json &node) const
 {
-  SetValue(node[GET_NAME(header)], header);
-  SetValue(node[GET_NAME(data)], data);
-  return true;
+    SetValue(node[GET_NAME(header)], header);
+    SetValue(node[GET_NAME(data)], data);
+    return true;
 }
 
 bool ExtraData::Unmarshal(const Serializable::json &node)
 {
-  GetValue(node, GET_NAME(header), header);
-  GetValue(node, GET_NAME(data), data);
-  return info.Unmarshall(data);
+    GetValue(node, GET_NAME(header), header);
+    GetValue(node, GET_NAME(data), data);
+    return info.Unmarshall(data);
 }
 
 bool ExtraData::isPrivate() const
