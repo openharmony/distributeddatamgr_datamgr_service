@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <string>
+#include <tuple>
 #include "visibility.h"
 namespace OHOS::DistributedData {
 class API_EXPORT SharingCenter {
