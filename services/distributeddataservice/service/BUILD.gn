@@ -53,7 +53,9 @@ config("module_public_config") {
 
 ohos_shared_library("distributeddatasvc") {
   include_dirs = [
-    "../../../../data_object/frameworks/innerkitsimpl/include",
+    "${dataobject_path}/frameworks/innerkitsimpl/include",
+    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
+    "${dataobject_path}/interfaces/innerkits",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
     "../../../../relational_store/interfaces/inner_api/rdb/include",
     "${kv_store_distributeddb_path}",
@@ -87,6 +89,7 @@ ohos_shared_library("distributeddatasvc") {
     "kvdb/user_delegate.cpp",
     "matrix/src/device_matrix.cpp",
     "matrix/src/matrix_event.cpp",
+    "object/object_asset_loader.cpp",
     "object/object_callback_proxy.cpp",
     "object/object_data_listener.cpp",
     "object/object_manager.cpp",
@@ -129,11 +132,13 @@ ohos_shared_library("distributeddatasvc") {
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
+    "dfs_service:cloudsync_asset_kit_inner",
     "hilog:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "relational_store:common_type",
     "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"

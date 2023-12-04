@@ -37,6 +37,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${kv_store_distributeddb_path}/interfaces/include/",
     "${kv_store_distributeddb_path}/interfaces/include/relational",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
+    "${dataobject_path}/interfaces/innerkits",
     "//third_party/json/single_include",
   ]
 
@@ -62,6 +63,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/network_config.cpp",
     "${data_service_path}/service/config/src/model/protocol_config.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
+    "${data_service_path}/service/object/object_asset_loader.cpp",
     "${data_service_path}/service/object/object_callback_proxy.cpp",
     "${data_service_path}/service/object/object_data_listener.cpp",
     "${data_service_path}/service/object/object_manager.cpp",
@@ -87,11 +89,13 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
+    "dfs_service:cloudsync_asset_kit_inner",
     "hilog:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "relational_store:common_type",
   ]
 }
 

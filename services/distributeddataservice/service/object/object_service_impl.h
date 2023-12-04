@@ -47,7 +47,10 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnBind(const BindInfo &bindInfo) override;
     void DumpObjectServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
-
+    int32_t OnAssetChanged(const std::string &bundleName, const std::string &sessionId,
+        const std::string &deviceId, const ObjectStore::Asset &assetValue) override;
+    int32_t BindAssetStore(const std::string &bundleName, const std::string &sessionId,
+        ObjectStore::Asset &asset, ObjectStore::AssetBindInfo &bindInfo) override;
 private:
     using StaticActs = DistributedData::StaticActs;
     class ObjectStatic : public StaticActs {
