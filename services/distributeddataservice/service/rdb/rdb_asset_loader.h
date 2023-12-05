@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H
 
+#include "snapshot/snapshot.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/iAssetLoader.h"
@@ -27,7 +28,9 @@ public:
     using Type = DistributedDB::Type;
     using Asset = DistributedDB::Asset;
     using DBStatus = DistributedDB::DBStatus;
-    explicit RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader);
+    using Snapshots = DistributedData::Snapshots;
+
+    explicit RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader, Snapshots* snapshots);
 
     ~RdbAssetLoader() = default;
 
@@ -38,6 +41,11 @@ public:
 
 private:
     std::shared_ptr<DistributedData::AssetLoader> assetLoader_;
+    Snapshots* snapshots_;
+    void StartDownloadingInSnapshot(std::map<std::string, DistributedData::Value>& assets,
+        std::set<std::string>& skipAssets, bool& needCompensate);
+    void FinishDownloadingInSnapshot(std::map<std::string, DistributedData::Value>& assets,
+        std::set<std::string>& skipAssets);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H

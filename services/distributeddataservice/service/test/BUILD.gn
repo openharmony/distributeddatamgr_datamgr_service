@@ -27,8 +27,12 @@ config("module_private_config") {
     "../crypto/include/",
     "../directory/include/",
     "../matrix/include/",
+    "../common/",
     "../rdb/",
+    "../object/",
     "../../framework/include/",
+    "${dataobject_path}/interfaces/innerkits",
+    "${dataobject_path}/frameworks/innerkitsimpl/include",
   ]
 
   defines = [
@@ -71,7 +75,7 @@ ohos_unittest("CloudDataTest") {
 ohos_unittest("ValueProxyTest") {
   module_out_path = module_output_path
   sources = [
-    "../rdb/value_proxy.cpp",
+    "../common/value_proxy.cpp",
     "value_proxy_test.cpp",
   ]
 
@@ -208,7 +212,7 @@ ohos_unittest("RdbResultSetImplTest") {
   sources = [
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
-    "${data_service_path}/service/rdb/value_proxy.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
     "mock/cursor_mock.cpp",
     "rdb_result_set_impl_test.cpp",
   ]
@@ -273,6 +277,36 @@ ohos_unittest("CacheCursorTest") {
   ]
 }
 
+ohos_unittest("ObjectAssetMachineTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../object/object_asset_machine.cpp",
+    "object_asset_machine_test.cpp",
+  ]
+
+  include_dirs =
+  [ "${dataobject_path}/interfaces/innerkits" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${kv_store_distributeddb_path}:distributeddb",
+    "${relational_store_inner_api_path}:native_rdb_static",
+    "../../adapter:distributeddata_adapter",
+    "../../framework:distributeddatasvcfwk",
+    "../../service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
+  ]
+}
 ###############################################################################
 group("unittest") {
   testonly = true

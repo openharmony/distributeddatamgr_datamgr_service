@@ -29,7 +29,7 @@ ObjectAssetLoader *ObjectAssetLoader::GetInstance()
 }
 
 bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundleName,
-    const std::string &deviceId, const ObjectStore::Asset &assetValue)
+    const std::string &deviceId, const DistributedData::Asset &assetValue)
 {
     AssetInfo assetInfo;
     assetInfo.uri = assetValue.uri;
@@ -55,4 +55,17 @@ bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundle
     }
     return true;
 }
+
+bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+    const DistributedData::Asset& assetValue, std::function<void(bool success)> callback)
+{
+    AssetInfo assetInfo;
+    assetInfo.uri = assetValue.uri;
+    assetInfo.assetName = assetValue.name;
+    CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
+        [&](const std::string& uri, int32_t status) {
+            status == 0 ? callback(true) : callback(false);
+        });
+    return true;
 }
+} // namespace OHOS::DistributedObject

@@ -27,6 +27,7 @@
 #include "relational_store_manager.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
+#include "snapshot/snapshot.h"
 namespace OHOS::DistributedRdb {
 class RdbGeneralStore : public DistributedData::GeneralStore {
 public:
@@ -41,6 +42,8 @@ public:
     using GenErr = DistributedData::GeneralError;
     using RdbStore = OHOS::NativeRdb::RdbStore;
     using Reference = DistributedData::Reference;
+    using Snapshot = DistributedData::Snapshot;
+    using Snapshots = DistributedData::Snapshots;
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
@@ -67,7 +70,8 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
-
+    int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> snapshots) override;
+    int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
@@ -116,6 +120,9 @@ private:
     std::mutex mutex_;
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
+
+    Snapshots snapshots_;
+    DistributedData::StoreInfo storeInfo_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

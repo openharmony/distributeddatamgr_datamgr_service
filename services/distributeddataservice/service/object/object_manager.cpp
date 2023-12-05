@@ -17,12 +17,16 @@
 
 #include "object_manager.h"
 
+#include "ipc_skeleton.h"
+#include "accesstoken_kit.h"
+#include "ipc_skeleton.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "datetime_ex.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "object_data_listener.h"
+#include "object_asset_loader.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "account/account_delegate.h"
@@ -30,9 +34,13 @@
 namespace OHOS {
 namespace DistributedObject {
 using namespace OHOS::DistributedKv;
+using namespace Security::AccessToken;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using AccountDelegate = DistributedKv::AccountDelegate;
-
+using OHOS::DistributedKv::AccountDelegate;
+using Account = OHOS::DistributedKv::AccountDelegate;
+using AccessTokenKit = Security::AccessToken::AccessTokenKit;
+using ValueProxy = OHOS::DistributedData::ValueProxy;
 ObjectStoreManager::ObjectStoreManager() {}
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
@@ -652,6 +660,51 @@ void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
     executors_ = executors;
 }
 
+ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::string& bundleName,
+    const std::string& storeName)
+{
+    auto storeKey = bundleName + SEPERATOR + storeName;
+    auto pos = rdbBindSnapshots_.find(storeKey);
+    if (pos == rdbBindSnapshots_.end()) {
+        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    }
+    return rdbBindSnapshots_[storeKey];
+}
+
+int32_t ObjectStoreManager::BindAsset(const std::string& appId, const std::string& sessionId, ObjectStore::Asset& asset,
+    ObjectStore::AssetBindInfo& bindInfo)
+{
+    auto snapshotKey = appId + SEPERATOR + sessionId;
+    auto it = snapShots_.find(snapshotKey);
+    if (it == snapShots_.end()) {
+        snapShots_[snapshotKey] = std::make_shared<ObjectSnapshot>();
+    }
+
+    auto storeKey = appId + SEPERATOR + bindInfo.storeName;
+    auto pos = rdbBindSnapshots_.find(storeKey);
+    if (pos == rdbBindSnapshots_.end()) {
+        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    }
+    rdbBindSnapshots_[storeKey]->at(asset.uri) = snapShots_[snapshotKey];
+
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    HapTokenInfo tokenInfo;
+    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (status != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
+        return GeneralError::E_ERROR;
+    }
+    StoreInfo storeInfo;
+    storeInfo.bundleName = appId;
+    storeInfo.tokenId = tokenId;
+    storeInfo.instanceId = tokenInfo.instIndex;
+    storeInfo.user = tokenInfo.userID;
+    storeInfo.storeName = bindInfo.storeName;
+
+    snapShots_[snapshotKey]->BindAsset( ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
+    return OBJECT_SUCCESS;
+}
+
 uint64_t SequenceSyncManager::AddNotifier(const std::string &userId, SyncCallBack &callback)
 {
     std::lock_guard<std::mutex> lock(notifierLock_);
@@ -709,6 +762,41 @@ SequenceSyncManager::Result SequenceSyncManager::DeleteNotifierNoLock(uint64_t s
         userIdIter++;
     }
     return SUCCESS_USER_HAS_FINISHED;
+}
+
+RdbBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo)
+{
+    return RdbBindInfo{
+        .storeName = std::move(bindInfo.storeName),
+        .tableName = std::move(bindInfo.tableName),
+        .primaryKey = ValueProxy::Convert(std::move(bindInfo.primaryKey)),
+        .field = std::move(bindInfo.field),
+        .assetName = std::move(bindInfo.assetName),
+    };
+}
+
+int32_t ObjectStoreManager::OnAssetChanged(const std::string& appId, const std::string& sessionId,
+                                           const std::string& deviceId, const ObjectStore::Asset& asset)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto objectAsset = asset;
+    Asset dataAsset =  ValueProxy::Convert(std::move(objectAsset));
+    auto snapshotKey = appId + SEPERATOR + sessionId;
+    auto it = snapShots_.find(snapshotKey);
+    if (it != snapShots_.end() && snapShots_[snapshotKey]->IsBindAsset(dataAsset)) {
+      return snapShots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
+    }
+
+    bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, appId, deviceId, dataAsset);
+    if (isSuccess) {
+        return OBJECT_SUCCESS;
+    } else {
+        ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, \
+        asset name : %{public}s",
+            userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
+        return OBJECT_INNER_ERROR;
+    }
 }
 } // namespace DistributedObject
 } // namespace OHOS

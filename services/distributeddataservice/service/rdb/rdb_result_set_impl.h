@@ -26,6 +26,7 @@
 namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public RdbResultSetStub {
 public:
+    using  ValueProxy = DistributedData::ValueProxy;
     explicit RdbResultSetImpl(std::shared_ptr<DistributedData::Cursor> resultSet);
     ~RdbResultSetImpl() override {};
     int GetAllColumnNames(std::vector<std::string> &columnNames) override;

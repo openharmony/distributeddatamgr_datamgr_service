@@ -26,16 +26,21 @@
 namespace OHOS::DistributedRdb {
 using namespace DistributedDB;
 using namespace DistributedData;
-RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB)
-    : cloudDB_(std::move(cloudDB))
+RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, Snapshots* snapshots)
+    : cloudDB_(std::move(cloudDB)) , snapshots_(snapshots)
 {
 }
 
 DBStatus RdbCloud::BatchInsert(
     const std::string &tableName, std::vector<DBVBucket> &&record, std::vector<DBVBucket> &extend)
 {
+    extend.resize(record.size());
     DistributedData::VBuckets extends = ValueProxy::Convert(std::move(extend));
-    auto error = cloudDB_->BatchInsert(tableName, ValueProxy::Convert(std::move(record)), extends);
+    DistributedData::VBuckets records = ValueProxy::Convert(std::move(record));
+    std::set<std::string> skipAssets;
+    StartUploadInSnapshot(records, skipAssets, extends);
+    auto error = cloudDB_->BatchInsert(tableName, std::move(records), extends);
+    FinishUploadInSnapshot(extends, skipAssets);
     extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
@@ -43,8 +48,13 @@ DBStatus RdbCloud::BatchInsert(
 DBStatus RdbCloud::BatchUpdate(
     const std::string &tableName, std::vector<DBVBucket> &&record, std::vector<DBVBucket> &extend)
 {
+    extend.resize(record.size());
     DistributedData::VBuckets extends = ValueProxy::Convert(std::move(extend));
-    auto error = cloudDB_->BatchUpdate(tableName, ValueProxy::Convert(std::move(record)), extends);
+    DistributedData::VBuckets records = ValueProxy::Convert(std::move(record));
+    std::set<std::string> skipAssets;
+    StartUploadInSnapshot(records, skipAssets, extends);
+    auto error = cloudDB_->BatchUpdate(tableName, std::move(records), extends);
+    FinishUploadInSnapshot(extends, skipAssets);
     extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
@@ -137,6 +147,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::CLOUD_FULL_RECORDS;
         case GeneralError::E_NO_SPACE_FOR_ASSET:
             return DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT;
+        case GeneralError::E_RECORD_EXIST_CONFLICT:
+            return DBStatus::CLOUD_RECORD_EXIST_CONFLICT;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;
@@ -204,4 +216,80 @@ RdbCloud::QueryNodes RdbCloud::ConvertQuery(RdbCloud::DBQueryNodes&& nodes)
     }
     return queryNodes;
 }
+
+void RdbCloud::StartUploadInSnapshot(VBuckets& records, std::set<std::string>& skipAssets, VBuckets& extend)
+{
+    int32_t index = 0;
+    for (auto& record : records) {
+        VBucket ext = extend[index++];
+        for (auto& [key, value] : record) {
+            if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
+                auto* asset = Traits::get_if<DistributedData::Asset>(&value);
+                PostUploading(*asset, ext, skipAssets);
+            }
+
+            if (value.index() == TYPE_INDEX<DistributedData::Assets>) {
+                auto* assets = Traits::get_if<DistributedData::Assets>(&value);
+                for (auto& asset : *assets) {
+                    PostUploading(asset, ext, skipAssets);
+                }
+            }
+        }
+    }
+}
+
+void RdbCloud::FinishUploadInSnapshot(DistributedData::VBuckets& records, std::set<std::string>& skipAssetsUri)
+{
+    for (auto& record : records) {
+        for (auto& [key, value] : record) {
+            if (value.index() != TYPE_INDEX<DistributedData::Asset> &&
+                value.index() != TYPE_INDEX<DistributedData::Assets>) {
+                continue;
+            }
+
+            if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
+                auto* asset = Traits::get_if<DistributedData::Asset>(&value);
+                PostFinishUploading(*asset, skipAssetsUri);
+            }
+
+            if (value.index() == TYPE_INDEX<DistributedData::Assets>) {
+                auto* assets = Traits::get_if<DistributedData::Assets>(&value);
+                for (auto& asset : *assets) {
+                    PostFinishUploading(asset, skipAssetsUri);
+                }
+            }
+        }
+    }
+}
+
+void RdbCloud::PostUploading(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets)
+{
+    auto it = snapshots_->snapshots->find(asset.uri);
+    if (it == snapshots_->snapshots->end()) {
+        return;
+    }
+
+    auto snapshot = snapshots_->snapshots->at(asset.uri);
+    snapshot->Upload(asset);
+    if (snapshot->GetAssetStatus(asset) == TransferStatus::STATUS_WAIT_UPLOAD) {
+        skipAssets.insert(asset.uri);
+        extend[SchemaMeta::ERROR_FIELD] = GeneralError::E_RECORD_EXIST_CONFLICT;
+    }
+}
+
+void RdbCloud::PostFinishUploading(DistributedData::Asset& asset, std::set<std::string>& skipAssets)
+{
+    auto it = snapshots_->snapshots->find(asset.uri);
+    if (it == snapshots_->snapshots->end()) {
+        return;
+    }
+
+    auto snapshot = snapshots_->snapshots->at(asset.uri);
+    auto skip = skipAssets.find(asset.uri);
+    if (skip != skipAssets.end()) {
+        return;
+    }
+    snapshot->FinishUploading(asset);
+}
+
 } // namespace OHOS::DistributedRdb

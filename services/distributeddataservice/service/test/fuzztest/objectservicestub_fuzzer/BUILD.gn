@@ -25,6 +25,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/framework/include",
     "${data_service_path}/service/backup/include",
     "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/common",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/object",
@@ -62,6 +63,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",
     "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/object/object_asset_loader.cpp",
     "${data_service_path}/service/object/object_callback_proxy.cpp",
@@ -69,6 +71,9 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/object/object_manager.cpp",
     "${data_service_path}/service/object/object_service_impl.cpp",
     "${data_service_path}/service/object/object_service_stub.cpp",
+    "${data_service_path}/service/object/object_snapshot.cpp",
+    "${data_service_path}/service/object/object_asset_machine.cpp",
+    "${data_service_path}/service/object/object_types_utils.cpp",
     "objectservicestub_fuzzer.cpp",
   ]
 

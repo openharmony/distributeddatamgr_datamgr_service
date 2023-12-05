@@ -19,6 +19,7 @@
 #include "cloud/cloud_store_types.h"
 #include "cloud/icloud_db.h"
 #include "error/general_error.h"
+#include "snapshot/snapshot.h"
 
 namespace OHOS::DistributedRdb {
 class RdbCloud : public DistributedDB::ICloudDb {
@@ -26,8 +27,11 @@ public:
     using DBStatus = DistributedDB::DBStatus;
     using DBVBucket = DistributedDB::VBucket;
     using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
+    using DataBucket = DistributedData::VBucket;
+    using DataBuckets = DistributedData::VBuckets;
+    using Snapshots = DistributedData::Snapshots;
 
-    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB);
+    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, Snapshots* snapshots);
     virtual ~RdbCloud() = default;
     DBStatus BatchInsert(const std::string &tableName, std::vector<DBVBucket> &&record,
         std::vector<DBVBucket> &extend) override;
@@ -50,6 +54,13 @@ private:
     static QueryNodes ConvertQuery(DBQueryNodes&& nodes);
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
+    Snapshots* snapshots_;
+
+    void PostUploading(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets);
+    void PostFinishUploading(DistributedData::Asset& asset, std::set<std::string>& skipAssets);
+    void StartUploadInSnapshot(DataBuckets& records, std::set<std::string>& skipAssets, DataBuckets& extend);
+    void FinishUploadInSnapshot(DistributedData::VBuckets& records, std::set<std::string>& skipAssetsUri);
+
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H

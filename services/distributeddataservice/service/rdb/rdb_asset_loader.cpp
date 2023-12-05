@@ -22,9 +22,10 @@
 #include "value_proxy.h"
 
 using namespace DistributedDB;
+using ValueProxy = OHOS::DistributedData::ValueProxy;
 namespace OHOS::DistributedRdb {
-RdbAssetLoader::RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader)
-    : assetLoader_(std::move(cloudAssetLoader))
+RdbAssetLoader::RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader, Snapshots* snapshots)
+    : assetLoader_(std::move(cloudAssetLoader)), snapshots_(snapshots)
 {
 }
 
@@ -32,12 +33,67 @@ DBStatus RdbAssetLoader::Download(const std::string &tableName, const std::strin
     std::map<std::string, Assets> &assets)
 {
     DistributedData::VBucket downLoadAssets = ValueProxy::Convert(assets);
+    std::set<std::string> skipAssets;
+    bool needCompensate = false;
+    StartDownloadingInSnapshot(downLoadAssets, skipAssets, needCompensate);
     DistributedDB::Type prefixTemp = prefix;
     auto error = assetLoader_->Download(tableName, gid, ValueProxy::Convert(std::move(prefixTemp)), downLoadAssets);
-    if (error == DistributedData::GeneralError::E_OK) {
-        assets = ValueProxy::Convert(std::move(downLoadAssets));
+    FinishDownloadingInSnapshot(downLoadAssets, skipAssets);
+    assets = ValueProxy::Convert(std::move(downLoadAssets));
+    return needCompensate ? CLOUD_RECORD_EXIST_CONFLICT : RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
+}
+
+void RdbAssetLoader::StartDownloadingInSnapshot(std::map<std::string, DistributedData::Value>& assets,
+    std::set<std::string>& skipAssets, bool& needCompensate)
+{
+    for (auto& asset : assets) {
+        if (asset.second.index() == DistributedData::TYPE_INDEX<DistributedData::Assets>) {
+            auto* downLoadAssets = Traits::get_if<DistributedData::Assets>(&asset.second);
+            if (downLoadAssets == nullptr) {
+                return;
+            }
+            for (auto& downLoadAsset : *downLoadAssets) {
+                auto it = snapshots_->snapshots->find(downLoadAsset.uri);
+                if (downLoadAsset.status == DistributedData::Asset::STATUS_DELETE) {
+                    continue;
+                }
+                if (it == snapshots_->snapshots->end()) {
+                    continue;
+                }
+
+                auto snapShot = snapshots_->snapshots->at(downLoadAsset.uri);
+                snapShot->Download(downLoadAsset);
+                if (snapShot->GetAssetStatus(downLoadAsset) == DistributedData::STATUS_WAIT_DOWNLOAD) {
+                    needCompensate = true;
+                    skipAssets.insert(downLoadAsset.uri);
+                }
+            }
+        }
     }
-    return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
+}
+
+void RdbAssetLoader::FinishDownloadingInSnapshot(std::map<std::string, DistributedData::Value>& assets,
+    std::set<std::string>& skipAssets)
+{
+    for (auto& asset : assets) {
+        if (asset.second.index() == DistributedData::TYPE_INDEX<DistributedData::Assets>) {
+            auto* downLoadAssets = Traits::get_if<DistributedData::Assets>(&asset.second);
+            if (downLoadAssets == nullptr) {
+                return;
+            }
+            for (auto& downLoadAsset : *downLoadAssets) {
+                auto it = snapshots_->snapshots->find(downLoadAsset.uri);
+                if (it == snapshots_->snapshots->end()) {
+                    continue;
+                }
+                auto pos = skipAssets.find(downLoadAsset.uri);
+                if (pos != skipAssets.end()) {
+                    continue;
+                }
+                snapshots_->snapshots->at(downLoadAsset.uri)->FinishDownloading(downLoadAsset);
+            }
+        }
+    }
 }
 
 DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)
