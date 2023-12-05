@@ -229,15 +229,11 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_t userId, std::string &storeId,
-                                                 std::vector<std::string> &table)
+std::pair<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromExtraData(
+    const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta)
 {
-    auto schemaKey = CloudInfo::GetSchemaKey(userId, exData.info.bundleName);
-    SchemaMeta schemaMeta;
-    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
-        ZLOGE("no exist meta, user:%{public}d", userId);
-        return ERROR;
-    }
+    std::string storeId;
+    std::vector<std::string> names;
     for (auto &db : schemaMeta.databases) {
         if (db.alias != exData.info.containerName) {
             continue;
@@ -250,15 +246,15 @@ int32_t CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &exData, int32_
             }
             if (exData.isPrivate()) {
                 ZLOGI("private data change");
-                table.emplace_back(tb.name);
+                names.emplace_back(tb.name);
             }
             if (exData.isShared()) {
                 ZLOGI("sharing data change");
-                table.emplace_back(tb.sharedTableName);
+                names.emplace_back(tb.sharedTableName);
             }
         }
     }
-    return SUCCESS;
+    return { storeId, names };
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
@@ -297,12 +293,14 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         if (CheckNotifyConditions(exData.info.accountId, exData.info.bundleName, cloudInfo) != E_OK) {
             return INVALID_ARGUMENT;
         }
-        std::string storeId;
-        std::vector<std::string> table;
-        if (GetDbInfoFromExtraData(exData, userId, storeId, table) != E_OK) {
+        auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
+        SchemaMeta schemaMeta;
+        if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+            ZLOGE("no exist meta, user:%{public}d", user);
             return INVALID_ARGUMENT;
         }
-        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, storeId, table));
+        auto [storeId, tables] = GetDbInfoFromExtraData(exData, schemaMeta);
+        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, storeId, tables));
     }
     return SUCCESS;
 }
