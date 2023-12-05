@@ -19,7 +19,7 @@
 namespace OHOS::DistributedKv {
 Installer &Installer::GetInstance()
 {
-    static InstallerImpl Installer;
-    return Installer;
+    static InstallerImpl installer;
+    return installer;
 }
 } // namespace OHOS::DistributedKv

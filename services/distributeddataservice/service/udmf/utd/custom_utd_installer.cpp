@@ -70,6 +70,10 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
     bool isSucc = true;
     for (std::string module : modules) {
         auto utdTypes = GetModuleCustomUtdTypes(bundleName, module, user);
+        if (utdTypes.empty()) {
+            ZLOGE("Module custom utd types is empty.");
+            continue;
+        }
         if (!UtdCfgsChecker::GetInstance().CheckTypeDescriptors(utdTypes, presetTypes, customTyepCfgs, bundleName)) {
             ZLOGE("Parse json failed, moduleName: %{public}s, bundleName: %{public}s.", module.c_str(),
                 bundleName.c_str());
@@ -153,6 +157,10 @@ CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bun
         user);
     if (status != NO_ERROR) {
         ZLOGE("get local bundle info failed, jsonStr is %{public}s.", jsonStr.c_str());
+        return typeCfgs;
+    }
+    if (jsonStr.empty()) {
+        ZLOGE("JsonStr is empty, bundleName: %{public}s.", bundleName.c_str());
         return typeCfgs;
     }
     std::vector<TypeDescriptorCfg> declarationType;
