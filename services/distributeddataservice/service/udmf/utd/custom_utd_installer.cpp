@@ -130,7 +130,7 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
         }
     }
     if (CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path) != E_OK) {
-        ZLOGE("Uninstall save custom utds failed, bundleName: %{public}s.", bundleName.c_str());
+        ZLOGE("Save type cfgs failed, bundleName: %{public}s.", bundleName.c_str());
         return E_ERROR;
     }
     return E_OK;
@@ -156,7 +156,7 @@ CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bun
     auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
         user);
     if (status != NO_ERROR) {
-        ZLOGE("get local bundle info failed, jsonStr is %{public}s.", jsonStr.c_str());
+        ZLOGE("get json profile failed, bundleName: %{public}s.", bundleName.c_str());
         return typeCfgs;
     }
     if (jsonStr.empty()) {
@@ -206,7 +206,7 @@ int32_t CustomUtdInstaller::SaveCustomUtds(const CustomUtdCfgs &utdTypes, std::v
         }
     }
     if (CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path) != E_OK) {
-        ZLOGE("Save custom utds failed, bundleName: %{public}s.", bundleName.c_str());
+        ZLOGE("Save type cfgs failed, bundleName: %{public}s.", bundleName.c_str());
         return E_ERROR;
     }
     return E_OK;
