@@ -80,7 +80,8 @@ ohos_unittest("ValueProxyTest") {
   ]
 
   include_dirs =
-      [ "../../../../../relational_store/interfaces/inner_api/rdb/include" ]
+      [ "../../../../../relational_store/interfaces/inner_api/rdb/include",
+      "${relational_store_path}/interfaces/inner_api/common_type/include",]
 
   configs = [ ":module_private_config" ]
 
@@ -221,6 +222,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "${data_service_path}/service/rdb",
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
     "${relational_store_path}/interfaces/inner_api/rdb/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
 
   configs = [ ":module_private_config" ]
