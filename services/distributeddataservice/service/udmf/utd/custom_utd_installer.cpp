@@ -70,7 +70,7 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
     bool isSucc = true;
     for (std::string module : modules) {
         auto utdTypes = GetModuleCustomUtdTypes(bundleName, module, user);
-        if (utdTypes.empty()) {
+        if (utdTypes.first.empty() && utdTypes.second.empty()) {
             ZLOGE("Module custom utd types is empty.");
             continue;
         }
