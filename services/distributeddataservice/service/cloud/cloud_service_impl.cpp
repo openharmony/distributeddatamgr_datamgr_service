@@ -235,20 +235,20 @@ std::pair<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFrom
     std::string storeId;
     std::vector<std::string> names;
     for (auto &db : schemaMeta.databases) {
-        if (db.alias != exData.info.containerName) {
+        if (db.alias != extraData.info.containerName) {
             continue;
         }
         storeId = db.name;
         for (auto &tb : db.tables) {
-            const auto &tbs = exData.info.tables;
+            const auto &tbs = extraData.info.tables;
             if (std::find(tbs.begin(), tbs.end(), tb.alias) == tbs.end()) {
                 continue;
             }
-            if (exData.isPrivate()) {
+            if (extraData.isPrivate()) {
                 ZLOGI("private data change");
                 names.emplace_back(tb.name);
             }
-            if (exData.isShared()) {
+            if (extraData.isShared()) {
                 ZLOGI("sharing data change");
                 names.emplace_back(tb.sharedTableName);
             }
