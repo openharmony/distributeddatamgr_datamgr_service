@@ -54,8 +54,8 @@ public:
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
         const std::vector<Reference> &references, int32_t type = DISTRIBUTED_DEVICE) override;
 
-    int32_t RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
-                        const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet) override;
+    std::pair<int32_t, std::shared_ptr<ResultSet>> RemoteQuery(const RdbSyncerParam& param, const std::string& device,
+        const std::string& sql, const std::vector<std::string>& selectionArgs) override;
 
     int32_t Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async) override;
@@ -79,7 +79,7 @@ public:
 
     int32_t Delete(const RdbSyncerParam &param) override;
 
-    std::pair<int32_t, sptr<IRemoteObject>> QuerySharingResource(const RdbSyncerParam& param,
+    std::pair<int32_t, std::shared_ptr<ResultSet>> QuerySharingResource(const RdbSyncerParam& param,
         const PredicatesMemo& predicates, const std::vector<std::string>& columns) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;

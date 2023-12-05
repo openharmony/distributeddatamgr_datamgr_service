@@ -18,10 +18,13 @@
 
 #include <iremote_stub.h>
 #include "irdb_result_set.h"
+#include "result_set.h"
 
 namespace OHOS::DistributedRdb {
 class RdbResultSetStub : public IRemoteStub<IRdbResultSet> {
 public:
+    using Code = NativeRdb::RemoteResultSet::Code;
+    explicit RdbResultSetStub(std::shared_ptr<NativeRdb::ResultSet> resultSet);
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
 
 private:
@@ -53,33 +56,34 @@ private:
 
     static bool CheckInterfaceToken(MessageParcel &data);
     using RequestHandle = int (RdbResultSetStub::*)(MessageParcel &, MessageParcel &);
-    static constexpr RequestHandle HANDLERS[CMD_MAX] = {
-        [CMD_GET_ALL_COLUMN_NAMES] = &RdbResultSetStub::OnGetAllColumnNames,
-        [CMD_GET_COLUMN_COUNT] = &RdbResultSetStub::OnGetColumnCount,
-        [CMD_GET_COLUMN_TYPE] = &RdbResultSetStub::OnGetColumnType,
-        [CMD_GET_COLUMN_INDEX] = &RdbResultSetStub::OnGetColumnIndex,
-        [CMD_GET_COLUMN_NAME] = &RdbResultSetStub::OnGetColumnName,
-        [CMD_GET_ROW_COUNT] = &RdbResultSetStub::OnGetRowCount,
-        [CMD_GET_ROW_INDEX] = &RdbResultSetStub::OnGetRowIndex,
-        [CMD_GO_TO] = &RdbResultSetStub::OnGoTo,
-        [CMD_GO_TO_ROW] = &RdbResultSetStub::OnGoToRow,
-        [CMD_GO_TO_FIRST_ROW] = &RdbResultSetStub::OnGoToFirstRow,
-        [CMD_GO_TO_LAST_ROW] = &RdbResultSetStub::OnGoToLastRow,
-        [CMD_GO_TO_NEXT_ROW] = &RdbResultSetStub::OnGoToNextRow,
-        [CMD_GO_TO_PREV_ROW] = &RdbResultSetStub::OnGoToPreviousRow,
-        [CMD_IS_ENDED_ROW] = &RdbResultSetStub::OnIsEnded,
-        [CMD_IS_STARTED_ROW] = &RdbResultSetStub::OnIsStarted,
-        [CMD_IS_AT_FIRST_ROW] = &RdbResultSetStub::OnIsAtFirstRow,
-        [CMD_IS_AT_LAST_ROW] = &RdbResultSetStub::OnIsAtLastRow,
-        [CMD_GET_BLOB] = &RdbResultSetStub::OnGetBlob,
-        [CMD_GET_STRING] = &RdbResultSetStub::OnGetString,
-        [CMD_GET_INT] = &RdbResultSetStub::OnGetInt,
-        [CMD_GET_LONG] = &RdbResultSetStub::OnGetLong,
-        [CMD_GET_DOUBLE] = &RdbResultSetStub::OnGetDouble,
-        [CMD_IS_COLUMN_NULL] = &RdbResultSetStub::OnIsColumnNull,
-        [CMD_IS_CLOSED] = &RdbResultSetStub::OnIsClosed,
-        [CMD_CLOSE] = &RdbResultSetStub::OnClose
+    static constexpr RequestHandle HANDLERS[Code::CMD_MAX] = {
+        [Code::CMD_GET_ALL_COLUMN_NAMES] = &RdbResultSetStub::OnGetAllColumnNames,
+        [Code::CMD_GET_COLUMN_COUNT] = &RdbResultSetStub::OnGetColumnCount,
+        [Code::CMD_GET_COLUMN_TYPE] = &RdbResultSetStub::OnGetColumnType,
+        [Code::CMD_GET_COLUMN_INDEX] = &RdbResultSetStub::OnGetColumnIndex,
+        [Code::CMD_GET_COLUMN_NAME] = &RdbResultSetStub::OnGetColumnName,
+        [Code::CMD_GET_ROW_COUNT] = &RdbResultSetStub::OnGetRowCount,
+        [Code::CMD_GET_ROW_INDEX] = &RdbResultSetStub::OnGetRowIndex,
+        [Code::CMD_GO_TO] = &RdbResultSetStub::OnGoTo,
+        [Code::CMD_GO_TO_ROW] = &RdbResultSetStub::OnGoToRow,
+        [Code::CMD_GO_TO_FIRST_ROW] = &RdbResultSetStub::OnGoToFirstRow,
+        [Code::CMD_GO_TO_LAST_ROW] = &RdbResultSetStub::OnGoToLastRow,
+        [Code::CMD_GO_TO_NEXT_ROW] = &RdbResultSetStub::OnGoToNextRow,
+        [Code::CMD_GO_TO_PREV_ROW] = &RdbResultSetStub::OnGoToPreviousRow,
+        [Code::CMD_IS_ENDED_ROW] = &RdbResultSetStub::OnIsEnded,
+        [Code::CMD_IS_STARTED_ROW] = &RdbResultSetStub::OnIsStarted,
+        [Code::CMD_IS_AT_FIRST_ROW] = &RdbResultSetStub::OnIsAtFirstRow,
+        [Code::CMD_IS_AT_LAST_ROW] = &RdbResultSetStub::OnIsAtLastRow,
+        [Code::CMD_GET_BLOB] = &RdbResultSetStub::OnGetBlob,
+        [Code::CMD_GET_STRING] = &RdbResultSetStub::OnGetString,
+        [Code::CMD_GET_INT] = &RdbResultSetStub::OnGetInt,
+        [Code::CMD_GET_LONG] = &RdbResultSetStub::OnGetLong,
+        [Code::CMD_GET_DOUBLE] = &RdbResultSetStub::OnGetDouble,
+        [Code::CMD_IS_COLUMN_NULL] = &RdbResultSetStub::OnIsColumnNull,
+        [Code::CMD_IS_CLOSED] = &RdbResultSetStub::OnIsClosed,
+        [Code::CMD_CLOSE] = &RdbResultSetStub::OnClose
     };
+    std::shared_ptr<NativeRdb::ResultSet> resultSet_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // DISTRIBUTED_RDB_RDB_RESULT_SET_STUB_H

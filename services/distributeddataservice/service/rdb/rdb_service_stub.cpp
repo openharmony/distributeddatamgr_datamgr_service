@@ -20,6 +20,7 @@
 #include "log_print.h"
 #include "itypes_util.h"
 #include "utils/anonymous.h"
+#include "rdb_result_set_stub.h"
 
 namespace OHOS::DistributedRdb {
 using Anonymous = DistributedData::Anonymous;
@@ -197,9 +198,9 @@ int32_t RdbServiceStub::OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    sptr<IRemoteObject> resultSet;
-    auto status = RemoteQuery(param, device, sql, selectionArgs, resultSet);
-    if (!ITypesUtil::Marshal(reply, status, resultSet)) {
+    auto [status, resultSet] = RemoteQuery(param, device, sql, selectionArgs);
+    sptr<RdbResultSetStub> object = new RdbResultSetStub(resultSet);
+    if (!ITypesUtil::Marshal(reply, status, object->AsObject())) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
@@ -293,7 +294,8 @@ int32_t RdbServiceStub::OnRemoteQuerySharingResource(MessageParcel& data, Messag
     }
 
     auto [status, resultSet] = QuerySharingResource(param, predicates, columns);
-    if (!ITypesUtil::Marshal(reply, status, resultSet)) {
+    sptr<RdbResultSetStub> object = new RdbResultSetStub(resultSet);
+    if (!ITypesUtil::Marshal(reply, status, object->AsObject())) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

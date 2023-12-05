@@ -326,31 +326,22 @@ RdbServiceImpl::DetailAsync RdbServiceImpl::GetCallbacks(uint32_t tokenId, const
     };
 }
 
-int32_t RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
-                                    const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet)
+std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param,
+    const std::string& device, const std::string& sql, const std::vector<std::string>& selectionArgs)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("permission error");
-        return RDB_ERROR;
+        return { RDB_ERROR, nullptr };
     }
     auto store = GetStore(param);
     if (store == nullptr) {
         ZLOGE("store is null");
-        return RDB_ERROR;
+        return { RDB_ERROR, nullptr };
     }
     RdbQuery rdbQuery;
     rdbQuery.MakeRemoteQuery(device, sql, ValueProxy::Convert(selectionArgs));
     auto cursor = store->Query("", rdbQuery);
-    if (cursor == nullptr) {
-        ZLOGE("Query failed, cursor is null");
-        return RDB_ERROR;
-    }
-    resultSet = new (std::nothrow) RdbResultSetImpl(cursor);
-    if (resultSet == nullptr) {
-        ZLOGE("new resultSet failed");
-        return RDB_ERROR;
-    }
-    return RDB_OK;
+    return { RDB_OK, std::make_shared<RdbResultSetImpl>(cursor) };
 }
 
 int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
@@ -563,7 +554,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-std::pair<int32_t, sptr<IRemoteObject>> RdbServiceImpl::QuerySharingResource(
+std::pair<int32_t, std::shared_ptr<RdbService::ResultSet>> RdbServiceImpl::QuerySharingResource(
     const RdbSyncerParam& param, const PredicatesMemo& predicates, const std::vector<std::string>& columns)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
@@ -589,7 +580,7 @@ std::pair<int32_t, sptr<IRemoteObject>> RdbServiceImpl::QuerySharingResource(
             Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, {} };
     }
-    return { RDB_OK, new (std::nothrow) RdbResultSetImpl(cursor) };
+    return { RDB_OK, std::make_shared<RdbResultSetImpl>(cursor) };
 }
 
 std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(CloudEvent::StoreInfo& storeInfo,

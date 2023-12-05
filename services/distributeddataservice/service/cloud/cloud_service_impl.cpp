@@ -176,7 +176,7 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
             }
             auto status = store->Clean({}, action, "");
             if (status != E_OK) {
-                ZLOGW("remove device data status:%{public}d, user:%{pubilc}d, bundleName:%{public}s, "
+                ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
                       "storeId:%{public}s",
                     status, static_cast<int>(cloudInfo.user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
                 continue;

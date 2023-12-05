@@ -20,9 +20,8 @@
 #include "remote_result_set.h"
 
 namespace OHOS::DistributedRdb {
-class IRdbResultSet : public NativeRdb::RemoteResultSet, public IRemoteBroker {
+class IRdbResultSet : public IRemoteBroker {
 public:
-    using ColumnType = NativeRdb::ColumnType;
     virtual ~IRdbResultSet() = default;
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS::NativeRdb.IResultSet");
 };
