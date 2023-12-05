@@ -47,6 +47,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/asset_loader.cpp",
     "cloud/cloud_db.cpp",
     "cloud/cloud_event.cpp",
+    "cloud/cloud_extra_data.cpp",
     "cloud/cloud_info.cpp",
     "cloud/cloud_server.cpp",
     "cloud/cloud_share_event.cpp",
