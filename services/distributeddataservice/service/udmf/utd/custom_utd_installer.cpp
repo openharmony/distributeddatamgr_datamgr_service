@@ -148,12 +148,12 @@ std::vector<std::string> CustomUtdInstaller::GetHapModules(const std::string &bu
 }
 
 CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bundleName,
-    const std::string &moduleName, int32_t user)
+    const std::string &utdJson, int32_t user)
 {
     auto bundlemgr = GetBundleManager();
     std::string jsonStr;
     CustomUtdCfgs typeCfgs;
-    auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
+    auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, utdJson, jsonStr,
         user);
     if (status != NO_ERROR) {
         ZLOGE("get json profile failed, bundleName: %{public}s.", bundleName.c_str());
