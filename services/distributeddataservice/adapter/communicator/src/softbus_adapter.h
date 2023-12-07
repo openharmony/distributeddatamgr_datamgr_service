@@ -33,7 +33,7 @@
 #include "softbus_client.h"
 namespace OHOS {
 namespace AppDistributedKv {
-class SoftBusAdapter {
+class SoftBusAdapter : public AppDistributedKv::AppDeviceChangeListener {
 public:
     SoftBusAdapter();
     ~SoftBusAdapter();
@@ -71,12 +71,10 @@ public:
 
     uint32_t GetMtuSize(const DeviceId &deviceId);
     uint32_t GetTimeout(const DeviceId &deviceId);
-    std::shared_ptr<SoftBusClient> GetConnect(const std::string &deviceId);
 
-    class SofBusDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
-        void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
-                             const AppDistributedKv::DeviceChangeType &type) const override;
-    };
+    void OnDeviceChanged(const AppDistributedKv::DeviceInfo& info,
+        const AppDistributedKv::DeviceChangeType& type) const override;
+
 private:
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
@@ -84,19 +82,17 @@ private:
     std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
     std::string DelConnect(int32_t connId);
     void DelSessionStatus(int32_t connId);
-    void AfterStrategyUpdate(const std::string &deviceId);
     Task GetCloseSessionTask();
     static constexpr uint32_t WAIT_MAX_TIME = 19;
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
-    ConcurrentMap<std::string, std::shared_ptr<SoftBusClient>> connects_{};
+    ConcurrentMap<std::string, std::vector<std::shared_ptr<SoftBusClient>>> connects_;
     bool flag_ = true; // only for br flag
     ISessionListener sessionListener_{};
     std::mutex statusMutex_{};
     std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
     std::function<void(const std::string &, uint16_t)> onBroadcast_;
-    static SofBusDeviceChangeListenerImpl listener_;
     std::mutex taskMutex_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     Time next_ = INVALID_NEXT;

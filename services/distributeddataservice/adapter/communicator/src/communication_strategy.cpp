@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #define LOG_TAG "CommunicationStrategy"
 #include "communication_strategy.h"
 #include "log_print.h"
@@ -45,18 +45,19 @@ size_t CommunicationStrategy::CalcSyncDataSize(const std::string &deviceId)
     return dataSize;
 }
 
-void CommunicationStrategy::SetStrategy(const std::string &deviceId, Strategy strategy,
-                                        const std::function<void(const std::string &, Strategy)> &action)
+void CommunicationStrategy::SetStrategy(const std::string &deviceId, Strategy strategy)
 {
     auto value = strategy;
     if (strategy == Strategy::ON_LINE_SELECT_CHANNEL && CalcSyncDataSize(deviceId) < SWITCH_CONNECTION_THRESHOLD) {
         value = Strategy::DEFAULT;
     }
-    if (action) {
-        action(deviceId, value);
-    }
     strategys_.InsertOrAssign(deviceId, value);
     return ;
+}
+
+void CommunicationStrategy::RemoveStrategy(const std::string &deviceId)
+{
+    (void)strategys_.Erase(deviceId);
 }
 
 CommunicationStrategy::Strategy CommunicationStrategy::GetStrategy(const std::string &deviceId)

@@ -44,22 +44,20 @@ public:
     Time GetExpireTime() const;
     int32_t GetConnId() const;
     int32_t GetRoutType() const;
+    bool Support(uint32_t length) const;
     void UpdateExpireTime();
-    void AfterStrategyUpdate(Strategy strategy);
 private:
     enum class ConnectStatus : int32_t {
         CONNECT_OK,
         DISCONNECT,
     };
 
-    Status OpenConnect(uint32_t totalLength);
-    Status SwitchChannel(uint32_t totalLength);
-    Status CreateChannel(uint32_t totalLength);
+    Status OpenConnect(uint32_t length);
     Status Open(SessionAttribute attr);
-    Status OpenSessionByAsync(SessionAttribute attr);
     SessionAttribute GetSessionAttribute(bool isP2p);
     void RestoreDefaultValue();
-    void UpdateMtuSize();
+    std::pair<int32_t, uint32_t> GetMtu(int32_t id);
+    std::pair<int32_t, int32_t> GetRouteType(int32_t id);
     Duration GetDelayTime(uint32_t dataLength);
 
     static constexpr int32_t INVALID_CONNECT_ID = -1;
@@ -72,17 +70,18 @@ private:
     static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 3; // 2^3 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
     static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(60);
+    static constexpr Duration SESSION_OPEN_DELAY = std::chrono::seconds(20);
     std::atomic_bool sessionFlag_ = false;
     int32_t connId_ = INVALID_CONNECT_ID;
     int32_t routeType_ = RouteType::INVALID_ROUTE_TYPE;
-    Strategy strategy_ = Strategy::DEFAULT;
+    int32_t expireType_ = RouteType::INVALID_ROUTE_TYPE;
     ConnectStatus status_ = ConnectStatus::DISCONNECT;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     PipeInfo pipe_;
     DeviceId device_;
     uint32_t mtu_;
     std::function<int32_t(int32_t)> getConnStatus_;
-    Time expireTime_ = std::chrono::steady_clock::now();
+    Time expireTime_ = std::chrono::steady_clock::now() + SESSION_OPEN_DELAY;
 };
 }
 
