@@ -67,42 +67,28 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
     std::vector<TypeDescriptorCfg> customTyepCfgs = CustomUtdStore::GetInstance().GetTypeCfgs(path);
     std::vector <TypeDescriptorCfg> presetTypes = PresetTypeDescriptors::GetInstance().GetPresetTypes();
     std::vector <std::string> modules = GetHapModules(bundleName, user);
+    bool isSucc = true;
     for (std::string module : modules) {
         auto utdTypes = GetModuleCustomUtdTypes(bundleName, module, user);
+        if (utdTypes.first.empty() && utdTypes.second.empty()) {
+            ZLOGW("Module custom utd types is empty.");
+            continue;
+        }
         if (!UtdCfgsChecker::GetInstance().CheckTypeDescriptors(utdTypes, presetTypes, customTyepCfgs, bundleName)) {
             ZLOGE("Parse json failed, moduleName: %{public}s, bundleName: %{public}s.", module.c_str(),
                 bundleName.c_str());
+            isSucc = false;
             continue;
         }
-        // Update customTyepCfgs used for subsequent persistence of type definitions.
-        for (TypeDescriptorCfg &declarationType : utdTypes.first) {
-            for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
-                if (iter->typeId == declarationType.typeId) {
-                    declarationType.installerBundles = iter->installerBundles;
-                    iter = customTyepCfgs.erase(iter);
-                } else {
-                    iter ++;
-                }
-            }
-            declarationType.installerBundles.emplace(bundleName);
-            declarationType.ownerBundle = bundleName;
-            customTyepCfgs.push_back(declarationType);
+        if (SaveCustomUtds(utdTypes, customTyepCfgs, bundleName, path) != E_OK) {
+            ZLOGE("Install save custom utds failed, moduleName: %{public}s, bundleName: %{public}s.", module.c_str(),
+                bundleName.c_str());
+            isSucc = false;
+            continue;
         }
-        for (TypeDescriptorCfg &referenceType : utdTypes.second) {
-            bool found = false;
-            for (auto &typeCfg : customTyepCfgs) {
-                if (typeCfg.typeId == referenceType.typeId) {
-                    typeCfg.installerBundles.emplace(bundleName);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                referenceType.installerBundles.emplace(bundleName);
-                customTyepCfgs.push_back(referenceType);
-            }
-        }
-        CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
+    }
+    if (!isSucc) {
+        return E_ERROR;
     }
     return E_OK;
 }
@@ -143,7 +129,10 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
             customIter++;
         }
     }
-    CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path);
+    if (CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path) != E_OK) {
+        ZLOGE("Save type cfgs failed, bundleName: %{public}s.", bundleName.c_str());
+        return E_ERROR;
+    }
     return E_OK;
 }
 
@@ -158,16 +147,20 @@ std::vector<std::string> CustomUtdInstaller::GetHapModules(const std::string &bu
     return bundleInfo.hapModuleNames;
 }
 
-std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> CustomUtdInstaller::GetModuleCustomUtdTypes(
-    const std::string &bundleName, const std::string &moduleName, int32_t user)
+CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bundleName,
+    const std::string &utdJson, int32_t user)
 {
     auto bundlemgr = GetBundleManager();
     std::string jsonStr;
-    std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> typeCfgs;
-    auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
+    CustomUtdCfgs typeCfgs;
+    auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, utdJson, jsonStr,
         user);
     if (status != NO_ERROR) {
-        ZLOGE("get local bundle info failed, jsonStr is %{public}s.", jsonStr.c_str());
+        ZLOGE("get json profile failed, bundleName: %{public}s.", bundleName.c_str());
+        return typeCfgs;
+    }
+    if (jsonStr.empty()) {
+        ZLOGE("JsonStr is empty, bundleName: %{public}s.", bundleName.c_str());
         return typeCfgs;
     }
     std::vector<TypeDescriptorCfg> declarationType;
@@ -180,6 +173,43 @@ std::pair<std::vector<TypeDescriptorCfg>, std::vector<TypeDescriptorCfg>> Custom
         typeCfgs.second = referenceType;
     }
     return typeCfgs;
+}
+
+int32_t CustomUtdInstaller::SaveCustomUtds(const CustomUtdCfgs &utdTypes, std::vector<TypeDescriptorCfg> customTyepCfgs,
+    const std::string &bundleName, const std::string &path)
+{
+    for (TypeDescriptorCfg declarationType : utdTypes.first) {
+        for (auto iter = customTyepCfgs.begin(); iter != customTyepCfgs.end();) {
+            if (iter->typeId == declarationType.typeId) {
+                declarationType.installerBundles = iter->installerBundles;
+                iter = customTyepCfgs.erase(iter);
+            } else {
+                iter ++;
+            }
+        }
+        declarationType.installerBundles.emplace(bundleName);
+        declarationType.ownerBundle = bundleName;
+        customTyepCfgs.push_back(declarationType);
+    }
+    for (TypeDescriptorCfg referenceType : utdTypes.second) {
+        bool found = false;
+        for (auto &typeCfg : customTyepCfgs) {
+            if (typeCfg.typeId == referenceType.typeId) {
+                typeCfg.installerBundles.emplace(bundleName);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            referenceType.installerBundles.emplace(bundleName);
+            customTyepCfgs.push_back(referenceType);
+        }
+    }
+    if (CustomUtdStore::GetInstance().SaveTypeCfgs(customTyepCfgs, path) != E_OK) {
+        ZLOGE("Save type cfgs failed, bundleName: %{public}s.", bundleName.c_str());
+        return E_ERROR;
+    }
+    return E_OK;
 }
 }
 }

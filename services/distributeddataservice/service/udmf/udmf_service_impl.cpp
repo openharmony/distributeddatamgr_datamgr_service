@@ -528,6 +528,25 @@ int32_t UdmfServiceImpl::UdmfStatic::OnAppInstall(const std::string &bundleName,
 {
     ZLOGD("Bundle: %{public}s installed.", bundleName.c_str());
     auto status = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
+    if (status != E_OK) {
+        ZLOGE("Install Utd failed, bundleName: %{public}s, status: %{public}d", bundleName.c_str(), status);
+    }
+    return status;
+}
+
+int32_t UdmfServiceImpl::UdmfStatic::OnAppUpdate(const std::string &bundleName, int32_t user,
+    int32_t index)
+{
+    ZLOGD("Bundle: %{public}s Update.", bundleName.c_str());
+    auto status = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
+    if (status != E_OK) {
+        ZLOGE("Uninstall utd failed, bundleName: %{public}s, status: %{public}d.", bundleName.c_str(), status);
+        return status;
+    }
+    status = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
+    if (status != E_OK) {
+        ZLOGE("Install utd failed, bundleName: %{public}s, status: %{public}d.", bundleName.c_str(), status);
+    }
     return status;
 }
 
@@ -536,6 +555,9 @@ int32_t UdmfServiceImpl::UdmfStatic::OnAppUninstall(const std::string &bundleNam
 {
     ZLOGD("Bundle: %{public}s uninstalled.", bundleName.c_str());
     auto status = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
+    if (status != E_OK) {
+        ZLOGE("Uninstall utd failed, bundleName: %{public}s, status: %{public}d.", bundleName.c_str(), status);
+    }
     return status;
 }
 } // namespace UDMF
