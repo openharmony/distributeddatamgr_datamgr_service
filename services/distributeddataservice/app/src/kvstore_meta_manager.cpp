@@ -227,6 +227,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
         [&delegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *nbDelegate) {
             if (nbDelegate == nullptr) {
+                ZLOGE("nbDelegate is null, status: %{public}d", static_cast<int>(dbStatus));
                 return;
             }
             delegate = nbDelegate;
