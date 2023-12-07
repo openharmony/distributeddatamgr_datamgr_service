@@ -226,8 +226,14 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     DistributedDB::KvStoreNbDelegate *delegate = nullptr;
     delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
         [&delegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *nbDelegate) {
+            if (nbDelegate == nullptr) {
+                return;
+            }
             delegate = nbDelegate;
             dbStatusTmp = dbStatus;
+            bool param = true;
+            auto data = static_cast<DistributedDB::PragmaData>(&param);
+            delegate->Pragma(DistributedDB::SET_SYNC_RETRY, data);
         });
 
     if (dbStatusTmp != DistributedDB::DBStatus::OK) {
