@@ -35,8 +35,8 @@ public:
     using Strategy = CommunicationStrategy::Strategy;
     void RegGetSyncDataSize(const std::string &type, const std::function<size_t(const std::string &)> &getDataSize);
     CommunicationStrategy::Strategy GetStrategy(const std::string &deviceId);
-    void SetStrategy(const std::string &deviceId, Strategy strategy,
-                     const std::function<void(const std::string &, Strategy)> &action);
+    void SetStrategy(const std::string &deviceId, Strategy strategy);
+    void RemoveStrategy(const std::string &deviceId);
 private:
     CommunicationStrategy() = default;
     ~CommunicationStrategy() = default;
