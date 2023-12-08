@@ -49,7 +49,7 @@
         "ram": "8192KB",
         "hisysevent_config": [
             "//foundation/distributeddatamgr/datamgr_service/hisysevent.yaml"
-          ],
+        ],
         "deps": {
             "components": [
                 "ability_base",
@@ -94,7 +94,8 @@
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/conf:build_module",
-                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module"
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/rust/ylong_cloud_extension:ylong_cloud_extension"
             ],
             "inner_kits": [
                 {
@@ -149,7 +150,8 @@
             ],
             "test": [
                 "//foundation/distributeddatamgr/datamgr_service:fuzztest",
-                "//foundation/distributeddatamgr/datamgr_service:build_native_test"
+                "//foundation/distributeddatamgr/datamgr_service:build_native_test",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/rust/ylong_cloud_extension:rust_ylong_cloud_ext_unit_test"
             ]
         }
     }
