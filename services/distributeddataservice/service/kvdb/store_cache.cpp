@@ -58,6 +58,9 @@ StoreCache::Store StoreCache::GetStore(const StoreMetaData &data, std::shared_pt
             dbStore->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
                 DeviceMatrix::GetInstance().OnExchanged(info.deviceId, code, true);
             });
+            bool param = true;
+            auto data = static_cast<DistributedDB::PragmaData>(&param);
+            dbStore->Pragma(DistributedDB::SET_SYNC_RETRY, data);
         }
 
         auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(data.storeId),
