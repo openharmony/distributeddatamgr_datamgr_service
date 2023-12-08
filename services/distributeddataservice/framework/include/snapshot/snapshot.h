@@ -25,27 +25,28 @@ class API_EXPORT Snapshot {
 public:
     virtual ~Snapshot() = default;
 
-    virtual int32_t FinishTransferring(Asset& asset);
+    virtual int32_t Transferred(Asset& asset);
 
     virtual int32_t Upload(Asset& asset);
 
     virtual int32_t Download(Asset& asset);
 
-    virtual int32_t FinishUploading(Asset& asset);
+    virtual int32_t Uploaded(Asset& asset);
 
-    virtual int32_t FinishDownloading(Asset& asset);
+    virtual int32_t Downloaded(Asset& asset);
 
     virtual TransferStatus GetAssetStatus(Asset& asset);
 
     virtual int32_t BindAsset(const Asset& asset, const RdbBindInfo& bindInfo, const StoreInfo& storeInfo);
 
-    virtual int32_t OnDataChanged(Asset& asset,const std::string &deviceId);
+    virtual int32_t OnDataChanged(Asset& asset, const std::string &deviceId);
 
-    virtual bool IsBindAsset(const Asset& asset);
+    virtual bool IsBoundAsset(const Asset& asset);
+
 };
 
-struct Snapshots {
-    std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> snapshots;
+struct BindAssets {
+    std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets;
 };
 } // namespace DistributedData
 } // namespace OHOS

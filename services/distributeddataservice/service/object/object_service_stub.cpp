@@ -83,7 +83,7 @@ int32_t ObjectServiceStub::ObjectStoreBindAssetOnRemote(MessageParcel &data, Mes
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, asset, bindInfo)) {
         ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s assetName:%{public}s bindStore:%{public}s",
               DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(),
-              asset.name.c_str(), bindInfo.storeName.c_str() );
+              asset.name.c_str(), bindInfo.storeName.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 

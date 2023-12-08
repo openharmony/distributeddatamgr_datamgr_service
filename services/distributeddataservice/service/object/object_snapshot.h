@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace DistributedObject {
 using namespace DistributedData;
-class ObjectSnapshot : public Snapshot{
+class ObjectSnapshot : public Snapshot {
 public:
 
     ObjectSnapshot();
@@ -31,12 +31,12 @@ public:
     int32_t Upload(Asset &asset) override;
     int32_t Download(Asset &asset) override;
     TransferStatus GetAssetStatus(Asset& asset) override;
-    int32_t FinishUploading(Asset& asset) override;
-    int32_t FinishDownloading(Asset& asset) override;
-    int32_t FinishTransferring(Asset& asset) override;
-    int32_t OnDataChanged(Asset& asset,const std::string &deviceId) override;
+    int32_t Uploaded(Asset& asset) override;
+    int32_t Downloaded(Asset& asset) override;
+    int32_t Transferred(Asset& asset) override;
+    int32_t OnDataChanged(Asset& asset, const std::string &deviceId) override;
     int32_t BindAsset(const Asset& asset, const RdbBindInfo& bindInfo, const StoreInfo& storeInfo) override;
-    bool IsBindAsset(const Asset& asset) override;
+    bool IsBoundAsset(const Asset& asset) override;
 private:
 
     std::map<std::string, ChangedAssetInfo> changedAssets_;

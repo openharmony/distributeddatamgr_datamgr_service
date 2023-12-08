@@ -21,8 +21,7 @@
 namespace OHOS {
 namespace DistributedData {
 
-enum TransferStatus : int32_t
-{
+enum TransferStatus : int32_t {
     STATUS_STABLE = 0,
     STATUS_TRANSFERRING,
     STATUS_DOWNLOADING,
@@ -34,8 +33,7 @@ enum TransferStatus : int32_t
     STATUS_NO_CHANGE = 0XFFFFFFF,
 };
 
-enum AssetEvent
-{
+enum AssetEvent {
     REMOTE_CHANGED = 0,
     TRANSFER_FINISHED,
     UPLOAD,
@@ -59,22 +57,6 @@ struct StoreInfo {
     int32_t user;
     std::string bundleName;
     std::string storeName;
-};
-
-struct ChangedAssetInfo {
-    ChangedAssetInfo() = default;
-    std::string deviceId;
-    DistributedData::Asset asset;
-    DistributedData::TransferStatus status = DistributedData::STATUS_STABLE;
-    RdbBindInfo bindInfo;
-    StoreInfo storeInfo;
-
-    ChangedAssetInfo(const Asset& bindAsset, const RdbBindInfo& rdbBindInfo, const StoreInfo& store)
-    {
-        asset = bindAsset;
-        bindInfo = rdbBindInfo;
-        storeInfo = store;
-    }
 };
 } // namespace DistributedData
 } // namespace OHOS

@@ -43,7 +43,7 @@ using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 using OHOS::DistributedKv::AccountDelegate;
 using namespace Security::AccessToken;
-constexpr static const char *SQL_AND = " = ? and ";
+constexpr static const char* SQL_AND = " = ? and ";
 constexpr static const int32_t AND_SIZE = 5;
 
 static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::pair<std::string, Asset>& newAsset);
@@ -52,9 +52,11 @@ static int32_t ChangeAssetToNormal(int32_t eventId, Asset& asset, void*);
 
 static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, void*);
 
-static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, const Asset& curAsset);
+static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, void*);
 
 static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, std::pair<std::string, Asset>& newAsset);
+
+static int32_t PrintError(int32_t eventId, ChangedAssetInfo& changedAsset, void*);
 
 static int32_t UpdateStore(ChangedAssetInfo& changedAsset);
 
@@ -62,44 +64,44 @@ static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset);
 static VBuckets GetMigratedData(AutoCache::Store& store, RdbBindInfo& rdbBindInfo, const Asset& newAsset);
 static void MergeAssetData(VBucket& record, const Asset& newAsset, const RdbBindInfo& rdbBindInfo);
 static void MergeAsset(Asset& oldAsset, const Asset& newAsset);
-static std::string BuildSql(const RdbBindInfo& bindInfo, Values &args);
+static std::string BuildSql(const RdbBindInfo& bindInfo, Values& args);
 
 static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
     {
         // STATUS_STABLE
         { STATUS_TRANSFERRING, nullptr, (Action)DoTransfer }, // remote_changed
-        { STATUS_NO_CHANGE, nullptr, nullptr },               // transfer_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // transfer_finished
         { STATUS_UPLOADING, nullptr, nullptr },               //upload
-        { STATUS_NO_CHANGE, nullptr, nullptr },               // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // upload_finished
         { STATUS_DOWNLOADING, nullptr, nullptr },             // download
-        { STATUS_NO_CHANGE, nullptr, nullptr },               // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // upload_finished
     },
     {
         // TRANSFERRING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset },        // remote_changed
         { STATUS_STABLE, nullptr, nullptr },                            // transfer_finished
         { STATUS_WAIT_UPLOAD, nullptr, (Action)ChangeAssetToNormal },   //upload
-        { STATUS_NO_CHANGE, nullptr, nullptr },                         // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },              // upload_finished
         { STATUS_WAIT_DOWNLOAD, nullptr, (Action)ChangeAssetToNormal }, // download
-        { STATUS_NO_CHANGE, nullptr, nullptr },                         // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },              // upload_finished
     },
     {
         // DOWNLOADING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  //upload
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // upload_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // download
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // transfer_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
         { STATUS_STABLE, nullptr, nullptr },                     // download_finished
     },
     {
         // STATUS_UPLOADING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // transfer_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
         { STATUS_STABLE, nullptr, nullptr },                     // upload_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // download
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // download_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
     },
     {
         // STATUS_WAIT_TRANSFER
@@ -114,19 +116,19 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // STATUS_WAIT_UPLOAD
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_STABLE, nullptr, (Action)CompensateSync },      // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  //upload
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // upload_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // download
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // download_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
     },
     {
         // STATUS_WAIT_DOWNLOAD
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_STABLE, nullptr, (Action)CompensateSync },      // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  //upload
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // upload_finished
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // download
-        { STATUS_NO_CHANGE, nullptr, nullptr },                  // download_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
     }
 };
 
@@ -189,6 +191,10 @@ static int32_t UpdateStore(ChangedAssetInfo& changedAsset)
     }
 
     VBuckets vBuckets = GetMigratedData(store, changedAsset.bindInfo, changedAsset.asset);
+    if (vBuckets.empty()) {
+        ZLOGE("No data need Merge");
+        return E_OK;
+    }
     return store->MergeMigratedData(changedAsset.bindInfo.tableName, std::move(vBuckets));
 }
 
@@ -203,21 +209,13 @@ static VBuckets GetMigratedData(AutoCache::Store& store, RdbBindInfo& rdbBindInf
         return vBuckets;
     }
     int32_t count = cursor->GetCount();
-
-    if (count != 1 && count != 0) {
-        ZLOGE("Query Error, cursor count:%{public}d",count);
+    if (count != 1) {
+        ZLOGE("Query data Error, not find bind store data.Cursor count:%{public}d", count);
         return vBuckets;
     }
-    if (count == 0) {
-        VBucket entry;
-        MergeAssetData(entry, newAsset, rdbBindInfo);
-        vBuckets.emplace_back(std::move(entry));
-        return vBuckets;
-    }
-
     vBuckets.reserve(count);
     auto err = cursor->MoveToFirst();
-    while (err ==E_OK && count> 0) {
+    while (err == E_OK && count > 0) {
         VBucket entry;
         err = cursor->GetRow(entry);
         if (err != E_OK) {
@@ -231,11 +229,11 @@ static VBuckets GetMigratedData(AutoCache::Store& store, RdbBindInfo& rdbBindInf
     return vBuckets;
 }
 
-static std::string BuildSql(const RdbBindInfo& bindInfo, Values &args) {
-
+static std::string BuildSql(const RdbBindInfo& bindInfo, Values& args)
+{
     std::string sql;
-    sql.append("SELECT " ).append(bindInfo.field).append(" FROM ").append(bindInfo.tableName).append(" WHERE ");
-    for (auto const&[key, value]: bindInfo.primaryKey) {
+    sql.append("SELECT ").append(bindInfo.field).append(" FROM ").append(bindInfo.tableName).append(" WHERE ");
+    for (auto const& [key, value] : bindInfo.primaryKey) {
         sql.append(key).append(SQL_AND);
         args.emplace_back(value);
     }
@@ -245,28 +243,27 @@ static std::string BuildSql(const RdbBindInfo& bindInfo, Values &args) {
 
 static void MergeAssetData(VBucket& record, const Asset& newAsset, const RdbBindInfo& rdbBindInfo)
 {
-    for (auto const&[key, primary]: rdbBindInfo.primaryKey) {
+    for (auto const& [key, primary] : rdbBindInfo.primaryKey) {
         record[key] = primary;
     }
 
     auto it = record.find(rdbBindInfo.field);
-    if (it == record.end() ) {
+    if (it == record.end()) {
         ZLOGE("Error, Not find field:%{public}s in store", rdbBindInfo.field.c_str());
         return;
     }
 
-    auto &value = it->second;
+    auto& value = it->second;
     if (value.index() == TYPE_INDEX<std::monostate>) {
-        Assets assets {newAsset};
+        Assets assets{ newAsset };
         return;
     }
     if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
         auto* asset = Traits::get_if<DistributedData::Asset>(&value);
         if (asset->name != newAsset.name) {
-            ZLOGE("Asset not same, old uri: %{public}s, new uri: %{public}s",asset->uri.c_str(), newAsset.uri.c_str());
+            ZLOGE("Asset not same, old uri: %{public}s, new uri: %{public}s", asset->uri.c_str(), newAsset.uri.c_str());
+            return;
         }
-        MergeAsset(*asset, newAsset);
-        return;
     }
 
     if (value.index() == TYPE_INDEX<DistributedData::Assets>) {
@@ -281,45 +278,37 @@ static void MergeAssetData(VBucket& record, const Asset& newAsset, const RdbBind
     }
 }
 
-static void MergeAsset(Asset& oldAsset, const Asset& newAsset) {
+static void MergeAsset(Asset& oldAsset, const Asset& newAsset)
+{
     oldAsset.name = newAsset.name;
     oldAsset.uri = newAsset.uri;
     oldAsset.modifyTime = newAsset.modifyTime;
     oldAsset.createTime = newAsset.createTime;
     oldAsset.size = newAsset.size;
     oldAsset.hash = newAsset.hash;
+    oldAsset.path = newAsset.path;
 }
 
 static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset)
 {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
     HapTokenInfo tokenInfo;
-    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (status != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
-        return nullptr;
-    }
 
     StoreMetaData meta;
     meta.storeId = changedAsset.bindInfo.storeName;
-    meta.bundleName = tokenInfo.bundleName;
-    meta.user = std::to_string(tokenInfo.userID);
-    meta.instanceId = tokenInfo.instIndex;
+    meta.bundleName = changedAsset.storeInfo.bundleName;
+    meta.user = std::to_string(changedAsset.storeInfo.user);
+    meta.instanceId = changedAsset.storeInfo.instanceId;
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
         ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-              meta.GetStoreAlias().c_str());
+            meta.GetStoreAlias().c_str());
         return nullptr;
     }
     return AutoCache::GetInstance().GetStore(meta, {});
 }
 
-static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, const Asset& curAsset)
+static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
 {
-    if (curAsset.hash == changedAsset.asset.hash) {
-        return E_OK;
-    }
-
     std::pair<std::string, Asset> newChangedAsset{ changedAsset.deviceId, changedAsset.asset };
     return ObjectAssetMachine::DFAPostEvent(REMOTE_CHANGED, changedAsset.status, (void*)&changedAsset,
         (void*)&newChangedAsset);
@@ -328,20 +317,18 @@ static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changed
 static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
 {
     ZLOGE("DoCloudSync");
-
     SnapshotEvent::SnapshotEventInfo bindEventInfo;
     bindEventInfo.bundleName = changedAsset.storeInfo.bundleName;
     bindEventInfo.user = changedAsset.storeInfo.user;
+    bindEventInfo.tokenId = changedAsset.storeInfo.tokenId;
     bindEventInfo.instanceId = changedAsset.storeInfo.instanceId;
     bindEventInfo.storeName = changedAsset.bindInfo.storeName;
     bindEventInfo.tableName = changedAsset.bindInfo.tableName;
     bindEventInfo.filed = changedAsset.bindInfo.field;
     bindEventInfo.primaryKey = changedAsset.bindInfo.primaryKey;
     bindEventInfo.assetName = changedAsset.bindInfo.assetName;
-
-    auto evt = std::make_unique<SnapshotEvent>(SnapshotEvent::COMPENSATE_SYNC, bindEventInfo);
+    auto evt = std::make_unique<SnapshotEvent>(SnapshotEvent::COMPENSATE_SYNC, std::move(bindEventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
-    // rdb接受以后进行补偿同步
     return E_OK;
 }
 
@@ -355,6 +342,13 @@ static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, std
 static int32_t ChangeAssetToNormal(int32_t eventId, Asset& asset, void*)
 {
     asset.status = Asset::STATUS_NORMAL;
+    return E_OK;
+}
+
+static int32_t PrintError(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
+{
+    ZLOGE("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s, uri%{public}s",
+        eventId, changedAsset.status, changedAsset.asset.name.c_str(), changedAsset.asset.uri.c_str());
     return E_OK;
 }
 

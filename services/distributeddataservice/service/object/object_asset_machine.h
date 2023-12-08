@@ -23,6 +23,22 @@ namespace OHOS {
 namespace DistributedObject {
 using namespace OHOS::DistributedData;
 
+struct ChangedAssetInfo {
+    ChangedAssetInfo() = default;
+    std::string deviceId;
+    DistributedData::Asset asset;
+    DistributedData::TransferStatus status = DistributedData::STATUS_STABLE;
+    RdbBindInfo bindInfo;
+    StoreInfo storeInfo;
+
+    ChangedAssetInfo(const Asset& bindAsset, const RdbBindInfo& rdbBindInfo, const StoreInfo& store)
+    {
+        asset = bindAsset;
+        bindInfo = rdbBindInfo;
+        storeInfo = store;
+    }
+};
+
 typedef int32_t (*Action)(int32_t evtId, void* param, void* param2);
 
 struct DFAAction {

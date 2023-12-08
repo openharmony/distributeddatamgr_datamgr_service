@@ -660,51 +660,6 @@ void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
     executors_ = executors;
 }
 
-ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::string& bundleName,
-    const std::string& storeName)
-{
-    auto storeKey = bundleName + SEPERATOR + storeName;
-    auto pos = rdbBindSnapshots_.find(storeKey);
-    if (pos == rdbBindSnapshots_.end()) {
-        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
-    }
-    return rdbBindSnapshots_[storeKey];
-}
-
-int32_t ObjectStoreManager::BindAsset(const std::string& appId, const std::string& sessionId, ObjectStore::Asset& asset,
-    ObjectStore::AssetBindInfo& bindInfo)
-{
-    auto snapshotKey = appId + SEPERATOR + sessionId;
-    auto it = snapShots_.find(snapshotKey);
-    if (it == snapShots_.end()) {
-        snapShots_[snapshotKey] = std::make_shared<ObjectSnapshot>();
-    }
-
-    auto storeKey = appId + SEPERATOR + bindInfo.storeName;
-    auto pos = rdbBindSnapshots_.find(storeKey);
-    if (pos == rdbBindSnapshots_.end()) {
-        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
-    }
-    rdbBindSnapshots_[storeKey]->at(asset.uri) = snapShots_[snapshotKey];
-
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    HapTokenInfo tokenInfo;
-    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (status != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
-        return GeneralError::E_ERROR;
-    }
-    StoreInfo storeInfo;
-    storeInfo.bundleName = appId;
-    storeInfo.tokenId = tokenId;
-    storeInfo.instanceId = tokenInfo.instIndex;
-    storeInfo.user = tokenInfo.userID;
-    storeInfo.storeName = bindInfo.storeName;
-
-    snapShots_[snapshotKey]->BindAsset( ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
-    return OBJECT_SUCCESS;
-}
-
 uint64_t SequenceSyncManager::AddNotifier(const std::string &userId, SyncCallBack &callback)
 {
     std::lock_guard<std::mutex> lock(notifierLock_);
@@ -764,6 +719,39 @@ SequenceSyncManager::Result SequenceSyncManager::DeleteNotifierNoLock(uint64_t s
     return SUCCESS_USER_HAS_FINISHED;
 }
 
+int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
+    ObjectStore::Asset& asset, ObjectStore::AssetBindInfo& bindInfo)
+{
+    auto snapshotKey = appId + SEPERATOR + sessionId;
+    auto it = snapShots_.find(snapshotKey);
+    if (it == snapShots_.end()) {
+        snapShots_[snapshotKey] = std::make_shared<ObjectSnapshot>();
+    }
+
+    auto storeKey = appId + SEPERATOR + bindInfo.storeName;
+    auto pos = rdbBindSnapshots_.find(storeKey);
+    if (pos == rdbBindSnapshots_.end()) {
+        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    }
+    rdbBindSnapshots_[storeKey]->emplace(std::pair{asset.uri, snapShots_[snapshotKey]});
+
+    HapTokenInfo tokenInfo;
+    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (status != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
+        return GeneralError::E_ERROR;
+    }
+    StoreInfo storeInfo;
+    storeInfo.bundleName = appId;
+    storeInfo.tokenId = tokenId;
+    storeInfo.instanceId = tokenInfo.instIndex;
+    storeInfo.user = tokenInfo.userID;
+    storeInfo.storeName = bindInfo.storeName;
+
+    snapShots_[snapshotKey]->BindAsset(ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
+    return OBJECT_SUCCESS;
+}
+
 RdbBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo)
 {
     return RdbBindInfo{
@@ -775,17 +763,16 @@ RdbBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::AssetBindInfo& bind
     };
 }
 
-int32_t ObjectStoreManager::OnAssetChanged(const std::string& appId, const std::string& sessionId,
-                                           const std::string& deviceId, const ObjectStore::Asset& asset)
+int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
+    const std::string& deviceId, const ObjectStore::Asset& asset)
 {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
     const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     auto objectAsset = asset;
     Asset dataAsset =  ValueProxy::Convert(std::move(objectAsset));
     auto snapshotKey = appId + SEPERATOR + sessionId;
     auto it = snapShots_.find(snapshotKey);
-    if (it != snapShots_.end() && snapShots_[snapshotKey]->IsBindAsset(dataAsset)) {
-      return snapShots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
+    if (it != snapShots_.end() && snapShots_[snapshotKey]->IsBoundAsset(dataAsset)) {
+        return snapShots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
     }
 
     bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, appId, deviceId, dataAsset);
@@ -798,5 +785,17 @@ int32_t ObjectStoreManager::OnAssetChanged(const std::string& appId, const std::
         return OBJECT_INNER_ERROR;
     }
 }
+
+ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::string& bundleName,
+    const std::string& storeName)
+{
+    auto storeKey = bundleName + SEPERATOR + storeName;
+    auto pos = rdbBindSnapshots_.find(storeKey);
+    if (pos == rdbBindSnapshots_.end()) {
+        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    }
+    return rdbBindSnapshots_[storeKey];
+}
+
 } // namespace DistributedObject
 } // namespace OHOS

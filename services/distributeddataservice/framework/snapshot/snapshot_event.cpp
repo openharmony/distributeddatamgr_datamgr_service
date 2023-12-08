@@ -16,7 +16,7 @@
 #include "snapshot/snapshot_event.h"
 
 namespace OHOS::DistributedData {
-SnapshotEvent::SnapshotEvent(int32_t evtId, SnapshotEventInfo bindInfo) : Event(evtId), bindInfo_(std::move(bindInfo))
+SnapshotEvent::SnapshotEvent(int32_t evtId, SnapshotEventInfo&& bindInfo) : Event(evtId), bindInfo_(std::move(bindInfo))
 {
 }
 

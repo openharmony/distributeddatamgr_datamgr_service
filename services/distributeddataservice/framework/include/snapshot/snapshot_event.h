@@ -41,7 +41,7 @@ public:
         std::string assetName;
     };
 
-    SnapshotEvent(int32_t evtId, SnapshotEventInfo bindInfo);
+    SnapshotEvent(int32_t evtId, SnapshotEventInfo&& bindInfo);
 
     ~SnapshotEvent() = default;
     const SnapshotEventInfo& GetBindInfo() const;

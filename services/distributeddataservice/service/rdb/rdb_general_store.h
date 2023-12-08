@@ -43,7 +43,7 @@ public:
     using RdbStore = OHOS::NativeRdb::RdbStore;
     using Reference = DistributedData::Reference;
     using Snapshot = DistributedData::Snapshot;
-    using Snapshots = DistributedData::Snapshots;
+    using BindAssets = DistributedData::BindAssets;
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
@@ -70,7 +70,7 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
-    int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> snapshots) override;
+    int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
@@ -121,7 +121,7 @@ private:
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
 
-    Snapshots snapshots_;
+    BindAssets snapshots_;
     DistributedData::StoreInfo storeInfo_;
 };
 } // namespace OHOS::DistributedRdb

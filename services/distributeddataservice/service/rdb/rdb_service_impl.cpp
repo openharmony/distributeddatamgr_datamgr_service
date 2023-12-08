@@ -416,8 +416,8 @@ void RdbServiceImpl::DoCompensateSync(const SnapshotEvent& event)
     auto bindInfo = event.GetBindInfo();
     CloudEvent::StoreInfo storeInfo;
     storeInfo.bundleName = bindInfo.bundleName;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.tokenId = bindInfo.tokenId;
+    storeInfo.user = bindInfo.user;
     storeInfo.storeName = bindInfo.storeName;
     OHOS::NativeRdb::AbsRdbPredicates predicates(bindInfo.tableName);
     for (auto& [key, value] : bindInfo.primaryKey) {

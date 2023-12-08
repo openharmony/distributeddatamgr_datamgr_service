@@ -124,7 +124,7 @@ public:
 
     virtual int32_t Release()  = 0;
 
-    virtual int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> snapshots) = 0;
+    virtual int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) = 0;
 
     virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) = 0;
 };

@@ -25,16 +25,16 @@ int32_t Snapshot::Download(OHOS::DistributedData::Asset& asset)
 {
     return E_OK;
 }
-int32_t Snapshot::FinishUploading(Asset& asset)
+int32_t Snapshot::Uploaded(Asset& asset)
 {
     return E_OK;
 }
-int32_t Snapshot::FinishDownloading(Asset& asset)
+int32_t Snapshot::Downloaded(Asset& asset)
 {
     return E_OK;
 }
 
-int32_t Snapshot::FinishTransferring(Asset& asset)
+int32_t Snapshot::Transferred(Asset& asset)
 {
     return E_OK;
 }
@@ -54,7 +54,7 @@ int32_t Snapshot::OnDataChanged(Asset& asset,const std::string &deviceId)
     return E_OK;
 }
 
-bool Snapshot::IsBindAsset(const Asset& asset)
+bool Snapshot::IsBoundAsset(const Asset& asset)
 {
     return false;
 }

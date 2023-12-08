@@ -28,10 +28,9 @@ public:
     using DBVBucket = DistributedDB::VBucket;
     using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
     using DataBucket = DistributedData::VBucket;
-    using DataBuckets = DistributedData::VBuckets;
-    using Snapshots = DistributedData::Snapshots;
+    using BindAssets = DistributedData::BindAssets;
 
-    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, Snapshots* snapshots);
+    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets* bindAssets);
     virtual ~RdbCloud() = default;
     DBStatus BatchInsert(const std::string &tableName, std::vector<DBVBucket> &&record,
         std::vector<DBVBucket> &extend) override;
@@ -54,12 +53,14 @@ private:
     static QueryNodes ConvertQuery(DBQueryNodes&& nodes);
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
-    Snapshots* snapshots_;
+    BindAssets* snapshots_;
 
-    void PostUploading(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets);
-    void PostFinishUploading(DistributedData::Asset& asset, std::set<std::string>& skipAssets);
-    void StartUploadInSnapshot(DataBuckets& records, std::set<std::string>& skipAssets, DataBuckets& extend);
-    void FinishUploadInSnapshot(DistributedData::VBuckets& records, std::set<std::string>& skipAssetsUri);
+    void PostUpload(DistributedData::Value& value, DistributedData::VBucket& extend, std::set<std::string>& skipAssets);
+    void PostUploaded(DistributedData::Value& value, std::set<std::string>& skipAssets);
+    void PostUploadAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets);
+    void PostUploadedAsset(DistributedData::Asset& asset, std::set<std::string>& skipAssets);
+    void CheckUpload(DistributedData::VBuckets& records, std::set<std::string>& skipAssets, DistributedData::VBuckets& extend);
+    void CheckUploaded(DistributedData::VBuckets& records, std::set<std::string>& skipAssets);
 
 };
 } // namespace OHOS::DistributedRdb

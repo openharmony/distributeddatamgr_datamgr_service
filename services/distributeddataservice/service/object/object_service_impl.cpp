@@ -91,9 +91,9 @@ int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const s
         ZLOGE("object sync permission denied, tokenId %{public}d", tokenId);
         return OBJECT_PERMISSION_DENIED;
     }
-    status = ObjectStoreManager::GetInstance()->OnAssetChanged(bundleName, sessionId, deviceId, assetValue);
+    status = ObjectStoreManager::GetInstance()->OnAssetChanged(tokenId, bundleName, sessionId, deviceId, assetValue);
     if (status != OBJECT_SUCCESS) {
-      ZLOGE("save fail %{public}d", status);
+        ZLOGE("save fail %{public}d", status);
     }
     return status;
 }
@@ -109,12 +109,12 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
         return status;
     }
     if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
-        ZLOGE("object save permission denied");
+        ZLOGE("object bind permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
-    status = ObjectStoreManager::GetInstance()->BindAsset(bundleName, sessionId, asset, bindInfo);
+    status = ObjectStoreManager::GetInstance()->BindAsset(tokenId, bundleName, sessionId, asset, bindInfo);
     if (status != OBJECT_SUCCESS) {
-        ZLOGE("save fail %{public}d", status);
+        ZLOGE("bind asset fail %{public}d", status);
     }
     return status;
 }
@@ -333,7 +333,7 @@ ObjectServiceImpl::ObjectServiceImpl()
         StoreMetaData meta;
         meta.storeId = eventInfo.storeName;
         meta.bundleName = eventInfo.bundleName;
-        meta.user = eventInfo.user;
+        meta.user = std::to_string(eventInfo.user);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
@@ -345,8 +345,8 @@ ObjectServiceImpl::ObjectServiceImpl()
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
-        auto snapshots = ObjectStoreManager::GetInstance()->GetSnapShots(eventInfo.bundleName, eventInfo.storeName);
-        store->BindSnapshots(snapshots);
+        auto bindAssets = ObjectStoreManager::GetInstance()->GetSnapShots(eventInfo.bundleName, eventInfo.storeName);
+        store->BindSnapshots(bindAssets);
     };
     EventCenter::GetInstance().Subscribe(SnapshotEvent::BIND_SNAPSHOT, process);
 }
