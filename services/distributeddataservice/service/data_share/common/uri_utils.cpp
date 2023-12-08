@@ -100,4 +100,14 @@ bool URIUtils::GetInfoFromProxyURI(
     }
     return true;
 }
+
+void URIUtils::FormatUri(std::string &uri)
+{
+    auto pos = uri.find_last_of('?');
+    if (pos == std::string::npos) {
+        return;
+    }
+
+    uri = uri.substr(0, pos);
+}
 } // namespace OHOS::DataShare

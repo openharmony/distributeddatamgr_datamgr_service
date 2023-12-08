@@ -21,9 +21,6 @@ namespace OHOS::DataShare {
 class LoadConfigCommonStrategy final : public Strategy {
 public:
     bool operator()(std::shared_ptr<Context> context) override;
-
-private:
-    void FormatUri(std::string &uri);
 };
 } // namespace OHOS::DataShare
 #endif
