@@ -15,10 +15,11 @@
 
 #define LOG_TAG "RdbResultSetImpl"
 
-#include "rdb_result_set_impl.h"
+#include <mutex>
 #include "log_print.h"
 #include "store_types.h"
 #include "store/cursor.h"
+#include "rdb_result_set_impl.h"
 
 using DistributedDB::DBStatus;
 using OHOS::NativeRdb::ColumnType;
@@ -309,5 +310,30 @@ ColumnType RdbResultSetImpl::ConvertColumnType(int32_t columnType) const
         return ColumnType::TYPE_NULL;
     }
     return COLUMNTYPES[columnType];
+}
+
+int RdbResultSetImpl::GetAsset(int32_t col, NativeRdb::ValueObject::Asset& value)
+{
+    return NativeRdb::E_NOT_SUPPORT;
+}
+int RdbResultSetImpl::GetAssets(int32_t col, NativeRdb::ValueObject::Assets& value)
+{
+    return NativeRdb::E_NOT_SUPPORT;
+}
+int RdbResultSetImpl::Get(int32_t col, NativeRdb::ValueObject& value)
+{
+    return NativeRdb::E_NOT_SUPPORT;
+}
+int RdbResultSetImpl::GetRow(NativeRdb::RowEntity& rowEntity)
+{
+    return NativeRdb::E_NOT_SUPPORT;
+}
+int RdbResultSetImpl::GetModifyTime(std::string& modifyTime)
+{
+    return NativeRdb::E_NOT_SUPPORT;
+}
+int RdbResultSetImpl::GetSize(int columnIndex, size_t& size)
+{
+    return NativeRdb::E_NOT_SUPPORT;
 }
 } // namespace OHOS::DistributedRdb
