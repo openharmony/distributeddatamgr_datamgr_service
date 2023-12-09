@@ -69,7 +69,7 @@ private:
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
     static constexpr uint32_t P2P_TRANSFER_PER_MICROSECOND = 3; // 2^3 bytes per microsecond
     static constexpr float SWITCH_DELAY_FACTOR = 0.6f;
-    static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(60);
+    static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(150);
     static constexpr Duration SESSION_OPEN_DELAY = std::chrono::seconds(20);
     std::atomic_bool sessionFlag_ = false;
     int32_t connId_ = INVALID_CONNECT_ID;
