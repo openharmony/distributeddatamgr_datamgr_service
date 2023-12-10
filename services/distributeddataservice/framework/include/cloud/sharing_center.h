@@ -25,7 +25,7 @@ public:
     enum Role {
         ROLE_NIL = -1,
         ROLE_INVITER,
-        ROLE_INVITEES,
+        ROLE_INVITEE,
         ROLE_BUTT
     };
 

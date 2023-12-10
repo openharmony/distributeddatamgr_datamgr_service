@@ -230,13 +230,16 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
             dbStatusTmp = dbStatus;
         });
 
-    if (dbStatusTmp != DistributedDB::DBStatus::OK) {
-        ZLOGE("GetKvStore return error status: %{public}d", static_cast<int>(dbStatusTmp));
+    if (dbStatusTmp != DistributedDB::DBStatus::OK || delegate == nullptr) {
+        ZLOGE("GetKvStore return error status: %{public}d or delegate is nullptr", static_cast<int>(dbStatusTmp));
         return nullptr;
     }
     delegate->SetRemotePushFinishedNotify([](const RemotePushNotifyInfo &info) {
         DeviceMatrix::GetInstance().OnExchanged(info.deviceId, DeviceMatrix::META_STORE_MASK);
     });
+    bool param = true;
+    auto data = static_cast<DistributedDB::PragmaData>(&param);
+    delegate->Pragma(DistributedDB::SET_SYNC_RETRY, data);
     auto release = [this](DistributedDB::KvStoreNbDelegate *delegate) {
         ZLOGI("release meta data  kv store");
         if (delegate == nullptr) {

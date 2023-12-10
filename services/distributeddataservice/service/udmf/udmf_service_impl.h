@@ -61,6 +61,7 @@ private:
     public:
         ~UdmfStatic() override {};
         int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
     };
     class Factory {

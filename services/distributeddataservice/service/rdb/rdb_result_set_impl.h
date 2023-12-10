@@ -16,17 +16,19 @@
 #ifndef DISTRIBUTED_RDB_RDB_RESULT_SET_IMPL_H
 #define DISTRIBUTED_RDB_RDB_RESULT_SET_IMPL_H
 
+#include <atomic>
 #include <shared_mutex>
-#include "rdb_result_set_stub.h"
+#include "result_set.h"
 #include "rdb_errno.h"
 #include "store/cursor.h"
 #include "value_proxy.h"
 #include "store/general_value.h"
 
 namespace OHOS::DistributedRdb {
-class RdbResultSetImpl final : public RdbResultSetStub {
+class RdbResultSetImpl final : public NativeRdb::ResultSet {
 public:
     using ValueProxy = DistributedData::ValueProxy;
+    using ColumnType = NativeRdb::ColumnType;
     explicit RdbResultSetImpl(std::shared_ptr<DistributedData::Cursor> resultSet);
     ~RdbResultSetImpl() override {};
     int GetAllColumnNames(std::vector<std::string> &columnNames) override;
@@ -54,6 +56,12 @@ public:
     int IsColumnNull(int columnIndex, bool &isNull) override;
     bool IsClosed() const override;
     int Close() override;
+    int GetAsset(int32_t col, NativeRdb::ValueObject::Asset& value) override;
+    int GetAssets(int32_t col, NativeRdb::ValueObject::Assets& value) override;
+    int Get(int32_t col, NativeRdb::ValueObject& value) override;
+    int GetRow(NativeRdb::RowEntity& rowEntity) override;
+    int GetModifyTime(std::string& modifyTime) override;
+    int GetSize(int columnIndex, size_t& size) override;
 
 private:
     template<typename T>

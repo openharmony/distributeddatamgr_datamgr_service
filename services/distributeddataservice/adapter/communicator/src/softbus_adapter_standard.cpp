@@ -105,7 +105,6 @@ INodeStateCb g_callback = {
     .onNodeStatusChanged = OnCareEvent,
 };
 } // namespace
-SoftBusAdapter::SofBusDeviceChangeListenerImpl SoftBusAdapter::listener_;
 SoftBusAdapter::SoftBusAdapter()
 {
     ZLOGI("begin");
@@ -116,7 +115,7 @@ SoftBusAdapter::SoftBusAdapter()
     sessionListener_.OnBytesReceived = AppDataListenerWrap::OnBytesReceived;
     sessionListener_.OnMessageReceived = AppDataListenerWrap::OnBytesReceived;
 
-    auto status = DmAdapter::GetInstance().StartWatchDeviceChange(&listener_, {"softBusAdapter"});
+    auto status = DmAdapter::GetInstance().StartWatchDeviceChange(this, {"softBusAdapter"});
     if (status != Status::SUCCESS) {
         ZLOGW("register device change failed, status:%d", static_cast<int>(status));
     }
@@ -166,28 +165,32 @@ Status SoftBusAdapter::StopWatchDataChange(__attribute__((unused)) const AppData
 }
 
 Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-    uint32_t totalLength, const MessageInfo &info)
+    uint32_t length, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
     connects_.Compute(deviceId.deviceId,
-        [this, &pipeInfo, &deviceId, &conn](const auto &key, std::shared_ptr<SoftBusClient> &connect) -> bool {
-            if (connect != nullptr) {
+        [this, &pipeInfo, &deviceId, &conn, length](const auto& key,
+            std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
+                for (auto &connect : connects) {
+                    if (connect->Support(length)) {
+                        conn = connect;
+                        return true;
+                    }
+                }
+                auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, [this](int32_t connId) {
+                    return GetSessionStatus(connId);
+                });
+                connects.emplace_back(connect);
                 conn = connect;
                 return true;
-            }
-            connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, [this](int32_t connId) {
-                return GetSessionStatus(connId);
             });
-            conn = connect;
-            return true;
-    });
     if (conn == nullptr) {
         return Status::ERROR;
     }
-    auto status = conn->Send(dataInfo, totalLength);
+    auto status = conn->Send(dataInfo, length);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
         Time now = std::chrono::steady_clock::now();
-        auto expireTime = conn->GetExpireTime();
+        auto expireTime = conn->GetExpireTime() > now ? conn->GetExpireTime() : now;
         lock_guard<decltype(taskMutex_)> lock(taskMutex_);
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
             taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
@@ -209,28 +212,36 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
     return [this]() mutable {
         Time now = std::chrono::steady_clock::now();
         std::vector<std::shared_ptr<SoftBusClient>> connToClose;
-        connects_.EraseIf([&now, &connToClose](const auto &key, const auto &conn) -> bool {
-            if (conn == nullptr) {
-                return true;
+        connects_.ForEach([&now, &connToClose](const auto &key, auto &connects) -> bool {
+            std::vector<std::shared_ptr<SoftBusClient>> holdConnects;
+            for (auto conn : connects) {
+                if (conn == nullptr) {
+                    continue;
+                }
+                auto expireTime = conn->GetExpireTime();
+                if (expireTime <= now) {
+                    ZLOGD("[timeout] close session connId:%{public}d", conn->GetConnId());
+                    connToClose.emplace_back(conn);
+                } else {
+                    holdConnects.emplace_back(conn);
+                }
             }
-            auto expireTime = conn->GetExpireTime();
-            if (expireTime <= now) {
-                ZLOGD("[timeout] close session connId:%{public}d", conn->GetConnId());
-                connToClose.emplace_back(conn);
-                return true;
-            }
+            connects = std::move(holdConnects);
             return false;
         });
+        connects_.EraseIf([](const auto &key, const auto &conn) -> bool { return conn.empty(); });
 
         Time next = INVALID_NEXT;
         lock_guard<decltype(taskMutex_)> lg(taskMutex_);
-        connects_.ForEach([&next](const auto &key, const auto &conn) -> bool {
-            if (conn == nullptr) {
-                return false;
-            }
-            auto expireTime = conn->GetExpireTime();
-            if (expireTime < next) {
-                next = expireTime;
+        connects_.ForEach([&next](const auto &key,  auto &connects) -> bool {
+            for (auto conn : connects) {
+                if (conn == nullptr) {
+                    continue;
+                }
+                auto expireTime = conn->GetExpireTime();
+                if (expireTime < next) {
+                    next = expireTime;
+                }
             }
             return false;
         });
@@ -244,40 +255,62 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
     };
 }
 
-std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const std::string &deviceId)
-{
-    auto [status, vlaue] = connects_.Find(deviceId);
-    return vlaue;
-}
-
 uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
 {
-    std::shared_ptr<SoftBusClient> conn = GetConnect(deviceId.deviceId);
-    if (conn != nullptr) {
-        return conn->GetMtuSize();
-    }
-    return DEFAULT_MTU_SIZE;
+    uint32_t mtuSize = DEFAULT_MTU_SIZE;
+    connects_.ComputeIfPresent(deviceId.deviceId, [&mtuSize](auto, auto &connects) {
+        uint32_t mtu = 0;
+        for (auto conn : connects) {
+            if (conn == nullptr) {
+                continue;
+            }
+            if (mtu < conn->GetMtuSize()) {
+                mtu = conn->GetMtuSize();
+            }
+        }
+        if (mtu != 0) {
+            mtuSize = mtu;
+        }
+        return true;
+    });
+    return mtuSize;
 }
 
 uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
 {
-    std::shared_ptr<SoftBusClient> conn = GetConnect(deviceId.deviceId);
-    if (conn != nullptr) {
-        return conn->GetTimeout();
-    }
-    return DEFAULT_TIMEOUT;
+    uint32_t interval = DEFAULT_TIMEOUT;
+    connects_.ComputeIfPresent(deviceId.deviceId, [&interval](auto, auto &connects) {
+            uint32_t time = 0;
+            for (auto conn : connects) {
+                if (conn == nullptr) {
+                    continue;
+                }
+                if (time < conn->GetTimeout()) {
+                    time = conn->GetTimeout();
+                }
+            }
+            if (time != 0) {
+                interval = time;
+            }
+            return true;
+    });
+    return interval;
 }
 
 std::string SoftBusAdapter::DelConnect(int32_t connId)
 {
     std::string name;
-    connects_.EraseIf([connId, &name](const auto &key, const auto &value) -> bool {
-        if (value != nullptr && *value == connId) {
-            name += key;
-            name += " ";
-            return true;
+    connects_.ForEach([connId, &name](const auto &deviceId, auto &connects) -> bool {
+        for (auto iter = connects.begin(); iter != connects.end();) {
+            if (**iter == connId) {
+                name += deviceId;
+                name += " ";
+                connects.erase(iter++);
+            } else {
+                iter++;
+            }
         }
-        return false;
+    return false;
     });
     return name;
 }
@@ -305,9 +338,11 @@ void SoftBusAdapter::OnSessionOpen(int32_t connId, int32_t status)
     if (status != SOFTBUS_OK) {
         return;
     }
-    connects_.ForEach([connId](const auto &key, const auto &value) -> bool {
-        if (value != nullptr && *value == connId) {
-            value->UpdateExpireTime();
+    connects_.ForEach([connId](const auto &key, auto &connects) -> bool {
+        for (auto conn : connects) {
+            if (conn != nullptr && *conn == connId) {
+                conn->UpdateExpireTime();
+            }
         }
         return false;
     });
@@ -497,32 +532,26 @@ void AppDataListenerWrap::NotifyDataListeners(const uint8_t *data, const int siz
     softBusAdapter_->NotifyDataListeners(data, size, deviceId, pipeInfo);
 }
 
-void SoftBusAdapter::SofBusDeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
+void SoftBusAdapter::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     const AppDistributedKv::DeviceChangeType &type) const
 {
-    Strategy strategy = Strategy::BUTT;
+    if (info.uuid == DmAdapter::CLOUD_DEVICE_UUID) {
+        return;
+    }
+
     switch (type) {
         case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
-            strategy = Strategy::ON_LINE_SELECT_CHANNEL;
+            CommunicationStrategy::GetInstance().SetStrategy(info.uuid, Strategy::ON_LINE_SELECT_CHANNEL);
+            break;
+        case AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE:
+            CommunicationStrategy::GetInstance().RemoveStrategy(info.uuid);
             break;
         case AppDistributedKv::DeviceChangeType::DEVICE_ONREADY:
-            strategy = Strategy::DEFAULT;
+            CommunicationStrategy::GetInstance().SetStrategy(info.uuid, Strategy::DEFAULT);
             break;
         default:
             break;
     }
-
-    if (strategy >= Strategy::BUTT) {
-        return;
-    }
-
-    CommunicationStrategy::GetInstance().SetStrategy(info.uuid, strategy,
-        [this](const std::string &deviceId, Strategy strategy) {
-        std::shared_ptr<SoftBusClient> conn = SoftBusAdapter::GetInstance()->GetConnect(deviceId);
-        if (conn != nullptr) {
-            conn->AfterStrategyUpdate(strategy);
-        }
-    });
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

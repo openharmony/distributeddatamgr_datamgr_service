@@ -55,8 +55,8 @@ public:
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
         const std::vector<Reference> &references, int32_t type = DISTRIBUTED_DEVICE) override;
 
-    int32_t RemoteQuery(const RdbSyncerParam& param, const std::string& device, const std::string& sql,
-                        const std::vector<std::string>& selectionArgs, sptr<IRemoteObject>& resultSet) override;
+    std::pair<int32_t, std::shared_ptr<ResultSet>> RemoteQuery(const RdbSyncerParam& param, const std::string& device,
+        const std::string& sql, const std::vector<std::string>& selectionArgs) override;
 
     int32_t Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async) override;
@@ -80,7 +80,7 @@ public:
 
     int32_t Delete(const RdbSyncerParam &param) override;
 
-    std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> QuerySharingResource(const RdbSyncerParam& param,
+    std::pair<int32_t, std::shared_ptr<ResultSet>> QuerySharingResource(const RdbSyncerParam& param,
         const PredicatesMemo& predicates, const std::vector<std::string>& columns) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;
@@ -160,12 +160,10 @@ private:
 
     int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
 
-    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(
+    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> AllocResource(
         StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
-
-    static std::vector<NativeRdb::ValuesBucket> HandleCursor(std::shared_ptr<DistributedData::Cursor> cursor);
 
     static std::string TransferStringToHex(const std::string& origStr);
 

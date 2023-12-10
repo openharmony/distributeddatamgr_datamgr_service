@@ -17,8 +17,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 #include "rdb_result_set_impl.h"
+#include "rdb_result_set_stub.h"
 #include "message_parcel.h"
 #include "store/cursor.h"
 #include "securec.h"
@@ -40,7 +42,8 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
     MessageParcel reply;
     MessageOption option;
     std::shared_ptr<DistributedData::Cursor> dbResultSet;
-    std::shared_ptr<RdbResultSetStub> rdbResultSetStub = std::make_shared<RdbResultSetImpl>(dbResultSet);
+    auto result = std::make_shared<RdbResultSetImpl>(dbResultSet);
+    std::shared_ptr<RdbResultSetStub> rdbResultSetStub = std::make_shared<RdbResultSetStub>(result);
     rdbResultSetStub->OnRemoteRequest(code, request, reply, option);
     return true;
 }
