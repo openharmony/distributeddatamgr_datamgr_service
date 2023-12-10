@@ -59,6 +59,7 @@ ohos_shared_library("distributeddatasvc") {
     "${dataobject_path}/frameworks/innerkitsimpl/include/common",
     "${dataobject_path}/interfaces/innerkits",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
+    "../../../../relational_store/interfaces/inner_api/common_type/include",
     "../../../../relational_store/interfaces/inner_api/rdb/include",
     "${kv_store_distributeddb_path}",
   ]

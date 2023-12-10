@@ -132,7 +132,7 @@
                             "serializable/serializable.h",
                             "snapshot/machine_status.h",
                             "snapshot/snapshot.h",
-                            "snapshot/snapshot_event.h",
+                            "snapshot/bind_event.h",
                             "store/auto_cache.h",
                             "store/cursor.h",
                             "store/general_store.h",

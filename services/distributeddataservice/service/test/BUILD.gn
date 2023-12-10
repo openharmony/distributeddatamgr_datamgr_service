@@ -79,9 +79,10 @@ ohos_unittest("ValueProxyTest") {
     "value_proxy_test.cpp",
   ]
 
-  include_dirs =
-      [ "../../../../../relational_store/interfaces/inner_api/rdb/include",
-      "${relational_store_path}/interfaces/inner_api/common_type/include",]
+  include_dirs = [
+    "../../../../../relational_store/interfaces/inner_api/rdb/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
+  ]
 
   configs = [ ":module_private_config" ]
 
