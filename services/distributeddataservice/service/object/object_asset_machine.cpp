@@ -240,6 +240,9 @@ static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBi
     auto& value = it->second;
     if (value.index() == TYPE_INDEX<std::monostate>) {
         Assets assets{ newAsset };
+        value = assets;
+
+
         return;
     }
     if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
