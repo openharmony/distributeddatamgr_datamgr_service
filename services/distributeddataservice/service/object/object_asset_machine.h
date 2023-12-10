@@ -13,10 +13,11 @@
 * limitations under the License.
 */
 
-#include "snapshot/machine_status.h"
 
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H
+
+#include "snapshot/machine_status.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -55,4 +56,4 @@ private:
 };
 } // namespace DistributedObject
 } // namespace OHOS
-#endif //DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H
+#endif // DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H

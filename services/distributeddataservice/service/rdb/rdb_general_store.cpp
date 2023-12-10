@@ -117,7 +117,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
     eventInfo.user = storeInfo_.user;
     eventInfo.instanceId = storeInfo_.instanceId;
 
-    auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT,std::move(eventInfo));
+    auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     bindInfo_ = std::move(bindInfo);
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);

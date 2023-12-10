@@ -97,10 +97,10 @@ public:
     int32_t Open();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     UriToSnapshot GetSnapShots(const std::string &bundleName, const std::string &storeName);
-    int32_t BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId, ObjectStore::Asset& asset,
-        ObjectStore::AssetBindInfo& bindInfo);
-    int32_t OnAssetChanged(const uint32_t tokenId, const std::string& appId, const std::string& sessionId, const std::string& deviceId,
-        const ObjectStore::Asset& asset);
+    int32_t BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
+        ObjectStore::Asset& asset, ObjectStore::AssetBindInfo& bindInfo);
+    int32_t OnAssetChanged(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
+         const std::string& deviceId, const ObjectStore::Asset& asset);
     void DeleteSnapshot(const std::string &bundleName, const std::string &sessionId);
 private:
     constexpr static const char *SEPERATOR = "_";

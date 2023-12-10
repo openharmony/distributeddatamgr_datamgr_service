@@ -49,7 +49,7 @@ int32_t Snapshot::BindAsset(const Asset& asset, const AssetBindInfo& bindInfo, c
     return E_OK;
 }
 
-int32_t Snapshot::OnDataChanged(Asset& asset,const std::string &deviceId)
+int32_t Snapshot::OnDataChanged(Asset& asset, const std::string &deviceId)
 {
     return E_OK;
 }

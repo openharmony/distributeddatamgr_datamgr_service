@@ -34,7 +34,8 @@ public:
     int32_t Downloaded(Asset& asset) override;
     int32_t Transferred(Asset& asset) override;
     int32_t OnDataChanged(Asset& asset, const std::string& deviceId) override;
-    int32_t BindAsset(const Asset& asset, const DistributedData::AssetBindInfo& bindInfo, const StoreInfo& storeInfo) override;
+    int32_t BindAsset(const Asset& asset, const DistributedData::AssetBindInfo& bindInfo,
+        const StoreInfo& storeInfo) override;
     bool IsBoundAsset(const Asset& asset) override;
 
 private:

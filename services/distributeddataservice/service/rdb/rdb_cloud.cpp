@@ -27,7 +27,7 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedDB;
 using namespace DistributedData;
 RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets* bindAssets)
-    : cloudDB_(std::move(cloudDB)) , snapshots_(bindAssets)
+    : cloudDB_(std::move(cloudDB)), snapshots_(bindAssets)
 {
 }
 

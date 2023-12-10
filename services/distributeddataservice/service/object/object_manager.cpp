@@ -762,8 +762,8 @@ DistributedData::AssetBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::
     };
 }
 
-int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
-    const std::string& deviceId, const ObjectStore::Asset& asset)
+int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::string& appId,
+    const std::string& sessionId, const std::string& deviceId, const ObjectStore::Asset& asset)
 {
     const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     auto objectAsset = asset;
