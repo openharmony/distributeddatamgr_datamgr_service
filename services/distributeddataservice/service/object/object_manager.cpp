@@ -737,7 +737,7 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
     HapTokenInfo tokenInfo;
     auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (status != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
+        ZLOGE("token:0x%{public}x, result:%{public}d, bundleName:%{public}s", tokenId, status, appId.c_str());
         return GeneralError::E_ERROR;
     }
     StoreInfo storeInfo;
@@ -778,8 +778,7 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
         return OBJECT_SUCCESS;
     } else {
         ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
-              "%{public}s",
-            userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
+              "%{public}s", userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
         return OBJECT_INNER_ERROR;
     }
 }

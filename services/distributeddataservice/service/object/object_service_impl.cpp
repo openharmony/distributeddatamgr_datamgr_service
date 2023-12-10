@@ -97,8 +97,6 @@ int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const s
 int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const std::string &sessionId,
     ObjectStore::Asset &asset, ObjectStore::AssetBindInfo &bindInfo)
 {
-    ZLOGD("begin.");
-
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
@@ -106,7 +104,8 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
     }
     status = ObjectStoreManager::GetInstance()->BindAsset(tokenId, bundleName, sessionId, asset, bindInfo);
     if (status != OBJECT_SUCCESS) {
-        ZLOGE("bind asset fail %{public}d", status);
+        ZLOGE("bind asset fail %{public}d, bundleName:%{public}s, sessionId:%{public}s, assetName:%{public}s", status,
+            bundleName.c_str(), asset.name.c_str());
     }
     return status;
 }
@@ -236,7 +235,6 @@ int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundl
 
 int32_t ObjectServiceImpl::DeleteSnapshot(const std::string &bundleName, const std::string &sessionId)
 {
-    ZLOGD("begin.");
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {

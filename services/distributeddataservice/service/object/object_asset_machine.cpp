@@ -136,11 +136,8 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, TransferStatus& sta
         }
     }
     if (action->next != STATUS_NO_CHANGE) {
-        ZLOGI("status before:%{public}d", status);
+        ZLOGI("status before:%{public}d, eventId: %{public}d, status after:%{public}d", status, eventId, action->next);
         status = static_cast<TransferStatus>(action->next);
-        ZLOGI("eventId: %{public}d, status after:%{public}d", eventId, status);
-    } else {
-        ZLOGI("status nochange: %{public}d", status);
     }
     if (action->after != nullptr) {
         int32_t res = action->after(eventId, param, param2);

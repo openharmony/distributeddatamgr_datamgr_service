@@ -25,5 +25,4 @@ template<>
 bool Unmarshalling(AssetBindInfo &output, MessageParcel &data);
 
 }
-
-#endif //DISTRIBUTEDDATAMGR_OBJECT_TYPES_UTILS_H
+#endif // DISTRIBUTEDDATAMGR_OBJECT_TYPES_UTILS_H

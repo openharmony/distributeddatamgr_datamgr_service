@@ -24,5 +24,4 @@ const BindEvent::BindEventInfo& BindEvent::GetBindInfo() const
 {
     return bindInfo_;
 }
-
 } // namespace OHOS::DistributedData

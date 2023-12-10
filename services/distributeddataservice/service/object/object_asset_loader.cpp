@@ -63,7 +63,7 @@ bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string& bundle
     assetInfo.uri = assetValue.uri;
     assetInfo.assetName = assetValue.name;
     CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
-        [&](const std::string& uri, int32_t status) {
+        [callback](const std::string& uri, int32_t status) {
             status == 0 ? callback(true) : callback(false);
         });
     return true;

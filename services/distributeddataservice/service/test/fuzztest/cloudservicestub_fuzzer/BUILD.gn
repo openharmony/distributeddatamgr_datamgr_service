@@ -69,6 +69,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
     "${data_service_path}/service/cloud/cloud_value_util.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/config/src/config_factory.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
@@ -91,7 +92,6 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
-    "${data_service_path}/service/common/value_proxy.cpp",
     "cloudservicestub_fuzzer.cpp",
   ]
 

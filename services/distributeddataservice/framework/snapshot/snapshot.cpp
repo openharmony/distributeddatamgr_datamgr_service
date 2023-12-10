@@ -58,5 +58,4 @@ bool Snapshot::IsBoundAsset(const Asset& asset)
 {
     return false;
 }
-
 } // namespace OHOS::DistributedData
