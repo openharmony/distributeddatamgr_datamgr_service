@@ -22,9 +22,10 @@
 #include "value_proxy.h"
 
 using namespace DistributedDB;
+using ValueProxy = OHOS::DistributedData::ValueProxy;
 namespace OHOS::DistributedRdb {
-RdbAssetLoader::RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader)
-    : assetLoader_(std::move(cloudAssetLoader))
+RdbAssetLoader::RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader, BindAssets* bindAssets)
+    : assetLoader_(std::move(cloudAssetLoader)), snapshots_(bindAssets)
 {
 }
 
@@ -32,12 +33,14 @@ DBStatus RdbAssetLoader::Download(const std::string &tableName, const std::strin
     std::map<std::string, Assets> &assets)
 {
     DistributedData::VBucket downLoadAssets = ValueProxy::Convert(assets);
+    std::set<std::string> skipAssets;
+    PostEvent(skipAssets, downLoadAssets, DistributedData::AssetEvent::DOWNLOAD);
     DistributedDB::Type prefixTemp = prefix;
     auto error = assetLoader_->Download(tableName, gid, ValueProxy::Convert(std::move(prefixTemp)), downLoadAssets);
-    if (error == DistributedData::GeneralError::E_OK) {
-        assets = ValueProxy::Convert(std::move(downLoadAssets));
-    }
-    return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
+    PostEvent(skipAssets, downLoadAssets, DistributedData::AssetEvent::DOWNLOAD_FINISHED);
+    assets = ValueProxy::Convert(std::move(downLoadAssets));
+    return skipAssets.empty() ? RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error))
+                              : CLOUD_RECORD_EXIST_CONFLICT;
 }
 
 DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)
@@ -45,5 +48,44 @@ DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)
     DistributedData::VBucket deleteAssets = ValueProxy::Convert(std::map<std::string, Assets>{{ "", assets }});
     auto error = assetLoader_->RemoveLocalAssets("", "", {}, deleteAssets);
     return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
+}
+
+void RdbAssetLoader::PostEvent(std::set<std::string>& skipAssets,
+    std::map<std::string, DistributedData::Value>& assets, DistributedData::AssetEvent eventId)
+{
+    for (auto& asset : assets) {
+        auto* downLoadAssets = Traits::get_if<DistributedData::Assets>(&asset.second);
+        if (downLoadAssets == nullptr) {
+            return;
+        }
+        PostEvent(eventId, *downLoadAssets, skipAssets);
+    }
+}
+
+void RdbAssetLoader::PostEvent(DistributedData::AssetEvent eventId, DistributedData::Assets& assets,
+    std::set<std::string>& skipAssets)
+{
+    for (auto& downLoadAsset : assets) {
+        if (downLoadAsset.status == DistributedData::Asset::STATUS_DELETE) {
+            continue;
+        }
+        auto it = snapshots_->bindAssets->find(downLoadAsset.uri);
+        if (it == snapshots_->bindAssets->end()) {
+            continue;
+        }
+        auto snapshot = it->second;
+        if (eventId == DistributedData::DOWNLOAD) {
+            snapshot->Download(downLoadAsset);
+            if (snapshot->GetAssetStatus(downLoadAsset) == DistributedData::STATUS_WAIT_DOWNLOAD) {
+                skipAssets.insert(downLoadAsset.uri);
+            }
+        } else {
+            auto pos = skipAssets.find(downLoadAsset.uri);
+            if (pos != skipAssets.end()) {
+                continue;
+            }
+            snapshot->Downloaded(downLoadAsset);
+        }
+    }
 }
 } // namespace OHOS::DistributedRdb

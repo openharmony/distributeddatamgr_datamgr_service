@@ -24,6 +24,7 @@ ohos_fuzztest("RdbResultSetStubFuzzTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/rdb",
+    "${data_service_path}/service/common",
     "${kv_store_common_path}",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
@@ -34,6 +35,7 @@ ohos_fuzztest("RdbResultSetStubFuzzTest") {
     "${kv_store_distributeddb_path}/interfaces/include/relational",
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
     "${relational_store_path}/interfaces/inner_api/rdb/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
     "//third_party/json/single_include",
   ]
 
@@ -48,9 +50,9 @@ ohos_fuzztest("RdbResultSetStubFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
-    "${data_service_path}/service/rdb/value_proxy.cpp",
     "rdbresultsetstub_fuzzer.cpp",
   ]
 

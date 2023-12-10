@@ -22,6 +22,7 @@
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
+#include "snapshot/snapshot.h"
 namespace OHOS::DistributedData {
 class CloudDB;
 class AssetLoader;
@@ -122,6 +123,10 @@ public:
     virtual int32_t AddRef() = 0;
 
     virtual int32_t Release()  = 0;
+
+    virtual int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) = 0;
+
+    virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

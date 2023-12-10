@@ -13,15 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_VALUE_PROXY_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_VALUE_PROXY_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_VALUE_PROXY_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_VALUE_PROXY_H
 #include "asset_value.h"
 #include "cloud/cloud_store_types.h"
+#include "distributeddb/result_set.h"
 #include "store/general_value.h"
 #include "value_object.h"
 #include "values_bucket.h"
-#include "distributeddb/result_set.h"
-namespace OHOS::DistributedRdb {
+#include "common_values_bucket.h"
+
+namespace OHOS::DistributedData {
 class ValueProxy final {
 public:
     template<class T>
@@ -54,10 +56,12 @@ public:
             *this = proxy;
         };
         Asset(DistributedData::Asset asset);
+        Asset(CommonType::AssetValue asset);
         Asset(NativeRdb::AssetValue asset);
         Asset(DistributedDB::Asset asset);
         Asset &operator=(const Asset &proxy);
         Asset &operator=(Asset &&proxy) noexcept;
+        operator CommonType::AssetValue();
         operator NativeRdb::AssetValue();
         operator DistributedData::Asset();
         operator DistributedDB::Asset();
@@ -90,10 +94,12 @@ public:
             *this = proxy;
         };
         Assets(DistributedData::Assets assets);
+        Assets(CommonType::ValueObject::Assets assets);
         Assets(NativeRdb::ValueObject::Assets assets);
         Assets(DistributedDB::Assets assets);
         Assets &operator=(const Assets &proxy);
         Assets &operator=(Assets &&proxy) noexcept;
+        operator CommonType::ValueObject::Assets();
         operator NativeRdb::ValueObject::Assets();
         operator DistributedData::Assets();
         operator DistributedDB::Assets();
@@ -113,6 +119,7 @@ public:
         };
         Value &operator=(Value &&value) noexcept;
         operator NativeRdb::ValueObject();
+        operator CommonType::ValueObject();
         operator DistributedData::Value();
         operator DistributedDB::Type();
 
@@ -173,6 +180,7 @@ public:
             return bucket;
         }
         operator NativeRdb::ValuesBucket();
+        operator CommonType::ValuesBucket();
 
     private:
         friend ValueProxy;
@@ -204,16 +212,20 @@ public:
     };
 
     static Value Convert(DistributedData::Value &&value);
+    static Value Convert(CommonType::ValueObject &&value);
     static Value Convert(NativeRdb::ValueObject &&value);
     static Value Convert(DistributedDB::Type &&value);
     static Values Convert(DistributedData::Values &&values);
+    static Values Convert(std::vector<CommonType::ValueObject> &&values);
     static Values Convert(std::vector<NativeRdb::ValueObject> &&values);
     static Values Convert(std::vector<DistributedDB::Type> &&values);
     static Bucket Convert(DistributedData::VBucket &&bucket);
     static Bucket Convert(NativeRdb::ValuesBucket &&bucket);
+    static Bucket Convert(CommonType::ValuesBucket &&bucket);
     static Bucket Convert(DistributedDB::VBucket &&bucket);
     static Buckets Convert(DistributedData::VBuckets &&buckets);
     static Buckets Convert(std::vector<NativeRdb::ValuesBucket> &&buckets);
+    static Buckets Convert(std::vector<CommonType::ValuesBucket> &&buckets);
     static Buckets Convert(std::vector<DistributedDB::VBucket> &&buckets);
 
     static Value Convert(DistributedDB::VariantData &&value);
@@ -256,4 +268,4 @@ private:
     }
 };
 } // namespace OHOS::DistributedRdb
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_VALUE_PROXY_H
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_VALUE_PROXY_H

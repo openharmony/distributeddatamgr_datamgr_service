@@ -25,12 +25,14 @@
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
+#include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
-#include "object_asset_loader.h"
 #include "permission/permission_validator.h"
+#include "snapshot/bind_event.h"
+#include "store/auto_cache.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
@@ -85,18 +87,9 @@ int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const s
         ZLOGE("OnAssetChanged object bundleName wrong, status %{public}d", status);
         return status;
     }
-    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
-        ZLOGE("object sync permission denied, tokenId %{public}d", tokenId);
-        return OBJECT_PERMISSION_DENIED;
-    }
-    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, bundleName, deviceId, assetValue);
-    if (isSuccess) {
-        status = OBJECT_SUCCESS;
-    } else {
-        ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, \
-            asset name : %{public}s", userId, bundleName.c_str(), deviceId.c_str(), assetValue.name.c_str());
-        status = OBJECT_INNER_ERROR;
+    status = ObjectStoreManager::GetInstance()->OnAssetChanged(tokenId, bundleName, sessionId, deviceId, assetValue);
+    if (status != OBJECT_SUCCESS) {
+        ZLOGE("file transfer failed fail %{public}d", status);
     }
     return status;
 }
@@ -104,7 +97,17 @@ int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const s
 int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const std::string &sessionId,
     ObjectStore::Asset &asset, ObjectStore::AssetBindInfo &bindInfo)
 {
-    return OBJECT_SUCCESS;
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
+    }
+    status = ObjectStoreManager::GetInstance()->BindAsset(tokenId, bundleName, sessionId, asset, bindInfo);
+    if (status != OBJECT_SUCCESS) {
+        ZLOGE("bind asset fail %{public}d, bundleName:%{public}s, sessionId:%{public}s, assetName:%{public}s", status,
+            bundleName.c_str(), sessionId.c_str(), asset.name.c_str());
+    }
+    return status;
 }
 
 int32_t ObjectServiceImpl::OnInitialize()
@@ -230,6 +233,17 @@ int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundl
     return OBJECT_SUCCESS;
 }
 
+int32_t ObjectServiceImpl::DeleteSnapshot(const std::string &bundleName, const std::string &sessionId)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
+    }
+    ObjectStoreManager::GetInstance()->DeleteSnapshot(bundleName, sessionId);
+    return OBJECT_SUCCESS;
+}
+
 int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
     const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId)
 {
@@ -315,6 +329,28 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
 
 ObjectServiceImpl::ObjectServiceImpl()
 {
+    auto process = [](const Event& event) {
+        auto& evt = static_cast<const BindEvent&>(event);
+        auto eventInfo = evt.GetBindInfo();
+        StoreMetaData meta;
+        meta.storeId = eventInfo.storeName;
+        meta.bundleName = eventInfo.bundleName;
+        meta.user = std::to_string(eventInfo.user);
+        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str());
+            return;
+        }
+        auto store = AutoCache::GetInstance().GetStore(meta, {});
+        if (store == nullptr) {
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            return;
+        }
+        auto bindAssets = ObjectStoreManager::GetInstance()->GetSnapShots(eventInfo.bundleName, eventInfo.storeName);
+        store->BindSnapshots(bindAssets);
+    };
+    EventCenter::GetInstance().Subscribe(BindEvent::BIND_SNAPSHOT, process);
 }
 
 void ObjectServiceImpl::RegisterObjectServiceInfo()

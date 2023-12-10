@@ -15,23 +15,25 @@
 #define LOG_TAG "RdbGeneralStore"
 #include "rdb_general_store.h"
 #include "cache_cursor.h"
-#include "cloud_service.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
+#include "cloud_service.h"
 #include "crypto_manager.h"
+#include "device_manager_adapter.h"
+#include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "rdb_cursor.h"
 #include "rdb_helper.h"
 #include "rdb_query.h"
+#include "rdb_result_set_impl.h"
 #include "relational_store_manager.h"
+#include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
-#include "device_manager_adapter.h"
-#include "rdb_result_set_impl.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
@@ -64,6 +66,12 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     }
     option.observer = &observer_;
     manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
+    storeInfo_.tokenId = meta.tokenId;
+    storeInfo_.bundleName = meta.bundleName;
+    storeInfo_.storeName = meta.storeId;
+    storeInfo_.instanceId = meta.instanceId;
+    storeInfo_.user = std::stoi(meta.user);
+    
     if (delegate_ != nullptr && meta.isManualClean) {
         PragmaData data =
             static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
@@ -84,6 +92,14 @@ RdbGeneralStore::~RdbGeneralStore()
     rdbLoader_ = nullptr;
 }
 
+int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
+{
+    if (snapshots_.bindAssets == nullptr) {
+        snapshots_.bindAssets = bindAssets;
+    }
+    return GenErr::E_OK;
+}
+
 int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
 {
     if (bindInfo.db_ == nullptr || bindInfo.loader_ == nullptr) {
@@ -94,9 +110,19 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         return GeneralError::E_OK;
     }
 
+    BindEvent::BindEventInfo  eventInfo;
+    eventInfo.tokenId = storeInfo_.tokenId;
+    eventInfo.bundleName = storeInfo_.bundleName;
+    eventInfo.storeName = storeInfo_.storeName;
+    eventInfo.user = storeInfo_.user;
+    eventInfo.instanceId = storeInfo_.instanceId;
+
+    auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
     bindInfo_ = std::move(bindInfo);
-    rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_);
-    rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_);
+    rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
+    rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
+
     DBSchema schema;
     schema.tables.resize(database.tables.size());
     for (size_t i = 0; i < database.tables.size(); i++) {
@@ -207,6 +233,18 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
         return RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition());
     }
     return nullptr;
+}
+
+int32_t RdbGeneralStore::MergeMigratedData(const std::string& tableName, VBuckets&& values)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! tables name:%{public}s", Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ERROR;
+    }
+
+    auto status = delegate_->UpsertData(tableName, ValueProxy::Convert(std::move(values)));
+    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)

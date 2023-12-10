@@ -27,6 +27,7 @@
 namespace OHOS::DistributedRdb {
 class RdbResultSetImpl final : public NativeRdb::ResultSet {
 public:
+    using ValueProxy = DistributedData::ValueProxy;
     using ColumnType = NativeRdb::ColumnType;
     explicit RdbResultSetImpl(std::shared_ptr<DistributedData::Cursor> resultSet);
     ~RdbResultSetImpl() override {};

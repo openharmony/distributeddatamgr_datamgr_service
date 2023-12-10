@@ -26,6 +26,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/backup/include",
     "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/cloud",
+    "${data_service_path}/service/common",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/data_share",
@@ -45,6 +46,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${dataobject_path}/frameworks/innerkitsimpl/include",
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
     "${relational_store_path}/interfaces/inner_api/rdb/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
     "//third_party/json/single_include",
   ]
 
@@ -63,6 +65,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/app/src/checker/system_checker.cpp",
     "${data_service_path}/service/backup/src/backup_manager.cpp",
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/config/src/config_factory.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
@@ -85,7 +88,6 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
-    "${data_service_path}/service/rdb/value_proxy.cpp",
     "rdbservicestub_fuzzer.cpp",
   ]
 

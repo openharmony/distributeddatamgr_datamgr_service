@@ -19,7 +19,7 @@
 #include "value_proxy.h"
 namespace Test {
 using namespace testing::ext;
-using namespace OHOS::DistributedRdb;
+using namespace OHOS::DistributedData;
 class ValueProxyTest  : public testing::Test {
 };
 

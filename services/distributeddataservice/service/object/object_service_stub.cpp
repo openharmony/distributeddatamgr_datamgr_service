@@ -19,7 +19,7 @@
 
 #include <ipc_skeleton.h>
 
-#include "itypes_util.h"
+#include "common_type_util.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 
@@ -72,6 +72,27 @@ int32_t ObjectServiceStub::OnAssetChangedOnRemote(MessageParcel &data, MessagePa
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return status;
+}
+
+int32_t ObjectServiceStub::ObjectStoreBindAssetOnRemote(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    ObjectStore::Asset asset;
+    ObjectStore::AssetBindInfo bindInfo;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, asset, bindInfo)) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s assetName:%{public}s bindStore:%{public}s",
+              DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(),
+              asset.name.c_str(), bindInfo.storeName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    int32_t status = BindAssetStore(bundleName, sessionId, asset, bindInfo);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
 }
 
 int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, MessageParcel &reply)
@@ -150,6 +171,23 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = UnregisterDataChangeObserver(bundleName, sessionId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
+int32_t ObjectServiceStub::OnDeleteSnapshot(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId)) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+              DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = DeleteSnapshot(bundleName, sessionId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

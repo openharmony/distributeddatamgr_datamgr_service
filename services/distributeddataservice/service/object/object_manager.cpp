@@ -17,12 +17,16 @@
 
 #include "object_manager.h"
 
+#include "ipc_skeleton.h"
+#include "accesstoken_kit.h"
+#include "ipc_skeleton.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "datetime_ex.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "object_data_listener.h"
+#include "object_asset_loader.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "account/account_delegate.h"
@@ -30,9 +34,13 @@
 namespace OHOS {
 namespace DistributedObject {
 using namespace OHOS::DistributedKv;
+using namespace Security::AccessToken;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using AccountDelegate = DistributedKv::AccountDelegate;
-
+using OHOS::DistributedKv::AccountDelegate;
+using Account = OHOS::DistributedKv::AccountDelegate;
+using AccessTokenKit = Security::AccessToken::AccessTokenKit;
+using ValueProxy = OHOS::DistributedData::ValueProxy;
 ObjectStoreManager::ObjectStoreManager() {}
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
@@ -709,6 +717,102 @@ SequenceSyncManager::Result SequenceSyncManager::DeleteNotifierNoLock(uint64_t s
         userIdIter++;
     }
     return SUCCESS_USER_HAS_FINISHED;
+}
+
+int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
+    ObjectStore::Asset& asset, ObjectStore::AssetBindInfo& bindInfo)
+{
+    auto snapshotKey = appId + SEPERATOR + sessionId;
+    snapshots_.ComputeIfAbsent(
+        snapshotKey, [](const std::string& key) -> auto {
+            return std::make_shared<ObjectSnapshot>();
+        });
+    auto storeKey = appId + SEPERATOR + bindInfo.storeName;
+    bindSnapshots_.ComputeIfAbsent(
+        storeKey, [](const std::string& key) -> auto {
+            return std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+        });
+    bindSnapshots_[storeKey]->emplace(std::pair{asset.uri, snapshots_[snapshotKey]});
+
+    HapTokenInfo tokenInfo;
+    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (status != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d, bundleName:%{public}s", tokenId, status, appId.c_str());
+        return GeneralError::E_ERROR;
+    }
+    StoreInfo storeInfo;
+    storeInfo.bundleName = appId;
+    storeInfo.tokenId = tokenId;
+    storeInfo.instanceId = tokenInfo.instIndex;
+    storeInfo.user = tokenInfo.userID;
+    storeInfo.storeName = bindInfo.storeName;
+
+    snapshots_[snapshotKey]->BindAsset(ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
+    return OBJECT_SUCCESS;
+}
+
+DistributedData::AssetBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo)
+{
+    return DistributedData::AssetBindInfo{
+        .storeName = std::move(bindInfo.storeName),
+        .tableName = std::move(bindInfo.tableName),
+        .primaryKey = ValueProxy::Convert(std::move(bindInfo.primaryKey)),
+        .field = std::move(bindInfo.field),
+        .assetName = std::move(bindInfo.assetName),
+    };
+}
+
+int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::string& appId,
+    const std::string& sessionId, const std::string& deviceId, const ObjectStore::Asset& asset)
+{
+    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto objectAsset = asset;
+    Asset dataAsset =  ValueProxy::Convert(std::move(objectAsset));
+    auto snapshotKey = appId + SEPERATOR + sessionId;
+    if (snapshots_.Contains(snapshotKey) && snapshots_[snapshotKey]->IsBoundAsset(dataAsset)) {
+        return snapshots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
+    }
+
+    bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, appId, deviceId, dataAsset);
+    if (isSuccess) {
+        return OBJECT_SUCCESS;
+    } else {
+        ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
+              "%{public}s", userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
+        return OBJECT_INNER_ERROR;
+    }
+}
+
+ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::string& bundleName,
+    const std::string& storeName)
+{
+    auto storeKey = bundleName + SEPERATOR + storeName;
+    bindSnapshots_.ComputeIfAbsent(
+        storeKey, [](const std::string& key) -> auto {
+            return std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+        });
+    return bindSnapshots_[storeKey];
+}
+
+void ObjectStoreManager::DeleteSnapshot(const std::string& bundleName, const std::string& sessionId)
+{
+    auto snapshotKey = bundleName + SEPERATOR + sessionId;
+    if (!snapshots_.Contains(snapshotKey)) {
+        ZLOGD("Not find snapshot, don't need delete");
+        return;
+    }
+    auto snapshot = snapshots_[snapshotKey];
+    bindSnapshots_.ForEach([snapshot](auto& key, auto& value) {
+        for (auto pos = value->begin(); pos != value->end();) {
+            if (pos->second == snapshot) {
+                pos = value->erase(pos);
+            } else {
+                ++pos;
+            }
+        }
+        return true;
+    });
+    snapshots_.Erase(snapshotKey);
 }
 } // namespace DistributedObject
 } // namespace OHOS

@@ -27,6 +27,9 @@
 #include "object_common.h"
 #include "object_data_listener.h"
 #include "types.h"
+#include "object_snapshot.h"
+#include "object_types.h"
+#include "value_proxy.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -68,6 +71,7 @@ private:
 class ObjectStoreManager {
 public:
     using DmAdaper = OHOS::DistributedData::DeviceManagerAdapter;
+    using UriToSnapshot = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
     ObjectStoreManager();
     static ObjectStoreManager *GetInstance()
     {
@@ -92,6 +96,12 @@ public:
     void CloseAfterMinute();
     int32_t Open();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+    UriToSnapshot GetSnapShots(const std::string &bundleName, const std::string &storeName);
+    int32_t BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
+        ObjectStore::Asset& asset, ObjectStore::AssetBindInfo& bindInfo);
+    int32_t OnAssetChanged(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
+         const std::string& deviceId, const ObjectStore::Asset& asset);
+    void DeleteSnapshot(const std::string &bundleName, const std::string &sessionId);
 private:
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *LOCAL_DEVICE = "local";
@@ -161,6 +171,10 @@ private:
     static constexpr size_t TIME_TASK_NUM = 1;
     static constexpr int64_t INTERVAL = 1;
     std::shared_ptr<ExecutorPool> executors_;
+    DistributedData::AssetBindInfo ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo);
+    VBucket ConvertVBucket(ObjectStore::ValuesBucket &vBucket);
+    ConcurrentMap<std::string, std::shared_ptr<Snapshot>> snapshots_; // key:bundleName_sessionId
+    ConcurrentMap<std::string, UriToSnapshot> bindSnapshots_; // key:bundleName_storeName
 };
 } // namespace DistributedObject
 } // namespace OHOS

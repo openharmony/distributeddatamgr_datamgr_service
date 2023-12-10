@@ -17,6 +17,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
+#include "abs_rdb_predicates.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
@@ -33,6 +34,7 @@
 #include "metadata/store_meta_data.h"
 #include "rdb_watcher.h"
 #include "rdb_notifier_proxy.h"
+#include "rdb_query.h"
 #include "store/general_store.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
@@ -124,6 +126,11 @@ RdbServiceImpl::RdbServiceImpl()
         rdbQuery->SetColumns(evt.GetColumns());
         callback(rdbQuery);
     });
+    auto compensateSyncProcess = [this] (const Event &event) {
+        auto &evt = static_cast<const BindEvent &>(event);
+        DoCompensateSync(evt);
+    };
+    EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
 }
 
 int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
@@ -393,6 +400,31 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
             OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
         },
         false);
+}
+
+void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
+{
+    auto bindInfo = event.GetBindInfo();
+    CloudEvent::StoreInfo storeInfo;
+    storeInfo.bundleName = bindInfo.bundleName;
+    storeInfo.tokenId = bindInfo.tokenId;
+    storeInfo.user = bindInfo.user;
+    storeInfo.storeName = bindInfo.storeName;
+    OHOS::NativeRdb::AbsRdbPredicates predicates(bindInfo.tableName);
+    for (auto& [key, value] : bindInfo.primaryKey) {
+        predicates.In(key, std::vector<NativeRdb::ValueObject>({ ValueProxy::Convert(std::move(value)) }));
+    }
+    auto memo = predicates.GetDistributedPredicates();
+    std::shared_ptr<RdbQuery> query = nullptr;
+    if (!memo.tables_.empty()) {
+        query = std::make_shared<RdbQuery>();
+        query->MakeCloudQuery(memo);
+    }
+
+    auto mixMode = GeneralStore::MixMode(TIME_FIRST, GeneralStore::AUTO_SYNC_MODE);
+    auto info = ChangeEvent::EventInfo(mixMode, 0, false, query, nullptr);
+    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
 void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::Option &option,

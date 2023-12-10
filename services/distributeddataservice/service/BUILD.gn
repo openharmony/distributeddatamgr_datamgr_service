@@ -27,6 +27,7 @@ config("module_public_config") {
     "backup/include",
     "bootstrap/include",
     "cloud",
+    "common",
     "config/include",
     "crypto/include",
     "dumper/include",
@@ -48,6 +49,7 @@ config("module_public_config") {
     "${kv_store_distributeddb_path}/include/",
     "${kv_store_distributeddb_path}/interfaces/include/",
     "${kv_store_distributeddb_path}/interfaces/include/relational",
+    "${dataobject_path}/interfaces/innerkits",
   ]
 }
 
@@ -57,6 +59,7 @@ ohos_shared_library("distributeddatasvc") {
     "${dataobject_path}/frameworks/innerkitsimpl/include/common",
     "${dataobject_path}/interfaces/innerkits",
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
+    "../../../../relational_store/interfaces/inner_api/common_type/include",
     "../../../../relational_store/interfaces/inner_api/rdb/include",
     "${kv_store_distributeddb_path}",
   ]
@@ -68,6 +71,7 @@ ohos_shared_library("distributeddatasvc") {
     "cloud/cloud_types_util.cpp",
     "cloud/cloud_value_util.cpp",
     "cloud/sync_manager.cpp",
+    "common/value_proxy.cpp",
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",
     "config/src/model/checker_config.cpp",
@@ -90,11 +94,14 @@ ohos_shared_library("distributeddatasvc") {
     "matrix/src/device_matrix.cpp",
     "matrix/src/matrix_event.cpp",
     "object/object_asset_loader.cpp",
+    "object/object_asset_machine.cpp",
     "object/object_callback_proxy.cpp",
     "object/object_data_listener.cpp",
     "object/object_manager.cpp",
     "object/object_service_impl.cpp",
     "object/object_service_stub.cpp",
+    "object/object_snapshot.cpp",
+    "object/object_types_utils.cpp",
     "permission/src/permit_delegate.cpp",
     "rdb/cache_cursor.cpp",
     "rdb/rdb_asset_loader.cpp",
@@ -109,7 +116,6 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_service_impl.cpp",
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_watcher.cpp",
-    "rdb/value_proxy.cpp",
   ]
   cflags = [
     "-Wno-multichar",

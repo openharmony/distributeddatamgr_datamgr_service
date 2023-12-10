@@ -19,6 +19,7 @@
 #include "cloud/cloud_store_types.h"
 #include "cloud/icloud_db.h"
 #include "error/general_error.h"
+#include "snapshot/snapshot.h"
 
 namespace OHOS::DistributedRdb {
 class RdbCloud : public DistributedDB::ICloudDb {
@@ -26,8 +27,10 @@ public:
     using DBStatus = DistributedDB::DBStatus;
     using DBVBucket = DistributedDB::VBucket;
     using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
+    using DataBucket = DistributedData::VBucket;
+    using BindAssets = DistributedData::BindAssets;
 
-    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB);
+    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets* bindAssets);
     virtual ~RdbCloud() = default;
     DBStatus BatchInsert(const std::string &tableName, std::vector<DBVBucket> &&record,
         std::vector<DBVBucket> &extend) override;
@@ -50,6 +53,14 @@ private:
     static QueryNodes ConvertQuery(DBQueryNodes&& nodes);
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
+    BindAssets* snapshots_;
+
+    void PostEvent(DistributedData::VBuckets& records, std::set<std::string>& skipAssets,
+        DistributedData::VBuckets& extend, DistributedData::AssetEvent eventId);
+    void PostEvent(DistributedData::Value& value, DataBucket& extend, std::set<std::string>& skipAssets,
+        DistributedData::AssetEvent eventId);
+    void PostEventAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets,
+        DistributedData::AssetEvent eventId);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
