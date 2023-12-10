@@ -421,7 +421,7 @@ void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
     storeInfo.storeName = bindInfo.storeName;
     OHOS::NativeRdb::AbsRdbPredicates predicates(bindInfo.tableName);
     for (auto& [key, value] : bindInfo.primaryKey) {
-        predicates.EqualTo(key, ValueProxy::Convert(std::move(value)));
+        predicates.In(key, std::vector<NativeRdb::ValueObject>({ ValueProxy::Convert(std::move(value)) }));
     }
     auto memo = predicates.GetDistributedPredicates();
     std::shared_ptr<RdbQuery> query = nullptr;

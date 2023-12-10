@@ -61,7 +61,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // STATUS_STABLE
         { STATUS_TRANSFERRING, nullptr, (Action)DoTransfer }, // remote_changed
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // transfer_finished
-        { STATUS_UPLOADING, nullptr, nullptr },               //upload
+        { STATUS_UPLOADING, nullptr, nullptr },               // upload
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // upload_finished
         { STATUS_DOWNLOADING, nullptr, nullptr },             // download
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // upload_finished
@@ -70,7 +70,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // TRANSFERRING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset },        // remote_changed
         { STATUS_STABLE, nullptr, nullptr },                            // transfer_finished
-        { STATUS_WAIT_UPLOAD, nullptr, (Action)ChangeAssetToNormal },   //upload
+        { STATUS_WAIT_UPLOAD, nullptr, (Action)ChangeAssetToNormal },   // upload
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },              // upload_finished
         { STATUS_WAIT_DOWNLOAD, nullptr, (Action)ChangeAssetToNormal }, // download
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },              // upload_finished
@@ -79,7 +79,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // DOWNLOADING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
         { STATUS_STABLE, nullptr, nullptr },                     // download_finished
@@ -88,7 +88,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // STATUS_UPLOADING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
         { STATUS_STABLE, nullptr, nullptr },                     // upload_finished
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
@@ -97,7 +97,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // STATUS_WAIT_TRANSFER
         { STATUS_NO_CHANGE, nullptr, (Action)SaveNewAsset },            // remote_changed
         { STATUS_STABLE, nullptr, (Action)CompensateTransferring },     // transfer_finished
-        { STATUS_WAIT_UPLOAD, nullptr, (Action)ChangeAssetToNormal },   //upload
+        { STATUS_WAIT_UPLOAD, nullptr, (Action)ChangeAssetToNormal },   // upload
         { STATUS_STABLE, nullptr, (Action)CompensateTransferring },     // upload_finished
         { STATUS_WAIT_DOWNLOAD, nullptr, (Action)ChangeAssetToNormal }, // download
         { STATUS_STABLE, nullptr, (Action)CompensateTransferring },     // download_finished
@@ -106,7 +106,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // STATUS_WAIT_UPLOAD
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_STABLE, nullptr, (Action)CompensateSync },      // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
@@ -115,7 +115,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // STATUS_WAIT_DOWNLOAD
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_STABLE, nullptr, (Action)CompensateSync },      // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       //upload
+        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
         { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished

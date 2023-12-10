@@ -212,9 +212,9 @@ ohos_unittest("DeviceMatrixTest") {
 ohos_unittest("RdbResultSetImplTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
-    "${data_service_path}/service/common/value_proxy.cpp",
     "mock/cursor_mock.cpp",
     "rdb_result_set_impl_test.cpp",
   ]
@@ -287,8 +287,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "object_asset_machine_test.cpp",
   ]
 
-  include_dirs =
-  [ "${dataobject_path}/interfaces/innerkits" ]
+  include_dirs = [ "${dataobject_path}/interfaces/innerkits" ]
 
   configs = [ ":module_private_config" ]
 
@@ -310,6 +309,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "//third_party/googletest:gtest_main",
   ]
 }
+
 ###############################################################################
 group("unittest") {
   testonly = true

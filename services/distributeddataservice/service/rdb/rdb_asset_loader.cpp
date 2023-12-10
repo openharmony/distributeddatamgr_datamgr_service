@@ -39,7 +39,8 @@ DBStatus RdbAssetLoader::Download(const std::string &tableName, const std::strin
     auto error = assetLoader_->Download(tableName, gid, ValueProxy::Convert(std::move(prefixTemp)), downLoadAssets);
     PostEvent(skipAssets, downLoadAssets, DistributedData::AssetEvent::DOWNLOAD_FINISHED);
     assets = ValueProxy::Convert(std::move(downLoadAssets));
-    return skipAssets.empty() ? RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error)) : CLOUD_RECORD_EXIST_CONFLICT;
+    return skipAssets.empty() ? RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error))
+                              : CLOUD_RECORD_EXIST_CONFLICT;
 }
 
 DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)

@@ -19,7 +19,7 @@
 
 #include <ipc_skeleton.h>
 
-#include "itypes_util.h"
+#include "common_type_util.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 
