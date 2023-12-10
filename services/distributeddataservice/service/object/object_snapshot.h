@@ -16,34 +16,31 @@
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_SNAPSHOT_H
 #define DISTRIBUTEDDATAMGR_OBJECT_SNAPSHOT_H
 
-#include "store/general_value.h"
-#include "snapshot/snapshot.h"
 #include "object_asset_machine.h"
+#include "snapshot/snapshot.h"
+#include "store/general_value.h"
 namespace OHOS {
 namespace DistributedObject {
 using namespace DistributedData;
 class ObjectSnapshot : public Snapshot {
 public:
-
     ObjectSnapshot();
     ~ObjectSnapshot() override;
 
-    int32_t Upload(Asset &asset) override;
-    int32_t Download(Asset &asset) override;
+    int32_t Upload(Asset& asset) override;
+    int32_t Download(Asset& asset) override;
     TransferStatus GetAssetStatus(Asset& asset) override;
     int32_t Uploaded(Asset& asset) override;
     int32_t Downloaded(Asset& asset) override;
     int32_t Transferred(Asset& asset) override;
-    int32_t OnDataChanged(Asset& asset, const std::string &deviceId) override;
-    int32_t BindAsset(const Asset& asset, const RdbBindInfo& bindInfo, const StoreInfo& storeInfo) override;
+    int32_t OnDataChanged(Asset& asset, const std::string& deviceId) override;
+    int32_t BindAsset(const Asset& asset, const DistributedData::AssetBindInfo& bindInfo, const StoreInfo& storeInfo) override;
     bool IsBoundAsset(const Asset& asset) override;
-private:
 
+private:
     std::map<std::string, ChangedAssetInfo> changedAssets_;
     std::shared_ptr<ObjectAssetMachine> assetMachine_;
 };
-}
-}
-
-
-#endif //DISTRIBUTEDDATAMGR_OBJECT_SNAPSHOT_H
+} // namespace DistributedObject
+} // namespace OHOS
+#endif // DISTRIBUTEDDATAMGR_OBJECT_SNAPSHOT_H

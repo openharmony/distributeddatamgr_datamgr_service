@@ -22,8 +22,6 @@ namespace OHOS::ITypesUtil {
 using AssetBindInfo = OHOS::ObjectStore::AssetBindInfo;
 
 template<>
-bool Marshalling(const AssetBindInfo &input, MessageParcel &data);
-template<>
 bool Unmarshalling(AssetBindInfo &output, MessageParcel &data);
 
 }

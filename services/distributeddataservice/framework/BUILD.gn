@@ -75,7 +75,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/user_meta_data.cpp",
     "serializable/serializable.cpp",
     "snapshot/snapshot.cpp",
-    "snapshot/snapshot_event.cpp",
+    "snapshot/bind_event.cpp",
     "store/auto_cache.cpp",
     "utils/anonymous.cpp",
     "utils/block_integer.cpp",

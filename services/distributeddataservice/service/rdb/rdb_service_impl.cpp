@@ -127,10 +127,10 @@ RdbServiceImpl::RdbServiceImpl()
         callback(rdbQuery);
     });
     auto compensateSyncProcess = [this] (const Event &event) {
-        auto &evt = static_cast<const SnapshotEvent &>(event);
+        auto &evt = static_cast<const BindEvent &>(event);
         DoCompensateSync(evt);
     };
-    EventCenter::GetInstance().Subscribe(SnapshotEvent::COMPENSATE_SYNC, compensateSyncProcess);
+    EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
 }
 
 int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
@@ -411,7 +411,7 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
         false);
 }
 
-void RdbServiceImpl::DoCompensateSync(const SnapshotEvent& event)
+void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
 {
     auto bindInfo = event.GetBindInfo();
     CloudEvent::StoreInfo storeInfo;

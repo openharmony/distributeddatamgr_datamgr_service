@@ -44,7 +44,7 @@ TransferStatus Snapshot::GetAssetStatus(Asset& asset)
     return STATUS_BUTT;
 }
 
-int32_t Snapshot::BindAsset(const Asset& asset, const RdbBindInfo& bindInfo, const StoreInfo& storeInfo)
+int32_t Snapshot::BindAsset(const Asset& asset, const AssetBindInfo& bindInfo, const StoreInfo& storeInfo)
 {
     return E_OK;
 }

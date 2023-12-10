@@ -17,12 +17,6 @@
 
 namespace OHOS::ITypesUtil {
 template<>
-bool Marshalling(const AssetBindInfo &input, MessageParcel &data)
-{
-    return ITypesUtil::Marshal(data, input.storeName, input.tableName, input.primaryKey, input.field,
-        input.assetName);
-}
-template<>
 bool Unmarshalling(AssetBindInfo &output, MessageParcel &data)
 {
     return ITypesUtil::Unmarshal(data, output.storeName, output.tableName, output.primaryKey, output.field,

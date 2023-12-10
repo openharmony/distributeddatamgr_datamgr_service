@@ -34,7 +34,7 @@
 #include "store_observer.h"
 #include "visibility.h"
 #include "store/general_value.h"
-#include "snapshot/snapshot_event.h"
+#include "snapshot/bind_event.h"
 
 namespace OHOS::DistributedRdb {
 class API_EXPORT RdbServiceImpl : public RdbServiceStub {
@@ -137,7 +137,7 @@ private:
     void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 
-    void DoCompensateSync(const DistributedData::SnapshotEvent& event);
+    void DoCompensateSync(const DistributedData::BindEvent& event);
 
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);

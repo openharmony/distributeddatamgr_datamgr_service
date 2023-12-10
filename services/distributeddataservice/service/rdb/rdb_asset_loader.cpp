@@ -34,13 +34,12 @@ DBStatus RdbAssetLoader::Download(const std::string &tableName, const std::strin
 {
     DistributedData::VBucket downLoadAssets = ValueProxy::Convert(assets);
     std::set<std::string> skipAssets;
-    bool needCompensate = false;
-    CheckDownload(downLoadAssets, skipAssets, needCompensate);
+    PostEvent(skipAssets, downLoadAssets, DistributedData::AssetEvent::DOWNLOAD);
     DistributedDB::Type prefixTemp = prefix;
     auto error = assetLoader_->Download(tableName, gid, ValueProxy::Convert(std::move(prefixTemp)), downLoadAssets);
-    CheckDownloaded(downLoadAssets, skipAssets);
+    PostEvent(skipAssets, downLoadAssets, DistributedData::AssetEvent::DOWNLOAD_FINISHED);
     assets = ValueProxy::Convert(std::move(downLoadAssets));
-    return needCompensate ? CLOUD_RECORD_EXIST_CONFLICT : RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
+    return skipAssets.empty() ? RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error)) : CLOUD_RECORD_EXIST_CONFLICT;
 }
 
 DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)
@@ -50,38 +49,20 @@ DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)
     return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
 }
 
-void RdbAssetLoader::CheckDownload(std::map<std::string, DistributedData::Value>& assets,
-    std::set<std::string>& skipAssets, bool& needCompensate)
+void RdbAssetLoader::PostEvent(std::set<std::string>& skipAssets,
+    std::map<std::string, DistributedData::Value>& assets, DistributedData::AssetEvent eventId)
 {
     for (auto& asset : assets) {
-        if (asset.second.index() != DistributedData::TYPE_INDEX<DistributedData::Assets>) {
-            return;
-        }
         auto* downLoadAssets = Traits::get_if<DistributedData::Assets>(&asset.second);
         if (downLoadAssets == nullptr) {
             return;
         }
-        PostDownload(*downLoadAssets, skipAssets, needCompensate);
+        PostEvent(eventId, *downLoadAssets, skipAssets);
     }
 }
 
-void RdbAssetLoader::CheckDownloaded(std::map<std::string, DistributedData::Value>& assets,
+void RdbAssetLoader::PostEvent(DistributedData::AssetEvent eventId, DistributedData::Assets& assets,
     std::set<std::string>& skipAssets)
-{
-    for (auto& asset : assets) {
-        if (asset.second.index() != DistributedData::TYPE_INDEX<DistributedData::Assets>) {
-            return;
-        }
-        auto* downLoadAssets = Traits::get_if<DistributedData::Assets>(&asset.second);
-        if (downLoadAssets == nullptr) {
-            return;
-        }
-        PostDownloaded(*downLoadAssets, skipAssets);
-    }
-}
-
-void RdbAssetLoader::PostDownload(DistributedData::Assets& assets, std::set<std::string>& skipAssets,
-    bool& needCompensate)
 {
     for (auto& downLoadAsset : assets) {
         if (downLoadAsset.status == DistributedData::Asset::STATUS_DELETE) {
@@ -91,31 +72,19 @@ void RdbAssetLoader::PostDownload(DistributedData::Assets& assets, std::set<std:
         if (it == snapshots_->bindAssets->end()) {
             continue;
         }
-
-        auto snapShot = snapshots_->bindAssets->at(downLoadAsset.uri);
-        snapShot->Download(downLoadAsset);
-        if (snapShot->GetAssetStatus(downLoadAsset) == DistributedData::STATUS_WAIT_DOWNLOAD) {
-            needCompensate = true;
-            skipAssets.insert(downLoadAsset.uri);
+        auto snapshot = it->second;
+        if (eventId == DistributedData::DOWNLOAD) {
+            snapshot->Download(downLoadAsset);
+            if (snapshot->GetAssetStatus(downLoadAsset) == DistributedData::STATUS_WAIT_DOWNLOAD) {
+                skipAssets.insert(downLoadAsset.uri);
+            }
+        } else {
+            auto pos = skipAssets.find(downLoadAsset.uri);
+            if (pos != skipAssets.end()) {
+                continue;
+            }
+            snapshot->Downloaded(downLoadAsset);
         }
-    }
-}
-
-void RdbAssetLoader::PostDownloaded(DistributedData::Assets& downLoadAssets, std::set<std::string>& skipAssets)
-{
-    for (auto& downLoadAsset : downLoadAssets) {
-        if (downLoadAsset.status == DistributedData::Asset::STATUS_DELETE) {
-            continue;
-        }
-        auto it = snapshots_->bindAssets->find(downLoadAsset.uri);
-        if (it == snapshots_->bindAssets->end()) {
-            continue;
-        }
-        auto pos = skipAssets.find(downLoadAsset.uri);
-        if (pos != skipAssets.end()) {
-            continue;
-        }
-        snapshots_->bindAssets->at(downLoadAsset.uri)->Downloaded(downLoadAsset);
     }
 }
 } // namespace OHOS::DistributedRdb

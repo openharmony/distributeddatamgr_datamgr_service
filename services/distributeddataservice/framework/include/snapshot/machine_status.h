@@ -43,7 +43,7 @@ enum AssetEvent {
     EVENT_BUTT,
 };
 
-struct RdbBindInfo {
+struct AssetBindInfo {
     std::string storeName;
     std::string tableName;
     DistributedData::VBucket primaryKey;

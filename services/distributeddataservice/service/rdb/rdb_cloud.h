@@ -55,13 +55,12 @@ private:
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
     BindAssets* snapshots_;
 
-    void PostUpload(DistributedData::Value& value, DistributedData::VBucket& extend, std::set<std::string>& skipAssets);
-    void PostUploaded(DistributedData::Value& value, std::set<std::string>& skipAssets);
-    void PostUploadAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets);
-    void PostUploadedAsset(DistributedData::Asset& asset, std::set<std::string>& skipAssets);
-    void CheckUpload(DistributedData::VBuckets& records, std::set<std::string>& skipAssets, DistributedData::VBuckets& extend);
-    void CheckUploaded(DistributedData::VBuckets& records, std::set<std::string>& skipAssets);
-
+    void PostEvent(DistributedData::VBuckets& records, std::set<std::string>& skipAssets,
+        DistributedData::VBuckets& extend, DistributedData::AssetEvent eventId);
+    void PostEvent(DistributedData::Value& value, DataBucket& extend, std::set<std::string>& skipAssets,
+        DistributedData::AssetEvent eventId);
+    void PostEventAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets,
+        DistributedData::AssetEvent eventId);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H

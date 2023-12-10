@@ -15,31 +15,29 @@
 
 #include "snapshot/machine_status.h"
 
-
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H
 
 namespace OHOS {
 namespace DistributedObject {
 using namespace OHOS::DistributedData;
-
 struct ChangedAssetInfo {
     ChangedAssetInfo() = default;
     std::string deviceId;
     DistributedData::Asset asset;
     DistributedData::TransferStatus status = DistributedData::STATUS_STABLE;
-    RdbBindInfo bindInfo;
+    AssetBindInfo bindInfo;
     StoreInfo storeInfo;
 
-    ChangedAssetInfo(const Asset& bindAsset, const RdbBindInfo& rdbBindInfo, const StoreInfo& store)
+    ChangedAssetInfo(const Asset& bindAsset, const AssetBindInfo& AssetBindInfo, const StoreInfo& store)
     {
         asset = bindAsset;
-        bindInfo = rdbBindInfo;
+        bindInfo = AssetBindInfo;
         storeInfo = store;
     }
 };
 
-typedef int32_t (*Action)(int32_t evtId, void* param, void* param2);
+typedef int32_t (*Action)(AssetEvent eventId, void* param, void* param2);
 
 struct DFAAction {
     int32_t next;
@@ -55,8 +53,6 @@ public:
 
 private:
 };
-
 } // namespace DistributedObject
 } // namespace OHOS
-
 #endif //DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H

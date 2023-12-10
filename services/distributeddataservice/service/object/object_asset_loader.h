@@ -25,10 +25,10 @@ class ObjectAssetLoader {
 public:
     static ObjectAssetLoader *GetInstance();
     bool DownLoad(const int32_t userId, const std::string &bundleName,
-                  const std::string &deviceId, const DistributedData::Asset &assetValue);
+        const std::string &deviceId, const DistributedData::Asset &assetValue);
 
     bool DownLoad(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-              const DistributedData::Asset& assetValue, std::function<void(bool success)> callback);
+        const DistributedData::Asset& assetValue, std::function<void(bool success)> callback);
 private:
     ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;

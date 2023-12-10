@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#include "snapshot/snapshot_event.h"
+#include "snapshot/bind_event.h"
 
 namespace OHOS::DistributedData {
-SnapshotEvent::SnapshotEvent(int32_t evtId, SnapshotEventInfo&& bindInfo) : Event(evtId), bindInfo_(std::move(bindInfo))
+BindEvent::BindEvent(int32_t evtId, BindEventInfo&& bindInfo) : Event(evtId), bindInfo_(std::move(bindInfo))
 {
 }
 
-const SnapshotEvent::SnapshotEventInfo& SnapshotEvent::GetBindInfo() const
+const BindEvent::BindEventInfo& BindEvent::GetBindInfo() const
 {
     return bindInfo_;
 }

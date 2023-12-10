@@ -22,14 +22,14 @@
 #include "snapshot.h"
 
 namespace OHOS::DistributedData {
-class API_EXPORT SnapshotEvent : public Event {
+class API_EXPORT BindEvent : public Event {
 public:
     enum : int32_t {
         BIND_SNAPSHOT,
         COMPENSATE_SYNC,
     };
 
-    struct SnapshotEventInfo {
+    struct BindEventInfo {
         uint32_t tokenId = 0;
         int32_t instanceId = 0;
         int32_t user;
@@ -41,13 +41,13 @@ public:
         std::string assetName;
     };
 
-    SnapshotEvent(int32_t evtId, SnapshotEventInfo&& bindInfo);
+    BindEvent(int32_t evtId, BindEventInfo&& bindInfo);
 
-    ~SnapshotEvent() = default;
-    const SnapshotEventInfo& GetBindInfo() const;
+    ~BindEvent() = default;
+    const BindEventInfo& GetBindInfo() const;
 
 private:
-    SnapshotEventInfo bindInfo_;
+    BindEventInfo bindInfo_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_SNAPSHOT_SNAPSHOT_EVENT_H

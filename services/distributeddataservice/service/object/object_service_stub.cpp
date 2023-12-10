@@ -178,6 +178,23 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
     return 0;
 }
 
+int32_t ObjectServiceStub::OnDeleteSnapshot(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId)) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+              DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = DeleteSnapshot(bundleName, sessionId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
 bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
     auto localDescriptor = IObjectService::GetDescriptor();

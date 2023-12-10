@@ -723,17 +723,16 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
     ObjectStore::Asset& asset, ObjectStore::AssetBindInfo& bindInfo)
 {
     auto snapshotKey = appId + SEPERATOR + sessionId;
-    auto it = snapShots_.find(snapshotKey);
-    if (it == snapShots_.end()) {
-        snapShots_[snapshotKey] = std::make_shared<ObjectSnapshot>();
-    }
-
+    snapshots_.ComputeIfAbsent(
+        snapshotKey, [](const std::string& key) -> auto {
+            return std::make_shared<ObjectSnapshot>();
+        });
     auto storeKey = appId + SEPERATOR + bindInfo.storeName;
-    auto pos = rdbBindSnapshots_.find(storeKey);
-    if (pos == rdbBindSnapshots_.end()) {
-        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
-    }
-    rdbBindSnapshots_[storeKey]->emplace(std::pair{asset.uri, snapShots_[snapshotKey]});
+    bindSnapshots_.ComputeIfAbsent(
+        storeKey, [](const std::string& key) -> auto {
+            return std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+        });
+    bindSnapshots_[storeKey]->emplace(std::pair{asset.uri, snapshots_[snapshotKey]});
 
     HapTokenInfo tokenInfo;
     auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
@@ -748,13 +747,13 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
     storeInfo.user = tokenInfo.userID;
     storeInfo.storeName = bindInfo.storeName;
 
-    snapShots_[snapshotKey]->BindAsset(ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
+    snapshots_[snapshotKey]->BindAsset(ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
     return OBJECT_SUCCESS;
 }
 
-RdbBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo)
+DistributedData::AssetBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo)
 {
-    return RdbBindInfo{
+    return DistributedData::AssetBindInfo{
         .storeName = std::move(bindInfo.storeName),
         .tableName = std::move(bindInfo.tableName),
         .primaryKey = ValueProxy::Convert(std::move(bindInfo.primaryKey)),
@@ -770,17 +769,16 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
     auto objectAsset = asset;
     Asset dataAsset =  ValueProxy::Convert(std::move(objectAsset));
     auto snapshotKey = appId + SEPERATOR + sessionId;
-    auto it = snapShots_.find(snapshotKey);
-    if (it != snapShots_.end() && snapShots_[snapshotKey]->IsBoundAsset(dataAsset)) {
-        return snapShots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
+    if (snapshots_.Contains(snapshotKey) && snapshots_[snapshotKey]->IsBoundAsset(dataAsset)) {
+        return snapshots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
     }
 
     bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, appId, deviceId, dataAsset);
     if (isSuccess) {
         return OBJECT_SUCCESS;
     } else {
-        ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, \
-        asset name : %{public}s",
+        ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
+              "%{public}s",
             userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
         return OBJECT_INNER_ERROR;
     }
@@ -790,12 +788,32 @@ ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::st
     const std::string& storeName)
 {
     auto storeKey = bundleName + SEPERATOR + storeName;
-    auto pos = rdbBindSnapshots_.find(storeKey);
-    if (pos == rdbBindSnapshots_.end()) {
-        rdbBindSnapshots_[storeKey] = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
-    }
-    return rdbBindSnapshots_[storeKey];
+    bindSnapshots_.ComputeIfAbsent(
+        storeKey, [](const std::string& key) -> auto {
+            return std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+        });
+    return bindSnapshots_[storeKey];
 }
 
+void ObjectStoreManager::DeleteSnapshot(const std::string& bundleName, const std::string& sessionId)
+{
+    auto snapshotKey = bundleName + SEPERATOR + sessionId;
+    if (!snapshots_.Contains(snapshotKey)) {
+        ZLOGD("Not find snapshot, don't need delete");
+        return;
+    }
+    auto snapshot = snapshots_[snapshotKey];
+    bindSnapshots_.ForEach([snapshot](auto& key, auto& value) {
+        for (auto pos = value->begin(); pos != value->end();) {
+            if (pos->second == snapshot) {
+                pos = value->erase(pos);
+            } else {
+                ++pos;
+            }
+        }
+        return true;
+    });
+    snapshots_.Erase(snapshotKey);
+}
 } // namespace DistributedObject
 } // namespace OHOS

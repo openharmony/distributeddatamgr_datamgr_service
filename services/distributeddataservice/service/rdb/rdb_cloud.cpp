@@ -38,9 +38,9 @@ DBStatus RdbCloud::BatchInsert(
     VBuckets extends = ValueProxy::Convert(std::move(extend));
     VBuckets records = ValueProxy::Convert(std::move(record));
     std::set<std::string> skipAssets;
-    CheckUpload(records, skipAssets, extends);
+    PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
     auto error = cloudDB_->BatchInsert(tableName, std::move(records), extends);
-    CheckUploaded(extends, skipAssets);
+    PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
     extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
@@ -52,9 +52,9 @@ DBStatus RdbCloud::BatchUpdate(
     VBuckets extends = ValueProxy::Convert(std::move(extend));
     VBuckets records = ValueProxy::Convert(std::move(record));
     std::set<std::string> skipAssets;
-    CheckUpload(records, skipAssets, extends);
+    PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
     auto error = cloudDB_->BatchUpdate(tableName, std::move(records), extends);
-    CheckUploaded(extends, skipAssets);
+    PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
     extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
@@ -217,18 +217,20 @@ RdbCloud::QueryNodes RdbCloud::ConvertQuery(RdbCloud::DBQueryNodes&& nodes)
     return queryNodes;
 }
 
-void RdbCloud::CheckUpload(VBuckets& records, std::set<std::string>& skipAssets, VBuckets& extend)
+void RdbCloud::PostEvent(VBuckets& records, std::set<std::string>& skipAssets, VBuckets& extend,
+    DistributedData::AssetEvent eventId)
 {
     int32_t index = 0;
     for (auto& record : records) {
         DataBucket& ext = extend[index++];
         for (auto& [key, value] : record) {
-            PostUpload(value, ext, skipAssets);
+            PostEvent(value, ext, skipAssets, eventId);
         }
     }
 }
 
-void RdbCloud::PostUpload(DistributedData::Value& value, DataBucket& extend, std::set<std::string>& skipAssets)
+void RdbCloud::PostEvent(DistributedData::Value& value, DataBucket& extend, std::set<std::string>& skipAssets,
+    DistributedData::AssetEvent eventId)
 {
     if (value.index() != TYPE_INDEX<DistributedData::Asset> && value.index() != TYPE_INDEX<DistributedData::Assets>) {
         return;
@@ -236,74 +238,39 @@ void RdbCloud::PostUpload(DistributedData::Value& value, DataBucket& extend, std
 
     if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
         auto* asset = Traits::get_if<DistributedData::Asset>(&value);
-        PostUploadAsset(*asset, extend, skipAssets);
+        PostEventAsset(*asset, extend, skipAssets, eventId);
     }
 
     if (value.index() == TYPE_INDEX<DistributedData::Assets>) {
         auto* assets = Traits::get_if<DistributedData::Assets>(&value);
         for (auto& asset : *assets) {
-            PostUploadAsset(asset, extend, skipAssets);
+            PostEventAsset(asset, extend, skipAssets, eventId);
         }
     }
 }
 
-void RdbCloud::PostUploadAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets)
+void RdbCloud::PostEventAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets,
+    DistributedData::AssetEvent eventId)
 {
     auto it = snapshots_->bindAssets->find(asset.uri);
     if (it == snapshots_->bindAssets->end()) {
         return;
     }
 
-    auto snapshot = snapshots_->bindAssets->at(asset.uri);
-    snapshot->Upload(asset);
-    if (snapshot->GetAssetStatus(asset) == TransferStatus::STATUS_WAIT_UPLOAD) {
-        skipAssets.insert(asset.uri);
-        extend[SchemaMeta::ERROR_FIELD] = GeneralError::E_RECORD_EXIST_CONFLICT;
-    }
-}
-
-void RdbCloud::CheckUploaded(VBuckets& records, std::set<std::string>& skipAssets)
-{
-    for (auto& record : records) {
-        for (auto& [key, value] : record) {
-            PostUploaded(value,  skipAssets);
+    if (eventId == DistributedData::UPLOAD) {
+        it->second->Upload(asset);
+        if (it->second->GetAssetStatus(asset) == TransferStatus::STATUS_WAIT_UPLOAD) {
+            skipAssets.insert(asset.uri);
+            extend[SchemaMeta::ERROR_FIELD] = DBStatus::CLOUD_RECORD_EXIST_CONFLICT;
         }
     }
-}
 
-void RdbCloud::PostUploaded(DistributedData::Value& value, std::set<std::string>& skipAssets)
-{
-    if (value.index() != TYPE_INDEX<DistributedData::Asset> && value.index() != TYPE_INDEX<DistributedData::Assets>) {
-        return;
-    }
-
-    if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
-        auto* asset = Traits::get_if<DistributedData::Asset>(&value);
-        PostUploadedAsset(*asset, skipAssets);
-    }
-
-    if (value.index() == TYPE_INDEX<DistributedData::Assets>) {
-        auto* assets = Traits::get_if<DistributedData::Assets>(&value);
-        for (auto& asset : *assets) {
-            PostUploadedAsset(asset, skipAssets);
+    if (eventId == DistributedData::UPLOAD_FINISHED) {
+        auto skip = skipAssets.find(asset.uri);
+        if (skip != skipAssets.end()) {
+            return;
         }
+        it->second->Uploaded(asset);
     }
 }
-
-
-void RdbCloud::PostUploadedAsset(DistributedData::Asset& asset, std::set<std::string>& skipAssets)
-{
-    auto it = snapshots_->bindAssets->find(asset.uri);
-    if (it == snapshots_->bindAssets->end()) {
-        return;
-    }
-
-    auto snapshot = snapshots_->bindAssets->at(asset.uri);
-    auto skip = skipAssets.find(asset.uri);
-    if (skip != skipAssets.end()) {
-        return;
-    }
-    snapshot->Uploaded(asset);
-}
-
 } // namespace OHOS::DistributedRdb

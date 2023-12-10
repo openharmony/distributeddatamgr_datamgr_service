@@ -17,35 +17,25 @@
 #include "object_asset_machine.h"
 
 #include <utility>
+#include <utils/anonymous.h>
 
-#include "accesstoken_kit.h"
-#include "account/account_delegate.h"
 #include "cloud/change_event.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
-#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "object_asset_loader.h"
-#include "snapshot/snapshot_event.h"
+#include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
 
 namespace OHOS {
 namespace DistributedObject {
-using namespace OHOS::DistributedObject;
+using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedRdb;
-using Account = OHOS::DistributedKv::AccountDelegate;
-using AccessTokenKit = Security::AccessToken::AccessTokenKit;
-using OHOS::DistributedKv::AccountDelegate;
-using namespace Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-using Account = OHOS::DistributedKv::AccountDelegate;
-using AccessTokenKit = Security::AccessToken::AccessTokenKit;
-using OHOS::DistributedKv::AccountDelegate;
-using namespace Security::AccessToken;
+
 constexpr static const char* SQL_AND = " = ? and ";
 constexpr static const int32_t AND_SIZE = 5;
-
 static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::pair<std::string, Asset>& newAsset);
 
 static int32_t ChangeAssetToNormal(int32_t eventId, Asset& asset, void*);
@@ -61,10 +51,10 @@ static int32_t PrintError(int32_t eventId, ChangedAssetInfo& changedAsset, void*
 static int32_t UpdateStore(ChangedAssetInfo& changedAsset);
 
 static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset);
-static VBuckets GetMigratedData(AutoCache::Store& store, RdbBindInfo& rdbBindInfo, const Asset& newAsset);
-static void MergeAssetData(VBucket& record, const Asset& newAsset, const RdbBindInfo& rdbBindInfo);
+static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& AssetBindInfo, const Asset& newAsset);
+static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& AssetBindInfo);
 static void MergeAsset(Asset& oldAsset, const Asset& newAsset);
-static std::string BuildSql(const RdbBindInfo& bindInfo, Values& args);
+static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args);
 
 static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
     {
@@ -146,11 +136,11 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, TransferStatus& sta
         }
     }
     if (action->next != STATUS_NO_CHANGE) {
-        ZLOGE("status before:%{public}d", status);
+        ZLOGI("status before:%{public}d", status);
         status = static_cast<TransferStatus>(action->next);
-        ZLOGE(" eventId: %{public}d, status after:%{public}d", eventId, status);
+        ZLOGI("eventId: %{public}d, status after:%{public}d", eventId, status);
     } else {
-        ZLOGE("status nochange: %{public}d", status);
+        ZLOGI("status nochange: %{public}d", status);
     }
     if (action->after != nullptr) {
         int32_t res = action->after(eventId, param, param2);
@@ -165,20 +155,20 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::
 {
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
-    ZLOGE("go to DownloadFile, deviceId:%{public}s, uri:%{public}s", changedAsset.deviceId.c_str(),
-        changedAsset.asset.uri.c_str());
-
     ObjectAssetLoader::GetInstance()->DownLoad(changedAsset.storeInfo.user, changedAsset.storeInfo.bundleName,
-        changedAsset.deviceId, changedAsset.asset, [&](bool success) {
+        changedAsset.deviceId, changedAsset.asset, [&changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
                 if (status != E_OK) {
-                    ZLOGE("UpdateStore error, error:%{public}d", status);
+                    ZLOGE("UpdateStore error, error:%{public}d, assetName:%{public}s, store:%{public}s, "
+                          "table:%{public}s",
+                        status, changedAsset.asset.name.c_str(),
+                        Anonymous::Change(changedAsset.bindInfo.storeName).c_str(),
+                        changedAsset.bindInfo.tableName.c_str());
                 }
             }
             ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset.status, (void*)&changedAsset, nullptr);
         });
-    ZLOGE("DownloadFile end");
     return E_OK;
 }
 
@@ -186,31 +176,28 @@ static int32_t UpdateStore(ChangedAssetInfo& changedAsset)
 {
     auto store = GetStore(changedAsset);
     if (store == nullptr) {
-        ZLOGE("store null, storeId:%{public}s", changedAsset.bindInfo.storeName.c_str());
+        ZLOGE("store null, storeId:%{public}s", Anonymous::Change(changedAsset.bindInfo.storeName).c_str());
         return E_ERROR;
     }
 
     VBuckets vBuckets = GetMigratedData(store, changedAsset.bindInfo, changedAsset.asset);
     if (vBuckets.empty()) {
-        ZLOGE("No data need Merge");
         return E_OK;
     }
     return store->MergeMigratedData(changedAsset.bindInfo.tableName, std::move(vBuckets));
 }
 
-static VBuckets GetMigratedData(AutoCache::Store& store, RdbBindInfo& rdbBindInfo, const Asset& newAsset)
+static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& AssetBindInfo, const Asset& newAsset)
 {
     Values args;
     VBuckets vBuckets;
-    auto sql = BuildSql(rdbBindInfo, args);
-    auto cursor = store->Query(rdbBindInfo.tableName, sql, std::move(args));
+    auto sql = BuildSql(AssetBindInfo, args);
+    auto cursor = store->Query(AssetBindInfo.tableName, sql, std::move(args));
     if (cursor == nullptr) {
-        ZLOGE("cursor is nullptr");
         return vBuckets;
     }
     int32_t count = cursor->GetCount();
     if (count != 1) {
-        ZLOGE("Query data Error, not find bind store data.Cursor count:%{public}d", count);
         return vBuckets;
     }
     vBuckets.reserve(count);
@@ -219,9 +206,9 @@ static VBuckets GetMigratedData(AutoCache::Store& store, RdbBindInfo& rdbBindInf
         VBucket entry;
         err = cursor->GetRow(entry);
         if (err != E_OK) {
-            break;
+            return vBuckets;
         }
-        MergeAssetData(entry, newAsset, rdbBindInfo);
+        MergeAssetData(entry, newAsset, AssetBindInfo);
         vBuckets.emplace_back(std::move(entry));
         err = cursor->MoveToNext();
         count--;
@@ -229,7 +216,7 @@ static VBuckets GetMigratedData(AutoCache::Store& store, RdbBindInfo& rdbBindInf
     return vBuckets;
 }
 
-static std::string BuildSql(const RdbBindInfo& bindInfo, Values& args)
+static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args)
 {
     std::string sql;
     sql.append("SELECT ").append(bindInfo.field).append(" FROM ").append(bindInfo.tableName).append(" WHERE ");
@@ -241,15 +228,15 @@ static std::string BuildSql(const RdbBindInfo& bindInfo, Values& args)
     return sql;
 }
 
-static void MergeAssetData(VBucket& record, const Asset& newAsset, const RdbBindInfo& rdbBindInfo)
+static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& assetBindInfo)
 {
-    for (auto const& [key, primary] : rdbBindInfo.primaryKey) {
+    for (auto const& [key, primary] : assetBindInfo.primaryKey) {
         record[key] = primary;
     }
 
-    auto it = record.find(rdbBindInfo.field);
+    auto it = record.find(assetBindInfo.field);
     if (it == record.end()) {
-        ZLOGE("Error, Not find field:%{public}s in store", rdbBindInfo.field.c_str());
+        ZLOGD("Not find field:%{public}s in store", assetBindInfo.field.c_str());
         return;
     }
 
@@ -261,7 +248,7 @@ static void MergeAssetData(VBucket& record, const Asset& newAsset, const RdbBind
     if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
         auto* asset = Traits::get_if<DistributedData::Asset>(&value);
         if (asset->name != newAsset.name) {
-            ZLOGE("Asset not same, old uri: %{public}s, new uri: %{public}s", asset->uri.c_str(), newAsset.uri.c_str());
+            ZLOGD("Asset not same, old uri: %{public}s, new uri: %{public}s", asset->uri.c_str(), newAsset.uri.c_str());
             return;
         }
     }
@@ -291,8 +278,6 @@ static void MergeAsset(Asset& oldAsset, const Asset& newAsset)
 
 static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset)
 {
-    HapTokenInfo tokenInfo;
-
     StoreMetaData meta;
     meta.storeId = changedAsset.bindInfo.storeName;
     meta.bundleName = changedAsset.storeInfo.bundleName;
@@ -316,8 +301,7 @@ static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changed
 
 static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
 {
-    ZLOGE("DoCloudSync");
-    SnapshotEvent::SnapshotEventInfo bindEventInfo;
+    BindEvent::BindEventInfo bindEventInfo;
     bindEventInfo.bundleName = changedAsset.storeInfo.bundleName;
     bindEventInfo.user = changedAsset.storeInfo.user;
     bindEventInfo.tokenId = changedAsset.storeInfo.tokenId;
@@ -327,7 +311,7 @@ static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, v
     bindEventInfo.filed = changedAsset.bindInfo.field;
     bindEventInfo.primaryKey = changedAsset.bindInfo.primaryKey;
     bindEventInfo.assetName = changedAsset.bindInfo.assetName;
-    auto evt = std::make_unique<SnapshotEvent>(SnapshotEvent::COMPENSATE_SYNC, std::move(bindEventInfo));
+    auto evt = std::make_unique<BindEvent>(BindEvent::COMPENSATE_SYNC, std::move(bindEventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return E_OK;
 }
@@ -347,8 +331,8 @@ static int32_t ChangeAssetToNormal(int32_t eventId, Asset& asset, void*)
 
 static int32_t PrintError(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
 {
-    ZLOGE("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s, uri%{public}s",
-        eventId, changedAsset.status, changedAsset.asset.name.c_str(), changedAsset.asset.uri.c_str());
+    ZLOGE("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s", eventId,
+        changedAsset.status, changedAsset.asset.name.c_str());
     return E_OK;
 }
 

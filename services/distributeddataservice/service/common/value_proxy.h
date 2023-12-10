@@ -27,21 +27,21 @@ namespace OHOS::DistributedData {
 class ValueProxy final {
 public:
     template<class T>
-        static inline constexpr uint32_t INDEX = DistributedData::TYPE_INDEX<T>;
+    static inline constexpr uint32_t INDEX = DistributedData::TYPE_INDEX<T>;
     static inline constexpr uint32_t MAX = DistributedData::TYPE_MAX;
 
     template<typename T, typename... Types>
     struct variant_cvt_of {
         static constexpr size_t value = std::is_class_v<T> ? Traits::convertible_index_of_v<T, Types...>
-        : Traits::same_index_of_v<T, Types...>;
+                                                           : Traits::same_index_of_v<T, Types...>;
     };
 
     template<typename T, typename... Types>
     static variant_cvt_of<T, Types...> variant_cvt_test(const T &, const std::variant<Types...> &);
 
     template<class T, class V>
-        static inline constexpr uint32_t CVT_INDEX =
-            decltype(variant_cvt_test(std::declval<T>(), std::declval<V>()))::value;
+    static inline constexpr uint32_t CVT_INDEX =
+        decltype(variant_cvt_test(std::declval<T>(), std::declval<V>()))::value;
 
     using Bytes = DistributedData::Bytes;
     class Asset {

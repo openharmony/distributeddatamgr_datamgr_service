@@ -15,25 +15,25 @@
 #define LOG_TAG "RdbGeneralStore"
 #include "rdb_general_store.h"
 #include "cache_cursor.h"
-#include "cloud_service.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
+#include "cloud_service.h"
 #include "crypto_manager.h"
+#include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
-#include "snapshot/snapshot_event.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "rdb_cursor.h"
 #include "rdb_helper.h"
 #include "rdb_query.h"
+#include "rdb_result_set_impl.h"
 #include "relational_store_manager.h"
+#include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
-#include "device_manager_adapter.h"
-#include "rdb_result_set_impl.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
@@ -110,14 +110,14 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         return GeneralError::E_OK;
     }
 
-    SnapshotEvent::SnapshotEventInfo  eventInfo;
+    BindEvent::BindEventInfo  eventInfo;
     eventInfo.tokenId = storeInfo_.tokenId;
     eventInfo.bundleName = storeInfo_.bundleName;
     eventInfo.storeName = storeInfo_.storeName;
     eventInfo.user = storeInfo_.user;
     eventInfo.instanceId = storeInfo_.instanceId;
 
-    auto evt = std::make_unique<SnapshotEvent>(SnapshotEvent::BIND_SNAPSHOT,std::move(eventInfo));
+    auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT,std::move(eventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     bindInfo_ = std::move(bindInfo);
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);

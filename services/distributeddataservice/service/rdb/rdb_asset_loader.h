@@ -42,12 +42,10 @@ public:
 private:
     std::shared_ptr<DistributedData::AssetLoader> assetLoader_;
     BindAssets* snapshots_;
-    void CheckDownload(std::map<std::string, DistributedData::Value>& assets,
-        std::set<std::string>& skipAssets, bool& needCompensate);
-    void CheckDownloaded(std::map<std::string, DistributedData::Value>& assets,
+    void PostEvent(std::set<std::string>& skipAssets, std::map<std::string, DistributedData::Value>& assets,
+        DistributedData::AssetEvent eventId);
+    void PostEvent(DistributedData::AssetEvent eventId, DistributedData::Assets& assets,
         std::set<std::string>& skipAssets);
-    void PostDownload(DistributedData::Assets& assets, std::set<std::string>& skipAssets, bool& needCompensate);
-    void PostDownloaded(DistributedData::Assets& downLoadAssets, std::set<std::string>& skipAssets);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H

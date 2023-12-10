@@ -101,6 +101,7 @@ public:
         ObjectStore::AssetBindInfo& bindInfo);
     int32_t OnAssetChanged(const uint32_t tokenId, const std::string& appId, const std::string& sessionId, const std::string& deviceId,
         const ObjectStore::Asset& asset);
+    void DeleteSnapshot(const std::string &bundleName, const std::string &sessionId);
 private:
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *LOCAL_DEVICE = "local";
@@ -170,10 +171,10 @@ private:
     static constexpr size_t TIME_TASK_NUM = 1;
     static constexpr int64_t INTERVAL = 1;
     std::shared_ptr<ExecutorPool> executors_;
-    RdbBindInfo ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo);
+    DistributedData::AssetBindInfo ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo);
     VBucket ConvertVBucket(ObjectStore::ValuesBucket &vBucket);
-    std::map<std::string, std::shared_ptr<Snapshot>> snapShots_; // key:bundleName_sessionId, value:Snapshot*
-    std::map<std::string, UriToSnapshot> rdbBindSnapshots_; // key:bundleName_storeName, value:UriToSnapshot
+    ConcurrentMap<std::string, std::shared_ptr<Snapshot>> snapshots_; // key:bundleName_sessionId
+    ConcurrentMap<std::string, UriToSnapshot> bindSnapshots_; // key:bundleName_storeName
 };
 } // namespace DistributedObject
 } // namespace OHOS

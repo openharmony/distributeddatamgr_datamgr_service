@@ -18,7 +18,7 @@
 
 #include "eventcenter/event_center.h"
 #include "log_print.h"
-#include "snapshot/snapshot_event.h"
+#include "snapshot/bind_event.h"
 #include "store/general_store.h"
 namespace OHOS::DistributedObject {
 
@@ -83,7 +83,7 @@ int32_t ObjectSnapshot::OnDataChanged(Asset& asset, const std::string& deviceId)
         (void*)&changedAssets_[asset.uri], (void*)&newAsset);
 }
 
-int32_t ObjectSnapshot::BindAsset(const Asset& asset, const RdbBindInfo& bindInfo, const StoreInfo& storeInfo)
+int32_t ObjectSnapshot::BindAsset(const Asset& asset, const DistributedData::AssetBindInfo& bindInfo, const StoreInfo& storeInfo)
 {
     if (IsBoundAsset(asset)) {
         ZLOGD("Asset is bound. asset.uri:%{public}s :", asset.uri.c_str());
