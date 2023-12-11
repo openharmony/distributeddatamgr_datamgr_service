@@ -123,6 +123,7 @@ Status SoftBusClient::OpenConnect(uint32_t length)
             ZLOGE("OpenSessionByAsync client is nullptr.");
             return;
         }
+        ZLOGI("OpenSession Start.");
         (void)client->Open(attr);
         client->sessionFlag_.store(false);
     };
