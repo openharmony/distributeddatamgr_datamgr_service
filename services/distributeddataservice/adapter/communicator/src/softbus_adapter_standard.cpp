@@ -302,15 +302,15 @@ std::string SoftBusAdapter::DelConnect(int32_t connId)
     std::string name;
     connects_.ForEach([connId, &name](const auto &deviceId, auto &connects) -> bool {
         for (auto iter = connects.begin(); iter != connects.end();) {
-            if (**iter == connId) {
+            if (*iter != nullptr && **iter == connId) {
                 name += deviceId;
                 name += " ";
-                connects.erase(iter++);
+                iter = connects.erase(iter);
             } else {
                 iter++;
             }
         }
-    return false;
+        return false;
     });
     return name;
 }
