@@ -88,7 +88,7 @@ private:
     ConcurrentMap<std::string, std::string> syncTask_ {};
     std::shared_ptr<ExecutorPool> executors_;
     mutable std::shared_mutex mutex_;
-    static constexpr int32_t EFFECTIVE_DURATION = 1 * 1000; // ms
+    static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
     Time expireTime_ = std::chrono::steady_clock::now();
     bool isNetAvailable_ = false;
 };
