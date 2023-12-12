@@ -95,7 +95,7 @@ private:
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
     static constexpr int32_t WAIT_TIME = 30; // 30 seconds
     static constexpr int32_t DEFAULT_USER = 0;
-    static constexpr const char *DATA_CHANGE_EVENT_ID = "cloud_data_change";
+
     struct HapInfo {
         int32_t user;
         std::string bundleName;
