@@ -18,6 +18,7 @@
 
 #include <string>
 #include <shared_mutex>
+#include <mutex>
 
 #include "error_code.h"
 #include "unified_data.h"

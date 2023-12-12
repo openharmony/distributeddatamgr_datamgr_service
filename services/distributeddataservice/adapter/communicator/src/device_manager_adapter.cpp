@@ -98,7 +98,7 @@ private:
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
 {
     ZLOGI("OnNetworkAvailable");
-    dmAdapter_.isNetAvailable_ = true;
+    dmAdapter_.SetNetAvailable(true);
     dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
@@ -106,7 +106,7 @@ int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle
 int32_t NetConnCallbackObserver::NetUnavailable()
 {
     ZLOGI("OnNetworkUnavailable");
-    dmAdapter_.isNetAvailable_ = false;
+    dmAdapter_.SetNetAvailable(false);
     return DistributedKv::SUCCESS;
 }
 
@@ -127,7 +127,7 @@ int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &
 int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
 {
     ZLOGI("OnNetLost");
-    dmAdapter_.isNetAvailable_ = false;
+    dmAdapter_.SetNetAvailable(false);
     dmAdapter_.Offline(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
@@ -578,6 +578,22 @@ bool DeviceManagerAdapter::RegOnNetworkChange()
 
 bool DeviceManagerAdapter::IsNetworkAvailable()
 {
+    {
+        std::shared_lock<decltype(mutex_)> lock(mutex_);
+        if (isNetAvailable_ || expireTime_ > std::chrono::steady_clock::now()) {
+            return isNetAvailable_;
+        }
+    }
+    NetHandle handle;
+    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
+    return SetNetAvailable(status == 0 && handle.GetNetId() != 0);
+}
+
+bool DeviceManagerAdapter::SetNetAvailable(bool isNetAvailable)
+{
+    std::unique_lock<decltype(mutex_)> lock(mutex_);
+    isNetAvailable_ = isNetAvailable;
+    expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
     return isNetAvailable_;
 }
 } // namespace OHOS::DistributedData

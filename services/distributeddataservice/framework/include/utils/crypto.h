@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_CRYPTO_H
 #include <string>
 #include <vector>
+#include <limits>
 #include "visibility.h"
 namespace OHOS {
 namespace DistributedData {

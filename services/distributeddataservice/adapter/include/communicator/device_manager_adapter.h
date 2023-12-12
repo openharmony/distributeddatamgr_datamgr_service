@@ -37,6 +37,7 @@ public:
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
     using Status = OHOS::DistributedKv::Status;
+    using Time = std::chrono::steady_clock::time_point;
     static DeviceManagerAdapter &GetInstance();
     static constexpr const char *CLOUD_DEVICE_UUID = "cloudDeviceUuid";
     static constexpr const char *CLOUD_DEVICE_UDID = "cloudDeviceUdid";
@@ -65,6 +66,7 @@ private:
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
     bool RegOnNetworkChange();
+    bool SetNetAvailable(bool isNetAvailable);
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void UpdateDeviceInfo();
@@ -85,6 +87,9 @@ private:
     static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
     std::shared_ptr<ExecutorPool> executors_;
+    mutable std::shared_mutex mutex_;
+    static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
+    Time expireTime_ = std::chrono::steady_clock::now();
     bool isNetAvailable_ = false;
 };
 }  // namespace DistributedData
