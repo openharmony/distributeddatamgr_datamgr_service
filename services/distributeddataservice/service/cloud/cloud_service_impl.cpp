@@ -245,11 +245,11 @@ std::pair<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFrom
                 continue;
             }
             if (extraData.isPrivate()) {
-                ZLOGI("private data change");
+                ZLOGD("private table change, name:%{public}s", Anonymous::Change(tb.name).c_str());
                 names.emplace_back(tb.name);
             }
-            if (extraData.isShared()) {
-                ZLOGI("sharing data change");
+            if (extraData.isShared() && !tb.sharedTableName.empty()) {
+                ZLOGD("sharing table change, name:%{public}s", Anonymous::Change(tb.sharedTableName).c_str());
                 names.emplace_back(tb.sharedTableName);
             }
         }

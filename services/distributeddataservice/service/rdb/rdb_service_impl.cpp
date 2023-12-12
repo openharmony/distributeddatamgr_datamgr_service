@@ -36,6 +36,7 @@
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
 #include "store/general_store.h"
+#include "tokenid_kit.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
@@ -75,8 +76,7 @@ RdbServiceImpl::Factory::Factory()
         return store;
     });
     staticActs_ = std::make_shared<RdbStatic>();
-    FeatureSystem::GetInstance().RegisterStaticActs(RdbServiceImpl::SERVICE_NAME,
-        staticActs_);
+    FeatureSystem::GetInstance().RegisterStaticActs(RdbServiceImpl::SERVICE_NAME, staticActs_);
 }
 
 RdbServiceImpl::Factory::~Factory()
@@ -224,7 +224,7 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device
 int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier)
 {
     if (!CheckAccess(param.bundleName_, "")) {
-        ZLOGE("permission error");
+        ZLOGE("bundleName:%{public}s. Permission error", param.bundleName_.c_str());
         return RDB_ERROR;
     }
     if (notifier == nullptr) {
@@ -337,7 +337,8 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
     const std::string& device, const std::string& sql, const std::vector<std::string>& selectionArgs)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
     }
     auto store = GetStore(param);
@@ -355,7 +356,8 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
                              const AsyncDetail &async)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
     if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
@@ -589,8 +591,10 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 std::pair<int32_t, std::shared_ptr<RdbService::ResultSet>> RdbServiceImpl::QuerySharingResource(
     const RdbSyncerParam& param, const PredicatesMemo& predicates, const std::vector<std::string>& columns)
 {
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
+    if (!CheckAccess(param.bundleName_, param.storeName_) ||
+        !TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, {} };
     }
     if (predicates.tables_.empty()) {
@@ -631,7 +635,8 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(CloudE
 int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
-        ZLOGE("permission error");
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
     StoreMetaData storeMeta;
@@ -926,6 +931,11 @@ RdbServiceImpl::~RdbServiceImpl()
 
 int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData)
 {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
     CloudEvent::StoreInfo storeInfo;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = param.bundleName_;
