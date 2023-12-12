@@ -580,7 +580,7 @@ bool DeviceManagerAdapter::IsNetworkAvailable()
 {
     {
         std::shared_lock<decltype(mutex_)> lock(mutex_);
-        if (isNetAvailable_ || expireTime_ < std::chrono::steady_clock::now()) {
+        if (isNetAvailable_ || expireTime_ > std::chrono::steady_clock::now()) {
             return isNetAvailable_;
         }
     }
