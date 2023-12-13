@@ -114,7 +114,9 @@ Status SoftBusClient::OpenConnect(uint32_t length)
     if (strategy == Strategy::BUTT) {
         return Status::NETWORK_ERROR;
     }
-
+    if (sessionFlag_.exchange(true)) {
+        return Status::RATE_LIMIT;
+    }
     bool expireP2P = strategy == Strategy::ON_LINE_SELECT_CHANNEL || length >= P2P_SIZE_THRESHOLD;
     expireType_ = expireP2P ? RouteType::WIFI_P2P : RouteType::BT_BLE;
     auto attr = GetSessionAttribute(expireP2P);
@@ -127,10 +129,6 @@ Status SoftBusClient::OpenConnect(uint32_t length)
         (void)client->Open(attr);
         client->sessionFlag_.store(false);
     };
-
-    if (sessionFlag_.exchange(true)) {
-        return Status::RATE_LIMIT;
-    }
     Context::GetInstance().GetThreadPool()->Execute(task);
     return Status::RATE_LIMIT;
 }
