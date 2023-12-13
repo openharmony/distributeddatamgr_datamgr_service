@@ -19,7 +19,8 @@
 
 #include <ipc_skeleton.h>
 
-#include "common_type_util.h"
+#include "common_types.h"
+#include "object_types_utils.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 

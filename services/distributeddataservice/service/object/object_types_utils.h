@@ -20,9 +20,10 @@
 namespace OHOS::ITypesUtil {
 
 using AssetBindInfo = OHOS::ObjectStore::AssetBindInfo;
-
+using Asset = OHOS::ObjectStore::Asset;
 template<>
 bool Unmarshalling(AssetBindInfo &output, MessageParcel &data);
-
+template<>
+bool Unmarshalling(Asset &output, MessageParcel &data);
 }
 #endif // DISTRIBUTEDDATAMGR_OBJECT_TYPES_UTILS_H
