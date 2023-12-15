@@ -31,10 +31,10 @@ ValueProxy::Value ValueProxy::Convert(NativeRdb::ValueObject &&value)
     return proxy;
 }
 
-ValueProxy::Value ValueProxy::Convert(CommonType::ValueObject &&value)
+ValueProxy::Value ValueProxy::Convert(CommonType::Value &&value)
 {
     Value proxy;
-    DistributedData::Convert(std::move(value.value), proxy.value_);
+    DistributedData::Convert(std::move(value), proxy.value_);
     return proxy;
 }
 
@@ -65,7 +65,7 @@ ValueProxy::Values ValueProxy::Convert(std::vector<NativeRdb::ValueObject> &&val
     return proxy;
 }
 
-ValueProxy::Values ValueProxy::Convert(std::vector<CommonType::ValueObject> &&values)
+ValueProxy::Values ValueProxy::Convert(std::vector<CommonType::Value> &&values)
 {
     Values proxy;
     proxy.value_.reserve(values.size());
@@ -106,7 +106,7 @@ ValueProxy::Bucket ValueProxy::Convert(NativeRdb::ValuesBucket &&bucket)
 ValueProxy::Bucket ValueProxy::Convert(CommonType::ValuesBucket &&bucket)
 {
     ValueProxy::Bucket proxy;
-    for (auto &[key, value] : bucket.values_) {
+    for (auto &[key, value] : bucket) {
         proxy.value_.insert_or_assign(key, Convert(std::move(value)));
     }
     return proxy;
@@ -371,7 +371,7 @@ ValueProxy::Assets::Assets(NativeRdb::ValueObject::Assets assets)
     }
 }
 
-ValueProxy::Assets::Assets(CommonType::ValueObject::Assets assets)
+ValueProxy::Assets::Assets(CommonType::Assets assets)
 {
     assets_.clear();
     assets_.reserve(assets.size());
@@ -417,9 +417,9 @@ ValueProxy::Assets::operator NativeRdb::ValueObject::Assets()
     return assets;
 }
 
-ValueProxy::Assets::operator CommonType::ValueObject::Assets()
+ValueProxy::Assets::operator CommonType::Assets()
 {
-    CommonType::ValueObject::Assets assets;
+    CommonType::Assets assets;
     assets.reserve(assets_.size());
     for (auto &asset : assets_) {
         assets.push_back(std::move(asset));
@@ -463,10 +463,10 @@ ValueProxy::Value::operator NativeRdb::ValueObject()
     return object;
 }
 
-ValueProxy::Value::operator CommonType::ValueObject()
+ValueProxy::Value::operator CommonType::Value()
 {
-    CommonType::ValueObject object;
-    DistributedData::Convert(std::move(value_), object.value);
+    CommonType::Value object;
+    DistributedData::Convert(std::move(value_), object);
     return object;
 }
 
@@ -516,7 +516,7 @@ ValueProxy::Bucket::operator CommonType::ValuesBucket()
 {
     CommonType::ValuesBucket bucket;
     for (auto &[key, value] : value_) {
-        bucket.values_.insert_or_assign(key, std::move(value));
+        bucket.insert_or_assign(key, std::move(value));
     }
     value_.clear();
     return bucket;

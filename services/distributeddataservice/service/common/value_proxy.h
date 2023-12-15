@@ -21,7 +21,7 @@
 #include "store/general_value.h"
 #include "value_object.h"
 #include "values_bucket.h"
-#include "common_values_bucket.h"
+#include "common_types.h"
 
 namespace OHOS::DistributedData {
 class ValueProxy final {
@@ -94,12 +94,12 @@ public:
             *this = proxy;
         };
         Assets(DistributedData::Assets assets);
-        Assets(CommonType::ValueObject::Assets assets);
+        Assets(CommonType::Assets assets);
         Assets(NativeRdb::ValueObject::Assets assets);
         Assets(DistributedDB::Assets assets);
         Assets &operator=(const Assets &proxy);
         Assets &operator=(Assets &&proxy) noexcept;
-        operator CommonType::ValueObject::Assets();
+        operator CommonType::Assets();
         operator NativeRdb::ValueObject::Assets();
         operator DistributedData::Assets();
         operator DistributedDB::Assets();
@@ -119,7 +119,7 @@ public:
         };
         Value &operator=(Value &&value) noexcept;
         operator NativeRdb::ValueObject();
-        operator CommonType::ValueObject();
+        operator CommonType::Value();
         operator DistributedData::Value();
         operator DistributedDB::Type();
 
@@ -212,11 +212,11 @@ public:
     };
 
     static Value Convert(DistributedData::Value &&value);
-    static Value Convert(CommonType::ValueObject &&value);
+    static Value Convert(CommonType::Value &&value);
     static Value Convert(NativeRdb::ValueObject &&value);
     static Value Convert(DistributedDB::Type &&value);
     static Values Convert(DistributedData::Values &&values);
-    static Values Convert(std::vector<CommonType::ValueObject> &&values);
+    static Values Convert(std::vector<CommonType::Value> &&values);
     static Values Convert(std::vector<NativeRdb::ValueObject> &&values);
     static Values Convert(std::vector<DistributedDB::Type> &&values);
     static Bucket Convert(DistributedData::VBucket &&bucket);
