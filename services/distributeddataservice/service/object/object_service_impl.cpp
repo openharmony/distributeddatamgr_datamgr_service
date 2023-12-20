@@ -199,7 +199,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
         ZLOGE("object retrieve permission denied");
         return OBJECT_PERMISSION_DENIED;
     }
-    status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback);
+    status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback, tokenId);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
     }
