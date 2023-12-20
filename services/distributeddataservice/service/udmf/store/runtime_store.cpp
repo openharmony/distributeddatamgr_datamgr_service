@@ -231,7 +231,9 @@ void RuntimeStore::Close()
 
 bool RuntimeStore::Init()
 {
-    SaveMetaData();
+    if (!SaveMetaData()) {  // get keyinfo about create db fail.
+        return false;
+    }
     DistributedDB::KvStoreNbDelegate::Option option;
     option.createIfNecessary = true;
     option.isMemoryDb = false;
@@ -266,12 +268,12 @@ bool RuntimeStore::Init()
     return true;
 }
 
-void RuntimeStore::SaveMetaData()
+bool RuntimeStore::SaveMetaData()
 {
     auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (localDeviceId.empty()) {
         ZLOGE("failed to get local device id");
-        return;
+        return false;
     }
 
     uint32_t token = IPCSkeleton::GetSelfTokenID();
@@ -298,7 +300,7 @@ void RuntimeStore::SaveMetaData()
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
     if (!saved) {
         ZLOGE("SaveMeta failed");
-        return;
+        return false;
     }
     DistributedData::AppIDMetaData appIdMeta;
     appIdMeta.bundleName = saveMeta.bundleName;
@@ -306,8 +308,9 @@ void RuntimeStore::SaveMetaData()
     saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     if (!saved) {
         ZLOGE("Save appIdMeta failed");
-        return;
+        return false;
     }
+    return true;
 }
 
 void RuntimeStore::SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId)
