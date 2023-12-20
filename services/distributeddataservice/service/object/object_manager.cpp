@@ -30,6 +30,8 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "account/account_delegate.h"
+#include "common/bytes.h"
+#include "common/string_utils.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -174,7 +176,7 @@ int32_t ObjectStoreManager::RevokeSave(
 }
 
 int32_t ObjectStoreManager::Retrieve(
-    const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback)
+    const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback, , uint32_t tokenId)
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
     ZLOGI("enter");
@@ -193,6 +195,7 @@ int32_t ObjectStoreManager::Retrieve(
         proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
     }
+    TransferAsset(results, tokenId, appId);
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(appId, sessionId));
     if (status != OBJECT_SUCCESS) {
@@ -204,6 +207,40 @@ int32_t ObjectStoreManager::Retrieve(
     Close();
     proxy->Completed(results);
     return status;
+}
+
+void ObjectStoreManager::TransferAsset(std::map<std::string, std::vector<uint8_t>>& data, int32_t tokenId, const std::string& appId){
+    std::map<std::string, Asset> assets;
+    std::string deviceId;
+    for(const auto& [key, value] : data){
+        if(key == ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY){
+            ObjectStore::StringUtils::BytesToStrWithType(value, deviceId);
+        } else if(key.find(ObjectStore::ASSET_DOT) != std::string::npos) {
+            std::size_t dotPos = key.find(ObjectStore::ASSET_DOT);
+            std::string assetKey = key.substr(0, dotPos);
+            Asset asset;
+            assets[assetKey] = asset;
+        }
+    }
+    GetAsset(assets, data);
+    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    for(auto& [assetKey, asset] : assets){
+        bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, appId, deviceId, asset);
+        if (!isSuccess) {
+            ZLOGE("Transfer fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
+                "%{public}s", userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
+        }
+    }
+}
+
+void ObjectStoreManager::GetAsset(std::map<std::string, Asset>& assets, std::map<std::string, std::vector<uint8_t>>& data){
+    for(auto& [key, asset] : assets){
+        ObjectStore::StringUtils::BytesToStrWithType(data[key + ObjectStore::NAME_SUFFIX], asset.name);
+        asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
+
+        ObjectStore::StringUtils::BytesToStrWithType(data[key + ObjectStore::URI_SUFFIX], asset.uri);
+        asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
+    }
 }
 
 int32_t ObjectStoreManager::Clear()
