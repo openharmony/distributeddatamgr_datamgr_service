@@ -209,7 +209,8 @@ int32_t ObjectStoreManager::Retrieve(
     return status;
 }
 
-void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t tokenId, const std::string& bundleName)
+void ObjectStoreManager::TransferAssets(
+    std::map<std::string, std::vector<uint8_t>>& results, int32_t tokenId, const std::string& bundleName)
 {
     std::map<std::string, Asset> assets;
     std::string deviceId;

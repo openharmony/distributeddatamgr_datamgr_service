@@ -83,7 +83,8 @@ public:
         sptr<IRemoteObject> callback);
     int32_t RevokeSave(
         const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback);
-    int32_t Retrieve(const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId);
+    int32_t Retrieve(const std::string &bundleName, const std::string &sessionId,
+        sptr<IRemoteObject> callback, uint32_t tokenId);
     void SetData(const std::string &dataDir, const std::string &userId);
     int32_t Clear();
     int32_t DeleteByAppId(const std::string &appId);
@@ -140,7 +141,8 @@ private:
         const std::string &sessionId, const std::string &deviceId);
     void SaveUserToMeta();
     std::string GetCurrentUser();
-    void TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t tokenId, const std::string& bundleName);
+    void TransferAssets(
+        std::map<std::string, std::vector<uint8_t>>& results, int32_t tokenId, const std::string& bundleName);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
