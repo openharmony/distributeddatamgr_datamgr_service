@@ -243,7 +243,6 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
     }
 }
 
-
 int32_t ObjectStoreManager::Clear()
 {
     ZLOGI("enter");
