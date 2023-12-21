@@ -288,9 +288,9 @@ ohos_unittest("ObjectAssetMachineTest") {
     "object_asset_machine_test.cpp",
   ]
 
-  include_dirs = [ 
+  include_dirs = [
     "${dataobject_path}/interfaces/innerkits",
-    "${relational_store_path}/interfaces/inner_api/common_type/include", 
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
 
   configs = [ ":module_private_config" ]
