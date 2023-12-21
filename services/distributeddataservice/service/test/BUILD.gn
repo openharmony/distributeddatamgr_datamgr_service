@@ -283,29 +283,30 @@ ohos_unittest("CacheCursorTest") {
 ohos_unittest("ObjectAssetMachineTest") {
   module_out_path = module_output_path
   sources = [
+    "../object/object_asset_loader.cpp",
     "../object/object_asset_machine.cpp",
     "object_asset_machine_test.cpp",
   ]
 
-  include_dirs = [ "${dataobject_path}/interfaces/innerkits" ]
+  include_dirs = [ 
+    "${dataobject_path}/interfaces/innerkits",
+    "${relational_store_path}/interfaces/inner_api/common_type/include", 
+  ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
-    "ability_base:base",
-    "ability_base:want",
     "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
 
   deps = [
-    "${kv_store_distributeddb_path}:distributeddb",
-    "${relational_store_inner_api_path}:native_rdb_static",
-    "../../adapter:distributeddata_adapter",
-    "../../framework:distributeddatasvcfwk",
-    "../../service:distributeddatasvc",
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
   ]
 }
@@ -325,6 +326,7 @@ group("unittest") {
     ":CryptoManagerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
+    ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",
     ":ValueProxyTest",
   ]

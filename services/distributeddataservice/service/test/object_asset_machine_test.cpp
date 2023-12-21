@@ -82,7 +82,6 @@ void ObjectAssetMachineTest::TearDown() {}
 * @tc.require:
 * @tc.author: whj
 */
-
 HWTEST_F(ObjectAssetMachineTest, StatusTransfer, TestSize.Level0)
 {
     auto machine = std::make_shared<ObjectAssetMachine>();
@@ -96,19 +95,20 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer, TestSize.Level0)
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
     machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
         (void*)&changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
+    // A TRANSFER_FINISHED event will be posted in the callback of the migrated file, therefore, the state will be
+    // STATUS_STABLE.
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 
     changedAsset.first = "device_2";
     changedAsset.second.hash = "modifyTime2_size2";
     machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
         (void*)&changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, "modifyTime2_size2");
     ASSERT_EQ(changedAssets_[uri_].deviceId, "device_2");
 
     machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_], (void*)&asset);
 
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 
     machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
         (void*)&changedAssets_[uri_].asset);
@@ -122,7 +122,6 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer, TestSize.Level0)
 * @tc.require:
 * @tc.author: whj
 */
-
 HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
 {
     auto machine = std::make_shared<ObjectAssetMachine>();
@@ -136,11 +135,8 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
     machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
         (void*)&changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
     ASSERT_EQ(changedAssets_[uri_].deviceId, "device_1");
-    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAssets_[uri_].asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 }
 
@@ -151,7 +147,6 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
 * @tc.require:
 * @tc.author: whj
 */
-
 HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
 {
     auto machine = std::make_shared<ObjectAssetMachine>();
@@ -165,6 +160,38 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
     machine->DFAPostEvent(UPLOAD, changedAssets_[uri_].status, (void*)&changedAssets_[uri_].asset, nullptr);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
+
+    machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
+        (void*)&changedAssets_[uri_].asset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+}
+
+/**
+* @tc.name: StatusTransfer003
+* @tc.desc: Conflict scenario: Upload before transfer.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: whj
+*/
+HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
+{
+    auto machine = std::make_shared<ObjectAssetMachine>();
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
+    machine->DFAPostEvent(UPLOAD, changedAssets_[uri_].status, (void*)&changedAssets_[uri_].asset, nullptr);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
+
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
+        (void*)&changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
+    ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
+    ASSERT_EQ(changedAssets_[uri_].deviceId, "device_1");
 
     machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
         (void*)&changedAssets_[uri_].asset);

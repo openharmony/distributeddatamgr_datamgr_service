@@ -51,8 +51,8 @@ static int32_t PrintError(int32_t eventId, ChangedAssetInfo& changedAsset, void*
 static int32_t UpdateStore(ChangedAssetInfo& changedAsset);
 
 static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset);
-static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& AssetBindInfo, const Asset& newAsset);
-static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& AssetBindInfo);
+static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBindInfo, const Asset& newAsset);
+static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& assetBindInfo);
 static void MergeAsset(Asset& oldAsset, const Asset& newAsset);
 static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args);
 
@@ -152,8 +152,8 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::
 {
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
-    ObjectAssetLoader::GetInstance()->DownLoad(changedAsset.storeInfo.user, changedAsset.storeInfo.bundleName,
-        changedAsset.deviceId, changedAsset.asset, [&changedAsset](bool success) {
+    bool success = ObjectAssetLoader::GetInstance()->Transfer(changedAsset.storeInfo.user,
+        changedAsset.storeInfo.bundleName, changedAsset.deviceId, changedAsset.asset, [&changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
                 if (status != E_OK) {
@@ -166,6 +166,9 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::
             }
             ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset.status, (void*)&changedAsset, nullptr);
         });
+    if (!success) {
+        ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset.status, (void*)&changedAsset, nullptr);
+    }
     return E_OK;
 }
 
@@ -184,12 +187,12 @@ static int32_t UpdateStore(ChangedAssetInfo& changedAsset)
     return store->MergeMigratedData(changedAsset.bindInfo.tableName, std::move(vBuckets));
 }
 
-static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& AssetBindInfo, const Asset& newAsset)
+static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBindInfo, const Asset& newAsset)
 {
     Values args;
     VBuckets vBuckets;
-    auto sql = BuildSql(AssetBindInfo, args);
-    auto cursor = store->Query(AssetBindInfo.tableName, sql, std::move(args));
+    auto sql = BuildSql(assetBindInfo, args);
+    auto cursor = store->Query(assetBindInfo.tableName, sql, std::move(args));
     if (cursor == nullptr) {
         return vBuckets;
     }
@@ -205,7 +208,7 @@ static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& AssetBin
         if (err != E_OK) {
             return vBuckets;
         }
-        MergeAssetData(entry, newAsset, AssetBindInfo);
+        MergeAssetData(entry, newAsset, assetBindInfo);
         vBuckets.emplace_back(std::move(entry));
         err = cursor->MoveToNext();
         count--;

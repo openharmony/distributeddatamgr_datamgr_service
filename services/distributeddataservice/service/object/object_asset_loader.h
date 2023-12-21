@@ -24,11 +24,11 @@ namespace DistributedObject {
 class ObjectAssetLoader {
 public:
     static ObjectAssetLoader *GetInstance();
-    bool DownLoad(const int32_t userId, const std::string &bundleName,
+    bool Transfer(const int32_t userId, const std::string &bundleName,
         const std::string &deviceId, const DistributedData::Asset &assetValue);
 
-    bool DownLoad(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-        const DistributedData::Asset& assetValue, std::function<void(bool success)> callback);
+    bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+        const DistributedData::Asset& assetValue, std::function<void(bool)> callback);
 private:
     ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;
