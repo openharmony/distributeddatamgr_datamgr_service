@@ -20,8 +20,8 @@
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
-#include "cloud/make_query_event.h"
 #include "cloud/cloud_share_event.h"
+#include "cloud/make_query_event.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -31,12 +31,12 @@
 #include "metadata/meta_data_manager.h"
 #include "rdb_cloud_data_translate.h"
 #include "rdb_types.h"
-#include "values_bucket.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
-#include "utils/anonymous.h"
 #include "sync_manager.h"
+#include "utils/anonymous.h"
+#include "values_bucket.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace DistributedKv;
@@ -60,8 +60,7 @@ CloudServiceImpl::Factory::Factory() noexcept
         },
         FeatureSystem::BIND_NOW);
     staticActs_ = std::make_shared<CloudStatic>();
-    FeatureSystem::GetInstance().RegisterStaticActs(CloudServiceImpl::SERVICE_NAME,
-        staticActs_);
+    FeatureSystem::GetInstance().RegisterStaticActs(CloudServiceImpl::SERVICE_NAME, staticActs_);
 }
 
 CloudServiceImpl::Factory::~Factory() {}
@@ -541,8 +540,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
     return { SUCCESS, cloudInfo };
 }
 
-int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(
-    const std::string &bundleName, int32_t user, int32_t index)
+int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
@@ -724,8 +722,8 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     const std::vector<std::string>& columns, const Participants& participants)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto [bundleName, instanceId] = GetHapInfo(tokenId);
-    if (bundleName.empty()) {
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, storeId:%{public}s", Anonymous::Change(storeId).c_str());
         return { E_ERROR, {} };
     }
@@ -736,9 +734,9 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     }
     auto memo = std::make_shared<DistributedRdb::PredicatesMemo>(predicates);
     CloudEvent::StoreInfo storeInfo;
-    storeInfo.bundleName = bundleName;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.bundleName = hapInfo.bundleName;
+    storeInfo.tokenId = tokenId;
+    storeInfo.user = hapInfo.user;
     storeInfo.storeName = storeId;
     std::shared_ptr<GenQuery> query;
     MakeQueryEvent::Callback asyncCallback = [&query](std::shared_ptr<GenQuery> genQuery) {
@@ -796,139 +794,192 @@ std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::ConvertCursor(std::shared
     return valueBuckets;
 }
 
-std::pair<std::string, int32_t> CloudServiceImpl::GetHapInfo(uint32_t tokenId)
+CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 {
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return { "", -1 };
-    }
     HapTokenInfo tokenInfo;
     tokenInfo.instIndex = -1;
     int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (errCode != RET_SUCCESS) {
-        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x bundleName:%{public}s", errCode, tokenId,
-            tokenInfo.bundleName.c_str());
-        return { tokenInfo.bundleName, tokenInfo.instIndex };
+        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x", errCode, tokenId);
+        return { -1, -1, "" };
     }
-    return { tokenInfo.bundleName, tokenInfo.instIndex };
+    return { tokenInfo.userID, tokenInfo.instIndex, tokenInfo.bundleName };
 }
 
-int32_t CloudServiceImpl::Share(
-    const std::string &sharingRes, const Participants &participants, Results &results)
+int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    results = instance->Share(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
-    int32_t status = std::get<0>(results);
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&results, &instance, &hapInfo, &sharingRes, &participants]() {
+        results = instance->Share(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
+        ZLOGD("sharingRes:%{public}s, status:%{public}d", Anonymous::Change(sharingRes).c_str(), std::get<0>(results));
+    });
+    return Convert(static_cast<CenterCode>(std::get<0>(results)));
 }
 
-int32_t CloudServiceImpl::Unshare(
-    const std::string &sharingRes, const Participants &participants, Results &results)
+int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    results = instance->Unshare(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
-    int32_t status = std::get<0>(results);
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&results, &instance, &hapInfo, &sharingRes, &participants]() {
+        results = instance->Unshare(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
+        ZLOGD("sharingRes:%{public}s, status:%{public}d", Anonymous::Change(sharingRes).c_str(), std::get<0>(results));
+    });
+    return Convert(static_cast<CenterCode>(std::get<0>(results)));
 }
 
 int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    result = instance->Exit(hapInfo.user, hapInfo.bundleName, sharingRes);
-    int32_t status = result.first;
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&result, &instance, &hapInfo, &sharingRes]() {
+        result = instance->Exit(hapInfo.user, hapInfo.bundleName, sharingRes);
+        ZLOGD("sharingRes:%{public}s, status:%{public}d", Anonymous::Change(sharingRes).c_str(), result.first);
+    });
+    return Convert(static_cast<CenterCode>(result.first));
 }
 
-int32_t CloudServiceImpl::ChangePrivilege(
-    const std::string &sharingRes, const Participants &participants, Results &results)
+int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const Participants &participants,
+    Results &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    results = instance->ChangePrivilege(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
-    int32_t status = std::get<0>(results);
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&results, &instance, &hapInfo, &sharingRes, &participants]() {
+        results = instance->ChangePrivilege(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
+        ZLOGD("sharingRes:%{public}s, status:%{public}d", Anonymous::Change(sharingRes).c_str(), std::get<0>(results));
+    });
+    return Convert(static_cast<CenterCode>(std::get<0>(results)));
 }
 
 int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    auto queryResults = instance->Query(hapInfo.user, hapInfo.bundleName, sharingRes);
-    results = Convert(queryResults);
-    int32_t status = std::get<0>(queryResults);
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&results, &instance, &hapInfo, &sharingRes]() {
+        results = Convert(instance->Query(hapInfo.user, hapInfo.bundleName, sharingRes));
+        ZLOGD("sharingRes:%{public}s, status:%{public}d", Anonymous::Change(sharingRes).c_str(), std::get<0>(results));
+    });
+    return Convert(static_cast<CenterCode>(std::get<0>(results)));
 }
 
 int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, QueryResults &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, invitation:%{public}s", Anonymous::Change(invitation).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    auto queryResults = instance->QueryByInvitation(hapInfo.user, hapInfo.bundleName, invitation);
-    results = Convert(queryResults);
-    int32_t status = std::get<0>(queryResults);
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&results, &instance, &hapInfo, &invitation]() {
+        results = Convert(instance->QueryByInvitation(hapInfo.user, hapInfo.bundleName, invitation));
+        ZLOGD("invitation:%{public}s, status:%{public}d", Anonymous::Change(invitation).c_str(), std::get<0>(results));
+    });
+    return Convert(static_cast<CenterCode>(std::get<0>(results)));
 }
 
 int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32_t confirmation,
     std::tuple<int32_t, std::string, std::string> &result)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, invitation:%{public}s, confirmation:%{public}d",
+            Anonymous::Change(invitation).c_str(), confirmation);
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    result = instance->ConfirmInvitation(hapInfo.user, hapInfo.bundleName, invitation, confirmation);
-    int32_t status = std::get<0>(result);
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&result, &instance, &hapInfo, &invitation, &confirmation]() {
+        result = instance->ConfirmInvitation(hapInfo.user, hapInfo.bundleName, invitation, confirmation);
+        ZLOGD("invitation:%{public}s, confirmation:%{public}d, status:%{public}d",
+            Anonymous::Change(invitation).c_str(), confirmation, std::get<0>(result));
+    });
+    return Convert(static_cast<CenterCode>(std::get<0>(result)));
 }
 
-int32_t CloudServiceImpl::ChangeConfirmation(
-    const std::string &sharingRes, int32_t confirmation, std::pair<int32_t, std::string> &result)
+int32_t CloudServiceImpl::ChangeConfirmation(const std::string& sharingRes, int32_t confirmation,
+    std::pair<int32_t, std::string>& result)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
-    result = instance->ChangeConfirmation(hapInfo.user, hapInfo.bundleName, sharingRes, confirmation);
-    int32_t status = result.first;
-    ZLOGD("status:%{public}d", status);
-    return Convert(static_cast<CenterCode>(status));
+    FuncTimeElapsed([&result, &instance, &hapInfo, &sharingRes, &confirmation]() {
+        result = instance->ChangeConfirmation(hapInfo.user, hapInfo.bundleName, sharingRes, confirmation);
+        ZLOGD("sharingRes:%{public}s, confirmation:%{public}d, status:%{public}d",
+            Anonymous::Change(sharingRes).c_str(), confirmation, std::get<0>(result));
+    });
+    return Convert(static_cast<CenterCode>(std::get<0>(result)));
 }
 
-std::pair<std::shared_ptr<SharingCenter>, CloudServiceImpl::HapInfo> CloudServiceImpl::GetSharingHandle()
+std::shared_ptr<SharingCenter> CloudServiceImpl::GetSharingHandle(const HapInfo& hapInfo)
 {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    HapTokenInfo tokenInfo;
-    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (status != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
-        return { nullptr, {} };
-    }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        return { nullptr, {} };
+        return nullptr;
     }
-    auto handle = instance->ConnectSharingCenter(tokenInfo.userID, tokenInfo.bundleName);
-    return { handle, { tokenInfo.userID, tokenInfo.bundleName } };
+    auto handle = instance->ConnectSharingCenter(hapInfo.user, hapInfo.bundleName);
+    return handle;
+}
+
+int64_t CloudServiceImpl::FuncTimeElapsed(const std::function<void()> &func, int32_t timeout)
+{
+    if (func == nullptr) {
+        return 0;
+    }
+    auto start = steady_clock::now();
+    func();
+    auto end = steady_clock::now();
+    int64_t duration = duration_cast<milliseconds>(end - start).count();
+    if (duration > timeout) {
+        ZLOGW("actual cost:%{public}lld ms, expected cost:%{public}d ms", duration, timeout);
+    } else {
+        ZLOGD("actual cost:%{public}lld ms, expected cost:%{public}d ms", duration, timeout);
+    }
+    return duration;
 }
 } // namespace OHOS::CloudData

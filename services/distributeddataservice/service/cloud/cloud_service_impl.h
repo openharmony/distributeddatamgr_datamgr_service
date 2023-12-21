@@ -87,19 +87,21 @@ private:
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
 
+    struct HapInfo {
+        int32_t user;
+        int32_t instIndex;
+        std::string bundleName;
+    };
+
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
-    static std::pair<std::string, int32_t> GetHapInfo(uint32_t tokenId);
+    static HapInfo GetHapInfo(uint32_t tokenId);
+    static int64_t FuncTimeElapsed(const std::function<void()>& func, int32_t timeout = 500);
 
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
     static constexpr int32_t WAIT_TIME = 30; // 30 seconds
     static constexpr int32_t DEFAULT_USER = 0;
-
-    struct HapInfo {
-        int32_t user;
-        std::string bundleName;
-    };
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
@@ -128,7 +130,7 @@ private:
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
     std::pair<std::string, std::vector<std::string>> GetDbInfoFromExtraData(
         const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta);
-    std::pair<std::shared_ptr<DistributedData::SharingCenter>, HapInfo> GetSharingHandle();
+    std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo& hapInfo);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
 
