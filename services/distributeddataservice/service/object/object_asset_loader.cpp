@@ -19,6 +19,7 @@
 #include "cloud_sync_asset_manager.h"
 #include "log_print.h"
 #include "object_common.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
@@ -40,14 +41,14 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundle
             block->SetValue({ false, status });
         });
     if (res != OBJECT_SUCCESS) {
-        ZLOGE("fail, bundleName: %{public}s, name: %{public}s, result: %{public}d", bundleName.c_str(),
-            assetValue.name.c_str(), res);
+        ZLOGE("fail, res: %{public}d, name: %{public}s, networkId: %{public}s, bundleName: %{public}s", res,
+            assetValue.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
         return false;
     }
     auto [timeout, status] = block->GetValue();
     if (timeout || status != OBJECT_SUCCESS) {
-        ZLOGE("fail, bundleName: %{public}s, name: %{public}s, timeout: %{public}d, status: %{public}d",
-            bundleName.c_str(), assetValue.name.c_str(), timeout, status);
+        ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, networkId: %{public}s ", timeout,
+            status, assetValue.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
         return false;
     }
     return true;
@@ -61,11 +62,16 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
     assetInfo.assetName = assetValue.name;
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [callback](const std::string& uri, int32_t status) {
-            status == OBJECT_SUCCESS ? callback(true) : callback(false);
+            if (status != OBJECT_SUCCESS) {
+                ZLOGE("fail, uri: %{public}s, status: %{public}d", DistributedData::Anonymous::Change(uri).c_str(),
+                    status);
+                return callback(false);
+            }
+            return callback(true);
         });
     if (res != OBJECT_SUCCESS) {
-        ZLOGE("fail, bundleName: %{public}s, name: %{public}s, result: %{public}d", bundleName.c_str(),
-            assetValue.name.c_str(), res);
+        ZLOGE("fail, res: %{public}d, name: %{public}s, networkId: %{public}s, bundleName: %{public}s", res,
+            assetValue.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
         return false;
     }
     return true;

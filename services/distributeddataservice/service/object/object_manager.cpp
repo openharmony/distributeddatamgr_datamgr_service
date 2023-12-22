@@ -815,8 +815,6 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
     if (isSuccess) {
         return OBJECT_SUCCESS;
     } else {
-        ZLOGE("Transfer fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
-              "%{public}s", userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
         return OBJECT_INNER_ERROR;
     }
 }
