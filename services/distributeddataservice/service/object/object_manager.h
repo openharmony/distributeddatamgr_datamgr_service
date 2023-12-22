@@ -35,14 +35,6 @@ namespace OHOS {
 namespace DistributedObject {
 using SyncCallBack = std::function<void(const std::map<std::string, int32_t> &results)>;
 
-enum Status {
-    OBJECT_SUCCESS,
-    OBJECT_DBSTATUS_ERROR,
-    OBJECT_INNER_ERROR,
-    OBJECT_PERMISSION_DENIED,
-    OBJECT_STORE_NOT_FOUND
-};
-
 class SequenceSyncManager {
 public:
     enum Result {

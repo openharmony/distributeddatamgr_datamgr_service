@@ -236,7 +236,7 @@ void ObjectStoreManager::TransferAssets(
     if (!assets.empty()) {
         const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
         for (auto&[key, asset] : assets) {
-            if (!ObjectAssetLoader::GetInstance()->DownLoad(userId, bundleName, deviceId, asset)) {
+            if (!ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset)) {
                 ZLOGE("Transfer fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
                     "%{public}s", userId, bundleName.c_str(), deviceId.c_str(), asset.name.c_str());
             }
@@ -811,12 +811,10 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
         return snapshots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
     }
 
-    bool isSuccess = ObjectAssetLoader::GetInstance()->DownLoad(userId, appId, deviceId, dataAsset);
+    bool isSuccess = ObjectAssetLoader::GetInstance()->Transfer(userId, appId, deviceId, dataAsset);
     if (isSuccess) {
         return OBJECT_SUCCESS;
     } else {
-        ZLOGE("DownLoad fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
-              "%{public}s", userId, appId.c_str(), deviceId.c_str(), asset.name.c_str());
         return OBJECT_INNER_ERROR;
     }
 }

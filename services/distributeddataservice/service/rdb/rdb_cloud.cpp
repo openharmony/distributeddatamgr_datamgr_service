@@ -37,9 +37,9 @@ DBStatus RdbCloud::BatchInsert(
     extend.resize(record.size());
     VBuckets extends = ValueProxy::Convert(std::move(extend));
     VBuckets records = ValueProxy::Convert(std::move(record));
-    VBuckets temp = records;
     std::set<std::string> skipAssets;
-    PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
+    PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
+    VBuckets temp = records;
     auto error = cloudDB_->BatchInsert(tableName, std::move(records), extends);
     PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
     extend = ValueProxy::Convert(std::move(extends));
@@ -53,8 +53,8 @@ DBStatus RdbCloud::BatchUpdate(
     VBuckets extends = ValueProxy::Convert(std::move(extend));
     VBuckets records = ValueProxy::Convert(std::move(record));
     std::set<std::string> skipAssets;
+    PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
     VBuckets temp = records;
-    PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
     auto error = cloudDB_->BatchUpdate(tableName, std::move(records), extends);
     PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
     extend = ValueProxy::Convert(std::move(extends));

@@ -22,6 +22,14 @@ enum ObjectDistributedType : int32_t {
     DISTRIBUTED_TYPE_BUTT
 };
 
+enum Status : int32_t {
+    OBJECT_SUCCESS,
+    OBJECT_DBSTATUS_ERROR,
+    OBJECT_INNER_ERROR,
+    OBJECT_PERMISSION_DENIED,
+    OBJECT_STORE_NOT_FOUND
+};
+
 class ObjectCommon {
 public:
     constexpr static const char *OBJECTSTORE_DB_STOREID = "distributedObject_";

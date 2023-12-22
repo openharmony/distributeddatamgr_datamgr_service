@@ -30,10 +30,10 @@ struct ChangedAssetInfo {
     AssetBindInfo bindInfo;
     StoreInfo storeInfo;
 
-    ChangedAssetInfo(const Asset& bindAsset, const AssetBindInfo& AssetBindInfo, const StoreInfo& store)
+    ChangedAssetInfo(const Asset& bindAsset, const AssetBindInfo& assetBindInfo, const StoreInfo& store)
     {
         asset = bindAsset;
-        bindInfo = AssetBindInfo;
+        bindInfo = assetBindInfo;
         storeInfo = store;
     }
 };
