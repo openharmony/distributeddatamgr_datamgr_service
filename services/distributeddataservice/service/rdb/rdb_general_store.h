@@ -55,8 +55,9 @@ public:
 	    const std::vector<Reference> &references) override;
     int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
         const std::string& extendColName) override;
-    int32_t BatchInsert(const std::string &table, VBuckets &&values) override;
-    int32_t BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values) override;
+    int32_t Insert(const std::string &table, VBuckets &&values) override;
+    int32_t Update(const std::string &table, const std::string &setSql, Values &&values, const std::string &whereSql,
+        Values &&conditions) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
@@ -108,6 +109,7 @@ private:
         const std::vector<std::string>& columns) const;
     VBuckets ExecuteSql(const std::string& sql, Values &&args);
     VBuckets ExtractExtend(VBuckets& values) const;
+    size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
 
     ObserverProxy observer_;
     RdbManager manager_;
