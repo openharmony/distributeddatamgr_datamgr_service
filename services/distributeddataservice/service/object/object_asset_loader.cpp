@@ -34,23 +34,20 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundle
     AssetInfo assetInfo;
     assetInfo.uri = assetValue.uri;
     assetInfo.assetName = assetValue.name;
-    ZLOGD("start transfer file, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
-          "%{public}s", userId, bundleName.c_str(), deviceId.c_str(), assetValue.name.c_str());
-
     auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [block](const std::string &uri, int32_t status) {
             block->SetValue({ false, status });
         });
     if (res != OBJECT_SUCCESS) {
-        ZLOGE("Transfer file fail, bundleName: %{public}s, asset name : %{public}s, result: %{public}d",
-            bundleName.c_str(), assetValue.name.c_str(), res);
+        ZLOGE("fail, bundleName: %{public}s, name: %{public}s, result: %{public}d", bundleName.c_str(),
+            assetValue.name.c_str(), res);
         return false;
     }
     auto [timeout, status] = block->GetValue();
     if (timeout || status != OBJECT_SUCCESS) {
-        ZLOGE("Transfer file fail, bundleName: %{public}s, asset name : %{public}s, timeout: %{public}d, status: "
-              "%{public}d", bundleName.c_str(), assetValue.name.c_str(), timeout, status);
+        ZLOGE("fail, bundleName: %{public}s, name: %{public}s, timeout: %{public}d, status: %{public}d",
+            bundleName.c_str(), assetValue.name.c_str(), timeout, status);
         return false;
     }
     return true;
@@ -67,8 +64,8 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
             status == OBJECT_SUCCESS ? callback(true) : callback(false);
         });
     if (res != OBJECT_SUCCESS) {
-        ZLOGE("Transfer file fail, bundleName: %{public}s, asset name : %{public}s, result: %{public}d",
-            bundleName.c_str(), assetValue.name.c_str(), res);
+        ZLOGE("fail, bundleName: %{public}s, name: %{public}s, result: %{public}d", bundleName.c_str(),
+            assetValue.name.c_str(), res);
         return false;
     }
     return true;
