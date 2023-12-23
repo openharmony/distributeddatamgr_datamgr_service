@@ -186,10 +186,12 @@ bool SyncManager::isValid(SyncInfo &info, CloudInfo &cloud)
     }
     if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
         info.SetError(E_NETWORK_ERROR);
+        ZLOGD("network unavailable");
         return false;
     }
     if (!Account::GetInstance()->IsVerified(info.user_)) {
         info.SetError(E_USER_UNLOCK);
+        ZLOGD("user unverified");
         return false;
     }
     return true;
