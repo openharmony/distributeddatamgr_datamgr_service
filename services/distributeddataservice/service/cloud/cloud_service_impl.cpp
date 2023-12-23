@@ -192,7 +192,7 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
     if (status != SUCCESS) {
-        ZLOGD("get cloud meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
+        ZLOGE("get cloud meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
         return ERROR;
     }
     if (id != cloudInfo.id) {
