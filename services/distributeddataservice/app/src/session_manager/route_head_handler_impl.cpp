@@ -46,7 +46,7 @@ std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo 
 RouteHeadHandlerImpl::RouteHeadHandlerImpl(const ExtendInfo &info)
     : userId_(info.userId), appId_(info.appId), storeId_(info.storeId), deviceId_(info.dstTarget), headSize_(0)
 {
-    ZLOGI("init route handler, app:%{public}s, user:%{public}s, peer:%{public}s", appId_.c_str(), userId_.c_str(),
+    ZLOGD("init route handler, app:%{public}s, user:%{public}s, peer:%{public}s", appId_.c_str(), userId_.c_str(),
         Anonymous::Change(deviceId_).c_str());
 }
 
@@ -235,7 +235,7 @@ bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen
     routeHead.checkSum = NetToHost(head->checkSum);
     routeHead.dataLen = NetToHost(head->dataLen);
     if (routeHead.magic != RouteHead::MAGIC_NUMBER) {
-        ZLOGW("not route head data");
+        ZLOGD("not route head data");
         return false;
     }
     if (totalLen - sizeof(RouteHead) < routeHead.dataLen) {

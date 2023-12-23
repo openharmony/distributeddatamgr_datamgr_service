@@ -22,12 +22,12 @@ using NotifierIFCode = RelationalStore::IRdbNotifierInterfaceCode;
 
 RdbNotifierProxy::RdbNotifierProxy(const sptr<IRemoteObject> &object) : IRemoteProxy<RdbNotifierProxyBroker>(object)
 {
-    ZLOGI("construct");
+    ZLOGD("construct");
 }
 
 RdbNotifierProxy::~RdbNotifierProxy() noexcept
 {
-    ZLOGI("destroy");
+    ZLOGD("destroy");
 }
 
 int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, Details &&result)
