@@ -22,6 +22,7 @@
 #include "store/general_value.h"
 #include "utils/ref_count.h"
 #include "concurrent_map.h"
+#include "cloud/cloud_info.h"
 namespace OHOS::CloudData {
 class SyncManager {
 public:
@@ -74,6 +75,7 @@ private:
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
     using Retryer = std::function<bool(Duration interval, int32_t status)>;
+    using CloudInfo = DistributedData::CloudInfo;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
@@ -90,6 +92,7 @@ private:
     static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
+    bool isValid(SyncInfo &info, CloudInfo &cloud);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;

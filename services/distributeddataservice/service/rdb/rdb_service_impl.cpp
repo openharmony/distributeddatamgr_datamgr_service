@@ -151,7 +151,7 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
 
         auto aIdentifier = DistributedDB::RelationalStoreManager::GetRelationalStoreIdentifier(
             entry.user, entry.appId, entry.storeId);
-        ZLOGI("%{public}s %{public}s %{public}s",
+        ZLOGD("%{public}s %{public}s %{public}s",
             entry.user.c_str(), entry.appId.c_str(), Anonymous::Change(entry.storeId).c_str());
         if (aIdentifier != identifier) {
             continue;

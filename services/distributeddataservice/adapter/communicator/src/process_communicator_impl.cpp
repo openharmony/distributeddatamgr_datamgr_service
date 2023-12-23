@@ -125,7 +125,7 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     destination.deviceId = dstDevInfo.identifier;
     Status errCode = CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
     if (errCode == Status::RATE_LIMIT) {
-        ZLOGE("commProvider_ opening session, status:%{public}d.", static_cast<int>(errCode));
+        ZLOGD("commProvider_ opening session, status:%{public}d.", static_cast<int>(errCode));
         return DBStatus::RATE_LIMIT;
     }
     if (errCode != Status::SUCCESS) {

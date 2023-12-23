@@ -16,7 +16,6 @@
 #include "sync_manager.h"
 
 #include "account/account_delegate.h"
-#include "cloud/cloud_info.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"
@@ -172,6 +171,32 @@ int32_t SyncManager::StopCloudSync(int32_t user)
     return E_OK;
 }
 
+bool SyncManager::isValid(SyncInfo &info, CloudInfo &cloud)
+{
+    if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) ||
+        (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_)) {
+        info.SetError(E_CLOUD_DISABLED);
+        ZLOGE("cloudInfo invalid:%{public}d, <syncId:%{public}s, metaId:%{public}s>", cloud.IsValid(),
+              Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
+        return false;
+    }
+    if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
+        info.SetError(E_CLOUD_DISABLED);
+        ZLOGD("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
+    }
+    if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+        info.SetError(E_NETWORK_ERROR);
+        ZLOGD("network unavailable");
+        return false;
+    }
+    if (!Account::GetInstance()->IsVerified(info.user_)) {
+        info.SetError(E_USER_UNLOCK);
+        ZLOGD("user unverified");
+        return false;
+    }
+    return true;
+}
+
 ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo)
 {
     times++;
@@ -179,21 +204,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         activeInfos_.Erase(info.syncId_);
         CloudInfo cloud;
         cloud.user = info.user_;
-        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) || !cloud.enableCloud ||
-            (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_) ||
-            (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
-            info.SetError(E_CLOUD_DISABLED);
-            ZLOGE("cloudInfo invalid:%{public}d, enable:%{public}d, bundleName:%{public}s, <syncId:%{public}s, "
-                  "metaId:%{public}s>", cloud.IsValid(), cloud.enableCloud, info.bundleName_.c_str(),
-                  Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
-            return;
-        }
-        if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
-            info.SetError(E_NETWORK_ERROR);
-            return;
-        }
-        if (!Account::GetInstance()->IsVerified(info.user_)) {
-            info.SetError(E_USER_UNLOCK);
+        if (!isValid(info, cloud)) {
             return;
         }
         std::vector<SchemaMeta> schemas;
