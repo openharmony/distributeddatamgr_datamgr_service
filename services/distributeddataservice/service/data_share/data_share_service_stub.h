@@ -45,6 +45,7 @@ private:
     int32_t OnRemoteDisablePubSubs(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteNotifyConnectDone(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteNotifyObserver(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteSetSilentSwitch(MessageParcel& data, MessageParcel& reply);
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[DATA_SHARE_SERVICE_CMD_MAX] = {
         &DataShareServiceStub::OnRemoteInsert,
@@ -64,7 +65,8 @@ private:
         &DataShareServiceStub::OnRemoteEnablePubSubs,
         &DataShareServiceStub::OnRemoteDisablePubSubs,
         &DataShareServiceStub::OnRemoteNotifyConnectDone,
-        &DataShareServiceStub::OnRemoteNotifyObserver };
+        &DataShareServiceStub::OnRemoteNotifyObserver,
+        &DataShareServiceStub::OnRemoteSetSilentSwitch };
 };
 } // namespace DataShare
 } // namespace OHOS

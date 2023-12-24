@@ -54,6 +54,10 @@ DataShareServiceImpl::Factory::~Factory() {}
 int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Insert enter.");
+    if (!IsSilentProxyEnable(uri)) {
+        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return ERROR;
+    }
     auto context = std::make_shared<Context>(uri);
     auto ret = insertStrategy_.Execute(context, valuesBucket);
     if (ret) {
@@ -83,6 +87,10 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
     const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Update enter.");
+    if (!IsSilentProxyEnable(uri)) {
+        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return ERROR;
+    }
     auto context = std::make_shared<Context>(uri);
     auto ret = updateStrategy_.Execute(context, predicate, valuesBucket);
     if (ret) {
@@ -95,6 +103,10 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
 {
     ZLOGD("Delete enter.");
+    if (!IsSilentProxyEnable(uri)) {
+        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return ERROR;
+    }
     auto context = std::make_shared<Context>(uri);
     auto ret = deleteStrategy_.Execute(context, predicate);
     if (ret) {
@@ -108,6 +120,10 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
     ZLOGD("Query enter.");
+    if (!IsSilentProxyEnable(uri)) {
+        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return nullptr;
+    }
     auto context = std::make_shared<Context>(uri);
     return queryStrategy_.Execute(context, predicates, columns, errCode);
 }
@@ -554,5 +570,32 @@ int32_t DataShareServiceImpl::OnInitialize()
 DataShareServiceImpl::~DataShareServiceImpl()
 {
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
+}
+
+int32_t DataShareServiceImpl::EnableSilentProxy(const std::string &uri, bool enable)
+{
+    uint32_t callerTokenId = IPCSkeleton::GetCallingTokenID();
+    bool ret = dataShareSilentConfig_.EnableSilentProxy(callerTokenId, uri, enable);
+    if (!ret) {
+        ZLOGE("Enable silent proxy err, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return ERROR;
+    }
+    return E_OK;
+}
+
+bool DataShareServiceImpl::IsSilentProxyEnable(const std::string &uri)
+{
+    uint32_t callerTokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    UriInfo uriInfo;
+    if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
+        ZLOGE("Get uriInfo from URI error.");
+        return true;
+    }
+    auto success = dataShareSilentConfig_.IsSilentProxyEnable(callerTokenId, currentUserId, uriInfo.bundleName, uri);
+    if (!success) {
+        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+    }
+    return success;
 }
 } // namespace OHOS::DataShare
