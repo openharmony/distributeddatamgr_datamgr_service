@@ -588,7 +588,12 @@ bool DataShareServiceImpl::IsSilentProxyEnable(const std::string &uri)
         ZLOGE("Get uriInfo from URI error.");
         return true;
     }
-    auto success = dataShareSilentConfig_.IsSilentProxyEnable(callerTokenId, currentUserId, uriInfo.bundleName, uri);
+    std::string calledBundleName = uriInfo.bundleName;
+    uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(currentUserId, calledBundleName, 0);
+    if (calledTokenId == 0) {
+        calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(0, calledBundleName, 0);
+    }
+    auto success = dataShareSilentConfig_.IsSilentProxyEnable(calledTokenId, currentUserId, calledBundleName, uri);
     if (!success) {
         ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
     }
