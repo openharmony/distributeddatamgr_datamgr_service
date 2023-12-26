@@ -44,9 +44,9 @@ bool DataShareSilentConfig::IsSilentProxyEnable(uint32_t callerTokenId, int32_t 
               DistributedData::Anonymous::Change(uri).c_str());
         return true;
     }
-    for (const auto& iter : profileInfos) {
-        if (iter.first == uri) {
-            return iter.second.isSilentProxyEnable;
+    for (const auto &[key, value] : profileInfos) {
+        if (!value.isSilentProxyEnable) {
+            return false;
         }
     }
     return true;
