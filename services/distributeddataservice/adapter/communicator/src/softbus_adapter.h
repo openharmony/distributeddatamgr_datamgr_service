@@ -47,7 +47,7 @@ public:
 
     // Send data to other device, function will be called back after sent to notify send result.
     Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-        uint32_t totalLength, const MessageInfo &info);
+        uint32_t length, const MessageInfo &info);
 
     bool IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const struct DeviceId &peer);
 

@@ -138,7 +138,6 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
 
 std::vector<std::string> CustomUtdInstaller::GetHapModules(const std::string &bundleName, int32_t user)
 {
-    std::vector<std::string> modules;
     auto bundlemgr = GetBundleManager();
     AppExecFwk::BundleInfo bundleInfo;
     if (!bundlemgr->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT, bundleInfo, user)) {
@@ -148,12 +147,12 @@ std::vector<std::string> CustomUtdInstaller::GetHapModules(const std::string &bu
 }
 
 CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bundleName,
-    const std::string &utdJson, int32_t user)
+    const std::string &moduleName, int32_t user)
 {
     auto bundlemgr = GetBundleManager();
     std::string jsonStr;
     CustomUtdCfgs typeCfgs;
-    auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, utdJson, jsonStr,
+    auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
         user);
     if (status != NO_ERROR) {
         ZLOGE("get json profile failed, bundleName: %{public}s.", bundleName.c_str());
