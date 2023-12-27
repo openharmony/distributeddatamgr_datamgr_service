@@ -36,17 +36,23 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 constexpr static const char* SQL_AND = " = ? and ";
 constexpr static const int32_t AND_SIZE = 5;
-static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::pair<std::string, Asset>& newAsset);
+static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset);
 
-static int32_t ChangeAssetToNormal(int32_t eventId, Asset& asset, void*);
+static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset);
 
-static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, void*);
+static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset);
 
-static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, void*);
+static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset);
 
-static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, std::pair<std::string, Asset>& newAsset);
+static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset);
 
-static int32_t PrintError(int32_t eventId, ChangedAssetInfo& changedAsset, void*);
+static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset);
 
 static int32_t UpdateStore(ChangedAssetInfo& changedAsset);
 
@@ -55,43 +61,44 @@ static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBin
 static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& assetBindInfo);
 static void MergeAsset(Asset& oldAsset, const Asset& newAsset);
 static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args);
+static BindEvent::BindEventInfo MakeBindInfo(ChangedAssetInfo& changedAsset);
 
 static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
     {
         // STATUS_STABLE
         { STATUS_TRANSFERRING, nullptr, (Action)DoTransfer }, // remote_changed
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // transfer_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },       // transfer_finished
         { STATUS_UPLOADING, nullptr, nullptr },               // upload
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },       // upload_finished
         { STATUS_DOWNLOADING, nullptr, nullptr },             // download
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },    // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },       // upload_finished
     },
     {
         // TRANSFERRING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset },        // remote_changed
         { STATUS_STABLE, nullptr, nullptr },                            // transfer_finished
         { STATUS_WAIT_UPLOAD, nullptr, (Action)ChangeAssetToNormal },   // upload
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },              // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },                 // upload_finished
         { STATUS_WAIT_DOWNLOAD, nullptr, (Action)ChangeAssetToNormal }, // download
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },              // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },                 // upload_finished
     },
     {
         // DOWNLOADING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // transfer_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // upload
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // download
         { STATUS_STABLE, nullptr, nullptr },                     // download_finished
     },
     {
         // STATUS_UPLOADING
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // transfer_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // upload
         { STATUS_STABLE, nullptr, nullptr },                     // upload_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // download
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // download_finished
     },
     {
         // STATUS_WAIT_TRANSFER
@@ -106,41 +113,43 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         // STATUS_WAIT_UPLOAD
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_STABLE, nullptr, (Action)CompensateSync },      // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // upload
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // download
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // download_finished
     },
     {
         // STATUS_WAIT_DOWNLOAD
         { STATUS_WAIT_TRANSFER, nullptr, (Action)SaveNewAsset }, // remote_changed
         { STATUS_STABLE, nullptr, (Action)CompensateSync },      // transfer_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // upload_finished
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download
-        { STATUS_NO_CHANGE, nullptr, (Action)PrintError },       // download_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // upload
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // upload_finished
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // download
+        { STATUS_NO_CHANGE, nullptr, (Action)Recover },          // download_finished
     }
 };
 
-int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, TransferStatus& status, void* param, void* param2)
+int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& changedAssetInfo, Asset& asset,
+    const std::pair<std::string, Asset>& newAsset)
 {
     if (eventId < 0 || eventId >= EVENT_BUTT) {
         return GeneralError::E_ERROR;
     }
 
-    const DFAAction* action = &AssetDFA[status][eventId];
+    const DFAAction* action = &AssetDFA[changedAssetInfo.status][eventId];
     if (action->before != nullptr) {
-        int32_t res = action->before(eventId, param, param2);
+        int32_t res = action->before(eventId, changedAssetInfo, asset, newAsset);
         if (res != GeneralError::E_OK) {
             return GeneralError::E_ERROR;
         }
     }
     if (action->next != STATUS_NO_CHANGE) {
-        ZLOGI("status before:%{public}d, eventId: %{public}d, status after:%{public}d", status, eventId, action->next);
-        status = static_cast<TransferStatus>(action->next);
+        ZLOGI("status before:%{public}d, eventId: %{public}d, status after:%{public}d", changedAssetInfo.status,
+            eventId, action->next);
+        changedAssetInfo.status = static_cast<TransferStatus>(action->next);
     }
     if (action->after != nullptr) {
-        int32_t res = action->after(eventId, param, param2);
+        int32_t res = action->after(eventId, changedAssetInfo, asset, newAsset);
         if (res != GeneralError::E_OK) {
             return GeneralError::E_ERROR;
         }
@@ -148,7 +157,8 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, TransferStatus& sta
     return GeneralError::E_OK;
 }
 
-static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::pair<std::string, Asset>& newAsset)
+static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset)
 {
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
@@ -164,10 +174,10 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, std::
                         changedAsset.bindInfo.tableName.c_str());
                 }
             }
-            ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset.status, (void*)&changedAsset, nullptr);
+            ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
         });
     if (!success) {
-        ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset.status, (void*)&changedAsset, nullptr);
+        ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
     }
     return E_OK;
 }
@@ -293,14 +303,51 @@ static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset)
     return AutoCache::GetInstance().GetStore(meta, {});
 }
 
-static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
+static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset)
 {
     std::pair<std::string, Asset> newChangedAsset{ changedAsset.deviceId, changedAsset.asset };
-    return ObjectAssetMachine::DFAPostEvent(REMOTE_CHANGED, changedAsset.status, (void*)&changedAsset,
-        (void*)&newChangedAsset);
+    return ObjectAssetMachine::DFAPostEvent(REMOTE_CHANGED, changedAsset, changedAsset.asset, newChangedAsset);
 }
 
-static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
+static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset)
+{
+    BindEvent::BindEventInfo bindEventInfo = MakeBindInfo(changedAsset);
+    auto evt = std::make_unique<BindEvent>(BindEvent::COMPENSATE_SYNC, std::move(bindEventInfo));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return E_OK;
+}
+
+static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset)
+{
+    changedAsset.deviceId = newAsset.first;
+    changedAsset.asset = newAsset.second;
+    return E_OK;
+}
+
+static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAssetInfo, Asset& asset,
+    std::pair<std::string, Asset>& newAsset)
+{
+    asset.status = Asset::STATUS_NORMAL;
+    return E_OK;
+}
+
+static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    std::pair<std::string, Asset>& newAsset)
+{
+    ZLOGE("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s", eventId,
+        changedAsset.status, changedAsset.asset.name.c_str());
+
+    BindEvent::BindEventInfo bindEventInfo = MakeBindInfo(changedAsset);
+    changedAsset.status = TransferStatus::STATUS_STABLE;
+    auto evt = std::make_unique<BindEvent>(BindEvent::RECOVER_SYNC, std::move(bindEventInfo));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return E_OK;
+}
+
+static BindEvent::BindEventInfo MakeBindInfo(ChangedAssetInfo& changedAsset)
 {
     BindEvent::BindEventInfo bindEventInfo;
     bindEventInfo.bundleName = changedAsset.storeInfo.bundleName;
@@ -312,29 +359,7 @@ static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, v
     bindEventInfo.filed = changedAsset.bindInfo.field;
     bindEventInfo.primaryKey = changedAsset.bindInfo.primaryKey;
     bindEventInfo.assetName = changedAsset.bindInfo.assetName;
-    auto evt = std::make_unique<BindEvent>(BindEvent::COMPENSATE_SYNC, std::move(bindEventInfo));
-    EventCenter::GetInstance().PostEvent(std::move(evt));
-    return E_OK;
-}
-
-static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, std::pair<std::string, Asset>& newAsset)
-{
-    changedAsset.deviceId = newAsset.first;
-    changedAsset.asset = newAsset.second;
-    return E_OK;
-}
-
-static int32_t ChangeAssetToNormal(int32_t eventId, Asset& asset, void*)
-{
-    asset.status = Asset::STATUS_NORMAL;
-    return E_OK;
-}
-
-static int32_t PrintError(int32_t eventId, ChangedAssetInfo& changedAsset, void*)
-{
-    ZLOGE("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s", eventId,
-        changedAsset.status, changedAsset.asset.name.c_str());
-    return E_OK;
+    return bindEventInfo;
 }
 
 ObjectAssetMachine::ObjectAssetMachine() {}
