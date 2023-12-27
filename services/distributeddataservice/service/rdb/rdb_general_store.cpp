@@ -110,7 +110,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         return GeneralError::E_OK;
     }
 
-    BindEvent::BindEventInfo  eventInfo;
+    BindEvent::BindEventInfo eventInfo;
     eventInfo.tokenId = storeInfo_.tokenId;
     eventInfo.bundleName = storeInfo_.bundleName;
     eventInfo.storeName = storeInfo_.storeName;
@@ -144,9 +144,12 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         ZLOGE("database:%{public}s already closed!", Anonymous::Change(database.name).c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
-    delegate_->SetCloudDB(rdbCloud_);
-    delegate_->SetIAssetLoader(rdbLoader_);
-    delegate_->SetCloudDbSchema(std::move(schema));
+    if (delegate_->SetCloudDB(rdbCloud_) != DistributedDB::OK ||
+        delegate_->SetIAssetLoader(rdbLoader_) != DistributedDB::OK ||
+        delegate_->SetCloudDbSchema(std::move(schema)) != DistributedDB::OK) {
+        isBound_.exchange(false);
+        return GeneralError::E_ERROR;
+    }
     return GeneralError::E_OK;
 }
 
@@ -302,7 +305,8 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
         values = ExecuteSql(sql, rdbQuery->GetBindArgs());
     }
     if (rdbCloud_ == nullptr || values.empty()) {
-        ZLOGE("rdbCloud is nullptr:%{public}d, values size:%{public}zu", rdbCloud_ == nullptr, values.size());
+        ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud_ == nullptr ? "nullptr" : "not nullptr",
+            values.size());
         return nullptr;
     }
     VBuckets extends = ExtractExtend(values);

@@ -95,7 +95,6 @@ private:
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static HapInfo GetHapInfo(uint32_t tokenId);
-    static int64_t FuncTimeElapsed(const std::function<void()>& func, int32_t timeout = 500);
 
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;

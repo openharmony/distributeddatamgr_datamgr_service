@@ -75,7 +75,7 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
     }
     for (auto &meta : storeMetaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("uninstalled bundleName:%{public}s stordId:%{public}s", bundleName.c_str(),
+            ZLOGI("uninstalled bundleName:%{public}s storeId:%{public}s", bundleName.c_str(),
                 Anonymous::Change(meta.storeId).c_str());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
@@ -99,7 +99,7 @@ void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t use
     }
     for (auto &meta : storeMetaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("updated bundleName:%{public}s, stordId:%{public}s", bundleName.c_str(),
+            ZLOGI("updated bundleName:%{public}s, storeId:%{public}s", bundleName.c_str(),
                 Anonymous::Change(meta.storeId).c_str());
             MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(meta), true);
         }
