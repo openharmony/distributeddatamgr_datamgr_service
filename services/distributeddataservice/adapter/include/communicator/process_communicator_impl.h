@@ -31,6 +31,7 @@ public:
     using DBStatus = DistributedDB::DBStatus;
     using OnDeviceChange = DistributedDB::OnDeviceChange;
     using OnDataReceive = DistributedDB::OnDataReceive;
+    using OnSendAble = DistributedDB::OnSendAble;
     using DeviceInfos = DistributedDB::DeviceInfos;
     using RouteHeadHandlerCreator =
         std::function<std::shared_ptr<DistributedData::RouteHeadHandler>(const DistributedDB::ExtendInfo &info)>;
@@ -44,6 +45,7 @@ public:
 
     DBStatus RegOnDeviceChange(const OnDeviceChange &callback) override;
     DBStatus RegOnDataReceive(const OnDataReceive &callback) override;
+    void RegOnSendAble(const OnSendAble &sendAbleCallback) override;
 
     DBStatus SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length) override;
     DBStatus SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length,
