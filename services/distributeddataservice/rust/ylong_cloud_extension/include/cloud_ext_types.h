@@ -596,14 +596,14 @@ void OhCloudExtCloudDbDataFree(OhCloudExtCloudDbData *ptr);
  * @brief       Type declaration of Rust cloud extension struct KeyName.
  */
 typedef struct {
-    unsigned char *key,
-    unsigned int keyLen
+    unsigned char *key;
+    unsigned int keyLen;
 } OhCloudExtKeyName;
 
 /**
  * @brief       Create a KeyName instance by key, and keyLen.
  */
-OhCloudExtKeyName OhCloudExtKeyNameNew(unsigned char *key, unsigned int keyLen);
+OhCloudExtKeyName OhCloudExtKeyNameNew(const unsigned char *key, unsigned int keyLen);
 
 /**
  * @brief       Type declaration of Rust cloud extension struct ValueBucket.
