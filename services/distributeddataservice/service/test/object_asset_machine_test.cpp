@@ -25,6 +25,8 @@
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
 using namespace OHOS::DistributedData;
+namespace OHOS::Test {
+
 class ObjectAssetMachineTest : public testing::Test {
 public:
     void SetUp();
@@ -197,3 +199,4 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
         (void*)&changedAssets_[uri_].asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 }
+} // namespace OHOS::Test
