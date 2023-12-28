@@ -205,7 +205,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         activeInfos_.Erase(info.syncId_);
         CloudInfo cloud;
         cloud.user = info.user_;
-        if (!isValid(info, cloud)) {
+        if (!IsValid(info, cloud)) {
             return;
         }
         std::vector<SchemaMeta> schemas;
