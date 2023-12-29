@@ -92,10 +92,10 @@
             "sub_component": [
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/rust/extension:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/conf:build_module",
-                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module",
-                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/rust/ylong_cloud_extension:ylong_cloud_extension"
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module"
             ],
             "inner_kits": [
                 {
