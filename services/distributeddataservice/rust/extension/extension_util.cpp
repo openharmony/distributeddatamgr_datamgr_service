@@ -266,7 +266,6 @@ DBValue ExtensionUtil::ConvertValue(OhCloudExtValue *value)
         }
         case OhCloudExtValueType::VALUEINNERTYPE_BYTES: {
             std::vector<uint8_t> bytes;
-            bytes.reserve(ctLen);
             uint8_t *begin = reinterpret_cast<uint8_t *>(content);
             for (size_t i = 0; i < ctLen; i++) {
                 uint8_t bt = *begin;
@@ -320,7 +319,6 @@ DBValue ExtensionUtil::ConvertValues(OhCloudExtValueBucket *bucket, const std::s
             break;
         case OhCloudExtValueType::VALUEINNERTYPE_BYTES: {
             std::vector<uint8_t> bytes;
-            bytes.reserve(ctLen);
             uint8_t *begin = reinterpret_cast<uint8_t *>(content);
             for (size_t i = 0; i < ctLen; i++) {
                 uint8_t bt = *begin;
@@ -402,35 +400,40 @@ DBAsset ExtensionUtil::ConvertAsset(OhCloudExtCloudAsset *asset)
         return result;
     }
     result.createTime = std::string(reinterpret_cast<char *>(crtTime), crtTimeLen);
+    ConvertAssetLeft(asset, result);
+    return result;
+}
+
+void ExtensionUtil::ConvertAssetLeft(OhCloudExtCloudAsset *asset, DBAsset &dbAsset)
+{
     unsigned char *mdTime = nullptr;
     size_t mdTimeLen = 0;
-    status = OhCloudExtCloudAssetGetModifiedTime(asset, &mdTime, &mdTimeLen);
+    auto status = OhCloudExtCloudAssetGetModifiedTime(asset, &mdTime, &mdTimeLen);
     if (status != ERRNO_SUCCESS || mdTime == nullptr) {
-        return result;
+        return;
     }
-    result.modifyTime = std::string(reinterpret_cast<char *>(mdTime), mdTimeLen);
+    dbAsset.modifyTime = std::string(reinterpret_cast<char *>(mdTime), mdTimeLen);
     unsigned char *size = nullptr;
     size_t sizeLen = 0;
     status = OhCloudExtCloudAssetGetSize(asset, &size, &sizeLen);
     if (status != ERRNO_SUCCESS || size == nullptr) {
-        return result;
+        return;
     }
-    result.size = std::string(reinterpret_cast<char *>(size), sizeLen);
+    dbAsset.size = std::string(reinterpret_cast<char *>(size), sizeLen);
     unsigned char *hash = nullptr;
     size_t hashLen = 0;
     status = OhCloudExtCloudAssetGetHash(asset, &hash, &hashLen);
     if (status != ERRNO_SUCCESS || hash == nullptr) {
-        return result;
+        return;
     }
-    result.hash = std::string(reinterpret_cast<char *>(hash), hashLen);
+    dbAsset.hash = std::string(reinterpret_cast<char *>(hash), hashLen);
     unsigned char *path = nullptr;
     size_t pathLen = 0;
     status = OhCloudExtCloudAssetGetLocalPath(asset, &path, &pathLen);
     if (status != ERRNO_SUCCESS || path == nullptr) {
-        return result;
+        return;
     }
-    result.path = std::string(reinterpret_cast<char *>(path), pathLen);
-    return result;
+    dbAsset.path = std::string(reinterpret_cast<char *>(path), pathLen);
 }
 
 DBInfo ExtensionUtil::ConvertAppInfo(OhCloudExtAppInfo *appInfo)

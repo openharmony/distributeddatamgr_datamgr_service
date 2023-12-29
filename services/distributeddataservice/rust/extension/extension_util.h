@@ -60,6 +60,7 @@ public:
     static OhCloudExtAssetStatus ConvertAssetStatus(DBAssetStatus status);
 
 private:
+    static void ConvertAssetLeft(OhCloudExtCloudAsset *asset, DBAsset &dbAsset);
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_EXTENSION_EXTENSION_UTIL_H

@@ -48,6 +48,7 @@ private:
     void GetAppInfo(std::shared_ptr<OhCloudExtHashMap> briefInfo, DBCloudInfo &cloudInfo);
     void GetDatabases(std::shared_ptr<OhCloudExtVector> databases, DBSchemaMeta &dbSchema);
     void GetTables(std::shared_ptr<OhCloudExtHashMap> tables, DBMeta &dbMeta);
+    void GetTableInfo(std::shared_ptr<OhCloudExtTable> pTable, DBTable &dbTable);
     void GetFields(std::shared_ptr<OhCloudExtVector> fields, DBTable &dbTable);
     int32_t DoSubscribe(int32_t userId, std::shared_ptr<OhCloudExtCloudSync> server,
         std::shared_ptr<OhCloudExtHashMap> databases);

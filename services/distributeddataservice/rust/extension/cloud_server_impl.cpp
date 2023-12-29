@@ -222,20 +222,7 @@ void CloudServerImpl::GetTables(std::shared_ptr<OhCloudExtHashMap> tables, DBMet
         DBTable dbTable;
         OhCloudExtTable *table = reinterpret_cast<OhCloudExtTable *>(value);
         auto pTable = std::shared_ptr<OhCloudExtTable>(table, [](auto *table) { OhCloudExtTableFree(table); });
-        unsigned char *tbName = nullptr;
-        size_t tbNameLen = 0;
-        OhCloudExtTableGetName(pTable.get(), &tbName, &tbNameLen);
-        if (tbName == nullptr) {
-            return;
-        }
-        dbTable.name = std::string(reinterpret_cast<char *>(tbName), tbNameLen);
-        unsigned char *tbAlias = nullptr;
-        size_t tbAliasLen = 0;
-        OhCloudExtTableGetAlias(pTable.get(), &tbAlias, &tbAliasLen);
-        if (tbAlias == nullptr) {
-            return;
-        }
-        dbTable.alias = std::string(reinterpret_cast<char *>(tbAlias), tbAliasLen);
+        GetTableInfo(pTable, dbTable);
         OhCloudExtVector *fields = nullptr;
         status = OhCloudExtTableGetFields(pTable.get(), &fields);
         if (status != ERRNO_SUCCESS || fields == nullptr) {
@@ -247,6 +234,24 @@ void CloudServerImpl::GetTables(std::shared_ptr<OhCloudExtHashMap> tables, DBMet
         GetFields(pFields, dbTable);
         dbMeta.tables.emplace_back(std::move(dbTable));
     }
+}
+
+void CloudServerImpl::GetTableInfo(std::shared_ptr<OhCloudExtTable> pTable, DBTable &dbTable)
+{
+    unsigned char *tbName = nullptr;
+    size_t tbNameLen = 0;
+    OhCloudExtTableGetName(pTable.get(), &tbName, &tbNameLen);
+    if (tbName == nullptr) {
+        return;
+    }
+    dbTable.name = std::string(reinterpret_cast<char *>(tbName), tbNameLen);
+    unsigned char *tbAlias = nullptr;
+    size_t tbAliasLen = 0;
+    OhCloudExtTableGetAlias(pTable.get(), &tbAlias, &tbAliasLen);
+    if (tbAlias == nullptr) {
+        return;
+    }
+    dbTable.alias = std::string(reinterpret_cast<char *>(tbAlias), tbAliasLen);
 }
 
 void CloudServerImpl::GetFields(std::shared_ptr<OhCloudExtVector> fields, DBTable &dbTable)
@@ -514,18 +519,13 @@ int32_t CloudServerImpl::Unsubscribe(int32_t userId, const std::map<std::string,
     if (server == nullptr) {
         return DBErr::E_ERROR;
     }
-    auto pServer = std::shared_ptr<OhCloudExtCloudSync>(server, [](auto *server) {
-        OhCloudExtCloudSyncFree(server);
-    });
+    auto pServer = std::shared_ptr<OhCloudExtCloudSync>(server, [](auto *server) { OhCloudExtCloudSyncFree(server); });
     std::vector<std::string> bundles;
-    bundles.reserve(dbs.size());
-    OhCloudExtHashMap *relations = OhCloudExtHashMapNew(OhCloudExtRustType::VALUETYPE_VEC_STRING);
-    if (relations == nullptr) {
+    OhCloudExtHashMap *rels = OhCloudExtHashMapNew(OhCloudExtRustType::VALUETYPE_VEC_STRING);
+    if (rels == nullptr) {
         return DBErr::E_ERROR;
     }
-    auto pRelations = std::shared_ptr<OhCloudExtHashMap>(relations, [](auto *relations) {
-        OhCloudExtHashMapFree(relations);
-    });
+    auto pRels = std::shared_ptr<OhCloudExtHashMap>(rels, [](auto *rels) { OhCloudExtHashMapFree(rels); });
     for (auto &[bundle, databases] : dbs) {
         DBRelation dbRelation;
         DBMetaMgr::GetInstance().LoadMeta(DBSub::GetRelationKey(userId, bundle), dbRelation, true);
@@ -546,14 +546,14 @@ int32_t CloudServerImpl::Unsubscribe(int32_t userId, const std::map<std::string,
             }
             relationLen += 1;
         }
-        auto status = OhCloudExtHashMapInsert(pRelations.get(),
+        auto status = OhCloudExtHashMapInsert(pRels.get(),
             const_cast<void *>(reinterpret_cast<const void *>(bundle.c_str())), bundle.size(), relation, relationLen);
         if (status != ERRNO_SUCCESS) {
             return DBErr::E_ERROR;
         }
         bundles.emplace_back(bundle);
     }
-    if (DoUnsubscribe(pServer, pRelations, bundles, sub) != DBErr::E_OK) {
+    if (DoUnsubscribe(pServer, pRels, bundles, sub) != DBErr::E_OK) {
         return DBErr::E_ERROR;
     }
     DBMetaMgr::GetInstance().SaveMeta(sub.GetKey(), sub, true);
