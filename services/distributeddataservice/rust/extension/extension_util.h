@@ -61,6 +61,7 @@ public:
 
 private:
     static void ConvertAssetLeft(OhCloudExtCloudAsset *asset, DBAsset &dbAsset);
+    static void DoConvertValue(void *content, unsigned int ctLen, OhCloudExtValueType type, DBValue &dbvalue);
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_EXTENSION_EXTENSION_UTIL_H

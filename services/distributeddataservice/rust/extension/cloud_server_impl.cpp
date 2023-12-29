@@ -521,11 +521,11 @@ int32_t CloudServerImpl::Unsubscribe(int32_t userId, const std::map<std::string,
     }
     auto pServer = std::shared_ptr<OhCloudExtCloudSync>(server, [](auto *server) { OhCloudExtCloudSyncFree(server); });
     std::vector<std::string> bundles;
-    OhCloudExtHashMap *rels = OhCloudExtHashMapNew(OhCloudExtRustType::VALUETYPE_VEC_STRING);
-    if (rels == nullptr) {
+    OhCloudExtHashMap *subs = OhCloudExtHashMapNew(OhCloudExtRustType::VALUETYPE_VEC_STRING);
+    if (subs == nullptr) {
         return DBErr::E_ERROR;
     }
-    auto pRels = std::shared_ptr<OhCloudExtHashMap>(rels, [](auto *rels) { OhCloudExtHashMapFree(rels); });
+    auto pSubs = std::shared_ptr<OhCloudExtHashMap>(subs, [](auto *subs) { OhCloudExtHashMapFree(subs); });
     for (auto &[bundle, databases] : dbs) {
         DBRelation dbRelation;
         DBMetaMgr::GetInstance().LoadMeta(DBSub::GetRelationKey(userId, bundle), dbRelation, true);
@@ -540,20 +540,19 @@ int32_t CloudServerImpl::Unsubscribe(int32_t userId, const std::map<std::string,
                 continue;
             }
             uint32_t subId = std::stoul(it->second);
-            auto status = OhCloudExtVectorPush(relation, &subId, sizeof(uint32_t));
-            if (status != ERRNO_SUCCESS) {
+            if (OhCloudExtVectorPush(relation, &subId, sizeof(uint32_t)) != ERRNO_SUCCESS) {
                 return DBErr::E_ERROR;
             }
             relationLen += 1;
         }
-        auto status = OhCloudExtHashMapInsert(pRels.get(),
+        auto status = OhCloudExtHashMapInsert(pSubs.get(),
             const_cast<void *>(reinterpret_cast<const void *>(bundle.c_str())), bundle.size(), relation, relationLen);
         if (status != ERRNO_SUCCESS) {
             return DBErr::E_ERROR;
         }
         bundles.emplace_back(bundle);
     }
-    if (DoUnsubscribe(pServer, pRels, bundles, sub) != DBErr::E_OK) {
+    if (DoUnsubscribe(pServer, pSubs, bundles, sub) != DBErr::E_OK) {
         return DBErr::E_ERROR;
     }
     DBMetaMgr::GetInstance().SaveMeta(sub.GetKey(), sub, true);

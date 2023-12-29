@@ -250,46 +250,7 @@ DBValue ExtensionUtil::ConvertValue(OhCloudExtValue *value)
     if (status != ERRNO_SUCCESS || content == nullptr) {
         return result;
     }
-    switch (type) {
-        case OhCloudExtValueType::VALUEINNERTYPE_EMPTY:
-            break;
-        case OhCloudExtValueType::VALUEINNERTYPE_INT:
-            result = *reinterpret_cast<int64_t *>(content);
-            break;
-        case OhCloudExtValueType::VALUEINNERTYPE_BOOL:
-            result = *reinterpret_cast<bool *>(content);
-            break;
-        case OhCloudExtValueType::VALUEINNERTYPE_STRING: {
-            char *str = reinterpret_cast<char *>(content);
-            result = std::string(str, ctLen);
-            break;
-        }
-        case OhCloudExtValueType::VALUEINNERTYPE_BYTES: {
-            std::vector<uint8_t> bytes;
-            uint8_t *begin = reinterpret_cast<uint8_t *>(content);
-            for (size_t i = 0; i < ctLen; i++) {
-                uint8_t bt = *begin;
-                bytes.emplace_back(bt);
-                begin = begin + 1;
-            }
-            result = bytes;
-            break;
-        }
-        case OhCloudExtValueType::VALUEINNERTYPE_ASSET: {
-            OhCloudExtCloudAsset *asset = reinterpret_cast<OhCloudExtCloudAsset *>(content);
-            result = ConvertAsset(asset);
-            OhCloudExtCloudAssetFree(asset);
-            break;
-        }
-        case OhCloudExtValueType::VALUEINNERTYPE_ASSETS: {
-            OhCloudExtVector *assets = reinterpret_cast<OhCloudExtVector *>(content);
-            result = ConvertAssets(assets);
-            OhCloudExtVectorFree(assets);
-            break;
-        }
-        default:
-            break;
-    }
+    DoConvertValue(content, ctLen, type, result);
     return result;
 }
 
@@ -305,17 +266,23 @@ DBValue ExtensionUtil::ConvertValues(OhCloudExtValueBucket *bucket, const std::s
     if (status != ERRNO_SUCCESS || content == nullptr) {
         return result;
     }
+    DoConvertValue(content, ctLen, type, result);
+    return result;
+}
+
+void ExtensionUtil::DoConvertValue(void *content, unsigned int ctLen, OhCloudExtValueType type, DBValue &dbvalue)
+{
     switch (type) {
         case OhCloudExtValueType::VALUEINNERTYPE_EMPTY:
             break;
         case OhCloudExtValueType::VALUEINNERTYPE_INT:
-            result = *reinterpret_cast<int64_t *>(content);
+            dbvalue = *reinterpret_cast<int64_t *>(content);
             break;
         case OhCloudExtValueType::VALUEINNERTYPE_BOOL:
-            result = *reinterpret_cast<bool *>(content);
+            dbvalue = *reinterpret_cast<bool *>(content);
             break;
         case OhCloudExtValueType::VALUEINNERTYPE_STRING:
-            result = std::string(reinterpret_cast<char *>(content), ctLen);
+            dbvalue = std::string(reinterpret_cast<char *>(content), ctLen);
             break;
         case OhCloudExtValueType::VALUEINNERTYPE_BYTES: {
             std::vector<uint8_t> bytes;
@@ -325,25 +292,24 @@ DBValue ExtensionUtil::ConvertValues(OhCloudExtValueBucket *bucket, const std::s
                 bytes.emplace_back(bt);
                 begin = begin + 1;
             }
-            result = bytes;
+            dbvalue = bytes;
             break;
         }
         case OhCloudExtValueType::VALUEINNERTYPE_ASSET: {
             OhCloudExtCloudAsset *asset = reinterpret_cast<OhCloudExtCloudAsset *>(content);
-            result = ConvertAsset(asset);
+            dbvalue = ConvertAsset(asset);
             OhCloudExtCloudAssetFree(asset);
             break;
         }
         case OhCloudExtValueType::VALUEINNERTYPE_ASSETS: {
             OhCloudExtVector *assets = reinterpret_cast<OhCloudExtVector *>(content);
-            result = ConvertAssets(assets);
+            dbvalue = ConvertAssets(assets);
             OhCloudExtVectorFree(assets);
             break;
         }
         default:
             break;
     }
-    return result;
 }
 
 DBAssets ExtensionUtil::ConvertAssets(OhCloudExtVector *values)
