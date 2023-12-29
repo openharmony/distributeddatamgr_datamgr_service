@@ -74,32 +74,30 @@ int32_t AssetLoaderImpl::RemoveLocalAssets(
         auto dbAssets = std::get_if<DBAssets>(&value);
         if (dbAssets != nullptr) {
             for (auto &dbAsset : *dbAssets) {
-                auto data = ExtensionUtil::Convert(dbAsset);
-                if (data.first == nullptr) {
-                    return DBErr::E_ERROR;
-                }
-                auto status = OhCloudExtCloudAssetLoaderRemoveLocalAssets(data.first);
-                OhCloudExtCloudAssetFree(data.first);
-                if (status != ERRNO_SUCCESS) {
-                    return DBErr::E_ERROR;
-                }
+                RemoveLocalAsset(dbAsset);
             }
             return DBErr::E_OK;
         }
         auto dbAsset = std::get_if<DBAsset>(&value);
         if (dbAssets != nullptr) {
-            auto data = ExtensionUtil::Convert(*dbAsset);
-            if (data.first == nullptr) {
-                return DBErr::E_ERROR;
-            }
-            auto status = OhCloudExtCloudAssetLoaderRemoveLocalAssets(data.first);
-            OhCloudExtCloudAssetFree(data.first);
-            if (status != ERRNO_SUCCESS) {
-                return DBErr::E_ERROR;
-            }
+            RemoveLocalAsset(*dbAsset);
             return DBErr::E_OK;
         }
         return DBErr::E_INVALID_ARGS;
+    }
+    return DBErr::E_OK;
+}
+
+int32_t AssetLoaderImpl::RemoveLocalAsset(const DBAsset &dbAsset)
+{
+    auto data = ExtensionUtil::Convert(dbAsset);
+    if (data.first == nullptr) {
+        return DBErr::E_ERROR;
+    }
+    auto status = OhCloudExtCloudAssetLoaderRemoveLocalAssets(data.first);
+    OhCloudExtCloudAssetFree(data.first);
+    if (status != ERRNO_SUCCESS) {
+        return DBErr::E_ERROR;
     }
     return DBErr::E_OK;
 }

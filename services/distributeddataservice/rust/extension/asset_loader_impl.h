@@ -38,6 +38,7 @@ public:
 
 private:
     OhCloudExtCloudAssetLoader *loader_ = nullptr;
+    int32_t RemoveLocalAsset(const DBAsset &dbAsset);
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_EXTENSION_ASSET_LOADER_IMPL_H
