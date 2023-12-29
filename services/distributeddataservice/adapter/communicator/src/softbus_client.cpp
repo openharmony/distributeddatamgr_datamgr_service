@@ -126,7 +126,10 @@ Status SoftBusClient::OpenConnect(uint32_t length)
             return;
         }
         ZLOGI("OpenSession Start.");
-        (void)client->Open(attr);
+        auto status = client->Open(attr);
+        if (status == Status::SUCCESS) {
+            Context::GetInstance().NotifySessionChanged(client->device_.deviceId);
+        }
         client->sessionFlag_.store(false);
     };
     Context::GetInstance().GetThreadPool()->Execute(task);

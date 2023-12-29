@@ -13,9 +13,14 @@
 * limitations under the License.
 */
 
+#define LOG_TAG "CommunicatorContext"
 #include "communicator_context.h"
+#include "log_print.h"
+#include "kvstore_utils.h"
 
 namespace OHOS::DistributedData {
+using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
+
 CommunicatorContext &CommunicatorContext::GetInstance()
 {
     static CommunicatorContext context;
@@ -30,5 +35,23 @@ void CommunicatorContext::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 std::shared_ptr<ExecutorPool> CommunicatorContext::GetThreadPool()
 {
     return executors_;
+}
+
+void CommunicatorContext::SetSessionListener(const OnSendAble &sendAbleCallback)
+{
+    std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
+    sessionListener_ = sendAbleCallback;
+}
+
+void CommunicatorContext::NotifySessionChanged(const std::string &deviceId)
+{
+    ZLOGI("Notify session begin, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId).c_str());
+    std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
+    if (sessionListener_ == nullptr) {
+        return;
+    }
+    DeviceInfos devInfo;
+    devInfo.identifier = deviceId;
+    sessionListener_(devInfo);
 }
 } // namespace OHOS::DistributedData
