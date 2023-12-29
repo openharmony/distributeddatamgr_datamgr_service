@@ -43,9 +43,9 @@ private:
     std::shared_ptr<DistributedData::AssetLoader> assetLoader_;
     BindAssets* snapshots_;
     void PostEvent(std::set<std::string>& skipAssets, std::map<std::string, DistributedData::Value>& assets,
-        DistributedData::AssetEvent eventId);
+        DistributedData::AssetEvent eventId, std::set<std::string>& deleteAssets);
     void PostEvent(DistributedData::AssetEvent eventId, DistributedData::Assets& assets,
-        std::set<std::string>& skipAssets);
+        std::set<std::string>& skipAssets, std::set<std::string>& deleteAssets);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H
