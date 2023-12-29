@@ -55,6 +55,7 @@ public:
     static std::pair<OhCloudExtValue *, size_t> Convert(const DBValue &dbValue);
     static std::pair<OhCloudExtCloudAsset *, size_t> Convert(const DBAsset &dbAsset);
     static std::pair<OhCloudExtVector *, size_t> Convert(const DBAssets &dbAssets);
+    static std::pair<OhCloudExtVector *, size_t> Convert(const DBTable &dbTable);
     static OhCloudExtAssetStatus ConvertAssetStatus(DBAssetStatus status);
 
 private:

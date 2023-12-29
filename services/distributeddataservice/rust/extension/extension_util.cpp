@@ -119,28 +119,9 @@ std::pair<OhCloudExtDatabase *, size_t> ExtensionUtil::Convert(const DBMeta &dbM
     }
     size_t dbLen = 0;
     for (auto &table : dbMeta.tables) {
-        size_t tbLen = 0;
-        OhCloudExtVector *fields = OhCloudExtVectorNew(OhCloudExtRustType::VALUETYPE_FIELD);
+        auto [fields, tbLen] = Convert(table);
         if (fields == nullptr) {
             return { nullptr, 0 };
-        }
-        for (auto &field : table.fields) {
-            size_t fdLen =  field.colName.size() + field.alias.size() + sizeof(int) + sizeof(bool) * 2;
-            OhCloudExtFieldBuilder builder {
-                .colName = reinterpret_cast<const unsigned char *>(field.colName.c_str()),
-                .colNameLen = field.colName.size(),
-                .alias = reinterpret_cast<const unsigned char *>(field.alias.c_str()),
-                .aliasLen = field.alias.size(),
-                .typ = static_cast<unsigned int>(field.type),
-                .primary = field.primary,
-                .nullable = field.nullable
-            };
-            OhCloudExtField *fd = OhCloudExtFieldNew(&builder);
-            if (fd == nullptr) {
-                return { nullptr, 0 };
-            }
-            OhCloudExtVectorPush(fields, fd, fdLen);
-            tbLen += fdLen;
         }
         OhCloudExtTable *tb = OhCloudExtTableNew(reinterpret_cast<const unsigned char *>(table.name.c_str()),
             table.name.size(), reinterpret_cast<const unsigned char *>(table.alias.c_str()),
@@ -163,6 +144,34 @@ std::pair<OhCloudExtDatabase *, size_t> ExtensionUtil::Convert(const DBMeta &dbM
         return { nullptr, 0 };
     }
     return { db, dbLen };
+}
+
+std::pair<OhCloudExtVector *, size_t> ExtensionUtil::Convert(const DBTable &dbTable)
+{
+    size_t tbLen = 0;
+    OhCloudExtVector *fields = OhCloudExtVectorNew(OhCloudExtRustType::VALUETYPE_FIELD);
+    if (fields == nullptr) {
+        return { nullptr, 0 };
+    }
+    for (auto &field : dbTable.fields) {
+        size_t fdLen =  field.colName.size() + field.alias.size() + sizeof(int) + sizeof(bool) * 2;
+        OhCloudExtFieldBuilder builder {
+            .colName = reinterpret_cast<const unsigned char *>(field.colName.c_str()),
+            .colNameLen = field.colName.size(),
+            .alias = reinterpret_cast<const unsigned char *>(field.alias.c_str()),
+            .aliasLen = field.alias.size(),
+            .typ = static_cast<unsigned int>(field.type),
+            .primary = field.primary,
+            .nullable = field.nullable
+        };
+        OhCloudExtField *fd = OhCloudExtFieldNew(&builder);
+        if (fd == nullptr) {
+            return { nullptr, 0 };
+        }
+        OhCloudExtVectorPush(fields, fd, fdLen);
+        tbLen += fdLen;
+    }
+    return { fields, tbLen };
 }
 
 DBVBuckets ExtensionUtil::ConvertBuckets(OhCloudExtVector *values)
@@ -250,14 +259,12 @@ DBValue ExtensionUtil::ConvertValue(OhCloudExtValue *value)
         case OhCloudExtValueType::VALUEINNERTYPE_BOOL:
             result = *reinterpret_cast<bool *>(content);
             break;
-        case OhCloudExtValueType::VALUEINNERTYPE_STRING:
-        {
+        case OhCloudExtValueType::VALUEINNERTYPE_STRING: {
             char *str = reinterpret_cast<char *>(content);
             result = std::string(str, ctLen);
             break;
         }
-        case OhCloudExtValueType::VALUEINNERTYPE_BYTES:
-        {
+        case OhCloudExtValueType::VALUEINNERTYPE_BYTES: {
             std::vector<uint8_t> bytes;
             bytes.reserve(ctLen);
             uint8_t *begin = reinterpret_cast<uint8_t *>(content);
@@ -269,15 +276,13 @@ DBValue ExtensionUtil::ConvertValue(OhCloudExtValue *value)
             result = bytes;
             break;
         }
-        case OhCloudExtValueType::VALUEINNERTYPE_ASSET:
-        {
+        case OhCloudExtValueType::VALUEINNERTYPE_ASSET: {
             OhCloudExtCloudAsset *asset = reinterpret_cast<OhCloudExtCloudAsset *>(content);
             result = ConvertAsset(asset);
             OhCloudExtCloudAssetFree(asset);
             break;
         }
-        case OhCloudExtValueType::VALUEINNERTYPE_ASSETS:
-        {
+        case OhCloudExtValueType::VALUEINNERTYPE_ASSETS: {
             OhCloudExtVector *assets = reinterpret_cast<OhCloudExtVector *>(content);
             result = ConvertAssets(assets);
             OhCloudExtVectorFree(assets);
@@ -313,8 +318,7 @@ DBValue ExtensionUtil::ConvertValues(OhCloudExtValueBucket *bucket, const std::s
         case OhCloudExtValueType::VALUEINNERTYPE_STRING:
             result = std::string(reinterpret_cast<char *>(content), ctLen);
             break;
-        case OhCloudExtValueType::VALUEINNERTYPE_BYTES:
-        {
+        case OhCloudExtValueType::VALUEINNERTYPE_BYTES: {
             std::vector<uint8_t> bytes;
             bytes.reserve(ctLen);
             uint8_t *begin = reinterpret_cast<uint8_t *>(content);
@@ -326,15 +330,13 @@ DBValue ExtensionUtil::ConvertValues(OhCloudExtValueBucket *bucket, const std::s
             result = bytes;
             break;
         }
-        case OhCloudExtValueType::VALUEINNERTYPE_ASSET:
-        {
+        case OhCloudExtValueType::VALUEINNERTYPE_ASSET: {
             OhCloudExtCloudAsset *asset = reinterpret_cast<OhCloudExtCloudAsset *>(content);
             result = ConvertAsset(asset);
             OhCloudExtCloudAssetFree(asset);
             break;
         }
-        case OhCloudExtValueType::VALUEINNERTYPE_ASSETS:
-        {
+        case OhCloudExtValueType::VALUEINNERTYPE_ASSETS: {
             OhCloudExtVector *assets = reinterpret_cast<OhCloudExtVector *>(content);
             result = ConvertAssets(assets);
             OhCloudExtVectorFree(assets);
