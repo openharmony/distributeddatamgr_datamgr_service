@@ -27,6 +27,7 @@
 
 namespace OHOS::CloudData {
 using DBMeta = DistributedData::Database;
+using DBTable = DistributedData::Table;
 using DBErr = DistributedData::GeneralError;
 using DBValue = DistributedData::Value;
 using DBBytes = DistributedData::Bytes;
