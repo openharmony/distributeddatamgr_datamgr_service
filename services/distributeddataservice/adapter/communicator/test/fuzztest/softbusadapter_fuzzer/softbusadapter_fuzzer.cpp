@@ -29,7 +29,7 @@ bool OnBytesReceivedFuzz(const uint8_t *data, size_t size)
 {
     int connId = static_cast<int>(*data);
     unsigned int dataLen = static_cast<unsigned int>(size);
-    AppDataListenerWrap::OnBytesReceived(connId, data, dataLen);
+    AppDataListenerWrap::OnClientBytesReceived(connId, data, dataLen);
     return true;
 }
 } // namespace OHOS
