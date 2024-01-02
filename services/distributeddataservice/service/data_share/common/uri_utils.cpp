@@ -108,6 +108,6 @@ void URIUtils::FormatUri(std::string &uri)
         return;
     }
 
-    uri = uri.substr(0, pos);
+    uri.resize(pos);
 }
 } // namespace OHOS::DataShare

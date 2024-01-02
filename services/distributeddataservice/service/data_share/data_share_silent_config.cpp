@@ -29,37 +29,39 @@
 namespace OHOS::DataShare {
 const std::string ALL_URI = "*";
 bool DataShareSilentConfig::IsSilentProxyEnable(uint32_t callerTokenId, int32_t currentUserId,
-    const std::string &bundleName, const std::string &uriStr)
+    const std::string &calledBundleName, const std::string &originUriStr)
 {
-    std::string uri = uriStr;
+    std::string uri = originUriStr;
     URIUtils::FormatUri(uri);
     bool isEnable = false;
     if (CheckExistEnableSilentUris(callerTokenId, uri, isEnable) == E_OK) {
         return isEnable;
     }
     std::map<std::string, ProfileInfo> profileInfos;
-    DataShareProfileConfig dataShareProfileConfig;
-    if (!dataShareProfileConfig.GetProfileInfo(bundleName, currentUserId, profileInfos)) {
+    if (!DataShareProfileConfig::GetProfileInfo(calledBundleName, currentUserId, profileInfos)) {
         ZLOGE("GetProfileInfo error, No configuration has been set for silent access. uri:%{public}s",
               DistributedData::Anonymous::Change(uri).c_str());
         return true;
     }
     for (const auto &[key, value] : profileInfos) {
         if (!value.isSilentProxyEnable) {
+            ZLOGI("Is silent proxy enable end, profileInfo file isSilentProxyEnable is false");
             return false;
         }
     }
     return true;
 }
 
-bool DataShareSilentConfig::EnableSilentProxy(uint32_t callerTokenId, const std::string &uriStr, bool enable)
+bool DataShareSilentConfig::EnableSilentProxy(uint32_t callerTokenId, const std::string &originUriStr, bool enable)
 {
-    std::string uri = uriStr;
+    std::string uri = originUriStr;
     URIUtils::FormatUri(uri);
     if (uri.empty()) {
         enableSilentUris_.Erase(callerTokenId);
         uri = ALL_URI;
     }
+    ZLOGI("Enable silent proxy, callerTokenId:%{public}u, enable:%{public}d, uri:%{public}s",
+          callerTokenId, enable, uri.c_str());
     enableSilentUris_.Compute(callerTokenId, [&enable, &uri](const uint32_t &key,
         std::map<std::string, bool> &uris) {
         uris[uri] = enable;
@@ -88,6 +90,8 @@ int DataShareSilentConfig::CheckExistEnableSilentUris(uint32_t callerTokenId,
         }
         return !uris.empty();
     });
+    ZLOGI("Check exist enable silent uris, callerTokenId:%{public}u, status:%{public}d, uri:%{public}s",
+          callerTokenId, status, uri.c_str());
     return status;
 }
 } // namespace OHOS::DataShare
