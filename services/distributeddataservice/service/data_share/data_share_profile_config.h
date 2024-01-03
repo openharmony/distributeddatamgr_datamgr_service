@@ -26,7 +26,7 @@ namespace OHOS::DataShare {
 using ProfileInfo = RdbBMSAdapter::ProfileInfo;
 class DataShareProfileConfig {
 public:
-    bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
+    static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
 };
 } // namespace OHOS::DataShare

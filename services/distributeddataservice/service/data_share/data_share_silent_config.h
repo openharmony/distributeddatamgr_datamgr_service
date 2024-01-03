@@ -28,9 +28,9 @@ namespace OHOS::DataShare {
 using namespace OHOS::RdbBMSAdapter;
 class DataShareSilentConfig {
 public:
-    bool EnableSilentProxy(uint32_t callerTokenId, const std::string &uri, bool enable);
+    bool EnableSilentProxy(uint32_t callerTokenId, const std::string &originUriStr, bool enable);
     bool IsSilentProxyEnable(uint32_t callerTokenId, int32_t currentUserId,
-        const std::string &calledBundleName, const std::string &uri);
+        const std::string &calledBundleName, const std::string &originUriStr);
 
 private:
     ConcurrentMap<uint32_t, std::map<std::string, bool>> enableSilentUris_;
