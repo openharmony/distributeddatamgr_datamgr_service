@@ -95,25 +95,22 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAsset);
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
     // A TRANSFER_FINISHED event will be posted in the callback of the migrated file, therefore, the state will be
     // STATUS_STABLE.
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 
     changedAsset.first = "device_2";
     changedAsset.second.hash = "modifyTime2_size2";
-    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAsset);
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, "modifyTime2_size2");
     ASSERT_EQ(changedAssets_[uri_].deviceId, "device_2");
 
-    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_], (void*)&asset);
+    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset);
 
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 
-    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAssets_[uri_].asset);
+    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 }
 
@@ -135,8 +132,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAsset);
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
     ASSERT_EQ(changedAssets_[uri_].deviceId, "device_1");
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
@@ -160,11 +156,10 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    machine->DFAPostEvent(UPLOAD, changedAssets_[uri_].status, (void*)&changedAssets_[uri_].asset, nullptr);
+    machine->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
 
-    machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAssets_[uri_].asset);
+    machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 }
 
@@ -186,17 +181,15 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    machine->DFAPostEvent(UPLOAD, changedAssets_[uri_].status, (void*)&changedAssets_[uri_].asset, nullptr);
+    machine->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
 
-    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAsset);
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
     ASSERT_EQ(changedAssets_[uri_].deviceId, "device_1");
 
-    machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_].status, (void*)&changedAssets_[uri_],
-        (void*)&changedAssets_[uri_].asset);
+    machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 }
 } // namespace OHOS::Test

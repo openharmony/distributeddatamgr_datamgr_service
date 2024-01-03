@@ -27,7 +27,7 @@ int32_t ObjectSnapshot::Upload(Asset& asset)
     if (!IsBoundAsset(asset)) {
         return 0;
     }
-    return assetMachine_->DFAPostEvent(UPLOAD, changedAssets_[asset.uri].status, (void*)&asset, nullptr);
+    return assetMachine_->DFAPostEvent(UPLOAD, changedAssets_[asset.uri], asset);
 }
 
 bool ObjectSnapshot::IsBoundAsset(const Asset& asset)
@@ -44,7 +44,7 @@ int32_t ObjectSnapshot::Download(Asset& asset)
     if (!IsBoundAsset(asset)) {
         return 0;
     }
-    return assetMachine_->DFAPostEvent(DOWNLOAD, changedAssets_[asset.uri].status, (void*)&asset, nullptr);
+    return assetMachine_->DFAPostEvent(DOWNLOAD, changedAssets_[asset.uri], asset);
 }
 
 TransferStatus ObjectSnapshot::GetAssetStatus(Asset& asset)
@@ -60,8 +60,7 @@ int32_t ObjectSnapshot::Uploaded(Asset& asset)
     if (!IsBoundAsset(asset)) {
         return E_OK;
     }
-    return assetMachine_->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[asset.uri].status,
-        (void*)&changedAssets_[asset.uri], nullptr);
+    return assetMachine_->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[asset.uri], asset);
 }
 
 int32_t ObjectSnapshot::Downloaded(Asset& asset)
@@ -69,8 +68,7 @@ int32_t ObjectSnapshot::Downloaded(Asset& asset)
     if (!IsBoundAsset(asset)) {
         return E_OK;
     }
-    return assetMachine_->DFAPostEvent(DOWNLOAD_FINISHED, changedAssets_[asset.uri].status,
-        (void*)&changedAssets_[asset.uri], nullptr);
+    return assetMachine_->DFAPostEvent(DOWNLOAD_FINISHED, changedAssets_[asset.uri], asset);
 }
 
 int32_t ObjectSnapshot::OnDataChanged(Asset& asset, const std::string& deviceId)
@@ -79,8 +77,7 @@ int32_t ObjectSnapshot::OnDataChanged(Asset& asset, const std::string& deviceId)
         return E_OK;
     }
     std::pair<std::string, Asset> newAsset{ deviceId, asset };
-    return assetMachine_->DFAPostEvent(REMOTE_CHANGED, changedAssets_[asset.uri].status,
-        (void*)&changedAssets_[asset.uri], (void*)&newAsset);
+    return assetMachine_->DFAPostEvent(REMOTE_CHANGED, changedAssets_[asset.uri], asset, newAsset);
 }
 
 int32_t ObjectSnapshot::BindAsset(const Asset& asset, const DistributedData::AssetBindInfo& bindInfo,
@@ -99,8 +96,7 @@ int32_t ObjectSnapshot::Transferred(Asset& asset)
     if (!IsBoundAsset(asset)) {
         return E_OK;
     }
-    return assetMachine_->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[asset.uri].status,
-        (void*)&changedAssets_[asset.uri], nullptr);
+    return assetMachine_->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[asset.uri], asset);
 }
 ObjectSnapshot::~ObjectSnapshot() {}
 
