@@ -51,6 +51,8 @@ private:
     Status DeleteEntries(const std::vector<DistributedDB::Key> &keys);
     Status UnmarshalEntries(
         const std::string &key, std::vector<DistributedDB::Entry> &entries, UnifiedData &unifiedData);
+    bool GetDetailsFromUData(UnifiedData &data, UDDetails &details);
+    Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
 };
 } // namespace UDMF
 } // namespace OHOS
