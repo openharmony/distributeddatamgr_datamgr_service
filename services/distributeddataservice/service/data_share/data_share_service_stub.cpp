@@ -356,5 +356,20 @@ int32_t DataShareServiceStub::OnRemoteSetSilentSwitch(MessageParcel &data, Messa
     }
     return E_OK;
 }
+
+int32_t DataShareServiceStub::OnRemoteIsSilentProxyEnable(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    if (!ITypesUtil::Unmarshal(data, uri)) {
+        ZLOGE("Unmarshal silent enable failed. uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    bool enable = IsSilentProxyEnable(uri);
+    if (!ITypesUtil::Marshal(reply, enable)) {
+        ZLOGE("Marshal enable:%{public}d failed.", enable);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
 } // namespace DataShare
 } // namespace OHOS

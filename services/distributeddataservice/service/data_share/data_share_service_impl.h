@@ -77,6 +77,7 @@ public:
     void DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     int32_t OnInitialize() override;
     int32_t EnableSilentProxy(const std::string &uri, bool enable) override;
+    bool IsSilentProxyEnable(const std::string &uri) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -104,7 +105,6 @@ private:
     bool SubscribeTimeChanged();
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);
-    bool IsSilentProxyEnable(const std::string &uri);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     PublishStrategy publishStrategy_;
