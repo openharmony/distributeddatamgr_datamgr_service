@@ -86,8 +86,8 @@ private:
     Task GetCloseSessionTask();
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;
-    static constexpr QosTV Qos[QOS_COUNT] = { { .qos = QOS_TYPE_MIN_BW, .value = 160 * 1024 * 1024 },
-        { .qos = QOS_TYPE_MAX_LATENCY, .value = 1600 }, { .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 } };
+    static constexpr QosTV Qos[QOS_COUNT] = { { .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
+        { .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 }, { .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 } };
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
     ConcurrentMap<std::string, std::vector<std::shared_ptr<SoftBusClient>>> connects_;
