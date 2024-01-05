@@ -78,13 +78,17 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     if (bindState_ == 0) {
         return Status ::SUCCESS;
     }
-    if (sessionFlag_.exchange(true)) {
+    if (isOpening_.exchange(true)) {
         return Status::RATE_LIMIT;
+    }
+    if (bindState_ == 0) {
+        return Status ::SUCCESS;
     }
     SocketInfo socketInfo;
     std::string peerName = pipe_.pipeId;
     socketInfo.peerName = const_cast<char *>(peerName.c_str());
-    socketInfo.peerNetworkId = const_cast<char *>(DmAdapter::GetInstance().ToNetworkID(device_.deviceId).c_str());
+    std::string networkId = DmAdapter::GetInstance().ToNetworkID(device_.deviceId);
+    socketInfo.peerNetworkId = const_cast<char *>(networkId.c_str());
     std::string clientName = pipe_.pipeId + "_client_" + socketInfo.peerNetworkId;
     socketInfo.name = const_cast<char *>(clientName.c_str());
     std::string pkgName = "ohos.distributeddata";
@@ -105,7 +109,7 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
         if (status == Status::SUCCESS) {
             Context::GetInstance().NotifySessionChanged(client->device_.deviceId);
         }
-        client->sessionFlag_.store(false);
+        client->isOpening_.store(false);
     };
     Context::GetInstance().GetThreadPool()->Execute(task);
     return Status::RATE_LIMIT;
