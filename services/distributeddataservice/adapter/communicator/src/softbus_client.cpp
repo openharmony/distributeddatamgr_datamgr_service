@@ -96,6 +96,7 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     socketInfo.dataType = DATA_TYPE_BYTES;
     int32_t clientSocket = Socket(socketInfo);
     if (clientSocket <= 0) {
+        isOpening_.store(false);
         ZLOGE("Create the client Socket:%{public}d failed, peerName:%{public}s", clientSocket, socketInfo.peerName);
         return Status::NETWORK_ERROR;
     }
