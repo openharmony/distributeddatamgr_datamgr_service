@@ -34,6 +34,11 @@ ohos_shared_library("opencloudextension") {
     "cloud_server_impl.cpp",
     "extension_util.cpp",
   ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   cflags = [ "-Wno-multichar" ]
 
   cflags_cc = [ "-fvisibility=hidden" ]

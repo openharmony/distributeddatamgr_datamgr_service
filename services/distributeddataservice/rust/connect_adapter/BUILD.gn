@@ -21,6 +21,11 @@ config("export_connect") {
 }
 
 ohos_shared_library("conn_adapter") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "src/connect.cpp",
     "src/connect_wrapper.cpp",
