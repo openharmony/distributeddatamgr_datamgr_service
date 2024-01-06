@@ -43,6 +43,7 @@ public:
     DBStatus UnLock() override;
     DBStatus HeartBeat() override;
     DBStatus Close() override;
+    std::pair<DBStatus, std::string> GetEmptyCursor(const std::string &tableName) override;
     static DBStatus ConvertStatus(DistributedData::GeneralError error);
 
 private:

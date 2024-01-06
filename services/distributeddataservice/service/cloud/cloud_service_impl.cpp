@@ -298,7 +298,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             return INVALID_ARGUMENT;
         }
         auto [storeId, tables] = GetDbInfoFromExtraData(exData, schemaMeta);
-        if (storeId.empty() || tables.empty()) {
+        if (storeId.empty()) {
             ZLOGE("invalid data, storeId:%{public}s, tables size:%{public}zu", Anonymous::Change(storeId).c_str(),
                 tables.size());
             return INVALID_ARGUMENT;

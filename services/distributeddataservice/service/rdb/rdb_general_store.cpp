@@ -520,9 +520,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     }
     std::vector<DistributedDB::TableReferenceProperty> properties;
     for (const auto &reference : references) {
-        DistributedDB::TableReferenceProperty referenceProperty =
-            { reference.sourceTable, reference.targetTable, reference.refFields };
-        properties.emplace_back(referenceProperty);
+        properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
     }
     auto status = delegate_->SetReference(properties);
     if (status != DistributedDB::DBStatus::OK) {

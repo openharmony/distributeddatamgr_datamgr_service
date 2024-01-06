@@ -136,6 +136,12 @@ DBStatus RdbCloud::Close()
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
+std::pair<DBStatus, std::string> RdbCloud::GetEmptyCursor(const std::string &tableName)
+{
+    auto [error, cursor] = cloudDB_->GetEmptyCursor(tableName);
+    return { ConvertStatus(static_cast<GeneralError>(error)), cursor };
+}
+
 DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
 {
     switch (error) {
