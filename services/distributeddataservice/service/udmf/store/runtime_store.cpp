@@ -36,6 +36,9 @@ namespace UDMF {
 using namespace DistributedDB;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
+const std::string TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
+static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
+
 RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
 {
     UpdateTime();
@@ -95,6 +98,42 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return UnmarshalEntries(key, entries, unifiedData);
 }
 
+bool RuntimeStore::GetDetailsFromUData(UnifiedData &data, UDDetails &details)
+{
+    auto records = data.GetRecords();
+    if (records.size() != TEMP_UDATA_RECORD_SIZE) {
+        return false;
+    }
+    if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {
+        return false;
+    }
+    auto file = static_cast<File*>(records[0].get());
+    if (file == nullptr) {
+        return false;
+    }
+    auto result = file->GetDetails();
+    if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
+        return false;
+    }
+    details = result;
+    return true;
+}
+
+Status RuntimeStore::GetSummaryFromDetails(const UDDetails &details, Summary &summary)
+{
+    for (auto &item : details) {
+        if (item.first != TEMP_UNIFIED_DATA_FLAG) {
+            auto int64Value = std::get_if<int64_t>(&item.second);
+            if (int64Value != nullptr) {
+                auto size = std::get<int64_t>(item.second);
+                summary.summary[item.first] = size;
+                summary.totalSize += size;
+            }
+        }
+    }
+    return E_OK;
+}
+
 Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
 {
     UpdateTime();
@@ -104,6 +143,10 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
         return E_DB_ERROR;
     }
 
+    UDDetails details {};
+    if (GetDetailsFromUData(unifiedData, details)) {
+        return GetSummaryFromDetails(details, summary);
+    }
     for (const auto &record : unifiedData.GetRecords()) {
         int64_t recordSize = record->GetSize();
         auto udType = UD_TYPE_MAP.at(record->GetType());
