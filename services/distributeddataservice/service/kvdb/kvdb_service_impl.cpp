@@ -808,6 +808,10 @@ size_t KVDBServiceImpl::GetSyncDataSize(const std::string &deviceId)
 
     size_t totalSize = 0;
     for (const auto &data : metaData) {
+        if (data.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
+            data.storeType > StoreMetaData::StoreType::STORE_KV_END) {
+            continue;
+        }
         DistributedDB::DBStatus status;
         auto observers = GetObservers(data.tokenId, data.storeId);
         auto store = storeCache_.GetStore(data, observers, status);

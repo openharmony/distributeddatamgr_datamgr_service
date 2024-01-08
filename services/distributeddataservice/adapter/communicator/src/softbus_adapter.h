@@ -29,6 +29,7 @@
 #include "app_device_change_listener.h"
 #include "block_data.h"
 #include "session.h"
+#include "socket.h"
 #include "softbus_bus_center.h"
 #include "softbus_client.h"
 namespace OHOS {
@@ -46,8 +47,8 @@ public:
     Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo);
 
     // Send data to other device, function will be called back after sent to notify send result.
-    Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-        uint32_t totalLength, const MessageInfo &info);
+    Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo, uint32_t length,
+        const MessageInfo &info);
 
     bool IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const struct DeviceId &peer);
 
@@ -59,11 +60,13 @@ public:
 
     void NotifyDataListeners(const uint8_t *data, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
 
-    int32_t GetSessionStatus(int32_t connId);
+    std::string OnClientShutdown(int32_t socket);
 
-    void OnSessionOpen(int32_t connId, int32_t status);
+    void OnBind(int32_t socket, PeerSocketInfo info);
 
-    std::string OnSessionClose(int32_t connId);
+    void OnServerShutdown(int32_t socket);
+
+    bool GetPeerSocketInfo(int32_t socket, PeerSocketInfo &info);
 
     int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask);
     void OnBroadcast(const DeviceId &device, uint16_t mask);
@@ -72,30 +75,32 @@ public:
     uint32_t GetMtuSize(const DeviceId &deviceId);
     uint32_t GetTimeout(const DeviceId &deviceId);
 
-    void OnDeviceChanged(const AppDistributedKv::DeviceInfo& info,
-        const AppDistributedKv::DeviceChangeType& type) const override;
+    void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
+        const AppDistributedKv::DeviceChangeType &type) const override;
 
 private:
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     using Task = ExecutorPool::Task;
-    std::shared_ptr<BlockData<int32_t>> GetSemaphore(int32_t connId);
-    std::string DelConnect(int32_t connId);
-    void DelSessionStatus(int32_t connId);
+    std::string DelConnect(int32_t socket);
     Task GetCloseSessionTask();
-    static constexpr uint32_t WAIT_MAX_TIME = 19;
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
+    static constexpr uint32_t QOS_COUNT = 3;
+    static constexpr QosTV Qos[QOS_COUNT] = { { .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
+        { .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 }, { .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 } };
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
     ConcurrentMap<std::string, std::vector<std::shared_ptr<SoftBusClient>>> connects_;
     bool flag_ = true; // only for br flag
-    ISessionListener sessionListener_{};
-    std::mutex statusMutex_{};
-    std::map<int32_t, std::shared_ptr<BlockData<int32_t>>> sessionsStatus_;
     std::function<void(const std::string &, uint16_t)> onBroadcast_;
     std::mutex taskMutex_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     Time next_ = INVALID_NEXT;
+
+    ConcurrentMap<int32_t, PeerSocketInfo> peerSocketInfos_;
+    ISocketListener clientListener_{};
+    ISocketListener serverListener_{};
+    int32_t socket_ = 0;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

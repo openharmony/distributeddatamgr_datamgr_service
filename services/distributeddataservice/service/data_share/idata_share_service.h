@@ -47,6 +47,8 @@ public:
         DATA_SHARE_SERVICE_CMD_DISABLE_SUBSCRIBE_PUBLISHED,
         DATA_SHARE_SERVICE_CMD_NOTIFY,
         DATA_SHARE_SERVICE_CMD_NOTIFY_OBSERVERS,
+        DATA_SHARE_SERVICE_CMD_SET_SILENT_SWITCH,
+        DATA_SHARE_SERVICE_CMD_IS_SILENT_PROXY_ENABLE,
         DATA_SHARE_SERVICE_CMD_MAX
     };
 
@@ -81,6 +83,8 @@ public:
         const int64_t subscriberId) = 0;
     virtual void OnConnectDone() = 0;
     virtual void NotifyObserver(const std::string &uri) = 0;
+    virtual int32_t EnableSilentProxy(const std::string &uri, bool enable) = 0;
+    virtual bool IsSilentProxyEnable(const std::string &uri) = 0;
 };
 } // namespace OHOS::DataShare
 #endif

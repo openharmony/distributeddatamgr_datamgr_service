@@ -84,7 +84,6 @@ int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const s
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
-        ZLOGE("OnAssetChanged object bundleName wrong, status %{public}d", status);
         return status;
     }
     status = ObjectStoreManager::GetInstance()->OnAssetChanged(tokenId, bundleName, sessionId, deviceId, assetValue);
@@ -139,16 +138,16 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
-    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
-    if (!saved) {
+    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
+    if (!isSaved) {
         ZLOGE("SaveMeta failed");
         return OBJECT_INNER_ERROR;
     }
     DistributedData::AppIDMetaData appIdMeta;
     appIdMeta.bundleName = saveMeta.bundleName;
     appIdMeta.appId = saveMeta.appId;
-    saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
-    if (!saved) {
+    isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
+    if (!isSaved) {
         ZLOGE("Save appIdMeta failed");
     }
     ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s",
@@ -160,7 +159,7 @@ int32_t ObjectServiceImpl::OnInitialize()
 
 int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    if (code == uint32_t(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+    if (code == static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         Clear();
     }
     return Feature::OnUserChange(code, user, account);
@@ -182,6 +181,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     status = ObjectStoreManager::GetInstance()->RevokeSave(bundleName, sessionId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("revoke save fail %{public}d", status);
+        return status;
     }
     return OBJECT_SUCCESS;
 }
@@ -202,6 +202,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback, tokenId);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
+        return status;
     }
     return OBJECT_SUCCESS;
 }
@@ -268,7 +269,6 @@ void ObjectServiceImpl::Clear()
     if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
-    return;
 }
 
 int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
@@ -285,8 +285,7 @@ int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundl
 
 int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
-    ZLOGI("ObjectServiceImpl::ResolveAutoLaunch start");
-    ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
+    ZLOGI("start, user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
         param.appId.c_str(), DistributedData::Anonymous::Change(param.storeId).c_str(),
         DistributedData::Anonymous::Change(identifier).c_str());
     std::vector<StoreMetaData> metaData;

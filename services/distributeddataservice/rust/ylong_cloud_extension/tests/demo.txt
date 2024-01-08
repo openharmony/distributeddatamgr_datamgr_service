@@ -1,0 +1,301 @@
+cloudInfo
+{
+	"apps": {
+		"com.huawei.hmos.calendardata": {
+			"appId": "10055832",
+			"bundleName": "com.huawei.hmos.calendardata",
+			"cloudSwitch": 0,
+			"instanceId": 0,
+			"version": 0
+		},
+		"com.huawei.hmos.notepad": {
+			"appId": "10055832",
+			"bundleName": "com.huawei.hmos.notepad",
+			"cloudSwitch": 1,
+			"instanceId": 0,
+			"version": 0
+		},
+		"com.ohos.contacts": {
+			"appId": "10055832",
+			"bundleName": "com.ohos.contacts",
+			"cloudSwitch": 0,
+			"instanceId": 0,
+			"version": 0
+		}
+	},
+	"enableCloud": 1,
+	"id": "2850086000356238647",
+	"remainSpace": 536844326007,
+	"totalSpace": 536870912000,
+	"user": 100
+}
+备忘录schema
+{
+	"bundleName": "com.huawei.hmos.notepad",
+	"databases": [{
+		"alias": "notepad",
+		"name": "notepad",
+		"tables": [{
+			"alias": "notetag",
+			"fields": [{
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+			}, {
+				"alias": "uuid",
+				"colName": "uuid",
+				"nullable": 1,
+				"primary": 1,
+				"type": 3
+			}],
+			"name": "cloud_folders"
+		}, {
+			"alias": "shorthand",
+			"fields": [{
+				"alias": "attachments",
+				"colName": "attachments",
+				"nullable": 1,
+				"primary": 0,
+				"type": 7
+			}, {
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+			}, {
+				"alias": "uuid",
+				"colName": "uuid",
+				"nullable": 1,
+				"primary": 1,
+				"type": 3
+			}],
+			"name": "cloud_tasks"
+		}, {
+			"alias": "note",
+			"fields": [{
+				"alias": "attachments",
+				"colName": "attachments",
+				"nullable": 1,
+				"primary": 0,
+				"type": 7
+			}, {
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+			}, {
+				"alias": "uuid",
+				"colName": "uuid",
+				"nullable": 1,
+				"primary": 1,
+				"type": 3
+			}],
+			"name": "cloud_old_notes"
+		}, {
+			"alias": "noteattachment",
+			"fields": [{
+				"alias": "attachments",
+				"colName": "attachments",
+				"nullable": 1,
+				"primary": 0,
+				"type": 7
+			}, {
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+			}, {
+				"alias": "uuid",
+				"colName": "uuid",
+				"nullable": 1,
+				"primary": 1,
+				"type": 3
+			}],
+			"name": "cloud_attachments"
+		}, {
+			"alias": "newnote",
+			"fields": [{
+				"alias": "attachments",
+				"colName": "attachments",
+				"nullable": 1,
+				"primary": 0,
+				"type": 7
+			}, {
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+			}, {
+				"alias": "uuid",
+				"colName": "uuid",
+				"nullable": 1,
+				"primary": 1,
+				"type": 3
+			}],
+			"name": "cloud_notes"
+		}]
+	}],
+	"version": 100
+}
+CLOUD_SUBSCRIPTION
+{"expiresTime":{"com.huawei.hmos.notepad":1693488896462},"id":"2850086000356238647","userId":100}
+CLOUD_RELATION
+{"bundleName":"com.huawei.hmos.notepad","id":"2850086000356238647","relations":{"notepad":"02bea77bbbe5bbdba5ae93164c4545473cb2a515c88c9f91c70c51681e7e834f"}}
+日历schema
+{
+	"bundleName": "com.huawei.hmos.calendardata",
+	"databases": [{
+		"alias": "calendar",
+		"name": "calendar",
+		"tables": [{
+			"alias": "calendar",
+			"fields": [{
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+            }],
+            "name": "eventattach"
+        }]
+    }],
+    "version": 100
+}
+笔记schama
+{
+	"bundleName": "com.ohos.contacts",
+	"databases": [{
+		"alias": "addressbook",
+		"name": "contacts",
+		"tables": [{
+			"alias": "contact",
+			"fields": [{
+				"alias": "attachments",
+				"colName": "attachments",
+				"nullable": 1,
+				"primary": 0,
+				"type": 7
+			}, {
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+			}],
+			"name": "raw_contacts"
+		}, {
+			"alias": "group",
+			"fields": [{
+				"alias": "data",
+				"colName": "data",
+				"nullable": 1,
+				"primary": 0,
+				"type": 3
+			}, {
+				"alias": "recycled",
+				"colName": "recycled",
+				"nullable": 1,
+				"primary": 0,
+				"type": 4
+			}, {
+				"alias": "recycledTime",
+				"colName": "recycledTime",
+				"nullable": 1,
+				"primary": 0,
+				"type": 1
+			}],
+			"name": "group"
+		}]
+	}],
+	"version": 100
+}

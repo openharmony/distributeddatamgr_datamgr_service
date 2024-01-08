@@ -22,9 +22,11 @@
 #include "kvdb_service_impl.h"
 #include "message_parcel.h"
 #include "securec.h"
+#include "device_manager_adapter.h"
 
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.KVFeature";
@@ -37,6 +39,7 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 {
     std::shared_ptr<KVDBServiceImpl> kvdbServiceImpl = std::make_shared<KVDBServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    DmAdapter::GetInstance().Init(executor);
     kvdbServiceImpl->OnBind(
         { "KvdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 

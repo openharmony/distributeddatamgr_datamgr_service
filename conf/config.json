@@ -15,8 +15,7 @@
       }
     },
     {
-      "description": "cloud data interface adapter",
-      "lib": "libdistributedclouddata.z.so"
+      "lib": "libopencloudextension.z.so"
     },
     {
       "lib": "libudmf_server.z.so"

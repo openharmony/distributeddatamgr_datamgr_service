@@ -261,7 +261,7 @@ void RdbQuery::Glob(const RdbPredicateOperation& operation)
 
 void RdbQuery::Between(const RdbPredicateOperation& operation)
 {
-    if (operation.values_.size() != 2) {
+    if (operation.values_.size() != 2) { // between a and b 2 args
         return;
     }
     predicates_->Between(operation.field_, operation.values_[0], operation.values_[1]);
@@ -269,7 +269,7 @@ void RdbQuery::Between(const RdbPredicateOperation& operation)
 
 void RdbQuery::NotBetween(const RdbPredicateOperation& operation)
 {
-    if (operation.values_.size() != 2) {
+    if (operation.values_.size() != 2) { // not between a and b 2 args
         return;
     }
     predicates_->NotBetween(operation.field_, operation.values_[0], operation.values_[1]);

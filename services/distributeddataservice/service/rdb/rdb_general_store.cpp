@@ -185,17 +185,132 @@ int32_t RdbGeneralStore::Close()
 
 int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sql)
 {
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed!");
+        return GeneralError::E_ERROR;
+    }
+    std::vector<DistributedDB::VBucket> changedData;
+    auto status = delegate_->ExecuteSql({ sql, {} }, changedData);
+    if (status != DBStatus::OK) {
+        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
+              changedData.size());
+        return GeneralError::E_ERROR;
+    }
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::BatchInsert(const std::string &table, VBuckets &&values)
+size_t RdbGeneralStore::SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql)
 {
-    return 0;
+    strColumnSql += " (";
+    strRowValueSql += " (";
+    auto columnSize = value.size();
+    for (auto column = value.begin(); column != value.end(); ++column) {
+        strRowValueSql += " ?,";
+        strColumnSql += " " + column->first + ",";
+    }
+    if (columnSize != 0) {
+        strColumnSql.pop_back();
+        strColumnSql += ")";
+        strRowValueSql.pop_back();
+        strRowValueSql += ")";
+    }
+    return columnSize;
 }
 
-int32_t RdbGeneralStore::BatchUpdate(const std::string &table, const std::string &sql, VBuckets &&values)
+int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
 {
-    return 0;
+    if (table.empty()) {
+        ZLOGE("Insert: table can't be empty!");
+        return GeneralError::E_INVALID_ARGS;
+    }
+    if (values.size() == 0) {
+        ZLOGE("Insert: values size error, can't be 0!");
+        return GeneralError::E_INVALID_ARGS;
+    }
+
+    std::string strColumnSql;
+    std::string strRowValueSql;
+    auto value = values.front();
+    size_t columnSize = SqlConcatenate(value, strColumnSql, strRowValueSql);
+    if (columnSize == 0) {
+        ZLOGE("Insert: columnSize error, can't be 0!");
+        return GeneralError::E_INVALID_ARGS;
+    }
+
+    Values args;
+    std::string strValueSql;
+    for (auto &rowData : values) {
+        if (rowData.size() != columnSize) {
+            ZLOGE("Insert: VBucket size error, Each VBucket in values must be of the same length!");
+            return GeneralError::E_INVALID_ARGS;
+        }
+        for (auto column = rowData.begin(); column != rowData.end(); ++column) {
+            args.push_back(std::move(column->second));
+        }
+        strValueSql += strRowValueSql + ",";
+    }
+    strValueSql.pop_back();
+    std::string sql = "INSERT INTO " + table + strColumnSql + " VALUES " + strValueSql;
+
+    std::vector<DistributedDB::VBucket> changedData;
+    std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed!");
+        return GeneralError::E_ERROR;
+    }
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
+    if (status != DBStatus::OK) {
+        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
+              changedData.size());
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
+/**
+ * This function does not support batch updates in rdb, it only supports single data updates.
+ */
+int32_t RdbGeneralStore::Update(const std::string &table, const std::string &setSql, Values &&values,
+    const std::string &whereSql, Values &&conditions)
+{
+    if (table.empty()) {
+        ZLOGE("Update: table can't be empty!");
+        return GeneralError::E_INVALID_ARGS;
+    }
+    if (setSql.empty() || values.size() == 0) {
+        ZLOGE("Update: setSql and values can't be empty!");
+        return GeneralError::E_INVALID_ARGS;
+    }
+    if (whereSql.empty() || conditions.size() == 0) {
+        ZLOGE("Update: whereSql and conditions can't be empty!");
+        return GeneralError::E_INVALID_ARGS;
+    }
+
+    std::string sqlIn = " UPDATE " + table + " SET " + setSql + " WHERE " + whereSql;
+    Values args;
+    for (auto &value : values) {
+        args.push_back(std::move(value));
+    }
+    for (auto &condition : conditions) {
+        args.push_back(std::move(condition));
+    }
+
+    std::vector<DistributedDB::VBucket> changedData;
+    std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed!");
+        return GeneralError::E_ERROR;
+    }
+    auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs) }, changedData);
+    if (status != DBStatus::OK) {
+        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sqlIn).c_str(),
+              changedData.size());
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
 }
 
 int32_t RdbGeneralStore::Delete(const std::string &table, const std::string &sql, Values &&args)

@@ -18,13 +18,19 @@
 
 #include "executor_pool.h"
 #include "visibility.h"
+#include "iprocess_communicator.h"
 
 namespace OHOS::DistributedData {
 class API_EXPORT CommunicatorContext {
 public:
+    using OnSendAble = DistributedDB::OnSendAble;
+    using DeviceInfos = DistributedDB::DeviceInfos;
+
     API_EXPORT static CommunicatorContext &GetInstance();
     API_EXPORT void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     std::shared_ptr<ExecutorPool> GetThreadPool();
+    void SetSessionListener(const OnSendAble &sendAbleCallback);
+    void NotifySessionChanged(const std::string &deviceId);
 
 private:
     CommunicatorContext() = default;
@@ -34,6 +40,8 @@ private:
     CommunicatorContext(CommunicatorContext &&) = delete;
     CommunicatorContext &operator=(CommunicatorContext &&) = delete;
 
+    mutable std::mutex sessionMutex_;
+    OnSendAble sessionListener_;
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedData
