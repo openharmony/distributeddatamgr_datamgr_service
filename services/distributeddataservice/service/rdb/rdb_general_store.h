@@ -73,6 +73,7 @@ public:
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
+
 private:
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
@@ -80,10 +81,13 @@ private:
     using DBBriefCB = DistributedDB::SyncStatusCallback;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
-    static constexpr inline uint32_t ITERATE_TIMES = 10000;
     static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
     static constexpr const char* CLOUD_GID = "cloud_gid";
     static constexpr const char* DATE_KEY = "data_key";
+    static constexpr uint32_t ITER_V0 = 10000;
+    static constexpr uint32_t ITER_V1 = 5000;
+    static constexpr uint32_t ITERS[] = {ITER_V0, ITER_V1};
+    static constexpr uint32_t ITERS_COUNT = sizeof(ITERS) / sizeof(ITERS[0]);
     class ObserverProxy : public DistributedDB::StoreObserver {
     public:
         using DBChangedIF = DistributedDB::StoreChangedData;
