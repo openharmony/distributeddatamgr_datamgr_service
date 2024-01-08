@@ -22,6 +22,12 @@ ohos_rust_shared_ffi("ylong_cloud_extension") {
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   sources = [ "src/lib.rs" ]
   features = [ "test_server_ready" ]
 
