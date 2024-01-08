@@ -71,8 +71,11 @@ void RdbAssetLoader::PostEvent(DistributedData::AssetEvent eventId, DistributedD
             deleteAssets.insert(downLoadAsset.uri);
             continue;
         }
+        if (snapshots_->bindAssets == nullptr) {
+            continue;
+        }
         auto it = snapshots_->bindAssets->find(downLoadAsset.uri);
-        if (it == snapshots_->bindAssets->end()) {
+        if (it == snapshots_->bindAssets->end() || it->second == nullptr) {
             continue;
         }
         auto snapshot = it->second;
