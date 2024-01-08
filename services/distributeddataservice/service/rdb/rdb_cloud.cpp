@@ -254,8 +254,11 @@ void RdbCloud::PostEvent(DistributedData::Value& value, DataBucket& extend, std:
 void RdbCloud::PostEventAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets,
     DistributedData::AssetEvent eventId)
 {
+    if (snapshots_->bindAssets == nullptr) {
+        return;
+    }
     auto it = snapshots_->bindAssets->find(asset.uri);
-    if (it == snapshots_->bindAssets->end()) {
+    if (it == snapshots_->bindAssets->end() || it->second == nullptr) {
         return;
     }
 
