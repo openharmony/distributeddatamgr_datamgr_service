@@ -33,15 +33,12 @@ int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageP
     std::string deviceId;
     std::map<std::string, std::vector<uint8_t>> objectData;
     sptr<IRemoteObject> obj;
-    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, deviceId, objectData, obj)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s deviceId:%{public}s objectData size:%{public}zu",
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, deviceId, objectData, obj) || obj == nullptr) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s deviceId:%{public}s objectData size:%{public}zu, "
+              "callback is nullptr:%{public}d",
             DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(),
-            DistributedData::Anonymous::Change(deviceId).c_str(), objectData.size());
+            DistributedData::Anonymous::Change(deviceId).c_str(), objectData.size(), obj == nullptr);
         return IPC_STUB_INVALID_DATA_ERR;
-    }
-    if (obj == nullptr) {
-        ZLOGW("callback null");
-        return -1;
     }
     int32_t status = ObjectStoreSave(bundleName, sessionId, deviceId, objectData, obj);
     if (!ITypesUtil::Marshal(reply, status)) {
@@ -101,14 +98,10 @@ int32_t ObjectServiceStub::ObjectStoreRevokeSaveOnRemote(MessageParcel &data, Me
     std::string sessionId;
     std::string bundleName;
     sptr<IRemoteObject> obj;
-    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
-            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj) || obj == nullptr) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s, callback is nullptr: %{public}d",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(), obj == nullptr);
         return IPC_STUB_INVALID_DATA_ERR;
-    }
-    if (obj == nullptr) {
-        ZLOGW("callback null");
-        return -1;
     }
     int32_t status = ObjectStoreRevokeSave(bundleName, sessionId, obj);
     if (!ITypesUtil::Marshal(reply, status)) {
@@ -123,14 +116,10 @@ int32_t ObjectServiceStub::ObjectStoreRetrieveOnRemote(MessageParcel &data, Mess
     std::string sessionId;
     std::string bundleName;
     sptr<IRemoteObject> obj;
-    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
-            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj) || obj == nullptr) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s, callback is nullptr: %{public}d",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(), obj == nullptr);
         return IPC_STUB_INVALID_DATA_ERR;
-    }
-    if (obj == nullptr) {
-        ZLOGW("callback null");
-        return -1;
     }
     int32_t status = ObjectStoreRetrieve(bundleName, sessionId, obj);
     if (!ITypesUtil::Marshal(reply, status)) {
@@ -145,14 +134,10 @@ int32_t ObjectServiceStub::OnSubscribeRequest(MessageParcel &data, MessageParcel
     std::string sessionId;
     std::string bundleName;
     sptr<IRemoteObject> obj;
-    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj)) {
-        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
-            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj) || obj == nullptr) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s, callback is nullptr: %{public}d",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(), obj == nullptr);
         return IPC_STUB_INVALID_DATA_ERR;
-    }
-    if (obj == nullptr) {
-        ZLOGW("callback null");
-        return -1;
     }
     int32_t status = RegisterDataObserver(bundleName, sessionId, obj);
     if (!ITypesUtil::Marshal(reply, status)) {

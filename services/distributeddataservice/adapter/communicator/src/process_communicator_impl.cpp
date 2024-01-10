@@ -15,6 +15,7 @@
 
 #define LOG_TAG "processCommunication"
 
+#include "communicator_context.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 #include "softbus_adapter.h"
@@ -22,6 +23,7 @@
 namespace OHOS {
 namespace AppDistributedKv {
 using namespace DistributedDB;
+using namespace OHOS::DistributedData;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 ProcessCommunicatorImpl::ProcessCommunicatorImpl()
 {
@@ -110,6 +112,11 @@ DBStatus ProcessCommunicatorImpl::RegOnDataReceive(const OnDataReceive &callback
     return DBStatus::OK;
 }
 
+void ProcessCommunicatorImpl::RegOnSendAble(const OnSendAble &sendAbleCallback)
+{
+    CommunicatorContext::GetInstance().SetSessionListener(sendAbleCallback);
+}
+
 DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length)
 {
     uint32_t totalLength = 0;
@@ -125,7 +132,7 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     destination.deviceId = dstDevInfo.identifier;
     Status errCode = CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
     if (errCode == Status::RATE_LIMIT) {
-        ZLOGE("commProvider_ opening session, status:%{public}d.", static_cast<int>(errCode));
+        ZLOGD("commProvider_ opening session, status:%{public}d.", static_cast<int>(errCode));
         return DBStatus::RATE_LIMIT;
     }
     if (errCode != Status::SUCCESS) {

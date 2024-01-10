@@ -27,6 +27,7 @@ public:
     enum : int32_t {
         BIND_SNAPSHOT,
         COMPENSATE_SYNC,
+        RECOVER_SYNC,
     };
 
     struct BindEventInfo {

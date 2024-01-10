@@ -131,6 +131,7 @@ RdbServiceImpl::RdbServiceImpl()
         DoCompensateSync(evt);
     };
     EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
+    EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
 }
 
 int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
@@ -151,7 +152,7 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
 
         auto aIdentifier = DistributedDB::RelationalStoreManager::GetRelationalStoreIdentifier(
             entry.user, entry.appId, entry.storeId);
-        ZLOGI("%{public}s %{public}s %{public}s",
+        ZLOGD("%{public}s %{public}s %{public}s",
             entry.user.c_str(), entry.appId.c_str(), Anonymous::Change(entry.storeId).c_str());
         if (aIdentifier != identifier) {
             continue;
@@ -422,8 +423,9 @@ void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
         query = std::make_shared<RdbQuery>();
         query->MakeCloudQuery(memo);
     }
-
-    auto mixMode = GeneralStore::MixMode(TIME_FIRST, GeneralStore::AUTO_SYNC_MODE);
+    auto mixMode = event.GetEventId() == BindEvent::COMPENSATE_SYNC
+                       ? GeneralStore::MixMode(TIME_FIRST, GeneralStore::AUTO_SYNC_MODE)
+                       : GeneralStore::MixMode(CLOUD_FIRST, GeneralStore::AUTO_SYNC_MODE);
     auto info = ChangeEvent::EventInfo(mixMode, 0, false, query, nullptr);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));

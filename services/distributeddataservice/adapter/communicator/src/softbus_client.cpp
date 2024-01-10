@@ -14,34 +14,34 @@
  */
 
 #define LOG_TAG "SoftBusClient"
+#include "softbus_client.h"
+
 #include "communicator_context.h"
 #include "device_manager_adapter.h"
+#include "inner_socket.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "softbus_error_code.h"
-#include "softbus_client.h"
 
 namespace OHOS::AppDistributedKv {
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Context = DistributedData::CommunicatorContext;
-SoftBusClient::SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId,
-    const std::function<int32_t(int32_t)> &getConnStatus)
-    : pipe_(pipeInfo), device_(deviceId), getConnStatus_(getConnStatus)
+SoftBusClient::SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId) : pipe_(pipeInfo), device_(deviceId)
 {
     mtu_ = DEFAULT_MTU_SIZE;
 }
 
 SoftBusClient::~SoftBusClient()
 {
-    if (connId_ > 0) {
-        CloseSession(connId_);
+    if (socket_ > 0) {
+        Shutdown(socket_);
     }
 }
 
-bool SoftBusClient::operator==(int32_t connId) const
+bool SoftBusClient::operator==(int32_t socket) const
 {
-    return connId_ == connId;
+    return socket_ == socket;
 }
 
 bool SoftBusClient::operator==(const std::string &deviceId) const
@@ -49,163 +49,101 @@ bool SoftBusClient::operator==(const std::string &deviceId) const
     return device_.deviceId == deviceId;
 }
 
-void SoftBusClient::RestoreDefaultValue()
-{
-    connId_ = INVALID_CONNECT_ID;
-    status_ = ConnectStatus::DISCONNECT;
-    routeType_ = RouteType::INVALID_ROUTE_TYPE;
-    mtu_ = DEFAULT_MTU_SIZE;
-}
-
 uint32_t SoftBusClient::GetMtuSize() const
 {
-    ZLOGD("get mtu size connId:%{public}d mtu:%{public}d", connId_, mtu_);
+    ZLOGD("get mtu size socket:%{public}d mtu:%{public}d", socket_, mtu_);
     return mtu_;
 }
 
-uint32_t SoftBusClient::GetTimeout() const
-{
-    uint32_t timeout = DEFAULT_TIMEOUT;
-    switch (routeType_) {
-        case RouteType::WIFI_STA:
-            timeout = WIFI_TIMEOUT;
-            break;
-        case RouteType::WIFI_P2P:
-            timeout = WIFI_TIMEOUT;
-            break;
-        case RouteType::BT_BR:
-            timeout = BR_TIMEOUT;
-            break;
-        case RouteType::BT_BLE:
-            timeout = BR_TIMEOUT;
-            break;
-        default:
-            break;
-    }
-    return timeout;
-}
-
-Status SoftBusClient::Send(const DataInfo &dataInfo, uint32_t totalLength)
+Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *listener)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto result = OpenConnect(totalLength);
+    auto result = OpenConnect(listener);
     if (result != Status::SUCCESS) {
         return result;
     }
-
-    ZLOGD("send data connId:%{public}d, data size:%{public}u, total length:%{public}u.",
-        connId_, dataInfo.length, totalLength);
-    int32_t ret = SendBytes(connId_, dataInfo.data, dataInfo.length);
+    ZLOGD("send data socket:%{public}d, data size:%{public}u.", socket_, dataInfo.length);
+    int32_t ret = SendBytes(socket_, dataInfo.data, dataInfo.length);
     if (ret != SOFTBUS_OK) {
         expireTime_ = std::chrono::steady_clock::now();
-        ZLOGE("send data to connId%{public}d failed, ret:%{public}d.", connId_, ret);
+        ZLOGE("send data to socket%{public}d failed, ret:%{public}d.", socket_, ret);
         return Status::ERROR;
     }
-    expireTime_ = std::chrono::steady_clock::now() + GetDelayTime(totalLength);
+    expireTime_ = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
     return Status::SUCCESS;
 }
 
-Status SoftBusClient::OpenConnect(uint32_t length)
+Status SoftBusClient::OpenConnect(const ISocketListener *listener)
 {
-    auto strategy = CommunicationStrategy::GetInstance().GetStrategy(device_.deviceId);
-    if (routeType_ != RouteType::INVALID_ROUTE_TYPE) {
-        return Status::SUCCESS;
+    if (bindState_ == 0) {
+        return Status ::SUCCESS;
     }
-    if (strategy == Strategy::BUTT) {
-        return Status::NETWORK_ERROR;
-    }
-    if (sessionFlag_.exchange(true)) {
+    if (isOpening_.exchange(true)) {
         return Status::RATE_LIMIT;
     }
-    bool expireP2P = strategy == Strategy::ON_LINE_SELECT_CHANNEL || length >= P2P_SIZE_THRESHOLD;
-    expireType_ = expireP2P ? RouteType::WIFI_P2P : RouteType::BT_BLE;
-    auto attr = GetSessionAttribute(expireP2P);
-    auto task = [attr, client = shared_from_this()]() {
+    if (bindState_ == 0) {
+        return Status ::SUCCESS;
+    }
+    SocketInfo socketInfo;
+    std::string peerName = pipe_.pipeId;
+    socketInfo.peerName = const_cast<char *>(peerName.c_str());
+    std::string networkId = DmAdapter::GetInstance().ToNetworkID(device_.deviceId);
+    socketInfo.peerNetworkId = const_cast<char *>(networkId.c_str());
+    std::string clientName = pipe_.pipeId + "_client_" + socketInfo.peerNetworkId;
+    socketInfo.name = const_cast<char *>(clientName.c_str());
+    std::string pkgName = "ohos.distributeddata";
+    socketInfo.pkgName = pkgName.data();
+    socketInfo.dataType = DATA_TYPE_BYTES;
+    int32_t clientSocket = Socket(socketInfo);
+    if (clientSocket <= 0) {
+        isOpening_.store(false);
+        ZLOGE("Create the client Socket:%{public}d failed, peerName:%{public}s", clientSocket, socketInfo.peerName);
+        return Status::NETWORK_ERROR;
+    }
+    auto task = [this, clientSocket, listener, client = shared_from_this()]() {
         if (client == nullptr) {
             ZLOGE("OpenSessionByAsync client is nullptr.");
             return;
         }
-        ZLOGI("OpenSession Start.");
-        (void)client->Open(attr);
-        client->sessionFlag_.store(false);
+        ZLOGI("Bind Start.");
+        auto status = client->Open(clientSocket, clientQos, listener);
+        if (status == Status::SUCCESS) {
+            Context::GetInstance().NotifySessionChanged(client->device_.deviceId);
+        }
+        client->isOpening_.store(false);
     };
     Context::GetInstance().GetThreadPool()->Execute(task);
     return Status::RATE_LIMIT;
 }
 
-Status SoftBusClient::Open(SessionAttribute attr)
+Status SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListener *listener)
 {
-    int id = OpenSession(pipe_.pipeId.c_str(), pipe_.pipeId.c_str(),
-                         DmAdapter::GetInstance().ToNetworkID(device_.deviceId).c_str(), "GROUP_ID", &attr);
-    ZLOGI("open %{public}s,session:%{public}s,connId:%{public}d,linkNum:%{public}d,datatype:%{public}d",
-        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(),
-        id, attr.linkTypeNum, attr.dataType);
-    if (id < 0) {
-        ZLOGW("Open %{public}s, type:%{public}d failed, connId:%{public}d",
-              pipe_.pipeId.c_str(), attr.dataType, id);
-        return Status::NETWORK_ERROR;
-    }
+    int32_t status = ::Bind(socket, qos, QOS_COUNT, listener);
+    ZLOGI("Bind %{public}s,session:%{public}s,socketId:%{public}d",
+        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket);
 
-    int state = getConnStatus_(id);
-    ZLOGI("waited for notification, state:%{public}d connId:%{public}d", state, id);
-    if (state != SOFTBUS_OK) {
-        ZLOGE("open callback result error");
+    if (status != 0) {
+        ZLOGE("[Bind] device:%{public}s socket failed, session:%{public}s,result:%{public}d",
+            KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), status);
+        ::Shutdown(socket);
         return Status::NETWORK_ERROR;
     }
-
-    int32_t routeType = RouteType::INVALID_ROUTE_TYPE;
-    std::tie(state, routeType) = GetRouteType(id);
-    if (state != SOFTBUS_OK) {
-        ZLOGE("GetRouteType failed, session:%{public}s, connId:%{public}d", pipe_.pipeId.c_str(), id);
-        return Status::NETWORK_ERROR;
-    }
+    UpdateExpireTime();
     uint32_t mtu = 0;
-    std::tie(state, mtu) = GetMtu(id);
-    if (state != SOFTBUS_OK) {
-        ZLOGE("GetMtu failed, session:%{public}s, connId:%{public}d", pipe_.pipeId.c_str(), id);
+    std::tie(status, mtu) = GetMtu(socket);
+    if (status != SOFTBUS_OK) {
+        ZLOGE("GetMtu failed, session:%{public}s, socket:%{public}d", pipe_.pipeId.c_str(), socket_);
         return Status::NETWORK_ERROR;
     }
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        connId_ = id;
-        routeType_ = routeType;
+        socket_ = socket;
         mtu_ = mtu;
+        bindState_ = status;
     }
-    ZLOGI("open %{public}s, session:%{public}s success, connId:%{public}d, routeType:%{public}d",
-        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), connId_, routeType_);
+    ZLOGI("open %{public}s, session:%{public}s success, socket:%{public}d",
+        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket_);
     return Status::SUCCESS;
-}
-
-SessionAttribute SoftBusClient::GetSessionAttribute(bool isP2p)
-{
-    SessionAttribute attr;
-    attr.dataType = TYPE_BYTES;
-    // If the dataType is BYTES, the default strategy is wifi_5G > wifi_2.4G > BR, without P2P;
-    if (!isP2p) {
-        return attr;
-    }
-
-    int index = 0;
-    attr.linkType[index++] = LINK_TYPE_WIFI_WLAN_5G;
-    attr.linkType[index++] = LINK_TYPE_WIFI_WLAN_2G;
-    attr.linkType[index++] = LINK_TYPE_WIFI_P2P;
-    attr.linkType[index++] = LINK_TYPE_BR;
-    attr.linkTypeNum = index;
-    return attr;
-}
-
-std::pair<int32_t, int32_t> SoftBusClient::GetRouteType(int32_t id)
-{
-    int32_t routeType = RouteType::INVALID_ROUTE_TYPE;
-    auto ret = GetSessionOption(id, SESSION_OPTION_LINK_TYPE, &routeType, sizeof(routeType));
-    return { ret, routeType };
-}
-
-std::pair<int32_t, uint32_t> SoftBusClient::GetMtu(int32_t id)
-{
-    uint32_t mtu = 0;
-    auto ret = GetSessionOption(id, SESSION_OPTION_MAX_SENDBYTES_SIZE, &mtu, sizeof(mtu));
-    return { ret, mtu };
 }
 
 SoftBusClient::Time SoftBusClient::GetExpireTime() const
@@ -214,52 +152,24 @@ SoftBusClient::Time SoftBusClient::GetExpireTime() const
     return expireTime_;
 }
 
-int32_t SoftBusClient::GetConnId() const
+int32_t SoftBusClient::GetSocket() const
 {
-    return connId_;
-}
-
-int32_t SoftBusClient::GetRoutType() const
-{
-    return routeType_;
+    return socket_;
 }
 
 void SoftBusClient::UpdateExpireTime()
 {
-    auto expireTime = std::chrono::steady_clock::now() + GetDelayTime(0);
+    auto expireTime = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
     std::lock_guard<std::mutex> lock(mutex_);
     if (expireTime > expireTime_) {
         expireTime_ = expireTime;
     }
 }
 
-SoftBusClient::Duration SoftBusClient::GetDelayTime(uint32_t dataLength)
+std::pair<int32_t, uint32_t> SoftBusClient::GetMtu(int32_t socket)
 {
-    if (routeType_ == RouteType::WIFI_P2P) {
-        return P2P_CLOSE_DELAY + std::chrono::microseconds(dataLength >> P2P_TRANSFER_PER_MICROSECOND);
-    }
-    return SESSION_CLOSE_DELAY;
+    uint32_t mtu = 0;
+    auto ret = ::GetMtuSize(socket, &mtu);
+    return { ret, mtu };
 }
-
-bool SoftBusClient::Support(uint32_t length) const
-{
-    auto strategy = CommunicationStrategy::GetInstance().GetStrategy(device_.deviceId);
-    if (strategy == Strategy::ON_LINE_SELECT_CHANNEL) {
-        return true;
-    }
-
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (routeType_ == RouteType::WIFI_STA || routeType_ == RouteType::INVALID_ROUTE_TYPE) {
-        return true;
-    }
-
-    if (routeType_ == RouteType::BT_BLE || routeType_ == RouteType::BT_BR) {
-        return expireType_ == RouteType::WIFI_P2P || length < P2P_SIZE_THRESHOLD;
-    }
-
-    if (routeType_ == RouteType::WIFI_P2P) {
-        return (length > P2P_SIZE_THRESHOLD * SWITCH_DELAY_FACTOR);
-    }
-    return true;
-}
-}
+} // namespace OHOS::AppDistributedKv

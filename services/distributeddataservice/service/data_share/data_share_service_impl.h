@@ -22,6 +22,7 @@
 #include "common_event_subscriber.h"
 #include "data_proxy_observer.h"
 #include "data_share_service_stub.h"
+#include "data_share_silent_config.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
 #include "delete_strategy.h"
@@ -75,6 +76,8 @@ public:
     void NotifyObserver(const std::string &uri) override;
     void DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     int32_t OnInitialize() override;
+    int32_t EnableSilentProxy(const std::string &uri, bool enable) override;
+    bool IsSilentProxyEnable(const std::string &uri) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -115,6 +118,7 @@ private:
     RdbNotifyStrategy rdbNotifyStrategy_;
     BindInfo binderInfo_;
     std::shared_ptr<TimerReceiver> timerReceiver_ = nullptr;
+    DataShareSilentConfig dataShareSilentConfig_;
 };
 } // namespace OHOS::DataShare
 #endif

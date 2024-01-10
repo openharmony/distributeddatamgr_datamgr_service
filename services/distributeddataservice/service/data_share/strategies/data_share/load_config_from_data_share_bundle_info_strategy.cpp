@@ -86,14 +86,14 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
-            std::vector<std::string> infos;
-            auto ret = DataShareProfileInfo::GetResConfigFile(item, infos);
+            std::string info;
+            auto ret = DataShareProfileInfo::GetResConfigFile(item, info);
             if (!ret) {
                 return true; // optional meta data config
             }
             ProfileInfo profileInfo;
-            if (!profileInfo.Unmarshall(infos[0])) {
-                ZLOGE("parse failed! %{public}s", infos[0].c_str());
+            if (!profileInfo.Unmarshall(info)) {
+                ZLOGE("parse failed! %{public}s", info.c_str());
                 return false;
             }
             LoadConfigFromProfile(profileInfo, context);

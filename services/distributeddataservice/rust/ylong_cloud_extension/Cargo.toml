@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[package]
+name = "ylong_cloud_extension"
+version = "1.0.0"
+edition = "2021"
+description = "Cloud and Local End Synchronization General Implementation in Rust. Belong to OH Distributed Data Service."
+license = "Apache-2.0"
+repository = "https://gitee.com/openharmony-sig/"
+keywords = ["cloud", "distributeddataservice"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+# Because Cloud Synchronization needs backend JS server to handle IPC information and send back replies, if no server
+# is available, some tests to test on this communication will fail. Users can open this feature if server is available
+# for tests, and change demo data in the UT.
+test_server_ready = []
+
+[lib]
+name = "cloud_extension"
+crate-type = ["cdylib", "staticlib", "lib"]
+
+[dependencies]
+ipc_rust = {path = "../ipc_rust", version = "0.1.0"}
+hilog_rust = { path = "../hilog_rust", version = "0.1.0" }

@@ -30,15 +30,16 @@ struct ChangedAssetInfo {
     AssetBindInfo bindInfo;
     StoreInfo storeInfo;
 
-    ChangedAssetInfo(const Asset& bindAsset, const AssetBindInfo& AssetBindInfo, const StoreInfo& store)
+    ChangedAssetInfo(const Asset& bindAsset, const AssetBindInfo& assetBindInfo, const StoreInfo& store)
     {
         asset = bindAsset;
-        bindInfo = AssetBindInfo;
+        bindInfo = assetBindInfo;
         storeInfo = store;
     }
 };
 
-typedef int32_t (*Action)(AssetEvent eventId, void* param, void* param2);
+typedef int32_t (*Action)
+    (AssetEvent eventId, ChangedAssetInfo& changedAsset, Asset& asset, std::pair<std::string, Asset> newAsset);
 
 struct DFAAction {
     int32_t next;
@@ -50,7 +51,8 @@ class ObjectAssetMachine {
 public:
     ObjectAssetMachine();
 
-    static int32_t DFAPostEvent(AssetEvent eventId, TransferStatus& status, void* param, void* param2);
+    static int32_t DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+        const std::pair<std::string, Asset>& newAsset = std::pair<std::string, Asset>());
 
 private:
 };

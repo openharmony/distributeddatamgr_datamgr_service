@@ -18,7 +18,8 @@
 #include "block_data.h"
 #include "cloud_sync_asset_manager.h"
 #include "log_print.h"
-#include "object_manager.h"
+#include "object_common.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
@@ -28,44 +29,51 @@ ObjectAssetLoader *ObjectAssetLoader::GetInstance()
     return loader;
 }
 
-bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string &bundleName,
+bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundleName,
     const std::string &deviceId, const DistributedData::Asset &assetValue)
 {
     AssetInfo assetInfo;
     assetInfo.uri = assetValue.uri;
     assetInfo.assetName = assetValue.name;
-    ZLOGD("start download file, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, \
-        asset name : %{public}s", userId, bundleName.c_str(), deviceId.c_str(), assetValue.name.c_str());\
-
     auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [block](const std::string &uri, int32_t status) {
             block->SetValue({ false, status });
         });
     if (res != OBJECT_SUCCESS) {
-        ZLOGE("DownloadFile fail, bundleName: %{public}s, asset name : %{public}s, result: %{public}d",
-            bundleName.c_str(), assetValue.name.c_str(), res);
+        ZLOGE("fail, res: %{public}d, name: %{public}s, networkId: %{public}s, bundleName: %{public}s", res,
+            assetValue.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
         return false;
     }
     auto [timeout, status] = block->GetValue();
     if (timeout || status != OBJECT_SUCCESS) {
-        ZLOGE("DownloadFile fail, bundleName: %{public}s, asset name : %{public}s, timeout: %{public}d, \
-            status: %{public}d", bundleName.c_str(), assetValue.name.c_str(), timeout, status);
+        ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, networkId: %{public}s ", timeout,
+            status, assetValue.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
         return false;
     }
     return true;
 }
 
-bool ObjectAssetLoader::DownLoad(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
     const DistributedData::Asset& assetValue, std::function<void(bool success)> callback)
 {
     AssetInfo assetInfo;
     assetInfo.uri = assetValue.uri;
     assetInfo.assetName = assetValue.name;
-    CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
+    auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [callback](const std::string& uri, int32_t status) {
-            status == 0 ? callback(true) : callback(false);
+            if (status != OBJECT_SUCCESS) {
+                ZLOGE("fail, uri: %{public}s, status: %{public}d", DistributedData::Anonymous::Change(uri).c_str(),
+                    status);
+                return callback(false);
+            }
+            return callback(true);
         });
+    if (res != OBJECT_SUCCESS) {
+        ZLOGE("fail, res: %{public}d, name: %{public}s, networkId: %{public}s, bundleName: %{public}s", res,
+            assetValue.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
+        return false;
+    }
     return true;
 }
 } // namespace OHOS::DistributedObject
