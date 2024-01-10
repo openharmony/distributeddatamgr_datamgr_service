@@ -50,22 +50,32 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
 {
     observer_.storeId_ = meta.storeId;
     RelationalStoreDelegate::Option option;
+    option.observer = &observer_;
     if (meta.isEncrypt) {
         std::string key = meta.GetSecretKey();
         SecretKeyMetaData secretKeyMeta;
         MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
         std::vector<uint8_t> decryptKey;
         CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
-        if (option.passwd.SetValue(decryptKey.data(), decryptKey.size()) != CipherPassword::OK) {
-            std::fill(decryptKey.begin(), decryptKey.end(), 0);
-        }
+        option.passwd.SetValue(decryptKey.data(), decryptKey.size());
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         option.isEncryptedDb = meta.isEncrypt;
-        option.iterateTimes = ITERATE_TIMES;
         option.cipher = CipherType::AES_256_GCM;
+        for (auto i = 0; i < ITERS_COUNT; ++i) {
+            option.iterateTimes = ITERS[i];
+            auto ret = manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
+            if (ret == DBStatus::OK && delegate_ != nullptr) {
+                break;
+            }
+            manager_.CloseStore(delegate_);
+        }
+    } else {
+        auto ret = manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
+        if (ret != DBStatus::OK || delegate_ == nullptr) {
+            manager_.CloseStore(delegate_);
+        }
     }
-    option.observer = &observer_;
-    manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
+
     storeInfo_.tokenId = meta.tokenId;
     storeInfo_.bundleName = meta.bundleName;
     storeInfo_.storeName = meta.storeId;
