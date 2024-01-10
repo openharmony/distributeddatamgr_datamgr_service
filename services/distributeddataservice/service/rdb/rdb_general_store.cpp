@@ -144,12 +144,9 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         ZLOGE("database:%{public}s already closed!", Anonymous::Change(database.name).c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
-    if (delegate_->SetCloudDB(rdbCloud_) != DistributedDB::OK ||
-        delegate_->SetIAssetLoader(rdbLoader_) != DistributedDB::OK ||
-        delegate_->SetCloudDbSchema(std::move(schema)) != DistributedDB::OK) {
-        isBound_.exchange(false);
-        return GeneralError::E_ERROR;
-    }
+    delegate_->SetCloudDB(rdbCloud_);
+    delegate_->SetIAssetLoader(rdbLoader_);
+    delegate_->SetCloudDbSchema(std::move(schema));
     return GeneralError::E_OK;
 }
 

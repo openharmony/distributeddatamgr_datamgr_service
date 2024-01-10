@@ -70,13 +70,14 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
-        ZLOGE("load meta failed!");
+        ZLOGE("load meta failed! bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d", bundleName.c_str(),
+            userId, appIndex);
         return;
     }
     for (auto &meta : storeMetaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("uninstalled bundleName:%{public}s storeId:%{public}s", bundleName.c_str(),
-                Anonymous::Change(meta.storeId).c_str());
+            ZLOGI("uninstalled bundleName:%{public}s storeId:%{public}s, userId:%{public}d, appIndex:%{public}d",
+                bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
@@ -94,13 +95,14 @@ void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t use
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
-        ZLOGE("load meta failed!");
+        ZLOGE("load meta failed! bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d", bundleName.c_str(),
+            userId, appIndex);
         return;
     }
     for (auto &meta : storeMetaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("updated bundleName:%{public}s, storeId:%{public}s", bundleName.c_str(),
-                Anonymous::Change(meta.storeId).c_str());
+            ZLOGI("updated bundleName:%{public}s, storeId:%{public}s, userId:%{public}d, appIndex:%{public}d",
+                bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
             MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(meta), true);
         }
     }
