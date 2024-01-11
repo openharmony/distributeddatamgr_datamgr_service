@@ -75,6 +75,8 @@ public:
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
 
 private:
+    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
+    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore);
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
     using SyncProcess = DistributedDB::SyncProcess;

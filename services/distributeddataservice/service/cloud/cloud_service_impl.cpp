@@ -16,12 +16,13 @@
 #define LOG_TAG "CloudServiceImpl"
 
 #include "cloud_service_impl.h"
+
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
-#include "cloud/make_query_event.h"
 #include "cloud/cloud_share_event.h"
+#include "cloud/make_query_event.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -31,12 +32,12 @@
 #include "metadata/meta_data_manager.h"
 #include "rdb_cloud_data_translate.h"
 #include "rdb_types.h"
-#include "values_bucket.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
-#include "utils/anonymous.h"
 #include "sync_manager.h"
+#include "utils/anonymous.h"
+#include "values_bucket.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace DistributedKv;
@@ -60,8 +61,7 @@ CloudServiceImpl::Factory::Factory() noexcept
         },
         FeatureSystem::BIND_NOW);
     staticActs_ = std::make_shared<CloudStatic>();
-    FeatureSystem::GetInstance().RegisterStaticActs(CloudServiceImpl::SERVICE_NAME,
-        staticActs_);
+    FeatureSystem::GetInstance().RegisterStaticActs(CloudServiceImpl::SERVICE_NAME, staticActs_);
 }
 
 CloudServiceImpl::Factory::~Factory() {}
@@ -115,7 +115,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user, { WORK_STOP_CLOUD_SYNC, WORK_SUB, WORK_RELEASE }));
+    Execute(GenTask(0, cloudInfo.user, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE, WORK_SUB }));
     return SUCCESS;
 }
 
@@ -209,7 +209,7 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
 }
 
 int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName,
-                                                CloudInfo &cloudInfo)
+    CloudInfo &cloudInfo)
 {
     if (cloudInfo.id != id) {
         ZLOGE("invalid args, [input] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(id).c_str(),
@@ -220,7 +220,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
         return CLOUD_DISABLE;
     }
     if (!cloudInfo.Exist(bundleName)) {
-        ZLOGE("bundleName:%{public}s", bundleName.c_str());
+        ZLOGE("bundleName:%{public}s is not exist", bundleName.c_str());
         return INVALID_ARGUMENT;
     }
     if (!cloudInfo.apps[bundleName].cloudSwitch) {
@@ -229,32 +229,31 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
     return SUCCESS;
 }
 
-std::pair<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromExtraData(
-    const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta)
+std::pair<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &extraData,
+    const SchemaMeta &schemaMeta)
 {
-    std::string storeId;
-    std::vector<std::string> names;
     for (auto &db : schemaMeta.databases) {
         if (db.alias != extraData.info.containerName) {
             continue;
         }
-        storeId = db.name;
-        for (auto &tb : db.tables) {
+        std::vector<std::string> tables;
+        for (auto &table : db.tables) {
             const auto &tbs = extraData.info.tables;
-            if (std::find(tbs.begin(), tbs.end(), tb.alias) == tbs.end()) {
+            if (std::find(tbs.begin(), tbs.end(), table.alias) == tbs.end()) {
                 continue;
             }
             if (extraData.isPrivate()) {
-                ZLOGD("private table change, name:%{public}s", Anonymous::Change(tb.name).c_str());
-                names.emplace_back(tb.name);
+                ZLOGD("private table change, name:%{public}s", Anonymous::Change(table.name).c_str());
+                tables.emplace_back(table.name);
             }
-            if (extraData.isShared() && !tb.sharedTableName.empty()) {
-                ZLOGD("sharing table change, name:%{public}s", Anonymous::Change(tb.sharedTableName).c_str());
-                names.emplace_back(tb.sharedTableName);
+            if (extraData.isShared() && !table.sharedTableName.empty()) {
+                ZLOGD("sharing table change, name:%{public}s", Anonymous::Change(table.sharedTableName).c_str());
+                tables.emplace_back(table.sharedTableName);
             }
         }
+        return { db.name, std::move(tables) };
     }
-    return { storeId, names };
+    return { "", {} };
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
@@ -271,12 +270,10 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std::string &extraData, int32_t userId)
 {
-    ZLOGI("notify data change, user:%{public}d", userId);
-    if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty()) {
-        return INVALID_ARGUMENT;
-    }
     ExtraData exData;
-    if (!exData.Unmarshall(extraData)) {
+    if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty() || !exData.Unmarshall(extraData)) {
+        ZLOGE("invalid args, eventId:%{public}s, user:%{public}d, extraData is %{public}s", eventId.c_str(),
+            userId, extraData.empty() ? "empty" : "not empty");
         return INVALID_ARGUMENT;
     }
     std::vector<int32_t> users;
@@ -291,6 +288,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         }
         auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
         if (CheckNotifyConditions(exData.info.accountId, exData.info.bundleName, cloudInfo) != E_OK) {
+            ZLOGD("invalid user:%{public}d", user);
             return INVALID_ARGUMENT;
         }
         auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
@@ -300,6 +298,11 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             return INVALID_ARGUMENT;
         }
         auto [storeId, tables] = GetDbInfoFromExtraData(exData, schemaMeta);
+        if (storeId.empty()) {
+            ZLOGE("invalid data, storeId:%{public}s, tables size:%{public}zu", Anonymous::Change(storeId).c_str(),
+                tables.size());
+            return INVALID_ARGUMENT;
+        }
         syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, storeId, tables));
     }
     return SUCCESS;
@@ -414,6 +417,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
     }
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
     if (oldInfo.id != cloudInfo.id) {
+        ReleaseUserInfo(user);
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(oldInfo.id).c_str());
         std::map<std::string, int32_t> actions;
@@ -443,7 +447,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
     return true;
 }
 
-std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string& bundleName)
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
 {
     SchemaMeta schemaMeta;
     auto instance = CloudServer::GetInstance();
@@ -495,7 +499,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
     };
 }
 
-std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string& bundleName,
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, const std::string &bundleName,
     int32_t instanceId)
 {
     SchemaMeta schemaMeta;
@@ -541,8 +545,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
     return { SUCCESS, cloudInfo };
 }
 
-int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(
-    const std::string &bundleName, int32_t user, int32_t index)
+int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
@@ -558,10 +561,10 @@ void CloudServiceImpl::GetSchema(const Event &event)
     GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
 }
 
-void CloudServiceImpl::CloudShare(const Event& event)
+void CloudServiceImpl::CloudShare(const Event &event)
 {
-    auto& cloudShareEvent = static_cast<const CloudShareEvent&>(event);
-    auto& storeInfo = cloudShareEvent.GetStoreInfo();
+    auto &cloudShareEvent = static_cast<const CloudShareEvent &>(event);
+    auto &storeInfo = cloudShareEvent.GetStoreInfo();
     auto query = cloudShareEvent.GetQuery();
     auto callback = cloudShareEvent.GetCallback();
     if (query == nullptr) {
@@ -724,21 +727,22 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     const std::vector<std::string>& columns, const Participants& participants)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto [bundleName, instanceId] = GetHapInfo(tokenId);
-    if (bundleName.empty()) {
-        ZLOGE("bundleName is empty, storeId:%{public}s", Anonymous::Change(storeId).c_str());
-        return { E_ERROR, {} };
-    }
-    if (predicates.tables_.empty()) {
-        ZLOGE("tables size:%{public}zu, storeId:%{public}s", predicates.tables_.size(),
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID) {
+        ZLOGE("bundleName is empty or invalid user, user:%{public}d, storeId:%{public}s", hapInfo.user,
             Anonymous::Change(storeId).c_str());
         return { E_ERROR, {} };
     }
+    if (predicates.tables_.empty()) {
+        ZLOGE("invalid args, tables size:%{public}zu, storeId:%{public}s", predicates.tables_.size(),
+            Anonymous::Change(storeId).c_str());
+        return { E_INVALID_ARGS, {} };
+    }
     auto memo = std::make_shared<DistributedRdb::PredicatesMemo>(predicates);
     CloudEvent::StoreInfo storeInfo;
-    storeInfo.bundleName = bundleName;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.bundleName = hapInfo.bundleName;
+    storeInfo.tokenId = tokenId;
+    storeInfo.user = hapInfo.user;
     storeInfo.storeName = storeId;
     std::shared_ptr<GenQuery> query;
     MakeQueryEvent::Callback asyncCallback = [&query](std::shared_ptr<GenQuery> genQuery) {
@@ -757,7 +761,7 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
     }
     auto valueBuckets = ConvertCursor(cursor);
     Results results;
-    for (auto& valueBucket : valueBuckets) {
+    for (auto &valueBucket : valueBuckets) {
         NativeRdb::ValueObject object;
         if (!valueBucket.GetObject(DistributedRdb::Field::SHARING_RESOURCE_FIELD, object)) {
             continue;
@@ -784,7 +788,7 @@ std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::ConvertCursor(std::shared
             break;
         }
         NativeRdb::ValuesBucket bucket;
-        for (auto& [key, value] : entry) {
+        for (auto &[key, value] : entry) {
             NativeRdb::ValueObject object;
             DistributedData::Convert(std::move(value), object.value);
             bucket.values_.insert_or_assign(key, std::move(object));
@@ -796,26 +800,25 @@ std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::ConvertCursor(std::shared
     return valueBuckets;
 }
 
-std::pair<std::string, int32_t> CloudServiceImpl::GetHapInfo(uint32_t tokenId)
+CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 {
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return { "", -1 };
-    }
     HapTokenInfo tokenInfo;
-    tokenInfo.instIndex = -1;
     int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (errCode != RET_SUCCESS) {
-        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x bundleName:%{public}s", errCode, tokenId,
-            tokenInfo.bundleName.c_str());
-        return { tokenInfo.bundleName, tokenInfo.instIndex };
+        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x", errCode, tokenId);
+        return { INVALID_USER_ID, -1, "" };
     }
-    return { tokenInfo.bundleName, tokenInfo.instIndex };
+    return { tokenInfo.userID, tokenInfo.instIndex, tokenInfo.bundleName };
 }
 
-int32_t CloudServiceImpl::Share(
-    const std::string &sharingRes, const Participants &participants, Results &results)
+int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -825,10 +828,14 @@ int32_t CloudServiceImpl::Share(
     return Convert(static_cast<CenterCode>(status));
 }
 
-int32_t CloudServiceImpl::Unshare(
-    const std::string &sharingRes, const Participants &participants, Results &results)
+int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -840,7 +847,12 @@ int32_t CloudServiceImpl::Unshare(
 
 int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -850,10 +862,15 @@ int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t,
     return Convert(static_cast<CenterCode>(status));
 }
 
-int32_t CloudServiceImpl::ChangePrivilege(
-    const std::string &sharingRes, const Participants &participants, Results &results)
+int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const Participants &participants,
+    Results &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -865,7 +882,12 @@ int32_t CloudServiceImpl::ChangePrivilege(
 
 int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -878,7 +900,12 @@ int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &res
 
 int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, QueryResults &results)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, invitation:%{public}s", Anonymous::Change(invitation).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -892,7 +919,13 @@ int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, Query
 int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32_t confirmation,
     std::tuple<int32_t, std::string, std::string> &result)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, invitation:%{public}s, confirmation:%{public}d",
+            Anonymous::Change(invitation).c_str(), confirmation);
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -902,10 +935,15 @@ int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32
     return Convert(static_cast<CenterCode>(status));
 }
 
-int32_t CloudServiceImpl::ChangeConfirmation(
-    const std::string &sharingRes, int32_t confirmation, std::pair<int32_t, std::string> &result)
+int32_t CloudServiceImpl::ChangeConfirmation(const std::string &sharingRes, int32_t confirmation,
+    std::pair<int32_t, std::string> &result)
 {
-    auto [instance, hapInfo] = GetSharingHandle();
+    auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
+    if (hapInfo.bundleName.empty()) {
+        ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return E_ERROR;
+    }
+    auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         return NOT_SUPPORT;
     }
@@ -915,20 +953,13 @@ int32_t CloudServiceImpl::ChangeConfirmation(
     return Convert(static_cast<CenterCode>(status));
 }
 
-std::pair<std::shared_ptr<SharingCenter>, CloudServiceImpl::HapInfo> CloudServiceImpl::GetSharingHandle()
+std::shared_ptr<SharingCenter> CloudServiceImpl::GetSharingHandle(const HapInfo &hapInfo)
 {
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    HapTokenInfo tokenInfo;
-    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (status != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, status);
-        return { nullptr, {} };
-    }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        return { nullptr, {} };
+        return nullptr;
     }
-    auto handle = instance->ConnectSharingCenter(tokenInfo.userID, tokenInfo.bundleName);
-    return { handle, { tokenInfo.userID, tokenInfo.bundleName } };
+    auto handle = instance->ConnectSharingCenter(hapInfo.user, hapInfo.bundleName);
+    return handle;
 }
 } // namespace OHOS::CloudData

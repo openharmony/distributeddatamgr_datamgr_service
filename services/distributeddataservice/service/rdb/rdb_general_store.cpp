@@ -120,7 +120,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
         return GeneralError::E_OK;
     }
 
-    BindEvent::BindEventInfo  eventInfo;
+    BindEvent::BindEventInfo eventInfo;
     eventInfo.tokenId = storeInfo_.tokenId;
     eventInfo.bundleName = storeInfo_.bundleName;
     eventInfo.storeName = storeInfo_.storeName;
@@ -427,7 +427,8 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
         values = ExecuteSql(sql, rdbQuery->GetBindArgs());
     }
     if (rdbCloud_ == nullptr || values.empty()) {
-        ZLOGE("rdbCloud is nullptr:%{public}d, values size:%{public}zu", rdbCloud_ == nullptr, values.size());
+        ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud_ == nullptr ? "nullptr" : "not nullptr",
+            values.size());
         return nullptr;
     }
     VBuckets extends = ExtractExtend(values);
@@ -641,9 +642,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     }
     std::vector<DistributedDB::TableReferenceProperty> properties;
     for (const auto &reference : references) {
-        DistributedDB::TableReferenceProperty referenceProperty = { reference.sourceTable, reference.targetTable,
-            reference.refFields };
-        properties.emplace_back(referenceProperty);
+        properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
     }
     auto status = delegate_->SetReference(properties);
     if (status != DistributedDB::DBStatus::OK) {

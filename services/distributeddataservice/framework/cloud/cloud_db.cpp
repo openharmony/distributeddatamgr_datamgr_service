@@ -94,4 +94,9 @@ int32_t CloudDB::Close()
 {
     return E_NOT_SUPPORT;
 }
+
+std::pair<int32_t, std::string> CloudDB::GetEmptyCursor(const std::string &tableName)
+{
+    return { E_NOT_SUPPORT, "" };
+}
 } // namespace OHOS::DistributedData
