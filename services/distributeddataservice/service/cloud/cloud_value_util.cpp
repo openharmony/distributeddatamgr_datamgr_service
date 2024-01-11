@@ -122,15 +122,15 @@ std::vector<O> Convert(const std::vector<T> &data)
     return out;
 }
 
-SharingCode Convert(CenterCode code)
+Status Convert(CenterCode code)
 {
     switch (code) {
         case CenterCode::IPC_ERROR:
-            return SharingCode::INNER_ERROR;
+            return Status::IPC_ERROR;
         default:
             break;
     }
-    return SharingCode::SUCCESS;
+    return Status::SUCCESS;
 }
 } // namespace::SharingUtil
 } // namespace OHOS::CloudData
