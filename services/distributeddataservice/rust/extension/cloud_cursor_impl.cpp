@@ -42,11 +42,11 @@ CloudCursorImpl::CloudCursorImpl(OhCloudExtCloudDbData *cloudData) : cloudData_(
     }
     OhCloudExtVectorGetLength(values_, &valuesLen_);
     if (valuesLen_ > 0) {
-        void *value = nullptr;
+        void *values = nullptr;
         size_t valueLen = 0;
-        auto status = OhCloudExtVectorGet(values_, 0, &value, &valueLen);
+        auto status = OhCloudExtVectorGet(values_, 0, &values, &valueLen);
         if (status == ERRNO_SUCCESS && value != nullptr) {
-            OhCloudExtValueBucket *vBucket = reinterpret_cast<OhCloudExtValueBucket *>(value);
+            OhCloudExtValueBucket *vBucket = reinterpret_cast<OhCloudExtValueBucket *>(values);
             auto data = GetData(vBucket);
             for (auto &[key, value] : data) {
                 names_.push_back(key);
@@ -110,7 +110,7 @@ int32_t CloudCursorImpl::MoveToFirst()
     if (values_ == nullptr) {
         return DBErr::E_ALREADY_CLOSED;
     }
-    if (index_ != INVALID_INDEX || valuesLen_ <= 0) {
+    if (index_ != INVALID_INDEX || valuesLen_ = 0) {
         return DBErr::E_ALREADY_CONSUMED;
     }
     index_ = 0;
@@ -148,13 +148,13 @@ int32_t CloudCursorImpl::GetEntry(DBVBucket &entry)
     if (consumed_ || index_ >= valuesLen_) {
         return DBErr::E_ALREADY_CONSUMED;
     }
-    void *value = nullptr;
+    void *values = nullptr;
     size_t valueLen = 0;
-    auto status = OhCloudExtVectorGet(values_, index_, &value, &valueLen);
+    auto status = OhCloudExtVectorGet(values_, index_, &values, &valueLen);
     if (status != ERRNO_SUCCESS || value == nullptr) {
         return DBErr::E_ERROR;
     }
-    OhCloudExtValueBucket *vBucket = reinterpret_cast<OhCloudExtValueBucket *>(value);
+    OhCloudExtValueBucket *vBucket = reinterpret_cast<OhCloudExtValueBucket *>(values);
     auto data = GetData(vBucket);
     for (auto &[key, value] : data) {
         entry[key] = value;
