@@ -71,7 +71,7 @@ int32_t CustomUtdInstaller::InstallUtd(const std::string &bundleName, int32_t us
     for (std::string module : modules) {
         auto utdTypes = GetModuleCustomUtdTypes(bundleName, module, user);
         if (utdTypes.first.empty() && utdTypes.second.empty()) {
-            ZLOGW("Module custom utd types is empty.");
+            ZLOGD("Module custom utd types is empty.");
             continue;
         }
         if (!UtdCfgsChecker::GetInstance().CheckTypeDescriptors(utdTypes, presetTypes, customTyepCfgs, bundleName)) {
