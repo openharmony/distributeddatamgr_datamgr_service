@@ -641,7 +641,7 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
     });
 
     if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED) {
-        features_.Erase("data_object");
+        features_.Erase("data_share");
     }
 }
 
