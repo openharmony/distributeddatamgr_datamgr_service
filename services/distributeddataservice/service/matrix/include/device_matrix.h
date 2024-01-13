@@ -43,6 +43,7 @@ public:
     void OnExchanged(const std::string &device, uint16_t code, bool isRemote = false);
     bool IsChangedInTerm(const StoreMetaData &metaData, uint64_t term);
     uint16_t GetCode(const StoreMetaData &metaData);
+    std::pair<bool, uint16_t> GetMask(const std::string &device, bool isRemote = false);
     void Clear();
 
 private:
