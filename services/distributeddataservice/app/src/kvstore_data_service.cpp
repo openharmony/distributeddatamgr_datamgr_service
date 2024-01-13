@@ -639,10 +639,6 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
         value->OnUserChange(uint32_t(eventInfo.status), eventInfo.userId, eventInfo.harmonyAccountId);
         return false;
     });
-
-    if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED) {
-        features_.Erase("data_share");
-    }
 }
 
 void KvStoreDataService::InitSecurityAdapter(std::shared_ptr<ExecutorPool> executors)
