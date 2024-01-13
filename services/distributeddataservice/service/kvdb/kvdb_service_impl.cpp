@@ -442,9 +442,9 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
     MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     SaveLocalMetaData(options, metaData);
     Upgrade::GetInstance().UpdatePassword(metaData, password);
-    ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s",
-        appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId, metaData.storeType,
-        metaData.dataDir.c_str());
+    ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s"
+        "isCreated:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
+        metaData.instanceId, metaData.storeType, metaData.dataDir.c_str(), isCreated);
     return status;
 }
 
@@ -523,7 +523,8 @@ int32_t KVDBServiceImpl::OnReady(const std::string &device)
         if (!data.isAutoSync) {
             continue;
         }
-        ZLOGI("[onReady] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(), data.storeId.c_str());
+        ZLOGI("[onReady] appId:%{public}s, storeId:%{public}s",
+            data.bundleName.c_str(), Anonymous::Change(data.storeId).c_str());
         StoreMetaDataLocal localMetaData;
         MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), localMetaData, true);
         if (!localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY) &&

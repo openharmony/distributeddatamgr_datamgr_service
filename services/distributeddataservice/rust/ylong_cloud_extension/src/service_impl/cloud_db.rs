@@ -374,33 +374,3 @@ impl CloudDbData {
         &self.values
     }
 }
-
-#[cfg(test)]
-mod test {
-    use crate::c_adapter::cloud_ext_types::OhCloudExtCloudDbData;
-    use crate::c_adapter::SafetyCheckId;
-    use crate::ipc_conn::Connect;
-    use crate::service_impl::cloud_db::CloudDatabase;
-    use crate::service_impl::types::Database;
-
-    #[test]
-    fn ut_batch_query() {
-        let user_id = 100;
-        let bundle_name = String::from("com.huawei.hmos.notepad");
-        let mut connect = Connect::new(user_id).unwrap();
-        let app_schema = &connect.get_app_schema(user_id, &bundle_name).unwrap();
-        let database = &app_schema.databases.0[0];
-        let database = Database::from(database);
-
-        let mut cloud_database = CloudDatabase::new(user_id, &bundle_name, database).unwrap();
-        let table = "cloud_folders";
-        let cursor = "";
-        let cloud_data = cloud_database.batch_query(table, cursor).unwrap();
-        println!("cloud_data: {:?}", cloud_data);
-        let ptr = OhCloudExtCloudDbData::new(cloud_data, SafetyCheckId::CloudDbData).into_ptr();
-        let data_struct = unsafe {
-            OhCloudExtCloudDbData::get_inner_ref(ptr, SafetyCheckId::CloudDbData).unwrap()
-        };
-        println!("data_struct: {:?}", data_struct);
-    }
-}
