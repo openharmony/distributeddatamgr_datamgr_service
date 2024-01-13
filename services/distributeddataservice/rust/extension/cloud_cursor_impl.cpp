@@ -45,7 +45,7 @@ CloudCursorImpl::CloudCursorImpl(OhCloudExtCloudDbData *cloudData) : cloudData_(
         void *values = nullptr;
         size_t valueLen = 0;
         auto status = OhCloudExtVectorGet(values_, 0, &values, &valueLen);
-        if (status == ERRNO_SUCCESS && value != nullptr) {
+        if (status == ERRNO_SUCCESS && values != nullptr) {
             OhCloudExtValueBucket *vBucket = reinterpret_cast<OhCloudExtValueBucket *>(values);
             auto data = GetData(vBucket);
             for (auto &[key, value] : data) {
@@ -151,7 +151,7 @@ int32_t CloudCursorImpl::GetEntry(DBVBucket &entry)
     void *values = nullptr;
     size_t valueLen = 0;
     auto status = OhCloudExtVectorGet(values_, index_, &values, &valueLen);
-    if (status != ERRNO_SUCCESS || value == nullptr) {
+    if (status != ERRNO_SUCCESS || values == nullptr) {
         return DBErr::E_ERROR;
     }
     OhCloudExtValueBucket *vBucket = reinterpret_cast<OhCloudExtValueBucket *>(values);
