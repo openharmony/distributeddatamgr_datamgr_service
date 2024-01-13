@@ -110,7 +110,7 @@ int32_t CloudCursorImpl::MoveToFirst()
     if (values_ == nullptr) {
         return DBErr::E_ALREADY_CLOSED;
     }
-    if (index_ != INVALID_INDEX || valuesLen_ = 0) {
+    if (index_ != INVALID_INDEX || valuesLen_ == 0) {
         return DBErr::E_ALREADY_CONSUMED;
     }
     index_ = 0;
