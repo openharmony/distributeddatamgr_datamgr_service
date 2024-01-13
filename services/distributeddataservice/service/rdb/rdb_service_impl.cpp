@@ -348,7 +348,7 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
         return { RDB_ERROR, nullptr };
     }
     RdbQuery rdbQuery;
-    rdbQuery.MakeRemoteQuery(device, sql, ValueProxy::Convert(selectionArgs));
+    rdbQuery.MakeRemoteQuery(DmAdapter::GetInstance().ToUUID(device), sql, ValueProxy::Convert(selectionArgs));
     auto cursor = store->Query("", rdbQuery);
     return { RDB_OK, std::make_shared<RdbResultSetImpl>(cursor) };
 }
