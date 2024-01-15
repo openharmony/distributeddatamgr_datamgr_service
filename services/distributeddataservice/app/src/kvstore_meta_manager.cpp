@@ -218,6 +218,8 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     option.createDirByStoreIdOnly = true;
     option.isEncryptedDb = false;
     option.isNeedRmCorruptedDb = true;
+    option.compressionRate = 10;
+    option.isNeedCompress = true;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
     DistributedDB::KvStoreNbDelegate *delegate = nullptr;
     delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
