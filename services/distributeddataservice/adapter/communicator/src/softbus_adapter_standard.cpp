@@ -41,7 +41,6 @@ using namespace std;
 using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-using Strategy = CommunicationStrategy::Strategy;
 
 class AppDataListenerWrap {
 public:
@@ -470,23 +469,7 @@ void SoftBusAdapter::OnServerShutdown(int32_t socket)
 void SoftBusAdapter::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     const AppDistributedKv::DeviceChangeType &type) const
 {
-    if (info.uuid == DmAdapter::CLOUD_DEVICE_UUID) {
-        return;
-    }
-
-    switch (type) {
-        case AppDistributedKv::DeviceChangeType::DEVICE_ONLINE:
-            CommunicationStrategy::GetInstance().SetStrategy(info.uuid, Strategy::ON_LINE_SELECT_CHANNEL);
-            break;
-        case AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE:
-            CommunicationStrategy::GetInstance().RemoveStrategy(info.uuid);
-            break;
-        case AppDistributedKv::DeviceChangeType::DEVICE_ONREADY:
-            CommunicationStrategy::GetInstance().SetStrategy(info.uuid, Strategy::DEFAULT);
-            break;
-        default:
-            break;
-    }
+    return;
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

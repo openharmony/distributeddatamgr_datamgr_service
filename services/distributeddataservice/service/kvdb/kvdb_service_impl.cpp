@@ -23,7 +23,6 @@
 #include "backup_manager.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
-#include "communication_strategy.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
@@ -65,9 +64,6 @@ KVDBServiceImpl::Factory::~Factory()
 
 KVDBServiceImpl::KVDBServiceImpl()
 {
-    CommunicationStrategy::GetInstance().RegGetSyncDataSize("kv_store", [this](const std::string &deviceId) {
-        return GetSyncDataSize(deviceId);
-    });
 
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_META_FINISHED, [this](const Event &event) {
         auto &matrixEvent = static_cast<const MatrixEvent &>(event);

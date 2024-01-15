@@ -23,7 +23,6 @@
 #include "account_delegate.h"
 #include "bootstrap.h"
 #include "communication_provider.h"
-#include "communication_strategy.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -55,9 +54,6 @@ KvStoreMetaManager::KvStoreMetaManager()
       delegateManager_(Bootstrap::GetInstance().GetProcessLabel(), "default")
 {
     ZLOGI("begin.");
-    CommunicationStrategy::GetInstance().RegGetSyncDataSize("meta_store", [this](const std::string &deviceId) {
-        return this->GetSyncDataSize(deviceId);
-    });
 }
 
 KvStoreMetaManager::~KvStoreMetaManager()

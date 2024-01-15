@@ -21,7 +21,6 @@
 #include <mutex>
 
 #include "commu_types.h"
-#include "communication_strategy.h"
 #include "executor_pool.h"
 #include "session.h"
 #include "socket.h"
@@ -32,7 +31,6 @@ public:
     SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId);
     ~SoftBusClient();
 
-    using Strategy = CommunicationStrategy::Strategy;
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     static constexpr Duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
