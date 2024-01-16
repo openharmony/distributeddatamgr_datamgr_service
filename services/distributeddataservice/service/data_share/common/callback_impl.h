@@ -21,21 +21,25 @@
 namespace OHOS::DataShare {
 class CallbackImpl : public AAFwk::AbilityConnectionStub {
 public:
-    explicit CallbackImpl(BlockData<bool> &data) : data_(data) {}
+    explicit CallbackImpl(std::shared_ptr<BlockData<bool>> data) : data_(data) {}
     void OnAbilityConnectDone(
         const AppExecFwk::ElementName &element, const sptr<IRemoteObject> &remoteObject, int resultCode) override
     {
-        bool result = true;
-        data_.SetValue(result);
+        if (data_ == nullptr) {
+            return;
+        }
+        data_->SetValue(true);
     }
     void OnAbilityDisconnectDone(const AppExecFwk::ElementName &element, int resultCode) override
     {
-        bool result = false;
-        data_.SetValue(result);
+        if (data_ == nullptr) {
+            return;
+        }
+        data_->SetValue(false);
     }
 
 private:
-    BlockData<bool> &data_;
+    std::shared_ptr<BlockData<bool>> data_;
 };
 } // namespace OHOS::DataShare
 #endif

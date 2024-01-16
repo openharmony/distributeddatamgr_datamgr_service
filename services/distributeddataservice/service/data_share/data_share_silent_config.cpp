@@ -39,8 +39,6 @@ bool DataShareSilentConfig::IsSilentProxyEnable(uint32_t callerTokenId, int32_t 
     }
     std::map<std::string, ProfileInfo> profileInfos;
     if (!DataShareProfileConfig::GetProfileInfo(calledBundleName, currentUserId, profileInfos)) {
-        ZLOGI("GetProfileInfo error, No configuration has been set for silent access. uri:%{public}s",
-              DistributedData::Anonymous::Change(uri).c_str());
         return true;
     }
     for (const auto &[key, value] : profileInfos) {
@@ -90,8 +88,6 @@ int DataShareSilentConfig::CheckExistEnableSilentUris(uint32_t callerTokenId,
         }
         return !uris.empty();
     });
-    ZLOGI("silent proxy uris is exist, callerTokenId:%{public}u, status:%{public}d, uri:%{public}s",
-          callerTokenId, status, DistributedData::Anonymous::Change(uri).c_str());
     return status;
 }
 } // namespace OHOS::DataShare
