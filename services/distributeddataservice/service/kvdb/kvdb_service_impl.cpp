@@ -533,6 +533,11 @@ int32_t KVDBServiceImpl::OnReady(const std::string &device)
             localMetaData.GetPolicy(PolicyType::TERM_OF_SYNC_VALIDITY).valueUint))) {
             continue;
         }
+        auto code = DeviceMatrix::GetInstance().GetCode(data);
+        auto [exist, mask] = DeviceMatrix::GetInstance().GetMask(device);
+        if (exist && ((mask & code) != code)) {
+            continue;
+        }
         SyncInfo syncInfo;
         syncInfo.delay = localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY) ?
             localMetaData.GetPolicy(PolicyType::IMMEDIATE_SYNC_ON_READY).valueUint : 0;

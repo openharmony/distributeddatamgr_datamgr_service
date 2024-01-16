@@ -185,6 +185,21 @@ uint16_t DeviceMatrix::GetCode(const StoreMetaData &metaData)
     return 0;
 }
 
+std::pair<bool, uint16_t> DeviceMatrix::GetMask(const std::string &device)
+{
+    std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+    auto it = onLines_.find(device);
+    if (it != onLines_.end()) {
+        return { true, it->second.bitset };
+    } else {
+        auto remoteIter = remotes_.find(device);
+        if (remoteIter != remotes_.end()) {
+            return { true, remoteIter->second.bitset };
+        }
+    }
+    return { false, 0 };
+}
+
 void DeviceMatrix::Clear()
 {
     versions_.ResetCapacity(0);

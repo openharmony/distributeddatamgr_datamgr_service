@@ -113,11 +113,15 @@ void KvStoreMetaManager::InitDeviceOnline()
         auto mask = matrixEvent.GetMask();
         auto deviceId = matrixEvent.GetDeviceId();
         auto store = GetMetaKvStore();
-        auto onComplete = [deviceId, mask, refCount = matrixEvent.StealRefCount()](const DBStatuses &) mutable {
-            ZLOGD("matrix 0x%{public}08x device:%{public}s online", mask, Anonymous::Change(deviceId).c_str());
+        auto onComplete = [deviceId, mask, refCount = matrixEvent.StealRefCount()](const DBStatuses &statuses) mutable {
             auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
             finEvent->SetRefCount(std::move(refCount));
-            DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
+            auto it = statuses.find(deviceId);
+            if (it != statuses.end() && it->second == DBStatus::OK) {
+                DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
+            }
+            ZLOGI("matrix 0x%{public}08x device:%{public}s status:%{public}d online",
+                mask, Anonymous::Change(deviceId).c_str(), it == statuses.end() ? DBStatus::OK : it->second);
             EventCenter::GetInstance().PostEvent(std::move(finEvent));
         };
         if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
