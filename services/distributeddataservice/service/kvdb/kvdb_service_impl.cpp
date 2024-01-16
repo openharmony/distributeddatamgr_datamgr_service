@@ -64,7 +64,6 @@ KVDBServiceImpl::Factory::~Factory()
 
 KVDBServiceImpl::KVDBServiceImpl()
 {
-
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_META_FINISHED, [this](const Event &event) {
         auto &matrixEvent = static_cast<const MatrixEvent &>(event);
         auto deviceId = matrixEvent.GetDeviceId();
