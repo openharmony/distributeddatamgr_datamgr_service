@@ -88,6 +88,7 @@ private:
 
     static constexpr int32_t RETRY_MAX_TIMES = 100;
     static constexpr int32_t RETRY_INTERVAL = 1;
+    static constexpr uint8_t COMPTRESS_RATE = 10;
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     const std::string label_;
