@@ -171,7 +171,7 @@ int32_t SyncManager::StopCloudSync(int32_t user)
     return E_OK;
 }
 
-bool SyncManager::isValid(SyncInfo &info, CloudInfo &cloud)
+bool SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) ||
         (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_)) {
@@ -183,6 +183,7 @@ bool SyncManager::isValid(SyncInfo &info, CloudInfo &cloud)
     if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
         info.SetError(E_CLOUD_DISABLED);
         ZLOGD("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
+        return false;
     }
     if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
         info.SetError(E_NETWORK_ERROR);
@@ -204,7 +205,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         activeInfos_.Erase(info.syncId_);
         CloudInfo cloud;
         cloud.user = info.user_;
-        if (!isValid(info, cloud)) {
+        if (!IsValid(info, cloud)) {
             return;
         }
         std::vector<SchemaMeta> schemas;

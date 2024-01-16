@@ -92,7 +92,7 @@ private:
     static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
-    bool isValid(SyncInfo &info, CloudInfo &cloud);
+    bool IsValid(SyncInfo &info, CloudInfo &cloud);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
