@@ -32,7 +32,7 @@ public:
     Sensitive(Sensitive &&sensitive) noexcept;
     Sensitive &operator=(Sensitive &&sensitive) noexcept;
     ~Sensitive() = default;
-    operator bool () const;
+    operator bool() const;
     bool operator >= (const DistributedDB::SecurityOption &option);
     uint32_t GetDeviceSecurityLevel();
 
