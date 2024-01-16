@@ -61,7 +61,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         option.isEncryptedDb = meta.isEncrypt;
         option.cipher = CipherType::AES_256_GCM;
-        for (auto i = 0; i < ITERS_COUNT; ++i) {
+        for (size_t i = 0; i < ITERS_COUNT; ++i) {
             option.iterateTimes = ITERS[i];
             auto ret = manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
             if (ret == DBStatus::OK && delegate_ != nullptr) {
@@ -81,7 +81,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
-    
+
     if (delegate_ != nullptr && meta.isManualClean) {
         PragmaData data =
             static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
