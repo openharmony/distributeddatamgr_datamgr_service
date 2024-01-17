@@ -103,7 +103,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
     });
     auto key = data.GetKey();
     if (!metaDataBucket_.Get(key, data)) {
-        if (!MetaDataManager::GetInstance().LoadMeta(key, data)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(key, data, true)) {
             ZLOGE("load meta failed.");
             return false;
         }

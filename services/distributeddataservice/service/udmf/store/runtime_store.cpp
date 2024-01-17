@@ -340,7 +340,8 @@ bool RuntimeStore::SaveMetaData()
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
 
     SetDelegateManager(saveMeta.dataDir, saveMeta.appId, userId);
-    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
+                 DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!saved) {
         ZLOGE("SaveMeta failed");
         return false;

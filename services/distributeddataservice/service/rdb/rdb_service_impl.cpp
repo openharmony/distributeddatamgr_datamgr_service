@@ -99,7 +99,7 @@ RdbServiceImpl::RdbServiceImpl()
         meta.user = std::to_string(storeInfo.user);
         meta.instanceId = storeInfo.instanceId;
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
             return;
@@ -140,7 +140,7 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
     ZLOGI("%{public}.6s", identifierHex.c_str());
     std::vector<StoreMetaData> entries;
     auto localId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries, true)) {
         ZLOGE("get meta failed");
         return false;
     }
@@ -251,7 +251,7 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
 std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const RdbSyncerParam &param)
 {
     StoreMetaData storeMetaData = GetStoreMetaData(param);
-    MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData);
+    MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData, true);
     auto watchers = GetWatchers(storeMetaData.tokenId, storeMetaData.storeId);
     auto store = AutoCache::GetInstance().GetStore(storeMetaData, watchers);
     if (store == nullptr) {
@@ -267,6 +267,18 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
+    }
+    auto meta = GetStoreMetaData(param);
+    StoreMetaData syncMeta;
+    StoreMetaData localMeta;
+    bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
+    bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
+    if (isCreatedLocal && (!isCreatedSync || localMeta != syncMeta)) {
+        ZLOGD("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
+              "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
+            syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
     }
     auto store = GetStore(param);
     if (store == nullptr) {
@@ -584,6 +596,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     tmpParam.bundleName_ = hapTokenInfo.bundleName;
     auto storeMeta = GetStoreMetaData(tmpParam);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetStrategyKey());
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
@@ -693,7 +706,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
 int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old)
 {
     auto meta = GetStoreMetaData(param);
-    bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
+    bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     if (isCreated && (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
                          old.area != meta.area)) {
         ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
@@ -708,7 +721,7 @@ int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaDat
               "area:%{public}d->%{public}d",
             meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
     }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
