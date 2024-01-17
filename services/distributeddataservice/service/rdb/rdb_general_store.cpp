@@ -61,7 +61,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         option.isEncryptedDb = meta.isEncrypt;
         option.cipher = CipherType::AES_256_GCM;
-        for (size_t i = 0; i < ITERS_COUNT; ++i) {
+        for (uint32_t i = 0; i < ITERS_COUNT; ++i) {
             option.iterateTimes = ITERS[i];
             auto ret = manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
             if (ret == DBStatus::OK && delegate_ != nullptr) {
