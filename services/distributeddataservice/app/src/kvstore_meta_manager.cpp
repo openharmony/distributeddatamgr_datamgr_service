@@ -391,16 +391,6 @@ std::string KvStoreMetaManager::GetBackupPath() const
             Crypto::Sha256(label_ + "_" + Bootstrap::GetInstance().GetMetaDBName()));
 }
 
-size_t KvStoreMetaManager::GetSyncDataSize(const std::string &deviceId)
-{
-    auto metaDelegate = GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        return 0;
-    }
-
-    return metaDelegate->GetSyncDataSize(deviceId);
-}
-
 void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;

@@ -554,6 +554,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
     metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
+    metaData.isNeedCompress = options.isNeedCompress;
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
@@ -791,35 +792,6 @@ void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
     callback_ = nullptr;
     delayTimes_.clear();
     observers_.clear();
-}
-
-size_t KVDBServiceImpl::GetSyncDataSize(const std::string &deviceId)
-{
-    std::vector<StoreMetaData> metaData;
-    auto prefix = StoreMetaData::GetPrefix({DMAdapter::GetInstance().GetLocalDevice().uuid});
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
-        ZLOGE("load meta failed!");
-        return 0;
-    }
-
-    size_t totalSize = 0;
-    for (const auto &data : metaData) {
-        if (data.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
-            data.storeType > StoreMetaData::StoreType::STORE_KV_END) {
-            continue;
-        }
-        DistributedDB::DBStatus status;
-        auto observers = GetObservers(data.tokenId, data.storeId);
-        auto store = storeCache_.GetStore(data, observers, status);
-        if (store == nullptr) {
-            ZLOGE("failed! status:%{public}d appId:%{public}s storeId:%{public}s dir:%{public}s", status,
-                  data.bundleName.c_str(), Anonymous::Change(data.storeId).c_str(), data.dataDir.c_str());
-            continue;
-        }
-        totalSize += store->GetSyncDataSize(deviceId);
-    }
-
-    return totalSize;
 }
 
 int32_t KVDBServiceImpl::OnBind(const BindInfo &bindInfo)

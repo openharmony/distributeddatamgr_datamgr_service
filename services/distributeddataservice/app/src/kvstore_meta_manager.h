@@ -53,7 +53,6 @@ public:
     void InitBroadcast();
     void InitDeviceOnline();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
-    size_t GetSyncDataSize(const std::string &deviceId);
     void BindExecutor(std::shared_ptr<ExecutorPool> executors);
 private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;

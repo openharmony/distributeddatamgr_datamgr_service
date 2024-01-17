@@ -34,6 +34,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(isManualClean)], isManualClean);
     SetValue(node[GET_NAME(isDirty)], isDirty);
     SetValue(node[GET_NAME(isSearchable)], isSearchable);
+    SetValue(node[GET_NAME(isNeedCompress)], isNeedCompress);
     SetValue(node[GET_NAME(storeType)], storeType);
     SetValue(node[GET_NAME(securityLevel)], securityLevel);
     SetValue(node[GET_NAME(area)], area);
@@ -70,6 +71,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(isEncrypt), isEncrypt);
     GetValue(node, GET_NAME(isManualClean), isManualClean);
     GetValue(node, GET_NAME(isSearchable), isSearchable);
+    GetValue(node, GET_NAME(isNeedCompress), isNeedCompress);
     GetValue(node, GET_NAME(storeType), storeType);
     GetValue(node, GET_NAME(securityLevel), securityLevel);
     GetValue(node, GET_NAME(area), area);
