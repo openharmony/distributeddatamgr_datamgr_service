@@ -379,7 +379,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
     ZLOGI("start");
     std::vector<StoreMetaData> entries;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), entries, true)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), entries)) {
         ZLOGE("get full meta failed");
         return false;
     }
