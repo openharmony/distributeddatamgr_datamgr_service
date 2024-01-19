@@ -311,6 +311,31 @@ ohos_unittest("ObjectAssetMachineTest") {
   ]
 }
 
+ohos_unittest("MetaDataTest") {
+  module_out_path = module_output_path
+  sources = [
+    "meta_data_test.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -326,6 +351,7 @@ group("unittest") {
     ":CryptoManagerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
+    ":MetaDataTest",
     ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",
     ":ValueProxyTest",
