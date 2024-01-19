@@ -68,6 +68,21 @@ void MetaDataTest::SetUp()
 void MetaDataTest::TearDown() {}
 
 /**
+* @tc.name: LoadMetaData
+* @tc.desc: save and load meta data
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yl
+*/
+HWTEST_F(MetaDataTest, LoadMetaData, TestSize.Level0)
+{
+    ZLOGI("MetaDataTest start");
+    StoreMetaData metaData;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData));
+    ASSERT_FALSE(metaData.isNeedCompress);
+}
+
+/**
 * @tc.name: MetaDataChanged
 * @tc.desc: meta data changed and save meta
 * @tc.type: FUNC
@@ -85,7 +100,7 @@ HWTEST_F(MetaDataTest, MateDataChangeed, TestSize.Level0)
     changeMeta.bundleName = TEST_BUNDLE;
     changeMeta.storeId = TEST_STORE;
     changeMeta.instanceId = 0;
-    changeMeta.isAutoSync = false;
+    changeMeta.isAutoSync = true;
     changeMeta.storeType = 1;
     changeMeta.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
     changeMeta.isNeedCompress = true;
