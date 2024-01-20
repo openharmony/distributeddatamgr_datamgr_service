@@ -140,7 +140,7 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
     ZLOGI("%{public}.6s", identifierHex.c_str());
     std::vector<StoreMetaData> entries;
     auto localId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries, true)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localId }), entries)) {
         ZLOGE("get meta failed");
         return false;
     }
@@ -875,7 +875,7 @@ int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true)) {
         ZLOGE("load meta failed! bundleName:%{public}s, user:%{public}d, index:%{public}d",
             bundleName.c_str(), user, index);
         return E_ERROR;
