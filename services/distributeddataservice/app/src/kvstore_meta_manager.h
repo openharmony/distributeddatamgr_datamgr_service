@@ -56,6 +56,7 @@ public:
     void BindExecutor(std::shared_ptr<ExecutorPool> executors);
 private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
+    using TaskId = ExecutorPool::TaskId;
     NbDelegate GetMetaKvStore();
 
     NbDelegate CreateMetaKvStore();

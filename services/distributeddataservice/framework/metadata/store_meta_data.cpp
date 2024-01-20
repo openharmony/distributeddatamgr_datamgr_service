@@ -117,7 +117,8 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
 {
     if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
         Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt) ||
-        Constant::NotEqual(isSearchable, metaData.isSearchable) || Constant::NotEqual(isNeedCompress, metaData.isNeedCompress)) {
+        Constant::NotEqual(isSearchable, metaData.isSearchable) ||
+        Constant::NotEqual(isNeedCompress, metaData.isNeedCompress)) {
         return false;
     }
     return (version == metaData.version && storeType == metaData.storeType &&

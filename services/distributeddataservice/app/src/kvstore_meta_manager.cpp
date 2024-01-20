@@ -289,7 +289,6 @@ std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int3
         for (auto const &dev : devices) {
             devs.push_back(dev.uuid);
         }
-
         if (devs.empty()) {
             return;
         }
@@ -302,7 +301,6 @@ std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int3
                 ZLOGI("uuid is: %{public}s, and status is: %{public}d", uuid.c_str(), status);
             }
         });
-
         if (status != DistributedDB::OK) {
             ZLOGW("meta data sync error %{public}d.", status);
         }
