@@ -56,7 +56,7 @@ DBCloudInfo CloudServerImpl::GetServerInfo(int32_t userId)
     }
     unsigned char *id = nullptr;
     size_t idLen = 0;
-    status = OhCloudExtCloudInfoGetId(pInfo.get(), &id, &idLen);
+    status = OhCloudExtCloudInfoGetId(pInfo.get(), &id, reinterpret_cast<unsigned int *>(&idLen));
     if (status != ERRNO_SUCCESS || id == nullptr) {
         return result;
     }
@@ -91,22 +91,22 @@ void CloudServerImpl::GetAppInfo(std::shared_ptr<OhCloudExtHashMap> briefInfo, D
     auto pKeys = std::shared_ptr<OhCloudExtVector>(keys, [](auto *keys) { OhCloudExtVectorFree(keys); });
     auto pValues = std::shared_ptr<OhCloudExtVector>(values, [](auto *values) { OhCloudExtVectorFree(values); });
     size_t keysLen = 0;
-    OhCloudExtVectorGetLength(pKeys.get(), &keysLen);
+    OhCloudExtVectorGetLength(pKeys.get(), reinterpret_cast<unsigned int *>(&keysLen));
     size_t valuesLen = 0;
-    OhCloudExtVectorGetLength(pValues.get(), &valuesLen);
+    OhCloudExtVectorGetLength(pValues.get(), reinterpret_cast<unsigned int *>(&valuesLen));
     if (keysLen == 0 || keysLen != valuesLen) {
         return;
     }
     for (size_t i = 0; i < keysLen; i++) {
         void *key = nullptr;
         size_t keyLen = 0;
-        status = OhCloudExtVectorGet(pKeys.get(), i, &key, &keyLen);
+        status = OhCloudExtVectorGet(pKeys.get(), i, &key, reinterpret_cast<unsigned int *>(&keyLen));
         if (status != ERRNO_SUCCESS || key == nullptr) {
             return;
         }
         void *value = nullptr;
         size_t valueLen = 0;
-        status = OhCloudExtVectorGet(pValues.get(), i, &value, &valueLen);
+        status = OhCloudExtVectorGet(pValues.get(), i, &value, reinterpret_cast<unsigned int *>(&valueLen));
         if (status != ERRNO_SUCCESS || value == nullptr) {
             return;
         }
@@ -153,7 +153,7 @@ DBSchemaMeta CloudServerImpl::GetAppSchema(int32_t userId, const std::string &bu
 void CloudServerImpl::GetDatabases(std::shared_ptr<OhCloudExtVector> databases, DBSchemaMeta &dbSchema)
 {
     size_t dbsLen = 0;
-    auto status = OhCloudExtVectorGetLength(databases.get(), &dbsLen);
+    auto status = OhCloudExtVectorGetLength(databases.get(), reinterpret_cast<unsigned int *>(&dbsLen));
     if (status != ERRNO_SUCCESS || dbsLen == 0) {
         return;
     }
@@ -161,7 +161,7 @@ void CloudServerImpl::GetDatabases(std::shared_ptr<OhCloudExtVector> databases, 
     for (size_t i = 0; i < dbsLen; i++) {
         void *database = nullptr;
         size_t dbLen = 0;
-        status = OhCloudExtVectorGet(databases.get(), i, &database, &dbLen);
+        status = OhCloudExtVectorGet(databases.get(), i, &database, reinterpret_cast<unsigned int *>(&dbLen));
         if (status != ERRNO_SUCCESS || database == nullptr) {
             return;
         }
@@ -170,14 +170,14 @@ void CloudServerImpl::GetDatabases(std::shared_ptr<OhCloudExtVector> databases, 
         DBMeta dbMeta;
         unsigned char *name = nullptr;
         size_t nameLen = 0;
-        OhCloudExtDatabaseGetName(pDb.get(), &name, &nameLen);
+        OhCloudExtDatabaseGetName(pDb.get(), &name, reinterpret_cast<unsigned int *>(&nameLen));
         if (name == nullptr) {
             return;
         }
         dbMeta.name = std::string(reinterpret_cast<char *>(name), nameLen);
         unsigned char *alias = nullptr;
         size_t aliasLen = 0;
-        OhCloudExtDatabaseGetAlias(pDb.get(), &alias, &aliasLen);
+        OhCloudExtDatabaseGetAlias(pDb.get(), &alias, reinterpret_cast<unsigned int *>(&aliasLen));
         if (alias == nullptr) {
             return;
         }
@@ -206,16 +206,16 @@ void CloudServerImpl::GetTables(std::shared_ptr<OhCloudExtHashMap> tables, DBMet
     auto pKeys = std::shared_ptr<OhCloudExtVector>(keys, [](auto *keys) { OhCloudExtVectorFree(keys); });
     auto pValues = std::shared_ptr<OhCloudExtVector>(values, [](auto *values) { OhCloudExtVectorFree(values); });
     size_t keysLen = 0;
-    OhCloudExtVectorGetLength(pKeys.get(), &keysLen);
+    OhCloudExtVectorGetLength(pKeys.get(), reinterpret_cast<unsigned int *>(&keysLen));
     size_t valuesLen = 0;
-    OhCloudExtVectorGetLength(pValues.get(), &valuesLen);
+    OhCloudExtVectorGetLength(pValues.get(), reinterpret_cast<unsigned int *>(&valuesLen));
     if (keysLen == 0 || keysLen != valuesLen) {
         return;
     }
     for (size_t i = 0; i < valuesLen; i++) {
         void *value = nullptr;
         size_t valueLen = 0;
-        status = OhCloudExtVectorGet(pValues.get(), i, &value, &valueLen);
+        status = OhCloudExtVectorGet(pValues.get(), i, &value, reinterpret_cast<unsigned int *>(&valueLen));
         if (status != ERRNO_SUCCESS || value == nullptr) {
             return;
         }
@@ -240,14 +240,14 @@ void CloudServerImpl::GetTableInfo(std::shared_ptr<OhCloudExtTable> pTable, DBTa
 {
     unsigned char *tbName = nullptr;
     size_t tbNameLen = 0;
-    OhCloudExtTableGetName(pTable.get(), &tbName, &tbNameLen);
+    OhCloudExtTableGetName(pTable.get(), &tbName, reinterpret_cast<unsigned int *>(&tbNameLen));
     if (tbName == nullptr) {
         return;
     }
     dbTable.name = std::string(reinterpret_cast<char *>(tbName), tbNameLen);
     unsigned char *tbAlias = nullptr;
     size_t tbAliasLen = 0;
-    OhCloudExtTableGetAlias(pTable.get(), &tbAlias, &tbAliasLen);
+    OhCloudExtTableGetAlias(pTable.get(), &tbAlias, reinterpret_cast<unsigned int *>(&tbAliasLen));
     if (tbAlias == nullptr) {
         return;
     }
@@ -257,7 +257,7 @@ void CloudServerImpl::GetTableInfo(std::shared_ptr<OhCloudExtTable> pTable, DBTa
 void CloudServerImpl::GetFields(std::shared_ptr<OhCloudExtVector> fields, DBTable &dbTable)
 {
     size_t fieldsLen = 0;
-    auto status = OhCloudExtVectorGetLength(fields.get(), &fieldsLen);
+    auto status = OhCloudExtVectorGetLength(fields.get(), reinterpret_cast<unsigned int *>(&fieldsLen));
     if (status != ERRNO_SUCCESS || fieldsLen == 0) {
         return;
     }
@@ -265,7 +265,7 @@ void CloudServerImpl::GetFields(std::shared_ptr<OhCloudExtVector> fields, DBTabl
     for (size_t i = 0; i < fieldsLen; i++) {
         void *value = nullptr;
         size_t valueLen = 0;
-        status = OhCloudExtVectorGet(fields.get(), i, &value, &valueLen);
+        status = OhCloudExtVectorGet(fields.get(), i, &value, reinterpret_cast<unsigned int *>(&valueLen));
         if (status != ERRNO_SUCCESS || value == nullptr) {
             return;
         }
@@ -274,14 +274,14 @@ void CloudServerImpl::GetFields(std::shared_ptr<OhCloudExtVector> fields, DBTabl
         DBField dbField;
         unsigned char *colName = nullptr;
         size_t colLen = 0;
-        OhCloudExtFieldGetColName(pField.get(), &colName, &colLen);
+        OhCloudExtFieldGetColName(pField.get(), &colName, reinterpret_cast<unsigned int *>(&colLen));
         if (colName == nullptr) {
             return;
         }
         dbField.colName = std::string(reinterpret_cast<char *>(colName), colLen);
         unsigned char *fdAlias = nullptr;
         size_t fdAliasLen = 0;
-        OhCloudExtFieldGetAlias(pField.get(), &fdAlias, &fdAliasLen);
+        OhCloudExtFieldGetAlias(pField.get(), &fdAlias, reinterpret_cast<unsigned int *>(&fdAliasLen));
         if (fdAlias == nullptr) {
             return;
         }
@@ -358,14 +358,14 @@ int32_t CloudServerImpl::DoSubscribe(int32_t userId, std::shared_ptr<OhCloudExtC
     if (errs != nullptr) {
         auto pErrs = std::shared_ptr<OhCloudExtVector>(errs, [](auto *errs) { OhCloudExtVectorFree(errs); });
         size_t errsLen = 0;
-        status = OhCloudExtVectorGetLength(pErrs.get(), &errsLen);
+        status = OhCloudExtVectorGetLength(pErrs.get(), reinterpret_cast<unsigned int *>(&errsLen));
         if (status != ERRNO_SUCCESS || errsLen == 0) {
             return DBErr::E_ERROR;
         }
         for (size_t i = 0; i < errsLen; i++) {
             void *value = nullptr;
             size_t valueLen = 0;
-            status = OhCloudExtVectorGet(pErrs.get(), i, &value, &valueLen);
+            status = OhCloudExtVectorGet(pErrs.get(), i, &value, reinterpret_cast<unsigned int *>(&valueLen));
             if (status != ERRNO_SUCCESS || value == nullptr) {
                 return DBErr::E_ERROR;
             }
@@ -390,7 +390,7 @@ int32_t CloudServerImpl::SaveSubscription(int32_t userId, std::shared_ptr<OhClou
     auto pInfo = std::shared_ptr<OhCloudExtCloudInfo>(info, [](auto *info) { OhCloudExtCloudInfoFree(info); });
     unsigned char *id = nullptr;
     size_t idLen = 0;
-    status = OhCloudExtCloudInfoGetId(pInfo.get(), &id, &idLen);
+    status = OhCloudExtCloudInfoGetId(pInfo.get(), &id, reinterpret_cast<unsigned int *>(&idLen));
     if (status != ERRNO_SUCCESS || id == nullptr) {
         return DBErr::E_ERROR;
     }
@@ -423,14 +423,14 @@ int32_t CloudServerImpl::SaveRelation(std::shared_ptr<OhCloudExtVector> keys,
     std::shared_ptr<OhCloudExtVector> values, DBSub &sub)
 {
     size_t valuesLen = 0;
-    auto status = OhCloudExtVectorGetLength(values.get(), &valuesLen);
+    auto status = OhCloudExtVectorGetLength(values.get(), reinterpret_cast<unsigned int *>(&valuesLen));
     if (status != ERRNO_SUCCESS || valuesLen == 0) {
         return DBErr::E_ERROR;
     }
     for (size_t i = 0; i < valuesLen; i++) {
         void *value = nullptr;
         size_t valueLen = 0;
-        OhCloudExtVectorGet(values.get(), i, &value, &valueLen);
+        OhCloudExtVectorGet(values.get(), i, &value, reinterpret_cast<unsigned int *>(&valueLen));
         if (value == nullptr) {
             return DBErr::E_ERROR;
         }
@@ -440,7 +440,7 @@ int32_t CloudServerImpl::SaveRelation(std::shared_ptr<OhCloudExtVector> keys,
         });
         unsigned char *bundle = nullptr;
         size_t bundleLen = 0;
-        OhCloudExtRelationSetGetBundleName(pRelationSet.get(), &bundle, &bundleLen);
+        OhCloudExtRelationSetGetBundleName(pRelationSet.get(), &bundle, reinterpret_cast<unsigned int *>(&bundleLen));
         if (bundle == nullptr) {
             return DBErr::E_ERROR;
         }
@@ -481,23 +481,23 @@ int32_t CloudServerImpl::GetRelation(std::shared_ptr<OhCloudExtHashMap> relation
     auto pKeys = std::shared_ptr<OhCloudExtVector>(keys, [](auto *keys) { OhCloudExtVectorFree(keys); });
     auto pValues = std::shared_ptr<OhCloudExtVector>(values, [](auto *values) { OhCloudExtVectorFree(values); });
     size_t keysLen = 0;
-    OhCloudExtVectorGetLength(pKeys.get(), &keysLen);
+    OhCloudExtVectorGetLength(pKeys.get(), reinterpret_cast<unsigned int *>(&keysLen));
     size_t valuesLen = 0;
-    OhCloudExtVectorGetLength(pValues.get(), &valuesLen);
+    OhCloudExtVectorGetLength(pValues.get(), reinterpret_cast<unsigned int *>(&valuesLen));
     if (keysLen == 0 || keysLen != valuesLen) {
         return DBErr::E_ERROR;
     }
     for (size_t i = 0; i < keysLen; i++) {
         void *dbName = nullptr;
         size_t dbNameLen = 0;
-        status = OhCloudExtVectorGet(pKeys.get(), i, &dbName, &dbNameLen);
+        status = OhCloudExtVectorGet(pKeys.get(), i, &dbName, reinterpret_cast<unsigned int *>(&dbNameLen));
         if (status != ERRNO_SUCCESS || dbName == nullptr) {
             return DBErr::E_ERROR;
         }
         std::string databaseName(reinterpret_cast<char *>(dbName), dbNameLen);
         void *subId = nullptr;
         size_t subIdLen = 0;
-        status = OhCloudExtVectorGet(pValues.get(), i, &subId, &subIdLen);
+        status = OhCloudExtVectorGet(pValues.get(), i, &subId, reinterpret_cast<unsigned int *>(&subIdLen));
         if (status != ERRNO_SUCCESS || subId == nullptr) {
             return DBErr::E_ERROR;
         }
@@ -570,14 +570,14 @@ int32_t CloudServerImpl::DoUnsubscribe(std::shared_ptr<OhCloudExtCloudSync> serv
     if (errs != nullptr) {
         auto pErrs = std::shared_ptr<OhCloudExtVector>(errs, [](auto *errs) { OhCloudExtVectorFree(errs); });
         size_t errsLen = 0;
-        OhCloudExtVectorGetLength(pErrs.get(), &errsLen);
+        OhCloudExtVectorGetLength(pErrs.get(), reinterpret_cast<unsigned int *>(&errsLen));
         if (errsLen != bundles.size()) {
             return DBErr::E_ERROR;
         }
         for (size_t i = 0; i < errsLen; i++) {
             void *value = nullptr;
             size_t valueLen = 0;
-            status = OhCloudExtVectorGet(pErrs.get(), i, &value, &valueLen);
+            status = OhCloudExtVectorGet(pErrs.get(), i, &value, reinterpret_cast<unsigned int *>(&valueLen));
             if (status != ERRNO_SUCCESS || value == nullptr) {
                 return DBErr::E_ERROR;
             }

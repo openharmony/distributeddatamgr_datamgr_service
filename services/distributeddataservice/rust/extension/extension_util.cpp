@@ -178,7 +178,7 @@ DBVBuckets ExtensionUtil::ConvertBuckets(OhCloudExtVector *values)
 {
     DBVBuckets buckets;
     size_t len = 0;
-    auto status = OhCloudExtVectorGetLength(values, &len);
+    auto status = OhCloudExtVectorGetLength(values, reinterpret_cast<unsigned int *>(&len));
     if (status != ERRNO_SUCCESS || len == 0) {
         return buckets;
     }
@@ -186,7 +186,7 @@ DBVBuckets ExtensionUtil::ConvertBuckets(OhCloudExtVector *values)
     for (size_t i = 0; i < len; i++) {
         void *value = nullptr;
         size_t valueLen = 0;
-        status = OhCloudExtVectorGet(values, i, &value, &valueLen);
+        status = OhCloudExtVectorGet(values, i, &value, reinterpret_cast<unsigned int *>(&valueLen));
         if (status != ERRNO_SUCCESS || value == nullptr) {
             return buckets;
         }
@@ -214,21 +214,21 @@ DBVBucket ExtensionUtil::ConvertBucket(OhCloudExtHashMap *value)
     });
     size_t valKeysLen = 0;
     size_t valValuesLen = 0;
-    OhCloudExtVectorGetLength(pValKeys.get(), &valKeysLen);
-    OhCloudExtVectorGetLength(pValValues.get(), &valValuesLen);
+    OhCloudExtVectorGetLength(pValKeys.get(), reinterpret_cast<unsigned int *>(&valKeysLen));
+    OhCloudExtVectorGetLength(pValValues.get(), reinterpret_cast<unsigned int *>(&valValuesLen));
     if (valKeysLen == 0 || valKeysLen != valValuesLen) {
         return bucket;
     }
     for (size_t j = 0; j < valKeysLen; j++) {
         void *keyItem = nullptr;
         size_t keyItemLen = 0;
-        status = OhCloudExtVectorGet(pValKeys.get(), j, &keyItem, &keyItemLen);
+        status = OhCloudExtVectorGet(pValKeys.get(), j, &keyItem, reinterpret_cast<unsigned int *>(&keyItemLen));
         if (status != ERRNO_SUCCESS || keyItem == nullptr) {
             return bucket;
         }
         void *valueItem = nullptr;
         size_t valueItemLen = 0;
-        status = OhCloudExtVectorGet(pValValues.get(), j, &valueItem, &valueItemLen);
+        status = OhCloudExtVectorGet(pValValues.get(), j, &valueItem, reinterpret_cast<unsigned int *>(&valueItemLen));
         if (status != ERRNO_SUCCESS || valueItem == nullptr) {
             return bucket;
         }
@@ -246,7 +246,7 @@ DBValue ExtensionUtil::ConvertValue(OhCloudExtValue *value)
     OhCloudExtValueType type = OhCloudExtValueType::VALUEINNERTYPE_EMPTY;
     void *content = nullptr;
     size_t ctLen = 0;
-    auto status = OhCloudExtValueGetContent(value, &type, &content, &ctLen);
+    auto status = OhCloudExtValueGetContent(value, &type, &content, reinterpret_cast<unsigned int *>(&ctLen));
     if (status != ERRNO_SUCCESS || content == nullptr) {
         return result;
     }
@@ -316,7 +316,7 @@ DBAssets ExtensionUtil::ConvertAssets(OhCloudExtVector *values)
 {
     DBAssets result;
     size_t assetsLen = 0;
-    auto status = OhCloudExtVectorGetLength(values, &assetsLen);
+    auto status = OhCloudExtVectorGetLength(values, reinterpret_cast<unsigned int *>(&assetsLen));
     if (status != ERRNO_SUCCESS || assetsLen == 0) {
         return result;
     }
@@ -324,7 +324,7 @@ DBAssets ExtensionUtil::ConvertAssets(OhCloudExtVector *values)
     for (size_t i = 0; i < assetsLen; i++) {
         void *value = nullptr;
         size_t valueLen = 0;
-        status = OhCloudExtVectorGet(values, i, &value, &valueLen);
+        status = OhCloudExtVectorGet(values, i, &value, reinterpret_cast<unsigned int *>(&valueLen));
         if (status != ERRNO_SUCCESS || value == nullptr) {
             return result;
         }
@@ -340,28 +340,28 @@ DBAsset ExtensionUtil::ConvertAsset(OhCloudExtCloudAsset *asset)
     DBAsset result;
     unsigned char *id = nullptr;
     size_t idLen = 0;
-    auto status = OhCloudExtCloudAssetGetId(asset, &id, &idLen);
+    auto status = OhCloudExtCloudAssetGetId(asset, &id, reinterpret_cast<unsigned int *>(&idLen));
     if (status != ERRNO_SUCCESS || id == nullptr) {
         return result;
     }
     result.id = std::string(reinterpret_cast<char *>(id), idLen);
     unsigned char *name = nullptr;
     size_t nameLen = 0;
-    status = OhCloudExtCloudAssetGetName(asset, &name, &nameLen);
+    status = OhCloudExtCloudAssetGetName(asset, &name, reinterpret_cast<unsigned int *>(&nameLen));
     if (status != ERRNO_SUCCESS || name == nullptr) {
         return result;
     }
     result.name = std::string(reinterpret_cast<char *>(name), nameLen);
     unsigned char *uri = nullptr;
     size_t uriLen = 0;
-    status = OhCloudExtCloudAssetGetUri(asset, &uri, &uriLen);
+    status = OhCloudExtCloudAssetGetUri(asset, &uri, reinterpret_cast<unsigned int *>(&uriLen));
     if (status != ERRNO_SUCCESS || uri == nullptr) {
         return result;
     }
     result.uri = std::string(reinterpret_cast<char *>(uri), uriLen);
     unsigned char *crtTime = nullptr;
     size_t crtTimeLen = 0;
-    status = OhCloudExtCloudAssetGetCreateTime(asset, &crtTime, &crtTimeLen);
+    status = OhCloudExtCloudAssetGetCreateTime(asset, &crtTime, reinterpret_cast<unsigned int *>(&crtTimeLen));
     if (status != ERRNO_SUCCESS || crtTime == nullptr) {
         return result;
     }
@@ -374,28 +374,28 @@ void ExtensionUtil::ConvertAssetLeft(OhCloudExtCloudAsset *asset, DBAsset &dbAss
 {
     unsigned char *mdTime = nullptr;
     size_t mdTimeLen = 0;
-    auto status = OhCloudExtCloudAssetGetModifiedTime(asset, &mdTime, &mdTimeLen);
+    auto status = OhCloudExtCloudAssetGetModifiedTime(asset, &mdTime, reinterpret_cast<unsigned int *>(&mdTimeLen));
     if (status != ERRNO_SUCCESS || mdTime == nullptr) {
         return;
     }
     dbAsset.modifyTime = std::string(reinterpret_cast<char *>(mdTime), mdTimeLen);
     unsigned char *size = nullptr;
     size_t sizeLen = 0;
-    status = OhCloudExtCloudAssetGetSize(asset, &size, &sizeLen);
+    status = OhCloudExtCloudAssetGetSize(asset, &size, reinterpret_cast<unsigned int *>(&sizeLen));
     if (status != ERRNO_SUCCESS || size == nullptr) {
         return;
     }
     dbAsset.size = std::string(reinterpret_cast<char *>(size), sizeLen);
     unsigned char *hash = nullptr;
     size_t hashLen = 0;
-    status = OhCloudExtCloudAssetGetHash(asset, &hash, &hashLen);
+    status = OhCloudExtCloudAssetGetHash(asset, &hash, reinterpret_cast<unsigned int *>(&hashLen));
     if (status != ERRNO_SUCCESS || hash == nullptr) {
         return;
     }
     dbAsset.hash = std::string(reinterpret_cast<char *>(hash), hashLen);
     unsigned char *path = nullptr;
     size_t pathLen = 0;
-    status = OhCloudExtCloudAssetGetLocalPath(asset, &path, &pathLen);
+    status = OhCloudExtCloudAssetGetLocalPath(asset, &path, reinterpret_cast<unsigned int *>(&pathLen));
     if (status != ERRNO_SUCCESS || path == nullptr) {
         return;
     }
@@ -407,14 +407,14 @@ DBInfo ExtensionUtil::ConvertAppInfo(OhCloudExtAppInfo *appInfo)
     DBInfo info;
     unsigned char *appId = nullptr;
     size_t appIdLen = 0;
-    auto status = OhCloudExtAppInfoGetAppId(appInfo, &appId, &appIdLen);
+    auto status = OhCloudExtAppInfoGetAppId(appInfo, &appId, reinterpret_cast<unsigned int *>(&appIdLen));
     if (status != ERRNO_SUCCESS || appId == nullptr) {
         return info;
     }
     info.appId = std::string(reinterpret_cast<char *>(appId), appIdLen);
     unsigned char *bundle = nullptr;
     size_t bundleLen = 0;
-    status = OhCloudExtAppInfoGetBundleName(appInfo, &bundle, &bundleLen);
+    status = OhCloudExtAppInfoGetBundleName(appInfo, &bundle, reinterpret_cast<unsigned int *>(&bundleLen));
     if (status != ERRNO_SUCCESS || bundle == nullptr) {
         return info;
     }
