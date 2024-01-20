@@ -40,11 +40,11 @@ CloudCursorImpl::CloudCursorImpl(OhCloudExtCloudDbData *cloudData) : cloudData_(
     if (values_ == nullptr) {
         return;
     }
-    OhCloudExtVectorGetLength(values_, &valuesLen_);
+    OhCloudExtVectorGetLength(values_, reinterpret_cast<unsigned int *>(&valuesLen_));
     if (valuesLen_ > 0) {
         void *values = nullptr;
         size_t valueLen = 0;
-        auto status = OhCloudExtVectorGet(values_, 0, &values, &valueLen);
+        auto status = OhCloudExtVectorGet(values_, 0, &values, reinterpret_cast<unsigned int *>(&valueLen));
         if (status == ERRNO_SUCCESS && values != nullptr) {
             OhCloudExtValueBucket *vBucket = reinterpret_cast<OhCloudExtValueBucket *>(values);
             auto data = GetData(vBucket);
@@ -59,7 +59,8 @@ CloudCursorImpl::CloudCursorImpl(OhCloudExtCloudDbData *cloudData) : cloudData_(
     finished_ = !hasMore;
     unsigned char *cursor = nullptr;
     size_t cursorLen = 0;
-    auto status = OhCloudExtCloudDbDataGetNextCursor(cloudData_, &cursor, &cursorLen);
+    auto status = OhCloudExtCloudDbDataGetNextCursor(
+        cloudData_, &cursor, reinterpret_cast<unsigned int *>(&cursorLen));
     if (status == ERRNO_SUCCESS && cursor != nullptr) {
         cursor_ = std::string(reinterpret_cast<char *>(cursor), cursorLen);
     }
@@ -150,7 +151,7 @@ int32_t CloudCursorImpl::GetEntry(DBVBucket &entry)
     }
     void *values = nullptr;
     size_t valueLen = 0;
-    auto status = OhCloudExtVectorGet(values_, index_, &values, &valueLen);
+    auto status = OhCloudExtVectorGet(values_, index_, &values, reinterpret_cast<unsigned int *>(&valueLen));
     if (status != ERRNO_SUCCESS || values == nullptr) {
         return DBErr::E_ERROR;
     }
@@ -174,7 +175,7 @@ std::vector<std::pair<std::string, DBValue>> CloudCursorImpl::GetData(OhCloudExt
     std::vector<std::pair<std::string, DBValue>> result {};
     OhCloudExtVector *keys = nullptr;
     size_t keysLen = 0;
-    auto status = OhCloudExtValueBucketGetKeys(vb, &keys, &keysLen);
+    auto status = OhCloudExtValueBucketGetKeys(vb, &keys, reinterpret_cast<unsigned int *>(&keysLen));
     if (status != ERRNO_SUCCESS || keys == nullptr) {
         return result;
     }
@@ -182,7 +183,7 @@ std::vector<std::pair<std::string, DBValue>> CloudCursorImpl::GetData(OhCloudExt
     for (size_t i = 0; i < keysLen; i++) {
         void *value = nullptr;
         size_t valueLen = 0;
-        auto status = OhCloudExtVectorGet(pKeys.get(), i, &value, &valueLen);
+        auto status = OhCloudExtVectorGet(pKeys.get(), i, &value, reinterpret_cast<unsigned int *>(&valueLen));
         if (status != ERRNO_SUCCESS && value == nullptr) {
             return result;
         }
@@ -210,7 +211,7 @@ DBValue CloudCursorImpl::GetExtend(OhCloudExtValueBucket *vb, const std::string 
     OhCloudExtValueType type = OhCloudExtValueType::VALUEINNERTYPE_EMPTY;
     void *content = nullptr;
     size_t ctLen = 0;
-    status = OhCloudExtValueBucketGetValue(vb, keyName, &type, &content, &ctLen);
+    status = OhCloudExtValueBucketGetValue(vb, keyName, &type, &content, reinterpret_cast<unsigned int *>(&ctLen));
     if (status != ERRNO_SUCCESS || content == nullptr) {
         return result;
     }
@@ -262,7 +263,7 @@ int32_t CloudCursorImpl::Get(const std::string &col, DBValue &value)
 
     void *data = nullptr;
     size_t valueLen = 0;
-    auto status = OhCloudExtVectorGet(values_, index_, &data, &valueLen);
+    auto status = OhCloudExtVectorGet(values_, index_, &data, reinterpret_cast<unsigned int *>(&valueLen));
     if (status != ERRNO_SUCCESS || data == nullptr) {
         return DBErr::E_ERROR;
     }
