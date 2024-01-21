@@ -19,7 +19,7 @@
 #include "device_matrix.h"
 #include "executor_pool.h"
 #include "accesstoken_kit.h"
-#include "bootstrap.h
+#include "bootstrap.h"
 #include "token_setproc.h"
 #include "nativetoken_kit.h"
 #include "kvstore_meta_manager.h"
