@@ -48,12 +48,12 @@ public:
 
 protected:
     StoreMetaData metaData_;
-    Options Options_;
+    Options options_;
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
     int32_t GetInstIndex(uint32_t tokenId, const DistributedKv::AppId &appId);
 };
 
-int32_t MetaDataTest::GetInstIndex(uint32_t tokenId, const AppId &appId)
+int32_t MetaDataTest::GetInstIndex(uint32_t tokenId, const DistributedKv::AppId &appId)
 {
     if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
         return 0;
@@ -100,9 +100,9 @@ void MetaDataTest::SetUpTestCase(void)
     size_t min = 5;
     auto executors = std::make_shared<OHOS::ExecutorPool>(max, min);
     DmAdapter::GetInstance().Init(executors);
-    KvStoreMetaManager::GetInstance().BindExecutor(executors);
-    KvStoreMetaManager::GetInstance().InitMetaParameter();
-    KvStoreMetaManager::GetInstance().InitMetaListener();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
 }
 
 void MetaDataTest::TearDownTestCase() {}
