@@ -154,7 +154,7 @@ HWTEST_F(MetaDataTest, MateDataChanged, TestSize.Level0)
     options_.isNeedCompress = false;
     StoreMetaData metaData;
     std::vector<uint8_t> password {};
-    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, option, password);
+    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
     ASSERT_EQ(status, Status::SUCCESS);
     ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData));
     ASSERT_FALSE(metaData.isNeedCompress);
