@@ -17,20 +17,28 @@
 #include "log_print.h"
 #include "ipc_skeleton.h"
 #include "device_matrix.h"
+#include "executor_pool.h"
+#include "accesstoken_kit.h"
+#include "bootstrap.h
+#include "token_setproc.h"
+#include "nativetoken_kit.h"
+#include "kvstore_meta_manager.h"
 #include "device_manager_adapter.h"
-#include "mock/db_store_mock.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "kvdb_service_impl.h"
 #include "metadata/store_meta_data_local.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-
+using Status = OHOS::DistributedKv::Status;
+using Options = OHOS::DistributedKv::Options;
+static OHOS::DistributedKv::StoreId storeId = { "meta_test_storeid" };
+static OHOS::DistributedKv::AppId appId = { "ohos.test.metadata" };
+static constexpr const char *TEST_USER = "0";
 namespace OHOS::Test {
 namespace DistributedDataTest {
-static constexpr const char *TEST_BUNDLE = "meta_test_bundleName";
-static constexpr const char *TEST_APPID = "meta_test_appid";
-static constexpr const char *TEST_STORE = "meta_test_storeid";
 class MetaDataTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -40,73 +48,118 @@ public:
 
 protected:
     StoreMetaData metaData_;
-    static std::shared_ptr<DBStoreMock> dbStoreMock_;
+    Options Options_;
+    std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
+    int32_t GetInstIndex(uint32_t tokenId, const DistributedKv::AppId &appId)
+
 };
 
-void MetaDataTest::SetUpTestCase(void) {}
+int32_t MetaDataTest::GetInstIndex(uint32_t tokenId, const AppId &appId)
+{
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        return 0;
+    }
+
+    HapTokenInfo tokenInfo;
+    tokenInfo.instIndex = -1;
+    int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (errCode != RET_SUCCESS) {
+        return -1;
+    }
+    return tokenInfo.instIndex;
+}
+
+void GrantPermissionNative()
+{
+    const char **perms = new const char *[2];
+    perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
+    perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 2,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    AccessTokenKit::ReloadNativeTokenInfo();
+    delete []perms;
+}
+
+void MetaDataTest::SetUpTestCase(void) {
+
+    DistributedData::Bootstrap::GetInstance().LoadComponents();
+    DistributedData::Bootstrap::GetInstance().LoadDirectory();
+    DistributedData::Bootstrap::GetInstance().LoadCheckers();
+    GrantPermissionNative();
+
+    size_t max = 12;
+    size_t min = 5;
+    auto executors = std::make_shared<OHOS::ExecutorPool>(max, min);
+    DmAdapter::GetInstance().Init(executors);
+    KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
+    KvStoreMetaManager::GetInstance().InitMetaListener();
+}
 
 void MetaDataTest::TearDownTestCase() {}
 
 void MetaDataTest::SetUp()
 {
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, [](const auto &, auto) {
-        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
-    });
-    
+    options_.isNeedCompress = true;
+    kvdbServiceImpl_ = std::make_shared<DistributedKv::KVDBServiceImpl>();
     metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData_.appId = TEST_APPID;
-    metaData_.bundleName = TEST_BUNDLE;
-    metaData_.storeId = TEST_STORE;
-    metaData_.instanceId = 0;
-    metaData_.isAutoSync = true;
-    metaData_.storeType = 1;
+    metaData_.bundleName = appId.appId;
+    metaData_.storeId = storeId.storeId;
+    metaData_.user = TEST_USER;
     metaData_.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    metaData_.isNeedCompress = false;
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_);
+    metaData_.instanceId = GetInstIndex(metaData_.tokenId, appId);
+    metaData_.version = 1;
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
 }
 
 void MetaDataTest::TearDown() {}
 
 /**
-* @tc.name: LoadMetaData
-* @tc.desc: save and load meta data
+* @tc.name: SaveLoadMateData
+* @tc.desc: save meta data
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: yl
 */
-HWTEST_F(MetaDataTest, LoadMetaData, TestSize.Level0)
+HWTEST_F(MetaDataTest, SaveLoadMateData, TestSize.Level0)
 {
-    ZLOGI("MetaDataTest start");
+    ZLOGI("SaveLoadMateData start");
     StoreMetaData metaData;
+    std::vector<uint8_t> password {};
+    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
+    ASSERT_EQ(status, Status::SUCCESS);
     ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData));
-    ASSERT_FALSE(metaData.isNeedCompress);
+    ASSERT_TRUE(metaData.isNeedCompress);
 }
 
 /**
 * @tc.name: MetaDataChanged
-* @tc.desc: meta data changed and save meta
+* @tc.desc: meta data changed
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: yl
 */
-HWTEST_F(MetaDataTest, MateDataChangeed, TestSize.Level0)
+HWTEST_F(MetaDataTest, MateDataChanged, TestSize.Level0)
 {
-    ZLOGI("MetaDataTest start");
-    StoreMetaData oldMeta;
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), oldMeta));
-    StoreMetaData changeMeta;
-    changeMeta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    changeMeta.appId = TEST_APPID;
-    changeMeta.bundleName = TEST_BUNDLE;
-    changeMeta.storeId = TEST_STORE;
-    changeMeta.instanceId = 0;
-    changeMeta.isAutoSync = true;
-    changeMeta.storeType = 1;
-    changeMeta.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    changeMeta.isNeedCompress = true;
-    ASSERT_NE(changeMeta, oldMeta);
-    ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), changeMeta));
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
+    ZLOGI("MateDataChangeed start");
+    options_.isNeedCompress = false;
+    StoreMetaData metaData;
+    std::vector<uint8_t> password {};
+    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, option, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData));
+    ASSERT_FALSE(metaData.isNeedCompress);
+    ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey()));
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

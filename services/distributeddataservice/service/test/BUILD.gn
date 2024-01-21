@@ -314,17 +314,30 @@ ohos_unittest("ObjectAssetMachineTest") {
 ohos_unittest("MetaDataTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "meta_data_test.cpp",
-    "mock/db_change_data_mock.cpp",
-    "mock/db_store_mock.cpp",
+  ]
+
+  include_dirs = [
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/account",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/kvdb/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "//foundation/distributeddatamgr/kv_store/frameworks/innerkitsimpl/distributeddatasvc/include",
   ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
     "c_utils:utils",
+    "dataclassification:data_transit_mgr",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
 
   deps = [
