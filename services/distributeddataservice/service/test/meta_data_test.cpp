@@ -50,8 +50,7 @@ protected:
     StoreMetaData metaData_;
     Options Options_;
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
-    int32_t GetInstIndex(uint32_t tokenId, const DistributedKv::AppId &appId)
-
+    int32_t GetInstIndex(uint32_t tokenId, const DistributedKv::AppId &appId);
 };
 
 int32_t MetaDataTest::GetInstIndex(uint32_t tokenId, const AppId &appId)
@@ -90,8 +89,8 @@ void GrantPermissionNative()
     delete []perms;
 }
 
-void MetaDataTest::SetUpTestCase(void) {
-
+void MetaDataTest::SetUpTestCase(void)
+{
     DistributedData::Bootstrap::GetInstance().LoadComponents();
     DistributedData::Bootstrap::GetInstance().LoadDirectory();
     DistributedData::Bootstrap::GetInstance().LoadCheckers();
