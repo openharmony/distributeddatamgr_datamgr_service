@@ -68,17 +68,23 @@ void SchedulerManager::SetTimer(
         std::chrono::system_clock::now().time_since_epoch()).count();
     // reminder time must is in future
     if (reminderTime <= now || reminderTime - now >= MAX_MILLISECONDS) {
-        ZLOGE("reminderTime is not in future, %{public}" PRId64 "%{public}" PRId64, reminderTime, now);
+        ZLOGE("invalid args, %{public}" PRId64 ", %{public}" PRId64 ", subId=%{public}" PRId64
+            ", bundleName=%{public}s.", reminderTime, now, key.subscriberId, key.bundleName.c_str());
         return;
     }
     auto duration = std::chrono::milliseconds(reminderTime - now);
-    ZLOGI("reminderTime will notify in %{public}" PRId64 " milliseconds", reminderTime - now);
+    ZLOGI("the task will notify in %{public}" PRId64 " ms, %{public}" PRId64 ", %{public}s.",
+          reminderTime - now, key.subscriberId, key.bundleName.c_str());
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         // has current timer, reset time
         ZLOGD("has current taskId, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
             key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
-        executor_->Reset(it->second, duration);
+        auto taskId = executor_->Reset(it->second, duration);
+        if (taskId == ExecutorPool::INVALID_TASK_ID) {
+          ZLOGE("the task %{public}" PRIu64 " already invalid, %{public}" PRId64 ", %{public}s.", it->second,
+                key.subscriberId, key.bundleName.c_str());
+        }
         return;
     }
     // not find task in map, create new timer

@@ -167,14 +167,15 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId)
     rdbCache_.EraseIf([&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end();) {
             if (it->callerTokenId == callerTokenId) {
-                ZLOGI("erase start, uri is %{public}s, tokenId 0x%{public}x",
-                    DistributedData::Anonymous::Change(key.uri).c_str(), callerTokenId);
                 it = value.erase(it);
             } else {
                 it++;
             }
         }
         if (value.empty()) {
+            ZLOGI("delete timer, subId %{public}" PRId64 ", bundleName %{public}s, tokenId %{public}x, uri %{public}s.",
+                key.subscriberId, key.bundleName.c_str(), callerTokenId,
+                DistributedData::Anonymous::Change(key.uri).c_str());
             SchedulerManager::GetInstance().RemoveTimer(key);
         }
         return value.empty();
