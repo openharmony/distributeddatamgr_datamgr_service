@@ -488,6 +488,22 @@ int32_t DataShareServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, 
     return E_OK;
 }
 
+int32_t DataShareServiceImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    ZLOGI("AppUninstall user=%{public}d, index=%{public}d, bundleName=%{public}s",
+        user, index, bundleName.c_str());
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    return E_OK;
+}
+
+int32_t DataShareServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
+{
+    ZLOGI("AppUpdate user=%{public}d, index=%{public}d, bundleName=%{public}s",
+        user, index, bundleName.c_str());
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    return E_OK;
+}
+
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
     ZLOGD("%{private}s try notified", uri.c_str());
