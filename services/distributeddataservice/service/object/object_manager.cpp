@@ -195,7 +195,8 @@ int32_t ObjectStoreManager::Retrieve(
         proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
     }
-    TransferAssets(results, tokenId, bundleName);
+    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    TransferAssets(results, userId, bundleName);
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
     if (status != OBJECT_SUCCESS) {
@@ -210,7 +211,7 @@ int32_t ObjectStoreManager::Retrieve(
 }
 
 void ObjectStoreManager::TransferAssets(
-    std::map<std::string, std::vector<uint8_t>>& results, int32_t tokenId, const std::string& bundleName)
+    std::map<std::string, std::vector<uint8_t>>& results, int32_t userId, const std::string& bundleName)
 {
     std::map<std::string, Asset> assets;
     std::string deviceId;
@@ -234,7 +235,6 @@ void ObjectStoreManager::TransferAssets(
         }
     }
     if (!assets.empty()) {
-        const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
         for (auto&[key, asset] : assets) {
             if (!ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset)) {
                 ZLOGE("Transfer fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
@@ -354,10 +354,21 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     ZLOGD("ObjectStoreManager::NotifyChange start");
     SaveUserToMeta();
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
+    std::map<std::string, std::map<std::string, std::vector<uint8_t>>> transferData;
     for (const auto &item : changedData) {
         std::string prefix = GetBundleName(item.first) + GetSessionId(item.first);
         std::string propertyName = GetPropertyName(item.first);
-        data[prefix].insert_or_assign(std::move(propertyName), std::move(item.second));
+        data[prefix].insert_or_assign(propertyName, item.second);
+
+        std::string bundleName = GetBundleName(item.first);
+        transferData[bundleName].insert_or_assign(std::move(propertyName), std::move(item.second));
+    }
+
+    const int32_t userId = std::stoi(GetCurrentUser());
+    for (auto item : transferData) {
+        std::string bundleName = item.first;
+        auto results = item.second;
+        TransferAssets(results, userId, bundleName);
     }
 
     callbacks_.ForEach([&data](uint32_t tokenId, CallbackInfo &value) {
