@@ -244,6 +244,40 @@ void ObjectStoreManager::TransferAssets(
     }
 }
 
+void ObjectStoreManager::TransferAssets2(
+    std::map<std::string, std::vector<uint8_t>>& results, int32_t userId, const std::string& bundleName)
+{
+    std::map<std::string, Asset> assets;
+    std::string deviceId;
+
+    for (auto const&[key, value] : results) {
+        if (key.find(ObjectStore::ASSET_DOT) == std::string::npos) {
+            if (key == (ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)) {
+                ObjectStore::StringUtils::BytesToStrWithType(value, deviceId);
+            }
+        } else {
+            std::string assetKey = key.substr(0, key.find(ObjectStore::ASSET_DOT));
+            auto it = assets.find(assetKey);
+            if (it == assets.end()) {
+                Asset asset;
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::NAME_SUFFIX], asset.name);
+                asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::URI_SUFFIX], asset.uri);
+                asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
+                assets[assetKey] = asset;
+            }
+        }
+    }
+    if (!assets.empty()) {
+        for (auto&[key, asset] : assets) {
+            if (!ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset)) {
+                ZLOGE("Transfer fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
+                    "%{public}s", userId, bundleName.c_str(), deviceId.c_str(), asset.name.c_str());
+            }
+        }
+    }
+}
+
 int32_t ObjectStoreManager::Clear()
 {
     ZLOGI("enter");
@@ -354,22 +388,22 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     ZLOGD("ObjectStoreManager::NotifyChange start");
     SaveUserToMeta();
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
+    std::map<std::string, std::map<std::string, std::vector<uint8_t>>> transferData;
     for (const auto &item : changedData) {
         std::string prefix = GetBundleName(item.first) + GetSessionId(item.first);
         std::string propertyName = GetPropertyName(item.first);
         data[prefix].insert_or_assign(std::move(propertyName), std::move(item.second));
+
+        std::string bundleName = GetBundleName(item.first);
+        transferData[bundleName].insert_or_assign(std::move(propertyName), std::move(item.second));
     }
 
-    callbacks_.ForEach([&data](uint32_t tokenId, CallbackInfo &value) {
-        for (const auto &observer : value.observers_) {
-            auto it = data.find(observer.first);
-            if (it == data.end()) {
-                continue;
-            }
-            observer.second->Completed((*it).second);
-        }
-        return false;
-    });
+    const int32_t userId = std::stoi(GetCurrentUser());
+    for (auto item : transferData) {
+        std::string bundleName = item.first;
+        auto data2 = item.second;
+        TransferAssets2(data2, userId, bundleName);
+    }
 }
 
 void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &userId)
