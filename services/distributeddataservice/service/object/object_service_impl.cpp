@@ -138,7 +138,8 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
-    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta);
+    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
+                   DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!isSaved) {
         ZLOGE("SaveMeta failed");
         return OBJECT_INNER_ERROR;

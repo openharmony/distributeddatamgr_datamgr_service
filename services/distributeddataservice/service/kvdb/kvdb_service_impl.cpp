@@ -178,6 +178,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
         return true;
     });
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
+    MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
@@ -435,6 +436,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
 
     if (!isCreated || oldMeta != metaData) {
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
     }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData.bundleName;

@@ -167,7 +167,8 @@ void KvStoreMetaManager::InitMetaData()
     data.securityLevel = SecurityLevel::S1;
     data.area = EL1;
     data.tokenId = tokenId;
-    if (!MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data)) {
+    if (!(MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data) &&
+        MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true))) {
         ZLOGE("save meta fail");
     }
     ZLOGI("end.");

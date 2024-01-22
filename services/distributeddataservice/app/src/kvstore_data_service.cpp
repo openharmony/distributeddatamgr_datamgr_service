@@ -605,13 +605,14 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
             g_kvStoreAccountEventStatus = 1;
             // delete all kvstore meta belong to this user
             std::vector<StoreMetaData> metaData;
-            MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({""}), metaData);
+            MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({""}), metaData, true);
             for (const auto &meta : metaData) {
                 if (meta.user != eventInfo.userId) {
                     continue;
                 }
                 ZLOGI("bundleName:%{public}s, user:%{public}s", meta.bundleName.c_str(), meta.user.c_str());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+                MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.appId, true);
@@ -749,7 +750,7 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
     std::vector<StoreMetaData> metaData;
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData, true)) {
         ZLOGE("Clear data load meta failed, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
             bundleName.c_str(), userId, appIndex);
         return ERROR;
@@ -760,6 +761,7 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
             ZLOGI("data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d", bundleName.c_str(),
                 Anonymous::Change(meta.storeId).c_str(), appIndex);
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
             MetaDataManager::GetInstance().DelMeta(meta.appId, true);
@@ -790,7 +792,7 @@ void KvStoreDataService::DumpStoreInfo(int fd, std::map<std::string, std::vector
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
@@ -944,7 +946,7 @@ void KvStoreDataService::DumpUserInfo(int fd, std::map<std::string, std::vector<
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
@@ -1044,7 +1046,7 @@ void KvStoreDataService::DumpBundleInfo(int fd, std::map<std::string, std::vecto
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }

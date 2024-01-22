@@ -69,7 +69,7 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true)) {
         ZLOGE("load meta failed! bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d", bundleName.c_str(),
             userId, appIndex);
         return;
@@ -79,6 +79,7 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
             ZLOGI("uninstalled bundleName:%{public}s storeId:%{public}s, userId:%{public}d, appIndex:%{public}d",
                 bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
             MetaDataManager::GetInstance().DelMeta(meta.appId, true);
@@ -94,7 +95,7 @@ void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t use
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true)) {
         ZLOGE("load meta failed! bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d", bundleName.c_str(),
             userId, appIndex);
         return;
