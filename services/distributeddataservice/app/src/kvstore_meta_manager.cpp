@@ -221,6 +221,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     option.isMemoryDb = false;
     option.createDirByStoreIdOnly = true;
     option.isEncryptedDb = false;
+    option.isNeedRmCorruptedDb = true;
     option.isNeedCompressOnSync = true;
     option.compressionRate = COMPRESS_RATE;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
