@@ -53,7 +53,7 @@ void BackupManager::Init()
 {
     std::vector<StoreMetaData> metas;
     MetaDataManager::GetInstance().LoadMeta(
-        StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas);
+        StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas, true);
     for (auto &meta : metas) {
         if (!meta.isBackup || meta.isDirty) {
                 continue;
@@ -108,7 +108,7 @@ void BackupManager::BackSchedule(std::shared_ptr<ExecutorPool> executors)
             ZLOGI("start automatic backup.");
             std::vector<StoreMetaData> metas;
             MetaDataManager::GetInstance().LoadMeta(
-                StoreMetaData::GetPrefix({ DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), metas);
+                StoreMetaData::GetPrefix({ DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), metas, true);
 
             int64_t end = std::min(startNum_ + backupNumber_, static_cast<int64_t>(metas.size()));
             for (int64_t i = startNum_; i < end; startNum_++, i++) {

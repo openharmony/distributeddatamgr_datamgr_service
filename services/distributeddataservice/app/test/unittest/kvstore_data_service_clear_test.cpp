@@ -214,6 +214,7 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level1)
     InitMetaData();
 
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetStrategyKey(), metaData_));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.appId, metaData_, true));
