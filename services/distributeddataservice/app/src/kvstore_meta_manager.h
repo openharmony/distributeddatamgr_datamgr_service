@@ -91,7 +91,7 @@ private:
     static constexpr int32_t RETRY_MAX_TIMES = 100;
     static constexpr int32_t RETRY_INTERVAL = 1;
     static constexpr uint8_t COMPRESS_RATE = 10;
-    static constexpr int32_t DELAY_SYNC = 150;
+    static constexpr int32_t DELAY_SYNC = 500;
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     const std::string label_;
