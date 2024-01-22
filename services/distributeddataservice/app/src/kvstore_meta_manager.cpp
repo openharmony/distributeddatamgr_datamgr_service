@@ -23,7 +23,6 @@
 #include "account_delegate.h"
 #include "bootstrap.h"
 #include "communication_provider.h"
-#include "communication_strategy.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -55,13 +54,14 @@ KvStoreMetaManager::KvStoreMetaManager()
       delegateManager_(Bootstrap::GetInstance().GetProcessLabel(), "default")
 {
     ZLOGI("begin.");
-    CommunicationStrategy::GetInstance().RegGetSyncDataSize("meta_store", [this](const std::string &deviceId) {
-        return this->GetSyncDataSize(deviceId);
-    });
 }
 
 KvStoreMetaManager::~KvStoreMetaManager()
 {
+    if (delaySyncTaskId_ != ExecutorPool::INVALID_TASK_ID) {
+        executors_->Remove(delaySyncTaskId_);
+        delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
+    }
 }
 
 KvStoreMetaManager &KvStoreMetaManager::GetInstance()
@@ -227,6 +227,8 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     option.createDirByStoreIdOnly = true;
     option.isEncryptedDb = false;
     option.isNeedRmCorruptedDb = true;
+    option.isNeedCompressOnSync = true;
+    option.compressionRate = COMPRESS_RATE;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
     DistributedDB::KvStoreNbDelegate *delegate = nullptr;
     delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
@@ -266,35 +268,49 @@ void KvStoreMetaManager::ConfigMetaDataManager()
         DistributedDB::CipherPassword password;
         return store->Export(fullName, password);
     };
-    auto syncer = [](const auto &store, int32_t status) {
-        ZLOGI("Syncer status: %{public}d", status);
+    auto syncer = [this](const auto &store, int32_t status) {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
+        ZLOGI("Syncer status: %{public}d", status);
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (delaySyncTaskId_ == Executor::INVALID_TASK_ID) {
+            delaySyncTaskId_ =
+                executors_->Schedule(std::chrono::milliseconds(DELAY_SYNC), SyncTask(store, status));
+        } else {
+            delaySyncTaskId_ =
+                executors_->Reset(delaySyncTaskId_, std::chrono::milliseconds(DELAY_SYNC));
+        }
+    };
+    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup, syncer);
+}
+
+std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int32_t status)
+{
+    return [this, store, status]() mutable {
+        {
+            std::lock_guard<decltype(mutex_)> lock(mutex_);
+            delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
+        }
         std::vector<std::string> devs;
         auto devices = DmAdapter::GetInstance().GetRemoteDevices();
         for (auto const &dev : devices) {
             devs.push_back(dev.uuid);
         }
-
         if (devs.empty()) {
-            ZLOGW("no devices need sync meta data.");
             return;
         }
-
         status = store->Sync(devs, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, [](auto &results) {
-            ZLOGD("meta data sync completed.");
             for (auto &[uuid, status] : results) {
                 if (status != DistributedDB::OK) {
                     continue;
                 }
                 DeviceMatrix::GetInstance().OnExchanged(uuid, DeviceMatrix::META_STORE_MASK);
+                ZLOGI("uuid is: %{public}s, and status is: %{public}d", uuid.c_str(), status);
             }
         });
-
         if (status != DistributedDB::OK) {
             ZLOGW("meta data sync error %{public}d.", status);
         }
     };
-    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup, syncer);
 }
 
 void KvStoreMetaManager::SyncMeta()
@@ -397,16 +413,6 @@ std::string KvStoreMetaManager::GetBackupPath() const
 {
     return (DirectoryManager::GetInstance().GetMetaBackupPath() + "/" +
             Crypto::Sha256(label_ + "_" + Bootstrap::GetInstance().GetMetaDBName()));
-}
-
-size_t KvStoreMetaManager::GetSyncDataSize(const std::string &deviceId)
-{
-    auto metaDelegate = GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        return 0;
-    }
-
-    return metaDelegate->GetSyncDataSize(deviceId);
 }
 
 void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)

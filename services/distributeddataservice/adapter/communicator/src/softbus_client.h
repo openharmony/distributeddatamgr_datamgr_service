@@ -21,7 +21,6 @@
 #include <mutex>
 
 #include "commu_types.h"
-#include "communication_strategy.h"
 #include "executor_pool.h"
 #include "session.h"
 #include "socket.h"
@@ -32,7 +31,6 @@ public:
     SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId);
     ~SoftBusClient();
 
-    using Strategy = CommunicationStrategy::Strategy;
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     static constexpr Duration P2P_CLOSE_DELAY = std::chrono::seconds(3);
@@ -54,7 +52,7 @@ private:
     static constexpr uint32_t WAIT_MAX_TIME = 10;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
-    static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(10);
+    static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(3);
     static constexpr Duration SESSION_OPEN_DELAY = std::chrono::seconds(20);
     static constexpr uint32_t QOS_COUNT = 3;
     static constexpr QosTV clientQos[QOS_COUNT] = { { .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },

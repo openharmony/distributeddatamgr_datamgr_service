@@ -53,10 +53,10 @@ public:
     void InitBroadcast();
     void InitDeviceOnline();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
-    size_t GetSyncDataSize(const std::string &deviceId);
     void BindExecutor(std::shared_ptr<ExecutorPool> executors);
 private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
+    using TaskId = ExecutorPool::TaskId;
     NbDelegate GetMetaKvStore();
 
     NbDelegate CreateMetaKvStore();
@@ -74,6 +74,8 @@ private:
     std::string GetBackupPath() const;
 
     ExecutorPool::Task GetTask(uint32_t retry);
+    
+    std::function<void()> SyncTask(const NbDelegate &store, int32_t status);
 
     class KvStoreMetaObserver : public DistributedDB::KvStoreObserver {
     public:
@@ -88,14 +90,17 @@ private:
 
     static constexpr int32_t RETRY_MAX_TIMES = 100;
     static constexpr int32_t RETRY_INTERVAL = 1;
+    static constexpr uint8_t COMPRESS_RATE = 10;
+    static constexpr int32_t DELAY_SYNC = 500;
     NbDelegate metaDelegate_;
     std::string metaDBDirectory_;
     const std::string label_;
     DistributedDB::KvStoreDelegateManager delegateManager_;
     static MetaDeviceChangeListenerImpl listener_;
     KvStoreMetaObserver metaObserver_;
-    std::recursive_mutex mutex_;
+    std::mutex mutex_;
     std::shared_ptr<ExecutorPool> executors_;
+    TaskId delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

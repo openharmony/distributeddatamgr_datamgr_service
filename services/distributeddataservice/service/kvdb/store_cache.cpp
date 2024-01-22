@@ -147,6 +147,7 @@ StoreCache::DBOption StoreCache::GetDBOption(const StoreMetaData &data, const DB
     dbOption.createIfNecessary = false;
     dbOption.isMemoryDb = false;
     dbOption.isEncryptedDb = data.isEncrypt;
+    dbOption.isNeedCompressOnSync = data.isNeedCompress;
     if (data.isEncrypt) {
         dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
         dbOption.passwd = password;
