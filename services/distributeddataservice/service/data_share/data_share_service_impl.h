@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "bundle_mgr_proxy.h"
 #include "common_event_subscribe_info.h"
 #include "common_event_subscriber.h"
 #include "data_proxy_observer.h"
@@ -73,6 +74,8 @@ public:
     void OnConnectDone() override;
     int32_t OnBind(const BindInfo &binderInfo) override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
+    int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+    int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
     void NotifyObserver(const std::string &uri) override;
     void DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     int32_t OnInitialize() override;

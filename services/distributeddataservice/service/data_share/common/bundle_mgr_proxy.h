@@ -16,15 +16,19 @@
 #ifndef DATASHARESERVICE_BUNDLEMGR_PROXY_H
 #define DATASHARESERVICE_BUNDLEMGR_PROXY_H
 
-#include <string>
 #include <memory>
+#include <string>
+
+#include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
+#include "concurrent_map.h"
 namespace OHOS::DataShare {
 class BundleMgrProxy final : public std::enable_shared_from_this<BundleMgrProxy> {
 public:
     ~BundleMgrProxy();
     static std::shared_ptr<BundleMgrProxy> GetInstance();
     bool GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo);
+    void Delete(const std::string &bundleName, int32_t userId);
 
 private:
     BundleMgrProxy() = default;
@@ -47,6 +51,7 @@ private:
     std::mutex mutex_;
     sptr<IRemoteObject> proxy_;
     sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient_;
+    ConcurrentMap<std::string, AppExecFwk::BundleInfo> bundleCache_;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

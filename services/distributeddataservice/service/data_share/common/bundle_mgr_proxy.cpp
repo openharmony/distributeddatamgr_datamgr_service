@@ -52,6 +52,12 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
 bool BundleMgrProxy::GetBundleInfoFromBMS(
     const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo)
 {
+    auto bundleKey = bundleName + std::to_string(userId);
+    auto it = bundleCache_.Find(bundleKey);
+    if (it.first) {
+        bundleInfo = it.second;
+        return true;
+    }
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
         ZLOGE("GetBundleMgrProxy is nullptr!");
@@ -63,6 +69,7 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
         ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
         return false;
     }
+    bundleCache_.Insert(bundleKey, bundleInfo);
     return true;
 }
 
@@ -81,6 +88,12 @@ BundleMgrProxy::~BundleMgrProxy()
     if (proxy_ != nullptr) {
         proxy_->RemoveDeathRecipient(deathRecipient_);
     }
+}
+
+void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId)
+{
+    bundleCache_.Erase(bundleName + std::to_string(userId));
+    return;
 }
 
 std::shared_ptr<BundleMgrProxy> BundleMgrProxy::GetInstance()
