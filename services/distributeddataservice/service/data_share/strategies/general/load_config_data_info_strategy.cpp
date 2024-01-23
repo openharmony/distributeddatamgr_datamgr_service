@@ -38,7 +38,7 @@ static bool QueryMetaData(const std::string &bundleName, const std::string &stor
     meta.user = std::to_string(userId);
     meta.bundleName = bundleName;
     meta.storeId = storeName;
-    bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData);
+    bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true);
     if (!isCreated) {
         ZLOGE("DB not exist");
         return false;
