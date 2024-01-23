@@ -84,7 +84,7 @@ private:
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;
-    static constexpr int32_t SYNC_TIMEOUT = 30 * 1000; // ms
+    static constexpr int32_t SYNC_TIMEOUT = 60 * 1000; // ms
     ConcurrentMap<std::string, std::string> syncTask_ {};
     std::shared_ptr<ExecutorPool> executors_;
     mutable std::shared_mutex mutex_;
