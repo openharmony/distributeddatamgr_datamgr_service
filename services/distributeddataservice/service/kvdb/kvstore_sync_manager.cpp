@@ -43,7 +43,11 @@ Status KvStoreSyncManager::AddSyncOperation(uintptr_t syncId, uint32_t delayMs, 
             std::lock_guard<std::mutex> lock(syncOpsMutex_);
             realtimeSyncingOps_.push_back(syncOp);
         }
-        return syncFunc(endFunc);
+        auto status = syncFunc(endFunc);
+        if (status != Status::SUCCESS) {
+            RemoveSyncingOp(opSeq, realtimeSyncingOps_);
+        }
+        return status;
     }
 
     std::lock_guard<std::mutex> lock(syncOpsMutex_);
