@@ -304,7 +304,7 @@ std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int3
                     continue;
                 }
                 DeviceMatrix::GetInstance().OnExchanged(uuid, DeviceMatrix::META_STORE_MASK);
-                ZLOGI("uuid is: %{public}s, and status is: %{public}d", uuid.c_str(), status);
+                ZLOGI("uuid is: %{public}s, and status is: %{public}d", Anonymous::Change(uuid).c_str(), status);
             }
         });
         if (status != DistributedDB::OK) {
