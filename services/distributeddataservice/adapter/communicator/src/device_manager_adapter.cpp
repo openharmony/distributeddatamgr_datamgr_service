@@ -362,6 +362,9 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
 
 void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const DeviceChangeType &type)
 {
+    if (dvInfo.networkId == DeviceManagerAdapter::cloudDmInfo.networkId) {
+        return;
+    }
     switch (type) {
         case DeviceChangeType::DEVICE_ONLINE: {
             deviceInfos_.Set(dvInfo.networkId, dvInfo);
