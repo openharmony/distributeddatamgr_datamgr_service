@@ -291,7 +291,7 @@ std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int3
             delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
         }
         std::vector<std::string> devs;
-        auto devices = DmAdapter::GetInstance().GetRemoteDevices();
+        auto devices = DmAdapter::GetInstance().GetReadyDevices();
         for (auto const &dev : devices) {
             devs.push_back(dev.uuid);
         }

@@ -32,6 +32,11 @@ namespace OHOS {
 namespace DistributedData {
 class API_EXPORT DeviceManagerAdapter {
 public:
+    enum DeviceState {
+        DEVICE_ONLINE,
+        DEVICE_ONREADY,
+        DEVICE_BUTT
+    };
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
@@ -47,6 +52,9 @@ public:
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     DeviceInfo GetLocalDevice();
     std::vector<DeviceInfo> GetRemoteDevices();
+    std::vector<DeviceInfo> GetReadyDevices();
+    bool IsReadyDevices(const std::string &id);
+    size_t GetReadySize();
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
     std::string GetUdidByNetworkId(const std::string &networkId);
@@ -69,7 +77,8 @@ private:
     bool SetNetAvailable(bool isNetAvailable);
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
-    void UpdateDeviceInfo();
+    void InitDeviceInfo(bool onlyCache = true);
+    DeviceInfo GetLocalDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
     void Online(const DmDeviceInfo &info);
     void Offline(const DmDeviceInfo &info);
@@ -91,6 +100,7 @@ private:
     static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
     Time expireTime_ = std::chrono::steady_clock::now();
     bool isNetAvailable_ = false;
+    ConcurrentMap<std::string, std::pair<DeviceState, DeviceInfo>> readyDevices_;
 };
 }  // namespace DistributedData
 }  // namespace OHOS

@@ -28,7 +28,12 @@
 namespace OHOS::AppDistributedKv {
 class SoftBusClient : public std::enable_shared_from_this<SoftBusClient> {
 public:
-    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId);
+    enum QoSType {
+        QOS_BR,
+        QOS_HML,
+        QOS_BUTT
+    };
+    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId, uint32_t type = QOS_HML);
     ~SoftBusClient();
 
     using Time = std::chrono::steady_clock::time_point;
@@ -40,6 +45,7 @@ public:
     uint32_t GetMtuSize() const;
     Time GetExpireTime() const;
     int32_t GetSocket() const;
+    uint32_t GetQoSType() const;
     void UpdateExpireTime();
 
 private:
@@ -55,10 +61,21 @@ private:
     static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(3);
     static constexpr Duration SESSION_OPEN_DELAY = std::chrono::seconds(20);
     static constexpr uint32_t QOS_COUNT = 3;
-    static constexpr QosTV clientQos[QOS_COUNT] = { { .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
-        { .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 }, { .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 } };
+    static constexpr QosTV QOS_INFOS[QOS_BUTT][QOS_COUNT] = {
+        { // BR QOS
+            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 0x5a5a5a5a },
+            QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 },
+            QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 }
+        },
+        { // HML QOS
+            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
+            QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 },
+            QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 }
+        }
+    };
     std::atomic_bool isOpening_ = false;
     mutable std::mutex mutex_;
+    uint32_t type_ = QOS_HML;
     PipeInfo pipe_;
     DeviceId device_;
     uint32_t mtu_;

@@ -174,6 +174,7 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
         auto resultState = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
         auto resultNet = RegOnNetworkChange();
         if (resultInit == DM_OK && resultState == DM_OK && resultNet) {
+            InitDeviceInfo(false);
             return;
         }
         constexpr int32_t INTERVAL = 500;
@@ -366,12 +367,18 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Set(dvInfo.networkId, dvInfo);
             deviceInfos_.Set(dvInfo.uuid, dvInfo);
             deviceInfos_.Set(dvInfo.udid, dvInfo);
+            readyDevices_.InsertOrAssign(dvInfo.uuid, { DeviceState::DEVICE_ONLINE, dvInfo });
+            break;
+        }
+        case DeviceChangeType::DEVICE_ONREADY: {
+            readyDevices_.InsertOrAssign(dvInfo.uuid, { DeviceState::DEVICE_ONREADY, dvInfo });
             break;
         }
         case DeviceChangeType::DEVICE_OFFLINE: {
             deviceInfos_.Delete(dvInfo.networkId);
             deviceInfos_.Delete(dvInfo.uuid);
             deviceInfos_.Delete(dvInfo.udid);
+            readyDevices_.Erase(dvInfo.uuid);
             break;
         }
         default: {
@@ -387,23 +394,7 @@ DeviceInfo DeviceManagerAdapter::GetLocalDevice()
     if (!localInfo_.uuid.empty() && !localInfo_.udid.empty()) {
         return localInfo_;
     }
-
-    DmDeviceInfo info;
-    auto ret = DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, info);
-    if (ret != DM_OK) {
-        ZLOGE("get local device info fail");
-        return {};
-    }
-    auto networkId = std::string(info.networkId);
-    auto uuid = GetUuidByNetworkId(networkId);
-    auto udid = GetUdidByNetworkId(networkId);
-    if (uuid.empty()) {
-        return {};
-    }
-    ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d",
-        KvStoreUtils::ToBeAnonymous(uuid).c_str(), info.deviceName, info.deviceTypeId);
-    localInfo_ = { std::move(uuid), std::move(udid), std::move(networkId),
-                   std::string(info.deviceName), info.deviceTypeId };
+    localInfo_ = GetLocalDeviceInfo();
     return localInfo_;
 }
 
@@ -428,6 +419,31 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
     return dvInfos;
 }
 
+std::vector<DeviceInfo> DeviceManagerAdapter::GetReadyDevices()
+{
+    std::vector<DeviceInfo> devices;
+    devices.reserve(readyDevices_.Size());
+    readyDevices_.ForEach([&devices](auto&, DeviceInfo& info) {
+        devices.push_back(info.second);
+        return false;
+    });
+    return devices;
+}
+
+bool DeviceManagerAdapter::IsReadyDevices(const std::string& id)
+{
+    auto it = readyDevices_.Find(id);
+    if (it.first && it.second.first == DeviceState::DEVICE_ONLINE) {
+        return true;
+    }
+    return false;
+}
+
+size_t DeviceManagerAdapter::GetReadySize()
+{
+    return readyDevices_.Size();
+}
+
 DeviceInfo DeviceManagerAdapter::GetDeviceInfo(const std::string &id)
 {
     return GetDeviceInfoFromCache(id);
@@ -437,7 +453,7 @@ DeviceInfo DeviceManagerAdapter::GetDeviceInfoFromCache(const std::string &id)
 {
     DeviceInfo dvInfo;
     if (!deviceInfos_.Get(id, dvInfo)) {
-        UpdateDeviceInfo();
+        InitDeviceInfo();
         deviceInfos_.Get(id, dvInfo);
     }
     if (dvInfo.uuid.empty()) {
@@ -446,13 +462,15 @@ DeviceInfo DeviceManagerAdapter::GetDeviceInfoFromCache(const std::string &id)
     return dvInfo;
 }
 
-void DeviceManagerAdapter::UpdateDeviceInfo()
+void DeviceManagerAdapter::InitDeviceInfo(bool onlyCache)
 {
     std::vector<DeviceInfo> dvInfos = GetRemoteDevices();
     if (dvInfos.empty()) {
         ZLOGW("there is no trusted device!");
     }
-    dvInfos.emplace_back(GetLocalDevice());
+    if (!onlyCache) {
+        readyDevices_.Clear();
+    }
     for (const auto &info : dvInfos) {
         if (info.networkId.empty() || info.uuid.empty() || info.udid.empty()) {
             ZLOGE("networkId:%{public}s, uuid:%{public}d, udid:%{public}d",
@@ -462,7 +480,33 @@ void DeviceManagerAdapter::UpdateDeviceInfo()
         deviceInfos_.Set(info.networkId, info);
         deviceInfos_.Set(info.uuid, info);
         deviceInfos_.Set(info.udid, info);
+        if (!onlyCache) {
+            readyDevices_.InsertOrAssign(info.uuid, info);
+        }
     }
+    auto local = GetLocalDeviceInfo();
+    deviceInfos_.Set(local.networkId, local);
+    deviceInfos_.Set(local.uuid, local);
+    deviceInfos_.Set(local.udid, local);
+}
+
+DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
+{
+    DmDeviceInfo info;
+    auto ret = DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, info);
+    if (ret != DM_OK) {
+        ZLOGE("get local device info fail");
+        return {};
+    }
+    auto networkId = std::string(info.networkId);
+    auto uuid = GetUuidByNetworkId(networkId);
+    auto udid = GetUdidByNetworkId(networkId);
+    if (uuid.empty()) {
+        return {};
+    }
+    ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d", KvStoreUtils::ToBeAnonymous(uuid).c_str(),
+        info.deviceName, info.deviceTypeId);
+    return { std::move(uuid), std::move(udid), std::move(networkId), std::string(info.deviceName), info.deviceTypeId };
 }
 
 std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
