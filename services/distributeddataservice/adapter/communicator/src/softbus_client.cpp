@@ -27,7 +27,8 @@ namespace OHOS::AppDistributedKv {
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Context = DistributedData::CommunicatorContext;
-SoftBusClient::SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId) : pipe_(pipeInfo), device_(deviceId)
+SoftBusClient::SoftBusClient(const PipeInfo& pipeInfo, const DeviceId& deviceId, uint32_t type)
+    : type_(type), pipe_(pipeInfo), device_(deviceId)
 {
     mtu_ = DEFAULT_MTU_SIZE;
 }
@@ -100,13 +101,13 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
         ZLOGE("Create the client Socket:%{public}d failed, peerName:%{public}s", clientSocket, socketInfo.peerName);
         return Status::NETWORK_ERROR;
     }
-    auto task = [this, clientSocket, listener, client = shared_from_this()]() {
+    auto task = [type = type_, clientSocket, listener, client = shared_from_this()]() {
         if (client == nullptr) {
             ZLOGE("OpenSessionByAsync client is nullptr.");
             return;
         }
-        ZLOGI("Bind Start.");
-        auto status = client->Open(clientSocket, clientQos, listener);
+        ZLOGI("Bind Start, socket:%{public}d type:%{public}u", clientSocket, type);
+        auto status = client->Open(clientSocket, QOS_INFOS[type % QOS_BUTT], listener);
         if (status == Status::SUCCESS) {
             Context::GetInstance().NotifySessionChanged(client->device_.deviceId);
         }
@@ -171,5 +172,10 @@ std::pair<int32_t, uint32_t> SoftBusClient::GetMtu(int32_t socket)
     uint32_t mtu = 0;
     auto ret = ::GetMtuSize(socket, &mtu);
     return { ret, mtu };
+}
+
+uint32_t SoftBusClient::GetQoSType() const
+{
+    return type_ % QOS_COUNT;
 }
 } // namespace OHOS::AppDistributedKv

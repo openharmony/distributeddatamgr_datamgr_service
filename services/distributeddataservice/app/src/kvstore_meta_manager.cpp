@@ -270,7 +270,11 @@ void KvStoreMetaManager::ConfigMetaDataManager()
     };
     auto syncer = [this](const auto &store, int32_t status) {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
-        ZLOGI("Syncer status: %{public}d", status);
+        auto size = DmAdapter::GetInstance().GetOnlineSize();
+        ZLOGI("syncer status: %{public}d online device:%{public}zu", status, size);
+        if (size == 0) {
+            return;
+        }
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         if (delaySyncTaskId_ == Executor::INVALID_TASK_ID) {
             delaySyncTaskId_ =
@@ -291,7 +295,7 @@ std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int3
             delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
         }
         std::vector<std::string> devs;
-        auto devices = DmAdapter::GetInstance().GetRemoteDevices();
+        auto devices = DmAdapter::GetInstance().GetOnlineDevices();
         for (auto const &dev : devices) {
             devs.push_back(dev.uuid);
         }
