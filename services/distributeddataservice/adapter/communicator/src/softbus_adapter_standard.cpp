@@ -162,8 +162,8 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     uint32_t length, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
-    bool isNotReady = DmAdapter::GetInstance().IsReadyDevices(deviceId.deviceId);
-    uint32_t qosType = isNotReady ? SoftBusClient::QOS_BR : SoftBusClient::QOS_HML;
+    bool isReady = DmAdapter::GetInstance().IsReadyDevices(deviceId.deviceId);
+    uint32_t qosType = isReady ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
     connects_.Compute(deviceId.deviceId,
         [&pipeInfo, &deviceId, &conn, qosType](const auto &key,
             std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {

@@ -419,7 +419,7 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
     return dvInfos;
 }
 
-std::vector<DeviceInfo> DeviceManagerAdapter::GetReadyDevices()
+std::vector<DeviceInfo> DeviceManagerAdapter::GetOnlineDevices()
 {
     std::vector<DeviceInfo> devices;
     devices.reserve(readyDevices_.Size());
@@ -430,16 +430,13 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetReadyDevices()
     return devices;
 }
 
-bool DeviceManagerAdapter::IsReadyDevices(const std::string& id)
+bool DeviceManagerAdapter::IsDeviceReady(const std::string& id)
 {
     auto it = readyDevices_.Find(id);
-    if (it.first && it.second.first == DeviceState::DEVICE_ONLINE) {
-        return true;
-    }
-    return false;
+    return (it.first && it.second.first == DeviceState::DEVICE_OREADY);
 }
 
-size_t DeviceManagerAdapter::GetReadySize()
+size_t DeviceManagerAdapter::GetOnlineSize()
 {
     return readyDevices_.Size();
 }
@@ -481,7 +478,7 @@ void DeviceManagerAdapter::InitDeviceInfo(bool onlyCache)
         deviceInfos_.Set(info.uuid, info);
         deviceInfos_.Set(info.udid, info);
         if (!onlyCache) {
-            readyDevices_.InsertOrAssign(info.uuid, info);
+            readyDevices_.InsertOrAssign(info.uuid, { DeviceState::DEVICE_ONREADY, info });
         }
     }
     auto local = GetLocalDeviceInfo();

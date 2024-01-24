@@ -52,9 +52,9 @@ public:
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     DeviceInfo GetLocalDevice();
     std::vector<DeviceInfo> GetRemoteDevices();
-    std::vector<DeviceInfo> GetReadyDevices();
-    bool IsReadyDevices(const std::string &id);
-    size_t GetReadySize();
+    std::vector<DeviceInfo> GetOnlineDevices();
+    bool IsDeviceReady(const std::string &id);
+    size_t GetOnlineSize();
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
     std::string GetUdidByNetworkId(const std::string &networkId);
