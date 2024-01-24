@@ -34,11 +34,13 @@ struct API_EXPORT Subscription final : public Serializable {
     bool Unmarshal(const json &node);
     std::string GetKey();
     std::string GetRelationKey(const std::string &bundleName);
+    uint64_t GetMinExpireTime() const;
     static std::string GetKey(int32_t userId);
     static std::string GetRelationKey(int32_t userId, const std::string &bundleName);
     static std::string GetPrefix(const std::initializer_list<std::string> &fields);
-private:
+public:
     static constexpr const char *PREFIX = "CLOUD_SUBSCRIPTION";
+private:
     static constexpr const char *RELATION_PREFIX = "CLOUD_RELATION";
     static constexpr uint64_t INVALID_TIME = 0;
 };

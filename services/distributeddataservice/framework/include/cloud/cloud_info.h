@@ -46,6 +46,7 @@ public:
     bool IsValid() const;
     bool Exist(const std::string &bundleName, int32_t instanceId = 0);
     bool IsOn(const std::string &bundleName, int32_t instanceId = 0);
+    bool IsAllSwitchOff() const;
     static std::string GetPrefix(const std::initializer_list<std::string> &field);
 
     bool Marshal(json &node) const override;

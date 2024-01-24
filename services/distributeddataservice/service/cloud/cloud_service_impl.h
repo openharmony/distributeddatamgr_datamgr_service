@@ -86,6 +86,8 @@ private:
     using Handle = bool (CloudServiceImpl::*)(int32_t);
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
+	using TaskId = ExecutorPool::TaskId;
+    using Duration = ExecutorPool::Duration;
 
     struct HapInfo {
         int32_t user;
@@ -96,11 +98,13 @@ private:
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static HapInfo GetHapInfo(uint32_t tokenId);
 
+    static constexpr uint64_t INVALID_SUB_TIME = 0;
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
     static constexpr int32_t WAIT_TIME = 30; // 30 seconds
     static constexpr int32_t DEFAULT_USER = 0;
+    static constexpr int32_t TIME_BEFORE_SUB = 12 * 60 * 60 * 1000; // 12hours, ms
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
@@ -120,6 +124,8 @@ private:
     void CloudShare(const Event &event);
 
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
+    Task GenSubTask(Task task, int32_t user);
+    void InitSubTask(const Subscription &sub);
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
@@ -132,6 +138,10 @@ private:
     std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo& hapInfo);
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
+    std::mutex mutex_;
+    TaskId subTask_ = ExecutorPool::INVALID_TASK_ID;
+    uint64_t expireTime_ = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count());
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
