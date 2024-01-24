@@ -48,7 +48,7 @@ public:
 
 private:
     static constexpr uint32_t CURRENT_VERSION = 1;
-    static constexpr uint32_t CURRENT_MASK = 0x0002;
+    static constexpr uint32_t CURRENT_MASK = 0x000E;
     static constexpr size_t MAX_DEVICES = 16;
 
     DeviceMatrix();
@@ -75,7 +75,8 @@ private:
     std::map<std::string, Mask> onLines_;
     std::map<std::string, Mask> offLines_;
     std::map<std::string, Mask> remotes_;
-    std::vector<std::string> maskApps_ = { "distributed_device_profile_service" };
+    std::vector<std::string> maskApps_ = { "distributed_device_profile_service", "bundle_manager_service",
+        "dtbhardware_manager_service" };
     LRUBucket<std::string, MatrixMetaData> versions_{ MAX_DEVICES };
     LRUBucket<uint32_t, TimePoint> changeTime_ { 64 };
 };
