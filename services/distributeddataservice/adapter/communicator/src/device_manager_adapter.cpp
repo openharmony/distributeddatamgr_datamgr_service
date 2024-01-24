@@ -367,11 +367,11 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Set(dvInfo.networkId, dvInfo);
             deviceInfos_.Set(dvInfo.uuid, dvInfo);
             deviceInfos_.Set(dvInfo.udid, dvInfo);
-            readyDevices_.InsertOrAssign(dvInfo.uuid, { DeviceState::DEVICE_ONLINE, dvInfo });
+            readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONLINE, dvInfo));
             break;
         }
         case DeviceChangeType::DEVICE_ONREADY: {
-            readyDevices_.InsertOrAssign(dvInfo.uuid, { DeviceState::DEVICE_ONREADY, dvInfo });
+            readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
             break;
         }
         case DeviceChangeType::DEVICE_OFFLINE: {
@@ -423,7 +423,7 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetOnlineDevices()
 {
     std::vector<DeviceInfo> devices;
     devices.reserve(readyDevices_.Size());
-    readyDevices_.ForEach([&devices](auto&, DeviceInfo& info) {
+    readyDevices_.ForEach([&devices](auto &, auto &info) {
         devices.push_back(info.second);
         return false;
     });
@@ -433,7 +433,7 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetOnlineDevices()
 bool DeviceManagerAdapter::IsDeviceReady(const std::string& id)
 {
     auto it = readyDevices_.Find(id);
-    return (it.first && it.second.first == DeviceState::DEVICE_OREADY);
+    return (it.first && it.second.first == DeviceState::DEVICE_ONREADY);
 }
 
 size_t DeviceManagerAdapter::GetOnlineSize()
@@ -478,7 +478,7 @@ void DeviceManagerAdapter::InitDeviceInfo(bool onlyCache)
         deviceInfos_.Set(info.uuid, info);
         deviceInfos_.Set(info.udid, info);
         if (!onlyCache) {
-            readyDevices_.InsertOrAssign(info.uuid, { DeviceState::DEVICE_ONREADY, info });
+            readyDevices_.InsertOrAssign(info.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, info));
         }
     }
     auto local = GetLocalDeviceInfo();
