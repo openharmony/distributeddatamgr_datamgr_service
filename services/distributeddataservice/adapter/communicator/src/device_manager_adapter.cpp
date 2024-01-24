@@ -331,6 +331,7 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
+    readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     auto task = [this, dvInfo]() {
@@ -371,10 +372,6 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Set(dvInfo.uuid, dvInfo);
             deviceInfos_.Set(dvInfo.udid, dvInfo);
             readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONLINE, dvInfo));
-            break;
-        }
-        case DeviceChangeType::DEVICE_ONREADY: {
-            readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
             break;
         }
         case DeviceChangeType::DEVICE_OFFLINE: {
