@@ -12,7 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#define LOG_TAG "RefCountTest"
+#define LOG_TAG "UtilsTest"
 #include "utils/ref_count.h"
 
 #include <type_traits>

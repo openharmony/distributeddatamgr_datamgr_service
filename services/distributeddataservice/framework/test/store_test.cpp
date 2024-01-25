@@ -25,9 +25,6 @@
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
-class GenQueryTest : public testing::Test {
-public:
-};
 
 class AutoCacheTest : public testing::Test {
 public:
@@ -38,25 +35,6 @@ public:
 };
 
 /**
-* @tc.name: SetQueryNodestest
-* @tc.desc:  Set QueryNodes.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-//HWTEST_F(GenQueryTest, GenQueryTest, TestSize.Level2)
-//{
-//    ZLOGI("GenQueryTest GenQueryTest begin.");
-//    GenQuery *obj;
-//    std::string tableName = "test_table";
-//   // QueryNodes nodes = obj->GetQueryNodes(tableName);
-//    //std::cout<<"nodes = "<< sizeof(nodes)<<std::endl;
-//
-//    //obj->SetQueryNodes(tableName,std::move(nodes));
-//
-//}
-
-/**
 * @tc.name: BindExecutorTest
 * @tc.desc:  bind executor
 * @tc.type: FUNC
@@ -65,22 +43,12 @@ public:
 */
 HWTEST_F(AutoCacheTest, BindExecutorTest, TestSize.Level2)
 {
-    //Òì³£ÓÃÀý metaDataÎª¿Õ
     ZLOGI("AutoCacheTest BindExecutorTest begin.");
     StoreMetaData metaData;
     AutoCache::Watchers watchers;
     auto store =  AutoCache::GetInstance().GetStore(metaData, watchers);
     ASSERT_EQ(store, nullptr);
 
-    metaData.user = "0";
-    metaData.bundleName = "ohos.test.demo";
-    metaData.appId = "bundle_test_service";
-    metaData.securityLevel = DistributedKv::SecurityLevel::S2;
-    metaData.area = 1;
-    metaData.tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(10, "ohos.test.demo", 0);
-    metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
-    store =  AutoCache::GetInstance().GetStore(metaData, watchers);
-    //ASSERT_NE(store, nullptr);
 }
 
 /**
@@ -92,6 +60,7 @@ HWTEST_F(AutoCacheTest, BindExecutorTest, TestSize.Level2)
 */
 HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
 {
+    ZLOGI("GeneralStoreTest GetMixModeTest begin.");
     GeneralStore *genstore;
     uint32_t syncMode = 1;
     uint32_t highMode = 2;
