@@ -22,6 +22,7 @@
 #include "callback_impl.h"
 #include "extension_mgr_proxy.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 bool ExtensionConnectAdaptor::Connect(std::shared_ptr<Context> context)
@@ -34,26 +35,26 @@ bool ExtensionConnectAdaptor::Connect(std::shared_ptr<Context> context)
     return false;
 }
 
-ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(1) {}
+ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(std::make_shared<BlockData<bool>>(1))
+{
+    callback_ = new (std::nothrow) CallbackImpl(data_);
+}
 
 bool ExtensionConnectAdaptor::DoConnect(std::shared_ptr<Context> context)
 {
-    data_.Clear();
-    callback_ = new (std::nothrow) CallbackImpl(data_);
+    data_->Clear();
     if (callback_ == nullptr) {
-        ZLOGE("new failed");
         return false;
     }
-    ZLOGI("Start connect %{public}s", context->uri.c_str());
     ErrCode ret = ExtensionMgrProxy::GetInstance()->Connect(context->uri, callback_->AsObject(), nullptr);
     if (ret != ERR_OK) {
-        ZLOGE("connect ability failed, ret = %{public}d", ret);
+        ZLOGE("connect ability failed, ret = %{public}d, uri: %{public}s", ret,
+            DistributedData::Anonymous::Change(context->uri).c_str());
         return false;
     }
-    bool result = data_.GetValue();
-    if (result) {
-        ZLOGI("connect ability ended successfully");
-    }
+    bool result = data_->GetValue();
+    ZLOGI("Do connect, result: %{public}d,  uri: %{public}s", result,
+        DistributedData::Anonymous::Change(context->uri).c_str());
     return result;
 }
 
@@ -77,12 +78,10 @@ void ExtensionConnectAdaptor::Disconnect()
         ZLOGE("callback null");
         return;
     }
-    data_.Clear();
-    ZLOGI("Start disconnect");
+    data_->Clear();
     ExtensionMgrProxy::GetInstance()->DisConnect(callback_->AsObject());
-    if (!data_.GetValue()) {
-        ZLOGI("disconnect ability ended successfully");
-    }
+    bool result = data_->GetValue();
+    ZLOGI("Do disconnect, result: %{public}d", result);
     callback_ = nullptr;
 }
 } // namespace OHOS::DataShare

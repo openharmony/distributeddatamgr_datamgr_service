@@ -29,7 +29,7 @@ private:
     bool Connect(std::shared_ptr<Context> context);
     void Disconnect();
     bool DoConnect(std::shared_ptr<Context> context);
-    BlockData<bool> data_;
+    std::shared_ptr<BlockData<bool>> data_;
     sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };
 } // namespace OHOS::DataShare
