@@ -208,19 +208,6 @@ HWTEST_F(DirectoryManagerTest, GetStorageMetaPath, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetStorageMetaPath
-* @tc.desc: test get meta store dir
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: Sven Wang
-*/
-HWTEST_F(DirectoryManagerTest, GetStorageMetaPath, TestSize.Level0)
-{
-auto path = DirectoryManager::GetInstance().GetMetaStorePath();
-EXPECT_EQ(path, "/data/service/el1/public/database/distributeddata/meta");
-}
-
-/**
 * @tc.name: GetSecretKeyPath
 * @tc.desc: test get secret key path
 * @tc.type: FUNC
