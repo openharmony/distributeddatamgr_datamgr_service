@@ -52,7 +52,7 @@ private:
     Status OpenConnect(const ISocketListener *listener);
     Status Open(int32_t socket, const QosTV qos[], const ISocketListener *listener);
     std::pair<int32_t, uint32_t> GetMtu(int32_t socket);
-    Time CalcExpireTime() const
+    Time CalcExpireTime() const;
 
     static constexpr int32_t INVALID_SOCKET_ID = -1;
     static constexpr uint32_t DEFAULT_TIMEOUT = 15 * 1000;
