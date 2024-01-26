@@ -83,6 +83,7 @@ ohos_shared_library("distributeddataservice") {
     debug = false
   }
   sources = [
+    "src/db_info_handle.cpp",
     "src/feature_stub_impl.cpp",
     "src/kvstore_account_observer.cpp",
     "src/kvstore_data_service.cpp",

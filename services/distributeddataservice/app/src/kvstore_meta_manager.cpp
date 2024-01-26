@@ -36,6 +36,7 @@
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "utils/ref_count.h"
+#include "runtime_config.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -47,6 +48,7 @@ using namespace DistributedDB;
 using namespace OHOS::AppDistributedKv;
 
 KvStoreMetaManager::MetaDeviceChangeListenerImpl KvStoreMetaManager::listener_;
+KvStoreMetaManager::DBInfoDeviceChangeListenerImpl KvStoreMetaManager::dbInfoListener_;
 
 KvStoreMetaManager::KvStoreMetaManager()
     : metaDelegate_(nullptr), metaDBDirectory_(DirectoryManager::GetInstance().GetMetaStorePath()),
@@ -80,14 +82,23 @@ void KvStoreMetaManager::InitMetaListener()
     InitMetaData();
     auto status = DmAdapter::GetInstance().StartWatchDeviceChange(&listener_, { "metaMgr" });
     if (status != AppDistributedKv::Status::SUCCESS) {
-        ZLOGW("register failed.");
+        ZLOGW("register metaMgr failed.");
         return;
     }
     ZLOGI("register meta device change success.");
+
+    status = DmAdapter::GetInstance().StartWatchDeviceChange(&dbInfoListener_, { "notifyDbInfos" });
+    if (status != AppDistributedKv::Status::SUCCESS) {
+        ZLOGW("register notifyDbInfos failed.");
+        return;
+    }
+    ZLOGI("register notifyDbInfos device change success.");
+
     SubscribeMetaKvStore();
     SyncMeta();
     InitBroadcast();
     InitDeviceOnline();
+    NotifyAllAutoSyncDBInfo();
 }
 
 void KvStoreMetaManager::InitBroadcast()
@@ -370,6 +381,9 @@ void KvStoreMetaManager::KvStoreMetaObserver::OnChange(const DistributedDB::KvSt
     HandleChanges(CHANGE_FLAG::INSERT, data.GetEntriesInserted());
     HandleChanges(CHANGE_FLAG::UPDATE, data.GetEntriesUpdated());
     HandleChanges(CHANGE_FLAG::DELETE, data.GetEntriesDeleted());
+    KvStoreMetaManager::GetInstance().OnDataChange(data.GetEntriesInserted());
+    KvStoreMetaManager::GetInstance().OnDataChange(data.GetEntriesUpdated());
+    KvStoreMetaManager::GetInstance().OnDataChange(data.GetEntriesDeleted(), true);
 }
 
 void KvStoreMetaManager::KvStoreMetaObserver::HandleChanges(CHANGE_FLAG flag,
@@ -422,6 +436,104 @@ std::string KvStoreMetaManager::GetBackupPath() const
 void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;
+}
+
+void KvStoreMetaManager::OnDataChange(const std::list<DistributedDB::Entry>& changedData, bool isDeleted)
+{
+    for (const auto& entry : changedData) {
+        std::string key(entry.key.begin(), entry.key.end());
+        if (key.find(StoreMetaData::GetKey({})) != 0) {
+            continue;
+        }
+        StoreMetaData metaData;
+        metaData.Unmarshall({ entry.value.begin(), entry.value.end() });
+        if (!metaData.isAutoSync) {
+            continue;
+        }
+        // 获取deviceId,单框架可能不存在ALL_USER,可能不需要处理这里
+        auto index = key.find("###", 19);
+        auto tempDeviceId = key.substr(18, index - 18);
+        if (tempDeviceId != metaData.deviceId) {
+            metaData.deviceId = tempDeviceId;
+        }
+        // 处理ALL_USER_DEVICEID，暂且跳过
+
+        std::vector<DistributedDB::DBInfo> dbInfos;
+        AddDbInfo(metaData, dbInfos, isDeleted);
+        DistributedDB::RuntimeConfig::NotifyDBInfos({ metaData.deviceId }, dbInfos);
+    }
+}
+
+void KvStoreMetaManager::GetDbInfosByDeviceId(const std::string deviceId, std::vector<DistributedDB::DBInfo>& dbInfos)
+{
+    std::vector<StoreMetaData> metaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metaData)) {
+        ZLOGE("load meta failed");
+        return;
+    }
+    for (auto const& data : metaData) {
+        AddDbInfo(data, dbInfos);
+    }
+}
+
+void KvStoreMetaManager::AddDbInfo(const StoreMetaData& metaData, std::vector<DistributedDB::DBInfo>& dbInfos,
+    bool isDeleted)
+{
+    DistributedDB::DBInfo dbInfo;
+    dbInfo.appId = metaData.deviceId;
+    dbInfo.userId = metaData.user; // user
+    dbInfo.storeId = metaData.storeId;
+    dbInfo.isNeedSync = !isDeleted;
+    dbInfo.syncDualTupleMode = true; //是否为二元组模式，单框架都是true
+    dbInfos.push_back(dbInfo);
+}
+
+void KvStoreMetaManager::OnDeviceChange(const std::string deviceId, const DeviceChangeType& type)
+{
+    std::vector<DistributedDB::DBInfo> dbInfos;
+    GetDbInfosByDeviceId(deviceId, dbInfos);
+    DistributedDB::RuntimeConfig::NotifyDBInfos({ deviceId }, dbInfos);
+}
+
+void KvStoreMetaManager::NotifyAllAutoSyncDBInfo() {
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (deviceId.empty()) {
+        ZLOGE("local deviceId empty");
+        return ;
+    }
+    std::vector<StoreMetaData> metaData;
+    // 这里应该去哪个表里去取，sync还是local，还是全量的，应该是local，此时为服务刚启动
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({deviceId}), metaData, true)) {
+        ZLOGE("load meta failed");
+        return ;
+    }
+    std::vector<DistributedDB::DBInfo> dbInfos;
+    for (auto const data : metaData) {
+        if (!data.isAutoSync) {
+            continue ;
+        }
+        AddDbInfo(data, dbInfos);
+        DistributedDB::RuntimeConfig::NotifyDBInfos({ deviceId }, dbInfos);
+    }
+}
+
+void KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInfo& info,
+    const DeviceChangeType& type) const
+{
+    // 待确定，是否只有Online去通知
+    if (type != DeviceChangeType::DEVICE_ONLINE) {
+        ZLOGD("offline or onReady ignore, type:%{public}d", type);
+        return;
+    }
+    KvStoreMetaManager::GetInstance().SyncMeta();
+    // 用uuid还是其他
+    KvStoreMetaManager::GetInstance().OnDeviceChange(info.uuid, type);
+}
+
+AppDistributedKv::ChangeLevelType KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::GetChangeLevelType() const
+{
+    // 防止给报下线时给清空
+    return AppDistributedKv::ChangeLevelType::MIN;
 }
 } // namespace DistributedKv
 } // namespace OHOS

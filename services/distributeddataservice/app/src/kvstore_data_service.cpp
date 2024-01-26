@@ -57,6 +57,7 @@
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "db_info_handle_impl.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -133,6 +134,7 @@ void KvStoreDataService::Initialize()
         return Upgrade::GetInstance().GetEncryptedUuidByMeta(meta);
     };
     DBConfig::SetTranslateToDeviceIdCallback(translateCall);
+    DistributedDB::RuntimeConfig::SetDBInfoHandle(std::make_shared<DBInfoHandleImpl>());
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
