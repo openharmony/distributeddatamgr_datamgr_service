@@ -70,7 +70,7 @@ Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *
         ZLOGE("send data to socket%{public}d failed, ret:%{public}d.", socket_, ret);
         return Status::ERROR;
     }
-    expireTime_ = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
+    expireTime_ = CalcExpireTime();
     return Status::SUCCESS;
 }
 
@@ -160,7 +160,7 @@ int32_t SoftBusClient::GetSocket() const
 
 void SoftBusClient::UpdateExpireTime()
 {
-    auto expireTime = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
+    auto expireTime = CalcExpireTime();
     std::lock_guard<std::mutex> lock(mutex_);
     if (expireTime > expireTime_) {
         expireTime_ = expireTime;
@@ -177,5 +177,11 @@ std::pair<int32_t, uint32_t> SoftBusClient::GetMtu(int32_t socket)
 uint32_t SoftBusClient::GetQoSType() const
 {
     return type_ % QOS_COUNT;
+}
+
+SoftBusClient::Time SoftBusClient::CalcExpireTime() const
+{
+    auto delay = type_ == QOS_BR ? BR_CLOSE_DELAY : HML_CLOSE_DELAY;
+    return std::chrono::steady_clock::now() + delay;
 }
 } // namespace OHOS::AppDistributedKv
