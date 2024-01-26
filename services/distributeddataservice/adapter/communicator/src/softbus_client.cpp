@@ -70,7 +70,8 @@ Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *
         ZLOGE("send data to socket%{public}d failed, ret:%{public}d.", socket_, ret);
         return Status::ERROR;
     }
-    expireTime_ = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
+    auto delay = type_ == QOS_BR ? BR_CLOSE_DELAY : HML_CLOSE_DELAY;
+    expireTime_ = std::chrono::steady_clock::now() + delay;
     return Status::SUCCESS;
 }
 
@@ -160,7 +161,8 @@ int32_t SoftBusClient::GetSocket() const
 
 void SoftBusClient::UpdateExpireTime()
 {
-    auto expireTime = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
+    auto delay = type_ == QOS_BR ? BR_CLOSE_DELAY : HML_CLOSE_DELAY;
+    auto expireTime = std::chrono::steady_clock::now() + delay;
     std::lock_guard<std::mutex> lock(mutex_);
     if (expireTime > expireTime_) {
         expireTime_ = expireTime;

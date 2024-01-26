@@ -58,7 +58,8 @@ private:
     static constexpr uint32_t WAIT_MAX_TIME = 10;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
     static constexpr uint32_t P2P_SIZE_THRESHOLD = 0x10000u; // 64KB
-    static constexpr Duration SESSION_CLOSE_DELAY = std::chrono::seconds(3);
+    static constexpr Duration BR_CLOSE_DELAY = std::chrono::seconds(5);
+    static constexpr Duration HML_CLOSE_DELAY = std::chrono::seconds(3);
     static constexpr Duration SESSION_OPEN_DELAY = std::chrono::seconds(20);
     static constexpr uint32_t QOS_COUNT = 3;
     static constexpr QosTV QOS_INFOS[QOS_BUTT][QOS_COUNT] = {
