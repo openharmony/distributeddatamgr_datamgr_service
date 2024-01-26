@@ -45,7 +45,13 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
         ZLOGE("deathRecipient alloc failed.");
         return nullptr;
     }
-    proxy_->AddDeathRecipient(deathRecipient_);
+    if (!proxy_->AddDeathRecipient(deathRecipient_)) {
+        ZLOGE("add death recipient failed.");
+        proxy_ = nullptr;
+        deathRecipient_ = nullptr;
+        return nullptr;
+    }
+    ZLOGI("add death recipient success.");
     return iface_cast<AppExecFwk::BundleMgrProxy>(proxy_);
 }
 
@@ -76,6 +82,7 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
 void BundleMgrProxy::OnProxyDied()
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    ZLOGI("remove death recipient, proxy=null ? %{public}s.", proxy_ == nullptr ? "true" : "false");
     if (proxy_ != nullptr) {
         proxy_->RemoveDeathRecipient(deathRecipient_);
     }
