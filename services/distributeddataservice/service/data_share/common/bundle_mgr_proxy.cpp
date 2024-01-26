@@ -81,11 +81,12 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
 void BundleMgrProxy::OnProxyDied()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    ZLOGE("remove death recipient, proxy=null ? %{public}s.", proxy_ == nullptr ? "true" : "false");
+    ZLOGE("bundleMgr died, proxy=null ? %{public}s.", proxy_ == nullptr ? "true" : "false");
     if (proxy_ != nullptr) {
         proxy_->RemoveDeathRecipient(deathRecipient_);
     }
     proxy_ = nullptr;
+    deathRecipient_ = nullptr;
 }
 
 BundleMgrProxy::~BundleMgrProxy()
