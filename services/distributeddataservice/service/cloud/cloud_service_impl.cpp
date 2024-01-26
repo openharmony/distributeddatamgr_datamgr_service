@@ -76,7 +76,7 @@ CloudServiceImpl::CloudServiceImpl()
     });
     MetaDataManager::GetInstance().Subscribe(
         Subscription::PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
-            ZLOGI("subscription change, flag:%{public}d", flag);
+            ZLOGI("subscription change, key:%{public}s, flag:%{public}d", Anonymous::Change(key).c_str(), flag);
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
                 return true;
             }
