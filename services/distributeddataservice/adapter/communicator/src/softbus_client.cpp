@@ -179,7 +179,7 @@ uint32_t SoftBusClient::GetQoSType() const
     return type_ % QOS_COUNT;
 }
 
-Time SoftBusClient::CalcExpireTime() const
+SoftBusClient::Time SoftBusClient::CalcExpireTime() const
 {
     auto delay = type_ == QOS_BR ? BR_CLOSE_DELAY : HML_CLOSE_DELAY;
     return std::chrono::steady_clock::now() + delay;
