@@ -86,7 +86,7 @@ private:
     using Handle = bool (CloudServiceImpl::*)(int32_t);
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
-	using TaskId = ExecutorPool::TaskId;
+    using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
 
     struct HapInfo {
