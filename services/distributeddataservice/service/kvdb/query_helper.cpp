@@ -34,7 +34,7 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
     ZLOGI("query string length:%{public}zu", query.length());
     DBQuery dbQuery = DBQuery::Select();
     if (query.empty()) {
-        ZLOGI("Query string is empty.");
+        ZLOGD("Query string is empty.");
         isSuccess = true;
         return dbQuery;
     }
