@@ -472,7 +472,9 @@ void KvStoreMetaManager::GetDbInfosByDeviceId(const std::string deviceId, std::v
         return;
     }
     for (auto const& data : metaData) {
-        AddDbInfo(data, dbInfos);
+        if (data.isAutoSync) {
+            AddDbInfo(data, dbInfos);
+        }
     }
 }
 
