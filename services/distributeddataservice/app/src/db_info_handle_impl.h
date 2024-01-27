@@ -19,9 +19,7 @@
 namespace OHOS::DistributedKv {
 using namespace DistributedDB;
 class DBInfoHandleImpl : public DBInfoHandle {
-
 public:
-
     // return true if you can notify with RuntimeConfig::NotifyDBInfo
     bool IsSupport() override;
     // check is need auto sync when remote db is open
@@ -30,6 +28,4 @@ public:
         const DeviceInfos &devInfo) override;
 };
 }
-
-
 #endif //DISTRIBUTEDDATAMGR_DB_INFO_HANDLE_IMPL_H

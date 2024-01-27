@@ -82,17 +82,15 @@ void KvStoreMetaManager::InitMetaListener()
     InitMetaData();
     auto status = DmAdapter::GetInstance().StartWatchDeviceChange(&listener_, { "metaMgr" });
     if (status != AppDistributedKv::Status::SUCCESS) {
-        ZLOGW("register metaMgr failed.");
+        ZLOGW("register metaMgr failed: %{public}d.", status);
         return;
     }
-    ZLOGI("register meta device change success.");
-
     status = DmAdapter::GetInstance().StartWatchDeviceChange(&dbInfoListener_, { "notifyDbInfos" });
     if (status != AppDistributedKv::Status::SUCCESS) {
-        ZLOGW("register notifyDbInfos failed.");
+        ZLOGW("register notifyDbInfos failed: %{public}d.", status);
         return;
     }
-    ZLOGI("register notifyDbInfos device change success.");
+    ZLOGI("register metaMgr and notifyDbInfos device change success.");
 
     SubscribeMetaKvStore();
     SyncMeta();
@@ -450,7 +448,6 @@ void KvStoreMetaManager::OnDataChange(CHANGE_FLAG flag, const std::list<Distribu
         if (!metaData.isAutoSync) {
             continue;
         }
-        // TODO:: single no ALL_USER_DEVICE_ID£¿
         std::vector<DistributedDB::DBInfo> dbInfos;
         AddDbInfo(metaData, dbInfos, flag == CHANGE_FLAG::DELETE);
         DistributedDB::RuntimeConfig::NotifyDBInfos({ metaData.deviceId }, dbInfos);
@@ -461,7 +458,7 @@ void KvStoreMetaManager::GetDbInfosByDeviceId(const std::string& deviceId, std::
 {
     std::vector<StoreMetaData> metaData;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metaData)) {
-        ZLOGE("load meta failed");
+        ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(deviceId).c_str());
         return;
     }
     for (auto const& data : metaData) {
@@ -476,7 +473,7 @@ void KvStoreMetaManager::AddDbInfo(const StoreMetaData& metaData, std::vector<Di
 {
     DistributedDB::DBInfo dbInfo;
     dbInfo.appId = metaData.deviceId;
-    dbInfo.userId = metaData.user; // user or account
+    dbInfo.userId = metaData.user;
     dbInfo.storeId = metaData.storeId;
     dbInfo.isNeedSync = !isDeleted;
     dbInfo.syncDualTupleMode = true;
@@ -498,9 +495,8 @@ void KvStoreMetaManager::NotifyAllAutoSyncDBInfo()
         return;
     }
     std::vector<StoreMetaData> metaData;
-    // syncTable or localTable?
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metaData, true)) {
-        ZLOGE("load meta failed");
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metaData)) {
+        ZLOGE("load meta failed, deviceId:%{public}s", Anonymous::Change(deviceId).c_str());
         return;
     }
     std::vector<DistributedDB::DBInfo> dbInfos;
@@ -509,6 +505,8 @@ void KvStoreMetaManager::NotifyAllAutoSyncDBInfo()
             continue;
         }
         AddDbInfo(data, dbInfos);
+    }
+    if (!dbInfos.empty()) {
         DistributedDB::RuntimeConfig::NotifyDBInfos({ deviceId }, dbInfos);
     }
 }
@@ -517,11 +515,12 @@ void KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::OnDeviceChanged(const A
     const DeviceChangeType& type) const
 {
     if (type != DeviceChangeType::DEVICE_ONLINE) {
-        ZLOGD("offline or onReady ignore, type:%{public}d", type);
+        ZLOGD("offline or onReady ignore, type:%{public}d, deviceId:%{public}s", type,
+            Anonymous::Change(info.uuid).c_str());
         return;
     }
     KvStoreMetaManager::GetInstance().SyncMeta();
-    KvStoreMetaManager::GetInstance().OnDeviceChange(info.uuid); // uuid?
+    KvStoreMetaManager::GetInstance().OnDeviceChange(info.uuid);
 }
 
 AppDistributedKv::ChangeLevelType KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::GetChangeLevelType() const
