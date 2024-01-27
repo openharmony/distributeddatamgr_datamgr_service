@@ -76,7 +76,6 @@ CloudServiceImpl::CloudServiceImpl()
     });
     MetaDataManager::GetInstance().Subscribe(
         Subscription::PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
-            ZLOGI("subscription change, key:%{public}s, flag:%{public}d", Anonymous::Change(key).c_str(), flag);
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
                 return true;
             }
@@ -323,6 +322,20 @@ int32_t CloudServiceImpl::OnInitialize()
 {
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
     Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    std::vector<int> users;
+    Account::GetInstance()->QueryUsers(users);
+    for (auto user : users) {
+        if (user == DEFAULT_USER) {
+            continue;
+        }
+        Subscription sub;
+        sub.userId = user;
+        if (!MetaDataManager::GetInstance().LoadMeta(sub.GetKey(), sub, true)) {
+            ZLOGE("no exist meta, user:%{public}d", user);
+            continue;
+        }
+        InitSubTask(sub);
+    }
     return E_OK;
 }
 
@@ -1002,6 +1015,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
     if (executor == nullptr) {
         return;
     }
+    ZLOGI("Subscription Info, subTask:%{public}d, user:%{public}s",subTask_, sub.userId);
     expire = expire - TIME_BEFORE_SUB; // before 12 hours
     auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     Duration delay = expire > now ? milliseconds(expire - now) : milliseconds(0);
