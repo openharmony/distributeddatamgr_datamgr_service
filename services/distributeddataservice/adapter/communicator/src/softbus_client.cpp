@@ -56,6 +56,11 @@ uint32_t SoftBusClient::GetMtuSize() const
     return mtu_;
 }
 
+uint32_t SoftBusClient::GetTimeout() const
+{
+    return DEFAULT_TIMEOUT;
+}
+
 Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *listener)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -90,7 +95,7 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     socketInfo.peerName = const_cast<char *>(peerName.c_str());
     std::string networkId = DmAdapter::GetInstance().ToNetworkID(device_.deviceId);
     socketInfo.peerNetworkId = const_cast<char *>(networkId.c_str());
-    std::string clientName = pipe_.pipeId + "_client_" + socketInfo.peerNetworkId;
+    std::string clientName = (pipe_.pipeId + "_client_" + socketInfo.peerNetworkId).substr(0, 64);
     socketInfo.name = const_cast<char *>(clientName.c_str());
     std::string pkgName = "ohos.distributeddata";
     socketInfo.pkgName = pkgName.data();
