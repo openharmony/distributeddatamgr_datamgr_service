@@ -53,7 +53,6 @@ public:
     void InitMetaListener();
     void InitBroadcast();
     void InitDeviceOnline();
-    void NotifyAllAutoSyncDBInfo();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
     void BindExecutor(std::shared_ptr<ExecutorPool> executors);
 private:
@@ -73,10 +72,16 @@ private:
 
     void SyncMeta();
 
-    void OnDataChange(const std::list<DistributedDB::Entry> &changedData, bool isDeleted = false);
-    void OnDeviceChange(const std::string deviceId,  const AppDistributedKv::DeviceChangeType &type);
-    void AddDbInfo(const DistributedData::StoreMetaData &metaData, std::vector<DistributedDB::DBInfo> &dbInfos, bool isDeleted = false);
-    void GetDbInfosByDeviceId(const std::string deviceId, std::vector<DistributedDB::DBInfo> &dbInfos);
+    void NotifyAllAutoSyncDBInfo();
+
+    void OnDataChange(CHANGE_FLAG flag, const std::list<DistributedDB::Entry>& changedData);
+
+    void OnDeviceChange(const std::string& deviceId);
+
+    void AddDbInfo(const DistributedData::StoreMetaData& metaData, std::vector<DistributedDB::DBInfo>& dbInfos,
+        bool isDeleted = false);
+
+    void GetDbInfosByDeviceId(const std::string& deviceId, std::vector<DistributedDB::DBInfo>& dbInfos);
 
     std::string GetBackupPath() const;
 

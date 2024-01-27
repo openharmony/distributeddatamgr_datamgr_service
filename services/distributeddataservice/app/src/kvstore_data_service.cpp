@@ -28,6 +28,7 @@
 #include "communicator_context.h"
 #include "config_factory.h"
 #include "crypto_manager.h"
+#include "db_info_handle_impl.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "dump/dump_manager.h"
@@ -57,7 +58,6 @@
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
-#include "db_info_handle_impl.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
