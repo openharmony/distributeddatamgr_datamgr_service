@@ -52,7 +52,7 @@ public:
     static void OnServerBind(int32_t socket, PeerSocketInfo info);
     static void OnServerShutdown(int32_t socket, ShutdownReason reason);
     static void OnServerBytesReceived(int32_t socket, const void *data, uint32_t dataLen);
-    static std::string GetPipeId(const char *name);
+    static std::string GetPipeId(const std::string &name);
 
 public:
     // notify all listeners when received message
@@ -216,7 +216,7 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
                 }
                 auto expireTime = conn->GetExpireTime();
                 if (expireTime <= now) {
-                    ZLOGD("[timeout] close session socket:%{public}d", conn->GetSocket());
+                    ZLOGI("[timeout] close session socket:%{public}d", conn->GetSocket());
                     connToClose.emplace_back(conn);
                 } else {
                     holdConnects.emplace_back(conn);
@@ -277,7 +277,23 @@ uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
 
 uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
 {
-    return DEFAULT_TIMEOUT;
+    uint32_t interval = DEFAULT_TIMEOUT;
+    connects_.ComputeIfPresent(deviceId.deviceId, [&interval](auto, auto &connects) {
+        uint32_t time = 0;
+        for (auto conn : connects) {
+            if (conn == nullptr) {
+                continue;
+            }
+            if (time < conn->GetTimeout()) {
+                time = conn->GetTimeout();
+            }
+        }
+        if (time != 0) {
+            interval = time;
+        }
+        return true;
+    });
+    return interval;
 }
 
 std::string SoftBusAdapter::DelConnect(int32_t socket)
@@ -403,19 +419,19 @@ void AppDataListenerWrap::OnServerBind(int32_t socket, PeerSocketInfo info)
     softBusAdapter_->OnBind(socket, info);
     std::string peerDevUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(info.networkId));
 
-    ZLOGD("[OnServerBind] socket:%{public}d, peer name:%{public}s, peer devId:%{public}s", socket, info.name,
+    ZLOGI("[OnServerBind] socket:%{public}d, peer name:%{public}s, peer devId:%{public}s", socket, info.name,
         KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str());
 }
 
 void AppDataListenerWrap::OnServerShutdown(int32_t socket, ShutdownReason reason)
 {
     softBusAdapter_->OnServerShutdown(socket);
-    ZLOGD("Shut down reason:%{public}d socket id:%{public}d", reason, socket);
+    ZLOGI("Shut down reason:%{public}d socket id:%{public}d", reason, socket);
 }
 
 void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data, uint32_t dataLen)
 {
-    PeerSocketInfo info;
+    SoftBusAdapter::ServerSocketInfo info;
     if (!softBusAdapter_->GetPeerSocketInfo(socket, info)) {
         ZLOGE("Get peer socket info failed, socket id %{public}d", socket);
         return;
@@ -423,7 +439,7 @@ void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data
     std::string peerDevUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(info.networkId));
 
     ZLOGD("[OnBytesReceived] socket:%{public}d, peer name:%{public}s, peer devId:%{public}s, data len:%{public}u",
-        socket, info.name, KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str(), dataLen);
+        socket, info.name.c_str(), KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str(), dataLen);
 
     std::string pipeId = GetPipeId(info.name);
     if (pipeId.empty()) {
@@ -434,12 +450,11 @@ void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data
     NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerDevUuid, { pipeId, "" });
 }
 
-std::string AppDataListenerWrap::GetPipeId(const char *name)
+std::string AppDataListenerWrap::GetPipeId(const std::string &name)
 {
-    std::string nameStr = name;
-    auto pos = nameStr.find('_');
+    auto pos = name.find('_');
     if (pos != std::string::npos) {
-        return nameStr.substr(0, pos);
+        return name.substr(0, pos);
     }
     return "";
 }
@@ -450,7 +465,7 @@ void AppDataListenerWrap::NotifyDataListeners(const uint8_t *data, const int siz
     softBusAdapter_->NotifyDataListeners(data, size, deviceId, pipeInfo);
 }
 
-bool SoftBusAdapter::GetPeerSocketInfo(int32_t socket, PeerSocketInfo& info)
+bool SoftBusAdapter::GetPeerSocketInfo(int32_t socket, ServerSocketInfo &info)
 {
     auto it = peerSocketInfos_.Find(socket);
     if (it.first) {
@@ -462,7 +477,11 @@ bool SoftBusAdapter::GetPeerSocketInfo(int32_t socket, PeerSocketInfo& info)
 
 void SoftBusAdapter::OnBind(int32_t socket, PeerSocketInfo info)
 {
-    peerSocketInfos_.Insert(socket, info);
+    ServerSocketInfo socketInfo;
+    socketInfo.name = info.name;
+    socketInfo.networkId = info.networkId;
+    socketInfo.pkgName = info.pkgName;
+    peerSocketInfos_.Insert(socket, socketInfo);
 }
 
 void SoftBusAdapter::OnServerShutdown(int32_t socket)
