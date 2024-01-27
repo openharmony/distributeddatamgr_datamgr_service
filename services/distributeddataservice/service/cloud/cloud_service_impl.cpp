@@ -1015,7 +1015,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
     if (executor == nullptr) {
         return;
     }
-    ZLOGI("Subscription Info, subTask:%{public}d, user:%{public}s",subTask_, sub.userId);
+    ZLOGI("Subscription Info, subTask:%{public}d, user:%{public}s", subTask_, sub.userId);
     expire = expire - TIME_BEFORE_SUB; // before 12 hours
     auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     Duration delay = expire > now ? milliseconds(expire - now) : milliseconds(0);
