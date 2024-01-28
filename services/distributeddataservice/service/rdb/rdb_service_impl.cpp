@@ -273,7 +273,8 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     StoreMetaData localMeta;
     bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
     bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
-    if (isCreatedLocal && (!isCreatedSync || localMeta != syncMeta)) {
+    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE && isCreatedLocal &&
+        (!isCreatedSync || localMeta != syncMeta)) {
         ZLOGD("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
               "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
             meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,

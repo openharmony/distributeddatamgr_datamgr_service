@@ -247,7 +247,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         meta.user = std::to_string(storeInfo.user);
         meta.instanceId = storeInfo.instanceId;
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
             return;
