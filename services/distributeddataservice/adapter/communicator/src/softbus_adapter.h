@@ -40,6 +40,12 @@ public:
     ~SoftBusAdapter();
     static std::shared_ptr<SoftBusAdapter> GetInstance();
 
+    struct ServerSocketInfo {
+        std::string name;      /**< Peer socket name */
+        std::string networkId; /**< Peer network ID */
+        std::string pkgName;   /**< Peer package name */
+    };
+
     // add DataChangeListener to watch data change;
     Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo);
 
@@ -66,7 +72,7 @@ public:
 
     void OnServerShutdown(int32_t socket);
 
-    bool GetPeerSocketInfo(int32_t socket, PeerSocketInfo &info);
+    bool GetPeerSocketInfo(int32_t socket, ServerSocketInfo &info);
 
     int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask);
     void OnBroadcast(const DeviceId &device, uint16_t mask);
@@ -97,7 +103,7 @@ private:
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     Time next_ = INVALID_NEXT;
 
-    ConcurrentMap<int32_t, PeerSocketInfo> peerSocketInfos_;
+    ConcurrentMap<int32_t, ServerSocketInfo> peerSocketInfos_;
     ISocketListener clientListener_{};
     ISocketListener serverListener_{};
     int32_t socket_ = 0;
