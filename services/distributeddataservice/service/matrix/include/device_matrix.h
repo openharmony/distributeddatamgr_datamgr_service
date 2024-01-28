@@ -47,7 +47,7 @@ public:
     void Clear();
 
 private:
-    static constexpr uint32_t CURRENT_VERSION = 1;
+    static constexpr uint32_t CURRENT_VERSION = 2;
     static constexpr uint32_t CURRENT_MASK = 0x000E;
     static constexpr size_t MAX_DEVICES = 16;
 

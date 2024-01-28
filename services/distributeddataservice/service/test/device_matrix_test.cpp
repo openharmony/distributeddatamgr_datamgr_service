@@ -356,7 +356,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
 HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
 {
     MatrixMetaData metaData;
-    metaData.version = 2;
+    metaData.version = 3;
     metaData.mask = 0x1F;
     metaData.deviceId = TEST_DEVICE;
     metaData.maskInfo = { TEST_BUNDLE, "distributed_device_profile_service" };
