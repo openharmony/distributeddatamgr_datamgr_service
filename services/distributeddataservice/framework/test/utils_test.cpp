@@ -46,11 +46,10 @@ public:
 HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
 {
     ZLOGI("RefCountTest Constructor begin.");
-    RefCount obj; 
+    RefCount obj;
     ASSERT_EQ(obj, false);
 
-    RefCount obj1([]() { 
-    });
+    RefCount obj1([]() {});
     ASSERT_EQ(obj1, true);
 
     RefCount obj2(obj);
@@ -60,7 +59,7 @@ HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
     ASSERT_EQ(obj3, obj);
 
     RefCount obj4;
-    obj4 = obj; 
+    obj4 = obj;
     ASSERT_EQ(obj4, obj);
 
     bool isValid = (RefCount());
@@ -91,7 +90,7 @@ HWTEST_F(BlockIntegerTest, SymbolOverloadingTest, TestSize.Level2)
     ASSERT_EQ(blockInteger, 12);
 
     bool res = (blockInteger < 20);
-    ASSERT_EQ(res,true);
+    ASSERT_EQ(res, true);
 }
 
 
@@ -112,13 +111,9 @@ HWTEST_F(ConverterTest, StoreMetaDataConvertToStoreInfoTest, TestSize.Level2)
     metaData.storeId = "test_storeId";
     metaData.tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(10, "ohos.test.demo", 0);
     CheckerManager::StoreInfo storeInfo  =  Converter::ConvertToStoreInfo(metaData);
-    ASSERT_EQ(storeInfo.uid,1);
-    ASSERT_EQ(storeInfo.tokenId,3);
-    ASSERT_EQ(storeInfo.bundleName,"ohos.test.demo");
-    ASSERT_EQ(storeInfo.storeId,"test_storeId");
+    ASSERT_EQ(storeInfo.uid, 1);
+    ASSERT_EQ(storeInfo.tokenId, 3);
+    ASSERT_EQ(storeInfo.bundleName, "ohos.test.demo");
+    ASSERT_EQ(storeInfo.storeId, "test_storeId");
 }
-
-
-
-
 } // namespace OHOS::Test

@@ -48,7 +48,6 @@ HWTEST_F(AutoCacheTest, BindExecutorTest, TestSize.Level2)
     AutoCache::Watchers watchers;
     auto store =  AutoCache::GetInstance().GetStore(metaData, watchers);
     ASSERT_EQ(store, nullptr);
-
 }
 
 /**
@@ -73,6 +72,4 @@ HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
     uint32_t high_Mode = genstore->GetHighMode(mixMode);
     ASSERT_EQ(high_Mode, 0);
 }
-
-
 }
