@@ -13,6 +13,7 @@
 * limitations under the License.
 */
 #define LOG_TAG "UtilsTest"
+
 #include "utils/ref_count.h"
 #include "accesstoken_kit.h"
 #include "gtest/gtest.h"

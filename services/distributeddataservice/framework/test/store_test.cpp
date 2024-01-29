@@ -14,11 +14,9 @@
 */
 #define LOG_TAG "RefCountTest"
 
-#include "accesstoken_kit.h"
 #include "gtest/gtest.h"
 #include "log_print.h"
 #include "store/auto_cache.h"
-#include "store/general_value.h"
 #include "store/general_store.h"
 #include "types.h"
 
@@ -60,16 +58,15 @@ HWTEST_F(AutoCacheTest, BindExecutorTest, TestSize.Level2)
 HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
 {
     ZLOGI("GeneralStoreTest GetMixModeTest begin.");
-    GeneralStore *genstore;
     uint32_t syncMode = 1;
     uint32_t highMode = 2;
-    uint32_t mixMode =  genstore->MixMode(syncMode, highMode);
+    uint32_t mixMode =  GeneralStore::MixMode(syncMode, highMode);
     ASSERT_EQ(mixMode, 3);
 
-    uint32_t sync_Mode = genstore->GetSyncMode(mixMode);
+    uint32_t sync_Mode = GeneralStore::GetSyncMode(mixMode);
     ASSERT_EQ(sync_Mode, 3);
 
-    uint32_t high_Mode = genstore->GetHighMode(mixMode);
+    uint32_t high_Mode = GeneralStore::GetHighMode(mixMode);
     ASSERT_EQ(high_Mode, 0);
 }
 }
