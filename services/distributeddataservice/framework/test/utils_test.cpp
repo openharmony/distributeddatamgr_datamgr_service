@@ -14,9 +14,6 @@
 */
 #define LOG_TAG "UtilsTest"
 #include "utils/ref_count.h"
-
-#include <type_traits>
-
 #include "accesstoken_kit.h"
 #include "gtest/gtest.h"
 #include "log_print.h"

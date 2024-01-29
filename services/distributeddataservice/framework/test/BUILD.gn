@@ -96,6 +96,52 @@ ohos_unittest("SerializableTest") {
   ]
 }
 
+ohos_unittest("StoreTest") {
+  module_out_path = module_output_path
+  sources = [ "store_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//third_party/googletest:gtest_main",
+     "//third_party/openssl:libcrypto_shared",
+  ]
+}
+
+ohos_unittest("UtilsTest") {
+  module_out_path = module_output_path
+  sources = [ "utils_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_shared",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -106,6 +152,8 @@ group("unittest") {
     ":CheckerManagerTest",
     ":EventCenterTest",
     ":SerializableTest",
+    ":StoreTest",
+    ":UtilsTest",
   ]
 }
 ###############################################################################
