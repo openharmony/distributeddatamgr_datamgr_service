@@ -23,6 +23,7 @@
 #include "kv_store_delegate_manager.h"
 #include "system_ability.h"
 #include "types.h"
+#include "metadata/store_meta_data.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -71,6 +72,17 @@ private:
 
     void SyncMeta();
 
+    void NotifyAllAutoSyncDBInfo();
+
+    void OnDataChange(CHANGE_FLAG flag, const std::list<DistributedDB::Entry>& changedData);
+
+    void OnDeviceChange(const std::string& deviceId);
+
+    void AddDbInfo(const DistributedData::StoreMetaData& metaData, std::vector<DistributedDB::DBInfo>& dbInfos,
+        bool isDeleted = false);
+
+    void GetDbInfosByDeviceId(const std::string& deviceId, std::vector<DistributedDB::DBInfo>& dbInfos);
+
     std::string GetBackupPath() const;
 
     ExecutorPool::Task GetTask(uint32_t retry);
@@ -88,6 +100,13 @@ private:
         void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &entries);
     };
 
+    class DBInfoDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
+        void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
+            const AppDistributedKv::DeviceChangeType &type) const override;
+
+        AppDistributedKv::ChangeLevelType GetChangeLevelType() const override;
+    };
+
     static constexpr int32_t RETRY_MAX_TIMES = 100;
     static constexpr int32_t RETRY_INTERVAL = 1;
     static constexpr uint8_t COMPRESS_RATE = 10;
@@ -97,6 +116,7 @@ private:
     const std::string label_;
     DistributedDB::KvStoreDelegateManager delegateManager_;
     static MetaDeviceChangeListenerImpl listener_;
+    static DBInfoDeviceChangeListenerImpl dbInfoListener_;
     KvStoreMetaObserver metaObserver_;
     std::mutex mutex_;
     std::shared_ptr<ExecutorPool> executors_;
