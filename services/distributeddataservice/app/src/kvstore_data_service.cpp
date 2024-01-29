@@ -28,6 +28,7 @@
 #include "communicator_context.h"
 #include "config_factory.h"
 #include "crypto_manager.h"
+#include "db_info_handle_impl.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "dump/dump_manager.h"
@@ -133,6 +134,7 @@ void KvStoreDataService::Initialize()
         return Upgrade::GetInstance().GetEncryptedUuidByMeta(meta);
     };
     DBConfig::SetTranslateToDeviceIdCallback(translateCall);
+    DistributedDB::RuntimeConfig::SetDBInfoHandle(std::make_shared<DBInfoHandleImpl>());
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
