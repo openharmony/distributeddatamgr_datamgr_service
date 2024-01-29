@@ -164,7 +164,7 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
             meta.user = std::to_string(cloudInfo.user);
             meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
             meta.instanceId = cloudInfo.apps[bundle].instanceId;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
                 ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                     meta.GetStoreAlias().c_str());
                 continue;
@@ -592,7 +592,7 @@ std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::P
     meta.user = std::to_string(storeInfo.user);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.instanceId = storeInfo.instanceId;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
         ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         return { GeneralError::E_ERROR, nullptr };
