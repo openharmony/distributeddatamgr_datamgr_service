@@ -323,6 +323,10 @@ int32_t CloudServiceImpl::OnBind(const BindInfo &info)
 
     executor_ = std::move(info.executors);
     syncManager_.Bind(executor_);
+    auto instance = CloudServer::GetInstance();
+    if (instance != nullptr) {
+        instance->Bind(executor_);
+    }
     return E_OK;
 }
 
