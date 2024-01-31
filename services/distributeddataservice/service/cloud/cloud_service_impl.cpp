@@ -75,7 +75,7 @@ CloudServiceImpl::CloudServiceImpl()
         CloudShare(event);
     });
     MetaDataManager::GetInstance().Subscribe(
-        Subscription::PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
+        Subscription::GetPrefix({ "" }), [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
                 return true;
             }
