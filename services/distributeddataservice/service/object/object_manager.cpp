@@ -175,8 +175,8 @@ int32_t ObjectStoreManager::RevokeSave(
     return result;
 }
 
-int32_t ObjectStoreManager::Retrieve(const std::string& bundleName, const std::string& sessionId,
-    sptr<IRemoteObject> callback, uint32_t tokenId)
+int32_t ObjectStoreManager::Retrieve(
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
     ZLOGI("enter");
@@ -349,19 +349,19 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
     }));
 }
 
-void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>>& changedData)
+void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData)
 {
     ZLOGD("ObjectStoreManager::NotifyChange start");
     SaveUserToMeta();
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> transferData;
-    for (const auto& item : changedData) {
+    for (const auto &item : changedData) {
         std::string prefix = GetBundleName(item.first) + GetSessionId(item.first);
         std::string propertyName = GetPropertyName(item.first);
         data[prefix].insert_or_assign(propertyName, item.second);
 
         std::string bundleName = GetBundleName(item.first);
-        transferData[bundleName].insert_or_assign(std::move(propertyName), item.second);
+        transferData[bundleName].insert_or_assign(std::move(propertyName), std::move(item.second));
     }
 
     const int32_t userId = std::stoi(GetCurrentUser());
