@@ -196,10 +196,10 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    RefCount refCount([=]() {
+
+    TransferAssets(results, userId, bundleName, [=](){
         proxy->Completed(results);
     });
-    TransferAssets(results, userId, bundleName, refCount);
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
     if (status != OBJECT_SUCCESS) {
@@ -212,13 +212,13 @@ int32_t ObjectStoreManager::Retrieve(
     return status;
 }
 
-void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
-    const std::string& bundleName, RefCount refCount)
+void ObjectStoreManager::TransferAssets(
+    std::map<std::string, std::vector<uint8_t>>& results, int32_t userId, const std::string& bundleName, const std::function<void()>& callback)
 {
     std::map<std::string, Asset> assets;
     std::string deviceId;
 
-    for (auto const& [key, value] : results) {
+    for (auto const&[key, value] : results) {
         if (key.find(ObjectStore::ASSET_DOT) == std::string::npos) {
             if (key == (ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)) {
                 ObjectStore::StringUtils::BytesToStrWithType(value, deviceId);
@@ -228,19 +228,23 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
             auto it = assets.find(assetKey);
             if (it == assets.end()) {
                 Asset asset;
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::NAME_SUFFIX], asset.name);
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::NAME_SUFFIX], asset.name);
                 asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::URI_SUFFIX], asset.uri);
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::URI_SUFFIX], asset.uri);
                 asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
                 assets[assetKey] = asset;
             }
         }
     }
     if (!assets.empty()) {
-        for (auto& [key, asset] : assets) {
-            ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset,
-                [refCount](bool success) {});
+        for (auto&[key, asset] : assets) {
+            ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset, 
+                [callback](bool success){
+                    callback();
+                });
         }
+    } else {
+        callback();
     }
 }
 
@@ -365,22 +369,21 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     }
 
     const int32_t userId = std::stoi(GetCurrentUser());
-    RefCount refCount([this, data]() {
-        callbacks_.ForEach([data](uint32_t tokenId, CallbackInfo& value) {
-            for (const auto& observer : value.observers_) {
-                auto it = data.find(observer.first);
-                if (it == data.end()) {
-                    continue;
-                }
-                observer.second->Completed((*it).second);
-            }
-            return false;
-        });
-    });
-    for (auto& item : transferData) {
+    for (auto item : transferData) {
         std::string bundleName = item.first;
         auto results = item.second;
-        TransferAssets(results, userId, bundleName, refCount);
+        TransferAssets(results, userId, bundleName, [this, data]() {
+            callbacks_.ForEach([data](uint32_t tokenId, CallbackInfo &value) {
+                for (const auto &observer : value.observers_) {
+                    auto it = data.find(observer.first);
+                    if (it == data.end()) {
+                        continue;
+                    }
+                    observer.second->Completed((*it).second);
+                }
+                return false;
+            });
+        });
     }
 }
 

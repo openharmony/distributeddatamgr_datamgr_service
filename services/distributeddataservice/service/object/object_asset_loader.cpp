@@ -41,7 +41,7 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundle
     assetInfo.uri = assetValue.uri;
     assetInfo.assetName = assetValue.name;
     ZLOGD("Start transfer, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-        DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
+          DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
     auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [block](const std::string &uri, int32_t status) {
@@ -61,7 +61,7 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundle
     return true;
 }
 
-bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+void ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
     const DistributedData::Asset& assetValue, std::function<void(bool success)> callback)
 {
     executors_->Execute([userId, bundleName, deviceId, assetValue, callback]() {
@@ -83,6 +83,17 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
             ZLOGE("Start Transfer fail. res: %{public}d", res);
             callback(false);
         }
+    });
+}
+
+void ObjectAssetLoader::TransferAssets(const int32_t userId, const std::string &bundleName,
+    const std::string &deviceId, const std::vector<DistributedData::Asset> &assetValues, const std::function<void()>& callback)
+{
+    executors_->Execute([this, userId, bundleName, deviceId, assetValues, callback]() {
+        for(auto& assetValue : assetValues){
+            Transfer(userId, bundleName, deviceId, assetValue);
+        }
+        callback();
     });
 }
 } // namespace OHOS::DistributedObject
