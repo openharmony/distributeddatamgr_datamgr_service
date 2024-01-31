@@ -396,6 +396,9 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
+    if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+        return { ERROR, cloudInfo };
+    }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         return { SERVER_UNAVAILABLE, cloudInfo };
@@ -454,6 +457,9 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
 std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
 {
     SchemaMeta schemaMeta;
+    if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+        return { ERROR, schemaMeta };
+    }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         return { SERVER_UNAVAILABLE, schemaMeta };
