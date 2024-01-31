@@ -175,8 +175,8 @@ int32_t ObjectStoreManager::RevokeSave(
     return result;
 }
 
-int32_t ObjectStoreManager::Retrieve(
-    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
+int32_t ObjectStoreManager::Retrieve(const std::string& bundleName, const std::string& sessionId,
+    sptr<IRemoteObject> callback, uint32_t tokenId)
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
     ZLOGI("enter");
@@ -196,7 +196,10 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    TransferAssets(results, userId, bundleName);
+    RefCount refCount([=]() {
+        proxy->Completed(results);
+    });
+    TransferAssets(results, userId, bundleName, refCount);
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
     if (status != OBJECT_SUCCESS) {
@@ -206,17 +209,16 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     Close();
-    proxy->Completed(results);
     return status;
 }
 
-void ObjectStoreManager::TransferAssets(
-    std::map<std::string, std::vector<uint8_t>>& results, int32_t userId, const std::string& bundleName)
+void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
+    const std::string& bundleName, RefCount refCount)
 {
     std::map<std::string, Asset> assets;
     std::string deviceId;
 
-    for (auto const&[key, value] : results) {
+    for (auto const& [key, value] : results) {
         if (key.find(ObjectStore::ASSET_DOT) == std::string::npos) {
             if (key == (ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)) {
                 ObjectStore::StringUtils::BytesToStrWithType(value, deviceId);
@@ -226,20 +228,18 @@ void ObjectStoreManager::TransferAssets(
             auto it = assets.find(assetKey);
             if (it == assets.end()) {
                 Asset asset;
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::NAME_SUFFIX], asset.name);
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::NAME_SUFFIX], asset.name);
                 asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::URI_SUFFIX], asset.uri);
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::URI_SUFFIX], asset.uri);
                 asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
                 assets[assetKey] = asset;
             }
         }
     }
     if (!assets.empty()) {
-        for (auto&[key, asset] : assets) {
-            if (!ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset)) {
-                ZLOGE("Transfer fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
-                    "%{public}s", userId, bundleName.c_str(), deviceId.c_str(), asset.name.c_str());
-            }
+        for (auto& [key, asset] : assets) {
+            ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset,
+                [refCount](bool success) {});
         }
     }
 }
@@ -349,38 +349,39 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
     }));
 }
 
-void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData)
+void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>>& changedData)
 {
     ZLOGD("ObjectStoreManager::NotifyChange start");
     SaveUserToMeta();
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> transferData;
-    for (const auto &item : changedData) {
+    for (const auto& item : changedData) {
         std::string prefix = GetBundleName(item.first) + GetSessionId(item.first);
         std::string propertyName = GetPropertyName(item.first);
         data[prefix].insert_or_assign(propertyName, item.second);
 
         std::string bundleName = GetBundleName(item.first);
-        transferData[bundleName].insert_or_assign(std::move(propertyName), std::move(item.second));
+        transferData[bundleName].insert_or_assign(std::move(propertyName), item.second);
     }
 
     const int32_t userId = std::stoi(GetCurrentUser());
-    for (auto item : transferData) {
+    RefCount refCount([this, data]() {
+        callbacks_.ForEach([data](uint32_t tokenId, CallbackInfo& value) {
+            for (const auto& observer : value.observers_) {
+                auto it = data.find(observer.first);
+                if (it == data.end()) {
+                    continue;
+                }
+                observer.second->Completed((*it).second);
+            }
+            return false;
+        });
+    });
+    for (auto& item : transferData) {
         std::string bundleName = item.first;
         auto results = item.second;
-        TransferAssets(results, userId, bundleName);
+        TransferAssets(results, userId, bundleName, refCount);
     }
-
-    callbacks_.ForEach([&data](uint32_t tokenId, CallbackInfo &value) {
-        for (const auto &observer : value.observers_) {
-            auto it = data.find(observer.first);
-            if (it == data.end()) {
-                continue;
-            }
-            observer.second->Completed((*it).second);
-        }
-        return false;
-    });
 }
 
 void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &userId)
