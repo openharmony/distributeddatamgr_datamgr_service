@@ -17,6 +17,7 @@
 
 #include "data_share_service_stub.h"
 
+#include <cinttypes>
 #include "data_share_obs_proxy.h"
 #include "ipc_skeleton.h"
 #include "ishared_result_set.h"
@@ -320,14 +321,23 @@ int32_t DataShareServiceStub::OnRemoteNotifyConnectDone(MessageParcel &data, Mes
 
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
-    ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    ZLOGD("code:%{public}u, callingPid:%{public}d", code, callingPid);
     if (!CheckInterfaceToken(data)) {
         return DATA_SHARE_ERROR;
     }
+    int res = -1;
     if (code < DATA_SHARE_SERVICE_CMD_MAX) {
-        return (this->*HANDLERS[code])(data, reply);
+        auto start = std::chrono::steady_clock::now();
+        res = (this->*HANDLERS[code])(data, reply);
+        auto finish = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+        if (duration >= TIME_THRESHOLD) {
+            ZLOGW("over time, code:%{public}u callingPid:%{public}d, cost:%{public}" PRIi64 "ms",
+                code, callingPid, duration.count());
+        }
     }
-    return -1;
+    return res;
 }
 
 int32_t DataShareServiceStub::OnRemoteNotifyObserver(MessageParcel &data, MessageParcel &reply)
