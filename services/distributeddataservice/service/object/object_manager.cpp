@@ -175,8 +175,8 @@ int32_t ObjectStoreManager::RevokeSave(
     return result;
 }
 
-int32_t ObjectStoreManager::Retrieve(
-    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
+int32_t ObjectStoreManager::Retrieve(const std::string& bundleName, const std::string& sessionId,
+    sptr<IRemoteObject> callback, uint32_t tokenId)
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
     ZLOGI("enter");
@@ -197,7 +197,7 @@ int32_t ObjectStoreManager::Retrieve(
     }
     const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
 
-    TransferAssets(results, userId, bundleName, [=](){
+    TransferAssets(results, userId, bundleName, [=]() {
         proxy->Completed(results);
     });
     // delete local data
@@ -212,8 +212,8 @@ int32_t ObjectStoreManager::Retrieve(
     return status;
 }
 
-void ObjectStoreManager::TransferAssets(
-    std::map<std::string, std::vector<uint8_t>>& results, int32_t userId, const std::string& bundleName, const std::function<void()>& callback)
+void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
+    const std::string& bundleName, const std::function<void()>& callback)
 {
     std::map<std::string, Asset> assets;
     std::string deviceId;
@@ -237,12 +237,7 @@ void ObjectStoreManager::TransferAssets(
         }
     }
     if (!assets.empty()) {
-        for (auto&[key, asset] : assets) {
-            ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset, 
-                [callback](bool success){
-                    callback();
-                });
-        }
+        ObjectAssetLoader::GetInstance()->TransferAssets(userId, bundleName, deviceId, assets, callback);
     } else {
         callback();
     }

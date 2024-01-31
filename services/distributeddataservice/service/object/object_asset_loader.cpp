@@ -86,11 +86,11 @@ void ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
     });
 }
 
-void ObjectAssetLoader::TransferAssets(const int32_t userId, const std::string &bundleName,
-    const std::string &deviceId, const std::vector<DistributedData::Asset> &assetValues, const std::function<void()>& callback)
+void ObjectAssetLoader::TransferAssets(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+    const std::map<std::string, DistributedData::Asset>& assets, const std::function<void()>& callback)
 {
-    executors_->Execute([this, userId, bundleName, deviceId, assetValues, callback]() {
-        for(auto& assetValue : assetValues){
+    executors_->Execute([this, userId, bundleName, deviceId, assets, callback]() {
+        for (auto& [assetKey, assetValue] : assets) {
             Transfer(userId, bundleName, deviceId, assetValue);
         }
         callback();
