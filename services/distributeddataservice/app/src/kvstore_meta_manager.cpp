@@ -519,6 +519,10 @@ void KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::OnDeviceChanged(const A
             Anonymous::Change(info.uuid).c_str());
         return;
     }
+    if (info.uuid == DistributedData::DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
+        ZLOGD("Network change, ignore");
+        return;
+    }
     KvStoreMetaManager::GetInstance().SyncMeta();
     KvStoreMetaManager::GetInstance().OnDeviceChange(info.uuid);
 }
