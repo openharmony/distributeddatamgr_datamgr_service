@@ -188,7 +188,7 @@ int32_t ObjectStoreManager::Retrieve(
         return STORE_NOT_OPEN;
     }
 
-    std::map<std::string, std::vector<uint8_t>> results;
+    std::map<std::string, std::vector<uint8_t>> results{};
     int32_t status = RetrieveFromStore(bundleName, sessionId, results);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("Retrieve failed, status = %{public}d", status);
@@ -197,10 +197,6 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-
-    TransferAssets(results, userId, bundleName, [=](bool success) {
-        proxy->Completed(results);
-    });
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
     if (status != OBJECT_SUCCESS) {
@@ -210,6 +206,9 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     Close();
+    TransferAssets(results, userId, bundleName, [=](bool success) {
+        proxy->Completed(results);
+    });
     return status;
 }
 
