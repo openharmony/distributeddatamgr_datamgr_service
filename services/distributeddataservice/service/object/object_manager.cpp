@@ -14,6 +14,7 @@
  */
 
 #define LOG_TAG "ObjectStoreManager"
+#include <set>
 
 #include "object_manager.h"
 
@@ -187,7 +188,7 @@ int32_t ObjectStoreManager::Retrieve(
         return STORE_NOT_OPEN;
     }
 
-    std::map<std::string, std::vector<uint8_t>> results;
+    std::map<std::string, std::vector<uint8_t>> results{};
     int32_t status = RetrieveFromStore(bundleName, sessionId, results);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("Retrieve failed, status = %{public}d", status);
@@ -195,8 +196,6 @@ int32_t ObjectStoreManager::Retrieve(
         proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
     }
-    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    TransferAssets(results, userId, bundleName);
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
     if (status != OBJECT_SUCCESS) {
@@ -206,14 +205,18 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     Close();
-    proxy->Completed(results);
+    int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    TransferAssets(results, userId, bundleName, [=](bool success) {
+        proxy->Completed(results);
+    });
     return status;
 }
 
-void ObjectStoreManager::TransferAssets(
-    std::map<std::string, std::vector<uint8_t>>& results, int32_t userId, const std::string& bundleName)
+void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
+    const std::string& bundleName, const std::function<void(bool success)>& callback)
 {
-    std::map<std::string, Asset> assets;
+    std::set<std::string> assets;
+    std::vector<Asset> assetValues;
     std::string deviceId;
 
     for (auto const&[key, value] : results) {
@@ -230,17 +233,15 @@ void ObjectStoreManager::TransferAssets(
                 asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
                 ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::URI_SUFFIX], asset.uri);
                 asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
-                assets[assetKey] = asset;
+                assets.insert(assetKey);
+                assetValues.push_back(asset);
             }
         }
     }
-    if (!assets.empty()) {
-        for (auto&[key, asset] : assets) {
-            if (!ObjectAssetLoader::GetInstance()->Transfer(userId, bundleName, deviceId, asset)) {
-                ZLOGE("Transfer fail, userId: %{public}d, bundleName: %{public}s, networkId: %{public}s, asset name : "
-                    "%{public}s", userId, bundleName.c_str(), deviceId.c_str(), asset.name.c_str());
-            }
-        }
+    if (!assetValues.empty()) {
+        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assetValues, callback);
+    } else {
+        callback(true);
     }
 }
 
@@ -361,26 +362,31 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
         data[prefix].insert_or_assign(propertyName, item.second);
 
         std::string bundleName = GetBundleName(item.first);
-        transferData[bundleName].insert_or_assign(std::move(propertyName), std::move(item.second));
+        transferData[bundleName].insert_or_assign(propertyName, item.second);
     }
-
+    std::function<void(bool success)> callback = [this, data](bool success) {
+        callbacks_.ForEach([this, &data](uint32_t tokenId, CallbackInfo& value) {
+            DoNotify(tokenId, value, data);
+            return false;
+        });
+    };
     const int32_t userId = std::stoi(GetCurrentUser());
     for (auto item : transferData) {
         std::string bundleName = item.first;
-        auto results = item.second;
-        TransferAssets(results, userId, bundleName);
+        TransferAssets(item.second, userId, bundleName, callback);
     }
+}
 
-    callbacks_.ForEach([&data](uint32_t tokenId, CallbackInfo &value) {
-        for (const auto &observer : value.observers_) {
-            auto it = data.find(observer.first);
-            if (it == data.end()) {
-                continue;
-            }
-            observer.second->Completed((*it).second);
+void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
+    const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
+{
+    for (const auto& observer : value.observers_) {
+        auto it = data.find(observer.first);
+        if (it == data.end()) {
+            continue;
         }
-        return false;
-    });
+        observer.second->Completed((*it).second);
+    }
 }
 
 void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &userId)
