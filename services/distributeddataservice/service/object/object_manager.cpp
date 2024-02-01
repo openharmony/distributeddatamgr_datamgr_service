@@ -364,23 +364,28 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
         std::string bundleName = GetBundleName(item.first);
         transferData[bundleName].insert_or_assign(propertyName, item.second);
     }
-
-    const int32_t userId = std::stoi(GetCurrentUser());
     std::function<void(bool success)> callback = [this, data](bool success) {
-        callbacks_.ForEach([&data](uint32_t tokenId, CallbackInfo& value) {
-            for (const auto& observer : value.observers_) {
-                auto it = data.find(observer.first);
-                if (it == data.end()) {
-                    continue;
-                }
-                observer.second->Completed((*it).second);
-            }
+        callbacks_.ForEach([this, &data](uint32_t tokenId, CallbackInfo& value) {
+            DoNotify(tokenId, value, data);
             return false;
         });
     };
+    const int32_t userId = std::stoi(GetCurrentUser());
     for (auto item : transferData) {
         std::string bundleName = item.first;
         TransferAssets(item.second, userId, bundleName, callback);
+    }
+}
+
+void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
+    const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
+{
+    for (const auto& observer : value.observers_) {
+        auto it = data.find(observer.first);
+        if (it == data.end()) {
+            continue;
+        }
+        observer.second->Completed((*it).second);
     }
 }
 
