@@ -29,9 +29,9 @@ ObjectAssetLoader *ObjectAssetLoader::GetInstance()
     return loader;
 }
 
-ObjectAssetLoader::ObjectAssetLoader()
+void ObjectAssetLoader::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
-    executors_ = std::make_shared<ExecutorPool>(MAX_THREADS, MIN_THREADS);
+    executors_ = executors;
 }
 
 bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundleName,
@@ -61,39 +61,15 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundle
     return true;
 }
 
-void ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-    const DistributedData::Asset& assetValue, std::function<void(bool success)> callback)
-{
-    executors_->Execute([userId, bundleName, deviceId, assetValue, callback]() {
-        AssetInfo assetInfo;
-        assetInfo.uri = assetValue.uri;
-        assetInfo.assetName = assetValue.name;
-        ZLOGD("Start Transfer. assetName: %{public}s", assetInfo.assetName.c_str());
-        int32_t res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
-            [callback](const std::string& uri, int32_t status) {
-                if (status != OBJECT_SUCCESS) {
-                    ZLOGE("Transfer fail, uri: %{public}s, status: %{public}d",
-                        DistributedData::Anonymous::Change(uri).c_str(), status);
-                    callback(false);
-                } else {
-                    callback(true);
-                }
-            });
-        if (res != OBJECT_SUCCESS) {
-            ZLOGE("Start Transfer fail. res: %{public}d", res);
-            callback(false);
-        }
-    });
-}
-
 void ObjectAssetLoader::TransferAssets(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-    const std::map<std::string, DistributedData::Asset>& assets, const std::function<void()>& callback)
+    const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback)
 {
     executors_->Execute([this, userId, bundleName, deviceId, assets, callback]() {
-        for (auto& [assetKey, assetValue] : assets) {
-            Transfer(userId, bundleName, deviceId, assetValue);
+        bool result = true;
+        for (auto& asset : assets) {
+            result &= Transfer(userId, bundleName, deviceId, asset);
         }
-        callback();
+        callback(result);
     });
 }
 } // namespace OHOS::DistributedObject

@@ -26,24 +26,19 @@ namespace DistributedObject {
 class ObjectAssetLoader {
 public:
     static ObjectAssetLoader *GetInstance();
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     bool Transfer(const int32_t userId, const std::string &bundleName,
         const std::string &deviceId, const DistributedData::Asset &assetValue);
-
-    void Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-        const DistributedData::Asset& assetValue, std::function<void(bool success)> callback);
-
     void TransferAssets(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-        const std::map<std::string, DistributedData::Asset>& assets, const std::function<void()>& callback);
+        const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
 private:
-    ObjectAssetLoader();
+    ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;
     ObjectAssetLoader(const ObjectAssetLoader &) = delete;
     ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
 
     static constexpr int WAIT_TIME = 60;
     std::shared_ptr<ExecutorPool> executors_;
-    const size_t MAX_THREADS = 3;
-    const size_t MIN_THREADS = 0;
 };
 } // namespace DistributedObject
 } // namespace OHOS

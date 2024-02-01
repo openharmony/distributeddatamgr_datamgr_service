@@ -133,8 +133,8 @@ private:
         const std::string &sessionId, const std::string &deviceId);
     void SaveUserToMeta();
     std::string GetCurrentUser();
-    void TransferAssets(
-        std::map<std::string, std::vector<uint8_t>>& results, int32_t userId, const std::string& bundleName, const std::function<void()>& callback);
+    void TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
+        const std::string& bundleName, const std::function<void(bool success)>& callback);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;

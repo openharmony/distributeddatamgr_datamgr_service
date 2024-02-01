@@ -162,8 +162,8 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset
 {
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
-    ObjectAssetLoader::GetInstance()->Transfer(changedAsset.storeInfo.user, changedAsset.storeInfo.bundleName,
-        changedAsset.deviceId, changedAsset.asset, [&changedAsset](bool success) {
+    ObjectAssetLoader::GetInstance()->Transfer(changedAsset.storeInfo.user,
+        changedAsset.storeInfo.bundleName, changedAsset.deviceId, changedAsset.asset, [&changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
                 if (status != E_OK) {

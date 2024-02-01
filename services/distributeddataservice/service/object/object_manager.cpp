@@ -14,6 +14,7 @@
  */
 
 #define LOG_TAG "ObjectStoreManager"
+#include <set>
 
 #include "object_manager.h"
 
@@ -197,7 +198,7 @@ int32_t ObjectStoreManager::Retrieve(const std::string& bundleName, const std::s
     }
     const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
 
-    TransferAssets(results, userId, bundleName, [=]() {
+    TransferAssets(results, userId, bundleName, [=](bool success) {
         proxy->Completed(results);
     });
     // delete local data
@@ -213,9 +214,10 @@ int32_t ObjectStoreManager::Retrieve(const std::string& bundleName, const std::s
 }
 
 void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
-    const std::string& bundleName, const std::function<void()>& callback)
+    const std::string& bundleName, const std::function<void(bool success)>& callback)
 {
-    std::map<std::string, Asset> assets;
+    std::set<std::string> assets;
+    std::vector<Asset> assetValues;
     std::string deviceId;
 
     for (auto const&[key, value] : results) {
@@ -232,14 +234,15 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
                 asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
                 ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::URI_SUFFIX], asset.uri);
                 asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
-                assets[assetKey] = asset;
+                assets.insert(assetKey);
+                assetValues.push_back(asset);
             }
         }
     }
-    if (!assets.empty()) {
-        ObjectAssetLoader::GetInstance()->TransferAssets(userId, bundleName, deviceId, assets, callback);
+    if (!assetValues.empty()) {
+        ObjectAssetLoader::GetInstance()->TransferAssets(userId, bundleName, deviceId, assetValues, callback);
     } else {
-        callback();
+        callback(true);
     }
 }
 
@@ -367,7 +370,7 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     for (auto item : transferData) {
         std::string bundleName = item.first;
         auto results = item.second;
-        TransferAssets(results, userId, bundleName, [this, data]() {
+        TransferAssets(results, userId, bundleName, [this, data](bool success) {
             callbacks_.ForEach([data](uint32_t tokenId, CallbackInfo &value) {
                 for (const auto &observer : value.observers_) {
                     auto it = data.find(observer.first);
