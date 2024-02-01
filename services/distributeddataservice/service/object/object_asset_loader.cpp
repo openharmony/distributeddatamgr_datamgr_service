@@ -89,6 +89,7 @@ void ObjectAssetLoader::TransferAssets(const int32_t userId, const std::string& 
 {
     if(executors_ == nullptr) {
         ZLOGE("executors is null");
+        callback(false);
         return;
     }
     executors_->Execute([this, userId, bundleName, deviceId, assets, callback]() {
