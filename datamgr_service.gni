@@ -15,6 +15,8 @@ distributedfilejs_path = "//foundation/distributeddatamgr/distributedfile"
 
 kv_store_path = "//foundation/distributeddatamgr/kv_store"
 
+kv_store_native_path = "${kv_store_base_path}/frameworks/native"
+
 relational_store_path = "//foundation/distributeddatamgr/relational_store"
 
 relational_store_inner_api_path =
@@ -39,6 +41,7 @@ data_service_path = "//foundation/distributeddatamgr/datamgr_service/services/di
 udmf_path = "//foundation/distributeddatamgr/udmf"
 
 dataobject_path = "//foundation/distributeddatamgr/data_object"
+
 
 declare_args() {
   datamgr_service_power = true
