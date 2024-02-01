@@ -176,8 +176,8 @@ int32_t ObjectStoreManager::RevokeSave(
     return result;
 }
 
-int32_t ObjectStoreManager::Retrieve(const std::string& bundleName, const std::string& sessionId,
-    sptr<IRemoteObject> callback, uint32_t tokenId)
+int32_t ObjectStoreManager::Retrieve(
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
     ZLOGI("enter");
