@@ -583,6 +583,7 @@ void CloudServiceImpl::CloudShare(const Event &event)
         if (callback) {
             callback(GeneralError::E_ERROR, nullptr);
         }
+        return;
     }
     ZLOGD("Start PreShare, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
         storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
