@@ -196,7 +196,6 @@ int32_t ObjectStoreManager::Retrieve(
         proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
         return status;
     }
-    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
     if (status != OBJECT_SUCCESS) {
@@ -206,6 +205,7 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     Close();
+    int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     TransferAssets(results, userId, bundleName, [=](bool success) {
         proxy->Completed(results);
     });
