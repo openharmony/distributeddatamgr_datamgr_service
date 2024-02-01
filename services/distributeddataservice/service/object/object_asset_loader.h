@@ -30,7 +30,7 @@ public:
         const std::string &deviceId, const DistributedData::Asset &assetValue);
     bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const DistributedData::Asset& assetValue, std::function<void(bool success)> callback);
-    void TransferAssets(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+    void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
 private:
     ObjectAssetLoader() = default;

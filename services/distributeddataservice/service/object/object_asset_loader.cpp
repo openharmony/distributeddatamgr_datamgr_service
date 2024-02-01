@@ -84,11 +84,11 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
     return true;
 }
 
-void ObjectAssetLoader::TransferAssets(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
    const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback)
 {
     if(executors_ == nullptr) {
-        ZLOGE("executors is null");
+        ZLOGE("executors is null, deviceId: %{public}s, assets.size: %{public}lu", deviceId.c_str(), assets.size());
         callback(false);
         return;
     }
