@@ -88,7 +88,8 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
    const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback)
 {
     if(executors_ == nullptr) {
-        ZLOGE("executors is null, deviceId: %{public}s, assets.size: %{public}lu", deviceId.c_str(), assets.size());
+        ZLOGE("executors is null, bundleName: %{public}s, deviceId: %{public}s, userId: %{public}d",
+            bundleName.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), userId);
         callback(false);
         return;
     }
