@@ -37,7 +37,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 constexpr static const char* SQL_AND = " = ? and ";
 constexpr static const int32_t AND_SIZE = 5;
 static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    const std::pair<std::string, Asset>& newAsset);
+    std::pair<std::string, Asset>& newAsset);
 
 static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
     std::pair<std::string, Asset>& newAsset);
@@ -158,11 +158,11 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& c
 }
 
 static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    const std::pair<std::string, Asset>& newAsset)
+    std::pair<std::string, Asset>& newAsset)
 {
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
-    ObjectAssetLoader::GetInstance()->Transfer(changedAsset.storeInfo.user,
+    bool success = ObjectAssetLoader::GetInstance()->Transfer(changedAsset.storeInfo.user,
         changedAsset.storeInfo.bundleName, changedAsset.deviceId, changedAsset.asset, [&changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
@@ -176,6 +176,9 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset
             }
             ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
         });
+    if (!success) {
+        ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
+    }
     return E_OK;
 }
 
