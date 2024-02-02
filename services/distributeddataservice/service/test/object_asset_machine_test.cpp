@@ -43,7 +43,7 @@ protected:
     std::map<std::string, ChangedAssetInfo> changedAssets_;
     std::string sessionId = "123";
     StoreInfo storeInfo_;
-    static constexpr uint32_t WAIT_TRANSFER = 500;
+    static constexpr uint32_t WAIT_TRANSFER = 50;
 };
 
 void ObjectAssetMachineTest::SetUp()
