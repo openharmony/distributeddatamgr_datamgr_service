@@ -74,6 +74,17 @@ CloudServiceImpl::CloudServiceImpl()
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SHARE, [this](const Event &event) {
         CloudShare(event);
     });
+    MetaDataManager::GetInstance().Subscribe(
+        Subscription::GetPrefix({ "" }), [this](const std::string &key,
+            const std::string &value, int32_t flag) -> auto {
+            if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
+                return true;
+            }
+            Subscription sub;
+            Subscription::Unmarshall(value, sub);
+            InitSubTask(sub);
+            return true;
+        }, true);
 }
 
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
@@ -312,6 +323,20 @@ int32_t CloudServiceImpl::OnInitialize()
 {
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
     Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    std::vector<int> users;
+    Account::GetInstance()->QueryUsers(users);
+    for (auto user : users) {
+        if (user == DEFAULT_USER) {
+            continue;
+        }
+        Subscription sub;
+        sub.userId = user;
+        if (!MetaDataManager::GetInstance().LoadMeta(sub.GetKey(), sub, true)) {
+            ZLOGE("no exist meta, user:%{public}d", user);
+            continue;
+        }
+        InitSubTask(sub);
+    }
     return E_OK;
 }
 
@@ -973,4 +998,49 @@ std::shared_ptr<SharingCenter> CloudServiceImpl::GetSharingHandle(const HapInfo 
     auto handle = instance->ConnectSharingCenter(hapInfo.user, hapInfo.bundleName);
     return handle;
 }
+
+ExecutorPool::Task CloudServiceImpl::GenSubTask(Task task, int32_t user)
+{
+    return [this, user, work = std::move(task)] () {
+        {
+            std::lock_guard<decltype(mutex_)> lock(mutex_);
+            subTask_ = ExecutorPool::INVALID_TASK_ID;
+        }
+        auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+        if (status != SUCCESS || !cloudInfo.enableCloud || cloudInfo.IsAllSwitchOff()) {
+            ZLOGW("[sub task] all switch off, status:%{public}d user:%{public}d enableCloud:%{public}d",
+                status, user, cloudInfo.enableCloud);
+            return;
+        }
+        work();
+    };
+}
+
+void CloudServiceImpl::InitSubTask(const Subscription &sub)
+{
+    auto expire = sub.GetMinExpireTime();
+    if (expire == INVALID_SUB_TIME) {
+        ZLOGW("expire: %{public}" PRIu64, expire);
+        return;
+    }
+    auto executor = executor_;
+    if (executor == nullptr) {
+        return;
+    }
+    ZLOGI("Subscription Info, subTask:%{public}llu, user:%{public}d", subTask_, sub.userId);
+    expire = expire - TIME_BEFORE_SUB; // before 12 hours
+    auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    Duration delay = expire > now ? milliseconds(expire - now) : milliseconds(0);
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (subTask_ != ExecutorPool::INVALID_TASK_ID) {
+        if (expire < expireTime_) {
+            subTask_ = executor->Reset(subTask_, delay);
+            expireTime_ = expire > now ? expire : now;
+        }
+        return;
+    }
+    subTask_ = executor->Schedule(delay, GenSubTask(GenTask(0, sub.userId), sub.userId));
+    expireTime_ = expire > now ? expire : now;
+}
+
 } // namespace OHOS::CloudData
