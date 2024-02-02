@@ -32,6 +32,7 @@
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/appid_meta_data.h"
+#include "metadata/capability_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "permit_delegate.h"
 #include "query_helper.h"
@@ -200,7 +201,31 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
         }
     }
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
-        std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
+        std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
+        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
+}
+
+Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
+{
+    if (syncInfo.devices.empty()) {
+        ZLOGE("device empty.");
+        return Status::INVALID_ARGUMENT;
+    }
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    auto uuid = DMAdapter::GetInstance().ToUUID(syncInfo.devices[0]);
+    if (uuid.empty()) {
+        ZLOGE("invalid deviceId.");
+        return Status::INVALID_ARGUMENT;
+    }
+    auto code = DeviceMatrix::GetInstance().GetCode(metaData);
+    auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
+    if (code != 0 && exist && ((mask & code) != code)) {
+        ZLOGW("data is no change, do not need sync.");
+        return SUCCESS;
+    }
+    return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
+        std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
@@ -314,7 +339,7 @@ Status KVDBServiceImpl::AddSubscribeInfo(const AppId &appId, const StoreId &stor
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
-        std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_SUBSCRIBE),
+        std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SUBSCRIBE),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
@@ -324,7 +349,8 @@ Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &stor
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
-        std::bind(&KVDBServiceImpl::DoSync, this, metaData, syncInfo, std::placeholders::_1, ACTION_UNSUBSCRIBE),
+        std::bind(
+            &KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_UNSUBSCRIBE),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
@@ -636,6 +662,75 @@ Status KVDBServiceImpl::DoSync(const StoreMetaData &meta, const SyncInfo &info, 
         return Status::ERROR;
     }
 
+    return DoSyncBegin(uuids, meta, info, complete, type);
+}
+
+Status KVDBServiceImpl::DoSyncInOrder(
+    const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type)
+{
+    ZLOGD("type:%{public}d seqId:0x%{public}" PRIx64 " remote:%{public}zu appId:%{public}s storeId:%{public}s", type,
+        info.seqId, info.devices.size(), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
+    auto uuids = ConvertDevices(info.devices);
+    if (uuids.empty()) {
+        ZLOGW("no device seqId:0x%{public}" PRIx64 " remote:%{public}zu appId:%{public}s storeId:%{public}s",
+            info.seqId, info.devices.size(), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
+        return Status::ERROR;
+    }
+    bool isAfterMeta = false;
+    for (const auto &uuid : uuids) {
+        if (!DMAdapter::GetInstance().IsDeviceReady(uuid)) {
+            isAfterMeta = false;
+            break;
+        }
+        auto metaData = meta;
+        metaData.deviceId = uuid;
+        auto matrixMeta = DeviceMatrix::GetInstance().GetMatrixMeta(uuid);
+        if (matrixMeta.version == MatrixMetaData::DEFAULT_VERSION
+            || !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            isAfterMeta = true;
+            break;
+        }
+    }
+    if (isAfterMeta) {
+        auto result = MetaDataManager::GetInstance().Sync(
+            uuids, [this, meta, info, complete, type](const auto &results) {
+            auto ret = ProcessResult(results);
+            if (ret.first.empty()) {
+                DoComplete(meta, info, RefCount(), ret.second);
+                return;
+            }
+            auto status = DoSyncBegin(ret.first, meta, info, complete, type);
+            ZLOGD("data sync status:%{public}d appId:%{public}s, storeId:%{public}s",
+                static_cast<int32_t>(status), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
+        });
+        return result ? Status::SUCCESS : Status::ERROR;
+    }
+    return DoSyncBegin(uuids, meta, info, complete, type);
+}
+
+KVDBServiceImpl::SyncResult KVDBServiceImpl::ProcessResult(const std::map<std::string, int32_t> &results)
+{
+    std::map<std::string, DBStatus> dbResults;
+    std::vector<std::string> devices;
+    for (const auto &[uuid, status] : results) {
+        dbResults.insert_or_assign(uuid, static_cast<DBStatus>(status));
+        if (static_cast<DBStatus>(status) != DBStatus::OK) {
+            ZLOGE("meta sync failed, uuid:%{public}s", Anonymous::Change(uuid).c_str());
+            continue;
+        }
+        DeviceMatrix::GetInstance().OnExchanged(uuid, DeviceMatrix::META_STORE_MASK);
+        devices.emplace_back(uuid);
+    }
+    return { devices, dbResults };
+}
+
+Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,
+    const SyncInfo &info, const SyncEnd &complete, int32_t type)
+{
+    if (devices.empty()) {
+        ZLOGE("devices empty.");
+        return Status::INVALID_ARGUMENT;
+    }
     DistributedDB::DBStatus status;
     auto observers = GetObservers(meta.tokenId, meta.storeId);
     auto store = storeCache_.GetStore(meta, observers, status);
@@ -653,13 +748,19 @@ Status KVDBServiceImpl::DoSync(const StoreMetaData &meta, const SyncInfo &info, 
 
     switch (type) {
         case ACTION_SYNC:
-            status = store->Sync(uuids, ConvertDBMode(SyncMode(info.mode)), complete, dbQuery, false);
-            break;
+            {
+                if (info.query.empty()) {
+                    status = store->Sync(devices, ConvertDBMode(SyncMode(info.mode)), complete, false);
+                } else {
+                    status = store->Sync(devices, ConvertDBMode(SyncMode(info.mode)), complete, dbQuery, false);
+                }
+                break;
+            }
         case ACTION_SUBSCRIBE:
-            status = store->SubscribeRemoteQuery(uuids, complete, dbQuery, false);
+            status = store->SubscribeRemoteQuery(devices, complete, dbQuery, false);
             break;
         case ACTION_UNSUBSCRIBE:
-            status = store->UnSubscribeRemoteQuery(uuids, complete, dbQuery, false);
+            status = store->UnSubscribeRemoteQuery(devices, complete, dbQuery, false);
             break;
         default:
             status = DBStatus::INVALID_ARGS;
