@@ -27,7 +27,7 @@ public:
     static void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     static bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const DistributedData::Asset& asset);
-    static void Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+    static void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
 private:
     ObjectAssetLoader() = default;

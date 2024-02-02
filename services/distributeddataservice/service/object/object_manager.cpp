@@ -239,7 +239,7 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
         }
     }
     if (!assetValues.empty()) {
-        ObjectAssetLoader::Transfer(userId, bundleName, deviceId, assetValues, callback);
+        ObjectAssetLoader::TransferAssetsAsync(userId, bundleName, deviceId, assetValues, callback);
     } else {
         callback(true);
     }
