@@ -198,7 +198,7 @@ int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sq
         return GeneralError::E_ERROR;
     }
     std::vector<DistributedDB::VBucket> changedData;
-    auto status = delegate_->ExecuteSql({ sql, {} }, changedData);
+    auto status = delegate_->ExecuteSql({ sql, {}, false }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
               changedData.size());
@@ -267,7 +267,7 @@ int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
         ZLOGE("database already closed!");
         return GeneralError::E_ERROR;
     }
-    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), false }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
               changedData.size());
@@ -311,7 +311,7 @@ int32_t RdbGeneralStore::Update(const std::string &table, const std::string &set
         ZLOGE("database already closed!");
         return GeneralError::E_ERROR;
     }
-    auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs) }, changedData);
+    auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs), false }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sqlIn).c_str(),
               changedData.size());
@@ -719,11 +719,11 @@ int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
-VBuckets RdbGeneralStore::ExecuteSql(const std::string& sql, Values &&args)
+VBuckets RdbGeneralStore::ExecuteSql(const std::string& sql, Values &&args, bool isReadOnly)
 {
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), isReadOnly }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
             changedData.size());
