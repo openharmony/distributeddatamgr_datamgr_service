@@ -29,6 +29,11 @@ ObjectAssetLoader *ObjectAssetLoader::GetInstance()
     return loader;
 }
 
+void ObjectAssetLoader::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+}
+
 bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundleName,
     const std::string &deviceId, const DistributedData::Asset &assetValue)
 {
@@ -77,5 +82,24 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
         return false;
     }
     return true;
+}
+
+void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::string& bundleName,
+    const std::string& deviceId, const std::vector<DistributedData::Asset>& assets,
+    const std::function<void(bool success)>& callback)
+{
+    if (executors_ == nullptr) {
+        ZLOGE("executors is null, bundleName: %{public}s, deviceId: %{public}s, userId: %{public}d",
+            bundleName.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), userId);
+        callback(false);
+        return;
+    }
+    executors_->Execute([this, userId, bundleName, deviceId, assets, callback]() {
+        bool result = true;
+        for (auto& asset : assets) {
+            result &= Transfer(userId, bundleName, deviceId, asset);
+        }
+        callback(result);
+    });
 }
 } // namespace OHOS::DistributedObject

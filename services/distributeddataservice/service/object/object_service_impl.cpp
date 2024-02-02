@@ -30,6 +30,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "object_asset_loader.h"
 #include "permission/permission_validator.h"
 #include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
@@ -386,6 +387,7 @@ int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     ObjectStoreManager::GetInstance()->SetThreadPool(executors_);
+    ObjectAssetLoader::GetInstance()->SetThreadPool(executors_);
     return 0;
 }
 } // namespace OHOS::DistributedObject
