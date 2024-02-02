@@ -61,29 +61,6 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundle
     return true;
 }
 
-bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-    const DistributedData::Asset& assetValue, std::function<void(bool success)> callback)
-{
-    AssetInfo assetInfo;
-    assetInfo.uri = assetValue.uri;
-    assetInfo.assetName = assetValue.name;
-    auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
-        [callback](const std::string& uri, int32_t status) {
-            if (status != OBJECT_SUCCESS) {
-                ZLOGE("fail, uri: %{public}s, status: %{public}d", DistributedData::Anonymous::Change(uri).c_str(),
-                    status);
-                return callback(false);
-            }
-            return callback(true);
-        });
-    if (res != OBJECT_SUCCESS) {
-        ZLOGE("fail, res: %{public}d, name: %{public}s, deviceId: %{public}s, bundleName: %{public}s", res,
-            assetValue.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
-        return false;
-    }
-    return true;
-}
-
 void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::string& bundleName,
     const std::string& deviceId, const std::vector<DistributedData::Asset>& assets,
     const std::function<void(bool success)>& callback)

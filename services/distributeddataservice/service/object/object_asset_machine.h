@@ -39,7 +39,7 @@ struct ChangedAssetInfo {
 };
 
 typedef int32_t (*Action)
-    (AssetEvent eventId, ChangedAssetInfo& changedAsset, Asset& asset, std::pair<std::string, Asset> newAsset);
+    (int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset, const std::pair<std::string, Asset>& newAsset);
 
 struct DFAAction {
     int32_t next;
