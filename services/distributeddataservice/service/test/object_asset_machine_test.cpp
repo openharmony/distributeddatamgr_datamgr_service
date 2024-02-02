@@ -78,7 +78,7 @@ void ObjectAssetMachineTest::SetUp()
     ChangedAssetInfo changedAssetInfo(asset, AssetBindInfo, storeInfo);
     changedAssets_[uri_] = changedAssetInfo;
     auto executors = std::make_shared<ExecutorPool>(1, 0);
-    ObjectAssetLoader::SetThreadPool(executors);
+    ObjectAssetLoader::GetInstance->SetThreadPool(executors);
 }
 
 void ObjectAssetMachineTest::TearDown() {}

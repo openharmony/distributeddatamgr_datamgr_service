@@ -163,8 +163,8 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
     std::vector<Asset> assets{ changedAsset.asset };
-    ObjectAssetLoader::TransferAssetsAsync(changedAsset.storeInfo.user, changedAsset.storeInfo.bundleName,
-        changedAsset.deviceId, assets, [&changedAsset](bool success) {
+    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(changedAsset.storeInfo.user,
+        changedAsset.storeInfo.bundleName, changedAsset.deviceId, assets, [&changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
                 if (status != E_OK) {

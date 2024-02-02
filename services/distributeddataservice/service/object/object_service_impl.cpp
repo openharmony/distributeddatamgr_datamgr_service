@@ -387,7 +387,7 @@ int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     ObjectStoreManager::GetInstance()->SetThreadPool(executors_);
-    ObjectAssetLoader::SetThreadPool(executors_);
+    ObjectAssetLoader::GetInstance()->SetThreadPool(executors_);
     return 0;
 }
 } // namespace OHOS::DistributedObject

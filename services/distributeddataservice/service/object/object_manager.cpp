@@ -219,7 +219,7 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
     std::vector<Asset> assetValues;
     std::string deviceId;
 
-    for (auto const& [key, value] : results) {
+    for (auto const&[key, value] : results) {
         if (key.find(ObjectStore::ASSET_DOT) == std::string::npos) {
             if (key == (ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)) {
                 ObjectStore::StringUtils::BytesToStrWithType(value, deviceId);
@@ -229,9 +229,9 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
             auto it = assets.find(assetKey);
             if (it == assets.end()) {
                 Asset asset;
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::NAME_SUFFIX], asset.name);
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::NAME_SUFFIX], asset.name);
                 asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::URI_SUFFIX], asset.uri);
+                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::URI_SUFFIX], asset.uri);
                 asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
                 assets.insert(assetKey);
                 assetValues.push_back(asset);
@@ -239,7 +239,7 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
         }
     }
     if (!assetValues.empty()) {
-        ObjectAssetLoader::TransferAssetsAsync(userId, bundleName, deviceId, assetValues, callback);
+        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assetValues, callback);
     } else {
         callback(true);
     }
@@ -827,7 +827,7 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
         return snapshots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
     }
 
-    bool isSuccess = ObjectAssetLoader::Transfer(userId, appId, deviceId, dataAsset);
+    bool isSuccess = ObjectAssetLoader::GetInstance()->Transfer(userId, appId, deviceId, dataAsset);
     if (isSuccess) {
         return OBJECT_SUCCESS;
     } else {
