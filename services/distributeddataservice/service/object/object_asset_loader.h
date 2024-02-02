@@ -24,13 +24,10 @@ namespace OHOS {
 namespace DistributedObject {
 class ObjectAssetLoader {
 public:
-    static ObjectAssetLoader *GetInstance();
-    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
-    bool Transfer(const int32_t userId, const std::string &bundleName,
-        const std::string &deviceId, const DistributedData::Asset &assetValue);
-    bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-        const DistributedData::Asset& assetValue, std::function<void(bool success)> callback);
-    void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+    static void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+    static bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+        const DistributedData::Asset& asset);
+    static void Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
 private:
     ObjectAssetLoader() = default;
@@ -39,7 +36,7 @@ private:
     ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
 
     static constexpr int WAIT_TIME = 60;
-    std::shared_ptr<ExecutorPool> executors_;
+    static std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace DistributedObject
 } // namespace OHOS

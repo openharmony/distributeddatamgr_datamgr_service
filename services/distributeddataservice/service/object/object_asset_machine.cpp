@@ -37,22 +37,22 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 constexpr static const char* SQL_AND = " = ? and ";
 constexpr static const int32_t AND_SIZE = 5;
 static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset);
+    const std::pair<std::string, Asset>& newAsset);
 
 static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset);
+    const std::pair<std::string, Asset>& newAsset);
 
 static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset);
+    const std::pair<std::string, Asset>& newAsset);
 
 static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset);
+    const std::pair<std::string, Asset>& newAsset);
 
 static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset);
+    const std::pair<std::string, Asset>& newAsset);
 
 static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset);
+    const std::pair<std::string, Asset>& newAsset);
 
 static int32_t UpdateStore(ChangedAssetInfo& changedAsset);
 
@@ -158,12 +158,13 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& c
 }
 
 static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset)
+    const std::pair<std::string, Asset>& newAsset)
 {
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
-    bool success = ObjectAssetLoader::GetInstance()->Transfer(changedAsset.storeInfo.user,
-        changedAsset.storeInfo.bundleName, changedAsset.deviceId, changedAsset.asset, [&changedAsset](bool success) {
+    std::vector<Asset> assets{ changedAsset.asset };
+    ObjectAssetLoader::Transfer(changedAsset.storeInfo.user, changedAsset.storeInfo.bundleName, changedAsset.deviceId,
+        assets, [&changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
                 if (status != E_OK) {
@@ -176,9 +177,6 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset
             }
             ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
         });
-    if (!success) {
-        ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
-    }
     return E_OK;
 }
 
@@ -304,14 +302,14 @@ static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset)
 }
 
 static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset)
+    const std::pair<std::string, Asset>& newAsset)
 {
     std::pair<std::string, Asset> newChangedAsset{ changedAsset.deviceId, changedAsset.asset };
     return ObjectAssetMachine::DFAPostEvent(REMOTE_CHANGED, changedAsset, changedAsset.asset, newChangedAsset);
 }
 
 static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset)
+    const std::pair<std::string, Asset>& newAsset)
 {
     BindEvent::BindEventInfo bindEventInfo = MakeBindInfo(changedAsset);
     auto evt = std::make_unique<BindEvent>(BindEvent::COMPENSATE_SYNC, std::move(bindEventInfo));
@@ -320,7 +318,7 @@ static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, A
 }
 
 static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset)
+    const std::pair<std::string, Asset>& newAsset)
 {
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
@@ -328,14 +326,14 @@ static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, Ass
 }
 
 static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAssetInfo, Asset& asset,
-    std::pair<std::string, Asset>& newAsset)
+    const std::pair<std::string, Asset>& newAsset)
 {
     asset.status = Asset::STATUS_NORMAL;
     return E_OK;
 }
 
 static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
-    std::pair<std::string, Asset>& newAsset)
+    const std::pair<std::string, Asset>& newAsset)
 {
     ZLOGE("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s", eventId,
         changedAsset.status, changedAsset.asset.name.c_str());
