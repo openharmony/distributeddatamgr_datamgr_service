@@ -17,6 +17,8 @@
 
 #include "cloud_service_impl.h"
 
+#include <chrono>
+#include <cinttypes>
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
@@ -411,7 +413,8 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromMeta(int32_t use
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
-        ZLOGE("no exist meta, user:%{public}d", cloudInfo.user);
+        auto time = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+        ZLOGE("no exist meta, user:%{public}d times:%{public}" PRIu64 ".", cloudInfo.user, time);
         return { ERROR, cloudInfo };
     }
     return { SUCCESS, cloudInfo };
