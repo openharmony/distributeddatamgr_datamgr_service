@@ -271,7 +271,7 @@ int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
     auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
     if (status != DBStatus::OK) {
         if (IsPrintLog(status)) {
-            auto time = 
+            auto time =
                 static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
                 ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu times %{public}" PRIu64 ".",
                 status, Anonymous::Change(sql).c_str(), changedData.size(), time);
