@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 #define LOG_TAG "RdbGeneralStore"
+
 #include "rdb_general_store.h"
+
+#include <chrono>
+#include <cinttypes>
 #include "cache_cursor.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
@@ -39,6 +43,7 @@ using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
 using namespace  CloudData;
+using namespace std::chrono;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
@@ -227,12 +232,8 @@ size_t RdbGeneralStore::SqlConcatenate(VBucket &value, std::string &strColumnSql
 
 int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
 {
-    if (table.empty()) {
-        ZLOGE("Insert: table can't be empty!");
-        return GeneralError::E_INVALID_ARGS;
-    }
-    if (values.size() == 0) {
-        ZLOGE("Insert: values size error, can't be 0!");
+    if (table.empty() || values.size() == 0) {
+        ZLOGE("Insert:table maybe empty:%{public}d,value size is:%{public}d", table.empty(), values.size());
         return GeneralError::E_INVALID_ARGS;
     }
 
@@ -269,11 +270,28 @@ int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
     }
     auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
     if (status != DBStatus::OK) {
-        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
-              changedData.size());
+        if (IsPrintLog(status)) {
+            auto time = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+            ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu times %{public}" PRIu64 ".",
+            status, Anonymous::Change(sql).c_str(), changedData.size(), time);
+        }
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
+}
+
+bool RdbGeneralStore::IsPrintLog(DBStatus status) {
+    bool isPrint = false;
+    if (status == lastError_) {
+        if (++lastErrCnt_ % PRINT_ERROR_CNT == 0) {
+            isPrint = true;
+        }
+    } else {
+        isPrint = true;
+        lastErrCnt_ = 0;
+        lastError_ = status;
+    }
+    return isPrint;
 }
 
 /**
