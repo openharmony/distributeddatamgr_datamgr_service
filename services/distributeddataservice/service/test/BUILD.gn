@@ -72,6 +72,30 @@ ohos_unittest("CloudDataTest") {
   ]
 }
 
+ohos_unittest("CloudTest") {
+  module_out_path = module_output_path
+  sources = [ "cloud_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${kv_store_distributeddb_path}:distributeddb",
+    "../../adapter:distributeddata_adapter",
+    "../../framework:distributeddatasvcfwk",
+    "../../service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ohos_unittest("ValueProxyTest") {
   module_out_path = module_output_path
   sources = [
@@ -361,6 +385,7 @@ group("unittest") {
 
   deps += [
     ":CloudDataTest",
+    ":CloudTest",
     ":CryptoManagerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
