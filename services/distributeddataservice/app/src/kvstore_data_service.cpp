@@ -28,6 +28,7 @@
 #include "communicator_context.h"
 #include "config_factory.h"
 #include "crypto_manager.h"
+#include "db_info_handle_impl.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "dump/dump_manager.h"
@@ -133,6 +134,7 @@ void KvStoreDataService::Initialize()
         return Upgrade::GetInstance().GetEncryptedUuidByMeta(meta);
     };
     DBConfig::SetTranslateToDeviceIdCallback(translateCall);
+    DistributedDB::RuntimeConfig::SetDBInfoHandle(std::make_shared<DBInfoHandleImpl>());
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
@@ -540,7 +542,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
     : appId_(appId), dataService_(service), observerProxy_(std::move(observer)),
       deathRecipient_(new KvStoreDeathRecipient(*this))
 {
-    ZLOGI("KvStoreClientDeathObserverImpl");
+    ZLOGD("KvStoreClientDeathObserverImpl");
     uid_ = IPCSkeleton::GetCallingUid();
     pid_ = IPCSkeleton::GetCallingPid();
     token_ = IPCSkeleton::GetCallingTokenID();
@@ -585,7 +587,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvSto
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::~KvStoreDeathRecipient()
 {
-    ZLOGI("KvStore Client Death Observer");
+    ZLOGD("~KvStore Client Death Observer");
 }
 
 void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::OnRemoteDied(

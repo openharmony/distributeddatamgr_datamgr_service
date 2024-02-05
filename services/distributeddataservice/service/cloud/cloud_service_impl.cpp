@@ -17,6 +17,8 @@
 
 #include "cloud_service_impl.h"
 
+#include <chrono>
+#include <cinttypes>
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
@@ -74,6 +76,17 @@ CloudServiceImpl::CloudServiceImpl()
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SHARE, [this](const Event &event) {
         CloudShare(event);
     });
+    MetaDataManager::GetInstance().Subscribe(
+        Subscription::GetPrefix({ "" }), [this](const std::string &key,
+            const std::string &value, int32_t flag) -> auto {
+            if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
+                return true;
+            }
+            Subscription sub;
+            Subscription::Unmarshall(value, sub);
+            InitSubTask(sub);
+            return true;
+        }, true);
 }
 
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
@@ -164,7 +177,7 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
             meta.user = std::to_string(cloudInfo.user);
             meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
             meta.instanceId = cloudInfo.apps[bundle].instanceId;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
                 ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                     meta.GetStoreAlias().c_str());
                 continue;
@@ -312,6 +325,20 @@ int32_t CloudServiceImpl::OnInitialize()
 {
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
     Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    std::vector<int> users;
+    Account::GetInstance()->QueryUsers(users);
+    for (auto user : users) {
+        if (user == DEFAULT_USER) {
+            continue;
+        }
+        Subscription sub;
+        sub.userId = user;
+        if (!MetaDataManager::GetInstance().LoadMeta(sub.GetKey(), sub, true)) {
+            ZLOGE("no exist meta, user:%{public}d", user);
+            continue;
+        }
+        InitSubTask(sub);
+    }
     return E_OK;
 }
 
@@ -323,6 +350,10 @@ int32_t CloudServiceImpl::OnBind(const BindInfo &info)
 
     executor_ = std::move(info.executors);
     syncManager_.Bind(executor_);
+    auto instance = CloudServer::GetInstance();
+    if (instance != nullptr) {
+        instance->Bind(executor_);
+    }
     return E_OK;
 }
 
@@ -382,7 +413,8 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromMeta(int32_t use
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
-        ZLOGE("no exist meta, user:%{public}d", cloudInfo.user);
+        auto time = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+        ZLOGE("no exist meta, user:%{public}d times:%{public}" PRIu64 ".", cloudInfo.user, time);
         return { ERROR, cloudInfo };
     }
     return { SUCCESS, cloudInfo };
@@ -392,6 +424,9 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
+    if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+        return { ERROR, cloudInfo };
+    }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         return { SERVER_UNAVAILABLE, cloudInfo };
@@ -450,6 +485,9 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
 std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
 {
     SchemaMeta schemaMeta;
+    if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+        return { ERROR, schemaMeta };
+    }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         return { SERVER_UNAVAILABLE, schemaMeta };
@@ -573,6 +611,7 @@ void CloudServiceImpl::CloudShare(const Event &event)
         if (callback) {
             callback(GeneralError::E_ERROR, nullptr);
         }
+        return;
     }
     ZLOGD("Start PreShare, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
         storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
@@ -592,7 +631,7 @@ std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::P
     meta.user = std::to_string(storeInfo.user);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.instanceId = storeInfo.instanceId;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
         ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         return { GeneralError::E_ERROR, nullptr };
@@ -962,4 +1001,49 @@ std::shared_ptr<SharingCenter> CloudServiceImpl::GetSharingHandle(const HapInfo 
     auto handle = instance->ConnectSharingCenter(hapInfo.user, hapInfo.bundleName);
     return handle;
 }
+
+ExecutorPool::Task CloudServiceImpl::GenSubTask(Task task, int32_t user)
+{
+    return [this, user, work = std::move(task)] () {
+        {
+            std::lock_guard<decltype(mutex_)> lock(mutex_);
+            subTask_ = ExecutorPool::INVALID_TASK_ID;
+        }
+        auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+        if (status != SUCCESS || !cloudInfo.enableCloud || cloudInfo.IsAllSwitchOff()) {
+            ZLOGW("[sub task] all switch off, status:%{public}d user:%{public}d enableCloud:%{public}d",
+                status, user, cloudInfo.enableCloud);
+            return;
+        }
+        work();
+    };
+}
+
+void CloudServiceImpl::InitSubTask(const Subscription &sub)
+{
+    auto expire = sub.GetMinExpireTime();
+    if (expire == INVALID_SUB_TIME) {
+        ZLOGW("expire: %{public}" PRIu64, expire);
+        return;
+    }
+    auto executor = executor_;
+    if (executor == nullptr) {
+        return;
+    }
+    ZLOGI("Subscription Info, subTask:%{public}llu, user:%{public}d", subTask_, sub.userId);
+    expire = expire - TIME_BEFORE_SUB; // before 12 hours
+    auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    Duration delay = expire > now ? milliseconds(expire - now) : milliseconds(0);
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (subTask_ != ExecutorPool::INVALID_TASK_ID) {
+        if (expire < expireTime_) {
+            subTask_ = executor->Reset(subTask_, delay);
+            expireTime_ = expire > now ? expire : now;
+        }
+        return;
+    }
+    subTask_ = executor->Schedule(delay, GenSubTask(GenTask(0, sub.userId), sub.userId));
+    expireTime_ = expire > now ? expire : now;
+}
+
 } // namespace OHOS::CloudData

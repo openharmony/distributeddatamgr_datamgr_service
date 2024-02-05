@@ -55,7 +55,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
 {
     ZLOGD("Insert enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
     auto context = std::make_shared<Context>(uri);
@@ -88,7 +88,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
 {
     ZLOGD("Update enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
     auto context = std::make_shared<Context>(uri);
@@ -104,7 +104,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
 {
     ZLOGD("Delete enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
     auto context = std::make_shared<Context>(uri);
@@ -121,7 +121,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
 {
     ZLOGD("Query enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return nullptr;
     }
     auto context = std::make_shared<Context>(uri);
@@ -605,7 +605,6 @@ bool DataShareServiceImpl::IsSilentProxyEnable(const std::string &uri)
     int32_t currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     UriInfo uriInfo;
     if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
-        ZLOGE("Get uriInfo from URI error.");
         return true;
     }
     std::string calledBundleName = uriInfo.bundleName;
@@ -615,7 +614,7 @@ bool DataShareServiceImpl::IsSilentProxyEnable(const std::string &uri)
     }
     auto success = dataShareSilentConfig_.IsSilentProxyEnable(calledTokenId, currentUserId, calledBundleName, uri);
     if (!success) {
-        ZLOGE("check silent proxy switch disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
     }
     return success;
 }

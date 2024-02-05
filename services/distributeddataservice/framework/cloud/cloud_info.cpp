@@ -121,6 +121,16 @@ bool CloudInfo::IsOn(const std::string &bundleName, int32_t instanceId)
     return it != apps.end() && it->second.instanceId == instanceId && it->second.cloudSwitch;
 }
 
+bool CloudInfo::IsAllSwitchOff() const
+{
+    for (auto &[bundle, app] : apps) {
+        if (app.cloudSwitch) {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::string CloudInfo::GetPrefix(const std::initializer_list<std::string> &fields)
 {
     return GetKey(INFO_PREFIX, fields).append(Constant::KEY_SEPARATOR);

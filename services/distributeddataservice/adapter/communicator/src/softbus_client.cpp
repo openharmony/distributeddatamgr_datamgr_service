@@ -27,7 +27,8 @@ namespace OHOS::AppDistributedKv {
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Context = DistributedData::CommunicatorContext;
-SoftBusClient::SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId) : pipe_(pipeInfo), device_(deviceId)
+SoftBusClient::SoftBusClient(const PipeInfo& pipeInfo, const DeviceId& deviceId, uint32_t type)
+    : type_(type), pipe_(pipeInfo), device_(deviceId)
 {
     mtu_ = DEFAULT_MTU_SIZE;
 }
@@ -55,6 +56,11 @@ uint32_t SoftBusClient::GetMtuSize() const
     return mtu_;
 }
 
+uint32_t SoftBusClient::GetTimeout() const
+{
+    return DEFAULT_TIMEOUT;
+}
+
 Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *listener)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -69,7 +75,7 @@ Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *
         ZLOGE("send data to socket%{public}d failed, ret:%{public}d.", socket_, ret);
         return Status::ERROR;
     }
-    expireTime_ = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
+    expireTime_ = CalcExpireTime();
     return Status::SUCCESS;
 }
 
@@ -89,7 +95,7 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     socketInfo.peerName = const_cast<char *>(peerName.c_str());
     std::string networkId = DmAdapter::GetInstance().ToNetworkID(device_.deviceId);
     socketInfo.peerNetworkId = const_cast<char *>(networkId.c_str());
-    std::string clientName = pipe_.pipeId + "_client_" + socketInfo.peerNetworkId;
+    std::string clientName = (pipe_.pipeId + "_client_" + socketInfo.peerNetworkId).substr(0, 64);
     socketInfo.name = const_cast<char *>(clientName.c_str());
     std::string pkgName = "ohos.distributeddata";
     socketInfo.pkgName = pkgName.data();
@@ -100,13 +106,13 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
         ZLOGE("Create the client Socket:%{public}d failed, peerName:%{public}s", clientSocket, socketInfo.peerName);
         return Status::NETWORK_ERROR;
     }
-    auto task = [this, clientSocket, listener, client = shared_from_this()]() {
+    auto task = [type = type_, clientSocket, listener, client = shared_from_this()]() {
         if (client == nullptr) {
             ZLOGE("OpenSessionByAsync client is nullptr.");
             return;
         }
-        ZLOGI("Bind Start.");
-        auto status = client->Open(clientSocket, clientQos, listener);
+        ZLOGI("Bind Start, socket:%{public}d type:%{public}u", clientSocket, type);
+        auto status = client->Open(clientSocket, QOS_INFOS[type % QOS_BUTT], listener);
         if (status == Status::SUCCESS) {
             Context::GetInstance().NotifySessionChanged(client->device_.deviceId);
         }
@@ -159,7 +165,7 @@ int32_t SoftBusClient::GetSocket() const
 
 void SoftBusClient::UpdateExpireTime()
 {
-    auto expireTime = std::chrono::steady_clock::now() + SESSION_CLOSE_DELAY;
+    auto expireTime = CalcExpireTime();
     std::lock_guard<std::mutex> lock(mutex_);
     if (expireTime > expireTime_) {
         expireTime_ = expireTime;
@@ -171,5 +177,16 @@ std::pair<int32_t, uint32_t> SoftBusClient::GetMtu(int32_t socket)
     uint32_t mtu = 0;
     auto ret = ::GetMtuSize(socket, &mtu);
     return { ret, mtu };
+}
+
+uint32_t SoftBusClient::GetQoSType() const
+{
+    return type_ % QOS_COUNT;
+}
+
+SoftBusClient::Time SoftBusClient::CalcExpireTime() const
+{
+    auto delay = type_ == QOS_BR ? BR_CLOSE_DELAY : HML_CLOSE_DELAY;
+    return std::chrono::steady_clock::now() + delay;
 }
 } // namespace OHOS::AppDistributedKv

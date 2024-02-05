@@ -15,7 +15,8 @@
 
 #define LOG_TAG "UserDelegate"
 #include "user_delegate.h"
-
+#include <chrono>
+#include <cinttypes>
 #include <thread>
 #include "communicator/device_manager_adapter.h"
 #include "log_print.h"
@@ -24,6 +25,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+using namespace std::chrono;
 std::string GetLocalDeviceId()
 {
     return DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
@@ -89,8 +91,10 @@ std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
         }
         return !users.empty();
     });
-    ZLOGI("device:%{public}s, users:%{public}s", Anonymous::Change(deviceId).c_str(),
-        Serializable::Marshall(userStatus).c_str());
+    auto time =
+        static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    ZLOGI("device:%{public}s, users:%{public}s times %{public}" PRIu64 ".", Anonymous::Change(deviceId).c_str(),
+        Serializable::Marshall(userStatus).c_str(), time);
     return userStatus;
 }
 

@@ -54,6 +54,7 @@ ohos_shared_library("opencloudextension") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "hilog:libhilog",
+    "kv_store:distributeddata_inner",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

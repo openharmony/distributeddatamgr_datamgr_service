@@ -269,16 +269,24 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         return RDB_ERROR;
     }
     auto meta = GetStoreMetaData(param);
-    StoreMetaData syncMeta;
-    StoreMetaData localMeta;
-    bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
-    bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
-    if (isCreatedLocal && (!isCreatedSync || localMeta != syncMeta)) {
-        ZLOGD("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
-              "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
-            syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
-        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
+
+    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE) {
+        StoreMetaData localMeta;
+        bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
+        if (!isCreatedLocal) {
+            ZLOGE("no meta. bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
+                Anonymous::Change(param.storeName_).c_str());
+            return RDB_ERROR;
+        }
+        StoreMetaData syncMeta;
+        bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
+        if (!isCreatedSync || localMeta != syncMeta) {
+            ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
+                  "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
+                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
+                syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
+            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
+        }
     }
     auto store = GetStore(param);
     if (store == nullptr) {

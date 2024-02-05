@@ -67,6 +67,7 @@ config("module_private_config") {
 ohos_unittest("KvStoreDataServiceTest") {
   module_out_path = module_output_path
   sources = [
+    "../src/db_info_handle_impl.cpp",
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
     "../src/kvstore_data_service.cpp",
@@ -211,6 +212,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
 ohos_unittest("KvStoreDataServiceClearTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
     "${data_service_path}/app/src/kvstore_data_service.cpp",

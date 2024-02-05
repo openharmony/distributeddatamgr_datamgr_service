@@ -32,6 +32,7 @@
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
+#include "runtime_config.h"
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
@@ -47,6 +48,7 @@ using namespace DistributedDB;
 using namespace OHOS::AppDistributedKv;
 
 KvStoreMetaManager::MetaDeviceChangeListenerImpl KvStoreMetaManager::listener_;
+KvStoreMetaManager::DBInfoDeviceChangeListenerImpl KvStoreMetaManager::dbInfoListener_;
 
 KvStoreMetaManager::KvStoreMetaManager()
     : metaDelegate_(nullptr), metaDBDirectory_(DirectoryManager::GetInstance().GetMetaStorePath()),
@@ -80,14 +82,21 @@ void KvStoreMetaManager::InitMetaListener()
     InitMetaData();
     auto status = DmAdapter::GetInstance().StartWatchDeviceChange(&listener_, { "metaMgr" });
     if (status != AppDistributedKv::Status::SUCCESS) {
-        ZLOGW("register failed.");
+        ZLOGW("register metaMgr failed: %{public}d.", status);
         return;
     }
-    ZLOGI("register meta device change success.");
+    status = DmAdapter::GetInstance().StartWatchDeviceChange(&dbInfoListener_, { "notifyDbInfos" });
+    if (status != AppDistributedKv::Status::SUCCESS) {
+        ZLOGW("register notifyDbInfos failed: %{public}d.", status);
+        return;
+    }
+    ZLOGI("register metaMgr and notifyDbInfos device change success.");
+
     SubscribeMetaKvStore();
     SyncMeta();
     InitBroadcast();
     InitDeviceOnline();
+    NotifyAllAutoSyncDBInfo();
 }
 
 void KvStoreMetaManager::InitBroadcast()
@@ -270,7 +279,11 @@ void KvStoreMetaManager::ConfigMetaDataManager()
     };
     auto syncer = [this](const auto &store, int32_t status) {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
-        ZLOGI("Syncer status: %{public}d", status);
+        auto size = DmAdapter::GetInstance().GetOnlineSize();
+        ZLOGI("syncer status: %{public}d online device:%{public}zu", status, size);
+        if (size == 0) {
+            return;
+        }
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         if (delaySyncTaskId_ == Executor::INVALID_TASK_ID) {
             delaySyncTaskId_ =
@@ -291,7 +304,7 @@ std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int3
             delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
         }
         std::vector<std::string> devs;
-        auto devices = DmAdapter::GetInstance().GetRemoteDevices();
+        auto devices = DmAdapter::GetInstance().GetOnlineDevices();
         for (auto const &dev : devices) {
             devs.push_back(dev.uuid);
         }
@@ -366,6 +379,9 @@ void KvStoreMetaManager::KvStoreMetaObserver::OnChange(const DistributedDB::KvSt
     HandleChanges(CHANGE_FLAG::INSERT, data.GetEntriesInserted());
     HandleChanges(CHANGE_FLAG::UPDATE, data.GetEntriesUpdated());
     HandleChanges(CHANGE_FLAG::DELETE, data.GetEntriesDeleted());
+    KvStoreMetaManager::GetInstance().OnDataChange(CHANGE_FLAG::INSERT, data.GetEntriesInserted());
+    KvStoreMetaManager::GetInstance().OnDataChange(CHANGE_FLAG::UPDATE, data.GetEntriesUpdated());
+    KvStoreMetaManager::GetInstance().OnDataChange(CHANGE_FLAG::DELETE, data.GetEntriesDeleted());
 }
 
 void KvStoreMetaManager::KvStoreMetaObserver::HandleChanges(CHANGE_FLAG flag,
@@ -418,6 +434,102 @@ std::string KvStoreMetaManager::GetBackupPath() const
 void KvStoreMetaManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;
+}
+
+void KvStoreMetaManager::OnDataChange(CHANGE_FLAG flag, const std::list<DistributedDB::Entry>& changedData)
+{
+    for (const auto& entry : changedData) {
+        std::string key(entry.key.begin(), entry.key.end());
+        if (key.find(StoreMetaData::GetKey({})) != 0) {
+            continue;
+        }
+        StoreMetaData metaData;
+        metaData.Unmarshall({ entry.value.begin(), entry.value.end() });
+        if (!metaData.isAutoSync) {
+            continue;
+        }
+        std::vector<DistributedDB::DBInfo> dbInfos;
+        AddDbInfo(metaData, dbInfos, flag == CHANGE_FLAG::DELETE);
+        DistributedDB::RuntimeConfig::NotifyDBInfos({ metaData.deviceId }, dbInfos);
+    }
+}
+
+void KvStoreMetaManager::GetDbInfosByDeviceId(const std::string& deviceId, std::vector<DistributedDB::DBInfo>& dbInfos)
+{
+    std::vector<StoreMetaData> metaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metaData)) {
+        ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(deviceId).c_str());
+        return;
+    }
+    for (auto const& data : metaData) {
+        if (data.isAutoSync) {
+            AddDbInfo(data, dbInfos);
+        }
+    }
+}
+
+void KvStoreMetaManager::AddDbInfo(const StoreMetaData& metaData, std::vector<DistributedDB::DBInfo>& dbInfos,
+    bool isDeleted)
+{
+    DistributedDB::DBInfo dbInfo;
+    dbInfo.appId = metaData.deviceId;
+    dbInfo.userId = metaData.user;
+    dbInfo.storeId = metaData.storeId;
+    dbInfo.isNeedSync = !isDeleted;
+    dbInfo.syncDualTupleMode = true;
+    dbInfos.push_back(dbInfo);
+}
+
+void KvStoreMetaManager::OnDeviceChange(const std::string& deviceId)
+{
+    std::vector<DistributedDB::DBInfo> dbInfos;
+    GetDbInfosByDeviceId(deviceId, dbInfos);
+    DistributedDB::RuntimeConfig::NotifyDBInfos({ deviceId }, dbInfos);
+}
+
+void KvStoreMetaManager::NotifyAllAutoSyncDBInfo()
+{
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (deviceId.empty()) {
+        ZLOGE("local deviceId empty");
+        return;
+    }
+    std::vector<StoreMetaData> metaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metaData)) {
+        ZLOGE("load meta failed, deviceId:%{public}s", Anonymous::Change(deviceId).c_str());
+        return;
+    }
+    std::vector<DistributedDB::DBInfo> dbInfos;
+    for (auto const& data : metaData) {
+        if (!data.isAutoSync) {
+            continue;
+        }
+        AddDbInfo(data, dbInfos);
+    }
+    if (!dbInfos.empty()) {
+        DistributedDB::RuntimeConfig::NotifyDBInfos({ deviceId }, dbInfos);
+    }
+}
+
+void KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::OnDeviceChanged(const AppDistributedKv::DeviceInfo& info,
+    const DeviceChangeType& type) const
+{
+    if (type != DeviceChangeType::DEVICE_ONLINE) {
+        ZLOGD("offline or onReady ignore, type:%{public}d, deviceId:%{public}s", type,
+            Anonymous::Change(info.uuid).c_str());
+        return;
+    }
+    if (info.uuid == DistributedData::DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
+        ZLOGD("Network change, ignore");
+        return;
+    }
+    KvStoreMetaManager::GetInstance().SyncMeta();
+    KvStoreMetaManager::GetInstance().OnDeviceChange(info.uuid);
+}
+
+AppDistributedKv::ChangeLevelType KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::GetChangeLevelType() const
+{
+    return AppDistributedKv::ChangeLevelType::MIN;
 }
 } // namespace DistributedKv
 } // namespace OHOS

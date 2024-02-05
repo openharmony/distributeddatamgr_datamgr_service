@@ -120,9 +120,10 @@ void DeviceMatrixTest::InitRemoteMatrixMeta()
 {
     MatrixMetaData metaData;
     metaData.version = 1;
-    metaData.mask = 0x3;
+    metaData.mask = 0xF;
     metaData.deviceId = TEST_DEVICE;
-    metaData.maskInfo = { "distributed_device_profile_service" };
+    metaData.maskInfo = { "distributed_device_profile_service", "bundle_manager_service",
+        "dtbhardware_manager_service" };
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
 }
@@ -156,7 +157,7 @@ HWTEST_F(DeviceMatrixTest, FirstOnline, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0x3);
+    ASSERT_EQ(result.mask_, 0xF);
 }
 
 /**
@@ -171,13 +172,13 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainNoData, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0x3);
+    ASSERT_EQ(result.mask_, 0xF);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0x2);
+    ASSERT_EQ(result.mask_, 0xE);
 }
 
 /**
@@ -192,14 +193,14 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainWithData, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0x3);
+    ASSERT_EQ(result.mask_, 0xF);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0x3);
+    ASSERT_EQ(result.mask_, 0xF);
 }
 
 /**
@@ -214,14 +215,14 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainWithLocal, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0x3);
+    ASSERT_EQ(result.mask_, 0xF);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta_, true);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0x2);
+    ASSERT_EQ(result.mask_, 0xE);
 }
 
 /**
@@ -342,7 +343,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
     ASSERT_EQ(mask, 0);
 
     mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, 0xFFFF);
-    ASSERT_EQ(mask, 0x3);
+    ASSERT_EQ(mask, 0xF);
 }
 
 /**
@@ -355,8 +356,8 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
 HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
 {
     MatrixMetaData metaData;
-    metaData.version = 2;
-    metaData.mask = 0x7;
+    metaData.version = 3;
+    metaData.mask = 0x1F;
     metaData.deviceId = TEST_DEVICE;
     metaData.maskInfo = { TEST_BUNDLE, "distributed_device_profile_service" };
     MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }),

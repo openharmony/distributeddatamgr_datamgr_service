@@ -16,6 +16,7 @@
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 
 #include <string>
+#include "executor_pool.h"
 #include "object_types.h"
 #include "store/general_value.h"
 
@@ -24,11 +25,11 @@ namespace DistributedObject {
 class ObjectAssetLoader {
 public:
     static ObjectAssetLoader *GetInstance();
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     bool Transfer(const int32_t userId, const std::string &bundleName,
         const std::string &deviceId, const DistributedData::Asset &assetValue);
-
-    bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-        const DistributedData::Asset& assetValue, std::function<void(bool success)> callback);
+    void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+        const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
 private:
     ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;
@@ -36,6 +37,7 @@ private:
     ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
 
     static constexpr int WAIT_TIME = 60;
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace DistributedObject
 } // namespace OHOS
