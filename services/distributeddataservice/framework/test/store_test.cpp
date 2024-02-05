@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021 Huawei Device Co., Ltd.
+* Copyright (c) 2024 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -12,40 +12,59 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#define LOG_TAG "RefCountTest"
+#define LOG_TAG "StoreTest"
+#include <chrono>
 
+#include "access_token.h"
 #include "gtest/gtest.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
-#include "store/auto_cache.h"
+#include "rdb_query.h"
+#include "rdb_types.h"
+#include "snapshot/bind_event.h"
 #include "store/general_store.h"
-#include "types.h"
-
+#include "store/general_value.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-namespace OHOS::Test {
 
-class AutoCacheTest : public testing::Test {
+class GeneralValueTest : public testing::Test {
 public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
 };
-
 class GeneralStoreTest : public testing::Test {
 public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
 };
 
 /**
-* @tc.name: BindExecutorTest
-* @tc.desc:  bind executor
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(AutoCacheTest, BindExecutorTest, TestSize.Level2)
+ * @tc.name: SetQueryNodesTest
+ * @tc.desc: Set and query nodes.
+ * @tc.type: FUNC
+ * @tc.require: AR000F8N0
+ */
+HWTEST_F(GeneralValueTest, SetQueryNodesTest, TestSize.Level2)
 {
-    ZLOGI("AutoCacheTest BindExecutorTest begin.");
-    StoreMetaData metaData;
-    AutoCache::Watchers watchers;
-    auto store =  AutoCache::GetInstance().GetStore(metaData, watchers);
-    ASSERT_EQ(store, nullptr);
+    ZLOGI("GeneralValueTest SetQueryNodesTest begin.");
+    std::string tableName = "test_tableName";
+    QueryNode node;
+    node.op = OHOS::DistributedData::QueryOperation::EQUAL_TO;
+    node.fieldName =  "test_fieldName";
+    node.fieldValue = {"aaa","bbb","ccc"};
+    QueryNodes nodes{
+        {node}
+    };
+    OHOS::DistributedRdb::RdbQuery query;
+    query.SetQueryNodes(tableName, std::move(nodes));
+    QueryNodes nodes1 =  query.GetQueryNodes("test_tableName");
+    EXPECT_EQ(nodes1[0].fieldName, "test_fieldName");
+    EXPECT_EQ(nodes1[0].op, OHOS::DistributedData::QueryOperation::EQUAL_TO);
+    EXPECT_EQ(nodes1[0].fieldValue.size(), 3);
 }
 
 /**
@@ -55,18 +74,25 @@ HWTEST_F(AutoCacheTest, BindExecutorTest, TestSize.Level2)
 * @tc.require:
 * @tc.author:
 */
+// GeneralStore::MixMode(OHOS::DistributedRdb::CLOUD_FIRST, GeneralStore::AUTO_SYNC_MODE);
 HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
 {
     ZLOGI("GeneralStoreTest GetMixModeTest begin.");
-    uint32_t syncMode = 1;
-    uint32_t highMode = 2;
-    uint32_t mixMode =  GeneralStore::MixMode(syncMode, highMode);
-    ASSERT_EQ(mixMode, 3);
+    int32_t evtId = 1;
+    BindEvent::BindEventInfo bindInfo;
+    bindInfo.bundleName = "test_bundleName";
+    bindInfo.user = 100;
+    bindInfo.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    bindInfo.storeName = "test_storeName";
+    BindEvent event(evtId, std::move(bindInfo));
 
-    uint32_t sync_Mode = GeneralStore::GetSyncMode(mixMode);
-    ASSERT_EQ(sync_Mode, 3);
+    auto mixMode = GeneralStore::MixMode(OHOS::DistributedRdb::TIME_FIRST, GeneralStore::AUTO_SYNC_MODE);
+    std::cout<<"mixMode = "<<mixMode<<std::endl;
+    EXPECT_EQ(mixMode, 65540);
 
-    uint32_t high_Mode = GeneralStore::GetHighMode(mixMode);
-    ASSERT_EQ(high_Mode, 0);
-}
+    auto syncMode = GeneralStore::GetSyncMode(mixMode);
+    EXPECT_EQ(syncMode, OHOS::DistributedRdb::TIME_FIRST);
+
+    auto highMode = GeneralStore::GetHighMode(mixMode);
+    EXPECT_EQ(highMode, GeneralStore::AUTO_SYNC_MODE);
 }
