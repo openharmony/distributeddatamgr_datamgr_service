@@ -25,6 +25,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedData;
 class CloudInfoTest : public testing::Test {
 public:
+    static constexpr const char* TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
@@ -60,6 +61,20 @@ HWTEST_F(CloudInfoTest, IsValid, TestSize.Level0)
     CloudInfo cloudInfo;
     auto result = cloudInfo.IsValid();
     ASSERT_FALSE(result);
+
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    CloudInfo cloudInfo1;
+    cloudInfo1.user = 111;
+    cloudInfo1.id = "test1_id";
+    cloudInfo1.totalSpace = 0;
+    cloudInfo1.remainSpace = 0;
+    cloudInfo1.enableCloud = false;
+    cloudInfo1.apps = apps;
+
+    Serializable::json node1;
+    cloudInfo1.Marshal(node1);
+    result = cloudInfo1.IsValid();
+    ASSERT_TRUE(result);
 }
 
 /**
@@ -74,6 +89,27 @@ HWTEST_F(CloudInfoTest, Exist, TestSize.Level0)
     CloudInfo cloudInfo;
     auto result = cloudInfo.Exist("", 1);
     ASSERT_FALSE(result);
+
+    CloudInfo::AppInfo cloudInfo2;
+    cloudInfo2.bundleName = TEST_CLOUD_BUNDLE;
+    cloudInfo2.appId = "test_cloud_id";
+    cloudInfo2.version = 0;
+    cloudInfo2.instanceId = 100;
+    cloudInfo2.cloudSwitch = false;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+
+    CloudInfo cloudInfo1;
+    cloudInfo1.user = 111;
+    cloudInfo1.id = "test_cloud_id";
+    cloudInfo1.totalSpace = 0;
+    cloudInfo1.remainSpace = 100;
+    cloudInfo1.enableCloud = true;
+    cloudInfo1.apps[TEST_CLOUD_BUNDLE] = std::move(cloudInfo2);
+
+    Serializable::json node1;
+    cloudInfo1.Marshal(node1);
+    result = cloudInfo1.Exist(TEST_CLOUD_BUNDLE, 100);
+    ASSERT_TRUE(result);
 }
 
 /**
@@ -88,6 +124,27 @@ HWTEST_F(CloudInfoTest, IsOn, TestSize.Level0)
     CloudInfo cloudInfo;
     auto result = cloudInfo.IsOn("ohos.test.demo", 1);
     ASSERT_FALSE(result);
+
+    CloudInfo::AppInfo cloudInfo2;
+    cloudInfo2.bundleName = TEST_CLOUD_BUNDLE;
+    cloudInfo2.appId = "test_cloud_id";
+    cloudInfo2.version = 0;
+    cloudInfo2.instanceId = 100;
+    cloudInfo2.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+
+    CloudInfo cloudInfo1;
+    cloudInfo1.user = 111;
+    cloudInfo1.id = "test_cloud_id";
+    cloudInfo1.totalSpace = 0;
+    cloudInfo1.remainSpace = 100;
+    cloudInfo1.enableCloud = true;
+    cloudInfo1.apps[TEST_CLOUD_BUNDLE] = std::move(cloudInfo2);
+
+    Serializable::json node1;
+    cloudInfo1.Marshal(node1);
+    result = cloudInfo1.IsOn(TEST_CLOUD_BUNDLE, 100);
+    ASSERT_TRUE(result);
 }
 
 /**
@@ -128,7 +185,8 @@ HWTEST_F(CloudInfoTest, CloudInfoTest, TestSize.Level0)
 
     CloudInfo cloudInfo2;
     cloudInfo2.Unmarshal(node1);
-    EXPECT_EQ(cloudInfo2.id, "test1_id");
+    EXPECT_EQ(cloudInfo2.user, 111);
+    EXPECT_EQ(cloudInfo2.id, node1["id"]);
 }
 
 /**
