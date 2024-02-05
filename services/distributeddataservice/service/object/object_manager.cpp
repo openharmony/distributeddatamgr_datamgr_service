@@ -226,22 +226,34 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
             }
         } else {
             std::string assetKey = key.substr(0, key.find(ObjectStore::ASSET_DOT));
-            auto it = assets.find(assetKey);
-            if (it == assets.end()) {
-                Asset asset;
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::NAME_SUFFIX], asset.name);
-                asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
-                ObjectStore::StringUtils::BytesToStrWithType(results[assetKey+ObjectStore::URI_SUFFIX], asset.uri);
-                asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
-                assets.insert(assetKey);
-                assetValues.push_back(asset);
-            }
+            GetAsset(results, assetKey, assets, assetValues);
         }
     }
     if (!assetValues.empty()) {
         ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assetValues, callback);
     } else {
         callback(true);
+    }
+}
+
+void ObjectStoreManager::GetAsset(std::map<std::string, std::vector<uint8_t>>& results, const std::string& assetKey,
+    std::set<std::string> assets, std::vector<Asset> assetValues)
+{
+    auto it = assets.find(assetKey);
+    if (it == assets.end()) {
+        Asset asset;
+        ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::NAME_SUFFIX], asset.name);
+        if (asset.name.size() > ObjectStore::STRING_PREFIX_LEN) {
+            asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
+        }
+        ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::URI_SUFFIX], asset.uri);
+        if (asset.uri.size() > ObjectStore::STRING_PREFIX_LEN) {
+            asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
+        }
+        if (!asset.uri.empty() && !asset.name.empty()) {
+            assets.insert(assetKey);
+            assetValues.push_back(asset);
+        }
     }
 }
 
