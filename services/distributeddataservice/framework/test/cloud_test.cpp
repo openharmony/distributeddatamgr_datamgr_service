@@ -26,7 +26,6 @@ using namespace testing::ext;
 using namespace OHOS::DistributedData;
 class CloudInfoTest : public testing::Test {
 public:
-    static constexpr const char* TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
@@ -90,7 +89,7 @@ HWTEST_F(CloudInfoTest, Exist, TestSize.Level0)
     ASSERT_FALSE(result);
 
     CloudInfo::AppInfo appInfo;
-    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.bundleName = "test_cloud_bundleName";
     appInfo.appId = "test_cloud_id";
     appInfo.version = 0;
     appInfo.instanceId = 100;
@@ -101,11 +100,11 @@ HWTEST_F(CloudInfoTest, Exist, TestSize.Level0)
     cloudInfo.totalSpace = 0;
     cloudInfo.remainSpace = 100;
     cloudInfo.enableCloud = true;
-    cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    cloudInfo.apps["test_cloud_bundleName"] = std::move(appInfo);
 
     Serializable::json node1;
     cloudInfo.Marshal(node1);
-    result = cloudInfo.Exist(TEST_CLOUD_BUNDLE, 100);
+    result = cloudInfo.Exist("test_cloud_bundleName", 100);
     ASSERT_TRUE(result);
 }
 
@@ -123,7 +122,7 @@ HWTEST_F(CloudInfoTest, IsOn, TestSize.Level0)
     ASSERT_FALSE(result);
 
     CloudInfo::AppInfo appInfo;
-    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.bundleName = "test_cloud_bundleName";
     appInfo.appId = "test_cloud_id";
     appInfo.version = 0;
     appInfo.instanceId = 100;
@@ -134,11 +133,11 @@ HWTEST_F(CloudInfoTest, IsOn, TestSize.Level0)
     cloudInfo.totalSpace = 0;
     cloudInfo.remainSpace = 100;
     cloudInfo.enableCloud = true;
-    cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    cloudInfo.apps["test_cloud_bundleName"] = std::move(appInfo);
 
     Serializable::json node1;
     cloudInfo.Marshal(node1);
-    result = cloudInfo.IsOn(TEST_CLOUD_BUNDLE, 100);
+    result = cloudInfo.IsOn("test_cloud_bundleName", 100);
     ASSERT_TRUE(result);
 }
 
