@@ -63,14 +63,12 @@ HWTEST_F(CloudInfoTest, IsValid, TestSize.Level0)
     auto result = cloudInfo.IsValid();
     ASSERT_FALSE(result);
 
-    std::map<std::string, CloudInfo::AppInfo> apps;
     CloudInfo cloudInfo1;
     cloudInfo1.user = 111;
     cloudInfo1.id = "test1_id";
     cloudInfo1.totalSpace = 0;
     cloudInfo1.remainSpace = 0;
     cloudInfo1.enableCloud = false;
-    cloudInfo1.apps = apps;
 
     Serializable::json node1;
     cloudInfo1.Marshal(node1);
@@ -97,7 +95,6 @@ HWTEST_F(CloudInfoTest, Exist, TestSize.Level0)
     appInfo.version = 0;
     appInfo.instanceId = 100;
     appInfo.cloudSwitch = false;
-    std::map<std::string, CloudInfo::AppInfo> apps;
 
     cloudInfo.user = 111;
     cloudInfo.id = "test_cloud_id";
@@ -131,7 +128,6 @@ HWTEST_F(CloudInfoTest, IsOn, TestSize.Level0)
     appInfo.version = 0;
     appInfo.instanceId = 100;
     appInfo.cloudSwitch = true;
-    std::map<std::string, CloudInfo::AppInfo> apps;
 
     cloudInfo.user = 111;
     cloudInfo.id = "test_cloud_id";
@@ -169,14 +165,12 @@ HWTEST_F(CloudInfoTest, GetPrefix, TestSize.Level0)
 */
 HWTEST_F(CloudInfoTest, CloudInfoTest, TestSize.Level0)
 {
-    std::map<std::string, CloudInfo::AppInfo> apps;
     CloudInfo cloudInfo1;
     cloudInfo1.user = 111;
     cloudInfo1.id = "test1_id";
     cloudInfo1.totalSpace = 0;
     cloudInfo1.remainSpace = 0;
     cloudInfo1.enableCloud = false;
-    cloudInfo1.apps = apps;
 
     Serializable::json node1;
     cloudInfo1.Marshal(node1);
