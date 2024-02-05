@@ -16,6 +16,7 @@
 #define LOG_TAG "CloudInfoTest"
 #include <gtest/gtest.h>
 
+#include "serializable/serializable.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
 #include "nlohmann/json.hpp"
@@ -90,25 +91,24 @@ HWTEST_F(CloudInfoTest, Exist, TestSize.Level0)
     auto result = cloudInfo.Exist("", 1);
     ASSERT_FALSE(result);
 
-    CloudInfo::AppInfo cloudInfo2;
-    cloudInfo2.bundleName = TEST_CLOUD_BUNDLE;
-    cloudInfo2.appId = "test_cloud_id";
-    cloudInfo2.version = 0;
-    cloudInfo2.instanceId = 100;
-    cloudInfo2.cloudSwitch = false;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.appId = "test_cloud_id";
+    appInfo.version = 0;
+    appInfo.instanceId = 100;
+    appInfo.cloudSwitch = false;
     std::map<std::string, CloudInfo::AppInfo> apps;
 
-    CloudInfo cloudInfo1;
-    cloudInfo1.user = 111;
-    cloudInfo1.id = "test_cloud_id";
-    cloudInfo1.totalSpace = 0;
-    cloudInfo1.remainSpace = 100;
-    cloudInfo1.enableCloud = true;
-    cloudInfo1.apps[TEST_CLOUD_BUNDLE] = std::move(cloudInfo2);
+    cloudInfo.user = 111;
+    cloudInfo.id = "test_cloud_id";
+    cloudInfo.totalSpace = 0;
+    cloudInfo.remainSpace = 100;
+    cloudInfo.enableCloud = true;
+    cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
 
     Serializable::json node1;
-    cloudInfo1.Marshal(node1);
-    result = cloudInfo1.Exist(TEST_CLOUD_BUNDLE, 100);
+    cloudInfo.Marshal(node1);
+    result = cloudInfo.Exist(TEST_CLOUD_BUNDLE, 100);
     ASSERT_TRUE(result);
 }
 
@@ -125,25 +125,24 @@ HWTEST_F(CloudInfoTest, IsOn, TestSize.Level0)
     auto result = cloudInfo.IsOn("ohos.test.demo", 1);
     ASSERT_FALSE(result);
 
-    CloudInfo::AppInfo cloudInfo2;
-    cloudInfo2.bundleName = TEST_CLOUD_BUNDLE;
-    cloudInfo2.appId = "test_cloud_id";
-    cloudInfo2.version = 0;
-    cloudInfo2.instanceId = 100;
-    cloudInfo2.cloudSwitch = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.appId = "test_cloud_id";
+    appInfo.version = 0;
+    appInfo.instanceId = 100;
+    appInfo.cloudSwitch = true;
     std::map<std::string, CloudInfo::AppInfo> apps;
 
-    CloudInfo cloudInfo1;
-    cloudInfo1.user = 111;
-    cloudInfo1.id = "test_cloud_id";
-    cloudInfo1.totalSpace = 0;
-    cloudInfo1.remainSpace = 100;
-    cloudInfo1.enableCloud = true;
-    cloudInfo1.apps[TEST_CLOUD_BUNDLE] = std::move(cloudInfo2);
+    cloudInfo.user = 111;
+    cloudInfo.id = "test_cloud_id";
+    cloudInfo.totalSpace = 0;
+    cloudInfo.remainSpace = 100;
+    cloudInfo.enableCloud = true;
+    cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
 
     Serializable::json node1;
-    cloudInfo1.Marshal(node1);
-    result = cloudInfo1.IsOn(TEST_CLOUD_BUNDLE, 100);
+    cloudInfo.Marshal(node1);
+    result = cloudInfo.IsOn(TEST_CLOUD_BUNDLE, 100);
     ASSERT_TRUE(result);
 }
 
@@ -181,12 +180,11 @@ HWTEST_F(CloudInfoTest, CloudInfoTest, TestSize.Level0)
 
     Serializable::json node1;
     cloudInfo1.Marshal(node1);
-    EXPECT_EQ(node1["id"], "test1_id");
+    EXPECT_EQ(Serializable::Marshall(cloudInfo1), to_string(node1));
 
     CloudInfo cloudInfo2;
     cloudInfo2.Unmarshal(node1);
-    EXPECT_EQ(cloudInfo2.user, 111);
-    EXPECT_EQ(cloudInfo2.id, node1["id"]);
+    EXPECT_EQ(Serializable::Marshall(cloudInfo1), Serializable::Marshall(cloudInfo1));
 }
 
 /**
@@ -207,11 +205,11 @@ HWTEST_F(CloudInfoTest, AppInfoTest, TestSize.Level0)
 
     Serializable::json node1;
     cloudInfoAppInfo1.Marshal(node1);
-    EXPECT_EQ(node1["appId"], "test1_id");
+    EXPECT_EQ(Serializable::Marshall(cloudInfoAppInfo1), to_string(node1));
 
     CloudInfo::AppInfo cloudInfoAppInfo2;
     cloudInfoAppInfo2.Unmarshal(node1);
-    EXPECT_EQ(cloudInfoAppInfo2.bundleName, "ohos.test.demo");
+    EXPECT_EQ(Serializable::Marshall(cloudInfoAppInfo1), Serializable::Marshall(cloudInfoAppInfo2));
 }
 
 /**
@@ -237,9 +235,9 @@ HWTEST_F(CloudInfoTest, TableTest, TestSize.Level0)
     table1.fields.push_back(field1);
     Serializable::json node1;
     table1.Marshal(node1);
-    EXPECT_EQ(node1["sharedTableName"], "test1_sharedTableName");
+    EXPECT_EQ(Serializable::Marshall(table1), to_string(node1));
 
     Table table2;
     table2.Unmarshal(node1);
-    EXPECT_EQ(table2.name, "test1_name");
+    EXPECT_EQ(Serializable::Marshall(table1), Serializable::Marshall(table2));
 }
