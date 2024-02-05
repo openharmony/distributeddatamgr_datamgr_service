@@ -72,4 +72,8 @@ void CloudServer::Clean(int32_t userId)
 void CloudServer::ReleaseUserInfo(int32_t userId)
 {
 }
+
+void CloudServer::Bind(std::shared_ptr<ExecutorPool> executor)
+{
+}
 } // namespace OHOS::DistributedData

@@ -155,7 +155,7 @@ CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bun
     auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
         user);
     if (status != NO_ERROR) {
-        ZLOGE("get json profile failed, bundleName: %{public}s.", bundleName.c_str());
+        ZLOGD("get json profile failed, bundleName: %{public}s.", bundleName.c_str());
         return typeCfgs;
     }
     if (jsonStr.empty()) {

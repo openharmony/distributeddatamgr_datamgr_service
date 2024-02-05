@@ -116,7 +116,8 @@ private:
     VBuckets ExecuteSql(const std::string& sql, Values &&args);
     VBuckets ExtractExtend(VBuckets& values) const;
     size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
-
+    bool IsPrintLog(DistributedDB::DBStatus status);
+    
     ObserverProxy observer_;
     RdbManager manager_;
     RdbDelegate *delegate_ = nullptr;
@@ -131,6 +132,10 @@ private:
 
     BindAssets snapshots_;
     DistributedData::StoreInfo storeInfo_;
+
+    DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
+    static constexpr uint32_t PRINT_ERROR_CNT = 150;
+    uint32_t lastErrCnt_ = 0;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

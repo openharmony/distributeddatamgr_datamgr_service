@@ -310,5 +310,11 @@ DBStatus DBStoreMock::UpdateKey(const UpdateKeyCallback &callback)
 {
     return NOT_SUPPORT;
 }
+
+std::pair<DBStatus, WatermarkInfo> DBStoreMock::GetWatermarkInfo(const std::string &device)
+{
+    WatermarkInfo mark;
+    return { DBStatus::OK, mark };
+}
 } // namespace DistributedData
 } // namespace OHOS

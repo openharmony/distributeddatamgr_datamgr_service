@@ -37,6 +37,7 @@ public:
     using RemotePushFinishedNotifier = DistributedDB::RemotePushFinishedNotifier;
     using PushDataInterceptor = DistributedDB::PushDataInterceptor;
     using UpdateKeyCallback = DistributedDB::UpdateKeyCallback;
+    using WatermarkInfo = DistributedDB::WatermarkInfo;
     DBStatus Get(const Key &key, Value &value) const override;
     DBStatus GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const override;
     DBStatus GetEntries(const Key &keyPrefix, KvStoreResultSet *&resultSet) const override;
@@ -89,6 +90,7 @@ public:
     DBStatus GetKeys(const Key &keyPrefix, std::vector<Key> &keys) const override;
     size_t GetSyncDataSize(const std::string &device) const override;
     DBStatus UpdateKey(const UpdateKeyCallback &callback) override;
+    std::pair<DBStatus, WatermarkInfo> GetWatermarkInfo(const std::string &device) override;
 
 private:
     static const uint32_t DEFAULT_SIZE = 0;

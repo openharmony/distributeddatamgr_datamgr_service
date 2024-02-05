@@ -15,7 +15,8 @@
 #include "route_head_handler_impl.h"
 
 #define LOG_TAG "RouteHeadHandler"
-
+#include <chrono>
+#include <cinttypes>
 #include "auth_delegate.h"
 #include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
@@ -30,6 +31,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+using namespace std::chrono;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
 constexpr const int ALIGN_WIDTH = 8;
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
@@ -92,7 +94,9 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 
     // align message uint width
     headSize = GET_ALIGNED_SIZE(expectSize, ALIGN_WIDTH);
-    ZLOGI("packed size:%{public}u", headSize);
+    auto time =
+        static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    ZLOGI("packed size:%{public}u times %{public}" PRIu64 ".", headSize, time);
     headSize_ = headSize;
     return DistributedDB::OK;
 }
@@ -188,7 +192,9 @@ bool RouteHeadHandlerImpl::ParseHeadData(
         headSize = 0;
         return false;
     }
-    ZLOGI("unpacked size:%{public}u", headSize);
+    auto time =
+        static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    ZLOGI("unpacked size:%{public}u times %{public}" PRIu64 ".", headSize, time);
     // flip the local and peer ends
     SessionPoint local { .deviceId = session_.targetDeviceId, .appId = session_.appId };
     SessionPoint peer { .deviceId = session_.sourceDeviceId, .userId = session_.sourceUserId, .appId = session_.appId };

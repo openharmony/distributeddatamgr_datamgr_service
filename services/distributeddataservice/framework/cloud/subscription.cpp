@@ -58,6 +58,25 @@ std::string Subscription::GetRelationKey(const std::string &bundleName)
     return GetRelationKey(userId, bundleName);
 }
 
+uint64_t Subscription::GetMinExpireTime() const
+{
+    if (expiresTime.empty()) {
+        return 0;
+    }
+    auto it = expiresTime.begin();
+    uint64_t expire = it->second;
+    it++;
+    for (; it != expiresTime.end(); it++) {
+        if (it->second == 0) {
+            continue;
+        }
+        if (it->second < expire) {
+            expire = it->second;
+        }
+    }
+    return expire;
+}
+
 std::string Subscription::GetKey(int32_t userId)
 {
     return Constant::Join(PREFIX, Constant::KEY_SEPARATOR, { std::to_string(userId) });
