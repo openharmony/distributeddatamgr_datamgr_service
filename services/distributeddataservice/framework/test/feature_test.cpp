@@ -77,7 +77,7 @@ HWTEST_F(FeatureSystemTest, RegisterCreatorAndGetCreatorTest, TestSize.Level1)
 * @tc.require:
 * @tc.author: MengYao
 */
-HWTEST_F(FeatureSystemTest, GetGetStaticActsAndetStaticActsTest, TestSize.Level1)
+HWTEST_F(FeatureSystemTest, GetStaticActsAndetStaticActsTest, TestSize.Level1)
 {
     FeatureSystem& featureSystem = FeatureSystem::GetInstance();
     std::string staticActsName = "StaticActs";
