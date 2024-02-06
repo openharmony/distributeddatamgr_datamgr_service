@@ -23,6 +23,12 @@ config("module_private_config") {
   include_dirs = [
     "../include/",
     "../../service/bootstrap/include/",
+    "../../service/common/",
+    "../../service/rdb/",
+    "../../../../../relational_store/interfaces/inner_api/rdb/include",
+    "../../../../../relational_store/interfaces/inner_api/common_type/include",
+    "${kv_store_distributeddb_path}/interfaces/include",
+    "${kv_store_distributeddb_path}/include",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
@@ -114,13 +120,17 @@ ohos_unittest("UtilsTest") {
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "//third_party/googletest:gtest_main",
   ]
 }
 
 ohos_unittest("StoreTest") {
   module_out_path = module_output_path
 
-  sources = [ "store_test.cpp" ]
+  sources = [ 
+      "store_test.cpp",
+      "../../service/rdb/rdb_query.cpp",
+      ]
 
   configs = [ ":module_private_config" ]
 
@@ -130,10 +140,15 @@ ohos_unittest("StoreTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
   ]
   
 ohos_unittest("AssetLoaderTest") {
