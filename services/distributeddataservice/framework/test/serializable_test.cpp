@@ -301,4 +301,17 @@ HWTEST_F(SerializableTest, SetPointerValue, TestSize.Level2)
     out.Unmarshall(json);
     ASSERT_TRUE(in == out) << in.count;
 }
+
+/**
+* @tc.name: IsJson
+* @tc.desc: is json.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, IsJson, TestSize.Level1)
+{
+std::string str = "test";
+std::string jsonStr = "\"test\"";
+ASSERT_FALSE(Serializable::IsJson(str));
+ASSERT_TRUE(Serializable::IsJson(jsonStr));
+}
 } // namespace OHOS::Test
