@@ -40,7 +40,6 @@ udmf_path = "//foundation/distributeddatamgr/udmf"
 
 dataobject_path = "//foundation/distributeddatamgr/data_object"
 
-
 declare_args() {
   datamgr_service_power = true
   if (!defined(global_parts_info.power_manager_native_powermgr_client) ||
