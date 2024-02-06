@@ -69,30 +69,23 @@ HWTEST_F(GeneralValueTest, SetQueryNodesTest, TestSize.Level2)
 
 /**
 * @tc.name: GetMixModeTest
-* @tc.desc: get mix mode
+* @tc.desc: Mixing two mode into one and splitting 
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author:
 */
-// GeneralStore::MixMode(OHOS::DistributedRdb::CLOUD_FIRST, GeneralStore::AUTO_SYNC_MODE);
 HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
 {
     ZLOGI("GeneralStoreTest GetMixModeTest begin.");
-    int32_t evtId = 1;
-    BindEvent::BindEventInfo bindInfo;
-    bindInfo.bundleName = "test_bundleName";
-    bindInfo.user = 100;
-    bindInfo.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    bindInfo.storeName = "test_storeName";
-    BindEvent event(evtId, std::move(bindInfo));
+    auto mode1 = OHOS::DistributedRdb::TIME_FIRST;
+    auto mode2 = GeneralStore::AUTO_SYNC_MODE;
 
-    auto mixMode = GeneralStore::MixMode(OHOS::DistributedRdb::TIME_FIRST, GeneralStore::AUTO_SYNC_MODE);
-    std::cout<<"mixMode = "<<mixMode<<std::endl;
+    auto mixMode = GeneralStore::MixMode(mode1, mode2)
     EXPECT_EQ(mixMode, 65540);
 
     auto syncMode = GeneralStore::GetSyncMode(mixMode);
-    EXPECT_EQ(syncMode, OHOS::DistributedRdb::TIME_FIRST);
+    EXPECT_EQ(syncMode, mode1);
 
     auto highMode = GeneralStore::GetHighMode(mixMode);
-    EXPECT_EQ(highMode, GeneralStore::AUTO_SYNC_MODE);
+    EXPECT_EQ(highMode, mode2);
 }
