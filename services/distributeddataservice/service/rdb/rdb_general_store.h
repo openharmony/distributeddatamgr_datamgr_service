@@ -58,6 +58,7 @@ public:
     int32_t Insert(const std::string &table, VBuckets &&values) override;
     int32_t Update(const std::string &table, const std::string &setSql, Values &&values, const std::string &whereSql,
         Values &&conditions) override;
+    int32_t Replace(const std::string &table, VBucket &&value) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;

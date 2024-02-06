@@ -46,6 +46,10 @@ using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
+constexpr const char *INSERT = "INSERT INTO ";
+constexpr const char *REPLACE = "REPLACE INTO ";
+constexpr const char *VALUES = " VALUES ";
+
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
     observer_.storeId_ = meta.storeId;
@@ -194,7 +198,9 @@ int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sq
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed!");
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s, sql:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str(),
+            Anonymous::Change(sql).c_str());
         return GeneralError::E_ERROR;
     }
     std::vector<DistributedDB::VBucket> changedData;
@@ -258,13 +264,14 @@ int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
         strValueSql += strRowValueSql + ",";
     }
     strValueSql.pop_back();
-    std::string sql = "INSERT INTO " + table + strColumnSql + " VALUES " + strValueSql;
+    std::string sql = INSERT + table + strColumnSql + VALUES + strValueSql;
 
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed!");
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
         return GeneralError::E_ERROR;
     }
     auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
@@ -308,13 +315,45 @@ int32_t RdbGeneralStore::Update(const std::string &table, const std::string &set
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed!");
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
         return GeneralError::E_ERROR;
     }
     auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs) }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sqlIn).c_str(),
               changedData.size());
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
+int32_t RdbGeneralStore::Replace(const std::string &table, VBucket &&value)
+{
+    if (table.empty() || value.size() == 0) {
+        return GeneralError::E_INVALID_ARGS;
+    }
+    std::string columnSql;
+    std::string valueSql;
+    SqlConcatenate(value, columnSql, valueSql);
+    std::string sql = REPLACE + table + columnSql + VALUES + valueSql;
+
+    Values args;
+    for (auto &[k, v] : value) {
+        args.emplace_back(std::move(v));
+    }
+    std::vector<DistributedDB::VBucket> changedData;
+    std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
+        return GeneralError::E_ERROR;
+    }
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
+    if (status != DBStatus::OK) {
+        ZLOGE("Replace failed! ret:%{public}d, table:%{public}s, sql:%{public}s, fields:%{public}s",
+            status, Anonymous::Change(table).c_str(), Anonymous::Change(sql).c_str(), columnSql.c_str());
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -330,7 +369,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(__attribute__((unused))const std:
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed!");
+        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
         return nullptr;
     }
     std::vector<VBucket> records = ExecuteSql(sql, std::move(args));
@@ -347,7 +386,8 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
     }
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed! tables name:%{public}s", Anonymous::Change(table).c_str());
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
         return nullptr;
     }
     if (rdbQuery->IsRemoteQuery()) {
@@ -364,7 +404,8 @@ int32_t RdbGeneralStore::MergeMigratedData(const std::string& tableName, VBucket
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed! tables name:%{public}s", Anonymous::Change(tableName).c_str());
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_ERROR;
     }
 
@@ -421,7 +462,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
     {
         std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
         if (delegate_ == nullptr) {
-            ZLOGE("database already closed!");
+            ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
             return nullptr;
         }
         values = ExecuteSql(sql, rdbQuery->GetBindArgs());
@@ -628,7 +669,8 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed! tables size:%{public}zu, type:%{public}d", tables.size(), type);
+        ZLOGE("Database already closed! database:%{public}s, tables size:%{public}zu, type:%{public}d",
+            Anonymous::Change(storeInfo_.storeName).c_str(), tables.size(), type);
         return GeneralError::E_ALREADY_CLOSED;
     }
     for (const auto &table : tables) {
@@ -657,7 +699,8 @@ int32_t RdbGeneralStore::SetTrackerTable(const std::string& tableName, const std
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed! tables name:%{public}s", tableName.c_str());
+        ZLOGE("database already closed! database:%{public}s, tables name:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->SetTrackerTable({ tableName, extendColName, trackerColNames });
