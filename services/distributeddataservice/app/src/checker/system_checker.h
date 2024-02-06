@@ -25,10 +25,13 @@ public:
     ~SystemChecker();
     void Initialize() override;
     bool SetTrustInfo(const CheckerManager::Trust &trust) override;
+    bool SetDistrustInfo(const CheckerManager::Distrust &distrust) override;
     std::string GetAppId(const CheckerManager::StoreInfo &info) override;
     bool IsValid(const CheckerManager::StoreInfo &info) override;
+    bool IsDistrust(const CheckerManager::StoreInfo &info) override;
 private:
     std::map<std::string, std::string> trusts_;
+    std::map<std::string, std::string> distrusts_;
     static SystemChecker instance_;
 };
 } // namespace DistributedData

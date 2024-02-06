@@ -93,6 +93,13 @@ void Bootstrap::LoadCheckers()
         }
         checker->SetTrustInfo(trust);
     }
+    for (const auto &distrust : checkers->distrusts) {
+        auto *checker = CheckerManager::GetInstance().GetChecker(distrust.checker);
+        if (checker == nullptr) {
+            continue;
+        }
+        checker->SetDistrustInfo(distrust);
+    }
 }
 
 void Bootstrap::LoadBackup(std::shared_ptr<ExecutorPool> executors)

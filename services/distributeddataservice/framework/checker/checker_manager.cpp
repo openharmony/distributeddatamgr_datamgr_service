@@ -76,6 +76,20 @@ bool CheckerManager::IsValid(const StoreInfo &info)
     return false;
 }
 
+bool CheckerManager::IsDistrust(const StoreInfo &info)
+{
+    for (auto &[name, checker] : checkers_) {
+        if (checker == nullptr) {
+            continue;
+        }
+        if (!checker->IsDistrust(info)) {
+            continue;
+        }
+        return true;
+    }
+    return false;
+}
+
 CheckerManager::Checker *CheckerManager::GetChecker(const std::string &checker)
 {
     auto it = checkers_.find(checker);

@@ -104,7 +104,7 @@ MetaDataManager::~MetaDataManager()
     metaObservers_.Clear();
 }
 
-void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const Syncer &syncer)
+void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup)
 {
     if (metaStore == nullptr) {
         return;
@@ -116,8 +116,15 @@ void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Bac
     }
     metaStore_ = std::move(metaStore);
     backup_ = backup;
-    syncer_ = syncer;
     inited_ = true;
+}
+
+void MetaDataManager::SetSyncer(const Syncer &syncer)
+{
+    if (metaStore_ == nullptr) {
+        return;
+    }
+    syncer_ = syncer;
 }
 
 bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value, bool isLocal)

@@ -40,6 +40,12 @@ bool SystemChecker::SetTrustInfo(const CheckerManager::Trust &trust)
     return true;
 }
 
+bool SystemChecker::SetDistrustInfo(const CheckerManager::Distrust &distrust)
+{
+    distrusts_[distrust.bundleName] = distrust.appId;
+    return true;
+}
+
 std::string SystemChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (!IsValid(info)) {
@@ -54,6 +60,18 @@ bool SystemChecker::IsValid(const CheckerManager::StoreInfo &info)
 {
     auto type = AccessTokenKit::GetTokenTypeFlag(info.tokenId);
     return (type == TOKEN_NATIVE || type == TOKEN_SHELL);
+}
+
+bool SystemChecker::IsDistrust(const CheckerManager::StoreInfo &info)
+{
+    if (!IsValid(info)) {
+        return false;
+    }
+    auto it = distrusts_.find(info.bundleName);
+    if (it != distrusts_.end()) {
+        return true;
+    }
+    return false;
 }
 } // namespace DistributedData
 } // namespace OHOS

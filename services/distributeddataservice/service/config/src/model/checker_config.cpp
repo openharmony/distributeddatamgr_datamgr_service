@@ -40,6 +40,7 @@ bool CheckerConfig::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(checkers)], checkers);
     SetValue(node[GET_NAME(trusts)], trusts);
+    SetValue(node[GET_NAME(distrusts)], distrusts);
     return true;
 }
 
@@ -47,6 +48,7 @@ bool CheckerConfig::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(checkers), checkers);
     GetValue(node, GET_NAME(trusts), trusts);
+    GetValue(node, GET_NAME(distrusts), distrusts);
     return true;
 }
 } // namespace DistributedData
