@@ -128,8 +128,8 @@ ohos_unittest("StoreTest") {
   module_out_path = module_output_path
 
   sources = [
-    "store_test.cpp",
     "../../service/rdb/rdb_query.cpp",
+    "store_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -259,10 +259,10 @@ group("unittest") {
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
     ":SerializableTest",
-    ":UtilsTest",
-    ":StoreTest",
     ":StoreMetaDataLocalTest",
+    ":StoreTest",
     ":SubscriptionTest",
+    ":UtilsTest",
   ]
 }
 ###############################################################################
