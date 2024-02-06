@@ -32,11 +32,13 @@
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/version_meta_data.h"
 #include "runtime_config.h"
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "utils/ref_count.h"
+#include "utils/converter.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -180,7 +182,32 @@ void KvStoreMetaManager::InitMetaData()
         MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true))) {
         ZLOGE("save meta fail");
     }
+    UpdateMetaData();
+    SetSyncer();
     ZLOGI("end.");
+}
+
+void KvStoreMetaManager::UpdateMetaData()
+{
+    VersionMetaData versionMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)
+        || versionMeta.version < META_VERSION) {
+        std::vector<StoreMetaData> metaDataList;
+        std::string prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
+        MetaDataManager::GetInstance().LoadMeta(prefix, metaDataList);
+        for (auto metaData : metaDataList) {
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+            if (CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData)) ||
+                (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
+                 && metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END)) {
+                MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
+            }
+        }
+    }
+    if (versionMeta.version != VersionMetaData::CURRENT_VERSION) {
+        versionMeta.version = VersionMetaData::CURRENT_VERSION;
+        MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+    }
 }
 
 void KvStoreMetaManager::InitMetaParameter()
@@ -222,8 +249,13 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (metaDelegate_ == nullptr) {
         metaDelegate_ = CreateMetaKvStore();
+        auto fullName = GetBackupPath();
+        auto backup = [fullName](const auto &store) -> int32_t {
+            DistributedDB::CipherPassword password;
+            return store->Export(fullName, password);
+        };
+        MetaDataManager::GetInstance().Initialize(metaDelegate_, backup);
     }
-    ConfigMetaDataManager();
     return metaDelegate_;
 }
 
@@ -270,13 +302,8 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     return NbDelegate(delegate, release);
 }
 
-void KvStoreMetaManager::ConfigMetaDataManager()
+void KvStoreMetaManager::SetSyncer()
 {
-    auto fullName = GetBackupPath();
-    auto backup = [fullName](const auto &store) -> int32_t {
-        DistributedDB::CipherPassword password;
-        return store->Export(fullName, password);
-    };
     auto syncer = [this](const auto &store, int32_t status) {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
         auto size = DmAdapter::GetInstance().GetOnlineSize();
@@ -293,7 +320,7 @@ void KvStoreMetaManager::ConfigMetaDataManager()
                 executors_->Reset(delaySyncTaskId_, std::chrono::milliseconds(DELAY_SYNC));
         }
     };
-    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup, syncer);
+    MetaDataManager::GetInstance().SetSyncer(syncer);
 }
 
 std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int32_t status)

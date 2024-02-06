@@ -25,8 +25,10 @@ public:
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
     };
+    using Distrust = Trust;
     std::vector<std::string> checkers;
     std::vector<Trust> trusts;
+    std::vector<Distrust> distrusts;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

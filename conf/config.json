@@ -28,8 +28,6 @@
     "checkers": [
       "SystemChecker",
       "BundleChecker",
-      "PackageChecker",
-      "ExternalChecker"
     ],
     "trusts": [
       {
@@ -37,7 +35,8 @@
         "appId": "bundle_manager_service",
         "checker": "SystemChecker"
       }
-    ]
+    ],
+    "distrusts": []
   },
   "networks": {
     "chains": [
