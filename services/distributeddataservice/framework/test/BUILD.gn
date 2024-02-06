@@ -127,10 +127,10 @@ ohos_unittest("UtilsTest") {
 ohos_unittest("StoreTest") {
   module_out_path = module_output_path
 
-  sources = [ 
-      "store_test.cpp",
-      "../../service/rdb/rdb_query.cpp",
-      ]
+  sources = [
+    "store_test.cpp",
+    "../../service/rdb/rdb_query.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
@@ -150,7 +150,8 @@ ohos_unittest("StoreTest") {
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
   ]
-  
+}
+
 ohos_unittest("AssetLoaderTest") {
   module_out_path = module_output_path
   sources = [ "asset_loader_test.cpp" ]

@@ -43,8 +43,8 @@ public:
     {
         return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
     }
-    int interval_time = 100 * 1000;
-    int test_val = 10;
+    int intervalTime = 100 * 1000;
+    int testNum = 10;
 };
 
 class RefCountTest : public testing::Test {
@@ -86,10 +86,10 @@ HWTEST_F(UtilsTest, StoreMetaDataConvertToStoreInfo, TestSize.Level2)
 HWTEST_F(BlockIntegerTest, SymbolOverloadingTest, TestSize.Level2)
 {
     ZLOGI("BlockIntegerTest SymbolOverloading begin.");
-    int interval = interval_time;
+    int interval = intervalTime;
     BlockInteger blockInteger(interval);
-    blockInteger = test_val;
-    ASSERT_EQ(blockInteger, test_val);
+    blockInteger = testNum;
+    ASSERT_EQ(blockInteger, testNum);
 
     auto now1 = GetCurrentTime();
     int val = blockInteger++;
@@ -118,7 +118,7 @@ HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
 {
     int num = 0;
     {
-        RefCount refCount([&num](){
+        RefCount refCount([&num]() {
             num += 10;
         });
         ASSERT_TRUE(refCount);
@@ -134,7 +134,7 @@ HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
 
         RefCount refCount4 = std::move(refCount2);
         ASSERT_TRUE(refCount4);
-        ASSERT_EQ(num,0);
+        ASSERT_EQ(num, 0);
     }
-    ASSERT_EQ(num,10);
+    ASSERT_EQ(num, 10);
 }

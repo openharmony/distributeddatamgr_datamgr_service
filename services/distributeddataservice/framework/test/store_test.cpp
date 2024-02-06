@@ -52,7 +52,7 @@ HWTEST_F(GeneralValueTest, SetQueryNodesTest, TestSize.Level2)
     QueryNode node;
     node.op = OHOS::DistributedData::QueryOperation::EQUAL_TO;
     node.fieldName =  "test_fieldName";
-    node.fieldValue = {"aaa","bbb","ccc"};
+    node.fieldValue = {"aaa", "bbb", "ccc"};
     QueryNodes nodes{
         {node}
     };
