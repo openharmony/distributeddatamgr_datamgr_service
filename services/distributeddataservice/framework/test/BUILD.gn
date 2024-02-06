@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/ohos_var.gni")
 import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 module_output_path = "datamgr_service/distributeddatafwk"
 
@@ -96,6 +97,55 @@ ohos_unittest("SerializableTest") {
   ]
 }
 
+ohos_unittest("AssetLoaderTest") {
+  module_out_path = module_output_path
+  sources = [ "asset_loader_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
+ohos_unittest("BackupRuleManagerTest") {
+  module_out_path = module_output_path
+  sources = [ "backup_rule_manager_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
+ohos_unittest("BindEventTest") {
+  module_out_path = module_output_path
+  sources = [ "bind_event_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
+ohos_unittest("CloudInfoTest") {
+  module_out_path = module_output_path
+  sources = [ "cloud_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
+ohos_unittest("EventTest") {
+  module_out_path = module_output_path
+  sources = [ "event_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
+ohos_unittest("GeneralStoreTest") {
+  module_out_path = module_output_path
+  sources = [ "general_store_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
+ohos_unittest("SubscriptionTest") {
+  module_out_path = module_output_path
+  sources = [ "subscription_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -103,9 +153,16 @@ group("unittest") {
   deps = []
 
   deps += [
+    ":AssetLoaderTest",
+    ":BackupRuleManagerTest",
+    ":BindEventTest",
     ":CheckerManagerTest",
+    ":CloudInfoTest",
     ":EventCenterTest",
+    ":EventTest",
+    ":GeneralStoreTest",
     ":SerializableTest",
+    ":SubscriptionTest",
   ]
 }
 ###############################################################################
