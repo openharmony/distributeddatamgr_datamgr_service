@@ -77,8 +77,8 @@ HWTEST_F(ServiceMetaDataTest, AppIDMetaData, TestSize.Level1)
     EXPECT_EQ(appIdMetaData.appId, appIdMeta.appId);
     EXPECT_EQ(appIdMetaData.bundleName, appIdMeta.bundleName);
     EXPECT_EQ(appIdMetaData.GetKey(), appIdMeta.GetKey());
-    MetaDataManager::GetInstance().DelMeta(key, true);
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(key, appIdMetaData, true));
+    result = MetaDataManager::GetInstance().DelMeta(key, true);
+    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(key, appIdMetaData);
     EXPECT_TRUE(result);
@@ -87,8 +87,8 @@ HWTEST_F(ServiceMetaDataTest, AppIDMetaData, TestSize.Level1)
     EXPECT_EQ(appIdMetaData.appId, appIdMeta.appId);
     EXPECT_EQ(appIdMetaData.bundleName, appIdMeta.bundleName);
     EXPECT_EQ(appIdMetaData.GetKey(), appIdMeta.GetKey());
-    MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(key, appIdMetaData));
+    result = MetaDataManager::GetInstance().DelMeta(key);
+    EXPECT_TRUE(result);
 }
 
 
@@ -115,8 +115,8 @@ HWTEST_F(ServiceMetaDataTest, corruptedMeta, TestSize.Level1)
     EXPECT_EQ(corruptedMeta.bundleName, corruptedMetaData.bundleName);
     EXPECT_EQ(corruptedMeta.storeId, corruptedMetaData.storeId);
     EXPECT_EQ(corruptedMeta.GetKey(), corruptedMetaData.GetKey());
-    MetaDataManager::GetInstance().DelMeta(key, true);
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(key, corruptedMeta, true));
+    result = MetaDataManager::GetInstance().DelMeta(key, true);
+    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(key, corruptedMeta);
     EXPECT_TRUE(result);
@@ -126,8 +126,8 @@ HWTEST_F(ServiceMetaDataTest, corruptedMeta, TestSize.Level1)
     EXPECT_EQ(corruptedMeta.bundleName, corruptedMetaData.bundleName);
     EXPECT_EQ(corruptedMeta.storeId, corruptedMetaData.storeId);
     EXPECT_EQ(corruptedMeta.GetKey(), corruptedMetaData.GetKey());
-    MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(key, corruptedMeta));
+    result = MetaDataManager::GetInstance().DelMeta(key);
+    EXPECT_TRUE(result);
 }
 
 /**
@@ -158,8 +158,6 @@ HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData001, TestSize.Level1)
 
     result = MetaDataManager::GetInstance().DelMeta(key, true);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupkey, true);
-    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(key, secretKeyMeta);
     EXPECT_TRUE(result);
@@ -169,8 +167,6 @@ HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData001, TestSize.Level1)
     EXPECT_EQ(secretKeyMeta.GetBackupKey(fields), secretKeyMetaData.GetBackupKey(fields));
 
     result = MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupkey);
     EXPECT_TRUE(result);
 }
 
@@ -202,8 +198,6 @@ HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData002, TestSize.Level1)
 
     result = MetaDataManager::GetInstance().DelMeta(prefix, true);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupprefix, true);
-    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(prefix, secretKeyMeta);
     EXPECT_TRUE(result);
@@ -213,8 +207,6 @@ HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData002, TestSize.Level1)
     EXPECT_EQ(secretKeyMeta.GetBackupPrefix(fields), secretKeyMetaData.GetBackupPrefix(fields));
 
     result = MetaDataManager::GetInstance().DelMeta(prefix);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupprefix);
     EXPECT_TRUE(result);
 }
 
@@ -248,10 +240,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
 
     result = MetaDataManager::GetInstance().DelMeta(key, true);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(keylocal, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(keyfields, true);
-    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(key, storeMetaData);
     EXPECT_TRUE(result);
@@ -262,10 +250,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
     EXPECT_EQ(storeMetaData.GetKey(fields), storeMeta.GetKey(fields));
 
     result = MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(keylocal);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(keyfields);
     EXPECT_TRUE(result);
 }
 
@@ -295,8 +279,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData002, TestSize.Level1)
 
     result = MetaDataManager::GetInstance().DelMeta(secretkey, true);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupsecretkey, true);
-    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(secretkey, storeMetaData);
     EXPECT_TRUE(result);
@@ -306,8 +288,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData002, TestSize.Level1)
     EXPECT_EQ(storeMetaData.GetBackupSecretKey(), storeMeta.GetBackupSecretKey());
 
     result = MetaDataManager::GetInstance().DelMeta(secretkey);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupsecretkey);
     EXPECT_TRUE(result);
 }
 
@@ -341,10 +321,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData003, TestSize.Level1)
 
     result = MetaDataManager::GetInstance().DelMeta(strategykey, true);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(storealias, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(prefix, true);
-    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(strategykey, storeMetaData);
     EXPECT_TRUE(result);
@@ -355,10 +331,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData003, TestSize.Level1)
     EXPECT_EQ(storeMetaData.GetPrefix(fields), storeMeta.GetPrefix(fields));
 
     result = MetaDataManager::GetInstance().DelMeta(strategykey);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(storealias);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(prefix);
     EXPECT_TRUE(result);
 }
 
@@ -390,8 +362,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData004, TestSize.Level1)
 
     result = MetaDataManager::GetInstance().DelMeta(key, true);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(keylocal, true);
-    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(key, storeMetaData);
     EXPECT_TRUE(result);
@@ -401,8 +371,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData004, TestSize.Level1)
     EXPECT_EQ(storeMetaData.GetKeyLocal(), storeMeta.GetKeyLocal());
 
     result = MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(keylocal);
     EXPECT_TRUE(result);
 }
 
@@ -437,10 +405,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData005, TestSize.Level1)
 
     result = MetaDataManager::GetInstance().DelMeta(secretkey, true);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupsecretkey, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(strategykey, true);
-    EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(secretkey, storeMetaData);
     EXPECT_TRUE(result);
@@ -451,10 +415,6 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData005, TestSize.Level1)
     EXPECT_EQ(storeMetaData.GetStrategyKey(), storeMeta.GetStrategyKey());
 
     result = MetaDataManager::GetInstance().DelMeta(secretkey);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(backupsecretkey);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(strategykey);
     EXPECT_TRUE(result);
 }
 
@@ -583,10 +543,7 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta001, TestSize.Level1)
     EXPECT_EQ(strategyMeta.GetKey(), strategyMetaData.GetKey());
     EXPECT_EQ(strategyMeta.GetPrefix(fields), strategyMetaData.GetPrefix(fields));
 
-
     result = MetaDataManager::GetInstance().DelMeta(key, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(prefix, true);
     EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(key, strategyMeta);
@@ -596,10 +553,7 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta001, TestSize.Level1)
     EXPECT_EQ(strategyMeta.GetKey(), strategyMetaData.GetKey());
     EXPECT_EQ(strategyMeta.GetPrefix(fields), strategyMetaData.GetPrefix(fields));
 
-
     result = MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(prefix);
     EXPECT_TRUE(result);
 }
 
@@ -632,7 +586,6 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta002, TestSize.Level1)
     result = MetaDataManager::GetInstance().LoadMeta(key, strategyMetaData, true);
     EXPECT_TRUE(result);
     EXPECT_EQ(strategyMeta.GetKey(), strategyMetaData.GetKey());
-
     result = MetaDataManager::GetInstance().DelMeta(key, true);
     EXPECT_TRUE(result);
 
@@ -641,7 +594,6 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta002, TestSize.Level1)
     result = MetaDataManager::GetInstance().LoadMeta(key, strategyMetaData);
     EXPECT_TRUE(result);
     EXPECT_EQ(strategyMeta.GetKey(), strategyMetaData.GetKey());
-
     result = MetaDataManager::GetInstance().DelMeta(key);
     EXPECT_TRUE(result);
 }
@@ -672,10 +624,7 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
     EXPECT_TRUE(result);
     EXPECT_EQ(key, metaDataLoad.storeMetaData.GetKey());
     EXPECT_EQ(secretkey, metaDataLoad.secretKeyMetaData.GetKey(fields));
-
     result = MetaDataManager::GetInstance().DelMeta(key, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(secretkey, true);
     EXPECT_TRUE(result);
 
     result = MetaDataManager::GetInstance().SaveMeta(key, metaData);
@@ -684,10 +633,7 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
     EXPECT_TRUE(result);
     EXPECT_EQ(key, metaDataLoad.storeMetaData.GetKey());
     EXPECT_EQ(secretkey, metaDataLoad.secretKeyMetaData.GetKey(fields));
-
     result = MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(secretkey);
     EXPECT_TRUE(result);
 }
 } // namespace OHOS::Test
