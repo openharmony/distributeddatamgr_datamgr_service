@@ -13,15 +13,12 @@
 * limitations under the License.
 */
 #define LOG_TAG "StoreTest"
-#include <chrono>
 
 #include "access_token.h"
 #include "gtest/gtest.h"
-#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "rdb_query.h"
 #include "rdb_types.h"
-#include "snapshot/bind_event.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
 using namespace testing::ext;
@@ -69,7 +66,7 @@ HWTEST_F(GeneralValueTest, SetQueryNodesTest, TestSize.Level2)
 
 /**
 * @tc.name: GetMixModeTest
-* @tc.desc: Mixing two mode into one and splitting 
+* @tc.desc: get mix mode
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author:
@@ -80,12 +77,12 @@ HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
     auto mode1 = OHOS::DistributedRdb::TIME_FIRST;
     auto mode2 = GeneralStore::AUTO_SYNC_MODE;
 
-    auto mixMode = GeneralStore::MixMode(mode1, mode2)
-    EXPECT_EQ(mixMode, 65540);
+    auto mixMode = GeneralStore::MixMode(mode1, mode2);
+    EXPECT_EQ(mixMode, mode1 | mode2);
 
     auto syncMode = GeneralStore::GetSyncMode(mixMode);
-    EXPECT_EQ(syncMode, mode1);
+    EXPECT_EQ(syncMode, OHOS::DistributedRdb::TIME_FIRST);
 
     auto highMode = GeneralStore::GetHighMode(mixMode);
-    EXPECT_EQ(highMode, mode2);
+    EXPECT_EQ(highMode, GeneralStore::AUTO_SYNC_MODE);
 }

@@ -39,6 +39,12 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
+    static uint64_t GetCurrentTime()
+    {
+        return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    }
+    int interval_time = 100 * 1000;
+    int test_val = 10;
 };
 
 class RefCountTest : public testing::Test {
@@ -53,7 +59,6 @@ public:
  * @tc.name: StoreMetaDataConvertToStoreInfo
  * @tc.desc: Storemeta data convert to storeinfo.
  * @tc.type: FUNC
- * @tc.require: AR000F8N0
  */
 HWTEST_F(UtilsTest, StoreMetaDataConvertToStoreInfo, TestSize.Level2)
 {
@@ -81,28 +86,25 @@ HWTEST_F(UtilsTest, StoreMetaDataConvertToStoreInfo, TestSize.Level2)
 HWTEST_F(BlockIntegerTest, SymbolOverloadingTest, TestSize.Level2)
 {
     ZLOGI("BlockIntegerTest SymbolOverloading begin.");
-    int interval = 5;
+    int interval = interval_time;
     BlockInteger blockInteger(interval);
+    blockInteger = test_val;
+    ASSERT_EQ(blockInteger, test_val);
 
-    blockInteger = 10;
-    ASSERT_EQ(blockInteger, 10);
-
-    auto now1 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    auto now1 = GetCurrentTime();
     int val = blockInteger++;
-    auto now2 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    auto now2 = GetCurrentTime();
     ASSERT_EQ(val, 10);
     ASSERT_EQ(blockInteger, 11);
     ASSERT_TRUE(now2 - now1 >= interval);
 
-    now1 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    now1 = GetCurrentTime();
     val = ++blockInteger;
-    now2 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    now2 = GetCurrentTime();
     ASSERT_EQ(val, 12);
     ASSERT_EQ(blockInteger, 12);
     ASSERT_TRUE(now2 - now1 >= interval);
-
-    bool res = (blockInteger < 20);
-    ASSERT_EQ(res, true);
+    ASSERT_TRUE(blockInteger < 20);
 }
 
 /**
@@ -114,23 +116,25 @@ HWTEST_F(BlockIntegerTest, SymbolOverloadingTest, TestSize.Level2)
 */
 HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
 {
-    ZLOGI("RefCountTest Constructor begin.");
-    RefCount obj;
-    ASSERT_NE(&obj, nullptr);
-
-    int val = 0;
-   {
-        RefCount refCount([&val]() {
-            ASSERT_EQ(val, 0);
-            val = 10;
+    int num = 0;
+    {
+        RefCount refCount([&num](){
+            num += 10;
         });
-        ASSERT_EQ(refCount, true);
-   }
-   ASSERT_EQ(val, 10);
+        ASSERT_TRUE(refCount);
 
-   RefCount obj2(obj);
-   ASSERT_EQ(obj2, obj);
+        RefCount refCount1(refCount);
+        ASSERT_TRUE(refCount1);
 
-   RefCount obj3 = obj;
-   ASSERT_EQ(obj3, obj);
+        RefCount refCount2(std::move(refCount));
+        ASSERT_TRUE(refCount2);
+
+        RefCount refCount3 = refCount1;
+        ASSERT_TRUE(refCount3);
+
+        RefCount refCount4 = std::move(refCount2);
+        ASSERT_TRUE(refCount4);
+        ASSERT_EQ(num,0);
+    }
+    ASSERT_EQ(num,10);
 }
