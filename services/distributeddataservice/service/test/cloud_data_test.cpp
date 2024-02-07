@@ -135,7 +135,8 @@ void CloudDataTest::InitSchemaMeta()
 
 void CloudDataTest::SetUpTestCase(void)
 {
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, [](const auto &, auto) {
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    MetaDataManager::GetInstance().SetSyncer([](const auto &, auto) {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
     });
 
