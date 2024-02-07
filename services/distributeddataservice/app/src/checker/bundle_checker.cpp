@@ -44,6 +44,12 @@ bool BundleChecker::SetTrustInfo(const CheckerManager::Trust &trust)
     return true;
 }
 
+bool BundleChecker::SetDistrustInfo(const CheckerManager::Distrust &distrust)
+{
+    distrusts_[distrust.bundleName] = distrust.appId;
+    return true;
+}
+
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
@@ -79,6 +85,28 @@ bool BundleChecker::IsValid(const CheckerManager::StoreInfo &info)
     }
 
     return tokenInfo.bundleName == info.bundleName;
+}
+
+bool BundleChecker::IsDistrust(const CheckerManager::StoreInfo &info)
+{
+    if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
+        return false;
+    }
+    HapTokenInfo tokenInfo;
+    auto result = AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
+    if (result != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", info.tokenId, result);
+        return false;
+    }
+    if (!info.bundleName.empty() && tokenInfo.bundleName != info.bundleName) {
+        ZLOGE("bundlename:%{public}s <-> %{public}s", info.bundleName.c_str(), tokenInfo.bundleName.c_str());
+        return false;
+    }
+    auto it = distrusts_.find(info.bundleName);
+    if (it != distrusts_.end() && (it->second == tokenInfo.appID)) {
+        return true;
+    }
+    return false;
 }
 } // namespace DistributedData
 } // namespace OHOS

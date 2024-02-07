@@ -50,7 +50,8 @@ public:
     using Backup = std::function<int32_t(const std::shared_ptr<MetaStore> &)>;
     using Bytes = std::vector<uint8_t>;
     API_EXPORT static MetaDataManager &GetInstance();
-    API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const Syncer &syncer);
+    API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup);
+    API_EXPORT void SetSyncer(const Syncer &syncer);
     API_EXPORT bool SaveMeta(const std::string &key, const Serializable &value, bool isLocal = false);
     API_EXPORT bool LoadMeta(const std::string &key, Serializable &value, bool isLocal = false);
     template<class T>

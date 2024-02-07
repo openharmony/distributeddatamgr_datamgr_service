@@ -383,7 +383,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     AddOptions(options, meta);
 
     StoreMetaData old;
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     if (!isCreated) {
         return SUCCESS;
     }
@@ -416,7 +416,7 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
     AddOptions(options, metaData);
 
     StoreMetaData oldMeta;
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta, true);
     Status status = SUCCESS;
     if (isCreated && oldMeta != metaData) {
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
@@ -430,7 +430,9 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
     }
 
     if (!isCreated || oldMeta != metaData) {
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        if (!CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData))) {
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        }
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
     }
     AppIDMetaData appIdMeta;

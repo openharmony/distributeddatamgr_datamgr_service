@@ -61,7 +61,8 @@ std::shared_ptr<DBStoreMock> DeviceMatrixTest::dbStoreMock_ = std::make_shared<D
 uint32_t DeviceMatrixTest::selfToken_ = 0;
 void DeviceMatrixTest::SetUpTestCase(void)
 {
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, [](const auto &, auto) {
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    MetaDataManager::GetInstance().SetSyncer([](const auto &, auto) {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
     });
     selfToken_ = IPCSkeleton::GetCallingTokenID();

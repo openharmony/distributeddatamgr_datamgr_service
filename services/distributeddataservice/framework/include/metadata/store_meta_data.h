@@ -26,6 +26,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     // UID -> uid, deviceAccountId -> userId, userId -> user
     static constexpr uint32_t FIELD_CHANGED_TAG = 0x03000003;
     static constexpr uint32_t UUID_CHANGED_TAG = 0x03000004;
+    static constexpr const char *KEY_PREFIX = "KvStoreMetaData";
     uint32_t version = CURRENT_VERSION;
     bool isAutoSync = false;
     bool isBackup = false;
@@ -77,9 +78,6 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     API_EXPORT std::string GetStoreAlias() const;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
-
-private:
-    static constexpr const char *KEY_PREFIX = "KvStoreMetaData";
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_STORE_META_DATA_H
