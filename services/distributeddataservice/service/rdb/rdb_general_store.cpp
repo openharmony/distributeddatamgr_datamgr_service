@@ -333,7 +333,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(__attribute__((unused))const std:
         ZLOGE("database already closed!");
         return nullptr;
     }
-    std::vector<VBucket> records = ExecuteSql(sql, std::move(args));
+    std::vector<VBucket> records = ExecuteQuerySql(sql, std::move(args));
     return std::make_shared<CacheCursor>(std::move(records));
 }
 
@@ -424,7 +424,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
             ZLOGE("database already closed!");
             return nullptr;
         }
-        values = ExecuteSql(sql, rdbQuery->GetBindArgs());
+        values = ExecuteQuerySql(sql, rdbQuery->GetBindArgs());
     }
     if (rdbCloud_ == nullptr || values.empty()) {
         ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud_ == nullptr ? "nullptr" : "not nullptr",
@@ -719,11 +719,11 @@ int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
-VBuckets RdbGeneralStore::ExecuteSql(const std::string& sql, Values &&args, bool isReadOnly)
+VBuckets RdbGeneralStore::ExecuteQuerySql(const std::string& sql, Values &&args)
 {
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), isReadOnly }, changedData);
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), true }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
             changedData.size());
