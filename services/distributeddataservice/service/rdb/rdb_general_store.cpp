@@ -209,7 +209,7 @@ int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sq
         return GeneralError::E_ERROR;
     }
     std::vector<DistributedDB::VBucket> changedData;
-    auto status = delegate_->ExecuteSql({ sql, {} }, changedData);
+    auto status = delegate_->ExecuteSql({ sql, {}, false }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
               changedData.size());
@@ -275,7 +275,7 @@ int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
             Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
         return GeneralError::E_ERROR;
     }
-    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), false }, changedData);
     if (status != DBStatus::OK) {
         if (IsPrintLog(status)) {
             auto time =
@@ -339,7 +339,7 @@ int32_t RdbGeneralStore::Update(const std::string &table, const std::string &set
             Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
         return GeneralError::E_ERROR;
     }
-    auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs) }, changedData);
+    auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs), false }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sqlIn).c_str(),
               changedData.size());
@@ -392,7 +392,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(__attribute__((unused))const std:
         ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
         return nullptr;
     }
-    std::vector<VBucket> records = ExecuteSql(sql, std::move(args));
+    std::vector<VBucket> records = QuerySql(sql, std::move(args));
     return std::make_shared<CacheCursor>(std::move(records));
 }
 
@@ -485,7 +485,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
             ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
             return nullptr;
         }
-        values = ExecuteSql(sql, rdbQuery->GetBindArgs());
+        values = QuerySql(sql, rdbQuery->GetBindArgs());
     }
     if (rdbCloud_ == nullptr || values.empty()) {
         ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud_ == nullptr ? "nullptr" : "not nullptr",
@@ -782,11 +782,11 @@ int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
-VBuckets RdbGeneralStore::ExecuteSql(const std::string& sql, Values &&args)
+VBuckets RdbGeneralStore::QuerySql(const std::string& sql, Values &&args)
 {
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
+    auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), true }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
             changedData.size());
