@@ -193,8 +193,7 @@ void KvStoreMetaManager::UpdateMetaData()
     if (!MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)
         || versionMeta.version < META_VERSION) {
         std::vector<StoreMetaData> metaDataList;
-        std::string prefix = StoreMetaData::GetPrefix({ StoreMetaData::KEY_PREFIX,
-            DmAdapter::GetInstance().GetLocalDevice().uuid });
+        std::string prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
         MetaDataManager::GetInstance().LoadMeta(prefix, metaDataList);
         for (auto metaData : metaDataList) {
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
