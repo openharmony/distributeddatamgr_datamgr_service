@@ -114,7 +114,7 @@ private:
         const DistributedDB::RemoteCondition &remoteCondition);
     std::string BuildSql(const std::string& table, const std::string& statement,
         const std::vector<std::string>& columns) const;
-    VBuckets ExecuteSql(const std::string& sql, Values &&args);
+    VBuckets QuerySql(const std::string& sql, Values &&args);
     VBuckets ExtractExtend(VBuckets& values) const;
     size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
 
