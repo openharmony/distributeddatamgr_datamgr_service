@@ -194,22 +194,28 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         ZLOGW("check bundleName:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
         return Status::PERMISSION_DENIED;
     }
-
-    std::lock_guard<decltype(mutex_)> lg(mutex_);
-    auto iter = clients_.find(info.tokenId);
-    // Ignore register with same tokenId and pid
-    if (iter != clients_.end() && IPCSkeleton::GetCallingPid() == iter->second.GetPid()) {
-        ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.",
-            appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid());
-        return Status::SUCCESS;
+    KvStoreClientDeathObserverImpl impl(*this);
+    Status status = Status::SUCCESS;
+    {
+        std::lock_guard<decltype(mutex_)> lg(mutex_);
+        auto iter = clients_.find(info.tokenId);
+        // Ignore register with same tokenId and pid
+        if (iter != clients_.end() && IPCSkeleton::GetCallingPid() == iter->second.GetPid()) {
+            ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.", appId.appId.c_str(),
+                info.uid, IPCSkeleton::GetCallingPid());
+            return Status::SUCCESS;
+        }
+        if (iter != clients_.end()) {
+            impl = std::move(iter->second);
+            clients_.erase(iter);
+        }
+        auto it = clients_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
+            std::forward_as_tuple(appId, *this, std::move(observer)));
+        status = it.second ? Status::SUCCESS : Status::ERROR;
     }
-
-    clients_.erase(info.tokenId);
-    auto it = clients_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
-        std::forward_as_tuple(appId, *this, std::move(observer)));
-    ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.",
-        appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid(), it.second ? "success" : "failed");
-    return it.second ? Status::SUCCESS : Status::ERROR;
+    ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.", appId.appId.c_str(), info.uid,
+        IPCSkeleton::GetCallingPid(), status == Status::SUCCESS ? "success" : "failed");
+    return status;
 }
 
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
@@ -218,8 +224,15 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    std::lock_guard<decltype(mutex_)> lg(mutex_);
-    clients_.erase(token);
+    KvStoreClientDeathObserverImpl impl(*this);
+    {
+        std::lock_guard<decltype(mutex_)> lg(mutex_);
+        auto iter = clients_.find(token);
+        if (iter != clients_.end()) {
+            impl = std::move(iter->second);
+            clients_.erase(iter);
+        }
+    }
     return Status::SUCCESS;
 }
 
@@ -553,10 +566,31 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
         ZLOGW("observerProxy_ is nullptr");
     }
 }
+KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(KvStoreDataService& service)
+    : dataService_(service)
+{
+    Reset();
+}
+
+KvStoreDataService::KvStoreClientDeathObserverImpl& KvStoreDataService::KvStoreClientDeathObserverImpl::operator=(
+    KvStoreDataService::KvStoreClientDeathObserverImpl&& impl)
+{
+    uid_ = std::move(impl.uid_);
+    pid_ = std::move(impl.pid_);
+    token_ = std::move(impl.token_);
+    appId_.appId = std::move(impl.appId_.appId);
+    observerProxy_ = std::move(impl.observerProxy_);
+    deathRecipient_ = std::move(impl.deathRecipient_);
+    impl.Reset();
+    return *this;
+}
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverImpl()
 {
     ZLOGI("~KvStoreClientDeathObserverImpl");
+    if (uid_ == INVALID_UID || pid_ == INVALID_PID || token_ == INVALID_TOKEN || !appId_.IsValid()) {
+        return;
+    }
     if (deathRecipient_ != nullptr && observerProxy_ != nullptr) {
         ZLOGI("remove death recipient");
         observerProxy_->RemoveDeathRecipient(deathRecipient_);
@@ -576,6 +610,16 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::NotifyClientDie()
 pid_t KvStoreDataService::KvStoreClientDeathObserverImpl::GetPid() const
 {
     return pid_;
+}
+
+void KvStoreDataService::KvStoreClientDeathObserverImpl::Reset()
+{
+    uid_ = INVALID_UID;
+    pid_ = INVALID_PID;
+    token_ = INVALID_TOKEN;
+    appId_.appId = "";
+    observerProxy_ = nullptr;
+    deathRecipient_ = nullptr;
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvStoreDeathRecipient(

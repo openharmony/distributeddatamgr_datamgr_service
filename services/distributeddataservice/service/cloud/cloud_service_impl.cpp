@@ -576,7 +576,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
         return { ERROR, cloudInfo };
     }
     std::tie(status, cloudInfo) = GetCloudInfoFromServer(userId);
-    if (status == SUCCESS) {
+    if (status != SUCCESS) {
         return { status, cloudInfo };
     }
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
