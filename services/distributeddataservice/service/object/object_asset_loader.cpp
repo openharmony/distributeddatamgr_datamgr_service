@@ -73,7 +73,7 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
     }
     executors_->Execute([this, userId, bundleName, deviceId, assets, callback]() {
         bool result = true;
-        for (auto& asset : assets) {
+        for (const auto& asset : assets) {
             result &= Transfer(userId, bundleName, deviceId, asset);
         }
         callback(result);

@@ -21,6 +21,7 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
+    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "../include/",
     "../../service/bootstrap/include/",
     "../../service/common/",
@@ -29,6 +30,21 @@ config("module_private_config") {
     "../../../../../relational_store/interfaces/inner_api/common_type/include",
     "${kv_store_distributeddb_path}/interfaces/include",
     "${kv_store_distributeddb_path}/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/src",
+    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/app/src/security",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/matrix/include",
+    "//third_party/json/single_include",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
@@ -239,6 +255,47 @@ ohos_unittest("CryptoTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
+ohos_unittest("ServiceMetaDataTest") {
+  module_out_path = module_output_path
+
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "meta_data_test.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/app/src/checker:distributeddata_checker_static",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_distributeddb_path}:distributeddb",
+    "${kv_store_path}/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_shared",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -259,6 +316,7 @@ group("unittest") {
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
     ":SerializableTest",
+    ":ServiceMetaDataTest",
     ":StoreMetaDataLocalTest",
     ":StoreTest",
     ":SubscriptionTest",

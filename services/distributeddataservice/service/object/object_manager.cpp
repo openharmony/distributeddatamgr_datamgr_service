@@ -243,11 +243,11 @@ void ObjectStoreManager::GetAsset(std::map<std::string, std::vector<uint8_t>>& r
     if (it == assets.end()) {
         Asset asset;
         ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::NAME_SUFFIX], asset.name);
-        if (asset.name.size() > ObjectStore::STRING_PREFIX_LEN) {
+        if (static_cast<int32_t>(asset.name.size()) > ObjectStore::STRING_PREFIX_LEN) {
             asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
         }
         ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::URI_SUFFIX], asset.uri);
-        if (asset.uri.size() > ObjectStore::STRING_PREFIX_LEN) {
+        if (static_cast<int32_t>(asset.uri.size()) > ObjectStore::STRING_PREFIX_LEN) {
             asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
         }
         if (!asset.uri.empty() && !asset.name.empty()) {
@@ -377,7 +377,7 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
         transferData[bundleName].insert_or_assign(propertyName, item.second);
     }
     std::function<void(bool success)> callback = [this, data](bool success) {
-        callbacks_.ForEach([this, &data](uint32_t tokenId, CallbackInfo& value) {
+        callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
             DoNotify(tokenId, value, data);
             return false;
         });
