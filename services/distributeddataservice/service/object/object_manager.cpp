@@ -205,57 +205,18 @@ int32_t ObjectStoreManager::Retrieve(
         return status;
     }
     Close();
+    Assets assets = GetAssetsFromDBRecords(results);
+    if (assets.empty() || results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == results.end()) {
+        proxy->Completed(results);
+        return status;
+    }
     int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    TransferAssets(results, userId, bundleName, [=](bool success) {
+    std::string deviceId;
+    ObjectStore::StringUtils::BytesToStrWithType(results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)->second, deviceId);
+    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assets, [=](bool success) {
         proxy->Completed(results);
     });
     return status;
-}
-
-void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
-    const std::string& bundleName, const std::function<void(bool success)>& callback)
-{
-    std::set<std::string> assets;
-    std::vector<Asset> assetValues;
-    std::string deviceId;
-
-    for (auto const&[key, value] : results) {
-        if (key.find(ObjectStore::ASSET_DOT) == std::string::npos) {
-            if (key == (ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)) {
-                ObjectStore::StringUtils::BytesToStrWithType(value, deviceId);
-            }
-        } else {
-            std::string assetKey = key.substr(0, key.find(ObjectStore::ASSET_DOT));
-            GetAsset(results, assetKey, assets, assetValues);
-        }
-    }
-    ZLOGI("GetAsset, assetValues.size:%{public}zu, assetValues.size:%{public}zu.", assets.size(), assetValues.size());
-    if (!assetValues.empty()) {
-        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assetValues, callback);
-    } else {
-        callback(true);
-    }
-}
-
-void ObjectStoreManager::GetAsset(std::map<std::string, std::vector<uint8_t>>& results, const std::string& assetKey,
-    std::set<std::string>& assets, std::vector<Asset>& assetValues)
-{
-    auto it = assets.find(assetKey);
-    if (it == assets.end()) {
-        Asset asset;
-        ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::NAME_SUFFIX], asset.name);
-        if (static_cast<int32_t>(asset.name.size()) > ObjectStore::STRING_PREFIX_LEN) {
-            asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
-        }
-        ObjectStore::StringUtils::BytesToStrWithType(results[assetKey + ObjectStore::URI_SUFFIX], asset.uri);
-        if (static_cast<int32_t>(asset.uri.size()) > ObjectStore::STRING_PREFIX_LEN) {
-            asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
-        }
-        if (!asset.uri.empty() && !asset.name.empty()) {
-            assets.insert(assetKey);
-            assetValues.push_back(asset);
-        }
-    }
 }
 
 int32_t ObjectStoreManager::Clear()
@@ -368,14 +329,10 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     ZLOGD("ObjectStoreManager::NotifyChange start");
     SaveUserToMeta();
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
-    std::map<std::string, std::map<std::string, std::vector<uint8_t>>> transferData;
     for (const auto &item : changedData) {
         std::string prefix = GetBundleName(item.first) + GetSessionId(item.first);
         std::string propertyName = GetPropertyName(item.first);
         data[prefix].insert_or_assign(propertyName, item.second);
-
-        std::string bundleName = GetBundleName(item.first);
-        transferData[bundleName].insert_or_assign(propertyName, item.second);
     }
     std::function<void(bool success)> callback = [this, data](bool success) {
         callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
@@ -383,11 +340,102 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
             return false;
         });
     };
+    std::map<std::string, std::map<std::string, Assets>> changedAssets = GetAssetsFromStore(changedData);
     const int32_t userId = std::stoi(GetCurrentUser());
-    for (auto item : transferData) {
-        std::string bundleName = item.first;
-        TransferAssets(item.second, userId, bundleName, callback);
+    for (const auto& assetsOfBundle : changedAssets) {
+        std::string bundleName = assetsOfBundle.first;
+        for (const auto& assetsOfDevice : assetsOfBundle.second) {
+            std::string deviceId = assetsOfDevice.first;
+            Assets assets = assetsOfDevice.second;
+            ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assets, callback);
+        }
     }
+}
+
+std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAssetsFromStore(
+    const std::map<std::string, std::vector<uint8_t>>& changedData)
+{
+    std::set<std::string> assetKeyPrefix;
+    for (const auto& item : changedData) {
+        if (isAssetKey(GetPropertyName(item.first))) {
+            assetKeyPrefix.insert(item.first.substr(0, item.first.find_last_of(ObjectStore::ASSET_DOT)));
+        }
+    }
+    std::map<std::string, std::map<std::string, std::map<std::string, std::vector<uint8_t>>>> results;
+    for (const auto& keyPrefix : assetKeyPrefix) {
+        std::vector<DistributedDB::Entry> entries;
+        auto status = delegate_->GetEntries(std::vector<uint8_t>(keyPrefix.begin(), keyPrefix.end()), entries);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("GetEntries fail. keyPrefix = %{public}s", keyPrefix.c_str());
+            continue;
+        }
+        std::map<std::string, std::vector<uint8_t>> result{};
+        std::for_each(entries.begin(), entries.end(), [&result, this](const DistributedDB::Entry entry) {
+            std::string key(entry.key.begin(), entry.key.end());
+            result[GetPropertyName(key)] = entry.value;
+        });
+        if (!isAssetComplete(result, GetPropertyName(keyPrefix))) {
+            continue;
+        }
+        for (const auto& [key, value] : result) {
+            results[GetBundleName(keyPrefix)][GetSourceDeviceId(keyPrefix)][key] = value;
+        }
+    }
+    std::map<std::string, std::map<std::string, Assets>> changedAssets{};
+    for (const auto& resultOfBundle : results) {
+        std::string bundleName = resultOfBundle.first;
+        for (const auto& resultOfDevice : resultOfBundle.second) {
+            std::string deviceId = resultOfDevice.first;
+            Assets assets = GetAssetsFromDBRecords(resultOfDevice.second);
+            changedAssets[bundleName][deviceId] = assets;
+        }
+    }
+    return changedAssets;
+}
+
+bool ObjectStoreManager::isAssetKey(const std::string& key)
+{
+    return key.find(ObjectStore::ASSET_DOT) != std::string::npos;
+}
+
+bool ObjectStoreManager::isAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
+    const std::string& assetPrefix)
+{
+    if (result.find(assetPrefix + ObjectStore::NAME_SUFFIX) == result.end() ||
+        result.find(assetPrefix + ObjectStore::URI_SUFFIX) == result.end() ||
+        result.find(assetPrefix + ObjectStore::PATH_SUFFIX) == result.end() ||
+        result.find(assetPrefix + ObjectStore::CREATE_TIME_SUFFIX) == result.end() ||
+        result.find(assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX) == result.end() ||
+        result.find(assetPrefix + ObjectStore::SIZE_SUFFIX) == result.end()) {
+        return false;
+    }
+    return true;
+}
+
+Assets ObjectStoreManager::GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result)
+{
+    Assets assets{};
+    std::set<std::string> assetKey;
+    for (const auto& [key, value] : result) {
+        std::string assetPrefix = key.substr(0, key.find(ObjectStore::ASSET_DOT));
+        if (!isAssetKey(key) || assetKey.find(assetPrefix) != assetKey.end() ||
+            result.find(assetPrefix + ObjectStore::NAME_SUFFIX) == result.end() ||
+            result.find(assetPrefix + ObjectStore::URI_SUFFIX) == result.end()) {
+            continue;
+        }
+        Asset asset;
+        ObjectStore::StringUtils::BytesToStrWithType(result.find(assetPrefix + ObjectStore::NAME_SUFFIX)->second, asset.name);
+        if (asset.name.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
+            asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
+        }
+        ObjectStore::StringUtils::BytesToStrWithType(result.find(assetPrefix + ObjectStore::URI_SUFFIX)->second, asset.uri);
+        if (asset.uri.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
+            asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
+        }
+        assets.push_back(asset);
+        assetKey.insert(assetPrefix);
+    }
+    return assets;
 }
 
 void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
@@ -718,6 +766,18 @@ std::string ObjectStoreManager::GetBundleName(const std::string &key)
         return std::string();
     }
     std::string result = key;
+    result.erase(pos);
+    return result;
+}
+
+std::string ObjectStoreManager::GetSourceDeviceId(const std::string& key)
+{
+    std::string result = key;
+    ProcessKeyByIndex(result, 2);
+    auto pos = result.find(SEPERATOR);
+    if (pos == std::string::npos) {
+        return result;
+    }
     result.erase(pos);
     return result;
 }
