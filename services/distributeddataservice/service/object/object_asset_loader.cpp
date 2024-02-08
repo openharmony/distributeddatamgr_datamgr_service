@@ -40,7 +40,7 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundle
     AssetInfo assetInfo;
     assetInfo.uri = assetValue.uri;
     assetInfo.assetName = assetValue.name;
-    ZLOGD("Start transfer, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
+    ZLOGI("Start transfer, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
           DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
     auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
