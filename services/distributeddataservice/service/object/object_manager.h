@@ -136,7 +136,7 @@ private:
     void TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
         const std::string& bundleName, const std::function<void(bool success)>& callback);
     void GetAsset(std::map<std::string, std::vector<uint8_t>>& results, const std::string& assetKey,
-        std::set<std::string> assets, std::vector<Asset> assetValues);
+        std::set<std::string>& assets, std::vector<Asset>& assetValues);
     void DoNotify(uint32_t tokenId, const CallbackInfo& value,
         const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
