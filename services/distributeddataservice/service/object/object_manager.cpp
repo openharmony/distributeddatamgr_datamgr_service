@@ -229,6 +229,7 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
             GetAsset(results, assetKey, assets, assetValues);
         }
     }
+    ZLOGI("GetAsset, assetValues.size:%{public}zu, assetValues.size:%{public}zu.", assets.size(), assetValues.size());
     if (!assetValues.empty()) {
         ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assetValues, callback);
     } else {
@@ -237,7 +238,7 @@ void ObjectStoreManager::TransferAssets(std::map<std::string, std::vector<uint8_
 }
 
 void ObjectStoreManager::GetAsset(std::map<std::string, std::vector<uint8_t>>& results, const std::string& assetKey,
-    std::set<std::string> assets, std::vector<Asset> assetValues)
+    std::set<std::string>& assets, std::vector<Asset>& assetValues)
 {
     auto it = assets.find(assetKey);
     if (it == assets.end()) {
