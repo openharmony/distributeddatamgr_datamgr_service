@@ -27,7 +27,7 @@
   "bundleChecker": {
     "checkers": [
       "SystemChecker",
-      "BundleChecker",
+      "BundleChecker"
     ],
     "trusts": [
       {
