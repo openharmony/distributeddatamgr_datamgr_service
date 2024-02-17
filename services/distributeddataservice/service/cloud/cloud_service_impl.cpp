@@ -334,7 +334,6 @@ int32_t CloudServiceImpl::OnInitialize()
         Subscription sub;
         sub.userId = user;
         if (!MetaDataManager::GetInstance().LoadMeta(sub.GetKey(), sub, true)) {
-            ZLOGE("no exist meta, user:%{public}d", user);
             continue;
         }
         InitSubTask(sub);
@@ -1023,14 +1022,13 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
 {
     auto expire = sub.GetMinExpireTime();
     if (expire == INVALID_SUB_TIME) {
-        ZLOGW("expire: %{public}" PRIu64, expire);
         return;
     }
     auto executor = executor_;
     if (executor == nullptr) {
         return;
     }
-    ZLOGI("Subscription Info, subTask:%{public}llu, user:%{public}d", subTask_, sub.userId);
+    ZLOGI("Subscription Info, subTask:%{public}" PRIu64", user:%{public}d", subTask_, sub.userId);
     expire = expire - TIME_BEFORE_SUB; // before 12 hours
     auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     Duration delay = expire > now ? milliseconds(expire - now) : milliseconds(0);
