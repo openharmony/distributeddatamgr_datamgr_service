@@ -779,7 +779,7 @@ std::string ObjectStoreManager::GetSourceDeviceId(const std::string& key)
     ProcessKeyByIndex(result, SOURCE_DEVICE_ID_INDEX);
     auto pos = result.find(SEPERATOR);
     if (pos == std::string::npos) {
-        return result;
+        return {};
     }
     result.erase(pos);
     return result;
