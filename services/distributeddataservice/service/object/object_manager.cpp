@@ -212,7 +212,8 @@ int32_t ObjectStoreManager::Retrieve(
     }
     int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     std::string deviceId;
-    ObjectStore::StringUtils::BytesToStrWithType(results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)->second, deviceId);
+    ObjectStore::StringUtils::BytesToStrWithType(
+            results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)->second, deviceId);
     ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assets, [=](bool success) {
         proxy->Completed(results);
     });
@@ -424,11 +425,13 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const std::map<std::string, st
             continue;
         }
         Asset asset;
-        ObjectStore::StringUtils::BytesToStrWithType(result.find(assetPrefix + ObjectStore::NAME_SUFFIX)->second, asset.name);
+        ObjectStore::StringUtils::BytesToStrWithType(
+                result.find(assetPrefix + ObjectStore::NAME_SUFFIX)->second, asset.name);
         if (asset.name.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
             asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
         }
-        ObjectStore::StringUtils::BytesToStrWithType(result.find(assetPrefix + ObjectStore::URI_SUFFIX)->second, asset.uri);
+        ObjectStore::StringUtils::BytesToStrWithType(
+                result.find(assetPrefix + ObjectStore::URI_SUFFIX)->second, asset.uri);
         if (asset.uri.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
             asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
         }
@@ -773,7 +776,7 @@ std::string ObjectStoreManager::GetBundleName(const std::string &key)
 std::string ObjectStoreManager::GetSourceDeviceId(const std::string& key)
 {
     std::string result = key;
-    ProcessKeyByIndex(result, 2);
+    ProcessKeyByIndex(result, SOURCE_DEVICE_ID_INDEX);
     auto pos = result.find(SEPERATOR);
     if (pos == std::string::npos) {
         return result;
