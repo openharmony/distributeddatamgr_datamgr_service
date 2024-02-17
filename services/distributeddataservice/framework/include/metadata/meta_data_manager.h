@@ -73,7 +73,7 @@ public:
 
     API_EXPORT bool DelMeta(const std::string &key, bool isLocal = false);
     API_EXPORT bool Subscribe(std::shared_ptr<Filter> filter, Observer observer);
-    API_EXPORT bool Subscribe(std::string prefix, Observer observer);
+    API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
 private:
     MetaDataManager();

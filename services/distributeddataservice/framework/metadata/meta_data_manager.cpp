@@ -26,7 +26,8 @@ public:
     using Filter = MetaDataManager::Filter;
     using MetaStore = MetaDataManager::MetaStore;
     using Observer = MetaDataManager::Observer;
-    MetaObserver(std::shared_ptr<MetaStore> metaStore, std::shared_ptr<Filter> filter, Observer observer);
+    MetaObserver(std::shared_ptr<MetaStore> metaStore,
+                 std::shared_ptr<Filter> filter, Observer observer, bool isLocal = false);
     virtual ~MetaObserver();
 
     // Database change callback
@@ -38,11 +39,12 @@ private:
     Observer observer_;
 };
 
-MetaObserver::MetaObserver(std::shared_ptr<MetaStore> metaStore, std::shared_ptr<Filter> filter, Observer observer)
-    : metaStore_(std::move(metaStore)), filter_(std::move(filter)), observer_(std::move(observer))
+MetaObserver::MetaObserver(std::shared_ptr<MetaStore> metaStore,
+    std::shared_ptr<Filter> filter, Observer observer, bool isLocal)
 {
     if (metaStore_ != nullptr) {
-        int mode = DistributedDB::OBSERVER_CHANGES_NATIVE | DistributedDB::OBSERVER_CHANGES_FOREIGN;
+        int mode = isLocal ? DistributedDB::OBSERVER_CHANGES_LOCAL_ONLY
+                           : (DistributedDB::OBSERVER_CHANGES_NATIVE | DistributedDB::OBSERVER_CHANGES_FOREIGN);
         auto status = metaStore_->RegisterObserver(filter_->GetKey(), mode, this);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("register meta observer failed :%{public}d.", status);
@@ -215,15 +217,15 @@ bool MetaDataManager::Subscribe(std::shared_ptr<Filter> filter, Observer observe
         });
 }
 
-bool MetaDataManager::Subscribe(std::string prefix, Observer observer)
+bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLocal)
 {
     if (!inited_) {
         return false;
     }
 
     return metaObservers_.ComputeIfAbsent(
-        prefix, [ this, &observer, &prefix ](const std::string &key) -> auto {
-            return std::make_shared<MetaObserver>(metaStore_, std::make_shared<Filter>(prefix), observer);
+        prefix, [ this,  isLocal, &observer, &prefix ](const std::string &key) -> auto {
+            return std::make_shared<MetaObserver>(metaStore_, std::make_shared<Filter>(prefix), observer, isLocal);
         });
 }
 
