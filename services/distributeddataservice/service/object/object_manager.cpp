@@ -213,7 +213,7 @@ int32_t ObjectStoreManager::Retrieve(
     int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     std::string deviceId;
     ObjectStore::StringUtils::BytesToStrWithType(
-            results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)->second, deviceId);
+        results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)->second, deviceId);
     ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assets, [=](bool success) {
         proxy->Completed(results);
     });
