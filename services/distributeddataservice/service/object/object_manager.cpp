@@ -426,12 +426,12 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const std::map<std::string, st
         }
         Asset asset;
         ObjectStore::StringUtils::BytesToStrWithType(
-                result.find(assetPrefix + ObjectStore::NAME_SUFFIX)->second, asset.name);
+            result.find(assetPrefix + ObjectStore::NAME_SUFFIX)->second, asset.name);
         if (asset.name.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
             asset.name = asset.name.substr(ObjectStore::STRING_PREFIX_LEN);
         }
         ObjectStore::StringUtils::BytesToStrWithType(
-                result.find(assetPrefix + ObjectStore::URI_SUFFIX)->second, asset.uri);
+            result.find(assetPrefix + ObjectStore::URI_SUFFIX)->second, asset.uri);
         if (asset.uri.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
             asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
         }
