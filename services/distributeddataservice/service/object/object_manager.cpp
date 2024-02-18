@@ -379,7 +379,7 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
             continue;
         }
         for (const auto& [key, value] : result) {
-            results[GetBundleName(keyPrefix)][GetSourceDeviceId(keyPrefix)][key] = value;
+            results[GetBundleName(keyPrefix)][GetNetworkId(keyPrefix)][key] = value;
         }
     }
     std::map<std::string, std::map<std::string, Assets>> changedAssets{};
@@ -773,16 +773,16 @@ std::string ObjectStoreManager::GetBundleName(const std::string &key)
     return result;
 }
 
-std::string ObjectStoreManager::GetSourceDeviceId(const std::string& key)
+std::string ObjectStoreManager::GetNetworkId(const std::string& key)
 {
-    std::string result = key;
-    ProcessKeyByIndex(result, SOURCE_DEVICE_ID_INDEX);
-    auto pos = result.find(SEPERATOR);
-    if (pos == std::string::npos) {
-        return {};
+    std::stringstream keyStream(key);
+    std::string sourceDeviceUdId;
+    for (int i = 0; getline(keyStream, sourceDeviceUdId, *SEPERATOR); i++) {
+        if (i == SOURCE_DEVICE_ID_INDEX) {
+            return DmAdaper::GetInstance().ToNetworkID(sourceDeviceUdId);
+        }
     }
-    result.erase(pos);
-    return result;
+    return {};
 }
 
 void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)

@@ -128,7 +128,7 @@ private:
     std::string GetPropertyName(const std::string &key);
     std::string GetSessionId(const std::string &key);
     std::string GetBundleName(const std::string &key);
-    std::string GetSourceDeviceId(const std::string& key);
+    std::string GetNetworkId(const std::string& key);
     int64_t GetTime(const std::string &key);
     void ProcessOldEntry(const std::string &appId);
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
