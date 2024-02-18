@@ -121,7 +121,8 @@ private:
     class KvStoreClientDeathObserverImpl {
     public:
         KvStoreClientDeathObserverImpl(const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer);
-        KvStoreClientDeathObserverImpl(KvStoreDataService &service);
+        explicit KvStoreClientDeathObserverImpl(KvStoreDataService &service);
+        explicit KvStoreClientDeathObserverImpl(KvStoreClientDeathObserverImpl &&impl);
         KvStoreClientDeathObserverImpl& operator=(KvStoreClientDeathObserverImpl &&impl);
 
         virtual ~KvStoreClientDeathObserverImpl();

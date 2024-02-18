@@ -572,12 +572,25 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
     Reset();
 }
 
+KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
+    KvStoreDataService::KvStoreClientDeathObserverImpl&& impl)
+    : dataService_(impl.dataService_)
+{
+    uid_ = impl.uid_;
+    pid_ = impl.pid_;
+    token_ = impl.token_;
+    appId_.appId = std::move(impl.appId_.appId);
+    observerProxy_ = std::move(impl.observerProxy_);
+    deathRecipient_ = std::move(impl.deathRecipient_);
+    impl.Reset();
+}
+
 KvStoreDataService::KvStoreClientDeathObserverImpl& KvStoreDataService::KvStoreClientDeathObserverImpl::operator=(
     KvStoreDataService::KvStoreClientDeathObserverImpl&& impl)
 {
-    uid_ = std::move(impl.uid_);
-    pid_ = std::move(impl.pid_);
-    token_ = std::move(impl.token_);
+    uid_ = impl.uid_;
+    pid_ = impl.pid_;
+    token_ = impl.token_;
     appId_.appId = std::move(impl.appId_.appId);
     observerProxy_ = std::move(impl.observerProxy_);
     deathRecipient_ = std::move(impl.deathRecipient_);
