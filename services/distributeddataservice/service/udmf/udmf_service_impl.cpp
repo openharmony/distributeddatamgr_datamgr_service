@@ -394,6 +394,11 @@ int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
         ZLOGE("Store get summary failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
+    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+    if (localDeviceId != summary.deviceId) {
+       summary.isRemoteData = true;
+    }
+    ZLOGI("Store get summary, remoteDeviceId: %{public}s.", summary.deviceId.c_str());
     return E_OK;
 }
 
