@@ -378,8 +378,8 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
         if (!isAssetComplete(result, GetPropertyName(keyPrefix))) {
             continue;
         }
+        std::string networkId = GetNetworkId(keyPrefix);
         for (const auto& [key, value] : result) {
-            std::string networkId = GetNetworkId(keyPrefix);
             results[GetBundleName(keyPrefix)][networkId][key] = value;
         }
     }
