@@ -206,6 +206,25 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
     return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
 }
 
+bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete complete)
+{
+    if (!inited_ || devices.empty()) {
+        return false;
+    }
+    auto status = metaStore_->Sync(
+        devices, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, [complete](auto &dbResults) {
+        std::map<std::string, int32_t> results;
+        for (auto &[uuid, status] : dbResults) {
+            results.insert_or_assign(uuid, static_cast<int32_t>(status));
+        }
+        complete(results);
+    });
+    if (status != DistributedDB::OK) {
+        ZLOGW("meta data sync error %{public}d.", status);
+    }
+    return status == DistributedDB::OK;
+}
+
 bool MetaDataManager::Subscribe(std::shared_ptr<Filter> filter, Observer observer)
 {
     if (!inited_) {

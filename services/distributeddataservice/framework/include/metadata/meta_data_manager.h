@@ -49,6 +49,7 @@ public:
     using Syncer = std::function<void(const std::shared_ptr<MetaStore> &, int32_t)>;
     using Backup = std::function<int32_t(const std::shared_ptr<MetaStore> &)>;
     using Bytes = std::vector<uint8_t>;
+    using OnComplete = std::function<void(const std::map<std::string, int32_t> &)>;
     API_EXPORT static MetaDataManager &GetInstance();
     API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup);
     API_EXPORT void SetSyncer(const Syncer &syncer);
@@ -75,6 +76,8 @@ public:
     API_EXPORT bool Subscribe(std::shared_ptr<Filter> filter, Observer observer);
     API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
+    API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete);
+
 private:
     MetaDataManager();
     ~MetaDataManager();
