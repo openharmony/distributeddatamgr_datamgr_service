@@ -101,6 +101,7 @@ private:
     constexpr static const char *USERID = "USERID";
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
+    constexpr static int8_t SOURCE_DEVICE_ID_INDEX = 2;
     struct CallbackInfo {
         pid_t pid;
         std::map<std::string, sptr<ObjectChangeCallbackProxy>> observers_;
@@ -127,18 +128,20 @@ private:
     std::string GetPropertyName(const std::string &key);
     std::string GetSessionId(const std::string &key);
     std::string GetBundleName(const std::string &key);
+    std::string GetNetworkId(const std::string& key);
     int64_t GetTime(const std::string &key);
     void ProcessOldEntry(const std::string &appId);
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
         const std::string &sessionId, const std::string &deviceId);
     void SaveUserToMeta();
     std::string GetCurrentUser();
-    void TransferAssets(std::map<std::string, std::vector<uint8_t>>& results, int32_t userId,
-        const std::string& bundleName, const std::function<void(bool success)>& callback);
-    void GetAsset(std::map<std::string, std::vector<uint8_t>>& results, const std::string& assetKey,
-        std::set<std::string>& assets, std::vector<Asset>& assetValues);
     void DoNotify(uint32_t tokenId, const CallbackInfo& value,
         const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
+    std::map<std::string, std::map<std::string, Assets>> GetAssetsFromStore(
+        const std::map<std::string, std::vector<uint8_t>>& changedData);
+    bool isAssetKey(const std::string& key);
+    bool isAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result, const std::string& assetPrefix);
+    Assets GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
