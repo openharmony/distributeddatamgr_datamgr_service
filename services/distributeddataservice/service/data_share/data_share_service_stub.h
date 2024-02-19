@@ -26,6 +26,7 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
+    static constexpr std::chrono::milliseconds TIME_THRESHOLD = std::chrono::milliseconds(500);
     static bool CheckInterfaceToken(MessageParcel& data);
     int32_t OnRemoteInsert(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteUpdate(MessageParcel& data, MessageParcel& reply);
