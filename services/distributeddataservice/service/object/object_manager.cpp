@@ -379,7 +379,8 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
             continue;
         }
         for (const auto& [key, value] : result) {
-            results[GetBundleName(keyPrefix)][GetNetworkId(keyPrefix)][key] = value;
+            std::string networkId = GetNetworkId(keyPrefix);
+            results[GetBundleName(keyPrefix)][networkId][key] = value;
         }
     }
     std::map<std::string, std::map<std::string, Assets>> changedAssets{};
