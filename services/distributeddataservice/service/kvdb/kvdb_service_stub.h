@@ -44,6 +44,7 @@ private:
     int32_t OnSubscribe(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnUnsubscribe(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetBackupPassword(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnSyncExt(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)];
 };
 } // namespace OHOS::DistributedKv

@@ -44,6 +44,8 @@ public:
     bool IsChangedInTerm(const StoreMetaData &metaData, uint64_t term);
     uint16_t GetCode(const StoreMetaData &metaData);
     std::pair<bool, uint16_t> GetMask(const std::string &device);
+    std::pair<bool, uint16_t> GetRemoteMask(const std::string &device);
+    MatrixMetaData GetMatrixMeta(const std::string &device);
     void Clear();
 
 private:
@@ -63,7 +65,6 @@ private:
     }
 
     uint16_t ConvertMask(const std::string &device, uint16_t code);
-    MatrixMetaData GetMatrixMeta(const std::string &device);
 
     struct Mask {
         uint16_t bitset = META_STORE_MASK | CURRENT_MASK;

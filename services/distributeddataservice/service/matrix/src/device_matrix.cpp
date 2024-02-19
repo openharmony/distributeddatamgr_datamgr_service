@@ -200,6 +200,16 @@ std::pair<bool, uint16_t> DeviceMatrix::GetMask(const std::string &device)
     return { false, 0 };
 }
 
+std::pair<bool, uint16_t> DeviceMatrix::GetRemoteMask(const std::string &device)
+{
+    std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+    auto it = remotes_.find(device);
+    if (it != remotes_.end()) {
+        return { true, it->second.bitset };
+    }
+    return { false, 0 };
+}
+
 void DeviceMatrix::Clear()
 {
     versions_.ResetCapacity(0);
