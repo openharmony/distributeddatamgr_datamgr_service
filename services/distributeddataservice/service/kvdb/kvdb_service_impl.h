@@ -42,6 +42,7 @@ public:
         const std::vector<uint8_t> &password) override;
     Status Delete(const AppId &appId, const StoreId &storeId) override;
     Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
+    Status SyncExt(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback) override;
     Status UnregisterSyncCallback(const AppId &appId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
@@ -97,12 +98,17 @@ private:
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
+    Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
+    Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,
+        const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoComplete(const StoreMetaData &meta, const SyncInfo &info, RefCount refCount, const DBResult &dbResult);
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
     std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
+    using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
+    SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
     void RegisterKvServiceInfo();
     void RegisterHandler();
