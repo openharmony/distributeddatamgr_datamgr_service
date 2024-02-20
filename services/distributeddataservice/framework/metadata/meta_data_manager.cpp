@@ -27,7 +27,7 @@ public:
     using MetaStore = MetaDataManager::MetaStore;
     using Observer = MetaDataManager::Observer;
     MetaObserver(std::shared_ptr<MetaStore> metaStore,
-                 std::shared_ptr<Filter> filter, Observer observer, bool isLocal = false);
+        std::shared_ptr<Filter> filter, Observer observer, bool isLocal = false);
     virtual ~MetaObserver();
 
     // Database change callback
@@ -41,6 +41,7 @@ private:
 
 MetaObserver::MetaObserver(std::shared_ptr<MetaStore> metaStore,
     std::shared_ptr<Filter> filter, Observer observer, bool isLocal)
+    : metaStore_(std::move(metaStore)), filter_(std::move(filter)), observer_(std::move(observer))
 {
     if (metaStore_ != nullptr) {
         int mode = isLocal ? DistributedDB::OBSERVER_CHANGES_LOCAL_ONLY
@@ -243,7 +244,7 @@ bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLo
     }
 
     return metaObservers_.ComputeIfAbsent(
-        prefix, [ this,  isLocal, &observer, &prefix ](const std::string &key) -> auto {
+        prefix, [ this, isLocal, &observer, &prefix ](const std::string &key) -> auto {
             return std::make_shared<MetaObserver>(metaStore_, std::make_shared<Filter>(prefix), observer, isLocal);
         });
 }
