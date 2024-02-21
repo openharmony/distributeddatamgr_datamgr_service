@@ -342,6 +342,9 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
         });
     };
     std::map<std::string, std::map<std::string, Assets>> changedAssets = GetAssetsFromStore(changedData);
+    if (changedAssets.empty()) {
+        callback(true);
+    }
     const int32_t userId = std::stoi(GetCurrentUser());
     for (const auto& assetsOfBundle : changedAssets) {
         std::string bundleName = assetsOfBundle.first;
