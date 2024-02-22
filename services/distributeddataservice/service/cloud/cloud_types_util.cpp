@@ -74,4 +74,15 @@ bool Unmarshalling(ValuesBucket &output, MessageParcel &data)
 {
     return Unmarshal(data, output.values_);
 }
+
+template<>
+bool Marshalling(const StatisticInfo &input, MessageParcel &data)
+{
+    return ITypesUtil::Marshal(data, input.table, input.inserted, input.updated, input.normal);
+}
+template<>
+bool Unmarshalling(StatisticInfo &output, MessageParcel &data)
+{
+    return ITypesUtil::Unmarshal(data, output.table, output.inserted, output.updated, output.normal);
+}
 } // namespace OHOS::ITypesUtil

@@ -32,6 +32,7 @@ private:
     int32_t OnClean(const std::string &id, MessageParcel &data, MessageParcel &reply);
     int32_t OnNotifyDataChange(const std::string &id, MessageParcel &data, MessageParcel &reply);
     int32_t OnNotifyChange(const std::string &id, MessageParcel &data, MessageParcel &reply);
+    int32_t OnQueryStatistics(const std::string &id, MessageParcel &data, MessageParcel &reply);
 
     int32_t OnAllocResourceAndShare(const std::string &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnShare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
