@@ -72,7 +72,7 @@ using DBConfig = DistributedDB::RuntimeConfig;
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
-    : SystemAbility(runOnCreate), mutex_(), clients_()
+    : SystemAbility(runOnCreate), clients_()
 {
     ZLOGI("begin.");
     if (executors_ == nullptr) {
@@ -84,7 +84,7 @@ KvStoreDataService::KvStoreDataService(bool runOnCreate)
 }
 
 KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate)
-    : SystemAbility(systemAbilityId, runOnCreate), mutex_(), clients_()
+    : SystemAbility(systemAbilityId, runOnCreate), clients_()
 {
     ZLOGI("begin");
     if (executors_ == nullptr) {
@@ -98,7 +98,7 @@ KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate
 KvStoreDataService::~KvStoreDataService()
 {
     ZLOGI("begin.");
-    clients_.clear();
+    clients_.Clear();
     features_.Clear();
 }
 
@@ -194,28 +194,24 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         ZLOGW("check bundleName:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
         return Status::PERMISSION_DENIED;
     }
-    KvStoreClientDeathObserverImpl impl(*this);
-    Status status = Status::SUCCESS;
-    {
-        std::lock_guard<decltype(mutex_)> lg(mutex_);
-        auto iter = clients_.find(info.tokenId);
-        // Ignore register with same tokenId and pid
-        if (iter != clients_.end() && IPCSkeleton::GetCallingPid() == iter->second.GetPid()) {
+    KvStoreClientDeathObserverImpl kvStoreClientDeathObserver(*this);
+    clients_.Compute(info.tokenId, [&info, &appId, &kvStoreClientDeathObserver, this, &observer](auto&,
+                                       KvStoreClientDeathObserverImpl& impl) mutable {
+        if (IPCSkeleton::GetCallingPid() == impl.GetPid()) {
             ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.", appId.appId.c_str(),
                 info.uid, IPCSkeleton::GetCallingPid());
-            return Status::SUCCESS;
+            return true;
         }
-        if (iter != clients_.end()) {
-            impl = std::move(iter->second);
-            clients_.erase(iter);
+        if (impl.GetPid() == INVALID_PID) {
+            impl = KvStoreClientDeathObserverImpl(appId, *this, std::move(observer));
+            return true;
         }
-        auto it = clients_.emplace(std::piecewise_construct, std::forward_as_tuple(info.tokenId),
-            std::forward_as_tuple(appId, *this, std::move(observer)));
-        status = it.second ? Status::SUCCESS : Status::ERROR;
-    }
-    ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d inserted:%{public}s.", appId.appId.c_str(), info.uid,
-        IPCSkeleton::GetCallingPid(), status == Status::SUCCESS ? "success" : "failed");
-    return status;
+        kvStoreClientDeathObserver = std::move(impl);
+        return false;
+    }, KvStoreClientDeathObserverImpl(*this));
+    ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d.", appId.appId.c_str(), info.uid,
+        IPCSkeleton::GetCallingPid());
+    return Status::SUCCESS;
 }
 
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
@@ -225,14 +221,10 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
     KvStoreClientDeathObserverImpl impl(*this);
-    {
-        std::lock_guard<decltype(mutex_)> lg(mutex_);
-        auto iter = clients_.find(token);
-        if (iter != clients_.end()) {
-            impl = std::move(iter->second);
-            clients_.erase(iter);
-        }
-    }
+    clients_.ComputeIfPresent(token, [&impl](auto&, auto& value) {
+        impl = std::move(value);
+        return false;
+    });
     return Status::SUCCESS;
 }
 
