@@ -28,13 +28,6 @@ struct API_EXPORT DeviceInfo {
     uint32_t deviceType;
 };
 
-enum DeviceType {
-    SMART_WATCH,
-    KID_WATCH,
-    PHONE,
-    OTHERS,
-};
-
 enum RouteType : int32_t {
     INVALID_ROUTE_TYPE = -1,
     ROUTE_TYPE_ALL = 0,
