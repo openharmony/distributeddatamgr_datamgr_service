@@ -194,21 +194,21 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         ZLOGW("check bundleName:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
         return Status::PERMISSION_DENIED;
     }
-    KvStoreClientDeathObserverImpl kvStoreClientDeathObserver(*this);
+    std::shared_ptr<KvStoreClientDeathObserverImpl> kvStoreClientDeathObserver;
     clients_.Compute(info.tokenId, [&info, &appId, &kvStoreClientDeathObserver, this, &observer](auto&,
-                                       KvStoreClientDeathObserverImpl& impl) mutable {
-        if (IPCSkeleton::GetCallingPid() == impl.GetPid()) {
+                                       std::shared_ptr<KvStoreClientDeathObserverImpl>& impl) mutable {
+        if (impl == nullptr) {
+            impl = std::make_shared<KvStoreClientDeathObserverImpl>(appId, *this, std::move(observer));
+            return true;
+        }
+        if (IPCSkeleton::GetCallingPid() == impl->GetPid()) {
             ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.", appId.appId.c_str(),
                 info.uid, IPCSkeleton::GetCallingPid());
             return true;
         }
-        if (impl.GetPid() == INVALID_PID) {
-            impl = KvStoreClientDeathObserverImpl(appId, *this, std::move(observer));
-            return true;
-        }
         kvStoreClientDeathObserver = std::move(impl);
         return false;
-    }, KvStoreClientDeathObserverImpl(*this));
+    });
     ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d.", appId.appId.c_str(), info.uid,
         IPCSkeleton::GetCallingPid());
     return Status::SUCCESS;
@@ -220,7 +220,7 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
-    KvStoreClientDeathObserverImpl impl(*this);
+    std::shared_ptr<KvStoreClientDeathObserverImpl> impl;
     clients_.ComputeIfPresent(token, [&impl](auto&, auto& value) {
         impl = std::move(value);
         return false;
@@ -558,44 +558,10 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
         ZLOGW("observerProxy_ is nullptr");
     }
 }
-KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(KvStoreDataService& service)
-    : dataService_(service)
-{
-    Reset();
-}
-
-KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
-    KvStoreDataService::KvStoreClientDeathObserverImpl&& impl)
-    : dataService_(impl.dataService_)
-{
-    uid_ = impl.uid_;
-    pid_ = impl.pid_;
-    token_ = impl.token_;
-    appId_.appId = std::move(impl.appId_.appId);
-    observerProxy_ = std::move(impl.observerProxy_);
-    deathRecipient_ = std::move(impl.deathRecipient_);
-    impl.Reset();
-}
-
-KvStoreDataService::KvStoreClientDeathObserverImpl& KvStoreDataService::KvStoreClientDeathObserverImpl::operator=(
-    KvStoreDataService::KvStoreClientDeathObserverImpl&& impl)
-{
-    uid_ = impl.uid_;
-    pid_ = impl.pid_;
-    token_ = impl.token_;
-    appId_.appId = std::move(impl.appId_.appId);
-    observerProxy_ = std::move(impl.observerProxy_);
-    deathRecipient_ = std::move(impl.deathRecipient_);
-    impl.Reset();
-    return *this;
-}
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverImpl()
 {
     ZLOGI("~KvStoreClientDeathObserverImpl");
-    if (uid_ == INVALID_UID || pid_ == INVALID_PID || token_ == INVALID_TOKEN || !appId_.IsValid()) {
-        return;
-    }
     if (deathRecipient_ != nullptr && observerProxy_ != nullptr) {
         ZLOGI("remove death recipient");
         observerProxy_->RemoveDeathRecipient(deathRecipient_);
@@ -615,16 +581,6 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::NotifyClientDie()
 pid_t KvStoreDataService::KvStoreClientDeathObserverImpl::GetPid() const
 {
     return pid_;
-}
-
-void KvStoreDataService::KvStoreClientDeathObserverImpl::Reset()
-{
-    uid_ = INVALID_UID;
-    pid_ = INVALID_PID;
-    token_ = INVALID_TOKEN;
-    appId_.appId = "";
-    observerProxy_ = nullptr;
-    deathRecipient_ = nullptr;
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvStoreDeathRecipient(
