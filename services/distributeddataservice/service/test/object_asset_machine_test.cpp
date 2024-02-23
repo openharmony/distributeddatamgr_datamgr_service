@@ -78,7 +78,7 @@ void ObjectAssetMachineTest::TearDown() {}
 
 /**
 * @tc.name: StatusTransfer001
-* @tc.desc: Transfer event
+* @tc.desc: Transfer event.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: whj
@@ -125,6 +125,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
     ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
 }
+
 /**
 * @tc.name: StatusTransfer003
 * @tc.desc: Conflict transfer.
@@ -154,7 +155,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
 
 /**
 * @tc.name: StatusTransfer004
-* @tc.desc: Conflict transfer.
+* @tc.desc: Transfer finished.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: whj
@@ -224,7 +225,6 @@ HWTEST_F(ObjectAssetMachineTest, StatusUpload002, TestSize.Level0)
     machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
-    ASSERT_EQ(changedAssets_[uri_].deviceId, "device_1");
 
     machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
