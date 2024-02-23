@@ -398,12 +398,12 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
     return changedAssets;
 }
 
-static bool ObjectStoreManager::isAssetKey(const std::string& key)
+bool ObjectStoreManager::isAssetKey(const std::string& key)
 {
     return key.find(ObjectStore::ASSET_DOT) != std::string::npos;
 }
 
-static bool ObjectStoreManager::isAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
+bool ObjectStoreManager::isAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
     const std::string& assetPrefix)
 {
     if (result.find(assetPrefix + ObjectStore::NAME_SUFFIX) == result.end() ||
