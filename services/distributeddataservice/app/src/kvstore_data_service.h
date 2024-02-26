@@ -121,6 +121,9 @@ private:
     class KvStoreClientDeathObserverImpl {
     public:
         KvStoreClientDeathObserverImpl(const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer);
+        explicit KvStoreClientDeathObserverImpl(KvStoreDataService &service);
+        explicit KvStoreClientDeathObserverImpl(KvStoreClientDeathObserverImpl &&impl);
+        KvStoreClientDeathObserverImpl &operator=(KvStoreClientDeathObserverImpl &&impl);
 
         virtual ~KvStoreClientDeathObserverImpl();
 
@@ -137,6 +140,7 @@ private:
             KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl_;
         };
         void NotifyClientDie();
+        void Reset();
         pid_t uid_;
         pid_t pid_;
         uint32_t token_;
@@ -166,7 +170,7 @@ private:
 
     static constexpr int TEN_SEC = 10;
 
-    ConcurrentMap<uint32_t, std::shared_ptr<KvStoreClientDeathObserverImpl>> clients_;
+    ConcurrentMap<uint32_t, KvStoreClientDeathObserverImpl> clients_;
     std::shared_ptr<KvStoreAccountObserver> accountEventObserver_;
 
     std::shared_ptr<Security> security_;
@@ -179,6 +183,9 @@ private:
     static constexpr char FORMAT_BLANK_SPACE = ' ';
     static constexpr int32_t PRINTF_COUNT_2 = 2;
     static constexpr int MAXIMUM_PARAMETER_LIMIT = 3;
+    static constexpr pid_t INVALID_UID = -1;
+    static constexpr pid_t INVALID_PID = -1;
+    static constexpr uint32_t INVALID_TOKEN = 0;
 };
 }
 #endif  // KVSTORE_DATASERVICE_H
