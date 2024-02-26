@@ -20,6 +20,8 @@
 #include <gtest/gtest.h>
 
 #include "snapshot/machine_status.h"
+#include "object_asset_loader.h"
+#include "executor_pool.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
@@ -72,6 +74,8 @@ void ObjectAssetMachineTest::SetUp()
     storeInfo_ = storeInfo;
     ChangedAssetInfo changedAssetInfo(asset, AssetBindInfo, storeInfo);
     changedAssets_[uri_] = changedAssetInfo;
+    auto executors = std::make_shared<ExecutorPool>(1, 0);
+    ObjectAssetLoader::GetInstance()->SetThreadPool(executors);
 }
 
 void ObjectAssetMachineTest::TearDown() {}
@@ -91,7 +95,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
         .uri = uri_,
         .modifyTime = "modifyTime1",
         .size = "size1",
-        .hash = "hash1",
+        .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
     changedAssets_[uri_].status = STATUS_STABLE;
@@ -116,7 +120,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
         .uri = uri_,
         .modifyTime = "modifyTime2",
         .size = "size2",
-        .hash = "hash2",
+        .hash = "modifyTime2_size2",
     };
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
     changedAssets_[uri_].status = STATUS_TRANSFERRING;
@@ -141,16 +145,16 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
         .uri = uri_,
         .modifyTime = "modifyTime1",
         .size = "size1",
-        .hash = "hash1",
+        .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
     changedAssets_[uri_].status = STATUS_WAIT_TRANSFER;
     changedAssets_[uri_].deviceId = "device_2";
-    changedAssets_[uri_].asset.hash = "hash2";
+    changedAssets_[uri_].asset.hash = "modifyTime2_size2";
     machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
     ASSERT_EQ(changedAssets_[uri_].deviceId, "device_2");
-    ASSERT_EQ(changedAssets_[uri_].asset.hash, "hash2");
+    ASSERT_EQ(changedAssets_[uri_].asset.hash, "modifyTime2_size2");
 }
 
 /**
@@ -168,7 +172,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer004, TestSize.Level0)
         .uri = uri_,
         .modifyTime = "modifyTime2",
         .size = "size2",
-        .hash = "hash2",
+        .hash = "modifyTime2_size2",
     };
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
     changedAssets_[uri_].status = STATUS_TRANSFERRING;
