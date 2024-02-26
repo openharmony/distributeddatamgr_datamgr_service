@@ -107,7 +107,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
 
 /**
 * @tc.name: StatusTransfer002
-* @tc.desc: Conflict transfer.
+* @tc.desc: Remote changed when transferring.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: whj
@@ -132,7 +132,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
 
 /**
 * @tc.name: StatusTransfer003
-* @tc.desc: Conflict transfer.
+* @tc.desc: Compensate transfer in conflict scenario.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: whj
