@@ -18,9 +18,7 @@
 #include "object_asset_machine.h"
 
 #include <gtest/gtest.h>
-#include <thread>
 
-#include "log_print.h"
 #include "snapshot/machine_status.h"
 #include "object_asset_loader.h"
 #include "executor_pool.h"
@@ -43,7 +41,6 @@ protected:
     std::map<std::string, ChangedAssetInfo> changedAssets_;
     std::string sessionId = "123";
     StoreInfo storeInfo_;
-    static constexpr uint32_t WAIT_TRANSFER = 50;
 };
 
 void ObjectAssetMachineTest::SetUp()
@@ -84,48 +81,8 @@ void ObjectAssetMachineTest::SetUp()
 void ObjectAssetMachineTest::TearDown() {}
 
 /**
-* @tc.name: StatusTransfer
-* @tc.desc: .
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: whj
-*/
-HWTEST_F(ObjectAssetMachineTest, StatusTransfer, TestSize.Level0)
-{
-    auto machine = std::make_shared<ObjectAssetMachine>();
-    Asset asset{
-        .name = "test_name",
-        .uri = uri_,
-        .modifyTime = "modifyTime1",
-        .size = "size1",
-        .hash = "modifyTime1_size1",
-    };
-    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
-    // A TRANSFER_FINISHED event will be posted in the callback of the migrated file, therefore, the state will be
-    // STATUS_STABLE.
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
-
-    changedAsset.first = "device_2";
-    changedAsset.second.hash = "modifyTime2_size2";
-    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
-    ASSERT_EQ(changedAssets_[uri_].asset.hash, "modifyTime2_size2");
-    ASSERT_EQ(changedAssets_[uri_].deviceId, "device_2");
-
-    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
-
-    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
-}
-
-/**
 * @tc.name: StatusTransfer001
-* @tc.desc: No conflict scenarios. Normal object Migration and cloud synchronization processes.
+* @tc.desc: Transfer event.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: whj
@@ -141,16 +98,16 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
+    changedAssets_[uri_].status = STATUS_STABLE;
     machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
+    ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
-    ASSERT_EQ(changedAssets_[uri_].deviceId, "device_1");
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
 }
 
 /**
 * @tc.name: StatusTransfer002
-* @tc.desc: No conflict scenarios: normal cloud sync.
+* @tc.desc: Remote changed when transferring.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: whj
@@ -161,23 +118,21 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
     Asset asset{
         .name = "test_name",
         .uri = uri_,
-        .modifyTime = "modifyTime1",
-        .size = "size1",
-        .hash = "modifyTime1_size1",
+        .modifyTime = "modifyTime2",
+        .size = "size2",
+        .hash = "modifyTime2_size2",
     };
-    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    machine->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset, changedAsset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
-
-    machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+    std::pair<std::string, Asset> changedAsset{ "device_2", asset };
+    changedAssets_[uri_].status = STATUS_TRANSFERRING;
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
+    ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
+    ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
 }
 
 /**
 * @tc.name: StatusTransfer003
-* @tc.desc: Conflict scenario: Upload before transfer.
+* @tc.desc: Compensate transfer in conflict scenario.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: whj
@@ -193,18 +148,89 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
+    changedAssets_[uri_].status = STATUS_WAIT_TRANSFER;
+    changedAssets_[uri_].deviceId = "device_2";
+    changedAssets_[uri_].asset.hash = "modifyTime2_size2";
+    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
+    ASSERT_EQ(changedAssets_[uri_].deviceId, "device_2");
+    ASSERT_EQ(changedAssets_[uri_].asset.hash, "modifyTime2_size2");
+}
+
+/**
+* @tc.name: StatusTransfer004
+* @tc.desc: Transfer finished.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: whj
+*/
+HWTEST_F(ObjectAssetMachineTest, StatusTransfer004, TestSize.Level0)
+{
+    auto machine = std::make_shared<ObjectAssetMachine>();
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime2",
+        .size = "size2",
+        .hash = "modifyTime2_size2",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_2", asset };
+    changedAssets_[uri_].status = STATUS_TRANSFERRING;
+    machine->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+}
+
+/**
+* @tc.name: StatusUpload001
+* @tc.desc: No conflict scenarios: normal cloud sync.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: whj
+*/
+HWTEST_F(ObjectAssetMachineTest, StatusUpload001, TestSize.Level0)
+{
+    auto machine = std::make_shared<ObjectAssetMachine>();
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
+    machine->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
+
+    machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+}
+
+/**
+* @tc.name: StatusUpload002
+* @tc.desc: Conflict scenario: Upload before transfer.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: whj
+*/
+HWTEST_F(ObjectAssetMachineTest, StatusUpload002, TestSize.Level0)
+{
+    auto machine = std::make_shared<ObjectAssetMachine>();
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
     machine->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
 
     machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
-    ASSERT_EQ(changedAssets_[uri_].deviceId, "device_1");
 
     machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
-    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TRANSFER));
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
 }
 } // namespace OHOS::Test
