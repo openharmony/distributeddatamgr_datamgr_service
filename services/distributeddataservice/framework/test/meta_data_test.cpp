@@ -91,7 +91,6 @@ HWTEST_F(ServiceMetaDataTest, AppIDMetaData, TestSize.Level1)
     EXPECT_TRUE(result);
 }
 
-
 /**
 * @tc.name: corruptedMeta
 * @tc.desc:
