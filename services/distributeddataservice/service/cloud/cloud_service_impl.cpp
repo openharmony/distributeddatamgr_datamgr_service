@@ -375,10 +375,9 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
     return E_OK;
 }
 
-int32_t CloudServiceImpl::Online(const std::string &device)
+int32_t CloudServiceImpl::OnReady(const std::string& device)
 {
     if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
-        ZLOGI("Not network online");
         return SUCCESS;
     }
     std::vector<int32_t> users;

@@ -31,6 +31,19 @@ using namespace OHOS::NetManagerStandard;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
+static DeviceManagerAdapter::NetworkType Convert(NetManagerStandard::NetBearType bearType)
+{
+    switch (bearType) {
+        case NetManagerStandard::BEARER_WIFI:
+            return DeviceManagerAdapter::WIFI;
+        case NetManagerStandard::BEARER_CELLULAR:
+            return DeviceManagerAdapter::CELLULAR;
+        case NetManagerStandard::BEARER_ETHERNET:
+            return DeviceManagerAdapter::ETHERNET;
+        default:
+            return DeviceManagerAdapter::OTHER;
+    }
+}
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
     explicit DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
@@ -98,7 +111,6 @@ private:
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
 {
     ZLOGI("OnNetworkAvailable");
-    dmAdapter_.SetNetAvailable(true);
     dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
@@ -106,22 +118,33 @@ int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle
 int32_t NetConnCallbackObserver::NetUnavailable()
 {
     ZLOGI("OnNetworkUnavailable");
-    dmAdapter_.SetNetAvailable(false);
-    return DistributedKv::SUCCESS;
+    dmAdapter_.SetNetType(DeviceManagerAdapter::NONE);
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandle,
     const sptr<NetAllCapabilities> &netAllCap)
 {
     ZLOGI("OnNetCapabilitiesChange");
-    return DistributedKv::SUCCESS;
+    if (netHandle == nullptr || netAllCap == nullptr) {
+        return 0;
+    }
+    if (netAllCap->netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) && !netAllCap->bearerTypes_.empty()) {
+        dmAdapter_.SetNetAvailable(true);
+        dmAdapter_.SetNetType(Convert(*netAllCap->bearerTypes_.begin()));
+        dmAdapter_.OnReady(dmAdapter_.cloudDmInfo);
+    } else {
+        dmAdapter_.SetNetAvailable(false);
+        dmAdapter_.SetNetType(DeviceManagerAdapter::NONE);
+    }
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &netHandle,
     const sptr<NetLinkInfo> &info)
 {
     ZLOGI("OnNetConnectionPropertiesChange");
-    return DistributedKv::SUCCESS;
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
@@ -129,13 +152,13 @@ int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
     ZLOGI("OnNetLost");
     dmAdapter_.SetNetAvailable(false);
     dmAdapter_.Offline(dmAdapter_.cloudDmInfo);
-    return DistributedKv::SUCCESS;
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked)
 {
     ZLOGI("OnNetBlockStatusChange");
-    return DistributedKv::SUCCESS;
+    return 0;
 }
 
 DeviceManagerAdapter::DeviceManagerAdapter()
@@ -625,16 +648,51 @@ bool DeviceManagerAdapter::IsNetworkAvailable()
             return isNetAvailable_;
         }
     }
-    NetHandle handle;
-    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
-    return SetNetAvailable(status == 0 && handle.GetNetId() != 0);
+    return refreshNet().first;
 }
 
-bool DeviceManagerAdapter::SetNetAvailable(bool isNetAvailable)
+void DeviceManagerAdapter::SetNetAvailable(bool isNetAvailable)
 {
     std::unique_lock<decltype(mutex_)> lock(mutex_);
     isNetAvailable_ = isNetAvailable;
     expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
-    return isNetAvailable_;
+}
+
+void DeviceManagerAdapter::SetNetType(NetworkType netWorkType)
+{
+    std::unique_lock<decltype(mutex_)> lock(mutex_);
+    defaultNetwork_ = netWorkType;
+}
+
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::GetNetworkType(bool retrieve)
+{
+    if (!retrieve) {
+        std::shared_lock<decltype(mutex_)> lock(mutex_);
+        return defaultNetwork_;
+    }
+    return refreshNet().second;
+}
+
+std::pair<bool, DeviceManagerAdapter::NetworkType> DeviceManagerAdapter::refreshNet()
+{
+    NetHandle handle;
+    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
+    if (status != 0 || handle.GetNetId() == 0) {
+        SetNetAvailable(false);
+        SetNetType(NONE);
+        return { false, NONE };
+    }
+    NetAllCapabilities capabilities;
+    status = NetConnClient::GetInstance().GetNetCapabilities(handle, capabilities);
+    if (status != 0 || !capabilities.netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) ||
+        capabilities.bearerTypes_.empty()) {
+        SetNetAvailable(false);
+        SetNetType(NONE);
+        return { false, NONE };
+    }
+    SetNetAvailable(true);
+    auto type = Convert(*capabilities.bearerTypes_.begin());
+    SetNetType(type);
+    return { true, type };
 }
 } // namespace OHOS::DistributedData

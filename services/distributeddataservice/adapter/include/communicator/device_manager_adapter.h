@@ -37,6 +37,13 @@ public:
         DEVICE_ONREADY,
         DEVICE_BUTT
     };
+    enum NetworkType {
+        NONE,
+        CELLULAR,
+        WIFI,
+        ETHERNET,
+        OTHER
+    };
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
@@ -66,6 +73,7 @@ public:
     std::string ToNetworkID(const std::string &id);
     void NotifyReadyEvent(const std::string &uuid);
     bool IsNetworkAvailable();
+    NetworkType GetNetworkType(bool retrieve = false);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 
@@ -74,7 +82,9 @@ private:
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
     bool RegOnNetworkChange();
-    bool SetNetAvailable(bool isNetAvailable);
+    void SetNetAvailable(bool isNetAvailable);
+    void SetNetType(NetworkType netWorkType);
+    std::pair<bool, NetworkType> refreshNet();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void InitDeviceInfo(bool onlyCache = true);
@@ -100,6 +110,7 @@ private:
     static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
     Time expireTime_ = std::chrono::steady_clock::now();
     bool isNetAvailable_ = false;
+    NetworkType defaultNetwork_ = NONE;
     ConcurrentMap<std::string, std::pair<DeviceState, DeviceInfo>> readyDevices_;
 };
 }  // namespace DistributedData
