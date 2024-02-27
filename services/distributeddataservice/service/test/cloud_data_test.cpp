@@ -28,6 +28,7 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
+#include "store/store_info.h"
 #include "rdb_types.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -188,7 +189,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     SchemaMeta schemaMeta;
     ASSERT_FALSE(
         MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
-    CloudEvent::StoreInfo storeInfo { OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
+    StoreInfo storeInfo { OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
     ASSERT_FALSE(

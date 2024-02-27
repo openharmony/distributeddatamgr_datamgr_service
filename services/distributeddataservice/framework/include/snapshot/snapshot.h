@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_SNAPSHOT_SNAPSHOT_H
 #include "machine_status.h"
 #include "store/general_value.h"
+#include "store/store_info.h"
 #include "visibility.h"
 namespace OHOS {
 namespace DistributedData {

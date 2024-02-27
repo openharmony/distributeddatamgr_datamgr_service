@@ -50,14 +50,6 @@ struct AssetBindInfo {
     std::string field;
     std::string assetName;
 };
-
-struct StoreInfo {
-    uint32_t tokenId = 0;
-    int32_t instanceId = 0;
-    int32_t user;
-    std::string bundleName;
-    std::string storeName;
-};
 } // namespace DistributedData
 } // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_SNAPSHOT_MACHINE_STATUS_H

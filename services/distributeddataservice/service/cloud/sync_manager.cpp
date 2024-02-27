@@ -225,7 +225,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                 if (!info.Contains(database.name)) {
                     continue;
                 }
-                CloudEvent::StoreInfo storeInfo = { 0, schema.bundleName, database.name,
+                StoreInfo storeInfo = { 0, schema.bundleName, database.name,
                     cloud.apps[schema.bundleName].instanceId, cloud.user };
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
@@ -347,7 +347,7 @@ int32_t SyncManager::Compare(uint64_t syncId, int32_t user)
 
 void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
 {
-    CloudEvent::StoreInfo storeInfo;
+    StoreInfo storeInfo;
     storeInfo.user = syncInfo.user_;
     storeInfo.bundleName = syncInfo.bundleName_;
     EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo));

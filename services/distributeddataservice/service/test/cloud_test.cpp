@@ -55,7 +55,7 @@ HWTEST_F(CloudTest, EventInfo, TestSize.Level1)
     SyncEvent::EventInfo eventInfo1(mode, wait, retry, query, async);
     SyncEvent::EventInfo eventInfo2(std::move(eventInfo1));
     SyncEvent::EventInfo eventInfo3 = std::move(eventInfo2);
-    CloudEvent::StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), testCloudBundle, testCloudStore, 0 };
+    StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), testCloudBundle, testCloudStore, 0 };
     SyncEvent evt(storeInfo, eventInfo3);
     EXPECT_EQ(evt.GetMode(), mode);
     EXPECT_EQ(evt.GetWait(), wait);

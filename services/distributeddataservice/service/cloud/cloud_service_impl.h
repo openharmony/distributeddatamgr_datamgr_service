@@ -32,6 +32,7 @@ namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
     using StoreMetaData = DistributedData::StoreMetaData;
+    using StoreInfo = DistributedData::StoreInfo;
     CloudServiceImpl();
     ~CloudServiceImpl() = default;
     int32_t EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches) override;
@@ -129,7 +130,7 @@ private:
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
-    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(const CloudEvent::StoreInfo& storeInfo,
+    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(const StoreInfo& storeInfo,
         DistributedData::GenQuery& query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);

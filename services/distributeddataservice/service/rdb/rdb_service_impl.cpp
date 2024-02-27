@@ -428,7 +428,7 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
 void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
 {
     auto bindInfo = event.GetBindInfo();
-    CloudEvent::StoreInfo storeInfo;
+    StoreInfo storeInfo;
     storeInfo.bundleName = bindInfo.bundleName;
     storeInfo.tokenId = bindInfo.tokenId;
     storeInfo.user = bindInfo.user;
@@ -454,7 +454,7 @@ void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
 void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::Option &option,
     const PredicatesMemo &predicates, const AsyncDetail &async)
 {
-    CloudEvent::StoreInfo storeInfo;
+    StoreInfo storeInfo;
     storeInfo.bundleName = param.bundleName_;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
@@ -628,7 +628,7 @@ std::pair<int32_t, std::shared_ptr<RdbService::ResultSet>> RdbServiceImpl::Query
     auto rdbQuery = std::make_shared<RdbQuery>();
     rdbQuery->MakeQuery(predicates);
     rdbQuery->SetColumns(columns);
-    CloudEvent::StoreInfo storeInfo;
+    StoreInfo storeInfo;
     storeInfo.bundleName = param.bundleName_;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
@@ -642,7 +642,7 @@ std::pair<int32_t, std::shared_ptr<RdbService::ResultSet>> RdbServiceImpl::Query
     return { RDB_OK, std::make_shared<RdbResultSetImpl>(cursor) };
 }
 
-std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(CloudEvent::StoreInfo& storeInfo,
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(StoreInfo& storeInfo,
     std::shared_ptr<RdbQuery> rdbQuery)
 {
     std::pair<int32_t, std::shared_ptr<Cursor>> result;
@@ -668,7 +668,7 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
     }
 
     if (executors_ != nullptr) {
-        CloudEvent::StoreInfo storeInfo;
+        StoreInfo storeInfo;
         storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
         storeInfo.bundleName = param.bundleName_;
         storeInfo.storeName = RemoveSuffix(param.storeName_);
@@ -959,7 +959,7 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    CloudEvent::StoreInfo storeInfo;
+    StoreInfo storeInfo;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = param.bundleName_;
     storeInfo.storeName = RemoveSuffix(param.storeName_);
