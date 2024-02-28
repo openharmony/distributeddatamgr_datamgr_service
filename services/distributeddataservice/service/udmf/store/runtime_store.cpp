@@ -158,7 +158,6 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
         }
         summary.totalSize += recordSize;
     }
-    summary.deviceId = unifiedData.GetRuntime()->deviceId;
     return E_OK;
 }
 

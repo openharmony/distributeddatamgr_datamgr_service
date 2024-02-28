@@ -200,5 +200,21 @@ int32_t UdmfServiceStub::OnSync(MessageParcel &data, MessageParcel &reply)
     }
     return E_OK;
 }
+
+int32_t UdmfServiceStub::OnIsRemoteData(MessageParcel &data, MessageParcel &reply)
+{
+    QueryOption query;
+    if (!ITypesUtil::Unmarshal(data, query)) {
+        ZLOGE("Unmarshal query failed");
+        return E_READ_PARCEL_ERROR;
+    }
+    bool result = false;
+    int32_t status = IsRemoteData(query, result);
+    if (!ITypesUtil::Marshal(reply, status, result)) {
+        ZLOGE("Marshal IsRemoteData result failed, key: %{public}s", query.key.c_str());
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
 } // namespace UDMF
 } // namespace OHOS
