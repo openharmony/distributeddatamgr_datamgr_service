@@ -26,7 +26,6 @@ struct API_EXPORT DeviceInfo {
     std::string networkId;
     std::string deviceName;
     uint32_t deviceType;
-    int32_t osType;
 };
 
 enum DeviceType {
