@@ -380,31 +380,48 @@ Status RuntimeStore::GetEntries(const std::string &dataPrefix, std::vector<Entry
 
 Status RuntimeStore::PutEntries(const std::vector<Entry> &entries)
 {
-    size_t size = entries.size();
-    DBStatus status;
-    for (size_t index = 0; index < size; index += MAX_BATCH_SIZE) {
-        std::vector<Entry> dbEntries(
-            entries.begin() + index, entries.begin() + std::min(index + MAX_BATCH_SIZE, size));
-        status = kvStore_->PutBatch(dbEntries);
+    DBStatus status = kvStore_->StartTransaction();
+    if (status != DBStatus::OK) {
+        ZLOGE("start transaction failed, status: %{public}d.", status);
+        return E_DB_ERROR;
+    }
+    status = kvStore_->PutBatch(entries);
+    if (status != DBStatus::OK) {
+        ZLOGE("putBatch failed, status: %{public}d.", status);
+        status = kvStore_->Rollback();
         if (status != DBStatus::OK) {
-            ZLOGE("KvStore putBatch failed, status: %{public}d.", status);
-            return E_DB_ERROR;
+            ZLOGE("rollback failed, status: %{public}d.", status);
         }
+        return E_DB_ERROR;
+    }
+    status = kvStore_->Commit();
+    if (status != DBStatus::OK) {
+        ZLOGE("commit failed, status: %{public}d.", status);
+        return E_DB_ERROR;
     }
     return E_OK;
 }
 
 Status RuntimeStore::DeleteEntries(const std::vector<Key> &keys)
 {
-    size_t size = keys.size();
-    DBStatus status;
-    for (size_t index = 0; index < size; index += MAX_BATCH_SIZE) {
-        std::vector<Key> dbKeys(keys.begin() + index, keys.begin() + std::min(index + MAX_BATCH_SIZE, size));
-        status = kvStore_->DeleteBatch(dbKeys);
+    DBStatus status = kvStore_->StartTransaction();
+    if (status != DBStatus::OK) {
+        ZLOGE("start transaction failed, status: %{public}d.", status);
+        return E_DB_ERROR;
+    }
+    status = kvStore_->DeleteBatch(keys);
+    if (status != DBStatus::OK) {
+        ZLOGE("deleteBatch failed, status: %{public}d.", status);
+        status = kvStore_->Rollback();
         if (status != DBStatus::OK) {
-            ZLOGE("KvStore deleteBatch failed, status: %{public}d.", status);
-            return E_DB_ERROR;
+            ZLOGE("rollback failed, status: %{public}d.", status);
         }
+        return E_DB_ERROR;
+    }
+    status = kvStore_->Commit();
+    if (status != DBStatus::OK) {
+        ZLOGE("commit failed, status: %{public}d.", status);
+        return E_DB_ERROR;
     }
     return E_OK;
 }
