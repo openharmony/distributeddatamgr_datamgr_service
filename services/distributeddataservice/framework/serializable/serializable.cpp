@@ -156,12 +156,6 @@ bool Serializable::SetValue(json &node, const int64_t &value)
     return true;
 }
 
-bool Serializable::SetValue(json &node, const bool &value)
-{
-    node = value;
-    return true;
-}
-
 bool Serializable::SetValue(json &node, const std::vector<uint8_t> &value)
 {
     node = value;
