@@ -91,6 +91,16 @@ protected:
         }
         return result;
     }
+
+    template<typename T>
+    static bool SetValue(json &node, const T *value)
+    {
+        if (value == nullptr) {
+            return false;
+        }
+        return SetValue(node, *value);
+    }
+
     template<typename T>
     static bool GetValue(const json &node, const std::string &name, std::vector<T> &values)
     {
