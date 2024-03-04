@@ -61,9 +61,15 @@ public:
     API_EXPORT static bool SetValue(json &node, const uint32_t &value);
     API_EXPORT static bool SetValue(json &node, const int32_t &value);
     API_EXPORT static bool SetValue(json &node, const int64_t &value);
-    API_EXPORT static bool SetValue(json &node, const bool &value);
     API_EXPORT static bool SetValue(json &node, const std::vector<uint8_t> &value);
     API_EXPORT static bool SetValue(json &node, const Serializable &value);
+    // Use bool & to forbid the const T * auto convert to bool, const bool will convert to const uint32_t &value;
+    template<typename T>
+    API_EXPORT static std::enable_if_t<std::is_same_v<T, bool>, bool> SetValue(json &node, const T &value)
+    {
+        node = static_cast<bool>(value);
+        return true;
+    }
 protected:
     API_EXPORT ~Serializable() = default;
 
@@ -85,6 +91,16 @@ protected:
         }
         return result;
     }
+
+    template<typename T>
+    static bool SetValue(json &node, const T *value)
+    {
+        if (value == nullptr) {
+            return false;
+        }
+        return SetValue(node, *value);
+    }
+
     template<typename T>
     static bool GetValue(const json &node, const std::string &name, std::vector<T> &values)
     {
