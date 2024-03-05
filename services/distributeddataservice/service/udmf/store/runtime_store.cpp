@@ -275,6 +275,7 @@ void RuntimeStore::Close()
 bool RuntimeStore::Init()
 {
     if (!SaveMetaData()) {  // get keyinfo about create db fail.
+        ZLOGW("SaveMetaData fail, the data can not sync to other device.");
         return false;
     }
     DistributedDB::KvStoreNbDelegate::Option option;
@@ -339,11 +340,19 @@ bool RuntimeStore::SaveMetaData()
     saveMeta.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
 
+    DistributedData::StoreMetaData saveMetaLoadLocal;
+    DistributedData::StoreMetaData saveMetaLoad;
+    if (DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), saveMetaLoadLocal, true) &&
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), saveMetaLoad, true)) {
+        ZLOGD("Meta data is already save.");
+        return true;
+    }
+
     SetDelegateManager(saveMeta.dataDir, saveMeta.appId, userId);
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
                  DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!saved) {
-        ZLOGE("SaveMeta failed");
+        ZLOGE("SaveMeta failed, saveMeta.key:%{public}s", saveMeta.GetKey().c_str());
         return false;
     }
     DistributedData::AppIDMetaData appIdMeta;
@@ -351,7 +360,7 @@ bool RuntimeStore::SaveMetaData()
     appIdMeta.appId = saveMeta.appId;
     saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     if (!saved) {
-        ZLOGE("Save appIdMeta failed");
+        ZLOGE("Save appIdMeta failed, appIdMeta.key:%{public}s", appIdMeta.GetKey().c_str());
         return false;
     }
     return true;
