@@ -52,7 +52,6 @@ public:
     static void OnServerBind(int32_t socket, PeerSocketInfo info);
     static void OnServerShutdown(int32_t socket, ShutdownReason reason);
     static void OnServerBytesReceived(int32_t socket, const void *data, uint32_t dataLen);
-    static std::string GetPipeId(const std::string &name);
 
 public:
     // notify all listeners when received message
@@ -437,32 +436,17 @@ void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data
         return;
     };
     std::string peerDevUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(info.networkId));
-    if (!DmAdapter::GetInstance().IsOHOsType(peerDevUuid)) {
-        ZLOGD("[OnBytesReceived] Not OH device socket:%{public}d, peer name:%{public}s, peer devId:%{public}s,"
-            "data len:%{public}u", socket, info.name.c_str(), KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str(),
-            dataLen);
-        return;
-    }
 
     ZLOGD("[OnBytesReceived] socket:%{public}d, peer name:%{public}s, peer devId:%{public}s, data len:%{public}u",
         socket, info.name.c_str(), KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str(), dataLen);
 
-    std::string pipeId = GetPipeId(info.name);
+    std::string pipeId = info.name;
     if (pipeId.empty()) {
         ZLOGE("pipId is invalid");
         return;
     }
 
     NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerDevUuid, { pipeId, "" });
-}
-
-std::string AppDataListenerWrap::GetPipeId(const std::string &name)
-{
-    auto pos = name.find('_');
-    if (pos != std::string::npos) {
-        return name.substr(0, pos);
-    }
-    return "";
 }
 
 void AppDataListenerWrap::NotifyDataListeners(const uint8_t *data, const int size, const std::string &deviceId,

@@ -51,13 +51,11 @@ ohos_static_library("distributeddata_communicator_static") {
     "${kv_store_distributeddb_path}/include",
     "${kv_store_distributeddb_path}/interfaces/include/relational",
     "${kv_store_path}/interfaces/innerkits/distributeddata/include",
-    "${data_service_path}/framework/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "../dfx:distributeddata_dfx_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
   ]
