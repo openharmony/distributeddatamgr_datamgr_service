@@ -228,5 +228,5 @@ HWTEST_F(DirectoryManagerTest, GetSecretKeyPath, TestSize.Level0)
     auto version = DirectoryManager::GetInstance().GetVersions();
     EXPECT_NE(sizeof(version), 0);
     auto path = DirectoryManager::GetInstance().GetSecretKeyPath(metaData);
-    EXPECT_EQ(path, "/data/app/el1/0/database/bundle_manager_service/kvdb/secret");
+    EXPECT_EQ(path, "/data/app/el1/public/database/bundle_manager_service/kvdb/secret");
 }
