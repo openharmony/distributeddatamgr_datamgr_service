@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 
-#define LOG_TAG "UdmfTransactionTest"
+#define LOG_TAG "UdmfRunTimeStoreTest"
 #include <openssl/rand.h>
 
 #include "accesstoken_kit.h"
@@ -43,7 +43,7 @@ namespace DistributedDataTest {
 
 void GrantPermissionNative()
 {
-    const char** perms = new const char*[2];
+    const char **perms = new const char*[2];
     perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
     perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
     TokenInfoParams infoInstance = {
@@ -62,7 +62,7 @@ void GrantPermissionNative()
     delete[] perms;
 }
 
-class UdmfTransactionTest : public testing::Test {
+class UdmfRunTimeStoreTest : public testing::Test {
 public:
     static void SetUpTestCase(void)
     {
@@ -90,7 +90,7 @@ public:
     const std::string KEY_PREFIX = "TEST_";
 };
 
-void UdmfTransactionTest::GetRandomKey(std::vector<uint8_t>& key, uint32_t defaultSize)
+void UdmfRunTimeStoreTest::GetRandomKey(std::vector<uint8_t>& key, uint32_t defaultSize)
 {
     key.resize(defaultSize);
     RAND_bytes(key.data(), defaultSize);
@@ -101,7 +101,7 @@ void UdmfTransactionTest::GetRandomKey(std::vector<uint8_t>& key, uint32_t defau
     }
 }
 
-void UdmfTransactionTest::GetRandomValue(std::vector<uint8_t>& value, uint32_t defaultSize)
+void UdmfRunTimeStoreTest::GetRandomValue(std::vector<uint8_t>& value, uint32_t defaultSize)
 {
     value.resize(defaultSize);
     RAND_bytes(value.data(), defaultSize);
@@ -113,7 +113,7 @@ void UdmfTransactionTest::GetRandomValue(std::vector<uint8_t>& value, uint32_t d
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfTransactionTest, PutEntries001, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries001, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -128,9 +128,7 @@ HWTEST_F(UdmfTransactionTest, PutEntries001, TestSize.Level1)
         entrysRand.push_back({ key, value });
     }
 
-    int32_t status = store->Delete(KEY_PREFIX);
-    EXPECT_EQ(E_OK, status);
-    status = store->PutEntries(entrysRand);
+    int32_t status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_OK, status);
 
     vector<Entry> entries;
@@ -148,7 +146,7 @@ HWTEST_F(UdmfTransactionTest, PutEntries001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfTransactionTest, PutEntries002, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries002, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -163,10 +161,14 @@ HWTEST_F(UdmfTransactionTest, PutEntries002, TestSize.Level1)
     for (int i = 0; i < 3969; i++) {
         entrysRand.push_back({ key, emptyValue });
     }
-    int32_t status = store->Delete(KEY_PREFIX);
+    int32_t status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_OK, status);
-    status = store->PutEntries(entrysRand);
+
+    vector<Entry> entries;
+    status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(1, entries.size());
+
     status = store->Delete(KEY_PREFIX);
     EXPECT_EQ(E_OK, status);
 }
@@ -177,7 +179,7 @@ HWTEST_F(UdmfTransactionTest, PutEntries002, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfTransactionTest, PutEntries003, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries003, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -193,9 +195,7 @@ HWTEST_F(UdmfTransactionTest, PutEntries003, TestSize.Level1)
         entrysRand.push_back({ key, emptyValue });
     }
 
-    int32_t status = store->Delete(KEY_PREFIX);
-    EXPECT_EQ(E_OK, status);
-    status = store->PutEntries(entrysRand);
+    int32_t status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_DB_ERROR, status);
 
     vector<Entry> entries;
@@ -210,7 +210,7 @@ HWTEST_F(UdmfTransactionTest, PutEntries003, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfTransactionTest, PutEntries004, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries004, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -220,17 +220,14 @@ HWTEST_F(UdmfTransactionTest, PutEntries004, TestSize.Level1)
     Key keyInvalid;
     Value value;
     Value valueInvalid;
-    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K + 1
-    GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1);       // 1K
+    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
+    GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1);       // 1K + 1
     GetRandomValue(value, MAX_VALUE_SIZE);            // 4M
     GetRandomValue(valueInvalid, MAX_VALUE_SIZE + 1); // 4M + 1
     vector<Entry> entrysMix1(1, { keyInvalid, value });
     vector<Entry> entrysMix2(1, { key, valueInvalid });
 
-    int32_t status = store->Delete(KEY_PREFIX);
-    EXPECT_EQ(E_OK, status);
-
-    status = store->PutEntries(entrysMix1);
+    int32_t status = store->PutEntries(entrysMix1);
     EXPECT_EQ(E_DB_ERROR, status);
     vector<Entry> entries;
     status = store->GetEntries(KEY_PREFIX, entries);
@@ -243,9 +240,44 @@ HWTEST_F(UdmfTransactionTest, PutEntries004, TestSize.Level1)
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
     EXPECT_EQ(0, entries.size());
+}
 
-    status = store->Delete(KEY_PREFIX);
+/**
+* @tc.name: PutEntries005
+* @tc.desc: test rollback, mix illegal entries and legal entries.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries005, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_EQ(true, result);
+
+    Key key;
+    Key keyInvalid;
+    Value value;
+    Value valueInvalid;
+    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
+    GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1);       // 1K + 1
+    GetRandomValue(value, MAX_VALUE_SIZE);            // 4M
+    GetRandomValue(valueInvalid, MAX_VALUE_SIZE + 1); // 4M + 1
+    vector<Entry> entrysRandom(129, { key, value });
+
+    entrysRandom[128] = { keyInvalid, value };
+    int32_t status = store->PutEntries(entrysRandom);
+    EXPECT_EQ(E_DB_ERROR, status);
+    vector<Entry> entries;
+    status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(0, entries.size());
+
+    entrysRandom[128] = { key, valueInvalid };
+    status = store->PutEntries(entrysRandom);
+    EXPECT_EQ(E_DB_ERROR, status);
+    status = store->GetEntries(KEY_PREFIX, entries);
+    EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(0, entries.size());
 }
 
 /**
@@ -254,7 +286,7 @@ HWTEST_F(UdmfTransactionTest, PutEntries004, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfTransactionTest, DeleteEntries001, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries001, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -269,9 +301,7 @@ HWTEST_F(UdmfTransactionTest, DeleteEntries001, TestSize.Level1)
         entrysRand.push_back({ keys[i], value });
     }
 
-    int32_t status = store->Delete(KEY_PREFIX);
-    EXPECT_EQ(E_OK, status);
-    status = store->PutEntries(entrysRand);
+    int32_t status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_OK, status);
 
     vector<Entry> entries;
@@ -286,48 +316,6 @@ HWTEST_F(UdmfTransactionTest, DeleteEntries001, TestSize.Level1)
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
     EXPECT_EQ(0, entries.size());
-}
-
-/**
-* @tc.name: DeleteEntries002
-* @tc.desc: test rollback, illegal size of key.
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfTransactionTest, DeleteEntries002, TestSize.Level1)
-{
-    auto store = std::make_shared<RuntimeStore>(STORE_ID);
-    bool result = store->Init();
-    EXPECT_EQ(true, result);
-
-    Value value;
-    GetRandomValue(value, MAX_KEY_SIZE); // 1K
-    vector<Key> keys(129);
-    vector<Entry> entrysRand;
-    for (int i = 0; i < 129; ++i) {
-        GetRandomKey(keys[i], MAX_KEY_SIZE); // 1K
-        entrysRand.push_back({ keys[i], value });
-    }
-
-    int32_t status = store->Delete(KEY_PREFIX);
-    EXPECT_EQ(E_OK, status);
-    status = store->PutEntries(entrysRand);
-    EXPECT_EQ(E_OK, status);
-
-    vector<Entry> entries;
-    status = store->GetEntries(KEY_PREFIX, entries);
-    EXPECT_EQ(E_OK, status);
-    EXPECT_EQ(129, entries.size());
-
-    Key keyInvalid;
-    GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1); // 1K + 1
-    status = store->DeleteEntries({ keyInvalid });
-    EXPECT_EQ(E_DB_ERROR, status);
-
-    entries.clear();
-    status = store->GetEntries(KEY_PREFIX, entries);
-    EXPECT_EQ(E_OK, status);
-    EXPECT_EQ(129, entries.size());
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

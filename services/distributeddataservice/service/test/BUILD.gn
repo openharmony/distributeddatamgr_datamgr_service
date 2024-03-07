@@ -373,11 +373,11 @@ ohos_unittest("MetaDataTest") {
   ]
 }
 
-ohos_unittest("UdmfTransactionTest") {
+ohos_unittest("UdmfRunTimeStoreTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "udmf_transaction_test.cpp",
+    "udmf_run_time_store_test.cpp",
   ]
 
   include_dirs = [
@@ -439,7 +439,7 @@ group("unittest") {
     ":MetaDataTest",
     ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",
-    ":UdmfTransactionTest",
+    ":UdmfRunTimeStoreTest",
     ":ValueProxyTest",
   ]
 }
