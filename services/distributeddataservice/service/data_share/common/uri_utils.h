@@ -33,6 +33,7 @@ public:
         const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName);
     static bool IsDataProxyURI(const std::string &uri);
     static void FormatUri(std::string &uri);
+    static void RemoveUriPrefix(const std::string &prefix, std::string &str);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
     static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";
     static constexpr int DATA_PROXY_SCHEMA_LEN = sizeof(DATA_PROXY_SCHEMA) - 1;

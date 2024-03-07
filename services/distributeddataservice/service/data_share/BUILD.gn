@@ -57,6 +57,7 @@ ohos_shared_library("data_share_service") {
     "data/resultset_json_formatter.cpp",
     "data/template_data.cpp",
     "data_share_obs_proxy.cpp",
+    "data_share_pre_process.cpp",
     "data_share_profile_config.cpp",
     "data_share_service_impl.cpp",
     "data_share_service_stub.cpp",

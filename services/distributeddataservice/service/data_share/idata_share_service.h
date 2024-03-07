@@ -24,6 +24,7 @@
 #include "datashare_values_bucket.h"
 #include "datashare_template.h"
 #include "data_proxy_observer.h"
+#include "iremote_object.h"
 
 namespace OHOS::DataShare {
 class IDataShareService {
@@ -49,6 +50,8 @@ public:
         DATA_SHARE_SERVICE_CMD_NOTIFY_OBSERVERS,
         DATA_SHARE_SERVICE_CMD_SET_SILENT_SWITCH,
         DATA_SHARE_SERVICE_CMD_IS_SILENT_PROXY_ENABLE,
+        DATA_SHARE_SERVICE_CMD_REGISTER_OBSERVER,
+        DATA_SHARE_SERVICE_CMD_UNREGISTER_OBSERVER,
         DATA_SHARE_SERVICE_CMD_MAX
     };
 
@@ -85,6 +88,9 @@ public:
     virtual void NotifyObserver(const std::string &uri) = 0;
     virtual int32_t EnableSilentProxy(const std::string &uri, bool enable) = 0;
     virtual bool IsSilentProxyEnable(const std::string &uri) = 0;
+    virtual int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) = 0;
+    virtual int32_t UnRegisterObserver(const std::string &uri,
+        const sptr<OHOS::IRemoteObject> &remoteObj) = 0;
 };
 } // namespace OHOS::DataShare
 #endif

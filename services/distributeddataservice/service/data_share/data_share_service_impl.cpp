@@ -22,6 +22,8 @@
 #include "app_connect_manager.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
+#include "data_ability_observer_interface.h"
+#include "data_share_pre_process.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
@@ -617,5 +619,59 @@ bool DataShareServiceImpl::IsSilentProxyEnable(const std::string &uri)
         ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
     }
     return success;
+}
+
+int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
+    const sptr<OHOS::IRemoteObject> &remoteObj)
+{
+    auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
+    if (obServer == nullptr) {
+        ZLOGE("ObServer is nullptr, uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return ERR_INVALID_VALUE;
+    }
+    auto calledInfo = std::make_shared<CalledInfo>(uri);
+    DataSharePreProcess preProcess;
+    auto ret = preProcess.RegisterObserverProcess(calledInfo);
+    if (ret != E_OK) {
+        ZLOGE("Register Observer Process failed, ret: %{public}d, uri: %{public}s", ret,
+            DistributedData::Anonymous::Change(uri).c_str());
+        return ret;
+    }
+    auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
+    if (obsMgrClient == nullptr) {
+        ZLOGE("Get DataObsMgrClient failed");
+        return ERROR;
+    }
+    ret = obsMgrClient->RegisterObserver(Uri(uri), obServer);
+    ZLOGI("Register observer ret: %{public}d, uri: %{public}s", ret,
+        DistributedData::Anonymous::Change(uri).c_str());
+    return ret;
+}
+
+int32_t DataShareServiceImpl::UnRegisterObserver(const std::string &uri,
+    const sptr<OHOS::IRemoteObject> &remoteObj)
+{
+    auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
+    if (obServer == nullptr) {
+        ZLOGE("ObServer is nullptr, uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return ERR_INVALID_VALUE;
+    }
+    auto calledInfo = std::make_shared<CalledInfo>(uri);
+    DataSharePreProcess preProcess;
+    auto ret = preProcess.RegisterObserverProcess(calledInfo);
+    if (ret != E_OK) {
+        ZLOGE("UnRegister Observer Process failed, ret: %{public}d, uri: %{public}s", ret,
+            DistributedData::Anonymous::Change(uri).c_str());
+        return ret;
+    }
+    auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
+    if (obsMgrClient == nullptr) {
+        ZLOGE("Get DataObsMgrClient failed");
+        return ERROR;
+    }
+    ret = obsMgrClient->UnregisterObserver(Uri(uri), obServer);
+    ZLOGI("UnRegister observer ret: %{public}d, uri: %{public}s", ret,
+        DistributedData::Anonymous::Change(uri).c_str());
+    return ret;
 }
 } // namespace OHOS::DataShare

@@ -81,6 +81,8 @@ public:
     int32_t OnInitialize() override;
     int32_t EnableSilentProxy(const std::string &uri, bool enable) override;
     bool IsSilentProxyEnable(const std::string &uri) override;
+    int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
+    int32_t UnRegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;

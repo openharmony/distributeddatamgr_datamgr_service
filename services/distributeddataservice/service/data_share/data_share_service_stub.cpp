@@ -381,5 +381,37 @@ int32_t DataShareServiceStub::OnRemoteIsSilentProxyEnable(MessageParcel &data, M
     }
     return E_OK;
 }
+
+int32_t DataShareServiceStub::OnRemoteRegisterObserver(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    sptr<IRemoteObject> remoteObj;
+    if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
+        ZLOGE("Unmarshalling uri is nullptr");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = RegisterObserver(uri, remoteObj);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x failed.", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnRemoteUnRegisterObserver(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    sptr<IRemoteObject> remoteObj;
+    if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
+        ZLOGE("Unmarshalling uri is nullptr");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = UnRegisterObserver(uri, remoteObj);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x failed.", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
 } // namespace DataShare
 } // namespace OHOS
