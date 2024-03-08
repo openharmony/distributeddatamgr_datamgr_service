@@ -70,8 +70,8 @@ public:
         DistributedData::Bootstrap::GetInstance().LoadComponents();
         DistributedData::Bootstrap::GetInstance().LoadDirectory();
         DistributedData::Bootstrap::GetInstance().LoadCheckers();
-        size_t max = 12;
-        size_t min = 5;
+        size_t max = 2;
+        size_t min = 1;
         auto executors = std::make_shared<OHOS::ExecutorPool>(max, min);
         DmAdapter::GetInstance().Init(executors);
         DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
@@ -258,22 +258,27 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries005, TestSize.Level1)
     Key keyInvalid;
     Value value;
     Value valueInvalid;
-    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
-    GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1);       // 1K + 1
-    GetRandomValue(value, MAX_VALUE_SIZE);            // 4M
-    GetRandomValue(valueInvalid, MAX_VALUE_SIZE + 1); // 4M + 1
-    vector<Entry> entrysRandom(129, { key, value });
+    vector<Entry> entrysRand;
+    for (int i = 0; i < 129; ++i) {
+        GetRandomKey(key, MAX_KEY_SIZE);              // 1K
+        GetRandomValue(value, MAX_KEY_SIZE);          // 1K
+        entrysRand.push_back({ key, value });
+    }
 
-    entrysRandom[128] = { keyInvalid, value };
-    int32_t status = store->PutEntries(entrysRandom);
+    GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1);       // 1K + 1
+    GetRandomValue(value, MAX_KEY_SIZE);              // 1K
+    entrysRand[128] = { keyInvalid, value };
+    int32_t status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_DB_ERROR, status);
     vector<Entry> entries;
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
     EXPECT_EQ(0, entries.size());
 
-    entrysRandom[128] = { key, valueInvalid };
-    status = store->PutEntries(entrysRandom);
+    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
+    GetRandomValue(valueInvalid, MAX_VALUE_SIZE + 1); // 4M + 1
+    entrysRand[128] = { key, valueInvalid };
+    status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_DB_ERROR, status);
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
