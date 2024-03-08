@@ -111,14 +111,13 @@ private:
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
 {
     ZLOGI("OnNetworkAvailable");
-    dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
 
 int32_t NetConnCallbackObserver::NetUnavailable()
 {
     ZLOGI("OnNetworkUnavailable");
-    dmAdapter_.SetNetType(DeviceManagerAdapter::NONE);
+    dmAdapter_.SetNet(false, DeviceManagerAdapter::NONE);
     return 0;
 }
 
@@ -130,12 +129,9 @@ int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandl
         return 0;
     }
     if (netAllCap->netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) && !netAllCap->bearerTypes_.empty()) {
-        dmAdapter_.SetNetAvailable(true);
-        dmAdapter_.SetNetType(Convert(*netAllCap->bearerTypes_.begin()));
-        dmAdapter_.OnReady(dmAdapter_.cloudDmInfo);
+        dmAdapter_.SetNet(true, Convert(*netAllCap->bearerTypes_.begin()));
     } else {
-        dmAdapter_.SetNetAvailable(false);
-        dmAdapter_.SetNetType(DeviceManagerAdapter::NONE);
+        dmAdapter_.SetNet(false, DeviceManagerAdapter::NONE);
     }
     return 0;
 }
@@ -150,8 +146,7 @@ int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &
 int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
 {
     ZLOGI("OnNetLost");
-    dmAdapter_.SetNetAvailable(false);
-    dmAdapter_.Offline(dmAdapter_.cloudDmInfo);
+    dmAdapter_.SetNet(false, DeviceManagerAdapter::NONE);
     return 0;
 }
 
@@ -651,17 +646,24 @@ bool DeviceManagerAdapter::IsNetworkAvailable()
     return refreshNet().first;
 }
 
-void DeviceManagerAdapter::SetNetAvailable(bool isNetAvailable)
+void DeviceManagerAdapter::SetNet(bool isNetAvailable, NetworkType netWorkType)
 {
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
-    isNetAvailable_ = isNetAvailable;
-    expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
-}
-
-void DeviceManagerAdapter::SetNetType(NetworkType netWorkType)
-{
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
-    defaultNetwork_ = netWorkType;
+    bool ready = false;
+    bool offline = false;
+    {
+        std::unique_lock<decltype(mutex_)> lock(mutex_);
+        ready = !isNetAvailable_ && isNetAvailable;
+        offline = isNetAvailable_ && !isNetAvailable;
+        isNetAvailable_ = isNetAvailable;
+        defaultNetwork_ = netWorkType;
+        expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
+    }
+    if (ready) {
+        OnReady(cloudDmInfo);
+    }
+    if (offline) {
+        Offline(cloudDmInfo);
+    }
 }
 
 DeviceManagerAdapter::NetworkType DeviceManagerAdapter::GetNetworkType(bool retrieve)
@@ -678,21 +680,18 @@ std::pair<bool, DeviceManagerAdapter::NetworkType> DeviceManagerAdapter::refresh
     NetHandle handle;
     auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
     if (status != 0 || handle.GetNetId() == 0) {
-        SetNetAvailable(false);
-        SetNetType(NONE);
+        SetNet(false, DeviceManagerAdapter::NONE);
         return { false, NONE };
     }
     NetAllCapabilities capabilities;
     status = NetConnClient::GetInstance().GetNetCapabilities(handle, capabilities);
     if (status != 0 || !capabilities.netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) ||
         capabilities.bearerTypes_.empty()) {
-        SetNetAvailable(false);
-        SetNetType(NONE);
+        SetNet(false, DeviceManagerAdapter::NONE);
         return { false, NONE };
     }
-    SetNetAvailable(true);
     auto type = Convert(*capabilities.bearerTypes_.begin());
-    SetNetType(type);
+    SetNet(true, type);
     return { true, type };
 }
 } // namespace OHOS::DistributedData

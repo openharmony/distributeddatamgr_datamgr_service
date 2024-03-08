@@ -82,8 +82,7 @@ private:
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
     bool RegOnNetworkChange();
-    void SetNetAvailable(bool isNetAvailable);
-    void SetNetType(NetworkType netWorkType);
+    void SetNet(bool isNetAvailable, NetworkType netWorkType);
     std::pair<bool, NetworkType> refreshNet();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
