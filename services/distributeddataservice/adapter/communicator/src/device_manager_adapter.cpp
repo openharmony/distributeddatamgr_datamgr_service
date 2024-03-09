@@ -643,7 +643,7 @@ bool DeviceManagerAdapter::IsNetworkAvailable()
             return isNetAvailable_;
         }
     }
-    return refreshNet().first;
+    return RefreshNet().first;
 }
 
 void DeviceManagerAdapter::SetNet(bool isNetAvailable, NetworkType netWorkType)
@@ -652,8 +652,12 @@ void DeviceManagerAdapter::SetNet(bool isNetAvailable, NetworkType netWorkType)
     bool offline = false;
     {
         std::unique_lock<decltype(mutex_)> lock(mutex_);
-        ready = !isNetAvailable_ && isNetAvailable;
+        ready = !isNetAvailable_ && isNetAvailable &&
+                (std::chrono::steady_clock::now() - netLostTime_) > std::chrono::milliseconds(NET_LOST_DURATION);
         offline = isNetAvailable_ && !isNetAvailable;
+        if (offline) {
+            netLostTime_ = std::chrono::steady_clock::now();
+        }
         isNetAvailable_ = isNetAvailable;
         defaultNetwork_ = netWorkType;
         expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
@@ -672,10 +676,10 @@ DeviceManagerAdapter::NetworkType DeviceManagerAdapter::GetNetworkType(bool retr
         std::shared_lock<decltype(mutex_)> lock(mutex_);
         return defaultNetwork_;
     }
-    return refreshNet().second;
+    return RefreshNet().second;
 }
 
-std::pair<bool, DeviceManagerAdapter::NetworkType> DeviceManagerAdapter::refreshNet()
+std::pair<bool, DeviceManagerAdapter::NetworkType> DeviceManagerAdapter::RefreshNet()
 {
     NetHandle handle;
     auto status = NetConnClient::GetInstance().GetDefaultNet(handle);

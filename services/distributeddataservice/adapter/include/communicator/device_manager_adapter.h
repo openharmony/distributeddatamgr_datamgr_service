@@ -83,7 +83,7 @@ private:
     std::function<void()> RegDevCallback();
     bool RegOnNetworkChange();
     void SetNet(bool isNetAvailable, NetworkType netWorkType);
-    std::pair<bool, NetworkType> refreshNet();
+    std::pair<bool, NetworkType> RefreshNet();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void InitDeviceInfo(bool onlyCache = true);
@@ -107,7 +107,9 @@ private:
     std::shared_ptr<ExecutorPool> executors_;
     mutable std::shared_mutex mutex_;
     static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
+    static constexpr int32_t NET_LOST_DURATION = 10 * 1000; // ms
     Time expireTime_ = std::chrono::steady_clock::now();
+    Time netLostTime_ = std::chrono::steady_clock::now();
     bool isNetAvailable_ = false;
     NetworkType defaultNetwork_ = NONE;
     ConcurrentMap<std::string, std::pair<DeviceState, DeviceInfo>> readyDevices_;
