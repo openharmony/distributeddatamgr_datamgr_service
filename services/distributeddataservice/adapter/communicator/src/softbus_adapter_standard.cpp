@@ -57,6 +57,7 @@ public:
     // notify all listeners when received message
     static void NotifyDataListeners(const uint8_t *data, const int size, const std::string &deviceId,
         const PipeInfo &pipeInfo);
+    static std::string GetPipeId(const std::string &name);
 
 private:
     static SoftBusAdapter *softBusAdapter_;
@@ -440,13 +441,22 @@ void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data
     ZLOGD("[OnBytesReceived] socket:%{public}d, peer name:%{public}s, peer devId:%{public}s, data len:%{public}u",
         socket, info.name.c_str(), KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str(), dataLen);
 
-    std::string pipeId = info.name;
+    std::string pipeId = GetPipeId(info.name);
     if (pipeId.empty()) {
         ZLOGE("pipId is invalid");
         return;
     }
 
     NotifyDataListeners(reinterpret_cast<const uint8_t *>(data), dataLen, peerDevUuid, { pipeId, "" });
+}
+
+std::string AppDataListenerWrap::GetPipeId(const std::string &name)
+{
+    auto pos = name.find('_');
+    if (pos != std::string::npos) {
+        return name.substr(0, pos);
+    }
+    return name;
 }
 
 void AppDataListenerWrap::NotifyDataListeners(const uint8_t *data, const int size, const std::string &deviceId,
