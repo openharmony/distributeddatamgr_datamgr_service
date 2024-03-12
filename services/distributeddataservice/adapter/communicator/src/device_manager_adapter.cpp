@@ -117,7 +117,7 @@ int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle
 int32_t NetConnCallbackObserver::NetUnavailable()
 {
     ZLOGI("OnNetworkUnavailable");
-    dmAdapter_.SetNet(false, DeviceManagerAdapter::NONE);
+    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
     return 0;
 }
 
@@ -129,9 +129,9 @@ int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandl
         return 0;
     }
     if (netAllCap->netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) && !netAllCap->bearerTypes_.empty()) {
-        dmAdapter_.SetNet(true, Convert(*netAllCap->bearerTypes_.begin()));
+        dmAdapter_.SetNet(Convert(*netAllCap->bearerTypes_.begin()));
     } else {
-        dmAdapter_.SetNet(false, DeviceManagerAdapter::NONE);
+        dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
     }
     return 0;
 }
@@ -146,7 +146,7 @@ int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &
 int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
 {
     ZLOGI("OnNetLost");
-    dmAdapter_.SetNet(false, DeviceManagerAdapter::NONE);
+    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
     return 0;
 }
 
@@ -637,65 +637,52 @@ bool DeviceManagerAdapter::RegOnNetworkChange()
 
 bool DeviceManagerAdapter::IsNetworkAvailable()
 {
-    {
-        std::shared_lock<decltype(mutex_)> lock(mutex_);
-        if (isNetAvailable_ || expireTime_ > std::chrono::steady_clock::now()) {
-            return isNetAvailable_;
-        }
+    if (defaultNetwork_ != NONE || expireTime_ > GetTimeStamp()) {
+        return defaultNetwork_ != NONE;
     }
-    return RefreshNet().first;
+    return RefreshNet() != NONE;
 }
 
-void DeviceManagerAdapter::SetNet(bool isNetAvailable, NetworkType netWorkType)
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::SetNet(NetworkType netWorkType)
 {
-    bool ready = false;
-    bool offline = false;
-    {
-        std::unique_lock<decltype(mutex_)> lock(mutex_);
-        ready = !isNetAvailable_ && isNetAvailable &&
-                (std::chrono::steady_clock::now() - netLostTime_) > std::chrono::milliseconds(NET_LOST_DURATION);
-        offline = isNetAvailable_ && !isNetAvailable;
-        if (offline) {
-            netLostTime_ = std::chrono::steady_clock::now();
-        }
-        isNetAvailable_ = isNetAvailable;
-        defaultNetwork_ = netWorkType;
-        expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
+    auto oldNet = defaultNetwork_;
+    bool ready = oldNet == NONE && netWorkType != NONE && (GetTimeStamp() - netLostTime_) > NET_LOST_DURATION;
+    bool offline = oldNet != NONE && netWorkType == NONE;
+    if (offline) {
+        netLostTime_ = GetTimeStamp();
     }
+    defaultNetwork_ = netWorkType;
+    expireTime_ = GetTimeStamp() + EFFECTIVE_DURATION;
     if (ready) {
         OnReady(cloudDmInfo);
     }
     if (offline) {
         Offline(cloudDmInfo);
     }
+    return netWorkType;
 }
 
 DeviceManagerAdapter::NetworkType DeviceManagerAdapter::GetNetworkType(bool retrieve)
 {
     if (!retrieve) {
-        std::shared_lock<decltype(mutex_)> lock(mutex_);
         return defaultNetwork_;
     }
-    return RefreshNet().second;
+    return RefreshNet();
 }
 
-std::pair<bool, DeviceManagerAdapter::NetworkType> DeviceManagerAdapter::RefreshNet()
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::RefreshNet()
 {
     NetHandle handle;
     auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
     if (status != 0 || handle.GetNetId() == 0) {
-        SetNet(false, DeviceManagerAdapter::NONE);
-        return { false, NONE };
+        return SetNet(NONE);
     }
     NetAllCapabilities capabilities;
     status = NetConnClient::GetInstance().GetNetCapabilities(handle, capabilities);
     if (status != 0 || !capabilities.netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) ||
         capabilities.bearerTypes_.empty()) {
-        SetNet(false, DeviceManagerAdapter::NONE);
-        return { false, NONE };
+        return SetNet(NONE);
     }
-    auto type = Convert(*capabilities.bearerTypes_.begin());
-    SetNet(true, type);
-    return { true, type };
+    return SetNet(Convert(*capabilities.bearerTypes_.begin()));
 }
 } // namespace OHOS::DistributedData
