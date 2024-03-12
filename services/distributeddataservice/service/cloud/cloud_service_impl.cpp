@@ -375,10 +375,9 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
     return E_OK;
 }
 
-int32_t CloudServiceImpl::Online(const std::string &device)
+int32_t CloudServiceImpl::OnReady(const std::string& device)
 {
     if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
-        ZLOGI("Not network online");
         return SUCCESS;
     }
     std::vector<int32_t> users;
@@ -622,7 +621,7 @@ void CloudServiceImpl::CloudShare(const Event &event)
 }
 
 std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::PreShare(
-    const CloudEvent::StoreInfo& storeInfo, GenQuery& query)
+    const StoreInfo& storeInfo, GenQuery& query)
 {
     StoreMetaData meta;
     meta.bundleName = storeInfo.bundleName;
@@ -777,7 +776,7 @@ std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::Alloc
         return { E_INVALID_ARGS, {} };
     }
     auto memo = std::make_shared<DistributedRdb::PredicatesMemo>(predicates);
-    CloudEvent::StoreInfo storeInfo;
+    StoreInfo storeInfo;
     storeInfo.bundleName = hapInfo.bundleName;
     storeInfo.tokenId = tokenId;
     storeInfo.user = hapInfo.user;

@@ -32,6 +32,19 @@ using namespace OHOS::NetManagerStandard;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
+static DeviceManagerAdapter::NetworkType Convert(NetManagerStandard::NetBearType bearType)
+{
+    switch (bearType) {
+        case NetManagerStandard::BEARER_WIFI:
+            return DeviceManagerAdapter::WIFI;
+        case NetManagerStandard::BEARER_CELLULAR:
+            return DeviceManagerAdapter::CELLULAR;
+        case NetManagerStandard::BEARER_ETHERNET:
+            return DeviceManagerAdapter::ETHERNET;
+        default:
+            return DeviceManagerAdapter::OTHER;
+    }
+}
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
     explicit DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
@@ -99,44 +112,49 @@ private:
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
 {
     ZLOGI("OnNetworkAvailable");
-    dmAdapter_.SetNetAvailable(true);
-    dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
 
 int32_t NetConnCallbackObserver::NetUnavailable()
 {
     ZLOGI("OnNetworkUnavailable");
-    dmAdapter_.SetNetAvailable(false);
-    return DistributedKv::SUCCESS;
+    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandle,
     const sptr<NetAllCapabilities> &netAllCap)
 {
     ZLOGI("OnNetCapabilitiesChange");
-    return DistributedKv::SUCCESS;
+    if (netHandle == nullptr || netAllCap == nullptr) {
+        return 0;
+    }
+    if (netAllCap->netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) && !netAllCap->bearerTypes_.empty()) {
+        dmAdapter_.SetNet(Convert(*netAllCap->bearerTypes_.begin()));
+    } else {
+        dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
+    }
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &netHandle,
     const sptr<NetLinkInfo> &info)
 {
     ZLOGI("OnNetConnectionPropertiesChange");
-    return DistributedKv::SUCCESS;
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
 {
     ZLOGI("OnNetLost");
-    dmAdapter_.SetNetAvailable(false);
-    dmAdapter_.Offline(dmAdapter_.cloudDmInfo);
-    return DistributedKv::SUCCESS;
+    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked)
 {
     ZLOGI("OnNetBlockStatusChange");
-    return DistributedKv::SUCCESS;
+    return 0;
 }
 
 struct DeviceExtraInfo final : public Serializable {
@@ -671,22 +689,52 @@ bool DeviceManagerAdapter::RegOnNetworkChange()
 
 bool DeviceManagerAdapter::IsNetworkAvailable()
 {
-    {
-        std::shared_lock<decltype(mutex_)> lock(mutex_);
-        if (isNetAvailable_ || expireTime_ > std::chrono::steady_clock::now()) {
-            return isNetAvailable_;
-        }
+    if (defaultNetwork_ != NONE || expireTime_ > GetTimeStamp()) {
+        return defaultNetwork_ != NONE;
     }
-    NetHandle handle;
-    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
-    return SetNetAvailable(status == 0 && handle.GetNetId() != 0);
+    return RefreshNet() != NONE;
 }
 
-bool DeviceManagerAdapter::SetNetAvailable(bool isNetAvailable)
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::SetNet(NetworkType netWorkType)
 {
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
-    isNetAvailable_ = isNetAvailable;
-    expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
-    return isNetAvailable_;
+    auto oldNet = defaultNetwork_;
+    bool ready = oldNet == NONE && netWorkType != NONE && (GetTimeStamp() - netLostTime_) > NET_LOST_DURATION;
+    bool offline = oldNet != NONE && netWorkType == NONE;
+    if (offline) {
+        netLostTime_ = GetTimeStamp();
+    }
+    defaultNetwork_ = netWorkType;
+    expireTime_ = GetTimeStamp() + EFFECTIVE_DURATION;
+    if (ready) {
+        OnReady(cloudDmInfo);
+    }
+    if (offline) {
+        Offline(cloudDmInfo);
+    }
+    return netWorkType;
+}
+
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::GetNetworkType(bool retrieve)
+{
+    if (!retrieve) {
+        return defaultNetwork_;
+    }
+    return RefreshNet();
+}
+
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::RefreshNet()
+{
+    NetHandle handle;
+    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
+    if (status != 0 || handle.GetNetId() == 0) {
+        return SetNet(NONE);
+    }
+    NetAllCapabilities capabilities;
+    status = NetConnClient::GetInstance().GetNetCapabilities(handle, capabilities);
+    if (status != 0 || !capabilities.netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) ||
+        capabilities.bearerTypes_.empty()) {
+        return SetNet(NONE);
+    }
+    return SetNet(Convert(*capabilities.bearerTypes_.begin()));
 }
 } // namespace OHOS::DistributedData
