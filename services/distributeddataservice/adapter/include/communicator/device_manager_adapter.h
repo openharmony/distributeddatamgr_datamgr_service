@@ -54,6 +54,7 @@ public:
     std::vector<DeviceInfo> GetRemoteDevices();
     std::vector<DeviceInfo> GetOnlineDevices();
     bool IsDeviceReady(const std::string &id);
+    bool IsOHOsType(const std::string &id);
     size_t GetOnlineSize();
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
@@ -84,7 +85,6 @@ private:
     void Offline(const DmDeviceInfo &info);
     void OnChanged(const DmDeviceInfo &info);
     void OnReady(const DmDeviceInfo &info);
-    void TimeOut(const std::string uuid);
     std::vector<const AppDeviceChangeListener *> GetObservers();
 
     std::mutex devInfoMutex_ {};
@@ -94,6 +94,7 @@ private:
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;
     static constexpr int32_t SYNC_TIMEOUT = 60 * 1000; // ms
+    static constexpr int32_t OH_OS_TYPE = 10;
     ConcurrentMap<std::string, std::string> syncTask_ {};
     std::shared_ptr<ExecutorPool> executors_;
     mutable std::shared_mutex mutex_;
