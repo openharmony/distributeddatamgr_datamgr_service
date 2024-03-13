@@ -23,6 +23,7 @@
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "sync_strategies/network_sync_strategy.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
 namespace OHOS::CloudData {
@@ -124,6 +125,7 @@ bool SyncManager::SyncInfo::Contains(const std::string& storeName)
 SyncManager::SyncManager()
 {
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
+    syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
 }
 
 SyncManager::~SyncManager()
@@ -225,8 +227,15 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                 if (!info.Contains(database.name)) {
                     continue;
                 }
-                StoreInfo storeInfo = { 0, schema.bundleName, database.name,
-                    cloud.apps[schema.bundleName].instanceId, cloud.user };
+                StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
+                    cloud.user };
+                auto status = syncStrategy_->CheckSyncAction(storeInfo);
+                if (status != SUCCESS) {
+                    ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
+                        storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
+                    info.SetError(status);
+                    continue;
+                }
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo { info.mode_, info.wait_, retry, std::move(query), info.async_ });
