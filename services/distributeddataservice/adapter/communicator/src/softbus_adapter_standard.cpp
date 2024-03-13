@@ -23,7 +23,6 @@
 #include "log_print.h"
 #include "reporter.h"
 #include "securec.h"
-#include "session.h"
 #include "softbus_adapter.h"
 #include "softbus_bus_center.h"
 #include "softbus_error_code.h"
