@@ -78,6 +78,7 @@ ohos_shared_library("distributeddatasvc") {
     "cloud/cloud_value_util.cpp",
     "cloud/sync_manager.cpp",
     "cloud/sync_strategies/network_sync_strategy.cpp",
+    "common/common_types_utils.cpp",
     "common/value_proxy.cpp",
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",

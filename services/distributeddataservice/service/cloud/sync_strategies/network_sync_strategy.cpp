@@ -25,8 +25,8 @@ namespace OHOS::CloudData {
 using namespace OHOS::DistributedData;
 NetworkSyncStrategy::NetworkSyncStrategy()
 {
-    MetaDataManager::GetInstance().Subscribe(
-        StrategyInfo::PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
+    MetaDataManager::GetInstance().Subscribe(StrategyInfo::NETWORK_STRATEGY_PREFIX,
+	    [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
             StrategyInfo info;
             StrategyInfo::Unmarshall(value, info);
             ZLOGI("flag:%{public}d, value:%{public}s", flag, value.c_str());
@@ -45,7 +45,7 @@ NetworkSyncStrategy::NetworkSyncStrategy()
 }
 NetworkSyncStrategy::~NetworkSyncStrategy()
 {
-    MetaDataManager::GetInstance().Unsubscribe(StrategyInfo::PREFIX);
+    MetaDataManager::GetInstance().Unsubscribe(StrategyInfo::NETWORK_STRATEGY_PREFIX);
 }
 int32_t NetworkSyncStrategy::CheckSyncAction(const StoreInfo &storeInfo)
 {
@@ -57,7 +57,7 @@ int32_t NetworkSyncStrategy::CheckSyncAction(const StoreInfo &storeInfo)
         user_ = storeInfo.user;
     }
     StrategyInfo info = GetStrategy(storeInfo.user, storeInfo.bundleName);
-    if(info.user == StrategyInfo::INVALID_USER) {
+    if (info.user == StrategyInfo::INVALID_USER) {
         info = GetStrategy(storeInfo.user, GLOBAL_BUNDLE);
     }
     if (!Check(info.strategy)) {
@@ -84,17 +84,17 @@ bool NetworkSyncStrategy::StrategyInfo::Unmarshal(const Serializable::json &node
 
 std::string NetworkSyncStrategy::StrategyInfo::GetKey()
 {
-    return Constant::Join(StrategyInfo::PREFIX, Constant::KEY_SEPARATOR, { std::to_string(user), bundleName });
+    return Constant::Join(StrategyInfo::NETWORK_STRATEGY_PREFIX, Constant::KEY_SEPARATOR, { std::to_string(user), bundleName });
 }
 
 std::string NetworkSyncStrategy::GetKey(int32_t user)
 {
-    return Constant::Join(StrategyInfo::PREFIX, Constant::KEY_SEPARATOR, { std::to_string(user) });
+    return Constant::Join(StrategyInfo::NETWORK_STRATEGY_PREFIX, Constant::KEY_SEPARATOR, { std::to_string(user) });
 }
 
 std::string NetworkSyncStrategy::GetKey(int32_t user, const std::string &bundleName)
 {
-    return Constant::Join(StrategyInfo::PREFIX, Constant::KEY_SEPARATOR, { std::to_string(user), bundleName });
+    return Constant::Join(StrategyInfo::NETWORK_STRATEGY_PREFIX, Constant::KEY_SEPARATOR, { std::to_string(user), bundleName });
 }
 
 bool NetworkSyncStrategy::Check(uint32_t strategy)
@@ -122,7 +122,7 @@ NetworkSyncStrategy::StrategyInfo NetworkSyncStrategy::GetStrategy(int32_t user,
         return info;
     }
     MetaDataManager::GetInstance().LoadMeta(GetKey(user, bundleName), info, true);
-    strategies_.InsertOrAssign(info.bundleName, info);
+    strategies_.Insert(info.bundleName, info);
     return info;
 }
 }
