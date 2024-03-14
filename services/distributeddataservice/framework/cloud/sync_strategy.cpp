@@ -17,7 +17,7 @@
 namespace OHOS::DistributedData {
 int32_t SyncStrategy::CheckSyncAction(const StoreInfo& storeInfo)
 {
-    return true;
+    return 0;
 }
 
 std::shared_ptr<SyncStrategy> SyncStrategy::SetNext(std::shared_ptr<SyncStrategy> next)

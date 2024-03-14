@@ -52,7 +52,7 @@ using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
-    &CloudServiceImpl::SaveNetWorkStrategy
+    &CloudServiceImpl::SaveNetworkStrategy
 };
 
 CloudServiceImpl::Factory::Factory() noexcept
@@ -1082,7 +1082,7 @@ int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<
     return STRATEGY_SAVERS[strategy](values, hapInfo);
 }
 
-int32_t CloudServiceImpl::SaveNetWorkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo)
+int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo)
 {
     NetworkSyncStrategy::StrategyInfo info;
     info.strategy = 0;

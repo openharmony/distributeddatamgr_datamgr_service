@@ -144,7 +144,7 @@ private:
 
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
-    static int32_t SaveNetWorkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
+    static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
