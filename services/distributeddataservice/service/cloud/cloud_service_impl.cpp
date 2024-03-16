@@ -38,6 +38,7 @@
 #include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "sync_manager.h"
+#include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
 #include "values_bucket.h"
 namespace OHOS::CloudData {
@@ -50,6 +51,9 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
+const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
+    &CloudServiceImpl::SaveNetworkStrategy
+};
 
 CloudServiceImpl::Factory::Factory() noexcept
 {
@@ -321,6 +325,24 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
     return SUCCESS;
 }
 
+int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, values size:%{public}zu", strategy, values.size());
+        return ERROR;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    HapInfo hapInfo;
+    hapInfo.user = Account::GetInstance()->GetUserByToken(tokenId);
+    if (hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid user:%{public}d, strategy:%{public}d, values size:%{public}zu", hapInfo.user, strategy,
+            values.size());
+        return ERROR;
+    }
+    hapInfo.bundleName = SyncStrategy::GLOBAL_BUNDLE;
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
+}
+
 int32_t CloudServiceImpl::OnInitialize()
 {
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
@@ -585,6 +607,7 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
 {
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
+    MetaDataManager::GetInstance().DelMeta(NetworkSyncStrategy::GetKey(user, bundleName), true);
     return E_OK;
 }
 
@@ -1043,4 +1066,37 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
     expireTime_ = expire > now ? expire : now;
 }
 
+int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, values size:%{public}zu", strategy, values.size());
+        return ERROR;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid, user:%{public}d, bundleName:%{public}s, strategy:%{public}d, values size:%{public}zu",
+            hapInfo.user, hapInfo.bundleName.c_str(), strategy, values.size());
+        return ERROR;
+    }
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
+}
+
+int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo)
+{
+    NetworkSyncStrategy::StrategyInfo info;
+    info.strategy = 0;
+    info.user = hapInfo.user;
+    info.bundleName = hapInfo.bundleName;
+    if (values.empty()) {
+        return MetaDataManager::GetInstance().DelMeta(info.GetKey(), true) ? SUCCESS : ERROR;
+    }
+    for (auto &value : values) {
+        auto strategy = std::get_if<int64_t>(&value);
+        if (strategy) {
+            info.strategy |= static_cast<int32_t>(*strategy);
+        }
+    }
+    return MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true) ? SUCCESS : ERROR;
+}
 } // namespace OHOS::CloudData

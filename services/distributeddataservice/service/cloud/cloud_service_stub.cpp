@@ -32,6 +32,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnClean,
     &CloudServiceStub::OnNotifyDataChange,
     &CloudServiceStub::OnNotifyChange,
+    &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnAllocResourceAndShare,
     &CloudServiceStub::OnShare,
     &CloudServiceStub::OnUnshare,
@@ -41,6 +42,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnQueryByInvitation,
     &CloudServiceStub::OnConfirmInvitation,
     &CloudServiceStub::OnChangeConfirmation,
+    &CloudServiceStub::OnSetCloudStrategy,
 };
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
@@ -58,34 +60,28 @@ int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, 
         return -1;
     }
 
-    if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
-        ZLOGE("permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
+    if (((code >= TRANS_CONFIG_HEAD && code < TRANS_CONFIG_BUTT) ||
+        (code >= TRANS_SHARE_HEAD && code < TRANS_SHARE_BUTT)) &&
+        !TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
+        ZLOGE("permission denied! code:%{public}u", code);
         auto result = static_cast<int32_t>(PERMISSION_DENIED);
         return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
     }
 
-    if (code >= TRANS_HEAD && code < TRANS_ALLOC_RESOURCE_AND_SHARE) {
-        auto permit =
-            DistributedKv::PermissionValidator::GetInstance().IsCloudConfigPermit(IPCSkeleton::GetCallingTokenID());
-        if (!permit) {
-            ZLOGE("cloud config permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
-            auto result = static_cast<int32_t>(CLOUD_CONFIG_PERMISSION_DENIED);
-            return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
-        }
+    if (code >= TRANS_CONFIG_HEAD && code < TRANS_CONFIG_BUTT &&
+        !DistributedKv::PermissionValidator::GetInstance().IsCloudConfigPermit(IPCSkeleton::GetCallingTokenID())) {
+        ZLOGE("cloud config permission denied! code:%{public}u, BUTT:%{public}d", code, TRANS_BUTT);
+        auto result = static_cast<int32_t>(CLOUD_CONFIG_PERMISSION_DENIED);
+        return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
     }
-
-    std::string id;
-    if (!ITypesUtil::Unmarshal(data, id)) {
-        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
-        return IPC_STUB_INVALID_DATA_ERR;
-    }
-    return (this->*HANDLERS[code])(id, data, reply);
+    return (this->*HANDLERS[code])(data, reply);
 }
 
-int32_t CloudServiceStub::OnEnableCloud(const std::string &id, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnEnableCloud(MessageParcel &data, MessageParcel &reply)
 {
+    std::string id;
     std::map<std::string, int32_t> switches;
-    if (!ITypesUtil::Unmarshal(data, switches)) {
+    if (!ITypesUtil::Unmarshal(data, id, switches)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -93,17 +89,23 @@ int32_t CloudServiceStub::OnEnableCloud(const std::string &id, MessageParcel &da
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnDisableCloud(const std::string &id, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnDisableCloud(MessageParcel &data, MessageParcel &reply)
 {
+    std::string id;
+    if (!ITypesUtil::Unmarshal(data, id)) {
+        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     auto result = DisableCloud(id);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnChangeAppSwitch(const std::string &id, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnChangeAppSwitch(MessageParcel &data, MessageParcel &reply)
 {
+    std::string id;
     std::string bundleName;
     int32_t appSwitch = SWITCH_OFF;
-    if (!ITypesUtil::Unmarshal(data, bundleName, appSwitch)) {
+    if (!ITypesUtil::Unmarshal(data, id, bundleName, appSwitch)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -111,10 +113,11 @@ int32_t CloudServiceStub::OnChangeAppSwitch(const std::string &id, MessageParcel
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnClean(const std::string &id, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnClean(MessageParcel &data, MessageParcel &reply)
 {
+    std::string id;
     std::map<std::string, int32_t> actions;
-    if (!ITypesUtil::Unmarshal(data, actions)) {
+    if (!ITypesUtil::Unmarshal(data, id, actions)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -122,10 +125,11 @@ int32_t CloudServiceStub::OnClean(const std::string &id, MessageParcel &data, Me
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnNotifyDataChange(const std::string &id, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnNotifyDataChange(MessageParcel &data, MessageParcel &reply)
 {
+    std::string id;
     std::string bundleName;
-    if (!ITypesUtil::Unmarshal(data, bundleName)) {
+    if (!ITypesUtil::Unmarshal(data, id, bundleName)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -133,13 +137,25 @@ int32_t CloudServiceStub::OnNotifyDataChange(const std::string &id, MessageParce
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnAllocResourceAndShare(const std::string& storeId, MessageParcel& data,
-    MessageParcel& reply)
+int32_t CloudServiceStub::OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply)
 {
+    Strategy strategy;
+    std::vector<CommonType::Value> values;
+    if (!ITypesUtil::Unmarshal(data, strategy, values)) {
+        ZLOGE("Unmarshal strategy:%{public}d, values size:%{public}zu", strategy, values.size());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = SetGlobalCloudStrategy(strategy, values);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnAllocResourceAndShare(MessageParcel &data, MessageParcel &reply)
+{
+    std::string storeId;
     DistributedRdb::PredicatesMemo predicatesMemo;
     std::vector<std::string> columns;
     std::vector<Participant> participants;
-    if (!ITypesUtil::Unmarshal(data, predicatesMemo, columns, participants)) {
+    if (!ITypesUtil::Unmarshal(data, storeId, predicatesMemo, columns, participants)) {
         ZLOGE("Unmarshal storeId:%{public}s", Anonymous::Change(storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -147,22 +163,24 @@ int32_t CloudServiceStub::OnAllocResourceAndShare(const std::string& storeId, Me
     return ITypesUtil::Marshal(reply, status, resultSet) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnNotifyChange(const std::string &id, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnNotifyChange(MessageParcel &data, MessageParcel &reply)
 {
+    std::string eventId;
     std::string extraData;
     int32_t userId;
-    if (!ITypesUtil::Unmarshal(data, extraData, userId)) {
-        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
+    if (!ITypesUtil::Unmarshal(data, eventId, extraData, userId)) {
+        ZLOGE("Unmarshal eventId:%{public}s", Anonymous::Change(eventId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto result = NotifyDataChange(id, extraData, userId);
+    auto result = NotifyDataChange(eventId, extraData, userId);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnShare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnShare(MessageParcel &data, MessageParcel &reply)
 {
+    std::string sharingRes;
     Participants participants;
-    if (!ITypesUtil::Unmarshal(data, participants)) {
+    if (!ITypesUtil::Unmarshal(data, sharingRes, participants)) {
         ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -171,10 +189,11 @@ int32_t CloudServiceStub::OnShare(const std::string &sharingRes, MessageParcel &
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnUnshare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnUnshare(MessageParcel &data, MessageParcel &reply)
 {
+    std::string sharingRes;
     Participants participants;
-    if (!ITypesUtil::Unmarshal(data, participants)) {
+    if (!ITypesUtil::Unmarshal(data, sharingRes, participants)) {
         ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -183,17 +202,23 @@ int32_t CloudServiceStub::OnUnshare(const std::string &sharingRes, MessageParcel
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnExit(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnExit(MessageParcel &data, MessageParcel &reply)
 {
+    std::string sharingRes;
+    if (!ITypesUtil::Unmarshal(data, sharingRes)) {
+        ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     std::pair<int32_t, std::string> result;
     auto status = Exit(sharingRes, result);
     return ITypesUtil::Marshal(reply, status, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnChangePrivilege(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnChangePrivilege(MessageParcel &data, MessageParcel &reply)
 {
+    std::string sharingRes;
     Participants participants;
-    if (!ITypesUtil::Unmarshal(data, participants)) {
+    if (!ITypesUtil::Unmarshal(data, sharingRes, participants)) {
         ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -202,26 +227,35 @@ int32_t CloudServiceStub::OnChangePrivilege(const std::string &sharingRes, Messa
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnQuery(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnQuery(MessageParcel &data, MessageParcel &reply)
 {
+    std::string sharingRes;
+    if (!ITypesUtil::Unmarshal(data, sharingRes)) {
+        ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     QueryResults results;
     auto status = Query(sharingRes, results);
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnQueryByInvitation(
-    const std::string &invitation, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnQueryByInvitation(MessageParcel &data, MessageParcel &reply)
 {
+    std::string invitation;
+    if (!ITypesUtil::Unmarshal(data, invitation)) {
+        ZLOGE("Unmarshal invitation:%{public}s", Anonymous::Change(invitation).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     QueryResults results;
     auto status = QueryByInvitation(invitation, results);
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnConfirmInvitation(
-    const std::string &invitation, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnConfirmInvitation(MessageParcel &data, MessageParcel &reply)
 {
+    std::string invitation;
     int32_t confirmation;
-    if (!ITypesUtil::Unmarshal(data, confirmation)) {
+    if (!ITypesUtil::Unmarshal(data, invitation, confirmation)) {
         ZLOGE("Unmarshal invitation:%{public}s", Anonymous::Change(invitation).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -230,16 +264,28 @@ int32_t CloudServiceStub::OnConfirmInvitation(
     return ITypesUtil::Marshal(reply, status, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
-int32_t CloudServiceStub::OnChangeConfirmation(
-    const std::string &sharingRes, MessageParcel &data, MessageParcel &reply)
+int32_t CloudServiceStub::OnChangeConfirmation(MessageParcel &data, MessageParcel &reply)
 {
+    std::string sharingRes;
     int32_t confirmation;
-    if (!ITypesUtil::Unmarshal(data, confirmation)) {
+    if (!ITypesUtil::Unmarshal(data, sharingRes, confirmation)) {
         ZLOGE("Unmarshal sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     std::pair<int32_t, std::string> result;
     auto status = ChangeConfirmation(sharingRes, confirmation, result);
     return ITypesUtil::Marshal(reply, status, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnSetCloudStrategy(MessageParcel &data, MessageParcel &reply)
+{
+    Strategy strategy;
+    std::vector<CommonType::Value> values;
+    if (!ITypesUtil::Unmarshal(data, strategy, values)) {
+        ZLOGE("Unmarshal strategy:%{public}d, values size:%{public}zu", strategy, values.size());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = SetCloudStrategy(strategy, values);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData

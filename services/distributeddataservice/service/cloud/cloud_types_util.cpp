@@ -74,4 +74,15 @@ bool Unmarshalling(ValuesBucket &output, MessageParcel &data)
 {
     return Unmarshal(data, output.values_);
 }
+
+template<>
+bool Unmarshalling(Strategy &output, MessageParcel &data)
+{
+    uint32_t result;
+    if (!data.ReadUint32(result) || result < Strategy::STRATEGY_HEAD || result >= Strategy::STRATEGY_BUTT) {
+        return false;
+    }
+    output = static_cast<Strategy>(result);
+    return true;
+}
 } // namespace OHOS::ITypesUtil

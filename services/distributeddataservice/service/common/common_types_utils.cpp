@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023 Huawei Device Co., Ltd.
+* Copyright (c) 2024 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -12,15 +12,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef DISTRIBUTEDDATAMGR_OBJECT_TYPES_UTILS_H
-#define DISTRIBUTEDDATAMGR_OBJECT_TYPES_UTILS_H
 
-#include "itypes_util.h"
-#include "object_types.h"
+#include "common_types_utils.h"
+
 namespace OHOS::ITypesUtil {
-
-using AssetBindInfo = OHOS::ObjectStore::AssetBindInfo;
 template<>
-bool Unmarshalling(AssetBindInfo &output, MessageParcel &data);
+bool Marshalling(const Asset &input, MessageParcel &data)
+{
+    return ITypesUtil::Marshal(data, input.name, input.uri, input.path, input.createTime,
+        input.modifyTime, input.size, input.status, input.hash);
 }
-#endif // DISTRIBUTEDDATAMGR_OBJECT_TYPES_UTILS_H
+template<>
+bool Unmarshalling(Asset &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.name, output.uri, output.path, output.createTime,
+        output.modifyTime, output.size, output.status, output.hash);
+}
+}

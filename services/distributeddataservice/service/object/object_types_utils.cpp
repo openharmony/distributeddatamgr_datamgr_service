@@ -22,10 +22,4 @@ bool Unmarshalling(AssetBindInfo &output, MessageParcel &data)
     return ITypesUtil::Unmarshal(data, output.storeName, output.tableName, output.primaryKey, output.field,
         output.assetName);
 }
-template<>
-bool Unmarshalling(Asset &output, MessageParcel &data)
-{
-    return Unmarshal(data, output.name, output.uri, output.path, output.createTime,
-        output.modifyTime, output.size, output.status, output.hash);
-}
 }
