@@ -28,6 +28,7 @@ config("module_public_config") {
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
     "../crypto/include",
+    "../permission/include",
   ]
 }
 group("build_module") {
@@ -44,7 +45,6 @@ ohos_shared_library("data_share_service") {
     "common/app_connect_manager.cpp",
     "common/base64_utils.cpp",
     "common/bundle_mgr_proxy.cpp",
-    "common/data_share_permission.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
     "common/extension_connect_adaptor.cpp",
@@ -57,9 +57,9 @@ ohos_shared_library("data_share_service") {
     "data/published_data.cpp",
     "data/resultset_json_formatter.cpp",
     "data/template_data.cpp",
+    "data_provider_config.cpp",
     "data_share_obs_proxy.cpp",
     "data_share_profile_config.cpp",
-    "data_share_provider_data.cpp",
     "data_share_service_impl.cpp",
     "data_share_service_stub.cpp",
     "data_share_silent_config.cpp",

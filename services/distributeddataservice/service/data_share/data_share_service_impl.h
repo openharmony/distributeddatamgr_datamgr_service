@@ -112,6 +112,7 @@ private:
     bool GetCallerBundleName(std::string &bundleName);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
+    static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;

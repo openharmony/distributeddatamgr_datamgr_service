@@ -37,6 +37,8 @@ public:
     API_EXPORT bool SyncActivate(const ActiveParam &param);
     API_EXPORT bool VerifyPermission(const CheckParam &param, uint8_t flag);
     API_EXPORT void DelCache(const std::string &key);
+    API_EXPORT static bool VerifyPermission(const std::string &permission,
+        uint32_t callerTokenId);
 
 private:
     PermitDelegate();
