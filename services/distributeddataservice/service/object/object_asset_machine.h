@@ -18,6 +18,7 @@
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_MACHINE_H
 
 #include "snapshot/machine_status.h"
+#include "store/store_info.h"
 
 namespace OHOS {
 namespace DistributedObject {

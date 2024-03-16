@@ -25,24 +25,27 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
-    using Handler = int32_t (CloudServiceStub::*)(const std::string &id, MessageParcel &data, MessageParcel &reply);
-    int32_t OnEnableCloud(const std::string &id, MessageParcel &data, MessageParcel &reply);
-    int32_t OnDisableCloud(const std::string &id, MessageParcel &data, MessageParcel &reply);
-    int32_t OnChangeAppSwitch(const std::string &id, MessageParcel &data, MessageParcel &reply);
-    int32_t OnClean(const std::string &id, MessageParcel &data, MessageParcel &reply);
-    int32_t OnNotifyDataChange(const std::string &id, MessageParcel &data, MessageParcel &reply);
-    int32_t OnNotifyChange(const std::string &id, MessageParcel &data, MessageParcel &reply);
-    int32_t OnQueryStatistics(const std::string &id, MessageParcel &data, MessageParcel &reply);
+    using Handler = int32_t (CloudServiceStub::*)(MessageParcel &data, MessageParcel &reply);
+    int32_t OnEnableCloud(MessageParcel &data, MessageParcel &reply);
+    int32_t OnDisableCloud(MessageParcel &data, MessageParcel &reply);
+    int32_t OnChangeAppSwitch(MessageParcel &data, MessageParcel &reply);
+    int32_t OnClean(MessageParcel &data, MessageParcel &reply);
+    int32_t OnNotifyDataChange(MessageParcel &data, MessageParcel &reply);
+    int32_t OnNotifyChange(MessageParcel &data, MessageParcel &reply);
+    int32_t OnQueryStatistics(MessageParcel &data, MessageParcel &reply);
+    int32_t OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply);
 
-    int32_t OnAllocResourceAndShare(const std::string &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnShare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
-    int32_t OnUnshare(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
-    int32_t OnExit(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
-    int32_t OnChangePrivilege(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
-    int32_t OnQuery(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
-    int32_t OnQueryByInvitation(const std::string &invitation, MessageParcel &data, MessageParcel &reply);
-    int32_t OnConfirmInvitation(const std::string &invitation, MessageParcel &data, MessageParcel &reply);
-    int32_t OnChangeConfirmation(const std::string &sharingRes, MessageParcel &data, MessageParcel &reply);
+    int32_t OnAllocResourceAndShare(MessageParcel &data, MessageParcel &reply);
+    int32_t OnShare(MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnshare(MessageParcel &data, MessageParcel &reply);
+    int32_t OnExit(MessageParcel &data, MessageParcel &reply);
+    int32_t OnChangePrivilege(MessageParcel &data, MessageParcel &reply);
+    int32_t OnQuery(MessageParcel &data, MessageParcel &reply);
+    int32_t OnQueryByInvitation(MessageParcel &data, MessageParcel &reply);
+    int32_t OnConfirmInvitation(MessageParcel &data, MessageParcel &reply);
+    int32_t OnChangeConfirmation(MessageParcel &data, MessageParcel &reply);
+
+    int32_t OnSetCloudStrategy(MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[TRANS_BUTT];
 };
 } // namespace OHOS::CloudData

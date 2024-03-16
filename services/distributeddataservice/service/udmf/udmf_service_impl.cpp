@@ -472,6 +472,38 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     return E_OK;
 }
 
+int32_t UdmfServiceImpl::IsRemoteData(const QueryOption &query, bool &result)
+{
+    UnifiedKey key(query.key);
+    if (!key.IsValid()) {
+        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+
+    auto store = StoreCache::GetInstance().GetStore(key.intention);
+    if (store == nullptr) {
+        ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
+        return E_DB_ERROR;
+    }
+
+    UnifiedData unifiedData;
+    if (store->Get(query.key, unifiedData) != E_OK) {
+        ZLOGE("Store get unifiedData failed, intention: %{public}s.", key.intention.c_str());
+        return E_DB_ERROR;
+    }
+    std::shared_ptr<Runtime> runtime = unifiedData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Store get runtime failed, key: %{public}s.", query.key.c_str());
+        return E_DB_ERROR;
+    }
+
+    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+    if (localDeviceId != runtime->deviceId) {
+        result = true;
+    }
+    return E_OK;
+}
+
 int32_t UdmfServiceImpl::OnInitialize()
 {
     ZLOGD("start");

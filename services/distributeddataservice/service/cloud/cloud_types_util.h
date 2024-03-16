@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H
+#include "cloud_types.h"
 #include "itypes_util.h"
 #include "cloud_types.h"
 #include "values_bucket.h"
@@ -29,6 +30,7 @@ using Asset = OHOS::NativeRdb::AssetValue;
 using ValueObject = OHOS::NativeRdb::ValueObject;
 using ValuesBucket = OHOS::NativeRdb::ValuesBucket;
 using StatisticInfo = OHOS::CloudData::StatisticInfo;
+using Strategy = OHOS::CloudData::Strategy;
 
 template<>
 bool Marshalling(const Participant &input, MessageParcel &data);
@@ -57,5 +59,8 @@ template<>
 bool Marshalling(const StatisticInfo &input, MessageParcel &data);
 template<>
 bool Unmarshalling(StatisticInfo &output, MessageParcel &data);
+
+template<>
+bool Unmarshalling(Strategy &output, MessageParcel &data);
 } // namespace OHOS::ITypesUtil
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H

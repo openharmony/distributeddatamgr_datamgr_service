@@ -540,6 +540,9 @@ int32_t KVDBServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
 
 int32_t KVDBServiceImpl::OnReady(const std::string &device)
 {
+    if (device == DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
+        return SUCCESS;
+    }
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {

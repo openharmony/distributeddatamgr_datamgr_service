@@ -23,6 +23,7 @@
 #include "utils/ref_count.h"
 #include "concurrent_map.h"
 #include "cloud/cloud_info.h"
+#include "cloud/sync_strategy.h"
 namespace OHOS::CloudData {
 class SyncManager {
 public:
@@ -76,6 +77,8 @@ private:
     using Duration = ExecutorPool::Duration;
     using Retryer = std::function<bool(Duration interval, int32_t status)>;
     using CloudInfo = DistributedData::CloudInfo;
+    using StoreInfo = DistributedData::StoreInfo;
+    using SyncStrategy = DistributedData::SyncStrategy;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
@@ -98,6 +101,7 @@ private:
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
+    std::shared_ptr<SyncStrategy> syncStrategy_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

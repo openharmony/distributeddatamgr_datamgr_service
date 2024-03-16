@@ -44,6 +44,7 @@ private:
     int32_t OnGetSummary(MessageParcel &data, MessageParcel &reply);
     int32_t OnAddPrivilege(MessageParcel &data, MessageParcel &reply);
     int32_t OnSync(MessageParcel &data, MessageParcel &reply);
+    int32_t OnIsRemoteData(MessageParcel &data, MessageParcel &reply);
 
     using Handler = int32_t (UdmfServiceStub::*)(MessageParcel &data, MessageParcel &reply);
     static constexpr Handler HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)] = {
@@ -54,7 +55,8 @@ private:
         &UdmfServiceStub::OnDeleteData,
         &UdmfServiceStub::OnGetSummary,
         &UdmfServiceStub::OnAddPrivilege,
-        &UdmfServiceStub::OnSync
+        &UdmfServiceStub::OnSync,
+        &UdmfServiceStub::OnIsRemoteData
     };
 };
 } // namespace UDMF

@@ -18,6 +18,7 @@
 
 #include <string>
 #include "eventcenter/event.h"
+#include "store/store_info.h"
 
 namespace OHOS::DistributedData {
 class API_EXPORT CloudEvent : public Event {
@@ -31,15 +32,6 @@ public:
         CLOUD_SHARE,
         MAKE_QUERY,
         CLOUD_BUTT
-    };
-
-    struct StoreInfo {
-        uint32_t tokenId = 0;
-        std::string bundleName;
-        std::string storeName;
-        int32_t instanceId = 0;
-        int32_t user = 0;
-        std::string deviceId;
     };
 
     CloudEvent(int32_t evtId, StoreInfo storeInfo);

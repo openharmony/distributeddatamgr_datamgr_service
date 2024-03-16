@@ -23,6 +23,7 @@
 #include "net_conn_callback_stub.h"
 #include "net_conn_client.h"
 #include "net_handle.h"
+#include "serializable/serializable.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedHardware;
@@ -31,6 +32,19 @@ using namespace OHOS::NetManagerStandard;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
+static DeviceManagerAdapter::NetworkType Convert(NetManagerStandard::NetBearType bearType)
+{
+    switch (bearType) {
+        case NetManagerStandard::BEARER_WIFI:
+            return DeviceManagerAdapter::WIFI;
+        case NetManagerStandard::BEARER_CELLULAR:
+            return DeviceManagerAdapter::CELLULAR;
+        case NetManagerStandard::BEARER_ETHERNET:
+            return DeviceManagerAdapter::ETHERNET;
+        default:
+            return DeviceManagerAdapter::OTHER;
+    }
+}
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
     explicit DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
@@ -98,45 +112,67 @@ private:
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
 {
     ZLOGI("OnNetworkAvailable");
-    dmAdapter_.SetNetAvailable(true);
-    dmAdapter_.Online(dmAdapter_.cloudDmInfo);
     return DistributedKv::SUCCESS;
 }
 
 int32_t NetConnCallbackObserver::NetUnavailable()
 {
     ZLOGI("OnNetworkUnavailable");
-    dmAdapter_.SetNetAvailable(false);
-    return DistributedKv::SUCCESS;
+    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandle,
     const sptr<NetAllCapabilities> &netAllCap)
 {
     ZLOGI("OnNetCapabilitiesChange");
-    return DistributedKv::SUCCESS;
+    if (netHandle == nullptr || netAllCap == nullptr) {
+        return 0;
+    }
+    if (netAllCap->netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) && !netAllCap->bearerTypes_.empty()) {
+        dmAdapter_.SetNet(Convert(*netAllCap->bearerTypes_.begin()));
+    } else {
+        dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
+    }
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &netHandle,
     const sptr<NetLinkInfo> &info)
 {
     ZLOGI("OnNetConnectionPropertiesChange");
-    return DistributedKv::SUCCESS;
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
 {
     ZLOGI("OnNetLost");
-    dmAdapter_.SetNetAvailable(false);
-    dmAdapter_.Offline(dmAdapter_.cloudDmInfo);
-    return DistributedKv::SUCCESS;
+    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
+    return 0;
 }
 
 int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked)
 {
     ZLOGI("OnNetBlockStatusChange");
-    return DistributedKv::SUCCESS;
+    return 0;
 }
+
+struct DeviceExtraInfo final : public Serializable {
+    static constexpr int32_t OH_OS_TYPE = 10;
+
+    int32_t OS_TYPE = OH_OS_TYPE;
+
+    DeviceExtraInfo() {};
+    ~DeviceExtraInfo() {};
+    bool Marshal(json &node) const override
+    {
+        return SetValue(node[GET_NAME(OS_TYPE)], OS_TYPE);
+    };
+    bool Unmarshal(const json &node) override
+    {
+        return GetValue(node, GET_NAME(OS_TYPE), OS_TYPE);
+    };
+};
 
 DeviceManagerAdapter::DeviceManagerAdapter()
     : cloudDmInfo({ "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 })
@@ -217,6 +253,13 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
+    syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
+    if (dvInfo.osType != OH_OS_TYPE) {
+        ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d is not oh device",
+              KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
+        NotifyReadyEvent(dvInfo.uuid);
+        return;
+    }
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
@@ -241,7 +284,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     }
 
     executors_->Schedule(std::chrono::milliseconds(SYNC_TIMEOUT), [this, dvInfo]() {
-        TimeOut(dvInfo.uuid);
+        NotifyReadyEvent(dvInfo.uuid);
     });
 
     for (const auto &item : observers) { // set compatible identify, sync service meta
@@ -254,20 +297,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     }
 }
 
-void DeviceManagerAdapter::TimeOut(const std::string uuid)
-{
-    if (uuid.empty()) {
-        ZLOGE("uuid empty!");
-        return;
-    }
-    if (syncTask_.Contains(uuid) && uuid != CLOUD_DEVICE_UUID) {
-        ZLOGI("[TimeOutReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
-        std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
-        DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
-    }
-    syncTask_.Erase(uuid);
-}
-
 void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
 {
     if (uuid.empty() || !syncTask_.Contains(uuid)) {
@@ -275,6 +304,9 @@ void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
     }
 
     syncTask_.Erase(uuid);
+    if (uuid == CLOUD_DEVICE_UUID) {
+        return;
+    }
     ZLOGI("[NotifyReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
     std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
     DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
@@ -331,6 +363,11 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
+    if (dvInfo.osType != OH_OS_TYPE) {
+        ZLOGW("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d is not oh device",
+              KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
+        return;
+    }
     readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
@@ -357,7 +394,16 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
         ZLOGW("uuid or udid empty");
         return false;
     }
-    dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId };
+    if (uuid == CLOUD_DEVICE_UUID) {
+        dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, OH_OS_TYPE };
+        return true;
+    }
+    DeviceExtraInfo deviceExtraInfo;
+    if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
+        ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
+        return false;
+    }
+    dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE };
     return true;
 }
 
@@ -412,8 +458,16 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
         auto networkId = std::string(dmInfo.networkId);
         auto uuid = GetUuidByNetworkId(networkId);
         auto udid = GetUdidByNetworkId(networkId);
+        DeviceExtraInfo deviceExtraInfo;
+        if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
+            ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
+            continue;
+        }
+        if (deviceExtraInfo.OS_TYPE != OH_OS_TYPE) {
+            continue;
+        }
         DeviceInfo dvInfo = { std::move(uuid), std::move(udid), std::move(networkId),
-                              std::string(dmInfo.deviceName), dmInfo.deviceTypeId };
+                              std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE };
         dvInfos.emplace_back(std::move(dvInfo));
     }
     return dvInfos;
@@ -434,6 +488,16 @@ bool DeviceManagerAdapter::IsDeviceReady(const std::string& id)
 {
     auto it = readyDevices_.Find(id);
     return (it.first && it.second.first == DeviceState::DEVICE_ONREADY);
+}
+
+bool DeviceManagerAdapter::IsOHOsType(const std::string& id)
+{
+    DeviceInfo dvInfo;
+    if (!deviceInfos_.Get(id, dvInfo)) {
+        InitDeviceInfo();
+        return deviceInfos_.Get(id, dvInfo);
+    }
+    return true;
 }
 
 size_t DeviceManagerAdapter::GetOnlineSize()
@@ -501,9 +565,15 @@ DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
     if (uuid.empty()) {
         return {};
     }
-    ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d", KvStoreUtils::ToBeAnonymous(uuid).c_str(),
-        info.deviceName, info.deviceTypeId);
-    return { std::move(uuid), std::move(udid), std::move(networkId), std::string(info.deviceName), info.deviceTypeId };
+    DeviceExtraInfo deviceExtraInfo;
+    if (!DistributedData::Serializable::Unmarshall(info.extraData, deviceExtraInfo)) {
+        ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", info.extraData.c_str());
+        return {};
+    }
+    ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d, osType:%{public}d",
+        KvStoreUtils::ToBeAnonymous(uuid).c_str(), info.deviceName, info.deviceTypeId, deviceExtraInfo.OS_TYPE);
+    return { std::move(uuid), std::move(udid), std::move(networkId), std::string(info.deviceName), info.deviceTypeId,
+        deviceExtraInfo.OS_TYPE };
 }
 
 std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
@@ -619,22 +689,52 @@ bool DeviceManagerAdapter::RegOnNetworkChange()
 
 bool DeviceManagerAdapter::IsNetworkAvailable()
 {
-    {
-        std::shared_lock<decltype(mutex_)> lock(mutex_);
-        if (isNetAvailable_ || expireTime_ > std::chrono::steady_clock::now()) {
-            return isNetAvailable_;
-        }
+    if (defaultNetwork_ != NONE || expireTime_ > GetTimeStamp()) {
+        return defaultNetwork_ != NONE;
     }
-    NetHandle handle;
-    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
-    return SetNetAvailable(status == 0 && handle.GetNetId() != 0);
+    return RefreshNet() != NONE;
 }
 
-bool DeviceManagerAdapter::SetNetAvailable(bool isNetAvailable)
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::SetNet(NetworkType netWorkType)
 {
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
-    isNetAvailable_ = isNetAvailable;
-    expireTime_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(EFFECTIVE_DURATION);
-    return isNetAvailable_;
+    auto oldNet = defaultNetwork_;
+    bool ready = oldNet == NONE && netWorkType != NONE && (GetTimeStamp() - netLostTime_) > NET_LOST_DURATION;
+    bool offline = oldNet != NONE && netWorkType == NONE;
+    if (offline) {
+        netLostTime_ = GetTimeStamp();
+    }
+    defaultNetwork_ = netWorkType;
+    expireTime_ = GetTimeStamp() + EFFECTIVE_DURATION;
+    if (ready) {
+        OnReady(cloudDmInfo);
+    }
+    if (offline) {
+        Offline(cloudDmInfo);
+    }
+    return netWorkType;
+}
+
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::GetNetworkType(bool retrieve)
+{
+    if (!retrieve) {
+        return defaultNetwork_;
+    }
+    return RefreshNet();
+}
+
+DeviceManagerAdapter::NetworkType DeviceManagerAdapter::RefreshNet()
+{
+    NetHandle handle;
+    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
+    if (status != 0 || handle.GetNetId() == 0) {
+        return SetNet(NONE);
+    }
+    NetAllCapabilities capabilities;
+    status = NetConnClient::GetInstance().GetNetCapabilities(handle, capabilities);
+    if (status != 0 || !capabilities.netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) ||
+        capabilities.bearerTypes_.empty()) {
+        return SetNet(NONE);
+    }
+    return SetNet(Convert(*capabilities.bearerTypes_.begin()));
 }
 } // namespace OHOS::DistributedData

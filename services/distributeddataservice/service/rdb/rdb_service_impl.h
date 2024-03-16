@@ -43,7 +43,7 @@ public:
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     using DetailAsync = DistributedData::GeneralStore::DetailAsync;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
-    using StoreInfo = DistributedData::CloudEvent::StoreInfo;
+    using StoreInfo = DistributedData::StoreInfo;
     RdbServiceImpl();
     virtual ~RdbServiceImpl();
 

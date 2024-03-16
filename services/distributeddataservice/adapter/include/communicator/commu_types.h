@@ -26,13 +26,7 @@ struct API_EXPORT DeviceInfo {
     std::string networkId;
     std::string deviceName;
     uint32_t deviceType;
-};
-
-enum DeviceType {
-    SMART_WATCH,
-    KID_WATCH,
-    PHONE,
-    OTHERS,
+    int32_t osType;
 };
 
 enum RouteType : int32_t {

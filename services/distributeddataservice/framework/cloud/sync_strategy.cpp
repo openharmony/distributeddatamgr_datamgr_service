@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#include "cloud/cloud_event.h"
-
+#include "cloud/sync_strategy.h"
 namespace OHOS::DistributedData {
-CloudEvent::CloudEvent(int32_t evtId, StoreInfo storeInfo)
-    : Event(evtId), storeInfo_(std::move(storeInfo))
+int32_t SyncStrategy::CheckSyncAction(const StoreInfo& storeInfo)
 {
+    return 0;
 }
 
-const StoreInfo& CloudEvent::GetStoreInfo() const
+std::shared_ptr<SyncStrategy> SyncStrategy::SetNext(std::shared_ptr<SyncStrategy> next)
 {
-    return storeInfo_;
+    next_ = next;
+    return next_;
 }
 }

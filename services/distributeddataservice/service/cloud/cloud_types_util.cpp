@@ -80,9 +80,20 @@ bool Marshalling(const StatisticInfo &input, MessageParcel &data)
 {
     return ITypesUtil::Marshal(data, input.table, input.inserted, input.updated, input.normal);
 }
+
 template<>
 bool Unmarshalling(StatisticInfo &output, MessageParcel &data)
 {
     return ITypesUtil::Unmarshal(data, output.table, output.inserted, output.updated, output.normal);
+}
+
+bool Unmarshalling(Strategy &output, MessageParcel &data)
+{
+    uint32_t result;
+    if (!data.ReadUint32(result) || result < Strategy::STRATEGY_HEAD || result >= Strategy::STRATEGY_BUTT) {
+        return false;
+    }
+    output = static_cast<Strategy>(result);
+    return true;
 }
 } // namespace OHOS::ITypesUtil

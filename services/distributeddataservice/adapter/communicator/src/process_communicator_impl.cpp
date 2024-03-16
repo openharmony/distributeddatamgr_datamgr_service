@@ -142,20 +142,6 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     return DBStatus::OK;
 }
 
-DeviceType ProcessCommunicatorImpl::GetDeviceType(int32_t deviceType)
-{
-    switch (deviceType) {
-        case 0x06D:  // SMART_WATCH
-        case 0x0A1:  // SMART_WATCH
-            return SMART_WATCH;
-        case 0x085:  // KID_WATCH
-        case 0x0A3:  // KID_WATCH
-            return KID_WATCH;
-        default:
-            return OTHERS;
-    }
-}
-
 uint32_t ProcessCommunicatorImpl::GetMtuSize()
 {
     return MTU_SIZE;
