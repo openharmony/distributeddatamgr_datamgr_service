@@ -443,14 +443,14 @@ std::pair<int32_t, std::map<std::string, StatisticInfos>> CloudServiceImpl::Quer
 int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
     if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
-        ZLOGE("invalid strategy:%{public}d, values size:%{public}zu", strategy, values.size());
-        return ERROR;
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     HapInfo hapInfo;
     hapInfo.user = Account::GetInstance()->GetUserByToken(tokenId);
     if (hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
-        ZLOGE("invalid user:%{public}d, strategy:%{public}d, values size:%{public}zu", hapInfo.user, strategy,
+        ZLOGE("invalid user:%{public}d, strategy:%{public}d, size:%{public}zu", hapInfo.user, strategy,
             values.size());
         return ERROR;
     }
@@ -1184,8 +1184,8 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
 int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
     if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
-        ZLOGE("invalid strategy:%{public}d, values size:%{public}zu", strategy, values.size());
-        return ERROR;
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto hapInfo = GetHapInfo(tokenId);
@@ -1208,7 +1208,7 @@ int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Valu
     }
     for (auto &value : values) {
         auto strategy = std::get_if<int64_t>(&value);
-        if (strategy) {
+        if (strategy != nullptr) {
             info.strategy |= static_cast<int32_t>(*strategy);
         }
     }
