@@ -387,28 +387,30 @@ int32_t DataShareServiceStub::OnRemoteRegisterObserver(MessageParcel &data, Mess
     std::string uri;
     sptr<IRemoteObject> remoteObj;
     if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
-        ZLOGE("Unmarshalling uri is nullptr");
+        ZLOGE("Unmarshal failed,uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = RegisterObserver(uri, remoteObj);
     if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status:0x%{public}x failed.", status);
+        ZLOGE("Marshal failed,status:0x%{public}x,uri:%{public}s", status,
+            DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return E_OK;
 }
 
-int32_t DataShareServiceStub::OnRemoteUnRegisterObserver(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteUnregisterObserver(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     sptr<IRemoteObject> remoteObj;
     if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
-        ZLOGE("Unmarshalling uri is nullptr");
+        ZLOGE("Unmarshal failed,uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = UnRegisterObserver(uri, remoteObj);
+    int32_t status = UnregisterObserver(uri, remoteObj);
     if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status:0x%{public}x failed.", status);
+        ZLOGE("Marshal failed,status:0x%{public}x,uri:%{public}s", status,
+            DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return E_OK;

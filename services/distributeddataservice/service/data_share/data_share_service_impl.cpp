@@ -23,7 +23,8 @@
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "data_ability_observer_interface.h"
-#include "data_share_pre_process.h"
+#include "data_share_permission.h"
+#include "data_share_provider_data.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
@@ -629,26 +630,33 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
         ZLOGE("ObServer is nullptr, uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERR_INVALID_VALUE;
     }
-    auto calledInfo = std::make_shared<CalledInfo>(uri);
-    DataSharePreProcess preProcess;
-    auto ret = preProcess.RegisterObserverProcess(calledInfo);
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    ProviderInfo providerInfo(uri, callerTokenId);
+    DataShareProvider dataShareProvider;
+    auto ret = dataShareProvider.GetProviderInfo(providerInfo);
     if (ret != E_OK) {
-        ZLOGE("Register Observer Process failed, ret: %{public}d, uri: %{public}s", ret,
-            DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
+                ret, DistributedData::Anonymous::Change(providerInfo.uri).c_str());
         return ret;
+    }
+    if (!DataSharePermission::VerifyPermission(providerInfo.readPermission,
+        callerTokenId, providerInfo.isProxyUri)) {
+        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
+                callerTokenId, providerInfo.readPermission.c_str(),
+                DistributedData::Anonymous::Change(providerInfo.uri).c_str());
+        return ERR_PERMISSION_DENIED;
     }
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
     if (obsMgrClient == nullptr) {
-        ZLOGE("Get DataObsMgrClient failed");
         return ERROR;
     }
     ret = obsMgrClient->RegisterObserver(Uri(uri), obServer);
-    ZLOGI("Register observer ret: %{public}d, uri: %{public}s", ret,
-        DistributedData::Anonymous::Change(uri).c_str());
+    ZLOGI("Register observer ret: %{public}d,callerTokenId:%{public}d,uri: %{public}s", ret,
+        callerTokenId, DistributedData::Anonymous::Change(uri).c_str());
     return ret;
 }
 
-int32_t DataShareServiceImpl::UnRegisterObserver(const std::string &uri,
+int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     const sptr<OHOS::IRemoteObject> &remoteObj)
 {
     auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
@@ -656,22 +664,29 @@ int32_t DataShareServiceImpl::UnRegisterObserver(const std::string &uri,
         ZLOGE("ObServer is nullptr, uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERR_INVALID_VALUE;
     }
-    auto calledInfo = std::make_shared<CalledInfo>(uri);
-    DataSharePreProcess preProcess;
-    auto ret = preProcess.RegisterObserverProcess(calledInfo);
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    ProviderInfo providerInfo(uri, callerTokenId);
+    DataShareProvider dataShareProvider;
+    auto ret = dataShareProvider.GetProviderInfo(providerInfo);
     if (ret != E_OK) {
-        ZLOGE("UnRegister Observer Process failed, ret: %{public}d, uri: %{public}s", ret,
-            DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
+                ret, DistributedData::Anonymous::Change(providerInfo.uri).c_str());
         return ret;
+    }
+    if (!DataSharePermission::VerifyPermission(providerInfo.readPermission,
+        callerTokenId, providerInfo.isProxyUri)) {
+        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
+                callerTokenId, providerInfo.readPermission.c_str(),
+                DistributedData::Anonymous::Change(providerInfo.uri).c_str());
+        return ERR_PERMISSION_DENIED;
     }
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
     if (obsMgrClient == nullptr) {
-        ZLOGE("Get DataObsMgrClient failed");
         return ERROR;
     }
     ret = obsMgrClient->UnregisterObserver(Uri(uri), obServer);
-    ZLOGI("UnRegister observer ret: %{public}d, uri: %{public}s", ret,
-        DistributedData::Anonymous::Change(uri).c_str());
+    ZLOGI("Unregister observer ret: %{public}d, callerTokenId:%{public}d,uri: %{public}s", ret,
+        callerTokenId, DistributedData::Anonymous::Change(uri).c_str());
     return ret;
 }
 } // namespace OHOS::DataShare

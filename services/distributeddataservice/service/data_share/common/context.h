@@ -56,17 +56,5 @@ public:
     OHOS::AppExecFwk::BundleInfo bundleInfo;
     std::string type = "rdb";
 };
-class CalledInfo {
-public:
-    CalledInfo() = default;
-    explicit CalledInfo(const std::string &uri) : uri(uri) {}
-    virtual ~CalledInfo() = default;
-    std::string uri;
-    int32_t currentUserId = -1;
-    std::string bundleName;
-    std::string moduleName;
-    std::string storeName;
-    std::string tableName;
-};
 } // namespace OHOS::DataShare
 #endif

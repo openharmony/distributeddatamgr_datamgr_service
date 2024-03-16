@@ -110,11 +110,4 @@ void URIUtils::FormatUri(std::string &uri)
 
     uri.resize(pos);
 }
-
-void URIUtils::RemoveUriPrefix(const std::string &prefix, std::string &str)
-{
-    if (str.substr(0, prefix.size()) == prefix) {
-        str = str.substr(prefix.size());
-    }
-}
 } // namespace OHOS::DataShare
