@@ -34,6 +34,7 @@
 #include "metadata/meta_data_manager.h"
 #include "rdb_cloud_data_translate.h"
 #include "rdb_types.h"
+#include "relational_store_manager.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
@@ -325,17 +326,131 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
     return SUCCESS;
 }
 
+std::map<std::string, StatisticInfos> CloudServiceImpl::ExecuteStatistics(const std::string &storeId,
+    const CloudInfo &cloudInfo, const SchemaMeta &schemaMeta)
+{
+    std::map<std::string, StatisticInfos> result;
+    for (auto& database : schemaMeta.databases) {
+        if (storeId.empty() || database.alias == storeId) {
+            StoreMetaData meta;
+            meta.bundleName = schemaMeta.bundleName;
+            meta.storeId = database.name;
+            meta.user = std::to_string(cloudInfo.user);
+            meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+            auto it = cloudInfo.apps.find(schemaMeta.bundleName);
+            if (it == cloudInfo.apps.end()) {
+                ZLOGE("bundleName:%{public}s is not exist", schemaMeta.bundleName.c_str());
+                break;
+            }
+            meta.instanceId = it->second.instanceId;
+            MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+            result.insert_or_assign(database.alias, QueryStatistics(meta, database));
+        }
+    }
+    return result;
+}
+
+StatisticInfos CloudServiceImpl::QueryStatistics(const StoreMetaData &storeMetaData,
+    const DistributedData::Database &database)
+{
+    std::vector<StatisticInfo> infos;
+    auto store = AutoCache::GetInstance().GetStore(storeMetaData, {});
+    if (store == nullptr) {
+        ZLOGE("store failed, store is nullptr,bundleName:%{public}s",
+            Anonymous::Change(storeMetaData.bundleName).c_str());
+        return infos;
+    }
+    infos.reserve(database.tables.size());
+    for (auto& table : database.tables) {
+        auto [success, info] = QueryTableStatistic(table.name, store);
+        if (success) {
+            info.table = table.alias;
+            infos.push_back(std::move(info));
+        }
+    }
+    return infos;
+}
+
+std::pair<bool, StatisticInfo> CloudServiceImpl::QueryTableStatistic(const std::string &tableName,
+    AutoCache::Store store)
+{
+    StatisticInfo info;
+    auto sql = BuildStatisticSql(tableName);
+    auto cursor = store->Query(tableName, sql, {});
+    if (cursor == nullptr || cursor->GetCount() != 1 || cursor->MoveToFirst() != E_OK) {
+        ZLOGE("query failed, cursor is nullptr or move to first failed,tableName:%{public}s",
+            Anonymous::Change(tableName).c_str());
+        return { false, info };
+    }
+    DistributedData::VBucket entry;
+    if (cursor->GetEntry(entry) != E_OK) {
+        ZLOGE("get entry failed,tableName:%{public}s", Anonymous::Change(tableName).c_str());
+        return { false, info };
+    }
+    auto it = entry.find("inserted");
+    if (it != entry.end() && it->second.index() == TYPE_INDEX<int64_t>) {
+        info.inserted = std::get<int64_t>(it->second);
+    }
+    it = entry.find("updated");
+    if (it != entry.end() && it->second.index() == TYPE_INDEX<int64_t>) {
+        info.updated = std::get<int64_t>(it->second);
+    }
+    it = entry.find("normal");
+    if (it != entry.end() && it->second.index() == TYPE_INDEX<int64_t>) {
+        info.normal = std::get<int64_t>(it->second);
+    }
+    return { true, info };
+}
+
+std::string CloudServiceImpl::BuildStatisticSql(const std::string &tableName)
+{
+    std::string logTable = DistributedDB::RelationalStoreManager::GetDistributedLogTableName(tableName);
+    std::string sql = "select ";
+    sql.append("count(case when cloud_gid = '' and flag&(0x1|0x8|0x20) = 0x20 then 1 end) as inserted,");
+    sql.append("count(case when cloud_gid <> '' and flag&0x20 != 0  then 1 end) as updated,");
+    sql.append("count(case when cloud_gid <> '' and flag&(0x1|0x8|0x20) = 0 then 1 end) as normal");
+    sql.append(" from ").append(logTable);
+
+    return sql;
+}
+
+std::pair<int32_t, std::map<std::string, StatisticInfos>> CloudServiceImpl::QueryStatistics(const std::string &id,
+    const std::string &bundleName, const std::string &storeId)
+{
+    std::map<std::string, StatisticInfos> result;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+    if (status != SUCCESS) {
+        ZLOGE("get cloud meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
+        return { ERROR, result };
+    }
+    if (id != cloudInfo.id || bundleName.empty() || cloudInfo.apps.find(bundleName) == cloudInfo.apps.end()) {
+        ZLOGE("[server] id:%{public}s, [meta] id:%{public}s, bundleName:%{public}s",
+            Anonymous::Change(cloudInfo.id).c_str(), Anonymous::Change(id).c_str(), bundleName.c_str());
+        return { ERROR, result };
+    }
+    SchemaMeta schemaMeta;
+    std::string schemaKey = cloudInfo.GetSchemaKey(bundleName);
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        ZLOGE("get load meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
+        return { ERROR, result };
+    }
+    result = ExecuteStatistics(storeId, cloudInfo, schemaMeta);
+    return { SUCCESS, result };
+}
+
 int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
     if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
-        ZLOGE("invalid strategy:%{public}d, values size:%{public}zu", strategy, values.size());
-        return ERROR;
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     HapInfo hapInfo;
     hapInfo.user = Account::GetInstance()->GetUserByToken(tokenId);
     if (hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
-        ZLOGE("invalid user:%{public}d, strategy:%{public}d, values size:%{public}zu", hapInfo.user, strategy,
+        ZLOGE("invalid user:%{public}d, strategy:%{public}d, size:%{public}zu", hapInfo.user, strategy,
             values.size());
         return ERROR;
     }
@@ -1069,8 +1184,8 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
 int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
     if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
-        ZLOGE("invalid strategy:%{public}d, values size:%{public}zu", strategy, values.size());
-        return ERROR;
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto hapInfo = GetHapInfo(tokenId);
@@ -1093,7 +1208,7 @@ int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Valu
     }
     for (auto &value : values) {
         auto strategy = std::get_if<int64_t>(&value);
-        if (strategy) {
+        if (strategy != nullptr) {
             info.strategy |= static_cast<int32_t>(*strategy);
         }
     }

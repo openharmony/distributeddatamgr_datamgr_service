@@ -41,6 +41,8 @@ public:
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
     int32_t NotifyDataChange(const std::string& eventId, const std::string& extraData, int32_t userId) override;
+    std::pair<int32_t, std::map<std::string, StatisticInfos>> QueryStatistics(const std::string &id,
+        const std::string &bundleName, const std::string &storeId) override;
     int32_t SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value>& values) override;
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string& storeId,
@@ -93,6 +95,7 @@ private:
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
+    using AutoCache = DistributedData::AutoCache;
 
     struct HapInfo {
         int32_t user;
@@ -124,6 +127,11 @@ private:
 
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
+    std::map<std::string, StatisticInfos> ExecuteStatistics(const std::string &storeId, const CloudInfo &cloudInfo,
+        const SchemaMeta &schemaMeta);
+    StatisticInfos QueryStatistics(const StoreMetaData &storeMetaData, const DistributedData::Database &database);
+    std::pair<bool, StatisticInfo> QueryTableStatistic(const std::string &tableName, AutoCache::Store store);
+    std::string BuildStatisticSql(const std::string &tableName);
 
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);

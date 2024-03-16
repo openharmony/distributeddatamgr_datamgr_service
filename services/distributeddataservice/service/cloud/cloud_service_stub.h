@@ -32,6 +32,7 @@ private:
     int32_t OnClean(MessageParcel &data, MessageParcel &reply);
     int32_t OnNotifyDataChange(MessageParcel &data, MessageParcel &reply);
     int32_t OnNotifyChange(MessageParcel &data, MessageParcel &reply);
+    int32_t OnQueryStatistics(MessageParcel &data, MessageParcel &reply);
     int32_t OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply);
 
     int32_t OnAllocResourceAndShare(MessageParcel &data, MessageParcel &reply);

@@ -16,7 +16,7 @@
 #include "cloud_service_stub.h"
 
 #include "ipc_skeleton.h"
-#include "itypes_util.h"
+#include "cloud_types_util.h"
 #include "log_print.h"
 #include "permission/permission_validator.h"
 #include "rdb_types.h"
@@ -32,6 +32,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnClean,
     &CloudServiceStub::OnNotifyDataChange,
     &CloudServiceStub::OnNotifyChange,
+    &CloudServiceStub::OnQueryStatistics,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnAllocResourceAndShare,
     &CloudServiceStub::OnShare,
@@ -174,6 +175,19 @@ int32_t CloudServiceStub::OnNotifyChange(MessageParcel &data, MessageParcel &rep
     }
     auto result = NotifyDataChange(eventId, extraData, userId);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnQueryStatistics(MessageParcel &data, MessageParcel &reply)
+{
+    std::string id;
+    std::string bundleName;
+    std::string storeId;
+    if (!ITypesUtil::Unmarshal(data, id, bundleName, storeId)) {
+        ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto result = QueryStatistics(id, bundleName, storeId);
+    return ITypesUtil::Marshal(reply, result.first, result.second) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
 int32_t CloudServiceStub::OnShare(MessageParcel &data, MessageParcel &reply)
