@@ -87,6 +87,7 @@ bool Unmarshalling(StatisticInfo &output, MessageParcel &data)
     return ITypesUtil::Unmarshal(data, output.table, output.inserted, output.updated, output.normal);
 }
 
+template<>
 bool Unmarshalling(Strategy &output, MessageParcel &data)
 {
     uint32_t result;
