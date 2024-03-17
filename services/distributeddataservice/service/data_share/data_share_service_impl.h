@@ -81,6 +81,8 @@ public:
     int32_t OnInitialize() override;
     int32_t EnableSilentProxy(const std::string &uri, bool enable) override;
     bool IsSilentProxyEnable(const std::string &uri) override;
+    int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
+    int32_t UnregisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -110,6 +112,7 @@ private:
     bool GetCallerBundleName(std::string &bundleName);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
+    static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;

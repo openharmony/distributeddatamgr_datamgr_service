@@ -29,6 +29,8 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/service/data_share/strategies",
     "${data_service_path}/service/data_share/subscriber_managers",
     "${data_service_path}/service/data_share",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/permission/include",
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
@@ -62,6 +64,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/service/data_share/data/published_data.cpp",
     "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
     "${data_service_path}/service/data_share/data/template_data.cpp",
+    "${data_service_path}/service/data_share/data_provider_config.cpp",
     "${data_service_path}/service/data_share/data_share_obs_proxy.cpp",
     "${data_service_path}/service/data_share/data_share_profile_config.cpp",
     "${data_service_path}/service/data_share/data_share_service_impl.cpp",
@@ -90,6 +93,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/service/data_share/strategies/update_strategy.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
+    "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "datashareservicestub_fuzzer.cpp",
   ]
 
