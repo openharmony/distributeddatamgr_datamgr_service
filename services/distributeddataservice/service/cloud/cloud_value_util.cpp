@@ -50,6 +50,8 @@ SharingCfm Convert(const Confirmation &cfm)
             return SharingCfm::CFM_REJECTED;
         case Confirmation::CFM_SUSPENDED:
             return SharingCfm::CFM_SUSPENDED;
+        case Confirmation::CFM_UNAVAILABLE:
+            return SharingCfm::CFM_UNAVAILABLE;
         default:
             break;
     }
@@ -78,6 +80,8 @@ Confirmation Convert(const SharingCfm &cfm)
             return Confirmation::CFM_REJECTED;
         case SharingCfm::CFM_SUSPENDED:
             return Confirmation::CFM_SUSPENDED;
+        case SharingCfm::CFM_UNAVAILABLE:
+            return Confirmation::CFM_UNAVAILABLE;
         default:
             break;
     }
