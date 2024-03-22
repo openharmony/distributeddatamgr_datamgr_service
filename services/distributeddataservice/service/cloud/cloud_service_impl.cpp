@@ -1209,7 +1209,7 @@ int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Valu
     for (auto &value : values) {
         auto strategy = std::get_if<int64_t>(&value);
         if (strategy != nullptr) {
-            info.strategy |= static_cast<int32_t>(*strategy);
+            info.strategy |= static_cast<uint32_t>(*strategy);
         }
     }
     return MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true) ? SUCCESS : ERROR;
