@@ -452,7 +452,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.account = accountId;
     saveMeta.tokenId = binderInfo.selfTokenId;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-    saveMeta.area = 1;
+    saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
