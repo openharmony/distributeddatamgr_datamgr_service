@@ -55,7 +55,7 @@ private:
 
     static constexpr int32_t INVALID_SOCKET_ID = -1;
     static constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
-    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
+    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096 * 1024u;
     static constexpr Duration BR_CLOSE_DELAY = std::chrono::seconds(5);
     static constexpr Duration HML_CLOSE_DELAY = std::chrono::seconds(3);
     static constexpr Duration MAX_DELAY = std::chrono::seconds(60 * 60 * 24 * 365);
