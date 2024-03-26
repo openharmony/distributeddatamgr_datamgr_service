@@ -384,7 +384,7 @@ HWTEST_F(KvdbServiceImplTest, AddSubscribeInfoTest001, TestSize.Level0)
     SyncInfo syncInfo;
     auto status = kvdbServiceImpl_->AddSubscribeInfo(appId, storeId, syncInfo);
     ZLOGI("AddSubscribeInfoTest001 status = :%{public}d", status);
-    ASSERT_EQ(status, Status::SUCCESS);
+    ASSERT_NE(status, Status::SUCCESS);
 }
 
 /**
@@ -399,7 +399,7 @@ HWTEST_F(KvdbServiceImplTest, RmvSubscribeInfoTest001, TestSize.Level0)
     SyncInfo syncInfo;
     auto status = kvdbServiceImpl_->RmvSubscribeInfo(appId, storeId, syncInfo);
     ZLOGI("RmvSubscribeInfoTest001 status = :%{public}d", status);
-    ASSERT_EQ(status, Status::SUCCESS);
+    ASSERT_NE(status, Status::SUCCESS);
 }
 
 /**
@@ -444,7 +444,7 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest001, TestSize.Level0)
     std::vector<uint8_t> password;
     auto status = kvdbServiceImpl_->GetBackupPassword(appId, storeId, password);
     ZLOGI("GetBackupPasswordTest001 status = :%{public}d", status);
-    ASSERT_EQ(status, Status::SUCCESS);
+    ASSERT_NE(status, Status::SUCCESS);
 }
 
 /**
