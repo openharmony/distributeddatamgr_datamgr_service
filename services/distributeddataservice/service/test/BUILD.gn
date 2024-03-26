@@ -37,6 +37,18 @@ config("module_private_config") {
     "../../adapter/include",
     "../data_share/",
     "../permission/include",
+    "../data_share",
+    "../data_share/common",
+    "../data_share/data",
+    "../data_share/strategies",
+    "../data_share/strategies/data_proxy",
+    "../data_share/strategies/data_share",
+    "../data_share/strategies/general",
+    "../data_share/subscriber_managers",
+    "${datashare_path}/frameworks/native/common/include",
+    "${datashare_path}/interfaces/inner_api/common/include",
+    "${datashare_path}/interfaces/inner_api/consumer/include",
+    "//third_party/json/single_include",
   ]
 
   defines = [
@@ -437,12 +449,13 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/data_share/data",
     "${data_service_path}/service/data_share/strategies",
+    "${data_service_path}/service/data_share/strategies/data_proxy",
+    "${data_service_path}/service/data_share/strategies/data_share",
+    "${data_service_path}/service/data_share/strategies/general",
     "${data_service_path}/service/data_share/subscriber_managers",
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
-    "../crypto/include",
-    "../permission/include",
     "//third_party/json/single_include",
   ]
 

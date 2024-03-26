@@ -33,8 +33,6 @@
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
 #include "hap_token_info.h"
-#include "ipc_skeleton.h"
-#include "log_print.h"
 #include "matching_skills.h"
 #include "permit_delegate.h"
 #include "scheduler_manager.h"
@@ -45,6 +43,10 @@
 using namespace testing::ext;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using namespace OHOS::DataShare;
+
+std::string DATA_SHARE_PROXY_URI = "datashareproxy://com.acts.ohos.data.datasharetest/test";
+std::string TBL_NAME0 = "name0";
+
 namespace OHOS::Test {
 class DataShareServiceImplTest : public testing::Test {
 public:
@@ -66,7 +68,9 @@ HWTEST_F(DataShareServiceImplTest, Insert001, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = "";
-    DataShareValuesBucket valuesBucket = {"key1": "value1", "key2": "value2"};
+    DataShare::DataShareValuesBucket valuesBucket;
+    std::string name0 = "wang";
+    valuesBucket.Put(TBL_NAME0, name0);
     auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
     EXPECT_EQ(result, ERROR);
 }
@@ -80,8 +84,8 @@ HWTEST_F(DataShareServiceImplTest, Insert001, TestSize.Level1)
 HWTEST_F(DataShareServiceImplTest, Insert002, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = "test_uri";
-    DataShareValuesBucket valuesBucket = {};
+    std::string uri = DATA_SHARE_PROXY_URI;
+    DataShare::DataShareValuesBucket valuesBucket;
     auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
     EXPECT_EQ(result, false);
 }
@@ -95,39 +99,30 @@ HWTEST_F(DataShareServiceImplTest, Insert002, TestSize.Level1)
 HWTEST_F(DataShareServiceImplTest, Insert003, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = "test_uri";
-    DataShareValuesBucket valuesBucket = {"key1": "value1", "key2": "value2"};
+    std::string uri = DATA_SHARE_PROXY_URI;
+    DataShare::DataShareValuesBucket valuesBucket;
+    std::string name0 = "wang";
+    valuesBucket.Put(TBL_NAME0, name0);
     auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
     EXPECT_EQ(result, false);
 }
 
 /**
-* @tc.name: NotifyChange001
+* @tc.name: Update001
 * @tc.desc:
 * @tc.type: FUNC
 * @tc.require:SQL
 */
-HWTEST_F(DataShareServiceImplTest, NotifyChange001, TestSize.Level1)
+HWTEST_F(DataShareServiceImplTest, Update001, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = "";
-    auto result = dataShareServiceImpl.NotifyChange(uri);
+    std::string uri = DATA_SHARE_PROXY_URI;
+    DataShare::DataSharePredicates predicates;
+    predicates.EqualTo(TBL_NAME0, "wang");
+    DataShare::DataShareValuesBucket valuesBucket;
+    std::string name0 = "wang";
+    valuesBucket.Put(TBL_NAME0, name0);
+    auto result = dataShareServiceImpl.Update(uri, predicates ,valuesBucket);
     EXPECT_EQ(result, false);
 }
-
-/**
-* @tc.name: NotifyChange002
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, NotifyChange002, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = "test_uri";
-    auto result = dataShareServiceImpl.NotifyChange(uri);
-    EXPECT_EQ(result, true);
-}
-
-
 } // namespace OHOS::Test
