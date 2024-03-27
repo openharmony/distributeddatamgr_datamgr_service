@@ -32,4 +32,4 @@ private:
     SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_DELETE_STRAGETY_H

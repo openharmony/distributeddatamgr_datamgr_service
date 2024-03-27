@@ -33,4 +33,4 @@ private:
     sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_EXTENSION_CONNECT_ADAPTOR_H

@@ -27,4 +27,4 @@ public:
     ProcessSingleAppUserCrossStrategy();
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_PROCESS_SINGLE_APP_USER_CROSS_STRAGETY_H

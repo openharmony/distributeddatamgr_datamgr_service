@@ -35,4 +35,4 @@ private:
     bool CheckPermission(std::shared_ptr<Context> context, const std::string &key);
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_GET_DATA_STRAGETY_H

@@ -77,4 +77,4 @@ private:
 };
 } // namespace DataShare
 } // namespace OHOS
-#endif
+#endif // DATASHARESERVICE_DATA_SHARE_SERVICE_STUB_H

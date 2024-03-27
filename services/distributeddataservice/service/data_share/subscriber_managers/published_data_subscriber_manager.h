@@ -72,4 +72,4 @@ private:
     ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_PUBLISHED_DATA_SUBSCRIBER_MANAGER_H

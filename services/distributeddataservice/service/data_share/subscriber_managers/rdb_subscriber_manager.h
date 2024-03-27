@@ -83,4 +83,4 @@ private:
     void SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes);
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_RDB_SUBSCRIBER_MANAGER_H

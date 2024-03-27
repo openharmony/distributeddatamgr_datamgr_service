@@ -23,4 +23,4 @@ public:
     bool operator()(std::shared_ptr<Context> context) override;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_EMPTY_STRAGETY_H

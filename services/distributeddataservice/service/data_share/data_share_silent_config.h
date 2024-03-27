@@ -37,4 +37,4 @@ private:
     int CheckExistEnableSilentUris(uint32_t callerTokenId, const std::string &uri, bool &isEnable);
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_DATA_SHARE_SILENT_CONFIG_H

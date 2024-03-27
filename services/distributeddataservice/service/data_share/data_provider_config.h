@@ -58,4 +58,4 @@ private:
     ProviderInfo providerInfo_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_DATA_PROVIDER_CONFIG_H

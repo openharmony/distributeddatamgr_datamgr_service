@@ -127,4 +127,4 @@ private:
     DataShareSilentConfig dataShareSilentConfig_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_DATA_SERVICE_IMPL_H
