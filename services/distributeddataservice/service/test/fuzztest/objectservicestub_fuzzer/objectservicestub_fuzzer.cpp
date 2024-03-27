@@ -28,7 +28,7 @@ using namespace OHOS::DistributedObject;
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedObject.IObjectService";
 constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = 4;
+constexpr uint32_t CODE_MAX = static_cast<uint32_t>(ObjectCode::OBJECTSTORE_SERVICE_CMD_MAX) + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 

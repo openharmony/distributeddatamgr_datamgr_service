@@ -28,7 +28,7 @@ using namespace OHOS::UDMF;
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
 constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = 10;
+constexpr uint32_t CODE_MAX = static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT) + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
