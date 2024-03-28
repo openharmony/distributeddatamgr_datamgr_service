@@ -24,6 +24,8 @@
 #include "concurrent_map.h"
 #include "cloud/cloud_info.h"
 #include "cloud/sync_strategy.h"
+#include "cloud_types.h"
+#include "cloud/cloud_event.h"
 namespace OHOS::CloudData {
 class SyncManager {
 public:
@@ -33,6 +35,7 @@ public:
     using RefCount = DistributedData::RefCount;
     using AutoCache = DistributedData::AutoCache;
     using StoreMetaData = DistributedData::StoreMetaData;
+    using Store = std::string;
     static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     class SyncInfo final {
     public:
@@ -69,6 +72,7 @@ public:
     int32_t Bind(std::shared_ptr<ExecutorPool> executor);
     int32_t DoCloudSync(SyncInfo syncInfo);
     int32_t StopCloudSync(int32_t user = 0);
+    int32_t QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results);
 
 private:
     using Event = DistributedData::Event;
@@ -79,6 +83,10 @@ private:
     using CloudInfo = DistributedData::CloudInfo;
     using StoreInfo = DistributedData::StoreInfo;
     using SyncStrategy = DistributedData::SyncStrategy;
+    using SyncId = uint64_t;
+    using SyncIdCloudInfos = ConcurrentMap<SyncId, CloudSyncInfo>;
+    using GeneralError = DistributedData::GeneralError;
+    using GenProgress = DistributedData::GenProgress;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
@@ -95,13 +103,22 @@ private:
     static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
-    bool IsValid(SyncInfo &info, CloudInfo &cloud);
+    std::pair<bool, GeneralError> IsValid(SyncInfo &info, CloudInfo &cloud);
+    void GetCloudSyncInfo(std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, SyncInfo &info,
+        CloudInfo &cloud);
+    void UpdateStartSyncInfo(SyncInfo &syncInfo, CloudInfo &cloud);
+    void UpdateFinishSyncInfo(const QueryKey &queryKey, SyncId syncId, int32_t code);
+    void BatchUpdate(SyncInfo &info, CloudInfo &cloud, int32_t code);
+    std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
+        const StoreInfo &storeInfo);
+    std::string GetAccountId(int32_t user);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
+    std::map<QueryKey, SyncIdCloudInfos> lastSyncInfos_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

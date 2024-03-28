@@ -15,6 +15,8 @@
 #define LOG_TAG "SyncManager"
 #include "sync_manager.h"
 
+#include <chrono>
+
 #include "account/account_delegate.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
@@ -173,31 +175,31 @@ int32_t SyncManager::StopCloudSync(int32_t user)
     return E_OK;
 }
 
-bool SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
+std::pair<bool, GeneralError> SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) ||
         (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_)) {
         info.SetError(E_CLOUD_DISABLED);
         ZLOGE("cloudInfo invalid:%{public}d, <syncId:%{public}s, metaId:%{public}s>", cloud.IsValid(),
               Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
-        return false;
+        return { false, E_CLOUD_DISABLED };
     }
     if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
         info.SetError(E_CLOUD_DISABLED);
         ZLOGD("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
-        return false;
+        return { false, E_CLOUD_DISABLED };
     }
     if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
         info.SetError(E_NETWORK_ERROR);
         ZLOGD("network unavailable");
-        return false;
+        return { false, E_NETWORK_ERROR };
     }
     if (!Account::GetInstance()->IsVerified(info.user_)) {
         info.SetError(E_USER_UNLOCK);
         ZLOGD("user unverified");
-        return false;
+        return { false, E_ERROR };
     }
-    return true;
+    return { true, E_OK };
 }
 
 ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo)
@@ -207,9 +209,6 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         activeInfos_.Erase(info.syncId_);
         CloudInfo cloud;
         cloud.user = info.user_;
-        if (!IsValid(info, cloud)) {
-            return;
-        }
         std::vector<SchemaMeta> schemas;
         auto key = cloud.GetSchemaPrefix(info.bundleName_);
         auto retryer = GetRetryer(times, info);
@@ -218,6 +217,14 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
             return;
         }
+
+        UpdateStartSyncInfo(info, cloud);
+        auto [status, code] = IsValid(info, cloud);
+        if (!status) {
+            BatchUpdate(info, cloud, code);
+            return;
+        }
+
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
         for (auto &schema : schemas) {
             if (!cloud.IsOn(schema.bundleName)) {
@@ -228,11 +235,13 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                     continue;
                 }
                 StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
-                    cloud.user };
+                    cloud.user, "", info.syncId_ };
                 auto status = syncStrategy_->CheckSyncAction(storeInfo);
                 if (status != SUCCESS) {
                     ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
                         storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
+                    QueryKey queryKey { cloud.id, schema.bundleName, database.name };
+                    UpdateFinishSyncInfo(queryKey, info.syncId_, E_BLOCKED_BY_NETWORK_STRATEGY);
                     info.SetError(status);
                     continue;
                 }
@@ -247,7 +256,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
 
 std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
 {
-    return [retryer](const Event &event) {
+    return [this, retryer](const Event &event) {
         auto &evt = static_cast<const SyncEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
         StoreMetaData meta;
@@ -270,15 +279,24 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         auto status = store->Sync({ SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.AutoRetry()
-            ? [retryer](const GenDetails &details) {
+            ? [this, retryer, storeInfo](const GenDetails &details) {
                 if (details.empty()) {
                     ZLOGE("retry, details empty");
                     return;
                 }
                 int32_t code = details.begin()->second.code;
+                auto progress = details.begin()->second.progress;
+                if (progress == GenProgress::SYNC_FINISH) {
+                    QueryKey queryKey {
+                        .accountId = GetAccountId(storeInfo.user),
+                        .bundleName = storeInfo.bundleName,
+                        .storeId = storeInfo.storeName
+                    };
+                    UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
+                }
                 retryer(code == E_LOCKED_BY_OTHERS ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
             }
-            : evt.GetAsyncDetail(), evt.GetWait());
+            : GetCallback(evt.GetAsyncDetail(), storeInfo), evt.GetWait());
         GenAsync async = evt.GetAsyncDetail();
         if (status != E_OK && async) {
             GenDetails details;
@@ -404,5 +422,138 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
     }
     return store;
+}
+
+void SyncManager::GetCloudSyncInfo(std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, SyncInfo &info,
+    CloudInfo &cloud)
+{
+    if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
+        ZLOGE("not exist cloud metadata, user: %{public}d.", cloud.user);
+        return;
+    }
+    std::vector<SchemaMeta> schemas;
+    auto key = cloud.GetSchemaPrefix(info.bundleName_);
+    if (!MetaDataManager::GetInstance().LoadMeta(key, schemas, true)) {
+        ZLOGE("not exist schema metadata, user: %{public}d.", cloud.user);
+        return;
+    }
+    for (auto &schema : schemas) {
+        if (!cloud.IsOn(schema.bundleName)) {
+            continue;
+        }
+        for (const auto &database : schema.databases) {
+            if (!info.Contains(database.name)) {
+                continue;
+            }
+            QueryKey queryKey;
+            queryKey.accountId = cloud.id;
+            queryKey.bundleName = schema.bundleName;
+            queryKey.storeId = database.name;
+            cloudSyncInfos.emplace_back(std::make_tuple(queryKey, info.syncId_));
+        }
+    }
+}
+
+int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)
+{
+    for (auto &queryKey : queryKeys) {
+        auto it = lastSyncInfos_.find(queryKey);
+        if (it == lastSyncInfos_.end()) {
+            return SUCCESS;
+        }
+        it->second.ForEach([&queryKey, &results](uint64_t syncId, CloudSyncInfo &info) {
+            results.insert(std::pair<std::string, CloudSyncInfo>(queryKey.storeId, info));
+            return SUCCESS;
+        });
+    }
+    return SUCCESS;
+}
+
+void SyncManager::UpdateStartSyncInfo(SyncInfo &syncInfo, CloudInfo &cloud)
+{
+    std::vector<std::tuple<QueryKey, uint64_t>> cloudSyncInfos;
+    GetCloudSyncInfo(cloudSyncInfos, syncInfo, cloud);
+    if (cloudSyncInfos.empty()) {
+        return;
+    }
+    CloudSyncInfo info;
+    info.startTime =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    for (auto &[queryKey, syncId] : cloudSyncInfos) {
+        lastSyncInfos_[queryKey][syncId] = info;
+    }
+}
+
+void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, SyncId syncId, int32_t code)
+{
+    auto it = lastSyncInfos_.find(queryKey);
+    if (it == lastSyncInfos_.end()) {
+        return;
+    }
+    auto [status, info] = it->second.Find(syncId);
+    if (!status) {
+        return;
+    }
+    info.finishTime =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    info.code = code;
+    lastSyncInfos_[queryKey][syncId] = info;
+}
+
+void SyncManager::BatchUpdate(SyncInfo &info, CloudInfo &cloud, int32_t code)
+{
+    std::vector<std::tuple<QueryKey, uint64_t>> cloudSyncInfos;
+    GetCloudSyncInfo(cloudSyncInfos, info, cloud);
+    if (cloudSyncInfos.empty()) {
+        return;
+    }
+    for (auto &[queryKey, syncId] : cloudSyncInfos) {
+        UpdateFinishSyncInfo(queryKey, syncId, code);
+    }
+}
+
+std::function<void(const GenDetails &result)> SyncManager::GetCallback(const GenAsync &async,
+    const StoreInfo &storeInfo)
+{
+    return [this, async, storeInfo](const GenDetails &result) {
+        if (async != nullptr) {
+            async(result);
+        }
+
+        if (result.empty()) {
+            ZLOGE("result is empty");
+            return;
+        }
+
+        if (result.begin()->second.progress != GenProgress::SYNC_FINISH) {
+            return;
+        }
+
+        auto id = GetAccountId(storeInfo.user);
+        if (id.empty()) {
+            return;
+        }
+        QueryKey queryKey{
+            .accountId = id,
+            .bundleName = storeInfo.bundleName,
+            .storeId = storeInfo.storeName
+        };
+
+        int32_t code = result.begin()->second.code;
+        UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
+    };
+}
+
+std::string SyncManager::GetAccountId(int32_t user)
+{
+    CloudInfo cloudInfo;
+    cloudInfo.user = user;
+    if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
+        ZLOGE("not exist meta, user:%{public}d.", cloudInfo.user);
+        return "";
+    }
+    return cloudInfo.id;
 }
 } // namespace OHOS::CloudData
