@@ -239,7 +239,7 @@ size_t RdbGeneralStore::SqlConcatenate(VBucket &value, std::string &strColumnSql
 int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
 {
     if (table.empty() || values.size() == 0) {
-        ZLOGE("Insert:table maybe empty:%{public}d,value size is:%{public}d", table.empty(), values.size());
+        ZLOGE("Insert:table maybe empty:%{public}d,value size is:%{public}zu", table.empty(), values.size());
         return GeneralError::E_INVALID_ARGS;
     }
 
