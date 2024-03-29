@@ -26,4 +26,4 @@ private:
     std::vector<std::string> allowCrossPermissions_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_WHITE_PERMISSION_STRAGETY_H

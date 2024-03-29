@@ -37,4 +37,4 @@ private:
         const DataProperties &properties, const std::string &moduleName, std::shared_ptr<Context> context);
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_PROXY_NODE_STRAGETY_H
