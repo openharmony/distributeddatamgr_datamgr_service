@@ -333,8 +333,9 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         auto finish = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
         if (duration >= TIME_THRESHOLD) {
+            int64_t milliseconds = duration.count();
             ZLOGW("over time, code:%{public}u callingPid:%{public}d, cost:%{public}" PRIi64 "ms",
-                code, callingPid, duration.count());
+                code, callingPid, milliseconds);
         }
     }
     return res;
