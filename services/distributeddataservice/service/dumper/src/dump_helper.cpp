@@ -48,20 +48,21 @@ bool DumpHelper::Dump(int fd, const std::vector<std::string> &args)
     std::vector<std::shared_ptr<CommandNode>> commands;
     ParseCommand(args, commands);
     GetCommandNodes(fd, commands);
-    if (!(commands.empty())) {
-        std::shared_ptr<CommandNode> tmpCommandNode;
-        for (auto const &command : commands) {
-            std::map<std::string, std::vector<std::string>> params;
-            tmpCommandNode = command;
-            while (tmpCommandNode != nullptr) {
-                params.emplace(tmpCommandNode->dumpName, tmpCommandNode->param);
-                if (tmpCommandNode->nextNode == nullptr) {
-                    for (auto const &handler : tmpCommandNode->handlers) {
-                        handler(fd, params);
-                    }
+    if (commands.empty()) {
+        return true;
+    }
+    std::shared_ptr<CommandNode> tmpCommandNode;
+    for (auto const& command : commands) {
+        std::map<std::string, std::vector<std::string>> params;
+        tmpCommandNode = command;
+        while (tmpCommandNode != nullptr) {
+            params.emplace(tmpCommandNode->dumpName, tmpCommandNode->param);
+            if (tmpCommandNode->nextNode == nullptr) {
+                for (auto const& handler : tmpCommandNode->handlers) {
+                    handler(fd, params);
                 }
-                tmpCommandNode = tmpCommandNode->nextNode;
             }
+            tmpCommandNode = tmpCommandNode->nextNode;
         }
     }
     return true;
