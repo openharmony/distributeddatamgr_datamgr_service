@@ -320,10 +320,6 @@ int RdbResultSetImpl::GetAssets(int32_t col, NativeRdb::ValueObject::Assets& val
 {
     return NativeRdb::E_NOT_SUPPORT;
 }
-int RdbResultSetImpl::GetFloat32Array(int32_t index, NativeRdb::ValueObject::FloatVector &vecs)
-{
-    return NativeRdb::E_NOT_SUPPORT;
-}
 int RdbResultSetImpl::Get(int32_t col, NativeRdb::ValueObject& value)
 {
     return NativeRdb::E_NOT_SUPPORT;
