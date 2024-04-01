@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H
+
 #include <atomic>
 #include <functional>
 #include <shared_mutex>
 
+#include "kv_store_changed_data.h"
+#include "kv_store_delegate_manager.h"
+#include "kv_store_nb_delegate.h"
+#include "kvstore_sync_callback.h"
+#include "kvstore_sync_manager.h"
 #include "metadata/store_meta_data.h"
-#include "rdb_asset_loader.h"
 #include "rdb_cloud.h"
-#include "rdb_store.h"
-#include "relational_store_delegate.h"
-#include "relational_store_manager.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
-#include "snapshot/snapshot.h"
-namespace OHOS::DistributedRdb {
-class RdbGeneralStore : public DistributedData::GeneralStore {
+#include "store_observer.h"
+
+namespace OHOS::DistributedKv {
+class KVDBGeneralStore : public DistributedData::GeneralStore {
 public:
     using Cursor = DistributedData::Cursor;
     using GenQuery = DistributedData::GenQuery;
@@ -40,21 +43,28 @@ public:
     using StoreMetaData = DistributedData::StoreMetaData;
     using Database = DistributedData::Database;
     using GenErr = DistributedData::GeneralError;
-    using RdbStore = OHOS::NativeRdb::RdbStore;
     using Reference = DistributedData::Reference;
-    using Snapshot = DistributedData::Snapshot;
+    using SyncCallback = KvStoreSyncCallback;
+    using SyncEnd = KvStoreSyncManager::SyncEnd;
+    using DBStore = DistributedDB::KvStoreNbDelegate;
+    using Store = std::shared_ptr<DBStore>;
+    using DBStatus = DistributedDB::DBStatus;
+    using DBOption = DistributedDB::KvStoreNbDelegate::Option;
+    using DBSecurity = DistributedDB::SecurityOption;
+    using DBPassword = DistributedDB::CipherPassword;
     using BindAssets = DistributedData::BindAssets;
+    using DBMode = DistributedDB::SyncMode;
 
-    explicit RdbGeneralStore(const StoreMetaData &meta);
-    ~RdbGeneralStore();
+    explicit KVDBGeneralStore(const StoreMetaData &meta);
+    ~KVDBGeneralStore();
     int32_t Bind(const std::map<std::string, std::pair<Database, BindInfo>> &cloudDBs) override;
     bool IsBound() override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
-    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-	    const std::vector<Reference> &references) override;
-    int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
-        const std::string& extendColName) override;
+    int32_t SetDistributedTables(
+        const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references) override;
+    int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
+        const std::string &extendColName) override;
     int32_t Insert(const std::string &table, VBuckets &&values) override;
     int32_t Update(const std::string &table, const std::string &setSql, Values &&values, const std::string &whereSql,
         Values &&conditions) override;
@@ -72,71 +82,53 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
-    int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
-    int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
+    int32_t BindSnapshots(
+        std::shared_ptr<std::map<std::string, std::shared_ptr<DistributedData::Snapshot>>> bindAssets) override;
+    int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
+
+    static DBPassword GetDBPassword(const StoreMetaData &data);
+    static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
+    static DBSecurity GetDBSecurity(int32_t secLevel);
 
 private:
-    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
-    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore);
-    using RdbDelegate = DistributedDB::RelationalStoreDelegate;
-    using RdbManager = DistributedDB::RelationalStoreManager;
+    KVDBGeneralStore(const KVDBGeneralStore &store);
+    KVDBGeneralStore &operator=(const KVDBGeneralStore &store);
+    using KvDelegate = DistributedDB::KvStoreNbDelegate;
+    using KvManager = DistributedDB::KvStoreDelegateManager;
     using SyncProcess = DistributedDB::SyncProcess;
-    using DBBriefCB = DistributedDB::SyncStatusCallback;
+    using DBSyncCallback = std::function<void(const std::map<std::string, DBStatus> &status)>;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
-    static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
-    static constexpr const char* CLOUD_GID = "cloud_gid";
-    static constexpr const char* DATE_KEY = "data_key";
-    static constexpr uint32_t ITER_V0 = 10000;
-    static constexpr uint32_t ITER_V1 = 5000;
-    static constexpr uint32_t ITERS[] = {ITER_V0, ITER_V1};
-    static constexpr uint32_t ITERS_COUNT = sizeof(ITERS) / sizeof(ITERS[0]);
-    class ObserverProxy : public DistributedDB::StoreObserver {
+    DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
+    class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
-        using DBChangedIF = DistributedDB::StoreChangedData;
-        using DBChangedData = DistributedDB::ChangedData;
         using DBOrigin = DistributedDB::Origin;
         using GenOrigin = Watcher::Origin;
-        void OnChange(const DistributedDB::StoreChangedData &data) override;
-        void OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data) override;
+        ~ObserverProxy() = default;
+        void OnChange(DistributedDB::Origin origin, const std::string &originalId, DistributedDB::ChangedData &&data);
+        void OnChange(const DistributedDB::KvStoreChangedData &data) override;
+        void ConvertChangeData(const std::list<DistributedDB::Entry> &entries, std::vector<Values> &values);
         bool HasWatcher() const
         {
             return watcher_ != nullptr;
         }
+
     private:
-        friend RdbGeneralStore;
+        friend KVDBGeneralStore;
         Watcher *watcher_ = nullptr;
         std::string storeId_;
     };
-    DBBriefCB GetDBBriefCB(DetailAsync async);
-    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t highMode = AUTO_SYNC_MODE);
-    std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
-        const DistributedDB::RemoteCondition &remoteCondition);
-    std::string BuildSql(const std::string& table, const std::string& statement,
-        const std::vector<std::string>& columns) const;
-    VBuckets QuerySql(const std::string& sql, Values &&args);
-    VBuckets ExtractExtend(VBuckets& values) const;
-    size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
-    bool IsPrintLog(DistributedDB::DBStatus status);
-    
+
     ObserverProxy observer_;
-    RdbManager manager_;
-    RdbDelegate *delegate_ = nullptr;
-    DetailAsync async_ = nullptr;
-    std::shared_ptr<RdbCloud> rdbCloud_ {};
-    std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
-    BindInfo bindInfo_;
+    KvManager manager_;
+    KvDelegate *delegate_ = nullptr;
+    std::map<std::string, std::shared_ptr<DistributedDB::ICloudDb>> dbClouds_{};
+    std::set<BindInfo> bindInfos_;
     std::atomic<bool> isBound_ = false;
     std::mutex mutex_;
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
-
-    BindAssets snapshots_;
     DistributedData::StoreInfo storeInfo_;
-
-    DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
-    static constexpr uint32_t PRINT_ERROR_CNT = 150;
-    uint32_t lastErrCnt_ = 0;
 };
-} // namespace OHOS::DistributedRdb
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
+} // namespace OHOS::DistributedKv
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +25,7 @@
 #include "metadata/meta_data_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "store/auto_cache.h"
+#include "user_delegate.h"
 #include "utils/anonymous.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
@@ -96,9 +97,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     }
     class SyncQuery final : public GenQuery {
     public:
-        explicit SyncQuery(const std::vector<std::string> &tables) : tables_(tables)
-        {
-        }
+        explicit SyncQuery(const std::vector<std::string> &tables) : tables_(tables) {}
 
         bool IsEqual(uint64_t tid) override
         {
@@ -117,7 +116,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     return std::make_shared<SyncQuery>(it == tables_.end() || it->second.empty() ? tables : it->second);
 }
 
-bool SyncManager::SyncInfo::Contains(const std::string& storeName)
+bool SyncManager::SyncInfo::Contains(const std::string &storeName)
 {
     return tables_.empty() || tables_.find(storeName) != tables_.end();
 }
@@ -179,7 +178,7 @@ bool SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
         (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_)) {
         info.SetError(E_CLOUD_DISABLED);
         ZLOGE("cloudInfo invalid:%{public}d, <syncId:%{public}s, metaId:%{public}s>", cloud.IsValid(),
-              Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
+            Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
         return false;
     }
     if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
@@ -380,28 +379,32 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         return nullptr;
     }
 
-    if (!store->IsBound()) {
-        CloudInfo info;
-        info.user = user;
-        SchemaMeta schemaMeta;
-        std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
-        if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
-            ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                meta.GetStoreAlias().c_str());
-            return nullptr;
+    if (!store->IsBound()) { // todo ֻ���ڹ������ʱ�򣬰󶨶����
+        std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
+        std::map<std::string, std::pair<Database, GeneralStore::BindInfo>> cloudDBs = {};
+        for (auto &activeUser : activeUsers) {
+            CloudInfo info;
+            info.user = std::stoi(activeUser);
+            SchemaMeta schemaMeta;
+            std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
+            if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
+                ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                    meta.GetStoreAlias().c_str());
+                return nullptr;
+            }
+            auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
+            auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
+            if (mustBind && cloudDB == nullptr) {
+                ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
+                    Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
+                return nullptr;
+            }
+            if (cloudDB != nullptr) {
+                GeneralStore::BindInfo bindInfo(std::move(cloudDB), nullptr);
+                cloudDBs[activeUser] = std::make_pair(dbMeta, bindInfo);
+            }
         }
-        auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
-        auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
-        auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
-        if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
-            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
-                Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
-            return nullptr;
-        }
-
-        if (cloudDB != nullptr || assetLoader != nullptr) {
-            store->Bind(dbMeta, { std::move(cloudDB), std::move(assetLoader) });
-        }
+        store->Bind(cloudDBs);
     }
     return store;
 }

@@ -1,0 +1,545 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#define LOG_TAG "KVDBGeneralStore"
+#include "kvdb_general_store.h"
+
+#include "cloud/schema_meta.h"
+#include "crypto_manager.h"
+#include "device_matrix.h"
+#include "directory/directory_manager.h"
+#include "eventcenter/event_center.h"
+#include "kvdb_query.h"
+#include "log_print.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/secret_key_meta_data.h"
+#include "query_helper.h"
+#include "snapshot/bind_event.h"
+#include "types.h"
+#include "user_delegate.h"
+#include "utils/anonymous.h"
+
+namespace OHOS::DistributedKv {
+using namespace DistributedData;
+using namespace DistributedDB;
+using DBField = DistributedDB::Field;
+using DBTable = DistributedDB::TableSchema;
+using DBSchema = DistributedDB::DataBaseSchema;
+using ClearMode = DistributedDB::ClearMode;
+using DBStatus = DistributedDB::DBStatus;
+
+KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
+{
+    DBPassword dbPassword;
+    if (!data.isEncrypt) {
+        return dbPassword;
+    }
+
+    SecretKeyMetaData secretKey;
+    secretKey.storeType = data.storeType;
+    auto storeKey = data.GetSecretKey();
+    MetaDataManager::GetInstance().LoadMeta(storeKey, secretKey, true);
+    std::vector<uint8_t> password;
+    CryptoManager::GetInstance().Decrypt(secretKey.sKey, password);
+    dbPassword.SetValue(password.data(), password.size());
+    password.assign(password.size(), 0);
+    return dbPassword;
+}
+
+KVDBGeneralStore::DBSecurity KVDBGeneralStore::GetDBSecurity(int32_t secLevel)
+{
+    if (secLevel < SecurityLevel::NO_LABEL || secLevel > SecurityLevel::S4) {
+        return { DistributedDB::NOT_SET, DistributedDB::ECE };
+    }
+    if (secLevel == SecurityLevel::S3) {
+        return { DistributedDB::S3, DistributedDB::SECE };
+    }
+    if (secLevel == SecurityLevel::S4) {
+        return { DistributedDB::S4, DistributedDB::ECE };
+    }
+    return { secLevel, DistributedDB::ECE };
+}
+
+KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &data, const DBPassword &password)
+{
+    DBOption dbOption;
+    dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
+    dbOption.createIfNecessary = false;
+    dbOption.isMemoryDb = false;
+    dbOption.isEncryptedDb = data.isEncrypt;
+    dbOption.isNeedCompressOnSync = data.isNeedCompress;
+    if (data.isEncrypt) {
+        dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
+        dbOption.passwd = password;
+    }
+
+    if (data.storeType == KvStoreType::SINGLE_VERSION) {
+        dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
+    } else if (data.storeType == KvStoreType::DEVICE_COLLABORATION) {
+        dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
+    }
+
+    dbOption.schema = data.schema;
+    dbOption.createDirByStoreIdOnly = true;
+    dbOption.secOption = GetDBSecurity(data.securityLevel);
+    return dbOption;
+}
+
+KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
+{
+    observer_.storeId_ = meta.storeId;
+
+    DBStatus status = DBStatus::NOT_FOUND;
+    manager_.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(meta) });
+    manager_.GetKvStore(
+        meta.storeId, GetDBOption(meta, GetDBPassword(meta)), [&status, this](auto dbStatus, auto *tmpStore) {
+            status = dbStatus;
+            delegate_ = tmpStore;
+        });
+    if (delegate_ == nullptr || status != DBStatus::OK) {
+        manager_.CloseKvStore(delegate_);
+        return;
+    }
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
+    if (meta.isAutoSync) {
+        auto code = DeviceMatrix::GetInstance().GetCode(meta);
+        delegate_->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
+            DeviceMatrix::GetInstance().OnExchanged(info.deviceId, code, true);
+        });
+        bool param = true;
+        auto data = static_cast<DistributedDB::PragmaData>(&param);
+        delegate_->Pragma(DistributedDB::SET_SYNC_RETRY, data);
+    }
+    storeInfo_.tokenId = meta.tokenId;
+    storeInfo_.bundleName = meta.bundleName;
+    storeInfo_.storeName = meta.storeId;
+    storeInfo_.instanceId = meta.instanceId;
+    storeInfo_.user = std::stoi(meta.user);
+    storeInfo_.isPublic = meta.isPublic;
+    storeInfo_.cloudSync = meta.cloudSync;
+}
+
+KVDBGeneralStore::~KVDBGeneralStore()
+{
+    if (delegate_ != nullptr) {
+        delegate_->UnRegisterObserver(&observer_);
+    }
+    manager_.CloseKvStore(delegate_);
+    delegate_ = nullptr;
+    for (auto &bindInfo_ : bindInfos_) {
+        if (bindInfo_.db_ != nullptr) {
+            bindInfo_.db_->Close();
+        }
+    }
+    bindInfos_.clear();
+    dbClouds_.clear();
+}
+
+int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
+{
+    return GenErr::E_OK;
+}
+
+int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, BindInfo>> &cloudDBs)
+{
+    if (cloudDBs.empty()) {
+        ZLOGW("No cloudDB!");
+        return GeneralError::E_OK;
+    }
+    std::map<std::string, const DataBaseSchema> schemas{};
+    for (auto &iter : cloudDBs) {
+        auto database = iter.second.first;
+        auto bindInfo = iter.second.second;
+
+        if (bindInfo.db_ == nullptr) {
+            return GeneralError::E_INVALID_ARGS;
+        }
+
+        if (isBound_.exchange(true)) {
+            return GeneralError::E_OK;
+        }
+
+        BindEvent::BindEventInfo eventInfo;
+        eventInfo.tokenId = storeInfo_.tokenId;
+        eventInfo.bundleName = storeInfo_.bundleName;
+        eventInfo.storeName = storeInfo_.storeName;
+        eventInfo.user = storeInfo_.user;
+        eventInfo.instanceId = storeInfo_.instanceId;
+
+        auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+        bindInfos_.insert(std::move(bindInfo));
+        dbClouds_.insert({ iter.first, std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
+
+        DBSchema schema;
+        schema.tables.resize(database.tables.size());
+        for (size_t i = 0; i < database.tables.size(); i++) {
+            const Table &table = database.tables[i];
+            DBTable &dbTable = schema.tables[i];
+            dbTable.name = table.name;
+            dbTable.sharedTableName = table.sharedTableName;
+            for (auto &field : table.fields) {
+                DBField dbField;
+                dbField.colName = field.colName;
+                dbField.type = field.type;
+                dbField.primary = field.primary;
+                dbField.nullable = field.nullable;
+                dbTable.fields.push_back(std::move(dbField));
+            }
+        }
+        schemas.insert({ iter.first, schema });
+    }
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    delegate_->SetCloudDB(dbClouds_);
+    delegate_->SetCloudDBSchema(schemas);
+    return GeneralError::E_OK;
+}
+
+bool KVDBGeneralStore::IsBound()
+{
+    return isBound_;
+}
+
+int32_t KVDBGeneralStore::Close()
+{
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        return 0;
+    }
+    int32_t count = delegate_->GetTaskCount();
+    if (count > 0) {
+        return GeneralError::E_BUSY;
+    }
+    if (delegate_ != nullptr) {
+        delegate_->UnRegisterObserver(&observer_);
+    }
+    auto status = manager_.CloseKvStore(delegate_);
+    if (status != DBStatus::OK) {
+        return status;
+    }
+    delegate_ = nullptr;
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::Execute(const std::string &table, const std::string &sql)
+{
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::Insert(const std::string &table, VBuckets &&values)
+{
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::Update(const std::string &table, const std::string &setSql, Values &&values,
+    const std::string &whereSql, Values &&conditions)
+{
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::Delete(const std::string &table, const std::string &sql, Values &&args)
+{
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::Replace(const std::string &table, VBucket &&value)
+{
+    return GeneralError::E_OK;
+}
+
+std::shared_ptr<Cursor> KVDBGeneralStore::Query(
+    __attribute__((unused)) const std::string &table, const std::string &sql, Values &&args)
+{
+    return nullptr;
+}
+
+std::shared_ptr<Cursor> KVDBGeneralStore::Query(const std::string &table, GenQuery &query)
+{
+    return nullptr;
+}
+
+int32_t KVDBGeneralStore::MergeMigratedData(const std::string &tableName, VBuckets &&values)
+{
+    return GeneralError::E_OK;
+}
+
+KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsync async)
+{
+    if (!async) {
+        return [](auto &) {};
+    }
+    return [async = std::move(async)](const std::map<std::string, DBStatus> &status) {
+        DistributedData::GenDetails details;
+        for (auto &[key, dbStatus] : status) {
+            auto &value = details[key];
+            value.progress = FINISHED;
+            value.code = GeneralError::E_OK;
+            if (dbStatus != DBStatus::OK) {
+                value.code = dbStatus;
+            }
+        }
+        async(details);
+    };
+}
+
+int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)
+{
+    auto syncMode = GeneralStore::GetSyncMode(mode);
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d", devices.size(),
+            devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode);
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    KVDBQuery *kvQuery = nullptr;
+    auto ret = query.QueryInterface(kvQuery);
+    DistributedDB::Query dbQuery;
+    if (ret == GeneralError::E_OK && kvQuery != nullptr && kvQuery->IsValidQuery()) {
+        dbQuery = kvQuery->GetDBQuery();
+    } else {
+        return GeneralError::E_INVALID_ARGS;
+    }
+    auto dbStatus = DistributedDB::OK;
+    if (syncMode == NEARBY_SUBSCRIBE_REMOTE) {
+        dbStatus = delegate_->SubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
+    } else if (syncMode == NEARBY_UNSUBSCRIBE_REMOTE) {
+        dbStatus = delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
+    } else {
+        auto dbMode = DistributedDB::SyncMode(syncMode);
+        if (syncMode < NEARBY_END) {
+            if (kvQuery->IsEmpty()) {
+                dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), false);
+            } else {
+                dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
+            }
+        } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
+            if (!storeInfo_.cloudSync) {
+                return GeneralError::E_NOT_SUPPORT;
+            }
+            DistributedDB::CloudSyncOption syncOption;
+            syncOption.devices = devices;
+            syncOption.mode = dbMode;
+            syncOption.waitTime = wait;
+            if (storeInfo_.isPublic) {
+                std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
+                for (auto &activeUser : activeUsers) {
+                    syncOption.users.push_back(activeUser);
+                }
+            } else {
+                syncOption.users.push_back(std::to_string(storeInfo_.user));
+            }
+            dbStatus = delegate_->Sync({ devices, dbMode, {}, wait, false }, nullptr);
+        } else {
+            dbStatus = DistributedDB::INVALID_ARGS;
+        }
+    }
+    return ConvertStatus(dbStatus);
+}
+
+std::shared_ptr<Cursor> KVDBGeneralStore::PreSharing(GenQuery &query)
+{
+    return nullptr;
+}
+
+int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
+{
+    if (mode < 0 || mode > CLEAN_MODE_BUTT) {
+        return GeneralError::E_INVALID_ARGS;
+    }
+    DBStatus status = OK;
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
+              "tableName:%{public}s",
+            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode,
+            Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    switch (mode) {
+        case CLOUD_INFO:
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_INFO));
+            break;
+        case CLOUD_DATA:
+            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
+            break;
+        case NEARBY_DATA:
+            if (devices.empty()) {
+                status = delegate_->RemoveDeviceData();
+                break;
+            }
+            for (auto device : devices) {
+                status = delegate_->RemoveDeviceData(device);
+            }
+            break;
+        default:
+            return GeneralError::E_ERROR;
+    }
+    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+}
+
+int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
+{
+    if (origin != Watcher::Origin::ORIGIN_ALL || observer_.watcher_ != nullptr) {
+        return GeneralError::E_INVALID_ARGS;
+    }
+
+    observer_.watcher_ = &watcher;
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
+{
+    if (origin != Watcher::Origin::ORIGIN_ALL || observer_.watcher_ != &watcher) {
+        return GeneralError::E_INVALID_ARGS;
+    }
+
+    observer_.watcher_ = nullptr;
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::Release()
+{
+    auto ref = 1;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (ref_ == 0) {
+            return 0;
+        }
+        ref = --ref_;
+    }
+    ZLOGD("ref:%{public}d", ref);
+    if (ref == 0) {
+        delete this;
+    }
+    return ref;
+}
+
+int32_t KVDBGeneralStore::AddRef()
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (ref_ == 0) {
+        return 0;
+    }
+    return ++ref_;
+}
+
+int32_t KVDBGeneralStore::SetDistributedTables(
+    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references)
+{
+    return GeneralError::E_OK;
+}
+
+int32_t KVDBGeneralStore::SetTrackerTable(
+    const std::string &tableName, const std::set<std::string> &trackerColNames, const std::string &extendColName)
+{
+    return GeneralError::E_OK;
+}
+
+KVDBGeneralStore::GenErr KVDBGeneralStore::ConvertStatus(
+    DistributedDB::DBStatus status) // todo 没用到，具体转换结合接口错误码
+{
+    switch (status) {
+        case DBStatus::OK:
+            return GenErr::E_OK;
+        case DBStatus::CLOUD_NETWORK_ERROR:
+            return GenErr::E_NETWORK_ERROR;
+        case DBStatus::CLOUD_LOCK_ERROR:
+            return GenErr::E_LOCKED_BY_OTHERS;
+        case DBStatus::CLOUD_FULL_RECORDS:
+            return GenErr::E_RECODE_LIMIT_EXCEEDED;
+        case DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT:
+            return GenErr::E_NO_SPACE_FOR_ASSET;
+        default:
+            ZLOGI("status:0x%{public}x", status);
+            break;
+    }
+    return GenErr::E_ERROR;
+}
+
+bool KVDBGeneralStore::IsValid()
+{
+    return delegate_ != nullptr;
+}
+
+int32_t KVDBGeneralStore::RegisterDetailProgressObserver(GeneralStore::DetailAsync async)
+{
+    return GenErr::E_OK;
+}
+
+int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
+{
+    return GenErr::E_OK;
+}
+
+void KVDBGeneralStore::ObserverProxy::OnChange(
+    DistributedDB::Origin origin, const std::string &originalId, DistributedDB::ChangedData &&data)
+{
+    if (!HasWatcher()) {
+        return;
+    }
+    GenOrigin genOrigin;
+    genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)
+                           ? GenOrigin::ORIGIN_LOCAL
+                           : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD : GenOrigin::ORIGIN_NEARBY;
+    genOrigin.dataType = data.type == DistributedDB::ASSET ? GenOrigin::ASSET_DATA : GenOrigin::BASIC_DATA;
+    genOrigin.id.push_back(originalId);
+    genOrigin.store = storeId_;
+    Watcher::PRIFields fields;
+    Watcher::ChangeInfo changeInfo;
+    for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
+        auto &info = changeInfo[data.tableName][i];
+        std::vector<std::vector<Type>> a = data.primaryData[i];
+        for (auto &priData : data.primaryData[i]) {
+            Watcher::PRIValue value;
+            Convert(std::move(*(priData.begin())), value);
+            info.push_back(std::move(value));
+        }
+    }
+    if (!data.field.empty()) {
+        fields[std::move(data.tableName)] = std::move(*(data.field.begin()));
+    }
+    watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
+}
+
+void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChangedData &data)
+{
+    if (!HasWatcher()) {
+        return;
+    }
+    const auto &inserts = data.GetEntriesInserted();
+    const auto &deletes = data.GetEntriesDeleted();
+    const auto &updates = data.GetEntriesUpdated();
+    Watcher::ChangeData changeData;
+    ConvertChangeData(inserts, changeData[storeId_][DistributedDB::OP_INSERT]);
+    ConvertChangeData(deletes, changeData[storeId_][DistributedDB::OP_DELETE]);
+    ConvertChangeData(updates, changeData[storeId_][DistributedDB::OP_UPDATE]);
+    GenOrigin genOrigin;
+    genOrigin.origin = GenOrigin::ORIGIN_NEARBY;
+    genOrigin.store = storeId_;
+
+    watcher_->OnChange(genOrigin, {}, std::move(changeData));
+}
+
+void KVDBGeneralStore::ObserverProxy::ConvertChangeData(
+    const std::list<DistributedDB::Entry> &entries, std::vector<Values> &values)
+{
+    for (auto entry : entries) {
+        auto value = std::vector<Value>{ entry.key, entry.value };
+        values.push_back(value);
+    }
+}
+} // namespace OHOS::DistributedKv

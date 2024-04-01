@@ -51,6 +51,8 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(storeId)], storeId);
     SetValue(node[GET_NAME(user)], user);
     SetValue(node[GET_NAME(account)], account);
+    SetValue(node[GET_NAME(isPublic)], isPublic);
+    SetValue(node[GET_NAME(cloudSync)], cloudSync);
 
     // compatible with the versions which lower than VERSION_TAG_0000
     SetValue(node[GET_NAME(kvStoreType)], storeType);
@@ -88,6 +90,8 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(storeId), storeId);
     GetValue(node, GET_NAME(user), user);
     GetValue(node, GET_NAME(account), account);
+    GetValue(node, GET_NAME(isPublic), isPublic);
+    GetValue(node, GET_NAME(cloudSync), cloudSync);
 
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
