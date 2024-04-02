@@ -126,19 +126,36 @@ void AutoCache::StartTimer()
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
 {
-    stores_.ComputeIfPresent(tokenId, [&storeId](auto &key, std::map<std::string, Delegate> &delegates) {
+    Stores stores;
+    stores_.ComputeIfPresent(tokenId, [&stores, &storeId](auto &key, std::map<std::string, Delegate> &delegates) {
         auto it = delegates.find(storeId);
         if (it != delegates.end()) {
-            it->second.Close();
+            stores.push_back(it->second);
             delegates.erase(it);
         }
         return !delegates.empty();
     });
+    for (auto store : stores) {
+        if (store) {
+            store->Close();
+        }
+    }
 }
 
 void AutoCache::CloseStore(uint32_t tokenId)
 {
-    stores_.Erase(tokenId);
+    Stores stores;
+    stores_.ComputeIfPresent(tokenId, [&stores](auto &key, std::map<std::string, Delegate> &delegates) {
+        for (auto& [_, store] : delegates) {
+            stores.push_back(store);
+        }
+        return false;
+    });
+    for (auto store : stores) {
+        if (store) {
+            store->Close();
+        }
+    }
 }
 
 void AutoCache::CloseExcept(const std::set<int32_t> &users)

@@ -93,11 +93,7 @@ RdbServiceImpl::RdbServiceImpl()
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta;
-        meta.storeId = storeInfo.storeName;
-        meta.bundleName = storeInfo.bundleName;
-        meta.user = std::to_string(storeInfo.user);
-        meta.instanceId = storeInfo.instanceId;
+        StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),

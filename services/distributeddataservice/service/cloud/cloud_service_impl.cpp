@@ -761,12 +761,8 @@ void CloudServiceImpl::CloudShare(const Event &event)
 std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::PreShare(
     const StoreInfo& storeInfo, GenQuery& query)
 {
-    StoreMetaData meta;
-    meta.bundleName = storeInfo.bundleName;
-    meta.storeId = storeInfo.storeName;
-    meta.user = std::to_string(storeInfo.user);
+    StoreMetaData meta(storeInfo);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.instanceId = storeInfo.instanceId;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
         ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
