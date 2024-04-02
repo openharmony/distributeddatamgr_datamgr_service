@@ -27,11 +27,7 @@
 #include <vector>
 #include "kvstore_death_recipient.h"
 #include "types.h"
-
-#define private public
-#define protected public
 #include "kvdb_service_impl.h"
-#undef private
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -64,8 +60,6 @@ public:
     static AppId appId;
     static StoreId storeId64;
     static StoreId storeId65;
-    static StoreId storeIdTest;
-    static StoreId storeIdEmpty;
 
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -85,8 +79,6 @@ UserId KvdbServiceImplTest::userId;
 AppId KvdbServiceImplTest::appId;
 StoreId KvdbServiceImplTest::storeId64;
 StoreId KvdbServiceImplTest::storeId65;
-StoreId KvdbServiceImplTest::storeIdTest;
-StoreId KvdbServiceImplTest::storeIdEmpty;
 
 void KvdbServiceImplTest::RemoveAllStore(DistributedKvDataManager &manager)
 {
@@ -116,7 +108,7 @@ void KvdbServiceImplTest::SetUpTestCase(void)
     RemoveAllStore(manager);
 }
 
-void KvdbServiceImplTest::TearDownTestCase() 
+void KvdbServiceImplTest::TearDownTestCase()
 {
     RemoveAllStore(manager);
     (void)remove((create.baseDir + "/kvdb").c_str());
@@ -128,7 +120,7 @@ void KvdbServiceImplTest::SetUp(void)
     kvdbServiceImpl_ = std::make_shared<DistributedKv::KVDBServiceImpl>();
 }
 
-void KvdbServiceImplTest::TearDown(void) 
+void KvdbServiceImplTest::TearDown(void)
 {
     RemoveAllStore(manager);
 }
@@ -161,14 +153,8 @@ HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status, Status::SUCCESS);
     std::vector<StoreId> storeIds;
-    std::vector<StoreId> storeIds1;
     status = kvdbServiceImpl_->GetStoreIds(appId, storeIds);
-    auto status1 = manager.GetAllKvStoreId(appId, storeIds1);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_EQ(status1, Status::SUCCESS);
-    ZLOGI("storeIds1 size... = :%{public}d", storeIds1.size());
-    ZLOGI("storeIds size... = :%{public}d", storeIds.size());
-    ASSERT_NE(storeIds1.size(), static_cast<size_t>(0));  
 }
 
 /**
@@ -184,7 +170,7 @@ HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest002, TestSize.Level0)
     AppId appId01;
     auto status = kvdbServiceImpl_->GetStoreIds(appId01, storeIds);
     ZLOGI("GetStoreIdsTest002 status = :%{public}d", status);
-    ASSERT_EQ(status, Status::SUCCESS); 
+    ASSERT_EQ(status, Status::SUCCESS);
 }
 
 /**

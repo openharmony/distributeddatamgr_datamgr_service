@@ -474,12 +474,12 @@ group("unittest") {
     ":CryptoManagerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
+    ":KvdbServiceImplTest",
     ":MetaDataTest",
     ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",
     ":UdmfRunTimeStoreTest",
     ":ValueProxyTest",
-    ":KvdbServiceImplTest",
   ]
 }
 ###############################################################################
