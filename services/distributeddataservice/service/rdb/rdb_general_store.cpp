@@ -724,8 +724,14 @@ int32_t RdbGeneralStore::SetTrackerTable(const std::string& tableName, const std
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->SetTrackerTable({ tableName, extendColName, trackerColNames });
+    if (status == DBStatus::WITH_INVENTORY_DATA) {
+        ZLOGI("Set tracker table with inventory data, database:%{public}s, tables name:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
+        return GeneralError::E_WITH_INVENTORY_DATA;
+    }
     if (status != DBStatus::OK) {
-        ZLOGE("Set tracker table failed! ret:%{public}d", status);
+        ZLOGE("Set tracker table failed! ret:%{public}d, database:%{public}s, tables name:%{public}s",
+            status, Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
