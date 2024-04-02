@@ -37,6 +37,7 @@ enum GeneralError : int32_t {
     E_USER_UNLOCK,
     E_VERSION_CONFLICT,
     E_RECORD_EXIST_CONFLICT,
+    E_WITH_INVENTORY_DATA,
     E_BUTT,
 };
 }
