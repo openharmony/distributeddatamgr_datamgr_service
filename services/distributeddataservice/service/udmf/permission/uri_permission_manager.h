@@ -20,13 +20,15 @@
 #include <string>
 
 #include "error_code.h"
+#include "uri.h"
 
 namespace OHOS {
 namespace UDMF {
 class UriPermissionManager {
 public:
     static UriPermissionManager &GetInstance();
-    Status GrantUriPermission(const std::string &path, const std::string &bundleName);
+    Status GrantUriPermission(
+        const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey);
 };
 } // namespace UDMF
 } // namespace OHOS
