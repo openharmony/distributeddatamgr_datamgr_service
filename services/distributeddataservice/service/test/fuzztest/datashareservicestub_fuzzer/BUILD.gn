@@ -109,6 +109,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "ability_base:zuri",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
     "bundle_framework:appexecfwk_base",
@@ -125,6 +126,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "relational_store:rdb_bms_adapter",
     "relational_store:rdb_data_share_adapter",
     "samgr:samgr_proxy",
+    "time_service:time_client",
   ]
 }
 
