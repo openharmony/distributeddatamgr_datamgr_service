@@ -18,16 +18,74 @@
 
 #include <string>
 #include <map>
-
 #include <vector>
-#include "data_share_profile_info.h"
+
+#include "bundle_info.h"
+#include "resource_manager.h"
+#include "serializable.h"
 
 namespace OHOS::DataShare {
-using ProfileInfo = RdbBMSAdapter::ProfileInfo;
-class DataShareProfileConfig {
+using namespace OHOS::Global::Resource;
+struct API_EXPORT Config final : public Serializable {
+    std::string uri = "*";
+    int crossUserMode = 0;
+    std::string writePermission = "";
+    std::string readPermission = "";
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
+struct API_EXPORT ProfileInfo : public Serializable {
+    std::vector<Config> tableConfig;
+    bool isSilentProxyEnable = true;
+    static const std::string MODULE_SCOPE;
+    static const std::string APPLICATION_SCOPE;
+    static const std::string RDB_TYPE;
+    static const std::string PUBLISHED_DATA_TYPE;
+    std::string storeName;
+    std::string tableName;
+    std::string scope = MODULE_SCOPE;
+    std::string type = RDB_TYPE;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
+enum AccessCrossMode : uint8_t {
+    USER_UNDEFINED,
+    USER_SHARED,
+    USER_SINGLE,
+    USER_MAX,
+};
+
+class API_EXPORT DataShareProfileConfig {
 public:
+    constexpr static int8_t TABLE_MATCH_PRIORITY = 3;
+    constexpr static int8_t STORE_MATCH_PRIORITY = 2;
+    constexpr static int8_t COMMON_MATCH_PRIORITY = 1;
+    constexpr static int8_t UNDEFINED_PRIORITY = -1;
+
     static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
+    static bool GetResConfigFile(
+        const AppExecFwk::ExtensionAbilityInfo &extensionInfo, std::string &profileInfos);
+    static std::pair<bool, std::string> GetDataPropertiesFromProxyDatas(const OHOS::AppExecFwk::ProxyData &proxyData,
+        const std::string &resourcePath, bool isCompressed);
+    AccessCrossMode GetFromTableConfigs(const ProfileInfo &profileInfo,
+        const std::string &tableUri, const std::string &storeUri);
+private:
+    static std::shared_ptr<ResourceManager> InitResMgr(const std::string &resourcePath);
+    static std::string GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
+        const std::string &resourcePath, bool isCompressed);
+    static std::string GetResProfileByMetadata(const AppExecFwk::Metadata &metadata,
+        const std::string &resourcePath, bool isCompressed);
+    static std::string GetResFromResMgr(const std::string &resName, ResourceManager &resMgr,
+        bool isCompressed);
+    static std::string ReadProfile(const std::string &resPath);
+    static bool IsFileExisted(const std::string &filePath);
+    static std::mutex infosMutex_;
+    void SetCrossUserMode(uint8_t priority, uint8_t crossMode);
+    AccessCrossMode GetCrossUserMode();
+    std::pair<AccessCrossMode, int8_t> crossMode_ = {AccessCrossMode::USER_UNDEFINED, UNDEFINED_PRIORITY};
 };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAMGR_PROFILE_CONFIG_H

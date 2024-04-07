@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <utility>
 #define LOG_TAG "RdbSubscriberManager"
 
 #include "rdb_subscriber_manager.h"
@@ -239,6 +240,24 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
     });
     SchedulerManager::GetInstance().Execute(
         uri, context->currentUserId, context->calledSourceDir, context->version);
+}
+
+void RdbSubscriberManager::Emit(const std::string &uri, DataProviderConfig::ProviderInfo &providerInfo,
+    DataShareDbDelegate::DbInfo &dbInfo)
+{
+    if (!URIUtils::IsDataProxyURI(uri)) {
+        return;
+    }
+    rdbCache_.ForEach([&uri, &providerInfo, &dbInfo, this](const Key &key, std::vector<ObserverNode> &val) {
+        if (key.uri != uri) {
+            return false;
+        }
+        Notify(key, providerInfo.currentUserId, val, dbInfo.dataDir, dbInfo.version);
+        SetObserverNotifyOnEnabled(val);
+        return false;
+    });
+    SchedulerManager::GetInstance().Execute(
+        uri, providerInfo.currentUserId, dbInfo.dataDir, dbInfo.version);
 }
 
 void RdbSubscriberManager::SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes)

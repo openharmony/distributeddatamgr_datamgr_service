@@ -58,6 +58,7 @@ ohos_shared_library("data_share_service") {
     "data/resultset_json_formatter.cpp",
     "data/template_data.cpp",
     "data_provider_config.cpp",
+    "data_share_db_delegate.cpp",
     "data_share_obs_proxy.cpp",
     "data_share_profile_config.cpp",
     "data_share_service_impl.cpp",
@@ -117,8 +118,9 @@ ohos_shared_library("data_share_service") {
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
-    "relational_store:rdb_bms_adapter",
+    "relational_store:native_appdatafwk",
     "relational_store:rdb_data_share_adapter",
+    "resource_management:global_resmgr",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"

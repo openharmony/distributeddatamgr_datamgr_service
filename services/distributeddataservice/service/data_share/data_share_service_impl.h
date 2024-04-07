@@ -16,12 +16,16 @@
 #ifndef DATASHARESERVICE_DATA_SERVICE_IMPL_H
 #define DATASHARESERVICE_DATA_SERVICE_IMPL_H
 
+#include <cstdint>
+#include <functional>
 #include <string>
 
 #include "bundle_mgr_proxy.h"
 #include "common_event_subscribe_info.h"
 #include "common_event_subscriber.h"
 #include "data_proxy_observer.h"
+#include "data_provider_config.h"
+#include "data_share_db_delegate.h"
 #include "data_share_service_stub.h"
 #include "data_share_silent_config.h"
 #include "datashare_template.h"
@@ -43,6 +47,8 @@ namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
 public:
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
+    using ExecuteCallback = std::function<int32_t(DataProviderConfig::ProviderInfo &,
+        DataShareDbDelegate::DbInfo &, std::shared_ptr<DBDelegate>)>;
     DataShareServiceImpl() = default;
     virtual ~DataShareServiceImpl();
     int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;
@@ -110,6 +116,7 @@ private:
     bool SubscribeTimeChanged();
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);
+    int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "data_share_profile_config.h"
 #define LOG_TAG "LoadConfigFromDataShareBundleInfoStrategy"
 
 #include "load_config_from_data_share_bundle_info_strategy.h"
@@ -87,7 +88,7 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
             std::string info;
-            auto ret = DataShareProfileInfo::GetResConfigFile(item, info);
+            auto ret = DataShareProfileConfig::GetResConfigFile(item, info);
             if (!ret) {
                 return true; // optional meta data config
             }

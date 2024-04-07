@@ -16,10 +16,9 @@
 #ifndef DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_SHARE_BUNDLE_INFO_STRAGETY_H
 #define DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_SHARE_BUNDLE_INFO_STRAGETY_H
 
-#include "data_share_profile_info.h"
+#include "data_share_profile_config.h"
 #include "strategy.h"
 namespace OHOS::DataShare {
-using namespace OHOS::RdbBMSAdapter;
 class LoadConfigFromDataShareBundleInfoStrategy final: public Strategy {
 public:
     LoadConfigFromDataShareBundleInfoStrategy() = default;
