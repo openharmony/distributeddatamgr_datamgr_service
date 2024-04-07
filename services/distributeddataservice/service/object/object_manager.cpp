@@ -907,12 +907,18 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
         return snapshots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
     }
 
-    bool isSuccess = ObjectAssetLoader::GetInstance()->Transfer(userId, appId, deviceId, dataAsset);
-    if (isSuccess) {
-        return OBJECT_SUCCESS;
-    } else {
+    auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, true });
+    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, appId, deviceId, {dataAsset},
+                                                                 [block](bool success) {
+        block->SetValue({ false, success });
+    });
+    auto [timeout, status] = block->GetValue();
+    if (timeout) {
+        ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
+              status, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
         return OBJECT_INNER_ERROR;
     }
+    return OBJECT_SUCCESS;
 }
 
 ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::string& bundleName,

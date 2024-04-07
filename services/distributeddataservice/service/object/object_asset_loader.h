@@ -19,25 +19,45 @@
 #include "executor_pool.h"
 #include "object_types.h"
 #include "store/general_value.h"
-
+#include "concurrent_map.h"
+#include <unordered_set>
 namespace OHOS {
 namespace DistributedObject {
+
+using TransferFunc = std::function<void(bool success)>;
+struct TransferTask {
+    TransferTask() = default;
+    std::unordered_set<std::string> downloadAssets;
+    TransferFunc callback;
+};
+
 class ObjectAssetLoader {
 public:
+    ObjectAssetLoader();
     static ObjectAssetLoader *GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     bool Transfer(const int32_t userId, const std::string &bundleName,
-        const std::string &deviceId, const DistributedData::Asset &assetValue);
+        const std::string &deviceId, const DistributedData::Asset & asset);
     void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
 private:
-    ObjectAssetLoader() = default;
+
     ~ObjectAssetLoader() = default;
     ObjectAssetLoader(const ObjectAssetLoader &) = delete;
     ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
-
+    void CheckCallcack(const std::string& uri, bool result);
     static constexpr int WAIT_TIME = 60;
+    static constexpr int LAST_DOWNLOAD_ASSET_SIZE = 100;
     std::shared_ptr<ExecutorPool> executors_;
+
+    std::mutex mutex;
+    std::atomic_uint32_t taskSeq_ = 0;
+
+    std::queue<std::string> assetQueue_;
+    ConcurrentMap<uint32_t , TransferTask> tasks_;
+    ConcurrentMap<std::string, std::string> downloaded_;
+    ConcurrentMap<std::string, std::string> downloading_;
+
 };
 } // namespace DistributedObject
 } // namespace OHOS

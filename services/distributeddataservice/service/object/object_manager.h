@@ -30,6 +30,7 @@
 #include "object_snapshot.h"
 #include "object_types.h"
 #include "value_proxy.h"
+#include <utils/anonymous.h>
 
 namespace OHOS {
 namespace DistributedObject {
@@ -102,6 +103,7 @@ private:
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
     constexpr static int8_t SOURCE_DEVICE_ID_INDEX = 2;
+    static constexpr int WAIT_TIME = 60;
     struct CallbackInfo {
         pid_t pid;
         std::map<std::string, sptr<ObjectChangeCallbackProxy>> observers_;
