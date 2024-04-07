@@ -158,9 +158,9 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
         return GeneralError::E_OK;
     }
     std::map<std::string, const DataBaseSchema> schemas{};
-    for (auto &iter : cloudDBs) {
-        auto database = iter.second.first;
-        auto bindInfo = iter.second.second;
+    for (auto &[userId, cloudDB] : cloudDBs) {
+        auto database = cloudDB.first;
+        auto bindInfo = cloudDB.second;
 
         if (bindInfo.db_ == nullptr) {
             return GeneralError::E_INVALID_ARGS;

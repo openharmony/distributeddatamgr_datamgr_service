@@ -490,20 +490,18 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent);
         return Status::STORE_META_CHANGED;
     }
-    if (options.cloudSync) {
-        if (executors_ != nullptr) {
-            DistributedData::StoreInfo storeInfo;
-            storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-            storeInfo.bundleName = appId.appId;
-            storeInfo.storeName = storeId;
-            storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
-            storeInfo.user = std::stoi(meta.user);
-            storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-            executors_->Execute([storeInfo]() {
-                auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
-                EventCenter::GetInstance().PostEvent(move(event));
-            });
-        }
+    if (options.cloudSync || executors_ != nullptr) {
+        DistributedData::StoreInfo storeInfo;
+        storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+        storeInfo.bundleName = appId.appId;
+        storeInfo.storeName = storeId;
+        storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
+        storeInfo.user = std::stoi(meta.user);
+        storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        executors_->Execute([storeInfo]() {
+            auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
+            EventCenter::GetInstance().PostEvent(move(event));
+        });
     }
 
     auto dbStatus = DBStatus::OK;
