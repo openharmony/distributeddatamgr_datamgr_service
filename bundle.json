@@ -76,6 +76,7 @@
                 "relational_store",
                 "safwk",
                 "samgr",
+                "time_service",
                 "udmf",
                 "app_file_service"
             ],
