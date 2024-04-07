@@ -72,6 +72,7 @@ private:
         int32_t GetUser() const;
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
+        int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
 
     private:
         mutable Time time_;

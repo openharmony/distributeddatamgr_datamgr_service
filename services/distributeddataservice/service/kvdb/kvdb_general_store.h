@@ -105,7 +105,8 @@ private:
         using DBOrigin = DistributedDB::Origin;
         using GenOrigin = Watcher::Origin;
         ~ObserverProxy() = default;
-        void OnChange(DistributedDB::Origin origin, const std::string &originalId, DistributedDB::ChangedData &&data);
+        void OnChange(
+            DistributedDB::Origin origin, const std::string &originalId, DistributedDB::ChangedData &&data) override;
         void OnChange(const DistributedDB::KvStoreChangedData &data) override;
         void ConvertChangeData(const std::list<DistributedDB::Entry> &entries, std::vector<Values> &values);
         bool HasWatcher() const

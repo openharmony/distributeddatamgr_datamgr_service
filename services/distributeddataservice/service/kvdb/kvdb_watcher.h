@@ -30,13 +30,13 @@ public:
     KVDBWatcher();
     int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
     int32_t OnChange(const Origin &origin, const GeneralWatcher::Fields &fields, ChangeData &&datas) override;
-    sptr<KvStoreObserverProxy> GetObserver() const;
-    void SetObserver(sptr<KvStoreObserverProxy> observer);
+    std::set<sptr<KvStoreObserverProxy>> GetObservers() const;
+    void SetObservers(std::set<sptr<KvStoreObserverProxy>> observers);
 
 private:
     std::vector<Entry> ConvertToEntries(const std::vector<DistributedData::Values> &values);
     mutable std::shared_mutex mutex_;
-    sptr<KvStoreObserverProxy> observer_;
+    std::set<sptr<KvStoreObserverProxy>> observers_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_WATCHER_H

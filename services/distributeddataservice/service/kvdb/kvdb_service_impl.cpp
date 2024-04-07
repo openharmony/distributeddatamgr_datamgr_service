@@ -229,11 +229,6 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    if (!metaData.cloudSync) {
-        ZLOGE("appId:%{public}s storeId:%{public}s  instanceId:%{public}d not supports cloud sync",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
-        return NOT_SUPPORT;
-    }
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = appId.appId;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
@@ -490,7 +485,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent);
         return Status::STORE_META_CHANGED;
     }
-    if (options.cloudSync || executors_ != nullptr) {
+    if (executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
         storeInfo.bundleName = appId.appId;
@@ -675,7 +670,6 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isNeedCompress = options.isNeedCompress;
     metaData.isPublic = options.isPublic;
-    metaData.cloudSync = options.cloudSync;
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
@@ -687,7 +681,6 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     localMetaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
     localMetaData.schema = options.schema;
     localMetaData.isPublic = options.isPublic;
-    localMetaData.cloudSync = options.cloudSync;
     for (auto &policy : options.policies) {
         OHOS::DistributedData::PolicyValue value;
         value.type = policy.type;
@@ -830,13 +823,12 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     if (devices.empty()) {
         return Status::INVALID_ARGUMENT;
     }
-    DistributedDB::DBStatus status = DistributedDB::OK;
     auto watcher = GetWatchers(meta.tokenId, meta.storeId);
     auto store = AutoCache::GetInstance().GetStore(meta, watcher);
     if (store == nullptr) {
-        ZLOGE("failed! status:%{public}d appId:%{public}s storeId:%{public}s dir:%{public}s", status,
-            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.dataDir.c_str());
-        return ConvertDbStatus(status);
+        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", meta.bundleName.c_str(),
+            Anonymous::Change(meta.storeId).c_str(), meta.dataDir.c_str());
+        return Status::ERROR;
     }
     KVDBQuery query(info.query);
     if (!query.IsValidQuery()) {
@@ -846,7 +838,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     auto mode = ConvertGeneralSyncMode(SyncMode(info.mode), SyncAction(type));
     auto ret = store->Sync(
         devices, mode, query,
-        [this, &complete](const GenDetails &result) mutable {
+        [this, complete](const GenDetails &result) mutable {
             auto deviceStatus = HandleGenDetails(result);
             complete(deviceStatus);
         },
@@ -999,7 +991,7 @@ void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
     delayTimes_.clear();
     count_ = 0;
     watcher_ = nullptr;
-    observer_ = nullptr;
+    observers_.clear();
 }
 
 void KVDBServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<KVDBWatcher> watcher)
@@ -1007,16 +999,16 @@ void KVDBServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<KVDBWatcher> watcher
     if (watcher_ != watcher) {
         watcher_ = watcher;
         if (watcher_ != nullptr) {
-            watcher_->SetObserver(observer_);
+            watcher_->SetObservers(observers_);
         }
     }
 }
 
 void KVDBServiceImpl::SyncAgent::SetObserver(sptr<KvStoreObserverProxy> observer)
 {
-    observer_ = observer;
+    observers_.insert(observer);
     if (watcher_ != nullptr) {
-        watcher_->SetObserver(observer);
+        watcher_->SetObservers(observers_);
     }
 }
 

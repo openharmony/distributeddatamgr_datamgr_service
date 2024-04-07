@@ -89,7 +89,7 @@ private:
         sptr<IKvStoreSyncCallback> callback_;
         std::map<std::string, uint32_t> delayTimes_;
         std::shared_ptr<KVDBWatcher> watcher_;
-        sptr<KvStoreObserverProxy> observer_;
+        std::set<sptr<KvStoreObserverProxy>> observers_;
         void ReInit(pid_t pid, const AppId &appId);
         void SetObserver(sptr<KvStoreObserverProxy> observer);
         void SetWatcher(std::shared_ptr<KVDBWatcher> watcher);

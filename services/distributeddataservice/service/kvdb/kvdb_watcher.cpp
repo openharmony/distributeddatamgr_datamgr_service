@@ -37,32 +37,31 @@ int32_t KVDBWatcher::OnChange(const Origin &origin, const Fields &fields, Change
     auto store = origin.store;
     auto changeData = datas.find(store);
     if (changeData != datas.end()) {
-        auto observer = GetObserver();
-        if (observer == nullptr) {
+        auto observers = GetObservers();
+        if (observers.empty()) {
             return E_NOT_INIT;
         }
         auto inserts = ConvertToEntries(changeData->second[OP_INSERT]);
         auto updates = ConvertToEntries(changeData->second[OP_UPDATE]);
         auto deletes = ConvertToEntries(changeData->second[OP_DELETE]);
         ChangeNotification change(std::move(inserts), std::move(updates), std::move(deletes), {}, false);
-        observer->OnChange(change);
+        for(auto &observer : observers) {
+            observer->OnChange(change);
+        }
     }
     return E_OK;
 }
 
-sptr<KvStoreObserverProxy> KVDBWatcher::GetObserver() const
+std::set<sptr<KvStoreObserverProxy>> KVDBWatcher::GetObservers() const
 {
     std::shared_lock<decltype(mutex_)> lock(mutex_);
-    return observer_;
+    return observers_;
 }
 
-void KVDBWatcher::SetObserver(sptr<KvStoreObserverProxy> observer)
+void KVDBWatcher::SetObservers(std::set<sptr<KvStoreObserverProxy>> observers)
 {
     std::unique_lock<decltype(mutex_)> lock(mutex_);
-    if (observer_ == observer) {
-        return;
-    }
-    observer_ = observer;
+    observers_ = std::move(observers);
 }
 
 std::vector<Entry> KVDBWatcher::ConvertToEntries(const std::vector<Values> &values)

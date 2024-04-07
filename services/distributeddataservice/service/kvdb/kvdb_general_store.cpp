@@ -127,7 +127,6 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
     storeInfo_.isPublic = meta.isPublic;
-    storeInfo_.cloudSync = meta.cloudSync;
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -157,7 +156,7 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
         ZLOGW("No cloudDB!");
         return GeneralError::E_OK;
     }
-    std::map<std::string, const DataBaseSchema> schemas{};
+    std::map<std::string, DataBaseSchema> schemas{};
     for (auto &[userId, cloudDB] : cloudDBs) {
         auto database = cloudDB.first;
         auto bindInfo = cloudDB.second;
@@ -180,7 +179,7 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
         auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
         EventCenter::GetInstance().PostEvent(std::move(evt));
         bindInfos_.insert(std::move(bindInfo));
-        dbClouds_.insert({ iter.first, std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
+        dbClouds_.insert({ userId, std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
 
         DBSchema schema;
         schema.tables.resize(database.tables.size());
@@ -198,14 +197,14 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
                 dbTable.fields.push_back(std::move(dbField));
             }
         }
-        schemas.insert({ iter.first, schema });
+        schemas.insert({ userId, schema });
     }
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
     delegate_->SetCloudDB(dbClouds_);
-    delegate_->SetCloudDBSchema(schemas);
+    delegate_->SetCloudDbSchema(std::move(schemas));
     return GeneralError::E_OK;
 }
 
@@ -327,9 +326,6 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
                 dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
             }
         } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
-            if (!storeInfo_.cloudSync) {
-                return GeneralError::E_NOT_SUPPORT;
-            }
             DistributedDB::CloudSyncOption syncOption;
             syncOption.devices = devices;
             syncOption.mode = dbMode;
@@ -342,7 +338,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
             } else {
                 syncOption.users.push_back(std::to_string(storeInfo_.user));
             }
-            dbStatus = delegate_->Sync({ devices, dbMode, {}, wait, false }, nullptr);
+            dbStatus = delegate_->Sync(syncOption, nullptr);
         } else {
             dbStatus = DistributedDB::INVALID_ARGS;
         }
