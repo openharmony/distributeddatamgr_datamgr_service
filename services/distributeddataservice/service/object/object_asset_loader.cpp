@@ -37,7 +37,7 @@ void ObjectAssetLoader::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
     const DistributedData::Asset& asset)
 {
-    if (RemoveDuplicates(asset)) {
+    if (RemoveDuplicateAsset(asset)) {
         return true;
     }
     AssetInfo assetInfo;
@@ -84,8 +84,8 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
     task.callback = callback;
     DistributedData::Assets downloadAssets;
     for (auto& asset : assets) {
-        auto [success, pair] = downloaded_.Find(asset.uri);
-        if (success && pair == asset.hash) {
+        auto [success, hash] = downloaded_.Find(asset.uri);
+        if (success && hash == asset.hash) {
             ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
             continue;
         }
@@ -125,18 +125,18 @@ void ObjectAssetLoader::FinishTask(const std::string& uri, bool result)
     }
 }
 
-bool ObjectAssetLoader::RemoveDuplicates(const DistributedData::Asset& asset)
+bool ObjectAssetLoader::RemoveDuplicateAsset(const DistributedData::Asset& asset)
 {
-    auto [success, pair] = downloaded_.Find(asset.uri);
-    if (success && pair == asset.hash) {
+    auto [success, hash] = downloaded_.Find(asset.uri);
+    if (success && hash == asset.hash) {
         ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
         return true;
     }
 
-    auto downloading = downloading_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
+    auto notDownloading = downloading_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
         return asset.hash;
     });
-    if (!downloading) {
+    if (!notDownloading) {
         ZLOGD("asset is downloading. assetName:%{public}s", asset.name.c_str());
         return true;
     }
@@ -144,7 +144,7 @@ bool ObjectAssetLoader::RemoveDuplicates(const DistributedData::Asset& asset)
     return false;
 }
 
-bool ObjectAssetLoader::UpdateDownloaded(const DistributedData::Asset& asset)
+void ObjectAssetLoader::UpdateDownloaded(const DistributedData::Asset& asset)
 {
     downloaded_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
         return asset.hash;

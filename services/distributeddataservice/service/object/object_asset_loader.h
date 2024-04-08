@@ -45,8 +45,8 @@ private:
     ObjectAssetLoader(const ObjectAssetLoader &) = delete;
     ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
     void FinishTask(const std::string& uri, bool result);
-    bool RemoveDuplicates(const DistributedData::Asset& asset);
-    bool UpdateDownloaded(const DistributedData::Asset& asset);
+    bool RemoveDuplicateAsset(const DistributedData::Asset& asset);
+    void UpdateDownloaded(const DistributedData::Asset& asset);
     static constexpr int WAIT_TIME = 60;
     static constexpr int LAST_DOWNLOAD_ASSET_SIZE = 100;
     std::shared_ptr<ExecutorPool> executors_;

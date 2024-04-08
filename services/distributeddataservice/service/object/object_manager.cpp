@@ -22,6 +22,7 @@
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "bootstrap.h"
+#include "block_data.h"
 #include "checker/checker_manager.h"
 #include "datetime_ex.h"
 #include "kvstore_utils.h"
