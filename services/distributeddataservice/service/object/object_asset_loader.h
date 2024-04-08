@@ -51,7 +51,6 @@ private:
     static constexpr int WAIT_TIME = 60;
     static constexpr int LAST_DOWNLOAD_ASSET_SIZE = 200;
     std::shared_ptr<ExecutorPool> executors_;
-
     std::mutex mutex_;
     std::atomic_uint32_t taskSeq_ = 0;
     std::queue<std::string> assetQueue_;

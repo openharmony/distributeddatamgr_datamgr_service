@@ -449,7 +449,7 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const std::map<std::string, st
         ObjectStore::StringUtils::BytesToStrWithType(
             result.find(assetPrefix + ObjectStore::SIZE_SUFFIX)->second, asset.size);
         if (asset.size.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
-            asset.size = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
+            asset.size = asset.size.substr(ObjectStore::STRING_PREFIX_LEN);
         }
         asset.hash = asset.modifyTime + "_" + asset.size;
         assets.push_back(asset);

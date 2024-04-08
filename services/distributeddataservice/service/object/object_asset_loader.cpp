@@ -102,6 +102,9 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
             if (IsDownloading(asset)) {
                 continue;
             }
+            downloading_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
+                return asset.hash;
+            });
             auto success = Transfer(userId, bundleName, deviceId, asset);
             if (success) {
                 std::lock_guard<std::mutex> lock(mutex_);
@@ -137,7 +140,6 @@ void ObjectAssetLoader::UpdateDownloaded(const DistributedData::Asset& asset)
     downloaded_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
         return asset.hash;
     });
-    std::lock_guard<std::mutex> lock(mutex_);
     assetQueue_.push(asset.uri);
     if (assetQueue_.size() > LAST_DOWNLOAD_ASSET_SIZE) {
         auto oldAsset = assetQueue_.front();
@@ -148,10 +150,8 @@ void ObjectAssetLoader::UpdateDownloaded(const DistributedData::Asset& asset)
 
 bool ObjectAssetLoader::IsDownloading(const DistributedData::Asset& asset)
 {
-    auto notDownloading = downloading_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
-        return asset.hash;
-    });
-    if (!notDownloading) {
+    auto [success, hash] = downloading_.Find(asset.uri);
+    if (success && hash == asset.hash) {
         ZLOGD("asset is downloading. assetName:%{public}s", asset.name.c_str());
         return true;
     }
