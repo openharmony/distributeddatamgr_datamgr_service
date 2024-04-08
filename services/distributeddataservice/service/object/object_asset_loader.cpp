@@ -37,50 +37,36 @@ void ObjectAssetLoader::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundleName,
     const std::string &deviceId, const DistributedData::Asset & asset)
 {
-    auto downloading = downloading_.ComputeIfAbsent(asset.uri,[asset](const std::string& key){
-        return asset.hash;
-    });
-    if (!downloading) {
+    if (RemoveDuplicates(asset)) {
         return true;
     }
-
     AssetInfo assetInfo;
     assetInfo.uri = asset.uri;
     assetInfo.assetName = asset.name;
     ZLOGI("Start transfer, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-          DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
+        DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
     auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
-        [block](const std::string &uri, int32_t status) {
+        [block](const std::string& uri, int32_t status) {
             block->SetValue({ false, status });
         });
-    CheckCallcack(asset.uri, res);
+    FinishTask(asset.uri, res);
     if (res != OBJECT_SUCCESS) {
         ZLOGE("fail, res: %{public}d, name: %{public}s, deviceId: %{public}s, bundleName: %{public}s", res,
             asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
+        downloading_.Erase(asset.uri);
         return false;
     }
     auto [timeout, status] = block->GetValue();
+    downloading_.Erase(asset.uri);
     if (timeout || status != OBJECT_SUCCESS) {
         ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
             status, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
         return false;
     }
-
-    // œ¬‘ÿÕÍ≥…
-    downloaded_.ComputeIfAbsent(asset.uri,[asset](const std::string& key){
-        return asset.hash;
-    });
-    downloaded_[asset.uri] = asset.hash;
-    downloading_.Erase(asset.uri);
-
-    std::lock_guard<std::mutex> lock(mutex);
-    assetQueue_.push(asset.uri);
-    if (assetQueue_.size() > LAST_DOWNLOAD_ASSET_SIZE) {
-        auto oldAsset = assetQueue_.front();
-        assetQueue_.pop();
-        downloaded_.Erase(oldAsset);
-    }
+    ZLOGD("Transfer end, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
+        DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
+    UpdateDownloaded(asset);
     return true;
 }
 
@@ -94,38 +80,81 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
         callback(false);
         return;
     }
-
     TransferTask task;
     task.callback = callback;
-
-    for (auto &asset: assets) {
-        if (downloaded_[asset.uri] == asset.hash) {
+    DistributedData::Assets downloadAssets;
+    for (auto& asset : assets) {
+        auto [success, pair] = downloaded_.Find(asset.uri);
+        if (success && pair == asset.hash) {
+            ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
             continue;
         }
         task.downloadAssets.insert(asset.uri);
+        downloadAssets.emplace_back(asset);
+    }
+    if (task.downloadAssets.empty()) {
+        callback(true);
     }
     taskSeq_++;
-    tasks_.ComputeIfAbsent(taskSeq_,[task](const uint32_t key){
+    tasks_.ComputeIfAbsent(taskSeq_, [task](const uint32_t key) {
         return task;
     });
 
-    executors_->Execute([this, userId, bundleName, deviceId, assets, callback]() {
-        for (const auto& asset : assets) {
-            Transfer(userId, bundleName, deviceId, asset);
+    executors_->Execute([this, userId, bundleName, deviceId, downloadAssets]() {
+        for (const auto& asset : downloadAssets) {
+            bool result = true;
+            result &= Transfer(userId, bundleName, deviceId, asset);
+            FinishTask(asset.uri, result);
         }
     });
+}
 
-}
-void ObjectAssetLoader::CheckCallcack(const std::string& uri, bool result)
+void ObjectAssetLoader::FinishTask(const std::string& uri, bool result)
 {
-    tasks_.ForEach([&uri, result, this](auto& seq, auto& task){
+    std::vector<uint32_t> finishedTasks;
+    tasks_.ForEach([&uri, &finishedTasks, result](auto& seq, auto& task) {
         task.downloadAssets.erase(uri);
-        if (task.downloadAssets.size() == 0 && task.callback!= nullptr) {
+        if (task.downloadAssets.size() == 0 && task.callback != nullptr) {
             task.callback(result);
-            tasks_.Erase(seq);
+            finishedTasks.emplace_back(seq);
         }
-        return true;
+        return false;
     });
+    for (auto taskId : finishedTasks) {
+        tasks_.Erase(taskId);
+    }
 }
-ObjectAssetLoader::ObjectAssetLoader() {}
+
+bool ObjectAssetLoader::RemoveDuplicates(const DistributedData::Asset& asset)
+{
+    auto [success, pair] = downloaded_.Find(asset.uri);
+    if (success && pair == asset.hash) {
+        ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
+        return true;
+    }
+
+    auto downloading = downloading_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
+        return asset.hash;
+    });
+    if (!downloading) {
+        ZLOGD("asset is downloading. assetName:%{public}s", asset.name.c_str());
+        return true;
+    }
+
+    return false;
+}
+
+bool ObjectAssetLoader::UpdateDownloaded(const DistributedData::Asset& asset)
+{
+    downloaded_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
+        return asset.hash;
+    });
+    std::lock_guard<std::mutex> lock(mutex);
+    assetQueue_.push(asset.uri);
+    if (assetQueue_.size() > LAST_DOWNLOAD_ASSET_SIZE) {
+        auto oldAsset = assetQueue_.front();
+        assetQueue_.pop();
+        downloaded_.Erase(oldAsset);
+    }
+}
 } // namespace OHOS::DistributedObject

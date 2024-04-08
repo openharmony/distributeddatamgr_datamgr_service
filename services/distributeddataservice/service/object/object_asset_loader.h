@@ -33,31 +33,31 @@ struct TransferTask {
 
 class ObjectAssetLoader {
 public:
-    ObjectAssetLoader();
     static ObjectAssetLoader *GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
-    bool Transfer(const int32_t userId, const std::string &bundleName,
-        const std::string &deviceId, const DistributedData::Asset & asset);
+    bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+        const DistributedData::Asset& asset);
     void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
-private:
 
+private:
+    ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;
     ObjectAssetLoader(const ObjectAssetLoader &) = delete;
     ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
-    void CheckCallcack(const std::string& uri, bool result);
+    void FinishTask(const std::string& uri, bool result);
+    bool RemoveDuplicates(const DistributedData::Asset& asset);
+    bool UpdateDownloaded(const DistributedData::Asset& asset);
     static constexpr int WAIT_TIME = 60;
     static constexpr int LAST_DOWNLOAD_ASSET_SIZE = 100;
     std::shared_ptr<ExecutorPool> executors_;
 
     std::mutex mutex;
     std::atomic_uint32_t taskSeq_ = 0;
-
     std::queue<std::string> assetQueue_;
-    ConcurrentMap<uint32_t , TransferTask> tasks_;
+    ConcurrentMap<uint32_t, TransferTask> tasks_;
     ConcurrentMap<std::string, std::string> downloaded_;
     ConcurrentMap<std::string, std::string> downloading_;
-
 };
 } // namespace DistributedObject
 } // namespace OHOS

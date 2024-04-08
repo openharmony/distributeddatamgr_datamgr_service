@@ -912,10 +912,10 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
                                                                  [block](bool success) {
         block->SetValue({ false, success });
     });
-    auto [timeout, status] = block->GetValue();
-    if (timeout) {
-        ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
-              status, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
+    auto [timeout, success] = block->GetValue();
+    if (timeout || !success) {
+        ZLOGE("transfer failed, timeout: %{public}d, success: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
+              success, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
         return OBJECT_INNER_ERROR;
     }
     return OBJECT_SUCCESS;
