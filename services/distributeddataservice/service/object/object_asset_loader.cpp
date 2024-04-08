@@ -37,9 +37,6 @@ void ObjectAssetLoader::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
     const DistributedData::Asset& asset)
 {
-    if (RemoveDuplicateAsset(asset)) {
-        return true;
-    }
     AssetInfo assetInfo;
     assetInfo.uri = asset.uri;
     assetInfo.assetName = asset.name;
@@ -50,15 +47,12 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
         [block](const std::string& uri, int32_t status) {
             block->SetValue({ false, status });
         });
-    FinishTask(asset.uri, res);
     if (res != OBJECT_SUCCESS) {
         ZLOGE("fail, res: %{public}d, name: %{public}s, deviceId: %{public}s, bundleName: %{public}s", res,
             asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
-        downloading_.Erase(asset.uri);
         return false;
     }
     auto [timeout, status] = block->GetValue();
-    downloading_.Erase(asset.uri);
     if (timeout || status != OBJECT_SUCCESS) {
         ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
             status, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
@@ -66,13 +60,11 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
     }
     ZLOGD("Transfer end, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
         DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
-    UpdateDownloaded(asset);
     return true;
 }
 
 void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::string& bundleName,
-    const std::string& deviceId, const std::vector<DistributedData::Asset>& assets,
-    const std::function<void(bool success)>& callback)
+    const std::string& deviceId, const std::vector<DistributedData::Asset>& assets, const TransferFunc& callback)
 {
     if (executors_ == nullptr) {
         ZLOGE("executors is null, bundleName: %{public}s, deviceId: %{public}s, userId: %{public}d",
@@ -101,9 +93,24 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
     });
 
     executors_->Execute([this, userId, bundleName, deviceId, downloadAssets]() {
+        bool result = true;
         for (const auto& asset : downloadAssets) {
-            bool result = true;
-            result &= Transfer(userId, bundleName, deviceId, asset);
+            if (IsDownloaded(asset)) {
+                FinishTask(asset.uri, result);
+                continue;
+            }
+            if (IsDownloading(asset)) {
+                continue;
+            }
+            auto success = Transfer(userId, bundleName, deviceId, asset);
+            if (success) {
+                std::lock_guard<std::mutex> lock(mutex_);
+                downloading_.Erase(asset.uri);
+                UpdateDownloaded(asset);
+            } else {
+                downloading_.Erase(asset.uri);
+            }
+            result &= success;
             FinishTask(asset.uri, result);
         }
     });
@@ -125,14 +132,22 @@ void ObjectAssetLoader::FinishTask(const std::string& uri, bool result)
     }
 }
 
-bool ObjectAssetLoader::RemoveDuplicateAsset(const DistributedData::Asset& asset)
+void ObjectAssetLoader::UpdateDownloaded(const DistributedData::Asset& asset)
 {
-    auto [success, hash] = downloaded_.Find(asset.uri);
-    if (success && hash == asset.hash) {
-        ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
-        return true;
+    downloaded_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
+        return asset.hash;
+    });
+    std::lock_guard<std::mutex> lock(mutex_);
+    assetQueue_.push(asset.uri);
+    if (assetQueue_.size() > LAST_DOWNLOAD_ASSET_SIZE) {
+        auto oldAsset = assetQueue_.front();
+        assetQueue_.pop();
+        downloaded_.Erase(oldAsset);
     }
+}
 
+bool ObjectAssetLoader::IsDownloading(const DistributedData::Asset& asset)
+{
     auto notDownloading = downloading_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
         return asset.hash;
     });
@@ -140,21 +155,16 @@ bool ObjectAssetLoader::RemoveDuplicateAsset(const DistributedData::Asset& asset
         ZLOGD("asset is downloading. assetName:%{public}s", asset.name.c_str());
         return true;
     }
-
     return false;
 }
 
-void ObjectAssetLoader::UpdateDownloaded(const DistributedData::Asset& asset)
+bool ObjectAssetLoader::IsDownloaded(const DistributedData::Asset& asset)
 {
-    downloaded_.ComputeIfAbsent(asset.uri, [asset](const std::string& key) {
-        return asset.hash;
-    });
-    std::lock_guard<std::mutex> lock(mutex);
-    assetQueue_.push(asset.uri);
-    if (assetQueue_.size() > LAST_DOWNLOAD_ASSET_SIZE) {
-        auto oldAsset = assetQueue_.front();
-        assetQueue_.pop();
-        downloaded_.Erase(oldAsset);
+    auto [success, hash] = downloaded_.Find(asset.uri);
+    if (success && hash == asset.hash) {
+        ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
+        return true;
     }
+    return false;
 }
 } // namespace OHOS::DistributedObject

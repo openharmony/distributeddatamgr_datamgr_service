@@ -38,20 +38,21 @@ public:
     bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const DistributedData::Asset& asset);
     void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
-        const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
+                             const std::vector<DistributedData::Asset>& assets, const TransferFunc& callback);
 private:
     ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;
     ObjectAssetLoader(const ObjectAssetLoader &) = delete;
     ObjectAssetLoader &operator=(const ObjectAssetLoader &) = delete;
     void FinishTask(const std::string& uri, bool result);
-    bool RemoveDuplicateAsset(const DistributedData::Asset& asset);
+    bool IsDownloading(const DistributedData::Asset& asset);
+    bool IsDownloaded(const DistributedData::Asset& asset);
     void UpdateDownloaded(const DistributedData::Asset& asset);
     static constexpr int WAIT_TIME = 60;
-    static constexpr int LAST_DOWNLOAD_ASSET_SIZE = 100;
+    static constexpr int LAST_DOWNLOAD_ASSET_SIZE = 200;
     std::shared_ptr<ExecutorPool> executors_;
 
-    std::mutex mutex;
+    std::mutex mutex_;
     std::atomic_uint32_t taskSeq_ = 0;
     std::queue<std::string> assetQueue_;
     ConcurrentMap<uint32_t, TransferTask> tasks_;

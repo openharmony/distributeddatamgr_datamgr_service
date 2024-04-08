@@ -441,6 +441,17 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const std::map<std::string, st
         if (asset.uri.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
             asset.uri = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
         }
+        ObjectStore::StringUtils::BytesToStrWithType(
+            result.find(assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX)->second, asset.modifyTime);
+        if (asset.modifyTime.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
+            asset.modifyTime = asset.modifyTime.substr(ObjectStore::STRING_PREFIX_LEN);
+        }
+        ObjectStore::StringUtils::BytesToStrWithType(
+            result.find(assetPrefix + ObjectStore::SIZE_SUFFIX)->second, asset.size);
+        if (asset.size.find(ObjectStore::STRING_PREFIX) != std::string::npos) {
+            asset.size = asset.uri.substr(ObjectStore::STRING_PREFIX_LEN);
+        }
+        asset.hash = asset.modifyTime + "_" + asset.size;
         assets.push_back(asset);
         assetKey.insert(assetPrefix);
     }
@@ -909,15 +920,14 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
         return snapshots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
     }
 
-    auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, true });
-    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, appId, deviceId, {dataAsset},
-                                                                 [block](bool success) {
-        block->SetValue({ false, success });
+    auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
+    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, appId, deviceId, { dataAsset }, [block](bool ret) {
+        block->SetValue({ false, ret });
     });
     auto [timeout, success] = block->GetValue();
     if (timeout || !success) {
-        ZLOGE("transfer failed, timeout: %{public}d, success: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
-              success, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
+        ZLOGE("transfer failed, timeout: %{public}d, success: %{public}d, name: %{public}s, deviceId: %{public}s ",
+            timeout, success, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
         return OBJECT_INNER_ERROR;
     }
     return OBJECT_SUCCESS;
