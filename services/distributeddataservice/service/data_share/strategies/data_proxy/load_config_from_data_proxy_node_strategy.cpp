@@ -21,6 +21,7 @@
 #include "common/uri_utils.h"
 #include "datashare_errno.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> context)
@@ -52,14 +53,11 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
             }
             bool isCompressed = !hapModuleInfo.hapPath.empty();
             std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
-            auto [ret, propertiesInfo] = DataShareProfileConfig::GetDataPropertiesFromProxyDatas(
-                proxyData, resourcePath, isCompressed);
+            auto [ret, properties] = DataShareProfileConfig::GetDataProperties(resourcePath,
+                std::vector<AppExecFwk::Metadata>{proxyData.metadata}, isCompressed, true);
             if (!ret) {
-                return true;
-            }
-            ProfileInfo properties;
-            if (!properties.Unmarshall(propertiesInfo)) {
-                ZLOGE("profileInfo Unmarshall error. infos: %{public}s", propertiesInfo.c_str());
+                ZLOGE("profileInfo Unmarshall error. uri: %{public}s",
+                    OHOS::DistributedData::Anonymous::Anonymity(context->uri).c_str());
                 return true;
             }
             GetContextInfoFromDataProperties(properties, hapModuleInfo.moduleName, context);

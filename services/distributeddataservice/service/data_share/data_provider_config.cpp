@@ -12,7 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
+#include <vector>
 #define LOG_TAG "DataProviderConfig"
 
 #include "data_provider_config.h"
@@ -38,14 +38,15 @@ int DataProviderConfig::GetFromProxyData()
 {
     auto uriConfig = URIUtils::GetUriConfig(providerInfo_.uri);
     if (uriConfig.authority_.empty()) {
-        ZLOGE("proxy authority empty! uri: %{public}s", Anonymous::Change(providerInfo_.uri).c_str());
+        ZLOGE("uri authority empty! uri: %{public}s", Anonymous::Anonymity(providerInfo_.uri).c_str());
         return E_URI_NOT_EXIST;
     }
     providerInfo_.bundleName = uriConfig.authority_;
     BundleInfo bundleInfo;
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
         providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo)) {
-        ZLOGE("BundleInfo failed! bundleName: %{public}s", providerInfo_.bundleName.c_str());
+        ZLOGE("BundleInfo failed! bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
+            providerInfo_.bundleName.c_str(), providerInfo_.currentUserId, Anonymous::Anonymity(providerInfo_.uri).c_str());
         return E_BUNDLE_NAME_NOT_EXIST;
     }
     providerInfo_.singleton = bundleInfo.singleton;
@@ -64,40 +65,52 @@ int DataProviderConfig::GetFromProxyData()
             providerInfo_.readPermission = std::move(data.requiredReadPermission);
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
             std::string resourcePath = !hapModuleInfo.hapPath.empty() ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
-            auto [ret, propertiesInfo] = DataShareProfileConfig::GetDataPropertiesFromProxyDatas(
-                data, resourcePath, !hapModuleInfo.hapPath.empty());
+            auto [ret, properties] = DataShareProfileConfig::GetDataProperties(resourcePath,
+                std::vector<AppExecFwk::Metadata>{data.metadata}, !hapModuleInfo.hapPath.empty(), true);
             if (!ret) {
+                ZLOGE("ProfileInfo from proxyData error. uri: %{public}s", Anonymous::Anonymity(providerInfo_.uri).c_str());
                 return true;
             }
-            ProfileInfo properties;
-            if (!properties.Unmarshall(propertiesInfo)) {
-                ZLOGE("ProfileInfo error. infos: %{public}s, uri: %{public}s",
-                    propertiesInfo.c_str(), Anonymous::Change(providerInfo_.uri).c_str());
-                return true;
-            }
-            GetFromDataProperties(properties, hapModuleInfo.moduleName);
+            GetFromProperties(properties, hapModuleInfo.moduleName, true, false);
             return E_OK;
         }
     }
     return E_URI_NOT_EXIST;
 }
 
-void DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName)
+int DataProviderConfig::GetFromProperties(const ProfileInfo &profileInfo,
+    const std::string &moduleName, bool isProxyData, bool singleton)
 {
-    if (profileInfo.scope == ProfileInfo::MODULE_SCOPE) {
-        // module scope
-        providerInfo_.moduleName = moduleName;
+    if (isProxyData) {
+        if (profileInfo.scope == ProfileInfo::MODULE_SCOPE) {
+            // module scope
+            providerInfo_.moduleName = moduleName;
+        }
+        providerInfo_.storeName = profileInfo.storeName;
+        providerInfo_.tableName = profileInfo.tableName;
+        providerInfo_.type = profileInfo.type;
+        return E_OK;
     }
-    providerInfo_.storeName = profileInfo.storeName;
-    providerInfo_.tableName = profileInfo.tableName;
-    providerInfo_.type = profileInfo.type;
-    return;
+    std::string storeUri = URIUtils::DATA_SHARE_SCHEMA + providerInfo_.bundleName + URIUtils::URI_SEPARATOR +
+            moduleName + URIUtils::URI_SEPARATOR + providerInfo_.storeName;
+    std::string tableUri = storeUri + URIUtils::URI_SEPARATOR + providerInfo_.tableName;
+    DataShareProfileConfig profileConfig;
+    providerInfo_.accessCrossMode = profileConfig.GetFromTableConfigs(profileInfo, tableUri, storeUri);
+    if (singleton && providerInfo_.accessCrossMode == AccessCrossMode::USER_UNDEFINED) {
+        ZLOGE("single app must config user cross mode,bundleName:%{public}s, uri:%{public}s",
+            providerInfo_.bundleName.c_str(), Anonymous::Anonymity(providerInfo_.uri).c_str());
+        return E_ERROR;
+    }
+    if (singleton && providerInfo_.accessCrossMode == AccessCrossMode::USER_SINGLE) {
+        providerInfo_.tableName.append("_").append(std::to_string(providerInfo_.currentUserId));
+    }
+    return E_OK;
 }
 
 int DataProviderConfig::GetFromExtension()
 {
     if (!GetFromUriPath()) {
-        ZLOGE("Uri Path failed! uri:%{public}s", Anonymous::Change(providerInfo_.uri).c_str());
+        ZLOGE("Uri Path failed! uri:%{public}s", Anonymous::Anonymity(providerInfo_.uri).c_str());
         return E_URI_NOT_EXIST;
     }
     BundleInfo bundleInfo;
@@ -114,31 +127,14 @@ int DataProviderConfig::GetFromExtension()
         providerInfo_.haveDataShareExtension = true;
         providerInfo_.readPermission = std::move(item.readPermission);
         providerInfo_.writePermission = std::move(item.writePermission);
-        std::string resProfile;
-        auto ret = DataShareProfileConfig::GetResConfigFile(item, resProfile);
+        std::string resourcePath = !item.hapPath.empty() ? item.hapPath : item.resourcePath;
+        auto [ret, properties] = DataShareProfileConfig::GetDataProperties(resourcePath,
+            item.metadata, !item.hapPath.empty(), false);
         if (!ret) {
+            ZLOGE("ProfileInfo from extension error.uri: %{public}s", Anonymous::Anonymity(providerInfo_.uri).c_str());
             return E_OK;
         }
-        ProfileInfo profileInfo;
-        if (!profileInfo.Unmarshall(resProfile)) {
-            ZLOGE("profileInfo parse failed! resProfile:%{public}s, uri: %{public}s",
-                resProfile.c_str(), Anonymous::Change(providerInfo_.uri).c_str());
-            return E_ERROR;
-        }
-        std::string storeUri = URIUtils::DATA_SHARE_SCHEMA + providerInfo_.bundleName + URIUtils::URI_SEPARATOR +
-            providerInfo_.moduleName + URIUtils::URI_SEPARATOR + providerInfo_.storeName;
-        std::string tableUri = storeUri + URIUtils::URI_SEPARATOR + providerInfo_.tableName;
-        DataShareProfileConfig profileConfig;
-        providerInfo_.accessCrossMode = profileConfig.GetFromTableConfigs(profileInfo, tableUri, storeUri);
-        if (bundleInfo.singleton && providerInfo_.accessCrossMode == AccessCrossMode::USER_UNDEFINED) {
-            ZLOGE("single app must config user cross mode,bundleName:%{public}s, uri:%{public}s",
-                providerInfo_.bundleName.c_str(), Anonymous::Change(providerInfo_.uri).c_str());
-            return E_ERROR;
-        }
-        if (bundleInfo.singleton && providerInfo_.accessCrossMode == AccessCrossMode::USER_SINGLE) {
-            providerInfo_.tableName.append("_").append(std::to_string(providerInfo_.currentUserId));
-        }
-        return E_OK;
+        return GetFromProperties(properties, providerInfo_.moduleName, false, bundleInfo.singleton);
     }
     return E_URI_NOT_EXIST;
 }
@@ -153,7 +149,7 @@ bool DataProviderConfig::GetFromUriPath()
         pathSegments[static_cast<int32_t>(PATH_PARAM::MODULE_NAME)].empty() ||
         pathSegments[static_cast<int32_t>(PATH_PARAM::STORE_NAME)].empty() ||
         pathSegments[static_cast<int32_t>(PATH_PARAM::TABLE_NAME)].empty()) {
-        ZLOGE("Invalid uri ! uri: %{public}s", Anonymous::Change(providerInfo_.uri).c_str());
+        ZLOGE("Invalid uri ! uri: %{public}s", Anonymous::Anonymity(providerInfo_.uri).c_str());
         return false;
     }
     providerInfo_.bundleName = pathSegments[static_cast<int32_t>(PATH_PARAM::BUNDLE_NAME)];
@@ -172,7 +168,7 @@ std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProvider
     ret = GetFromExtension();
     if (ret != E_OK) {
         ZLOGE("Get providerInfo failed! ret: %{public}d, uri: %{public}s",
-            ret, Anonymous::Change(providerInfo_.uri).c_str());
+            ret, Anonymous::Anonymity(providerInfo_.uri).c_str());
     }
     return std::make_pair(ret, providerInfo_);
 }

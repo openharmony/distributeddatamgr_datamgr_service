@@ -51,7 +51,8 @@ private:
     bool GetFromUriPath();
     int GetFromProxyData();
     int GetFromExtension();
-    void GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
+    int GetFromProperties(const ProfileInfo &profileInfo, const std::string &moduleName,
+        bool isProxyData, bool singleton);
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
         MODULE_NAME,

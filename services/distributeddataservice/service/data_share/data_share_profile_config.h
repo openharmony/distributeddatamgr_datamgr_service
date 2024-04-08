@@ -66,18 +66,14 @@ public:
 
     static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
-    static bool GetResConfigFile(
-        const AppExecFwk::ExtensionAbilityInfo &extensionInfo, std::string &profileInfos);
-    static std::pair<bool, std::string> GetDataPropertiesFromProxyDatas(const OHOS::AppExecFwk::ProxyData &proxyData,
-        const std::string &resourcePath, bool isCompressed);
+    static std::pair<bool, ProfileInfo> GetDataProperties(const std::string &resourcePath,
+        const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData);
     AccessCrossMode GetFromTableConfigs(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:
     static std::shared_ptr<ResourceManager> InitResMgr(const std::string &resourcePath);
-    static std::string GetResProfileByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
-        const std::string &resourcePath, bool isCompressed);
-    static std::string GetResProfileByMetadata(const AppExecFwk::Metadata &metadata,
-        const std::string &resourcePath, bool isCompressed);
+    static std::string GetProfileInfoByMetadata(const std::string &resourcePath,
+    const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData);
     static std::string GetResFromResMgr(const std::string &resName, ResourceManager &resMgr,
         bool isCompressed);
     static std::string ReadProfile(const std::string &resPath);

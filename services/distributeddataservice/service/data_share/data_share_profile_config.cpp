@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "DataShareProfileConfig"
 
 #include "data_share_profile_config.h"
@@ -26,6 +25,7 @@
 #include "bundle_mgr_proxy.h"
 #include "log_print.h"
 #include "uri_utils.h"
+#include "utils/anonymous.h"
 
 namespace OHOS {
 namespace DataShare {
@@ -71,72 +71,46 @@ bool ProfileInfo::Marshal(json &node) const
 
 bool ProfileInfo::Unmarshal(const json &node)
 {
-    bool ret = GetValue(node, GET_NAME(tableConfig), tableConfig);
+    GetValue(node, GET_NAME(tableConfig), tableConfig);
     GetValue(node, GET_NAME(isSilentProxyEnable), isSilentProxyEnable);
-    std::string path;
-    ret = GetValue(node, GET_NAME(path), path);
-    if (!ret) {
-        return false;
-    }
-    std::vector<std::string> splitPath;
-    SplitStr(path, SEPARATOR, splitPath);
-    if (splitPath.size() < PATH_SIZE) {
-        return false;
-    }
-
-    if (splitPath[0].empty() || splitPath[1].empty()) {
-        return false;
-    }
-    storeName = splitPath[0];
-    tableName = splitPath[1];
     GetValue(node, GET_NAME(scope), scope);
     GetValue(node, GET_NAME(type), type);
-    return ret;
-}
+    std::string path;
+    auto ret = GetValue(node, GET_NAME(path), path);
+    if (ret) {
+        std::vector<std::string> splitPath;
+        SplitStr(path, SEPARATOR, splitPath);
+        if (splitPath.size() < PATH_SIZE) {
+            return false;
+        }
 
-bool DataShareProfileConfig::GetResConfigFile(
-    const AppExecFwk::ExtensionAbilityInfo &extensionInfo, std::string &profileInfo)
-{
-    bool isCompressed = !extensionInfo.hapPath.empty();
-    std::string resourcePath = isCompressed ? extensionInfo.hapPath : extensionInfo.resourcePath;
-    std::string resProfile = GetResProfileByMetadata(extensionInfo.metadata, resourcePath, isCompressed);
-    if (resProfile.empty()) {
-        return false;
+        if (splitPath[0].empty() || splitPath[1].empty()) {
+            return false;
+        }
+        storeName = splitPath[0];
+        tableName = splitPath[1];
     }
-    profileInfo = resProfile;
     return true;
 }
 
-std::pair<bool, std::string> DataShareProfileConfig::GetDataPropertiesFromProxyDatas(const OHOS::AppExecFwk::ProxyData &proxyData,
-    const std::string &resourcePath, bool isCompressed)
+std::pair<bool, ProfileInfo> DataShareProfileConfig::GetDataProperties(const std::string &resourcePath,
+    const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData)
 {
-    std::string info = GetResProfileByMetadata(proxyData.metadata, resourcePath, isCompressed);
+    ProfileInfo profileInfo;
+    std::string info = GetProfileInfoByMetadata(resourcePath, metadata, isCompressed, isProxyData);
     if (info.empty()) {
-        return std::make_pair(false, info);
+        return std::make_pair(false, profileInfo);
     }
-    return std::make_pair(true, info);
+    if (!profileInfo.Unmarshall(info)) {
+        ZLOGE("profileInfo failed! info: %{public}s, path: %{public}s, isProxyData: %{public}d",
+            info.c_str(), resourcePath.c_str(), isProxyData);
+        return std::make_pair(false, profileInfo);
+    }
+    return std::make_pair(true, profileInfo);
 }
 
-std::string DataShareProfileConfig::GetResProfileByMetadata(
-    const AppExecFwk::Metadata &metadata, const std::string &resourcePath, bool isCompressed)
-{
-    std::string info;
-    if (metadata.name.empty() || resourcePath.empty()) {
-        return info;
-    }
-    std::shared_ptr<ResourceManager> resMgr = InitResMgr(resourcePath);
-    if (resMgr == nullptr) {
-        return info;
-    }
-    
-    if (metadata.name == "dataProperties") {
-        info = GetResFromResMgr(metadata.resource, *resMgr, isCompressed);
-    }
-    return info;
-}
-
-std::string DataShareProfileConfig::GetResProfileByMetadata(
-    const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath, bool isCompressed)
+std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::string &resourcePath,
+    const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData)
 {
     std::string profileInfo;
     if (metadata.empty() || resourcePath.empty()) {
@@ -146,7 +120,12 @@ std::string DataShareProfileConfig::GetResProfileByMetadata(
     if (resMgr == nullptr) {
         return profileInfo;
     }
-
+    if (isProxyData) {
+        if (metadata.at(0).name == "dataProperties") {
+            profileInfo = GetResFromResMgr(metadata.at(0).resource, *resMgr, isCompressed);
+        }
+        return profileInfo;
+    }
     auto it = std::find_if(metadata.begin(), metadata.end(), [](AppExecFwk::Metadata meta) {
         return meta.name == DATA_SHARE_PROFILE_META;
     });
@@ -271,14 +250,13 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
         if (item.type != AppExecFwk::ExtensionAbilityType::DATASHARE) {
             continue;
         }
-        std::string info;
-        auto ret = GetResConfigFile(item, info);
+        bool isCompressed = !item.hapPath.empty();
+        std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
+        auto [ret, profileInfo] = GetDataProperties(resourcePath, item.metadata,
+            isCompressed, false);
         if (!ret) {
-            continue;
-        }
-        ProfileInfo profileInfo;
-        if (!profileInfo.Unmarshall(info)) {
-            ZLOGE("profileInfo Unmarshall error. infos: %{public}s", info.c_str());
+            ZLOGE("Profile Unmarshall error. uris: %{public}s",
+                OHOS::DistributedData::Anonymous::Anonymity(item.uri).c_str());
             continue;
         }
         profileInfos[item.uri] = profileInfo;

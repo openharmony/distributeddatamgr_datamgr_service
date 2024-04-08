@@ -20,6 +20,7 @@
 #include "bundle_mgr_proxy.h"
 #include "log_print.h"
 #include "uri_utils.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 struct ConfigData {
@@ -87,15 +88,12 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
-            std::string info;
-            auto ret = DataShareProfileConfig::GetResConfigFile(item, info);
+            std::string resourcePath = !item.hapPath.empty() ? item.hapPath : item.resourcePath;
+            auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(resourcePath,
+                item.metadata, !item.hapPath.empty(), false);
             if (!ret) {
+                ZLOGE("Profile parse failed! uri:%{public}s", OHOS::DistributedData::Anonymous::Anonymity(context->uri).c_str());
                 return true; // optional meta data config
-            }
-            ProfileInfo profileInfo;
-            if (!profileInfo.Unmarshall(info)) {
-                ZLOGE("parse failed! %{public}s", info.c_str());
-                return false;
             }
             LoadConfigFromProfile(profileInfo, context);
             return true;

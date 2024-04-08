@@ -55,7 +55,7 @@ std::tuple<int, DataShareDbDelegate::DbInfo, std::shared_ptr<DBDelegate>> DataSh
         auto [success, meta] = QueryMetaData();
         if (!success) {
             ZLOGE("Query metaData fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
-                bundleName_.c_str(), userId_, DistributedData::Anonymous::Change(uri).c_str());
+                bundleName_.c_str(), userId_, DistributedData::Anonymous::Anonymity(uri).c_str());
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, dbInfo_, nullptr);
         }
     }
@@ -66,7 +66,7 @@ std::tuple<int, DataShareDbDelegate::DbInfo, std::shared_ptr<DBDelegate>> DataSh
         true, dbInfo_.isEncrypt, dbInfo_.secretKey);
     if (dbDelegate == nullptr) {
         ZLOGE("DbDelegate fail, bundleName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            bundleName_.c_str(), userId_, DistributedData::Anonymous::Change(uri).c_str());
+            bundleName_.c_str(), userId_, DistributedData::Anonymous::Anonymity(uri).c_str());
         return std::make_tuple(E_ERROR, dbInfo_, nullptr);
     }
     return std::make_tuple(E_OK, dbInfo_, dbDelegate);
