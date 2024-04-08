@@ -33,6 +33,7 @@
 #include "account/account_delegate.h"
 #include "common/bytes.h"
 #include "common/string_utils.h"
+#include <utils/anonymous.h>
 
 namespace OHOS {
 namespace DistributedObject {

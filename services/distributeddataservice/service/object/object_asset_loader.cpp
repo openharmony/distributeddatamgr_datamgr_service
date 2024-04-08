@@ -34,8 +34,8 @@ void ObjectAssetLoader::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
     executors_ = executors;
 }
 
-bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string &bundleName,
-    const std::string &deviceId, const DistributedData::Asset & asset)
+bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
+    const DistributedData::Asset& asset)
 {
     if (RemoveDuplicates(asset)) {
         return true;

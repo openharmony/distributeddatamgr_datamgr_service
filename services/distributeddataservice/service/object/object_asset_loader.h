@@ -39,7 +39,6 @@ public:
         const DistributedData::Asset& asset);
     void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const std::vector<DistributedData::Asset>& assets, const std::function<void(bool success)>& callback);
-
 private:
     ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;
