@@ -13,15 +13,18 @@
  * limitations under the License.
  */
 
-use crate::ipc_conn::vec_raw_read;
-use ipc_rust::{BorrowedMsgParcel, Deserialize, IpcStatusCode};
 use std::fmt::{Debug, Display, Formatter};
+
+use ipc::parcel::{Deserialize, MsgParcel};
+use ipc::{IpcResult, IpcStatusCode};
+
+use crate::ipc_conn::vec_raw_read;
 
 #[derive(Default, Debug)]
 pub(crate) struct Errors(pub(crate) Vec<Error>);
 
 impl Deserialize for Errors {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = Errors(vec_raw_read::<Error>(parcel)?);
         Ok(result)
     }
@@ -113,7 +116,7 @@ impl Display for Error {
 impl std::error::Error for Error {}
 
 impl Deserialize for Error {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let index = parcel.read::<u32>()?;
         match index {
             0 => Ok(Error::Success),

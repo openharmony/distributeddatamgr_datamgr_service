@@ -20,7 +20,6 @@ mod error;
 mod ffi;
 mod function;
 
-use ipc_rust::{BorrowedMsgParcel, Deserialize, Serialize, String16};
 use std::collections::HashMap;
 
 pub(crate) use asset::AssetLoader;
@@ -31,32 +30,33 @@ pub(crate) use connect::{
 };
 pub use connect::{AssetStatus, ValueBucket};
 pub(crate) use database::DatabaseStub;
-pub(crate) use error::Errors;
-
 /// Error message at the ipc.
 pub use error::Error;
+pub(crate) use error::Errors;
+use ipc::parcel::{Deserialize, MsgParcel, Serialize};
+use ipc::IpcResult;
 
 pub(crate) fn string_hash_map_raw_write<V: Serialize>(
-    msg_parcel: &mut BorrowedMsgParcel<'_>,
+    msg_parcel: &mut MsgParcel,
     hash_map: &HashMap<String, V>,
-) -> ipc_rust::IpcResult<()> {
+) -> IpcResult<()> {
     msg_parcel.write(&(hash_map.len() as i32))?;
     let mut keys: Vec<&String> = hash_map.keys().collect();
     keys.sort();
     for key in keys {
-        msg_parcel.write(&String16::new(key))?;
+        msg_parcel.write_string16(&String::from(key))?;
         msg_parcel.write(&hash_map[key])?;
     }
     Ok(())
 }
 
 pub(crate) fn string_hash_map_raw_read<V: Deserialize>(
-    msg_parcel: &BorrowedMsgParcel<'_>,
-) -> ipc_rust::IpcResult<HashMap<String, V>> {
+    msg_parcel: &mut MsgParcel,
+) -> IpcResult<HashMap<String, V>> {
     let length = msg_parcel.read::<i32>()?;
     let mut hash_map = HashMap::new();
     for _ in 0..length {
-        let key = msg_parcel.read::<String16>()?.get_string();
+        let key = msg_parcel.read_string16()?;
         let value = msg_parcel.read::<V>()?;
         hash_map.insert(key, value);
     }
@@ -64,9 +64,9 @@ pub(crate) fn string_hash_map_raw_read<V: Deserialize>(
 }
 
 pub(crate) fn vec_raw_write<T: Serialize>(
-    msg_parcel: &mut BorrowedMsgParcel<'_>,
+    msg_parcel: &mut MsgParcel,
     vector: &Vec<T>,
-) -> ipc_rust::IpcResult<()> {
+) -> IpcResult<()> {
     msg_parcel.write(&(vector.len() as i32))?;
     for value in vector {
         msg_parcel.write(value)?;
@@ -74,9 +74,7 @@ pub(crate) fn vec_raw_write<T: Serialize>(
     Ok(())
 }
 
-pub(crate) fn vec_raw_read<T: Deserialize>(
-    msg_parcel: &BorrowedMsgParcel<'_>,
-) -> ipc_rust::IpcResult<Vec<T>> {
+pub(crate) fn vec_raw_read<T: Deserialize>(msg_parcel: &mut MsgParcel) -> IpcResult<Vec<T>> {
     let length = msg_parcel.read::<i32>()? as usize;
     let mut vector = Vec::with_capacity(length);
     for _ in 0..length {
@@ -88,8 +86,9 @@ pub(crate) fn vec_raw_read<T: Deserialize>(
 
 #[cfg(test)]
 mod test {
+    use ipc::parcel::MsgParcel;
+
     use crate::ipc_conn::{vec_raw_read, vec_raw_write};
-    use ipc_rust::MsgParcel;
 
     /// UT test for vec_raw_write.
     ///
@@ -108,8 +107,7 @@ mod test {
             String::from("value3"),
         ];
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
-        let mut parcel = msg_parcel.borrowed();
+        let mut parcel = MsgParcel::new();
         assert!(vec_raw_write(&mut parcel, &vector).is_ok());
 
         assert_eq!(parcel.read::<i32>().unwrap(), 3);
@@ -136,11 +134,10 @@ mod test {
             String::from("value3"),
         ];
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
-        let mut parcel = msg_parcel.borrowed();
+        let mut parcel = MsgParcel::new();
         assert!(vec_raw_write(&mut parcel, &vector).is_ok());
 
-        let result = vec_raw_read::<String>(&parcel).unwrap();
+        let result = vec_raw_read::<String>(&mut parcel).unwrap();
         assert_eq!(vector, result);
     }
 }

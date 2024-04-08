@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+use ipc::parcel::{Deserialize, MsgParcel};
+use ipc::remote::RemoteObj;
+use ipc::IpcResult;
+
 use crate::ipc_conn::connect::ValueBucket;
 use crate::ipc_conn::error::Error;
 use crate::ipc_conn::ffi::ConnectService;
@@ -21,9 +25,6 @@ use crate::ipc_conn::function::CloudDB::{
 };
 use crate::ipc_conn::function::CloudServiceFunc::ConnectDatabase;
 use crate::ipc_conn::*;
-use ipc_rust::{
-    BorrowedMsgParcel, Deserialize, IRemoteObj, IpcResult, MsgParcel, RemoteObj, String16,
-};
 
 pub(crate) type DatabaseStubResult<T> = Result<T, Error>;
 
@@ -37,7 +38,7 @@ pub(crate) struct LockInfo {
 }
 
 impl Deserialize for LockInfo {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let interval = parcel.read::<i32>()?;
         let session_id = parcel.read::<i32>()?;
         let result = Self {
@@ -58,24 +59,26 @@ impl DatabaseStub {
         bundle_name: &str,
         database: &Database,
     ) -> DatabaseStubResult<Self> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let bundle_name = String16::new(bundle_name);
+        let mut msg_parcel = MsgParcel::new();
+
         msg_parcel
-            .write(&bundle_name)
+            .write_string16(bundle_name)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
             .write(database)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
 
         let function_number = ConnectDatabase as u32;
-        let remote_obj = unsafe { RemoteObj::from_raw_ciremoteobj(ConnectService(user_id)) }
+
+        let remote_obj = unsafe { RemoteObj::from_ciremote(ConnectService(user_id)) }
             .ok_or(Error::GetProxyObjectFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let result = receive
-            .read::<RemoteObj>()
+            .read_remote()
             .map_err(|_| Error::ReadMsgParcelFailed)?;
         Ok(Self {
             remote_obj: Some(result),
@@ -87,14 +90,20 @@ impl DatabaseStub {
         struct Ids(Vec<String>);
 
         impl Deserialize for Ids {
-            fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
-                let id_vec = vec_raw_read::<String16>(parcel)?;
-                let ids = Ids(id_vec.iter().map(|x| x.get_string()).collect());
+            fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+                let length = parcel.read::<i32>()? as usize;
+                let mut id_vec = Vec::with_capacity(length);
+                for _ in 0..length {
+                    let value = parcel.read_string16()?;
+                    id_vec.push(value);
+                }
+
+                let ids = Ids(id_vec.into_iter().collect());
                 Ok(ids)
             }
         }
 
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
             .write(&number)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
@@ -104,8 +113,9 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let error = receive
@@ -127,10 +137,10 @@ impl DatabaseStub {
         values: &ValueBuckets,
         extends: &ValueBuckets,
     ) -> DatabaseStubResult<Vec<Option<ValueBucket>>> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let table = String16::new(table);
+        let mut msg_parcel = MsgParcel::new();
+
         msg_parcel
-            .write(&table)
+            .write_string16(table)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
             .write(values)
@@ -144,8 +154,8 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let mut results = vec![];
@@ -175,10 +185,9 @@ impl DatabaseStub {
         values: &ValueBuckets,
         extends: &ValueBuckets,
     ) -> DatabaseStubResult<Vec<Option<ValueBucket>>> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let table = String16::new(table);
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
-            .write(&table)
+            .write_string16(table)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
             .write(values)
@@ -192,8 +201,8 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let mut results = vec![];
@@ -222,10 +231,9 @@ impl DatabaseStub {
         table: &str,
         extends: &ValueBuckets,
     ) -> DatabaseStubResult<Vec<Option<ValueBucket>>> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let table = String16::new(table);
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
-            .write(&table)
+            .write_string16(table)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
             .write(extends)
@@ -236,8 +244,8 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let mut results = vec![];
@@ -268,21 +276,18 @@ impl DatabaseStub {
         result_limit: i32,
         cursor: &str,
     ) -> DatabaseStubResult<CloudData> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let table = String16::new(table);
-        let columns: Vec<String16> = columns.iter().map(|x| String16::new(x)).collect();
-        let cursor = String16::new(cursor);
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
-            .write(&table)
+            .write_string16(table)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
-            .write(&columns)
+            .write_string16_vec(columns)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
             .write(&result_limit)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
-            .write(&cursor)
+            .write_string16(cursor)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
 
         let function_number = Query as u32;
@@ -290,8 +295,8 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let error = receive
@@ -307,7 +312,7 @@ impl DatabaseStub {
     }
 
     pub(crate) fn lock(&mut self, interval: i32) -> DatabaseStubResult<LockInfo> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
             .write(&interval)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
@@ -317,8 +322,8 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let error = receive
@@ -334,7 +339,7 @@ impl DatabaseStub {
     }
 
     pub(crate) fn unlock(&mut self, session_id: i32) -> DatabaseStubResult<()> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
             .write(&session_id)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
@@ -344,8 +349,8 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let error = receive
@@ -358,7 +363,7 @@ impl DatabaseStub {
     }
 
     pub(crate) fn heartbeat(&self, session_id: i32) -> DatabaseStubResult<LockInfo> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
             .write(&session_id)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
@@ -368,8 +373,8 @@ impl DatabaseStub {
             .remote_obj
             .as_ref()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let error = receive
