@@ -76,7 +76,8 @@ int DataProviderConfig::GetFromProxyData()
             bool isCompressed = !hapModuleInfo.hapPath.empty();
             std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
             auto [ret, info] = DataShareProfileConfig::GetDataProperties(
-                std::vector<AppExecFwk::Metadata>{data.metadata}, resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
+                std::vector<AppExecFwk::Metadata>{data.metadata}, resourcePath,
+                isCompressed, DATA_SHARE_PROPERTIES_META);
             if (!ret) {
                 return true;
             }

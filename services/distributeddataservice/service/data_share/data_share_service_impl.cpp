@@ -730,7 +730,7 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
         ZLOGE("Get dbInfo fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
             DistributedData::Anonymous::Anonymity(provider.uri).c_str());
-        return ERROR;
+        return code;
     }
     return callback(provider, dbConfig, dbDelegate);
 }
