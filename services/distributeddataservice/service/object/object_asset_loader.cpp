@@ -76,9 +76,7 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
     task.callback = callback;
     DistributedData::Assets downloadAssets;
     for (auto& asset : assets) {
-        auto [success, hash] = downloaded_.Find(asset.uri);
-        if (success && hash == asset.hash) {
-            ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
+        if (IsDownloaded(asset)) {
             continue;
         }
         task.downloadAssets.insert(asset.uri);
