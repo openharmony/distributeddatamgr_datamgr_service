@@ -35,7 +35,7 @@ public:
         std::string dataDir;
         std::string secretKey;
         int version = -1;
-        bool isEncrypt;
+        bool isEncrypt = false;
     };
     std::tuple<int, DbInfo, std::shared_ptr<DBDelegate>> GetDbInfo(const std::string uri,
         bool haveDataShareExtension);

@@ -20,7 +20,6 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "data_share_profile_config.h"
 #include "datashare_errno.h"
 #include "hap_token_info.h"
 #include "log_print.h"
@@ -38,18 +37,18 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
             callerTokenId, providerInfo_.bundleName);
         URIUtils::FormatUri(providerInfo_.uri);
     }
+    uriConfig_ = URIUtils::GetUriConfig(providerInfo_.uri);
 }
 
 int DataProviderConfig::GetFromProxyData()
 {
-    auto uriConfig = URIUtils::GetUriConfig(providerInfo_.uri);
-    providerInfo_.bundleName = uriConfig.authority_;
+    providerInfo_.bundleName = uriConfig_.authority_;
     if (providerInfo_.bundleName.empty()) {
-        if (uriConfig.pathSegments_.empty()) {
+        if (uriConfig_.pathSegments_.empty()) {
             ZLOGE("Authority and path empty! uri: %{public}s", Anonymous::Anonymity(providerInfo_.uri).c_str());
             return E_URI_NOT_EXIST;
         }
-        providerInfo_.bundleName = uriConfig.pathSegments_[0];
+        providerInfo_.bundleName = uriConfig_.pathSegments_[0];
     }
     BundleInfo bundleInfo;
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
@@ -68,21 +67,21 @@ int DataProviderConfig::GetFromProxyData()
     }
     for (auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
         for (auto &data : hapModuleInfo.proxyDatas) {
-            if (data.uri != uriConfig.formatUri_) {
+            if (data.uri != uriConfig_.formatUri_) {
                 continue;
             }
             providerInfo_.readPermission = std::move(data.requiredReadPermission);
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
-            std::string resourcePath = !hapModuleInfo.hapPath.empty() ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
-            auto [ret, info] = DataShareProfileConfig::GetDataProperties(
-                std::vector<AppExecFwk::Metadata>{data.metadata}, resourcePath,
-                !hapModuleInfo.hapPath.empty(), DATA_SHARE_PROPERTIES_META);
+            bool isCompressed = !hapModuleInfo.hapPath.empty();
+            std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
+            auto [ret, info] = DataShareProfileConfig::GetDataProperties(std::vector<AppExecFwk::Metadata>{data.metadata},
+                resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
             if (!ret) {
                 return true;
             }
             ProfileInfo profileInfo;
             if (!profileInfo.Unmarshall(info)) {
-                ZLOGE("ProfileInfo error. infos: %{public}s, uri: %{public}s",
+                ZLOGE("Profile unmarshall error. infos: %{public}s, uri: %{public}s",
                     info.c_str(), Anonymous::Anonymity(providerInfo_.uri).c_str());
                 return true;
             }
@@ -97,7 +96,6 @@ int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
 {
     if (isProxyData) {
         if (profileInfo.scope == ProfileInfo::MODULE_SCOPE) {
-            // module scope
             providerInfo_.moduleName = moduleName;
         }
         providerInfo_.storeName = profileInfo.storeName;
@@ -109,9 +107,9 @@ int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
             moduleName + URIUtils::URI_SEPARATOR + providerInfo_.storeName;
     std::string tableUri = storeUri + URIUtils::URI_SEPARATOR + providerInfo_.tableName;
     DataShareProfileConfig profileConfig;
-    providerInfo_.accessCrossMode = profileConfig.GetFromTableConfigs(profileInfo, tableUri, storeUri);
+    providerInfo_.accessCrossMode = profileConfig.GetAccessCrossMode(profileInfo, tableUri, storeUri);
     if (providerInfo_.singleton && providerInfo_.accessCrossMode == AccessCrossMode::USER_UNDEFINED) {
-        ZLOGE("single app must config user cross mode,bundleName:%{public}s, uri:%{public}s",
+        ZLOGE("Single app must config user cross mode,bundleName:%{public}s, uri:%{public}s",
             providerInfo_.bundleName.c_str(), Anonymous::Anonymity(providerInfo_.uri).c_str());
         return E_ERROR;
     }
@@ -151,7 +149,7 @@ int DataProviderConfig::GetFromExtension()
         }
         ProfileInfo profileInfo;
         if (!profileInfo.Unmarshall(info)) {
-            ZLOGE("profileInfo parse failed! resProfile:%{public}s, uri: %{public}s",
+            ZLOGE("Profile Unmarshall failed! info:%{public}s, uri:%{public}s",
                 info.c_str(), Anonymous::Anonymity(providerInfo_.uri).c_str());
             return E_ERROR;
         }
@@ -162,9 +160,7 @@ int DataProviderConfig::GetFromExtension()
 
 bool DataProviderConfig::GetFromUriPath()
 {
-    Uri uriTemp(providerInfo_.uri);
-    std::vector<std::string> pathSegments;
-    uriTemp.GetPathSegments(pathSegments);
+    std::vector<std::string> pathSegments = uriConfig_.pathSegments_;
     if (pathSegments.size() < static_cast<int32_t>(PATH_PARAM::PARAM_SIZE) ||
         pathSegments[static_cast<int32_t>(PATH_PARAM::BUNDLE_NAME)].empty() ||
         pathSegments[static_cast<int32_t>(PATH_PARAM::MODULE_NAME)].empty() ||

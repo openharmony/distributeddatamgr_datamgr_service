@@ -649,17 +649,15 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
     if (errCode != E_OK) {
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
             errCode, DistributedData::Anonymous::Anonymity(providerInfo.uri).c_str());
-        return errCode;
     }
-    if (providerInfo.readPermission.empty()) {
+    if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
-        return ERR_PERMISSION_DENIED;
     }
-    if (!PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
+    if (!providerInfo.readPermission.empty() &&
+        !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             callerTokenId, providerInfo.readPermission.c_str(),
             DistributedData::Anonymous::Anonymity(providerInfo.uri).c_str());
-        return ERR_PERMISSION_DENIED;
     }
     auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
     if (obServer == nullptr) {
@@ -682,17 +680,15 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     if (errCode != E_OK) {
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
             errCode, DistributedData::Anonymous::Anonymity(providerInfo.uri).c_str());
-        return errCode;
     }
-    if (providerInfo.readPermission.empty()) {
+    if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
-        return ERR_PERMISSION_DENIED;
     }
-    if (!PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
+    if (!providerInfo.readPermission.empty() &&
+        !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             callerTokenId, providerInfo.readPermission.c_str(),
             DistributedData::Anonymous::Anonymity(providerInfo.uri).c_str());
-        return ERR_PERMISSION_DENIED;
     }
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
     if (obsMgrClient == nullptr) {

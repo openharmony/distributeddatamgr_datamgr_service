@@ -68,7 +68,7 @@ public:
         std::map<std::string, ProfileInfo> &profileInfos);
     static std::pair<bool, std::string> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
         const std::string &resourcePath, bool isCompressed, const std::string &name);
-    AccessCrossMode GetFromTableConfigs(const ProfileInfo &profileInfo,
+    AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:
     static std::shared_ptr<ResourceManager> InitResMgr(const std::string &resourcePath);

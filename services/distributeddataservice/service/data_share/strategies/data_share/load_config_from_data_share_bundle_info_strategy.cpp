@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "data_share_profile_config.h"
 #define LOG_TAG "LoadConfigFromDataShareBundleInfoStrategy"
 
 #include "load_config_from_data_share_bundle_info_strategy.h"
 
 #include "bundle_mgr_proxy.h"
+#include "data_share_profile_config.h"
 #include "log_print.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"

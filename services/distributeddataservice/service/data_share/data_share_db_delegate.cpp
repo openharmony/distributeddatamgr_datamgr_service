@@ -64,7 +64,7 @@ std::tuple<int, DataShareDbDelegate::DbInfo, std::shared_ptr<DBDelegate>> DataSh
     auto dbDelegate = DBDelegate::Create(dbInfo_.dataDir, dbInfo_.version,
         true, dbInfo_.isEncrypt, dbInfo_.secretKey);
     if (dbDelegate == nullptr) {
-        ZLOGE("DbDelegate fail, bundleName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
+        ZLOGE("Create delegate fail, bundleName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             bundleName_.c_str(), userId_, DistributedData::Anonymous::Anonymity(uri).c_str());
         return std::make_tuple(E_ERROR, dbInfo_, nullptr);
     }

@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <string>
 #define LOG_TAG "DataShareProfileConfig"
 
 #include "data_share_profile_config.h"
@@ -21,6 +20,7 @@
 #include <cerrno>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <unistd.h>
 
 #include "bundle_mgr_proxy.h"
@@ -252,7 +252,7 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
     return true;
 }
 
-AccessCrossMode DataShareProfileConfig::GetFromTableConfigs(const ProfileInfo &profileInfo,
+AccessCrossMode DataShareProfileConfig::GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri)
 {
     for (auto const &item : profileInfo.tableConfig) {
