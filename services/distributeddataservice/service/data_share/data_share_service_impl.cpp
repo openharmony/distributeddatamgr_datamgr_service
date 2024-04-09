@@ -65,7 +65,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Anonymity(uri).c_str());
         return ERROR;
     }
-    auto insertCallBack = [&uri, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callBack = [&uri, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
             DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Insert(providerInfo.tableName, valuesBucket);
         if (ret > 0) {
@@ -74,7 +74,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         }
         return ret;
     };
-    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, insertCallBack);
+    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 bool DataShareServiceImpl::NotifyChange(const std::string &uri)
@@ -101,7 +101,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Anonymity(uri).c_str());
         return ERROR;
     }
-    auto updateCallBack = [&uri, &predicate, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callBack = [&uri, &predicate, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
             DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Update(providerInfo.tableName, predicate, valuesBucket);
         if (ret > 0) {
@@ -110,7 +110,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         }
         return ret;
     };
-    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, updateCallBack);
+    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
@@ -119,7 +119,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Anonymity(uri).c_str());
         return ERROR;
     }
-    auto deleteCallBack = [&uri, &predicate, this](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callBack = [&uri, &predicate, this](DataProviderConfig::ProviderInfo &providerInfo,
             DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Delete(providerInfo.tableName, predicate);
         if (ret > 0) {
@@ -128,7 +128,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         }
         return ret;
     };
-    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, deleteCallBack);
+    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri,
@@ -140,12 +140,12 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return nullptr;
     }
     std::shared_ptr<DataShareResultSet> resultSet;
-    auto queryCallBack = [&uri, &predicates, &columns, &resultSet, &errCode](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode](DataProviderConfig::ProviderInfo &providerInfo,
             DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, errCode);
         return E_OK;
     };
-    errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, queryCallBack);
+    errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);
     return resultSet;
 }
 
@@ -718,7 +718,7 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
             tokenId, permission.c_str(), DistributedData::Anonymous::Anonymity(provider.uri).c_str());
         return ERR_PERMISSION_DENIED;
     }
-    if (!permission.empty() && !PermitDelegate::VerifyPermission(permission,tokenId)) {
+    if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             tokenId, permission.c_str(), DistributedData::Anonymous::Anonymity(provider.uri).c_str());
         return ERR_PERMISSION_DENIED;

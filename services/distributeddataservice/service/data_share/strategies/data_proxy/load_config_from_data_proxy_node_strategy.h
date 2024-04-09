@@ -32,8 +32,8 @@ private:
         PARAM_SIZE
     };
     bool LoadConfigFromUri(std::shared_ptr<Context> context);
-    bool GetContextInfoFromDataProperties(
-        const ProfileInfo &properties, const std::string &moduleName, std::shared_ptr<Context> context);
+    bool GetContextInfoFromDataProperties(const std::string &moduleName, std::shared_ptr<Context> context,
+        std::vector<AppExecFwk::Metadata> metadatas, const std::string &resourcePath, bool isCompressed);
     static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };
 } // namespace OHOS::DataShare

@@ -93,15 +93,16 @@ bool ProfileInfo::Unmarshal(const json &node)
     return true;
 }
 
-std::pair<bool, std::string> DataShareProfileConfig::GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
-    const std::string &resourcePath, bool isCompressed, const std::string &name)
+std::pair<bool, std::string> DataShareProfileConfig::GetDataProperties(
+    const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath,
+    bool isCompressed, const std::string &name)
 {
     std::string info = GetProfileInfoByMetadata(metadata, resourcePath, isCompressed, name);
     return std::make_pair(!info.empty(), info);
 }
 
 std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
-        const std::string &resourcePath, bool isCompressed, const std::string &name)
+    const std::string &resourcePath, bool isCompressed, const std::string &name)
 {
     std::string profileInfo;
     if (metadata.empty() || resourcePath.empty()) {
@@ -253,7 +254,7 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
 }
 
 AccessCrossMode DataShareProfileConfig::GetAccessCrossMode(const ProfileInfo &profileInfo,
-        const std::string &tableUri, const std::string &storeUri)
+    const std::string &tableUri, const std::string &storeUri)
 {
     for (auto const &item : profileInfo.tableConfig) {
         if (item.uri == tableUri) {

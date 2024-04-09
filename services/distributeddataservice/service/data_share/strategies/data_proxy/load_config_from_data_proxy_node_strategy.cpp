@@ -53,18 +53,8 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
             }
             bool isCompressed = !hapModuleInfo.hapPath.empty();
             std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
-            auto [ret, propertiesInfo] = DataShareProfileConfig::GetDataProperties(std::vector<AppExecFwk::Metadata>{proxyData.metadata},
-                resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
-            if (!ret) {
-                return true;
-            }
-            ProfileInfo profileInfo;
-            if (!profileInfo.Unmarshall(propertiesInfo)) {
-                ZLOGE("profileInfo Unmarshall error. infos: %{public}s", propertiesInfo.c_str());
-                return false;
-            }
-            GetContextInfoFromDataProperties(profileInfo, hapModuleInfo.moduleName, context);
-            return true;
+            return GetContextInfoFromDataProperties(hapModuleInfo.moduleName, context,
+                std::vector<AppExecFwk::Metadata>{proxyData.metadata}, resourcePath, isCompressed);
         }
     }
     if (context->callerBundleName == context->calledBundleName) {
@@ -81,9 +71,20 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
     return false;
 }
 
-bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const ProfileInfo &properties,
-    const std::string &moduleName, std::shared_ptr<Context> context)
+bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const std::string &moduleName,
+    std::shared_ptr<Context> context, std::vector<AppExecFwk::Metadata> metadatas,
+    const std::string &resourcePath, bool isCompressed)
 {
+    auto [ret, propertiesInfo] = DataShareProfileConfig::GetDataProperties(
+        metadatas, resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
+    if (!ret) {
+        return true;
+    }
+    ProfileInfo properties;
+    if (!properties.Unmarshall(propertiesInfo)) {
+        ZLOGE("properties Unmarshall error. infos: %{public}s", propertiesInfo.c_str());
+        return false;
+    }
     if (properties.scope == ProfileInfo::MODULE_SCOPE) {
         // module scope
         context->calledModuleName = moduleName;

@@ -54,7 +54,8 @@ int DataProviderConfig::GetFromProxyData()
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
         providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo)) {
         ZLOGE("BundleInfo failed! bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
-            providerInfo_.bundleName.c_str(), providerInfo_.currentUserId, Anonymous::Anonymity(providerInfo_.uri).c_str());
+            providerInfo_.bundleName.c_str(), providerInfo_.currentUserId,
+            Anonymous::Anonymity(providerInfo_.uri).c_str());
         return E_BUNDLE_NAME_NOT_EXIST;
     }
     providerInfo_.singleton = bundleInfo.singleton;
@@ -74,8 +75,8 @@ int DataProviderConfig::GetFromProxyData()
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
             bool isCompressed = !hapModuleInfo.hapPath.empty();
             std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
-            auto [ret, info] = DataShareProfileConfig::GetDataProperties(std::vector<AppExecFwk::Metadata>{data.metadata},
-                resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
+            auto [ret, info] = DataShareProfileConfig::GetDataProperties(
+                std::vector<AppExecFwk::Metadata>{data.metadata}, resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
             if (!ret) {
                 return true;
             }
