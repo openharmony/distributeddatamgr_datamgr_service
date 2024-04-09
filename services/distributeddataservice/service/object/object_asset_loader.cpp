@@ -89,7 +89,6 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
     tasks_.ComputeIfAbsent(taskSeq_, [task](const uint32_t key) {
         return task;
     });
-
     executors_->Execute([this, userId, bundleName, deviceId, downloadAssets]() {
         bool result = true;
         for (const auto& asset : downloadAssets) {
