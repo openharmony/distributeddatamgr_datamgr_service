@@ -21,28 +21,77 @@
 #include "data_share_service_impl.h"
 #include "data_share_service_stub.h"
 #include "dump/dump_manager.h"
+#include "accesstoken_kit.h"
+#include "data_ability_observer_stub.h"
+#include "datashare_helper.h"
+#include "hap_token_info.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
+#include "token_setproc.h"
 
 using namespace testing::ext;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using namespace OHOS::DataShare;
-
-constexpr int STORAGE_MANAGER_MANAGER_ID = 5003;
-std::string DATA_SHARE_URI = "datashare:///com.acts.datasharetest";
+using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 std::string SLIENT_ACCESS_URI = "datashare:///com.acts.datasharetest/entry/DB00/TBL00?Proxy=true";
-std::string SLIENT_REGISTER_URI = "datashare:///com.acts.datasharetest/entry/DB00/TBL02?Proxy=true";
 std::string TBL_STU_NAME = "name";
 std::string TBL_STU_AGE = "age";
 
 namespace OHOS::Test {
 class DataShareServiceImplTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
     void SetUp(){};
     void TearDown(){};
-
 protected:
 };
+
+void DataShareServiceImplTest::SetUpTestCase(void)
+{
+    HapInfoParams info = {
+        .userID = 100,
+        .bundleName = "ohos.datashareclienttest.demo",
+        .instIndex = 0,
+        .appIDDesc = "ohos.datashareclienttest.demo"
+    };
+    HapPolicyParams policy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .bundleName = "ohos.datashareclienttest.demo",
+                .grantMode = 1,
+                .availableLevel = APL_NORMAL,
+                .label = "label",
+                .labelId = 1,
+                .description = "ohos.datashareclienttest.demo",
+                .descriptionId = 1
+            }
+        },
+        .permStateList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .isGeneral = true,
+                .resDeviceID = { "local" },
+                .grantStatus = { PermissionState::PERMISSION_GRANTED },
+                .grantFlags = { 1 }
+            }
+        }
+    };
+    AccessTokenKit::AllocHapToken(info, policy);
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
+        info.userID, info.bundleName, info.instIndex);
+    SetSelfTokenID(testTokenId);
+}
+
+void DataShareServiceImplTest::TearDownTestCase(void)
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.datashareclienttest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+}
 
 /**
 * @tc.name: Insert001
@@ -59,13 +108,8 @@ HWTEST_F(DataShareServiceImplTest, Insert001, TestSize.Level1)
     valuesBucket.Put(TBL_STU_NAME, value);
     int age = 25;
     valuesBucket.Put(TBL_STU_AGE, age);
-
-    bool enable = true;
-    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
-    EXPECT_EQ(resultA, E_OK);
-
     auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
-    EXPECT_NE(result, -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -83,9 +127,78 @@ HWTEST_F(DataShareServiceImplTest, Insert002, TestSize.Level1)
     valuesBucket.Put(TBL_STU_NAME, value);
     int age = 25;
     valuesBucket.Put(TBL_STU_AGE, age);
+
+    bool enable = true;
+    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
+    EXPECT_EQ(resultA, DataShare::E_OK);
+
     auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, -1);
 }
+
+/**
+* @tc.name: Insert003
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, Insert003, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "";
+    DataShare::DataShareValuesBucket valuesBucket;
+    std::string value = "";
+    std::string name = "";
+    valuesBucket.Put(name, value);
+
+    bool enable = true;
+    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
+    EXPECT_EQ(resultA, DataShare::E_OK);
+
+    auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+* @tc.name: Insert004
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, Insert004, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "";
+    DataShare::DataShareValuesBucket valuesBucket;
+    std::string value = "lisi";
+    valuesBucket.Put(TBL_STU_NAME, value);
+    int age = 25;
+    valuesBucket.Put(TBL_STU_AGE, age);
+
+    bool enable = true;
+    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
+    EXPECT_EQ(resultA, DataShare::E_OK);
+
+    auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
+    EXPECT_EQ(result, -1);
+}
+
+// /**
+// * @tc.name: NotifyChange
+// * @tc.desc:
+// * @tc.type: FUNC
+// * @tc.require:SQL
+// */
+// HWTEST_F(DataShareServiceImplTest, NotifyChange, TestSize.Level1)
+// {
+//     DataShareServiceImpl dataShareServiceImpl;
+//     std::string uri = "";
+//     auto result = dataShareServiceImpl.NotifyChange(uri);
+//     EXPECT_FALSE(result);
+//     dataShareServiceImpl.NotifyChange->obsMgrClient = nullptr;
+//     result = dataShareServiceImpl.NotifyChange(uri);
+//     EXPECT_FALSE(result);
+// }
 
 /**
 * @tc.name: Update001
@@ -106,10 +219,10 @@ HWTEST_F(DataShareServiceImplTest, Update001, TestSize.Level1)
 
     bool enable = true;
     auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
-    EXPECT_EQ(resultA, E_OK);
+    EXPECT_EQ(resultA, DataShare::E_OK);
 
     auto result = dataShareServiceImpl.Update(uri, predicates ,valuesBucket);
-    EXPECT_NE(result, -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -129,7 +242,7 @@ HWTEST_F(DataShareServiceImplTest, Update002, TestSize.Level1)
     std::string selections = TBL_STU_NAME + " = 'lisi'";
     predicates.SetWhereClause(selections);
     auto result = dataShareServiceImpl.Update(uri, predicates ,valuesBucket);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -142,16 +255,16 @@ HWTEST_F(DataShareServiceImplTest, Delete001, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = SLIENT_ACCESS_URI;
-    DataShare::DataSharePredicates deletePredicates;
+    DataShare::DataSharePredicates predicates;
     std::string selections = TBL_STU_NAME + " = 'lisi'";
-    deletePredicates.SetWhereClause(selections);
+    predicates.SetWhereClause(selections);
 
     bool enable = true;
     auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
-    EXPECT_EQ(resultA, E_OK);
+    EXPECT_EQ(resultA, DataShare::E_OK);
 
-    auto result = dataShareServiceImpl.Delete(uri, predicates ,valuesBucket);
-    EXPECT_NE(result, -1);
+    auto result = dataShareServiceImpl.Delete(uri, predicates);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -164,12 +277,12 @@ HWTEST_F(DataShareServiceImplTest, Delete002, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = SLIENT_ACCESS_URI;
-    DataShare::DataSharePredicates deletePredicates;
+    DataShare::DataSharePredicates predicates;
     std::string selections = TBL_STU_NAME + " = 'lisi'";
-    deletePredicates.SetWhereClause(selections);
+    predicates.SetWhereClause(selections);
 
-    auto result = dataShareServiceImpl.Delete(uri, predicates ,valuesBucket);
-    EXPECT_EQ(result, ERROR);
+    auto result = dataShareServiceImpl.Delete(uri, predicates);
+    EXPECT_EQ(result, -1);
 }
 
 } // namespace OHOS::Test

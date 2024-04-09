@@ -37,7 +37,8 @@ config("module_private_config") {
     "../../adapter/include",
     "../permission/include",
     "../data_share/",
-    "//third_party/json/single_include",
+    "//commonlibrary/c_utils/base/include",
+    "//utils/system/safwk/native/include",
   ]
 
   defines = [
@@ -498,6 +499,11 @@ ohos_unittest("DataShareServiceImplTest") {
 
   configs = [ ":module_private_config" ]
 
+  cflags = [
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+  ]
+
   external_deps = [
     "ability_base:want",
     "ability_base:zuri",
@@ -505,6 +511,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
+    "access_token:libtoken_setproc",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -512,6 +519,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
