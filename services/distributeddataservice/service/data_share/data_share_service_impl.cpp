@@ -140,13 +140,12 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return nullptr;
     }
     std::shared_ptr<DataShareResultSet> resultSet;
-    auto queryCallBack = [&uri, &predicates, &columns, &resultSet](DataProviderConfig::ProviderInfo &providerInfo,
+    auto queryCallBack = [&uri, &predicates, &columns, &resultSet, &errCode](DataProviderConfig::ProviderInfo &providerInfo,
             DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
-        int32_t errCode;
         resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, errCode);
-        return errCode;
+        return E_OK;
     };
-    Execute(uri, IPCSkeleton::GetCallingTokenID(), true, queryCallBack);
+    errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, queryCallBack);
     return resultSet;
 }
 
@@ -646,14 +645,13 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
 {
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
-    auto isProxyData = PROXY_URI_SCHEMA == Uri(uri).GetScheme();
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
             errCode, DistributedData::Anonymous::Anonymity(providerInfo.uri).c_str());
         return errCode;
     }
-    if (isProxyData && providerInfo.readPermission.empty()) {
+    if (providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
         return ERR_PERMISSION_DENIED;
     }
@@ -680,14 +678,13 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
 {
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
-    auto isProxyData = PROXY_URI_SCHEMA == Uri(uri).GetScheme();
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
             errCode, DistributedData::Anonymous::Anonymity(providerInfo.uri).c_str());
         return errCode;
     }
-    if (isProxyData && providerInfo.readPermission.empty()) {
+    if (providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
         return ERR_PERMISSION_DENIED;
     }
@@ -720,7 +717,12 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
         return errCode;
     }
     std::string permission = isRead ? provider.readPermission : provider.writePermission;
-    if (permission.empty() || !PermitDelegate::VerifyPermission(permission,tokenId)) {
+    if (!provider.allowEmptyPermission && permission.empty()) {
+        ZLOGE("Permission reject! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
+            tokenId, permission.c_str(), DistributedData::Anonymous::Anonymity(provider.uri).c_str());
+        return ERR_PERMISSION_DENIED;
+    }
+    if (!permission.empty() && !PermitDelegate::VerifyPermission(permission,tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             tokenId, permission.c_str(), DistributedData::Anonymous::Anonymity(provider.uri).c_str());
         return ERR_PERMISSION_DENIED;

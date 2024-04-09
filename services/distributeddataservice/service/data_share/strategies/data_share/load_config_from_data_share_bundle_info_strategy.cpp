@@ -89,11 +89,15 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
             std::string resourcePath = !item.hapPath.empty() ? item.hapPath : item.resourcePath;
-            auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(resourcePath,
-                item.metadata, !item.hapPath.empty(), false);
+            auto [ret, info] = DataShareProfileConfig::GetDataProperties(item.metadata,
+                resourcePath, !item.hapPath.empty(), DATA_SHARE_EXTENSION_META);
             if (!ret) {
-                ZLOGE("Profile parse failed! uri:%{public}s", OHOS::DistributedData::Anonymous::Anonymity(context->uri).c_str());
-                return true; // optional meta data config
+                continue;
+            }
+            ProfileInfo profileInfo;
+            if (!profileInfo.Unmarshall(info)) {
+                ZLOGE("parse failed! %{public}s", info.c_str());
+                return false;
             }
             LoadConfigFromProfile(profileInfo, context);
             return true;

@@ -43,6 +43,7 @@ public:
         std::string type = "rdb";
         bool singleton = false;
         bool haveDataShareExtension = false;
+        bool allowEmptyPermission = false;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
     };
 
@@ -51,8 +52,7 @@ private:
     bool GetFromUriPath();
     int GetFromProxyData();
     int GetFromExtension();
-    int GetFromProperties(const ProfileInfo &profileInfo, const std::string &moduleName,
-        bool isProxyData, bool singleton);
+    int GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName, bool isProxyData);
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
         MODULE_NAME,
@@ -60,6 +60,8 @@ private:
         TABLE_NAME,
         PARAM_SIZE
     };
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
+    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
     ProviderInfo providerInfo_;
 };
 } // namespace OHOS::DataShare

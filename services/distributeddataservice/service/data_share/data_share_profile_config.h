@@ -66,14 +66,14 @@ public:
 
     static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
-    static std::pair<bool, ProfileInfo> GetDataProperties(const std::string &resourcePath,
-        const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData);
+    static std::pair<bool, std::string> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
+        const std::string &resourcePath, bool isCompressed, const std::string &name);
     AccessCrossMode GetFromTableConfigs(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:
     static std::shared_ptr<ResourceManager> InitResMgr(const std::string &resourcePath);
-    static std::string GetProfileInfoByMetadata(const std::string &resourcePath,
-    const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData);
+    static std::string GetProfileInfoByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
+        const std::string &resourcePath, bool isCompressed, const std::string &name);
     static std::string GetResFromResMgr(const std::string &resName, ResourceManager &resMgr,
         bool isCompressed);
     static std::string ReadProfile(const std::string &resPath);
@@ -82,6 +82,7 @@ private:
     void SetCrossUserMode(uint8_t priority, uint8_t crossMode);
     AccessCrossMode GetCrossUserMode();
     std::pair<AccessCrossMode, int8_t> crossMode_ = {AccessCrossMode::USER_UNDEFINED, UNDEFINED_PRIORITY};
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
 };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAMGR_PROFILE_CONFIG_H

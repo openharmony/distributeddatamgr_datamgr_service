@@ -53,14 +53,17 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
             }
             bool isCompressed = !hapModuleInfo.hapPath.empty();
             std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
-            auto [ret, properties] = DataShareProfileConfig::GetDataProperties(resourcePath,
-                std::vector<AppExecFwk::Metadata>{proxyData.metadata}, isCompressed, true);
+            auto [ret, propertiesInfo] = DataShareProfileConfig::GetDataProperties(std::vector<AppExecFwk::Metadata>{proxyData.metadata},
+                resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
             if (!ret) {
-                ZLOGE("profileInfo Unmarshall error. uri: %{public}s",
-                    OHOS::DistributedData::Anonymous::Anonymity(context->uri).c_str());
                 return true;
             }
-            GetContextInfoFromDataProperties(properties, hapModuleInfo.moduleName, context);
+            ProfileInfo profileInfo;
+            if (!profileInfo.Unmarshall(propertiesInfo)) {
+                ZLOGE("profileInfo Unmarshall error. infos: %{public}s", propertiesInfo.c_str());
+                return false;
+            }
+            GetContextInfoFromDataProperties(profileInfo, hapModuleInfo.moduleName, context);
             return true;
         }
     }

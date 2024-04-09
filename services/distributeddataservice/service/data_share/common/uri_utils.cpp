@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "refbase.h"
-#include <string>
 #define LOG_TAG "URIUtils"
 
 #include "uri_utils.h"
+
+#include <string>
 
 #include "log_print.h"
 #include "string_ex.h"
@@ -123,9 +123,9 @@ UriConfig URIUtils::GetUriConfig(const std::string &uri)
     uriTemp.GetPathSegments(pathSegments);
     uriConfig.pathSegments_ = pathSegments;
     uriConfig.scheme_ = uriTemp.GetScheme();
-    std::string convertUri = uriConfig.scheme_ + URI_SEPARATOR + uriConfig.authority_ + URI_SEPARATOR + uriConfig.path_;
-    size_t schemePos = uri.find(PARAM_URI_SEPARATOR);
-    if (schemePos != uri.npos) {
+    std::string convertUri = uriConfig.scheme_ + SCHEME_SEPARATOR + uriConfig.authority_ + uriConfig.path_;
+    size_t schemePos = convertUri.find(PARAM_URI_SEPARATOR);
+    if (schemePos != std::string::npos) {
         convertUri.replace(schemePos, PARAM_URI_SEPARATOR_LEN, SCHEME_SEPARATOR);
     }
     uriConfig.formatUri_ = convertUri;

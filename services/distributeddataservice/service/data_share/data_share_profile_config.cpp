@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <string>
 #define LOG_TAG "DataShareProfileConfig"
 
 #include "data_share_profile_config.h"
@@ -32,7 +33,6 @@ namespace DataShare {
 // using namespace OHOS::Rdb;
 std::mutex DataShareProfileConfig::infosMutex_;
 
-constexpr const char *DATA_SHARE_PROFILE_META = "ohos.extension.dataShare";
 constexpr const char *PROFILE_FILE_PREFIX = "$profile:";
 constexpr const char *SEPARATOR = "/";
 static constexpr int PATH_SIZE = 2;
@@ -93,24 +93,15 @@ bool ProfileInfo::Unmarshal(const json &node)
     return true;
 }
 
-std::pair<bool, ProfileInfo> DataShareProfileConfig::GetDataProperties(const std::string &resourcePath,
-    const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData)
+std::pair<bool, std::string> DataShareProfileConfig::GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
+    const std::string &resourcePath, bool isCompressed, const std::string &name)
 {
-    ProfileInfo profileInfo;
-    std::string info = GetProfileInfoByMetadata(resourcePath, metadata, isCompressed, isProxyData);
-    if (info.empty()) {
-        return std::make_pair(false, profileInfo);
-    }
-    if (!profileInfo.Unmarshall(info)) {
-        ZLOGE("profileInfo failed! info: %{public}s, path: %{public}s, isProxyData: %{public}d",
-            info.c_str(), resourcePath.c_str(), isProxyData);
-        return std::make_pair(false, profileInfo);
-    }
-    return std::make_pair(true, profileInfo);
+    std::string info = GetProfileInfoByMetadata(metadata, resourcePath, isCompressed, name);
+    return std::make_pair(!info.empty(), info);
 }
 
-std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::string &resourcePath,
-    const std::vector<AppExecFwk::Metadata> &metadata, bool isCompressed, bool isProxyData)
+std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
+        const std::string &resourcePath, bool isCompressed, const std::string &name)
 {
     std::string profileInfo;
     if (metadata.empty() || resourcePath.empty()) {
@@ -120,14 +111,8 @@ std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::string &
     if (resMgr == nullptr) {
         return profileInfo;
     }
-    if (isProxyData) {
-        if (metadata.at(0).name == "dataProperties") {
-            profileInfo = GetResFromResMgr(metadata.at(0).resource, *resMgr, isCompressed);
-        }
-        return profileInfo;
-    }
-    auto it = std::find_if(metadata.begin(), metadata.end(), [](AppExecFwk::Metadata meta) {
-        return meta.name == DATA_SHARE_PROFILE_META;
+    auto it = std::find_if(metadata.begin(), metadata.end(), [&name](AppExecFwk::Metadata meta) {
+        return meta.name == name;
     });
     if (it != metadata.end()) {
         return GetResFromResMgr((*it).resource, *resMgr, isCompressed);
@@ -252,11 +237,14 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
         }
         bool isCompressed = !item.hapPath.empty();
         std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
-        auto [ret, profileInfo] = GetDataProperties(resourcePath, item.metadata,
-            isCompressed, false);
+        auto [ret, info] = GetDataProperties(item.metadata, resourcePath, isCompressed,
+            DATA_SHARE_EXTENSION_META);
         if (!ret) {
-            ZLOGE("Profile Unmarshall error. uris: %{public}s",
-                OHOS::DistributedData::Anonymous::Anonymity(item.uri).c_str());
+            continue;
+        }
+        ProfileInfo profileInfo;
+        if (!profileInfo.Unmarshall(info)) {
+            ZLOGE("profileInfo Unmarshall error. infos: %{public}s", info.c_str());
             continue;
         }
         profileInfos[item.uri] = profileInfo;

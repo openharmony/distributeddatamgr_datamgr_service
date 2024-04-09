@@ -27,7 +27,6 @@
 #include "uri_utils.h"
 #include "utils/anonymous.h"
 
-
 namespace OHOS::DataShare {
 std::pair<bool, DistributedData::StoreMetaData> DataShareDbDelegate::QueryMetaData()
 {
@@ -48,8 +47,7 @@ std::pair<bool, DistributedData::StoreMetaData> DataShareDbDelegate::QueryMetaDa
 std::tuple<int, DataShareDbDelegate::DbInfo, std::shared_ptr<DBDelegate>> DataShareDbDelegate::GetDbInfo(
     const std::string uri, bool haveDataShareExtension)
 {
-    DistributedData::StoreMetaData metaData;
-    auto [success, meta] = QueryMetaData();
+    auto [success, metaData] = QueryMetaData();
     if (!success) {
         ExtensionConnectAdaptor::TryAndWait(uri, bundleName_, haveDataShareExtension);
         auto [success, meta] = QueryMetaData();
@@ -58,6 +56,7 @@ std::tuple<int, DataShareDbDelegate::DbInfo, std::shared_ptr<DBDelegate>> DataSh
                 bundleName_.c_str(), userId_, DistributedData::Anonymous::Anonymity(uri).c_str());
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, dbInfo_, nullptr);
         }
+        metaData = std::move(meta);
     }
     dbInfo_.dataDir = std::move(metaData.dataDir);
     dbInfo_.isEncrypt = std::move(metaData.isEncrypt);
