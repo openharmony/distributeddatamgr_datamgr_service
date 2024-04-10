@@ -30,16 +30,12 @@
 #include "data_share_silent_config.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
-#include "delete_strategy.h"
 #include "feature/static_acts.h"
 #include "get_data_strategy.h"
-#include "insert_strategy.h"
 #include "publish_strategy.h"
-#include "query_strategy.h"
 #include "rdb_notify_strategy.h"
 #include "subscribe_strategy.h"
 #include "template_strategy.h"
-#include "update_strategy.h"
 #include "uri_utils.h"
 #include "visibility.h"
 
@@ -124,10 +120,6 @@ private:
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
-    DeleteStrategy deleteStrategy_;
-    InsertStrategy insertStrategy_;
-    QueryStrategy queryStrategy_;
-    UpdateStrategy updateStrategy_;
     TemplateStrategy templateStrategy_;
     RdbNotifyStrategy rdbNotifyStrategy_;
     BindInfo binderInfo_;

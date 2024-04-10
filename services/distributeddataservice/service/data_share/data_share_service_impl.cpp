@@ -37,6 +37,7 @@
 #include "log_print.h"
 #include "matching_skills.h"
 #include "permit_delegate.h"
+#include "rdb_helper.h"
 #include "scheduler_manager.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
 #include "template_data.h"
@@ -496,7 +497,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string 
     PublishedData::Delete(bundleName, user);
     PublishedData::ClearAging();
     TemplateData::Delete(bundleName, user);
-    RdbHelper::ClearCache();
+    NativeRdb::RdbHelper::ClearCache();
     return E_OK;
 }
 
