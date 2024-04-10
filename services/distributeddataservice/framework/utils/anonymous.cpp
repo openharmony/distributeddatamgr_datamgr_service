@@ -18,7 +18,6 @@ namespace OHOS {
 namespace DistributedData {
 constexpr int32_t HEAD_SIZE = 3;
 constexpr int32_t END_SIZE = 3;
-constexpr int32_t END_LENGTH = 10;
 constexpr int32_t MIN_SIZE = HEAD_SIZE + END_SIZE + 3;
 constexpr const char *REPLACE_CHAIN = "***";
 constexpr const char *DEFAULT_ANONYMOUS = "******";
@@ -33,15 +32,6 @@ std::string Anonymous::Change(const std::string &name)
     }
 
     return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN + name.substr(name.length() - END_SIZE, END_SIZE));
-}
-
-std::string Anonymous::Mask(const std::string &uri)
-{
-    if (uri.length() <= END_LENGTH) {
-        return DEFAULT_ANONYMOUS;
-    }
-
-    return (DEFAULT_ANONYMOUS + uri.substr(uri.length() - END_LENGTH, END_LENGTH));
 }
 } // namespace DistributedData
 } // namespace OHOS

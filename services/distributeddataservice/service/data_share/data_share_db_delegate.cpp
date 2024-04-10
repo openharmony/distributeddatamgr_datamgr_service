@@ -45,15 +45,18 @@ std::pair<bool, DistributedData::StoreMetaData> DataShareDbDelegate::QueryMetaDa
 }
 
 std::tuple<int, DataShareDbDelegate::DbInfo, std::shared_ptr<DBDelegate>> DataShareDbDelegate::GetDbInfo(
-    const std::string uri, bool haveDataShareExtension)
+    const std::string uri, bool hasExtension)
 {
     auto [success, metaData] = QueryMetaData();
     if (!success) {
-        ExtensionConnectAdaptor::TryAndWait(uri, bundleName_, haveDataShareExtension);
+        if (!hasExtension) {
+            return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, dbInfo_, nullptr);
+        }
+        ExtensionConnectAdaptor::TryAndWait(uri, bundleName_);
         auto [success, meta] = QueryMetaData();
         if (!success) {
             ZLOGE("Query metaData fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
-                bundleName_.c_str(), userId_, DistributedData::Anonymous::Mask(uri).c_str());
+                bundleName_.c_str(), userId_, URIUtils::Anonymous(uri).c_str());
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, dbInfo_, nullptr);
         }
         metaData = std::move(meta);
@@ -65,7 +68,7 @@ std::tuple<int, DataShareDbDelegate::DbInfo, std::shared_ptr<DBDelegate>> DataSh
         true, dbInfo_.isEncrypt, dbInfo_.secretKey);
     if (dbDelegate == nullptr) {
         ZLOGE("Create delegate fail, bundleName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            bundleName_.c_str(), userId_, DistributedData::Anonymous::Mask(uri).c_str());
+            bundleName_.c_str(), userId_, URIUtils::Anonymous(uri).c_str());
         return std::make_tuple(E_ERROR, dbInfo_, nullptr);
     }
     return std::make_tuple(E_OK, dbInfo_, dbDelegate);

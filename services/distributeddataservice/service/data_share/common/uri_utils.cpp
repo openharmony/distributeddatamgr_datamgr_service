@@ -131,4 +131,13 @@ UriConfig URIUtils::GetUriConfig(const std::string &uri)
     uriConfig.formatUri = convertUri;
     return uriConfig;
 }
+
+std::string URIUtils::Anonymous(const std::string &uri)
+{
+    if (uri.length() <= END_LENGTH) {
+        return DEFAULT_ANONYMOUS;
+    }
+
+    return (DEFAULT_ANONYMOUS + uri.substr(uri.length() - END_LENGTH, END_LENGTH));
+}
 } // namespace OHOS::DataShare

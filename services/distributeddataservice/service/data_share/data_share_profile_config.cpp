@@ -95,12 +95,20 @@ bool ProfileInfo::Unmarshal(const json &node)
     return true;
 }
 
-std::pair<bool, std::string> DataShareProfileConfig::GetDataProperties(
+std::pair<int, ProfileInfo> DataShareProfileConfig::GetDataProperties(
     const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath,
     bool isCompressed, const std::string &name)
 {
+    ProfileInfo profileInfo;
     std::string info = GetProfileInfoByMetadata(metadata, resourcePath, isCompressed, name);
-    return std::make_pair(!info.empty(), info);
+    if (info.empty()) {
+        return std::make_pair(NOT_FOUND, profileInfo);
+    }
+    if (!profileInfo.Unmarshall(info)) {
+        ZLOGE("Profile error. infos: %{public}s, name: %{public}s", info.c_str(), name.c_str());
+        return std::make_pair(ERROR, profileInfo);
+    }
+    return std::make_pair(SUCCESS, profileInfo);
 }
 
 std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
@@ -110,14 +118,14 @@ std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<A
     if (metadata.empty() || resourcePath.empty()) {
         return profileInfo;
     }
-    std::shared_ptr<ResourceManager> resMgr = InitResMgr(resourcePath);
-    if (resMgr == nullptr) {
-        return profileInfo;
-    }
     auto it = std::find_if(metadata.begin(), metadata.end(), [&name](AppExecFwk::Metadata meta) {
         return meta.name == name;
     });
     if (it != metadata.end()) {
+        std::shared_ptr<ResourceManager> resMgr = InitResMgr(resourcePath);
+        if (resMgr == nullptr) {
+            return profileInfo;
+        }
         return GetResFromResMgr((*it).resource, *resMgr, isCompressed);
     }
 
@@ -240,14 +248,10 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
         }
         bool isCompressed = !item.hapPath.empty();
         std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
-        auto [ret, info] = GetDataProperties(item.metadata, resourcePath, isCompressed,
+        auto [ret, profileInfo] = GetDataProperties(item.metadata, resourcePath, isCompressed,
             DATA_SHARE_EXTENSION_META);
-        if (!ret) {
-            continue;
-        }
-        ProfileInfo profileInfo;
-        if (!profileInfo.Unmarshall(info)) {
-            ZLOGE("profileInfo Unmarshall error. infos: %{public}s", info.c_str());
+        if (ret == ERROR || ret == NOT_FOUND) {
+            ZLOGE("profileInfo Unmarshall error or empty. bundleName: %{public}s", calledBundleName.c_str());
             continue;
         }
         profileInfos[item.uri] = profileInfo;
@@ -265,6 +269,10 @@ AccessCrossMode DataShareProfileConfig::GetAccessCrossMode(const ProfileInfo &pr
         }
         if (item.uri == storeUri) {
             SetCrossUserMode(STORE_MATCH_PRIORITY, item.crossUserMode);
+            continue;
+        }
+        if (item.uri == "*") {
+            SetCrossUserMode(COMMON_MATCH_PRIORITY, item.crossUserMode);
             continue;
         }
     }

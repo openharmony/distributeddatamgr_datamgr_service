@@ -50,15 +50,12 @@ bool ExtensionConnectAdaptor::DoConnect(const std::string &uri)
 }
 
 bool ExtensionConnectAdaptor::TryAndWait(const std::string &uri, const std::string &bundleName,
-    bool haveDataShareExtension, int maxWaitTime)
+    int maxWaitTime)
 {
     ExtensionConnectAdaptor strategy;
     return AppConnectManager::Wait(
         bundleName, maxWaitTime,
-        [&uri, &strategy, &haveDataShareExtension]() {
-            if (!haveDataShareExtension) {
-                return false;
-            }
+        [&uri, &strategy]() {
             return strategy.DoConnect(uri);
         },
         [&strategy]() {

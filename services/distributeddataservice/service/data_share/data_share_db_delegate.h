@@ -38,7 +38,7 @@ public:
         bool isEncrypt = false;
     };
     std::tuple<int, DbInfo, std::shared_ptr<DBDelegate>> GetDbInfo(const std::string uri,
-        bool haveDataShareExtension);
+        bool hasExtension);
 private:
     std::pair<bool, DistributedData::StoreMetaData> QueryMetaData();
     std::string bundleName_;

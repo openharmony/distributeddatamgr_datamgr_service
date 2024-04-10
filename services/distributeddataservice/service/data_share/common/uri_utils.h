@@ -42,6 +42,7 @@ public:
     static bool IsDataProxyURI(const std::string &uri);
     static void FormatUri(std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);
+    static std::string Anonymous(const std::string &uri);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
     static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";
     static constexpr const char *PARAM_URI_SEPARATOR = ":///";
@@ -58,6 +59,8 @@ private:
         TABLE_NAME,
         PARAM_SIZE
     };
+    static constexpr int32_t END_LENGTH = 10;
+    static constexpr const char *DEFAULT_ANONYMOUS = "******";
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_URI_UTILS_H

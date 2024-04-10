@@ -89,14 +89,13 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
             std::string resourcePath = !item.hapPath.empty() ? item.hapPath : item.resourcePath;
-            auto [ret, info] = DataShareProfileConfig::GetDataProperties(item.metadata,
+            auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(item.metadata,
                 resourcePath, !item.hapPath.empty(), DataShareProfileConfig::DATA_SHARE_EXTENSION_META);
-            if (!ret) {
+            if (ret == NOT_FOUND) {
                 return true; // optional meta data config
             }
-            ProfileInfo profileInfo;
-            if (!profileInfo.Unmarshall(info)) {
-                ZLOGE("parse failed! %{public}s", info.c_str());
+            if (ret == ERROR) {
+                ZLOGE("parse failed! %{public}s", context->calledBundleName.c_str());
                 return false;
             }
             LoadConfigFromProfile(profileInfo, context);

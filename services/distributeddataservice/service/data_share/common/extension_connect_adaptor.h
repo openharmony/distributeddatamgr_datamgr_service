@@ -23,7 +23,7 @@ namespace OHOS::DataShare {
 class ExtensionConnectAdaptor {
 public:
     static bool TryAndWait(const std::string &uri, const std::string &bundleName,
-        bool haveDataShareExtension, int maxWaitTime = 2);
+        int maxWaitTime = 2);
     ExtensionConnectAdaptor();
 private:
     void Disconnect();

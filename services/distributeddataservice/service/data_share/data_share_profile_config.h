@@ -26,7 +26,7 @@
 
 namespace OHOS::DataShare {
 using namespace OHOS::Global::Resource;
-struct API_EXPORT Config final : public Serializable {
+struct Config final : public Serializable {
     std::string uri = "*";
     int crossUserMode = 0;
     std::string writePermission = "";
@@ -35,7 +35,7 @@ struct API_EXPORT Config final : public Serializable {
     bool Unmarshal(const json &node) override;
 };
 
-struct API_EXPORT ProfileInfo : public Serializable {
+struct ProfileInfo : public Serializable {
     std::vector<Config> tableConfig;
     bool isSilentProxyEnable = true;
     static const std::string MODULE_SCOPE;
@@ -68,7 +68,7 @@ public:
 
     static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
-    static std::pair<bool, std::string> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
+    static std::pair<int, ProfileInfo> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
         const std::string &resourcePath, bool isCompressed, const std::string &name);
     static AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);

@@ -42,7 +42,7 @@ public:
         std::string writePermission;
         std::string type = "rdb";
         bool singleton = false;
-        bool haveDataShareExtension = false;
+        bool hasExtension = false;
         bool allowEmptyPermission = false;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
     };
@@ -52,7 +52,8 @@ private:
     bool GetFromUriPath();
     int GetFromProxyData();
     int GetFromExtension();
-    int GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName, bool isProxyData);
+    int GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
+    int GetFromExtensionProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
         MODULE_NAME,

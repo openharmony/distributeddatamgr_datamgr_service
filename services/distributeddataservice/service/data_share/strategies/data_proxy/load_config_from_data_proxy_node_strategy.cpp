@@ -75,15 +75,10 @@ bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const
     std::shared_ptr<Context> context, std::vector<AppExecFwk::Metadata> metadatas,
     const std::string &resourcePath, bool isCompressed)
 {
-    auto [ret, propertiesInfo] = DataShareProfileConfig::GetDataProperties(
+    auto [ret, properties] = DataShareProfileConfig::GetDataProperties(
         metadatas, resourcePath, isCompressed, DataShareProfileConfig::DATA_SHARE_PROPERTIES_META);
-    if (!ret) {
+    if (ret == ERROR || ret == NOT_FOUND) {
         return true;
-    }
-    ProfileInfo properties;
-    if (!properties.Unmarshall(propertiesInfo)) {
-        ZLOGE("properties Unmarshall error. infos: %{public}s", propertiesInfo.c_str());
-        return false;
     }
     if (properties.scope == ProfileInfo::MODULE_SCOPE) {
         // module scope
