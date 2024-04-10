@@ -383,6 +383,9 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
         std::map<std::string, std::pair<Database, GeneralStore::BindInfo>> cloudDBs = {};
         for (auto &activeUser : activeUsers) {
+            if (activeUser == "0") {
+                continue;
+            }
             CloudInfo info;
             info.user = std::stoi(activeUser);
             SchemaMeta schemaMeta;
@@ -393,8 +396,8 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
                 return nullptr;
             }
             auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
-            auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
-            auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
+            auto cloudDB = instance->ConnectCloudDB(meta.bundleName, info.user, dbMeta);
+            auto assetLoader = instance->ConnectAssetLoader(meta.bundleName, info.user, dbMeta);
             if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
                 ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
                     Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
