@@ -22,7 +22,7 @@ namespace DistributedData {
 class Anonymous {
 public:
     API_EXPORT static std::string Change(const std::string &name);
-    API_EXPORT static std::string Anonymity(const std::string &uri);
+    API_EXPORT static std::string Mask(const std::string &uri);
 };
 } // namespace DistributedData
 } // namespace OHOS

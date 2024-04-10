@@ -59,6 +59,8 @@ enum AccessCrossMode : uint8_t {
 
 class API_EXPORT DataShareProfileConfig {
 public:
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
+    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
     constexpr static int8_t TABLE_MATCH_PRIORITY = 3;
     constexpr static int8_t STORE_MATCH_PRIORITY = 2;
     constexpr static int8_t COMMON_MATCH_PRIORITY = 1;
@@ -82,7 +84,6 @@ private:
     void SetCrossUserMode(uint8_t priority, uint8_t crossMode);
     AccessCrossMode GetCrossUserMode();
     std::pair<AccessCrossMode, int8_t> crossMode_ = {AccessCrossMode::USER_UNDEFINED, UNDEFINED_PRIORITY};
-    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
 };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAMGR_PROFILE_CONFIG_H

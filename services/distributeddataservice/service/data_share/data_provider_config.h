@@ -60,8 +60,6 @@ private:
         TABLE_NAME,
         PARAM_SIZE
     };
-    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
-    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
     ProviderInfo providerInfo_;
     UriConfig uriConfig_;
 };

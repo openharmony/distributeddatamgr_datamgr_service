@@ -119,6 +119,7 @@ private:
     int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
+    static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;

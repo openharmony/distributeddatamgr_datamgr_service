@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <utility>
 #define LOG_TAG "RdbSubscriberManager"
 
 #include "rdb_subscriber_manager.h"
 
 #include <cinttypes>
+#include <utility>
 
 #include "ipc_skeleton.h"
 #include "general/load_config_data_info_strategy.h"

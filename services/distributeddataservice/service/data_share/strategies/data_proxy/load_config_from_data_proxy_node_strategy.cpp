@@ -76,7 +76,7 @@ bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const
     const std::string &resourcePath, bool isCompressed)
 {
     auto [ret, propertiesInfo] = DataShareProfileConfig::GetDataProperties(
-        metadatas, resourcePath, isCompressed, DATA_SHARE_PROPERTIES_META);
+        metadatas, resourcePath, isCompressed, DataShareProfileConfig::DATA_SHARE_PROPERTIES_META);
     if (!ret) {
         return true;
     }

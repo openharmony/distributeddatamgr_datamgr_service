@@ -35,7 +35,7 @@ std::string Anonymous::Change(const std::string &name)
     return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN + name.substr(name.length() - END_SIZE, END_SIZE));
 }
 
-std::string Anonymous::Anonymity(const std::string &uri)
+std::string Anonymous::Mask(const std::string &uri)
 {
     if (uri.length() <= END_LENGTH) {
         return DEFAULT_ANONYMOUS;
