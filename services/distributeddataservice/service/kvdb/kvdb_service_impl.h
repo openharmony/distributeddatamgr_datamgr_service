@@ -93,6 +93,7 @@ private:
         void ReInit(pid_t pid, const AppId &appId);
         void SetObserver(sptr<KvStoreObserverProxy> observer);
         void SetWatcher(std::shared_ptr<KVDBWatcher> watcher);
+        void ClearObservers();
     };
     class Factory {
     public:

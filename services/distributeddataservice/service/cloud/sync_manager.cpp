@@ -379,7 +379,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         return nullptr;
     }
 
-    if (!store->IsBound()) { // todo ֻ���ڹ������ʱ�򣬰󶨶����
+    if (!store->IsBound()) {
         std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
         std::map<std::string, std::pair<Database, GeneralStore::BindInfo>> cloudDBs = {};
         for (auto &activeUser : activeUsers) {
@@ -394,13 +394,14 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
             }
             auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
             auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
-            if (mustBind && cloudDB == nullptr) {
+            auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
+            if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
                 ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
                     Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
                 return nullptr;
             }
-            if (cloudDB != nullptr) {
-                GeneralStore::BindInfo bindInfo(std::move(cloudDB), nullptr);
+            if (cloudDB != nullptr || assetLoader != nullptr) {
+                GeneralStore::BindInfo bindInfo(std::move(cloudDB), std::move(assetLoader));
                 cloudDBs[activeUser] = std::make_pair(dbMeta, bindInfo);
             }
         }

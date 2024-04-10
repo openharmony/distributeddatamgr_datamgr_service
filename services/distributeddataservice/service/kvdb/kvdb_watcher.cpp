@@ -64,12 +64,18 @@ void KVDBWatcher::SetObservers(std::set<sptr<KvStoreObserverProxy>> observers)
     observers_ = std::move(observers);
 }
 
+void KVDBWatcher::ClearObservers()
+{
+    std::unique_lock<decltype(mutex_)> lock(mutex_);
+    observers_.clear();
+}
+
 std::vector<Entry> KVDBWatcher::ConvertToEntries(const std::vector<Values> &values)
 {
     std::vector<Entry> changeData{};
     for (auto &info : values) {
         auto key = std::get_if<Bytes>(&info[0]);
-        if (key->empty()) {
+        if (key == nullptr) {
             continue;
         }
         auto value = std::get_if<Bytes>(&info[1]);

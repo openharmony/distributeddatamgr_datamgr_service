@@ -558,7 +558,8 @@ int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
             return false;
         }
         if (agent.watcher_ != nullptr) {
-            agent.watcher_->SetObserver(nullptr);
+            agent.watcher_->ClearObservers();
+            agent.ClearObservers();
         }
         auto stores = AutoCache::GetInstance().GetStoresIfPresent(key);
         for (auto store : stores) {
@@ -1009,6 +1010,14 @@ void KVDBServiceImpl::SyncAgent::SetObserver(sptr<KvStoreObserverProxy> observer
     observers_.insert(observer);
     if (watcher_ != nullptr) {
         watcher_->SetObservers(observers_);
+    }
+}
+
+void KVDBServiceImpl::SyncAgent::ClearObservers()
+{
+    observers_.clear();
+    if (watcher_ != nullptr) {
+        watcher_->ClearObservers();
     }
 }
 

@@ -178,8 +178,8 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
 
         auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
         EventCenter::GetInstance().PostEvent(std::move(evt));
-        bindInfos_.insert(std::move(bindInfo));
         dbClouds_.insert({ userId, std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
+        bindInfos_.insert(std::move(bindInfo));
 
         DBSchema schema;
         schema.tables.resize(database.tables.size());

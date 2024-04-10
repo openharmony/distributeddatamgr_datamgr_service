@@ -32,6 +32,7 @@ public:
     int32_t OnChange(const Origin &origin, const GeneralWatcher::Fields &fields, ChangeData &&datas) override;
     std::set<sptr<KvStoreObserverProxy>> GetObservers() const;
     void SetObservers(std::set<sptr<KvStoreObserverProxy>> observers);
+    void ClearObservers();
 
 private:
     std::vector<Entry> ConvertToEntries(const std::vector<DistributedData::Values> &values);
