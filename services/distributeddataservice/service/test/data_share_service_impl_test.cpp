@@ -863,12 +863,28 @@ HWTEST_F(DataShareServiceImplTest, OnAppUninstall, TestSize.Level1)
     std::string bundleName = BUNDLE_NAME;
     int32_t user = USER_TEST;
     int32_t index = 0;
-
     auto result1 = dataShareServiceImpl.OnAppUninstall(bundleName, user, index);
     EXPECT_EQ(result1, GeneralError::E_OK);
 
-    auto result2 = DataShareServiceImpl::DataShareStatic::OnAppUninstall(bundleName, user, index);
+    DataShareServiceImpl::DataShareStatic dataShareStatic;
+    auto result2 = dataShareStatic.OnAppUninstall(bundleName, user, index);
     EXPECT_EQ(result2, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: OnInitialize
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, OnInitialize, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params;
+    dataShareServiceImpl.DumpDataShareServiceInfo(fd, params);
+    auto result1 = dataShareServiceImpl.OnInitialize();
+    EXPECT_EQ(result1, 0);
 }
 
 /**
@@ -882,9 +898,11 @@ HWTEST_F(DataShareServiceImplTest, OnAppExit, TestSize.Level1)
     DataShareServiceImpl dataShareServiceImpl;
     pid_t uid = 1;
     pid_t pid = 2;
+    int32_t user = USER_TEST;
+    int32_t index = 0;
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, BUNDLE_NAME, 0);
     std::string bundleName = BUNDLE_NAME;
-    auto result1 = dataShareServiceImpl.OnAppUpdate(uid, pid, tokenId, bundleName);
+    auto result1 = dataShareServiceImpl.OnAppUpdate(bundleName, user, index);
     EXPECT_EQ(result1, GeneralError::E_OK);
 
     auto result2 = dataShareServiceImpl.OnAppExit(uid, pid, tokenId, bundleName);
@@ -892,36 +910,58 @@ HWTEST_F(DataShareServiceImplTest, OnAppExit, TestSize.Level1)
 }
 
 /**
-* @tc.name: NotifyObserver001
+* @tc.name: RegisterObserver001
 * @tc.desc:
 * @tc.type: FUNC
 * @tc.require:SQL
 */
-HWTEST_F(DataShareServiceImplTest, NotifyObserver001, TestSize.Level1)
+HWTEST_F(DataShareServiceImplTest, RegisterObserver001, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = SLIENT_ACCESS_URI;
-    auto result1 = dataShareServiceImpl.NotifyObserver(uri);
-    EXPECT_EQ(result1, GeneralError::E_OK);
-
-    std::string urierr = "";
-    auto result2 = dataShareServiceImpl.NotifyObserver(urierr);
-    EXPECT_EQ(result2, GeneralError::E_OK);
+    sptr<OHOS::IRemoteObject> remoteObj;
+    auto result1 = dataShareServiceImpl.RegisterObserver(uri, remoteObj);
+    EXPECT_NE(result1, GeneralError::E_OK);
+    dataShareServiceImpl.NotifyObserver(uri);
+    auto result2 = dataShareServiceImpl.UnregisterObserver(uri, remoteObj);
+    EXPECT_NE(result2, GeneralError::E_OK);
 }
 
 /**
-* @tc.name: NotifyObserver002
+* @tc.name: RegisterObserver002
 * @tc.desc:
 * @tc.type: FUNC
 * @tc.require:SQL
 */
-HWTEST_F(DataShareServiceImplTest, NotifyObserver002, TestSize.Level1)
+HWTEST_F(DataShareServiceImplTest, RegisterObserver002, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string urierr = "";
+    sptr<OHOS::IRemoteObject> remoteObj;
+    auto result1 = dataShareServiceImpl.RegisterObserver(urierr, remoteObj);
+    EXPECT_NE(result1, GeneralError::E_OK);
+    dataShareServiceImpl.NotifyObserver(urierr);
+    auto result2 = dataShareServiceImpl.UnregisterObserver(urierr, remoteObj);
+    EXPECT_NE(result2, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: RegisterObserver003
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, RegisterObserver003, TestSize.Level1)
 {
     auto tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = SLIENT_ACCESS_URI;
-    auto result1 = dataShareServiceImpl.NotifyObserver(uri);
+    sptr<OHOS::IRemoteObject> remoteObj;
+    auto result1 = dataShareServiceImpl.RegisterObserver(uri, remoteObj);
     EXPECT_NE(result1, GeneralError::E_OK);
+    dataShareServiceImpl.NotifyObserver(uri);
+    auto result2 = dataShareServiceImpl.UnregisterObserver(uri, remoteObj);
+    EXPECT_NE(result2, GeneralError::E_OK);
 }
 } // namespace OHOS::Test
