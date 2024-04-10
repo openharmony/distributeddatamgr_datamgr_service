@@ -41,6 +41,8 @@ const std::string ProfileInfo::MODULE_SCOPE = "module";
 const std::string ProfileInfo::APPLICATION_SCOPE = "application";
 const std::string ProfileInfo::RDB_TYPE = "rdb";
 const std::string ProfileInfo::PUBLISHED_DATA_TYPE = "publishedData";
+std::pair<AccessCrossMode, int8_t> DataShareProfileConfig::crossMode_ =
+    std::make_pair(AccessCrossMode::USER_UNDEFINED, DataShareProfileConfig::UNDEFINED_PRIORITY);
 bool Config::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(uri)], uri);

@@ -117,18 +117,18 @@ UriConfig URIUtils::GetUriConfig(const std::string &uri)
 {
     UriConfig uriConfig;
     Uri uriTemp(uri);
-    uriConfig.authority_ = uriTemp.GetAuthority();
-    uriConfig.path_ = uriTemp.GetPath();
+    uriConfig.authority = uriTemp.GetAuthority();
+    uriConfig.path = uriTemp.GetPath();
     std::vector<std::string> pathSegments;
     uriTemp.GetPathSegments(pathSegments);
-    uriConfig.pathSegments_ = pathSegments;
-    uriConfig.scheme_ = uriTemp.GetScheme();
-    std::string convertUri = uriConfig.scheme_ + SCHEME_SEPARATOR + uriConfig.authority_ + uriConfig.path_;
+    uriConfig.pathSegments = pathSegments;
+    uriConfig.scheme = uriTemp.GetScheme();
+    std::string convertUri = uriConfig.scheme + SCHEME_SEPARATOR + uriConfig.authority + uriConfig.path;
     size_t schemePos = convertUri.find(PARAM_URI_SEPARATOR);
     if (schemePos != std::string::npos) {
         convertUri.replace(schemePos, PARAM_URI_SEPARATOR_LEN, SCHEME_SEPARATOR);
     }
-    uriConfig.formatUri_ = convertUri;
+    uriConfig.formatUri = convertUri;
     return uriConfig;
 }
 } // namespace OHOS::DataShare

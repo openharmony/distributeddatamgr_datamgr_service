@@ -26,11 +26,11 @@ struct UriInfo {
 };
 
 struct UriConfig {
-    std::string authority_;
-    std::string path_;
-    std::vector<std::string> pathSegments_;
-    std::string formatUri_;
-    std::string scheme_;
+    std::string authority;
+    std::string path;
+    std::vector<std::string> pathSegments;
+    std::string formatUri;
+    std::string scheme;
 };
 
 class URIUtils {

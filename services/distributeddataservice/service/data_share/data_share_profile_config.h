@@ -70,7 +70,7 @@ public:
         std::map<std::string, ProfileInfo> &profileInfos);
     static std::pair<bool, std::string> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
         const std::string &resourcePath, bool isCompressed, const std::string &name);
-    AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
+    static AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:
     static std::shared_ptr<ResourceManager> InitResMgr(const std::string &resourcePath);
@@ -81,9 +81,9 @@ private:
     static std::string ReadProfile(const std::string &resPath);
     static bool IsFileExisted(const std::string &filePath);
     static std::mutex infosMutex_;
-    void SetCrossUserMode(uint8_t priority, uint8_t crossMode);
-    AccessCrossMode GetCrossUserMode();
-    std::pair<AccessCrossMode, int8_t> crossMode_ = {AccessCrossMode::USER_UNDEFINED, UNDEFINED_PRIORITY};
+    static void SetCrossUserMode(uint8_t priority, uint8_t crossMode);
+    static AccessCrossMode GetCrossUserMode();
+    static std::pair<AccessCrossMode, int8_t> crossMode_;
 };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAMGR_PROFILE_CONFIG_H
