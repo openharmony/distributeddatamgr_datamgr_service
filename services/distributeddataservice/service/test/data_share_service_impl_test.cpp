@@ -13,8 +13,6 @@
 * limitations under the License.
 */
 
-#define LOG_TAG "DataShareServiceImplTest"
-
 #define private public
 #include "data_share_service_impl.h"
 #undef private
@@ -282,7 +280,7 @@ HWTEST_F(DataShareServiceImplTest, Update003, TestSize.Level1)
     auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
     EXPECT_EQ(resultA, DataShare::E_OK);
 
-    auto result = dataShareServiceImpl.Update(uri, predicates ,valuesBucket);
+    auto result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
     EXPECT_EQ(result, DataShareServiceImpl::ERROR);
 }
 
