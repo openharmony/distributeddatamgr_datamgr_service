@@ -12,9 +12,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#define LOG_TAG "DataShareDbDelegate"
+#define LOG_TAG "DataShareDbConfig"
 
-#include "data_share_db_delegate.h"
+#include "data_share_db_config.h"
 
 #include <tuple>
 #include <utility>
@@ -28,7 +28,7 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-bool DataShareDbDelegate::QueryMetaData()
+bool DataShareDbConfig::QueryMetaData()
 {
     DistributedData::StoreMetaData meta;
     meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
@@ -43,7 +43,7 @@ bool DataShareDbDelegate::QueryMetaData()
     return isCreated;
 }
 
-std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbDelegate::GetDbInfo(
+std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbConfig::GetDbConfig(
     const std::string uri, bool hasExtension)
 {
     auto success = QueryMetaData();
@@ -59,11 +59,8 @@ std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> Dat
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, metaData_, nullptr);
         }
     }
-    // dbInfo_.dataDir = std::move(metaData.dataDir);
-    // dbInfo_.isEncrypt = std::move(metaData.isEncrypt);
-    // dbInfo_.secretKey = metaData.isEncrypt ? metaData.GetSecretKey() : "";
     auto dbDelegate = DBDelegate::Create(metaData_.dataDir, metaData_.version,
-        true, metaData_.isEncrypt, metaData_.GetSecretKey());
+        true, metaData_.isEncrypt, metaData_.isEncrypt ? metaData_.GetSecretKey() : "");
     if (dbDelegate == nullptr) {
         ZLOGE("Create delegate fail, bundleName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             bundleName_.c_str(), userId_, URIUtils::Anonymous(uri).c_str());

@@ -12,8 +12,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef DATASHARESERVICE_DATA_SHARE_DB_DELEGATE_H
-#define DATASHARESERVICE_DATA_SHARE_DB_DELEGATE_H
+#ifndef DATASHARESERVICE_DATA_SHARE_DB_CONFIG_H
+#define DATASHARESERVICE_DATA_SHARE_DB_CONFIG_H
 
 #include <cstdint>
 #include <string>
@@ -26,18 +26,12 @@
 #include "uri_utils.h"
 
 namespace OHOS::DataShare {
-class DataShareDbDelegate {
+class DataShareDbConfig {
 public:
-    DataShareDbDelegate(const std::string &bundleName, const std::string &storeName,
+    DataShareDbConfig(const std::string &bundleName, const std::string &storeName,
         int32_t userId) : bundleName_(bundleName), storeName_(storeName), userId_(userId) {}
-    ~DataShareDbDelegate() = default;
-    // struct DbInfo {
-    //     std::string dataDir;
-    //     std::string secretKey;
-    //     int version = -1;
-    //     bool isEncrypt = false;
-    // };
-    std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbInfo(
+    ~DataShareDbConfig() = default;
+    std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(
         const std::string uri, bool hasExtension);
 private:
     bool QueryMetaData();

@@ -25,7 +25,7 @@
 #include "common_event_subscriber.h"
 #include "data_proxy_observer.h"
 #include "data_provider_config.h"
-#include "data_share_db_delegate.h"
+#include "data_share_db_config.h"
 #include "data_share_service_stub.h"
 #include "data_share_silent_config.h"
 #include "datashare_template.h"

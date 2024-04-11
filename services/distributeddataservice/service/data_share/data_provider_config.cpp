@@ -12,7 +12,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#include "rstate.h"
 #define LOG_TAG "DataProviderConfig"
 
 #include "data_provider_config.h"

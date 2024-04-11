@@ -26,7 +26,6 @@
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "data_ability_observer_interface.h"
-#include "data_share_db_delegate.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
@@ -71,7 +70,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         auto ret = dbDelegate->Insert(providerInfo.tableName, valuesBucket);
         if (ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, metaData);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
         }
         return ret;
     };
@@ -107,7 +106,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         auto ret = dbDelegate->Update(providerInfo.tableName, predicate, valuesBucket);
         if (ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, metaData);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
         }
         return ret;
     };
@@ -125,7 +124,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         auto ret = dbDelegate->Delete(providerInfo.tableName, predicate);
         if (ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, metaData);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
         }
         return ret;
     };
@@ -142,7 +141,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     }
     std::shared_ptr<DataShareResultSet> resultSet;
     auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode](DataProviderConfig::ProviderInfo &providerInfo,
-            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+            DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, errCode);
         return E_OK;
     };
@@ -724,11 +723,11 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
             tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
         return ERROR_PERMISSION_DENIED;
     }
-    DataShareDbDelegate delegate(provider.bundleName, provider.storeName,
+    DataShareDbConfig dbConfig(provider.bundleName, provider.storeName,
         provider.singleton ? 0 : provider.currentUserId);
-    auto [code, metaData, dbDelegate] = delegate.GetDbInfo(provider.uri, provider.hasExtension);
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(provider.uri, provider.hasExtension);
     if (code != E_OK) {
-        ZLOGE("Get dbInfo fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
+        ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
             URIUtils::Anonymous(provider.uri).c_str());
         return code;
