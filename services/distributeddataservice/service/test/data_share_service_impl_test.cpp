@@ -12,10 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-#define private public
-#include "data_share_service_impl.h"
-#undef private
+#define LOG_TAG "DataShareServiceImplTest"
 
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -28,6 +25,9 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
+#define private public
+#include "data_share_service_impl.h"
+#undef private
 
 using namespace testing::ext;
 using DumpManager = OHOS::DistributedData::DumpManager;
@@ -230,7 +230,7 @@ HWTEST_F(DataShareServiceImplTest, Update001, TestSize.Level1)
     DataShare::DataSharePredicates predicates;
     std::string selections = TBL_NAME1 + " = 'wu'";
     predicates.SetWhereClause(selections);
-    auto result = dataShareServiceImpl.Update(uri, predicates ,valuesBucket);
+    auto result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
     EXPECT_EQ(result, DataShareServiceImpl::ERROR);
 }
 
@@ -255,7 +255,7 @@ HWTEST_F(DataShareServiceImplTest, Update002, TestSize.Level1)
     auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
     EXPECT_EQ(resultA, DataShare::E_OK);
 
-    auto result = dataShareServiceImpl.Update(uri, predicates ,valuesBucket);
+    auto result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
     EXPECT_EQ(result, DataShareServiceImpl::ERROR);
 }
 
