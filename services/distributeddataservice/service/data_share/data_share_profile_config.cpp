@@ -96,11 +96,12 @@ bool ProfileInfo::Unmarshal(const json &node)
 }
 
 std::pair<int, ProfileInfo> DataShareProfileConfig::GetDataProperties(
-    const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resourcePath,
-    bool isCompressed, const std::string &name)
+    const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resPath,
+    const std::string &hapPath, const std::string &name)
 {
     ProfileInfo profileInfo;
-    std::string info = GetProfileInfoByMetadata(metadata, resourcePath, isCompressed, name);
+    std::string resourcePath = !hapPath.empty() ? hapPath : resPath;
+    std::string info = GetProfileInfoByMetadata(metadata, resourcePath, hapPath, name);
     if (info.empty()) {
         return std::make_pair(NOT_FOUND, profileInfo);
     }
@@ -112,7 +113,7 @@ std::pair<int, ProfileInfo> DataShareProfileConfig::GetDataProperties(
 }
 
 std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
-    const std::string &resourcePath, bool isCompressed, const std::string &name)
+    const std::string &resourcePath, const std::string &hapPath, const std::string &name)
 {
     std::string profileInfo;
     if (metadata.empty() || resourcePath.empty()) {
@@ -126,7 +127,7 @@ std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<A
         if (resMgr == nullptr) {
             return profileInfo;
         }
-        return GetResFromResMgr((*it).resource, *resMgr, isCompressed);
+        return GetResFromResMgr((*it).resource, *resMgr, hapPath);
     }
 
     return profileInfo;
@@ -149,7 +150,7 @@ std::shared_ptr<ResourceManager> DataShareProfileConfig::InitResMgr(const std::s
 }
 
 std::string DataShareProfileConfig::GetResFromResMgr(
-    const std::string &resName, ResourceManager &resMgr, bool isCompressed)
+    const std::string &resName, ResourceManager &resMgr, const std::string &hapPath)
 {
     std::string profileInfo;
     if (resName.empty()) {
@@ -163,7 +164,7 @@ std::string DataShareProfileConfig::GetResFromResMgr(
     }
     std::string profileName = resName.substr(pos + PROFILE_PREFIX_LEN);
     // hap is compressed status, get file content.
-    if (isCompressed) {
+    if (!hapPath.empty()) {
         ZLOGD("compressed status.");
         std::unique_ptr<uint8_t[]> fileContent = nullptr;
         size_t len = 0;
@@ -246,10 +247,8 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
         if (item.type != AppExecFwk::ExtensionAbilityType::DATASHARE) {
             continue;
         }
-        bool isCompressed = !item.hapPath.empty();
-        std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
-        auto [ret, profileInfo] = GetDataProperties(item.metadata, resourcePath, isCompressed,
-            DATA_SHARE_EXTENSION_META);
+        auto [ret, profileInfo] = GetDataProperties(item.metadata, item.resourcePath,
+            item.hapPath, DATA_SHARE_EXTENSION_META);
         if (ret == ERROR || ret == NOT_FOUND) {
             ZLOGE("profileInfo Unmarshall error or empty. bundleName: %{public}s", calledBundleName.c_str());
             continue;

@@ -69,15 +69,15 @@ public:
     static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
     static std::pair<int, ProfileInfo> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
-        const std::string &resourcePath, bool isCompressed, const std::string &name);
+        const std::string &resPath, const std::string &hapPath, const std::string &name);
     static AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:
     static std::shared_ptr<ResourceManager> InitResMgr(const std::string &resourcePath);
     static std::string GetProfileInfoByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
-        const std::string &resourcePath, bool isCompressed, const std::string &name);
+        const std::string &resourcePath, const std::string &hapPath, const std::string &name);
     static std::string GetResFromResMgr(const std::string &resName, ResourceManager &resMgr,
-        bool isCompressed);
+        const std::string &hapPath);
     static std::string ReadProfile(const std::string &resPath);
     static bool IsFileExisted(const std::string &filePath);
     static std::mutex infosMutex_;

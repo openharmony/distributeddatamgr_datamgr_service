@@ -32,8 +32,8 @@ private:
         PARAM_SIZE
     };
     bool LoadConfigFromUri(std::shared_ptr<Context> context);
-    bool GetContextInfoFromDataProperties(const std::string &moduleName, std::shared_ptr<Context> context,
-        std::vector<AppExecFwk::Metadata> metadatas, const std::string &resourcePath, bool isCompressed);
+    bool GetContextInfoFromDataProperties(
+        const ProfileInfo &properties, const std::string &moduleName, std::shared_ptr<Context> context);
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_PROXY_NODE_STRAGETY_H

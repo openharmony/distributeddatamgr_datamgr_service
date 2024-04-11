@@ -88,9 +88,8 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
-            std::string resourcePath = !item.hapPath.empty() ? item.hapPath : item.resourcePath;
             auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(item.metadata,
-                resourcePath, !item.hapPath.empty(), DataShareProfileConfig::DATA_SHARE_EXTENSION_META);
+                item.resourcePath, item.hapPath, DataShareProfileConfig::DATA_SHARE_EXTENSION_META);
             if (ret == NOT_FOUND) {
                 return true; // optional meta data config
             }

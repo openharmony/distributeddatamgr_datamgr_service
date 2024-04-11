@@ -76,11 +76,9 @@ int DataProviderConfig::GetFromProxyData()
             }
             providerInfo_.readPermission = std::move(data.requiredReadPermission);
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
-            bool isCompressed = !hapModuleInfo.hapPath.empty();
-            std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
             auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(
-                std::vector<AppExecFwk::Metadata>{data.metadata}, resourcePath,
-                isCompressed, DataShareProfileConfig::DATA_SHARE_PROPERTIES_META);
+                std::vector<AppExecFwk::Metadata>{data.metadata}, hapModuleInfo.resourcePath,
+                hapModuleInfo.hapPath, DataShareProfileConfig::DATA_SHARE_PROPERTIES_META);
             if (ret == ERROR || ret == NOT_FOUND) {
                 ZLOGE("Profile unmarshall error.uri: %{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
                 return true;
@@ -142,10 +140,9 @@ int DataProviderConfig::GetFromExtension()
         providerInfo_.hasExtension = true;
         providerInfo_.readPermission = std::move(item.readPermission);
         providerInfo_.writePermission = std::move(item.writePermission);
-        bool isCompressed = !item.hapPath.empty();
-        std::string resourcePath = isCompressed ? item.hapPath : item.resourcePath;
-        auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(item.metadata, resourcePath,
-            isCompressed, DataShareProfileConfig::DATA_SHARE_EXTENSION_META);
+        auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(
+            item.metadata, item.resourcePath,
+            item.hapPath, DataShareProfileConfig::DATA_SHARE_EXTENSION_META);
         if (ret == NOT_FOUND) {
             return E_OK;
         }
