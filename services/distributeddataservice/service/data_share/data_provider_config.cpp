@@ -68,8 +68,6 @@ int DataProviderConfig::GetFromProxyData()
     }
     for (auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
         for (auto &data : hapModuleInfo.proxyDatas) {
-            ZLOGE("hapModuleInfo.proxyDatas error. uri: %{public}s, formatUri: %{public}s",
-                data.uri.c_str(), uriConfig_.formatUri.c_str());
             if (data.uri != uriConfig_.formatUri) {
                 continue;
             }

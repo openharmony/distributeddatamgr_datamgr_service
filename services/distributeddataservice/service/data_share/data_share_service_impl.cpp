@@ -45,6 +45,7 @@
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
+using ProviderInfo = DataProviderConfig::ProviderInfo;
 using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
 DataShareServiceImpl::Factory::Factory()
@@ -65,7 +66,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    auto callBack = [&uri, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callBack = [&uri, &valuesBucket, this](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Insert(providerInfo.tableName, valuesBucket);
         if (ret > 0) {
@@ -101,7 +102,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    auto callBack = [&uri, &predicate, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callBack = [&uri, &predicate, &valuesBucket, this](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Update(providerInfo.tableName, predicate, valuesBucket);
         if (ret > 0) {
@@ -119,7 +120,7 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    auto callBack = [&uri, &predicate, this](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callBack = [&uri, &predicate, this](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Delete(providerInfo.tableName, predicate);
         if (ret > 0) {
@@ -140,9 +141,10 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return nullptr;
     }
     std::shared_ptr<DataShareResultSet> resultSet;
-    auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode](DataProviderConfig::ProviderInfo &providerInfo,
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode, &callingPid](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
-        resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, errCode);
+        resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, errCode, callingPid);
         return E_OK;
     };
     errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);

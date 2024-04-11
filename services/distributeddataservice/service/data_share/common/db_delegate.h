@@ -37,7 +37,8 @@ public:
         const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate) = 0;
     virtual std::shared_ptr<DataShareResultSet> Query(const std::string &tableName,
-        const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode) = 0;
+        const DataSharePredicates &predicates, const std::vector<std::string> &columns,
+        int &errCode, const int32_t callingPid) = 0;
     virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
     virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
