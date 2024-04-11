@@ -298,7 +298,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
     if (userId != INVALID_USER_ID) {
         users.emplace_back(userId);
     } else {
-        Account::GetInstance()->QueryUsers(users);
+        Account::GetInstance()->QueryForegroundUsers(users);
     }
     for (auto user : users) {
         if (user == DEFAULT_USER) {
@@ -518,12 +518,13 @@ int32_t CloudServiceImpl::OnReady(const std::string& device)
         return SUCCESS;
     }
     std::vector<int32_t> users;
-    Account::GetInstance()->QueryUsers(users);
+    Account::GetInstance()->QueryForegroundUsers(users);
     if (users.empty()) {
         return SUCCESS;
     }
-    auto it = users.begin();
-    Execute(GenTask(0, *it, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+    for (auto user : users) {
+        Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+    }
     return SUCCESS;
 }
 

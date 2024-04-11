@@ -325,6 +325,10 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
         if (code == E_OK) {
             return true;
         }
+        if (code == E_NO_SPACE_FOR_ASSET || code == E_RECODE_LIMIT_EXCEEDED) {
+            info.SetError(code);
+            return true;
+        }
 
         activeInfos_.ComputeIfAbsent(info.syncId_, [this, times, interval, &info](uint64_t key) mutable {
             auto syncId = GenerateId(info.user_);
