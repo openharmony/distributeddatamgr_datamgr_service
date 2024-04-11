@@ -44,7 +44,7 @@ class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
 public:
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using ExecuteCallback = std::function<int32_t(DataProviderConfig::ProviderInfo &,
-        DataShareDbDelegate::DbInfo &, std::shared_ptr<DBDelegate>)>;
+        DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate>)>;
     DataShareServiceImpl() = default;
     virtual ~DataShareServiceImpl();
     int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;

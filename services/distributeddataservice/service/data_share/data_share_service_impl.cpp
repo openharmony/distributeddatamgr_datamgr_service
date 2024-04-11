@@ -67,11 +67,11 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         return ERROR;
     }
     auto callBack = [&uri, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
-            DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Insert(providerInfo.tableName, valuesBucket);
         if (ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, dbInfo);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, metaData);
         }
         return ret;
     };
@@ -103,11 +103,11 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         return ERROR;
     }
     auto callBack = [&uri, &predicate, &valuesBucket, this](DataProviderConfig::ProviderInfo &providerInfo,
-            DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Update(providerInfo.tableName, predicate, valuesBucket);
         if (ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, dbInfo);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, metaData);
         }
         return ret;
     };
@@ -121,11 +121,11 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         return ERROR;
     }
     auto callBack = [&uri, &predicate, this](DataProviderConfig::ProviderInfo &providerInfo,
-            DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto ret = dbDelegate->Delete(providerInfo.tableName, predicate);
         if (ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, dbInfo);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo, metaData);
         }
         return ret;
     };
@@ -142,7 +142,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     }
     std::shared_ptr<DataShareResultSet> resultSet;
     auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode](DataProviderConfig::ProviderInfo &providerInfo,
-            DataShareDbDelegate::DbInfo &dbInfo, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, errCode);
         return E_OK;
     };
@@ -726,13 +726,13 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
     }
     DataShareDbDelegate delegate(provider.bundleName, provider.storeName,
         provider.singleton ? 0 : provider.currentUserId);
-    auto [code, dbConfig, dbDelegate] = delegate.GetDbInfo(provider.uri, provider.hasExtension);
+    auto [code, metaData, dbDelegate] = delegate.GetDbInfo(provider.uri, provider.hasExtension);
     if (code != E_OK) {
         ZLOGE("Get dbInfo fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
             URIUtils::Anonymous(provider.uri).c_str());
         return code;
     }
-    return callback(provider, dbConfig, dbDelegate);
+    return callback(provider, metaData, dbDelegate);
 }
 } // namespace OHOS::DataShare

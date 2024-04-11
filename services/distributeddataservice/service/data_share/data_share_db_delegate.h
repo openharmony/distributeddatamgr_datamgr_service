@@ -31,20 +31,20 @@ public:
     DataShareDbDelegate(const std::string &bundleName, const std::string &storeName,
         int32_t userId) : bundleName_(bundleName), storeName_(storeName), userId_(userId) {}
     ~DataShareDbDelegate() = default;
-    struct DbInfo {
-        std::string dataDir;
-        std::string secretKey;
-        int version = -1;
-        bool isEncrypt = false;
-    };
-    std::tuple<int, DbInfo, std::shared_ptr<DBDelegate>> GetDbInfo(const std::string uri,
-        bool hasExtension);
+    // struct DbInfo {
+    //     std::string dataDir;
+    //     std::string secretKey;
+    //     int version = -1;
+    //     bool isEncrypt = false;
+    // };
+    std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbInfo(
+        const std::string uri, bool hasExtension);
 private:
-    std::pair<bool, DistributedData::StoreMetaData> QueryMetaData();
+    bool QueryMetaData();
     std::string bundleName_;
     std::string storeName_;
     int32_t userId_;
-    DbInfo dbInfo_;
+    DistributedData::StoreMetaData metaData_;
 };
 } // namespace OHOS::DataShare
 #endif

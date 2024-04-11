@@ -243,21 +243,21 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
 }
 
 void RdbSubscriberManager::Emit(const std::string &uri, DataProviderConfig::ProviderInfo &providerInfo,
-    DataShareDbDelegate::DbInfo &dbInfo)
+    DistributedData::StoreMetaData &metaData)
 {
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
     }
-    rdbCache_.ForEach([&uri, &providerInfo, &dbInfo, this](const Key &key, std::vector<ObserverNode> &val) {
+    rdbCache_.ForEach([&uri, &providerInfo, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
         if (key.uri != uri) {
             return false;
         }
-        Notify(key, providerInfo.currentUserId, val, dbInfo.dataDir, dbInfo.version);
+        Notify(key, providerInfo.currentUserId, val, metaData.dataDir, metaData.version);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
     SchedulerManager::GetInstance().Execute(
-        uri, providerInfo.currentUserId, dbInfo.dataDir, dbInfo.version);
+        uri, providerInfo.currentUserId, metaData.dataDir, metaData.version);
 }
 
 void RdbSubscriberManager::SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes)

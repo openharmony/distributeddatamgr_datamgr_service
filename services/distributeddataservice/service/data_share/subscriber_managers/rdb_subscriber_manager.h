@@ -64,7 +64,7 @@ public:
     void Emit(const std::string &uri, int64_t subscriberId, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, DataProviderConfig::ProviderInfo &providerInfo,
-        DataShareDbDelegate::DbInfo &dbInfo);
+        DistributedData::StoreMetaData &metaData);
     void EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version);
     std::vector<Key> GetKeysByUri(const std::string &uri);
     void Clear();
