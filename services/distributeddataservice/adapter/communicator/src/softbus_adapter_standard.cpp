@@ -110,6 +110,10 @@ SoftBusAdapter::SoftBusAdapter()
     if (status != Status::SUCCESS) {
         ZLOGW("register device change failed, status:%d", static_cast<int>(status));
     }
+
+    Context::GetInstance().SetSessionListener([this](const std::string &deviceId) {
+        StartCloseSessionTask(deviceId);
+    });
 }
 
 SoftBusAdapter::~SoftBusAdapter()
@@ -172,7 +176,6 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
                     return true;
                 }
             }
-
             auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
             connects.emplace_back(connect);
             conn = connect;
@@ -181,7 +184,6 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     if (conn == nullptr) {
         return Status::ERROR;
     }
-
     auto status = conn->SendData(dataInfo, &clientListener_);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
         Time now = std::chrono::steady_clock::now();
@@ -190,16 +192,37 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
             taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
             next_ = expireTime;
-            if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
-                return status;
-            }
-        }
-        if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
-            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
-            next_ = expireTime;
         }
     }
     return status;
+}
+
+void SoftBusAdapter::StartCloseSessionTask(const std::string &deviceId)
+{
+    std::shared_ptr<SoftBusClient> conn;
+    bool isReady = DmAdapter::GetInstance().IsDeviceReady(deviceId);
+    uint32_t qosType = isReady ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    auto connects = connects_.Find(deviceId);
+    if (!connects.first) {
+        return;
+    }
+    for (auto &connect : connects.second) {
+        if (connect->GetQoSType() == qosType) {
+            conn = connect;
+            break;
+        }
+    }
+    if (conn == nullptr) {
+        return;
+    }
+    Time now = std::chrono::steady_clock::now();
+    auto expireTime = conn->GetExpireTime() > now ? conn->GetExpireTime() : now;
+    lock_guard<decltype(taskMutex_)> lock(taskMutex_);
+    if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
+        ZLOGI("Start close session, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId).c_str());
+        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
+        next_ = expireTime;
+    }
 }
 
 SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
