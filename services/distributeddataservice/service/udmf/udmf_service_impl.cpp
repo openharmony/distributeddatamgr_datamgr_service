@@ -37,7 +37,6 @@ using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
-constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 500;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {

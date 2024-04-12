@@ -22,6 +22,7 @@
 #include "log_print.h"
 namespace OHOS {
 namespace UDMF {
+constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 500;
 UriPermissionManager &UriPermissionManager::GetInstance()
 {
     static UriPermissionManager instance;
@@ -32,19 +33,10 @@ Status UriPermissionManager::GrantUriPermission(
     const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey)
 {
     //  GrantUriPermission is time-consuming, need recording the begin,end time in log.
-    ZLOGI("GrantUriPermission begin, url size:%{public}lu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
-    std::vector<std::vector<Uri>> uriLsts;
-    std::vector<Uri> uriLst;
-    size_t index = 1;
-    for (auto uriLst : allUri) {
-        uriLst.push_back(uri);
-        if (index % GRANT_URI_PERMISSION_MAX_SIZE == 0 || index + GRANT_URI_PERMISSION_MAX_SIZE >= records.size()) {
-            uriLsts.push_back(uriLst);
-            uriLst.clear();
-        }
-        index++;
-    }
-    for (auto uriLst : uriLsts) {
+    ZLOGI("GrantUriPermission begin, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
+    for (size_t index = 0; index < allUri.size(); index += GRANT_URI_PERMISSION_MAX_SIZE) {
+        std::vector<Uri> uriLst(
+            allUri.begin() + index, allUri.begin() + std::min(index + GRANT_URI_PERMISSION_MAX_SIZE, allUri.size()));
         auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermission(
             uriLst, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName);
         if (status != ERR_OK) {
@@ -52,7 +44,7 @@ Status UriPermissionManager::GrantUriPermission(
             return E_NO_PERMISSION;
         }
     }
-    ZLOGI("GrantUriPermission end, url size:%{public}lu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
+    ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
     return E_OK;
 }
 } // namespace UDMF
