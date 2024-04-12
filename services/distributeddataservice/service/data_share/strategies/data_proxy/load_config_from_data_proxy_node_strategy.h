@@ -34,6 +34,8 @@ private:
     bool LoadConfigFromUri(std::shared_ptr<Context> context);
     bool GetContextInfoFromDataProperties(
         const ProfileInfo &properties, const std::string &moduleName, std::shared_ptr<Context> context);
+    static constexpr const char *PUBLISHED_DATA_TYPE = "publishedData";
+    static constexpr const char *MODULE_SCOPE = "module";
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_PROXY_NODE_STRAGETY_H

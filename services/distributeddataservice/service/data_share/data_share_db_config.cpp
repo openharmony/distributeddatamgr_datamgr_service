@@ -28,42 +28,40 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-bool DataShareDbConfig::QueryMetaData()
+bool DataShareDbConfig::QueryMetaData(const std::string &bundleName, const std::string &storeName,
+    int32_t userId)
 {
     DistributedData::StoreMetaData meta;
     meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.user = std::to_string(userId_);
-    meta.bundleName = bundleName_;
-    meta.storeId = storeName_;
-    bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData_, true);
-    if (!isCreated) {
-        ZLOGE("DB not exist, bundleName:%{public}s, storeName:%{public}s, userId:%{public}d",
-            bundleName_.c_str(), storeName_.c_str(), userId_);
-    }
-    return isCreated;
+    meta.user = std::to_string(userId);
+    meta.bundleName = bundleName;
+    meta.storeId = storeName;
+    return DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData_, true);
 }
 
 std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbConfig::GetDbConfig(
-    const std::string uri, bool hasExtension)
+    const std::string &uri, bool hasExtension, const std::string &bundleName, const std::string &storeName,
+    int32_t userId)
 {
-    auto success = QueryMetaData();
+    auto success = QueryMetaData(bundleName, storeName, userId);
     if (!success) {
         if (!hasExtension) {
+            ZLOGE("DB not exist, bundleName:%{public}s, storeName:%{public}s, userId:%{public}d",
+                bundleName.c_str(), storeName.c_str(), userId);
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, metaData_, nullptr);
         }
-        ExtensionConnectAdaptor::TryAndWait(uri, bundleName_);
-        success = QueryMetaData();
+        ExtensionConnectAdaptor::TryAndWait(uri, bundleName);
+        success = QueryMetaData(bundleName, storeName, userId);
         if (!success) {
             ZLOGE("Query metaData fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
-                bundleName_.c_str(), userId_, URIUtils::Anonymous(uri).c_str());
+                bundleName.c_str(), userId, URIUtils::Anonymous(uri).c_str());
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, metaData_, nullptr);
         }
     }
-    auto dbDelegate = DBDelegate::Create(metaData_.dataDir, metaData_.version,
-        true, metaData_.isEncrypt, metaData_.isEncrypt ? metaData_.GetSecretKey() : "");
+    auto dbDelegate = DBDelegate::Create(metaData_);
     if (dbDelegate == nullptr) {
         ZLOGE("Create delegate fail, bundleName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            bundleName_.c_str(), userId_, URIUtils::Anonymous(uri).c_str());
+            bundleName.c_str(), userId, URIUtils::Anonymous(uri).c_str());
         return std::make_tuple(E_ERROR, metaData_, nullptr);
     }
     return std::make_tuple(E_OK, metaData_, dbDelegate);

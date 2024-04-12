@@ -24,6 +24,7 @@
 #include "datashare_result_set.h"
 #include "datashare_values_bucket.h"
 #include "executor_pool.h"
+#include "metadata/store_meta_data.h"
 #include "result_set.h"
 #include "serializable/serializable.h"
 
@@ -32,6 +33,7 @@ class DBDelegate {
 public:
     static std::shared_ptr<DBDelegate> Create(const std::string &dir, int version, bool registerFunction = true,
         bool isEncrypt = false, const std::string &secretMetaKey = "");
+    static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData);
     virtual int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) = 0;

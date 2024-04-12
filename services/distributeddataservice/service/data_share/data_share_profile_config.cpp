@@ -37,10 +37,6 @@ constexpr const char *PROFILE_FILE_PREFIX = "$profile:";
 constexpr const char *SEPARATOR = "/";
 static constexpr int PATH_SIZE = 2;
 const size_t PROFILE_PREFIX_LEN = strlen(PROFILE_FILE_PREFIX);
-const std::string ProfileInfo::MODULE_SCOPE = "module";
-const std::string ProfileInfo::APPLICATION_SCOPE = "application";
-const std::string ProfileInfo::RDB_TYPE = "rdb";
-const std::string ProfileInfo::PUBLISHED_DATA_TYPE = "publishedData";
 std::pair<AccessCrossMode, int8_t> DataShareProfileConfig::crossMode_ =
     std::make_pair(AccessCrossMode::USER_UNDEFINED, DataShareProfileConfig::UNDEFINED_PRIORITY);
 bool Config::Marshal(json &node) const

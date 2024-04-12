@@ -22,11 +22,11 @@
 
 #include "bundle_info.h"
 #include "resource_manager.h"
-#include "serializable.h"
+#include "serializable/serializable.h"
 
 namespace OHOS::DataShare {
 using namespace OHOS::Global::Resource;
-struct Config final : public Serializable {
+struct Config final : public DistributedData::Serializable {
     std::string uri = "*";
     int crossUserMode = 0;
     std::string writePermission = "";
@@ -35,17 +35,13 @@ struct Config final : public Serializable {
     bool Unmarshal(const json &node) override;
 };
 
-struct ProfileInfo : public Serializable {
+struct ProfileInfo : public DistributedData::Serializable {
     std::vector<Config> tableConfig;
     bool isSilentProxyEnable = true;
-    static const std::string MODULE_SCOPE;
-    static const std::string APPLICATION_SCOPE;
-    static const std::string RDB_TYPE;
-    static const std::string PUBLISHED_DATA_TYPE;
     std::string storeName;
     std::string tableName;
-    std::string scope = MODULE_SCOPE;
-    std::string type = RDB_TYPE;
+    std::string scope = "module";
+    std::string type = "rdb";
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

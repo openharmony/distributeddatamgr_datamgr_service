@@ -28,16 +28,12 @@
 namespace OHOS::DataShare {
 class DataShareDbConfig {
 public:
-    DataShareDbConfig(const std::string &bundleName, const std::string &storeName,
-        int32_t userId) : bundleName_(bundleName), storeName_(storeName), userId_(userId) {}
     ~DataShareDbConfig() = default;
     std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(
-        const std::string uri, bool hasExtension);
+        const std::string &uri, bool hasExtension, const std::string &bundleName,
+        const std::string &storeName, int32_t userId);
 private:
-    bool QueryMetaData();
-    std::string bundleName_;
-    std::string storeName_;
-    int32_t userId_;
+    bool QueryMetaData(const std::string &bundleName, const std::string &storeName, int32_t userId);
     DistributedData::StoreMetaData metaData_;
 };
 } // namespace OHOS::DataShare

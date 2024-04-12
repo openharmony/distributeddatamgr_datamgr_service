@@ -63,6 +63,7 @@ private:
     };
     ProviderInfo providerInfo_;
     UriConfig uriConfig_;
+    static constexpr const char *MODULE_SCOPE = "module";
 };
 } // namespace OHOS::DataShare
 #endif

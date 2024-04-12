@@ -29,7 +29,7 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
     if (!LoadConfigFromUri(context)) {
         return false;
     }
-    context->type = ProfileInfo::PUBLISHED_DATA_TYPE;
+    context->type = PUBLISHED_DATA_TYPE;
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
         context->calledBundleName, context->currentUserId, context->bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
@@ -78,7 +78,7 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
 bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const ProfileInfo &properties,
     const std::string &moduleName, std::shared_ptr<Context> context)
 {
-    if (properties.scope == ProfileInfo::MODULE_SCOPE) {
+    if (properties.scope == MODULE_SCOPE) {
         // module scope
         context->calledModuleName = moduleName;
     }

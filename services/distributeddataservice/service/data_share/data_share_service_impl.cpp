@@ -725,9 +725,10 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
             tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
         return ERROR_PERMISSION_DENIED;
     }
-    DataShareDbConfig dbConfig(provider.bundleName, provider.storeName,
+    DataShareDbConfig dbConfig;
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(provider.uri,
+        provider.hasExtension, provider.bundleName, provider.storeName,
         provider.singleton ? 0 : provider.currentUserId);
-    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(provider.uri, provider.hasExtension);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,

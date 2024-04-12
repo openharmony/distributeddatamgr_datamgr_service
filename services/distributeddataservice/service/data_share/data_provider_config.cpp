@@ -89,7 +89,7 @@ int DataProviderConfig::GetFromProxyData()
 int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
     const std::string &moduleName)
 {
-    if (profileInfo.scope == ProfileInfo::MODULE_SCOPE) {
+    if (profileInfo.scope == MODULE_SCOPE) {
         providerInfo_.moduleName = moduleName;
     }
     providerInfo_.storeName = profileInfo.storeName;
