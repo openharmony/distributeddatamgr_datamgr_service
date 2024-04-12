@@ -20,6 +20,7 @@
 #include "error/general_error.h"
 #include "ikvstore_observer.h"
 #include "log_print.h"
+#include "types.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedKv {
@@ -29,6 +30,24 @@ KVDBWatcher::KVDBWatcher() {}
 
 int32_t KVDBWatcher::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {
+    auto store = origin.store;
+    auto changeData = values.find(store);
+    if (changeData != values.end()) {
+        auto observers = GetObservers();
+        if (observers.empty()) {
+            return E_NOT_INIT;
+        }
+        std::vector<std::string> keys[OP_BUTT]{};
+        keys[OP_INSERT] = ConvertToKeys(changeData->second[OP_INSERT]);
+        keys[OP_UPDATE] = ConvertToKeys(changeData->second[OP_UPDATE]);
+        keys[OP_DELETE] = ConvertToKeys(changeData->second[OP_DELETE]);
+        DataOrigin dataOrigin;
+        dataOrigin.id = origin.id;
+        dataOrigin.store = origin.store;
+        for(auto &observer : observers) {
+            observer->OnChange(dataOrigin, std::move(keys));
+        }
+    }
     return E_OK;
 }
 
@@ -83,5 +102,18 @@ std::vector<Entry> KVDBWatcher::ConvertToEntries(const std::vector<Values> &valu
         changeData.push_back(tmpEntry);
     }
     return changeData;
+}
+
+std::vector<std::string> KVDBWatcher::ConvertToKeys(const std::vector<PRIValue> &values)
+{
+    std::vector<std::string> keys{};
+    for (auto &info : values) {
+        auto key = std::get_if<std::string>(&info);
+        if (key == nullptr) {
+            continue;
+        }
+        keys.push_back(*key);
+    }
+    return keys;
 }
 } // namespace OHOS::DistributedKv

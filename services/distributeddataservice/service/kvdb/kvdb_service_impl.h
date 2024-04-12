@@ -103,6 +103,7 @@ private:
         std::shared_ptr<KVDBServiceImpl> product_;
     };
 
+    void Init();
     void AddOptions(const Options &options, StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);

@@ -37,7 +37,6 @@ using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
-using DBStatus = DistributedDB::DBStatus;
 
 KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
 {
@@ -112,6 +111,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
         return;
     }
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
     if (meta.isAutoSync) {
         auto code = DeviceMatrix::GetInstance().GetCode(meta);
         delegate_->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
@@ -126,7 +126,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
-    storeInfo_.isPublic = meta.isPublic;
+    isPublic_ = meta.isPublic;
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -282,7 +282,7 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
         return [](auto &) {};
     }
     return [async = std::move(async)](const std::map<std::string, DBStatus> &status) {
-        DistributedData::GenDetails details;
+        GenDetails details;
         for (auto &[key, dbStatus] : status) {
             auto &value = details[key];
             value.progress = FINISHED;
@@ -330,14 +330,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
             syncOption.devices = devices;
             syncOption.mode = dbMode;
             syncOption.waitTime = wait;
-            if (storeInfo_.isPublic) {
-                std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
-                for (auto &activeUser : activeUsers) {
-                    syncOption.users.push_back(activeUser);
-                }
-            } else {
-                syncOption.users.push_back(std::to_string(storeInfo_.user));
-            }
+            syncOption.users.push_back(std::to_string(storeInfo_.user));
             dbStatus = delegate_->Sync(syncOption, nullptr);
         } else {
             dbStatus = DistributedDB::INVALID_ARGS;
@@ -445,8 +438,7 @@ int32_t KVDBGeneralStore::SetTrackerTable(
     return GeneralError::E_OK;
 }
 
-KVDBGeneralStore::GenErr KVDBGeneralStore::ConvertStatus(
-    DistributedDB::DBStatus status) // todo 没用到，具体转换结合接口错误码
+KVDBGeneralStore::GenErr KVDBGeneralStore::ConvertStatus(DistributedDB::DBStatus status)
 {
     switch (status) {
         case DBStatus::OK:
@@ -481,34 +473,25 @@ int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
-void KVDBGeneralStore::ObserverProxy::OnChange(
-    DistributedDB::Origin origin, const std::string &originalId, DistributedDB::ChangedData &&data)
+void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data)
 {
     if (!HasWatcher()) {
         return;
     }
     GenOrigin genOrigin;
-    genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)
-                           ? GenOrigin::ORIGIN_LOCAL
-                           : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD : GenOrigin::ORIGIN_NEARBY;
-    genOrigin.dataType = data.type == DistributedDB::ASSET ? GenOrigin::ASSET_DATA : GenOrigin::BASIC_DATA;
+    genOrigin.origin = (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD : GenOrigin::ORIGIN_NEARBY;
     genOrigin.id.push_back(originalId);
     genOrigin.store = storeId_;
-    Watcher::PRIFields fields;
     Watcher::ChangeInfo changeInfo;
     for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
         auto &info = changeInfo[data.tableName][i];
-        std::vector<std::vector<Type>> a = data.primaryData[i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             Convert(std::move(*(priData.begin())), value);
             info.push_back(std::move(value));
         }
     }
-    if (!data.field.empty()) {
-        fields[std::move(data.tableName)] = std::move(*(data.field.begin()));
-    }
-    watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
+    watcher_->OnChange(genOrigin, {}, std::move(changeInfo));
 }
 
 void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChangedData &data)
@@ -530,8 +513,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChang
     watcher_->OnChange(genOrigin, {}, std::move(changeData));
 }
 
-void KVDBGeneralStore::ObserverProxy::ConvertChangeData(
-    const std::list<DistributedDB::Entry> &entries, std::vector<Values> &values)
+void KVDBGeneralStore::ObserverProxy::ConvertChangeData(const std::list<DBEntry> &entries, std::vector<Values> &values)
 {
     for (auto entry : entries) {
         auto value = std::vector<Value>{ entry.key, entry.value };

@@ -597,41 +597,27 @@ int32_t CloudServerImpl::DoUnsubscribe(std::shared_ptr<OhCloudExtCloudSync> serv
     return DBErr::E_OK;
 }
 
-std::shared_ptr<DBAssetLoader> CloudServerImpl::ConnectAssetLoader(uint32_t tokenId, const DBMeta &dbMeta)
+std::shared_ptr<DBAssetLoader> CloudServerImpl::ConnectAssetLoader(
+    const std::string &bundleName, int user, const DBMeta &dbMeta)
 {
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return nullptr;
-    }
-    HapTokenInfo hapInfo;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != RET_SUCCESS) {
-        return nullptr;
-    }
     auto data = ExtensionUtil::Convert(dbMeta);
     if (data.first == nullptr) {
         return nullptr;
     }
-    OhCloudExtCloudAssetLoader *loader = OhCloudExtCloudAssetLoaderNew(hapInfo.userID,
-        reinterpret_cast<const unsigned char *>(hapInfo.bundleName.c_str()),
-        hapInfo.bundleName.size(), data.first);
+    OhCloudExtCloudAssetLoader *loader = OhCloudExtCloudAssetLoaderNew(
+        user, reinterpret_cast<const unsigned char *>(bundleName.c_str()), bundleName.size(), data.first);
     return loader != nullptr ? std::make_shared<AssetLoaderImpl>(loader) : nullptr;
 }
 
-std::shared_ptr<DBCloudDB> CloudServerImpl::ConnectCloudDB(uint32_t tokenId, const DBMeta &dbMeta)
+std::shared_ptr<DBCloudDB> CloudServerImpl::ConnectCloudDB(
+    const std::string &bundleName, int user, const DBMeta &dbMeta)
 {
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return nullptr;
-    }
-    HapTokenInfo hapInfo;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != RET_SUCCESS) {
-        return nullptr;
-    }
     auto data = ExtensionUtil::Convert(dbMeta);
     if (data.first == nullptr) {
         return nullptr;
     }
-    OhCloudExtCloudDatabase *cloudDb = OhCloudExtCloudDbNew(hapInfo.userID,
-        reinterpret_cast<const unsigned char *>(hapInfo.bundleName.c_str()),
-        hapInfo.bundleName.size(), data.first);
+    OhCloudExtCloudDatabase *cloudDb = OhCloudExtCloudDbNew(
+        user, reinterpret_cast<const unsigned char *>(bundleName.c_str()), bundleName.size(), data.first);
     return cloudDb != nullptr ? std::make_shared<CloudDbImpl>(cloudDb) : nullptr;
 }
 } // namespace OHOS::CloudData

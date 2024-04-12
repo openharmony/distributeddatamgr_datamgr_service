@@ -32,28 +32,15 @@
 #include "store_observer.h"
 
 namespace OHOS::DistributedKv {
+using namespace DistributedData;
 class KVDBGeneralStore : public DistributedData::GeneralStore {
 public:
-    using Cursor = DistributedData::Cursor;
-    using GenQuery = DistributedData::GenQuery;
-    using VBucket = DistributedData::VBucket;
-    using VBuckets = DistributedData::VBuckets;
     using Value = DistributedData::Value;
-    using Values = DistributedData::Values;
-    using StoreMetaData = DistributedData::StoreMetaData;
-    using Database = DistributedData::Database;
     using GenErr = DistributedData::GeneralError;
-    using Reference = DistributedData::Reference;
-    using SyncCallback = KvStoreSyncCallback;
-    using SyncEnd = KvStoreSyncManager::SyncEnd;
-    using DBStore = DistributedDB::KvStoreNbDelegate;
-    using Store = std::shared_ptr<DBStore>;
     using DBStatus = DistributedDB::DBStatus;
     using DBOption = DistributedDB::KvStoreNbDelegate::Option;
     using DBSecurity = DistributedDB::SecurityOption;
     using DBPassword = DistributedDB::CipherPassword;
-    using BindAssets = DistributedData::BindAssets;
-    using DBMode = DistributedDB::SyncMode;
 
     explicit KVDBGeneralStore(const StoreMetaData &meta);
     ~KVDBGeneralStore();
@@ -82,8 +69,7 @@ public:
     int32_t Close() override;
     int32_t AddRef() override;
     int32_t Release() override;
-    int32_t BindSnapshots(
-        std::shared_ptr<std::map<std::string, std::shared_ptr<DistributedData::Snapshot>>> bindAssets) override;
+    int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
 
     static DBPassword GetDBPassword(const StoreMetaData &data);
@@ -98,17 +84,18 @@ private:
     using SyncProcess = DistributedDB::SyncProcess;
     using DBSyncCallback = std::function<void(const std::map<std::string, DBStatus> &status)>;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
-    static GenErr ConvertStatus(DistributedDB::DBStatus status);
+    static GenErr ConvertStatus(DBStatus status);
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;
+        using DBChangeData = DistributedDB::ChangedData;
+        using DBEntry = DistributedDB::Entry;
         using GenOrigin = Watcher::Origin;
         ~ObserverProxy() = default;
-        void OnChange(
-            DistributedDB::Origin origin, const std::string &originalId, DistributedDB::ChangedData &&data) override;
+        void OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data) override;
         void OnChange(const DistributedDB::KvStoreChangedData &data) override;
-        void ConvertChangeData(const std::list<DistributedDB::Entry> &entries, std::vector<Values> &values);
+        void ConvertChangeData(const std::list<DBEntry> &entries, std::vector<Values> &values);
         bool HasWatcher() const
         {
             return watcher_ != nullptr;
@@ -129,7 +116,8 @@ private:
     std::mutex mutex_;
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
-    DistributedData::StoreInfo storeInfo_;
+    StoreInfo storeInfo_;
+    bool isPublic_ = false;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

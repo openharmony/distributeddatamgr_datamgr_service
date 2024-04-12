@@ -39,7 +39,6 @@
 #include "metadata/meta_data_manager.h"
 #include "permit_delegate.h"
 #include "query_helper.h"
-#include "store/general_store.h"
 #include "store/store_info.h"
 #include "upgrade.h"
 #include "utils/anonymous.h"
@@ -53,7 +52,6 @@ using namespace OHOS::Security::AccessToken;
 using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DumpManager = OHOS::DistributedData::DumpManager;
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
@@ -123,6 +121,16 @@ KVDBServiceImpl::KVDBServiceImpl()
                 std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, refCount, std::placeholders::_1));
         }
     });
+    Init();
+}
+
+KVDBServiceImpl::~KVDBServiceImpl()
+{
+    DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
+}
+
+void KVDBServiceImpl::Init()
+{
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
@@ -131,7 +139,13 @@ KVDBServiceImpl::KVDBServiceImpl()
         meta.bundleName = storeInfo.bundleName;
         meta.user = std::to_string(storeInfo.user);
         meta.instanceId = storeInfo.instanceId;
-        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+        if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
+            meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
+            ZLOGE("StoreType not match, bundleName:%{public}s, storeId:%{public}s, storeType: %{public}d",
+                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.storeType);
+            return;
+        }
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
@@ -146,11 +160,6 @@ KVDBServiceImpl::KVDBServiceImpl()
         store->RegisterDetailProgressObserver(nullptr);
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
-}
-
-KVDBServiceImpl::~KVDBServiceImpl()
-{
-    DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
 
 void KVDBServiceImpl::RegisterKvServiceInfo()
@@ -492,7 +501,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
         storeInfo.storeName = storeId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
         storeInfo.user = std::stoi(meta.user);
-        storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        storeInfo.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         executors_->Execute([storeInfo]() {
             auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
             EventCenter::GetInstance().PostEvent(move(event));
