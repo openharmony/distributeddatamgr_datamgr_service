@@ -443,8 +443,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
     "//third_party/json/single_include",
-    "//commonlibrary/c_utils/base/include",
-    "//utils/system/safwk/native/include",
   ]
 
   sources = [
