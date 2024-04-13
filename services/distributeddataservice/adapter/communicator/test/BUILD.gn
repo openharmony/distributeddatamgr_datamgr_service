@@ -91,9 +91,13 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
   ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
+    "${device_manager_path}/interfaces/inner_kits/native_cpp:devicemanagersdk",
     "//third_party/googletest:gtest_main",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]

@@ -21,9 +21,7 @@
 #include <vector>
 #include <unistd.h>
 #include <iostream>
-#define PRIVATE public
 #include "softbus_adapter.h"
-#undef private
 #include "app_device_change_listener.h"
 
 namespace {
