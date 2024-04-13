@@ -26,6 +26,11 @@ ohos_unittest("AccountDelegateTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/utils",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/account/src",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
   ]
 
   deps = [
@@ -40,6 +45,9 @@ ohos_unittest("AccountDelegateTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

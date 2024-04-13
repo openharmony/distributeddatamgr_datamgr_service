@@ -17,9 +17,12 @@
 #include <gtest/gtest.h>
 #include <memory.h>
 #include "account_delegate.h"
+#include "account_delegate_impl.h"
+#define private public
+#include "account_delegate_normal_impl.h"
+#undef private
 #include "ipc_skeleton.h"
 #include "log_print.h"
-
 namespace {
 using namespace OHOS::DistributedKv;
 using namespace testing::ext;
@@ -58,10 +61,12 @@ protected:
     static const std::string DEFAULT_OHOS_ACCOUNT_UID;
     static const uint32_t INVALID_TOKEN_ID;
     static const int32_t INVALID_USER;
+    static const int USERID;
 };
 const std::string AccountDelegateTest::DEFAULT_OHOS_ACCOUNT_UID = "ohosAnonymousUid";
 const uint32_t AccountDelegateTest::INVALID_TOKEN_ID = -1;
 const int32_t AccountDelegateTest::INVALID_USER = -1;
+const int AccountDelegateTest::USERID = 100;
 
 /**
 * @tc.name: Subscribe001
@@ -97,6 +102,28 @@ HWTEST_F(AccountDelegateTest, Subscribe002, TestSize.Level0)
     auto status = account->Subscribe(observer);
     EXPECT_EQ(status, Status::SUCCESS);
     observer->SetName("Subscribe002Observer");
+    status = account->Subscribe(observer);
+    EXPECT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: Subscribe003
+* @tc.desc: subscribe user change, the observer is invalid
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(AccountDelegateTest, Subscribe003, TestSize.Level0)
+{
+    auto account = AccountDelegate::GetInstance();
+    EXPECT_NE(account, nullptr);
+    auto observer = std::make_shared<AccountObserver>();
+    auto status = account->Subscribe(observer);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    observer->SetName("Subscribe003Observer");
+    status = account->Subscribe(observer);
+    EXPECT_EQ(status, Status::SUCCESS);
+    observer->SetName("Subscribe002ObserverAfter");
     status = account->Subscribe(observer);
     EXPECT_EQ(status, Status::SUCCESS);
 }
@@ -191,5 +218,50 @@ HWTEST_F(AccountDelegateTest, QueryUsers, TestSize.Level0)
     std::vector<int32_t> users;
     AccountDelegate::GetInstance()->QueryUsers(users);
     EXPECT_GT(users.size(), 0);
+}
+
+/**
+* @tc.name: IsVerified
+* @tc.desc: query users
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(AccountDelegateTest, IsVerified, TestSize.Level0)
+{
+//     AccountEventInfo accountInfo;
+//     accountInfo.harmonyAccountId = "harmonyAccountId";
+//     accountInfo.userId = "userId";
+//     accountInfo.status = AccountStatus::DEVICE_ACCOUNT_DELETE;
+//     auto accountId = AccountDelegateNormalImpl::GetBaseInstance()->UpdateUserStatus(accountInfo);
+    auto user = AccountDelegate::GetInstance()->IsVerified(USERID);
+    EXPECT_EQ(user,true);
+}
+
+/**
+* @tc.name: RegisterHashFunc
+* @tc.desc: RegisterHashFunc
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(AccountDelegateTest, RegisterHashFunc, TestSize.Level0)
+{
+    AccountDelegate::HashFunc hash = nullptr;
+    auto registerHash = AccountDelegate::GetInstance()->RegisterHashFunc(hash);
+    EXPECT_EQ(registerHash,true);
+}
+/**
+* @tc.name: GetCurrentAccountId
+* @tc.desc: get current account Id
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(AccountDelegateTest, UnsubscribeAccountEvent, TestSize.Level0)
+{
+    auto executor = std::make_shared<OHOS::ExecutorPool>(12, 5);
+    AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
+    AccountDelegate::GetInstance()->BindExecutor(executor);
 }
 } // namespace
