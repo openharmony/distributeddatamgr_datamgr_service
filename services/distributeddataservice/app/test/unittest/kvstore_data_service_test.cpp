@@ -17,10 +17,7 @@
 #include "kvstore_client_death_observer.h"
 #include "bootstrap.h"
 #include "gtest/gtest.h"
-#define private public
-#define protected public
 #include "kvstore_data_service.h"
-#undef private
 
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
