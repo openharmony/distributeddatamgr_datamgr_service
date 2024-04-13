@@ -25,9 +25,7 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
-#define private public
 #include "data_share_service_impl.h"
-#undef private
 
 using namespace testing::ext;
 using DumpManager = OHOS::DistributedData::DumpManager;
