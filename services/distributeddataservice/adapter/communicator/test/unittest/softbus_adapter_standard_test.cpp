@@ -29,7 +29,6 @@ using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
 class AppDataChangeListenerImpl : public AppDataChangeListener {
-
 struct ServerSocketInfo {
         std::string name;      /**< Peer socket name */
         std::string networkId; /**< Peer network ID */

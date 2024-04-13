@@ -13,10 +13,8 @@
  * limitations under the License.
  */
 
-#define private public
-#define PROTECTED public
+
 #include "device_manager_adapter.h"
-#undef private
 #include "gtest/gtest.h"
 #include "accesstoken_kit.h"
 #include "executor_pool.h"
