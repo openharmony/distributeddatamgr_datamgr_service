@@ -715,10 +715,6 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
         return errCode;
     }
     std::string permission = isRead ? provider.readPermission : provider.writePermission;
-    if (permission.empty()) {
-        ZLOGE("Permission reject! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
-            tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
-    }
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
