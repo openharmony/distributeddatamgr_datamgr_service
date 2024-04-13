@@ -14,7 +14,7 @@
  */
 
 #define private public
-#define protected public
+#define PROTECTED public
 #include "device_manager_adapter.h"
 #undef private
 #include "gtest/gtest.h"
@@ -391,7 +391,7 @@ HWTEST_F(DeviceManagerAdapterTest, StartWatchDeviceChange01, TestSize.Level0)
  */
 HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo, TestSize.Level0)
 {
-    auto executors = std::make_shared<OHOS::ExecutorPool>(0,0);
+    auto executors = std::make_shared<OHOS::ExecutorPool>(0, 0);
     DeviceManagerAdapter::GetInstance().Init(executors);
     auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(EMPTY_DEVICE_ID);
     EXPECT_TRUE(dvInfo.uuid.empty());

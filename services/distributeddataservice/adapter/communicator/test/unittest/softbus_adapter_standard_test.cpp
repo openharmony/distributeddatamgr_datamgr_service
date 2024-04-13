@@ -15,17 +15,13 @@
 #define LOG_TAG "SoftbusAdapterStandardTest"
 
 #include "gtest/gtest.h"
-//#include "accesstoken_kit.h"
-//#include "executor_pool.h"
-//#include "nativetoken_kit.h"
-//#include "token_setproc.h"
 #include "types.h"
 #include "log_print.h"
 #include <cstdint>
 #include <vector>
 #include <unistd.h>
 #include <iostream>
-#define private public
+#define PRIVATE public
 #include "softbus_adapter.h"
 #undef private
 #include "app_device_change_listener.h"
@@ -33,7 +29,6 @@
 namespace {
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
-// using namespace OHOS::DistributedKv;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
 class AppDataChangeListenerImpl : public AppDataChangeListener {
 
@@ -43,15 +38,15 @@ struct ServerSocketInfo {
         std::string pkgName;   /**< Peer package name */
     };
 
- void OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info, const uint8_t *ptr, const int size,
+  void OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info, const uint8_t *ptr, const int size,
                    const struct PipeInfo &id) const override;
 };
 
-void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
+  void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
     const uint8_t *ptr, const int size, const struct PipeInfo &id) const
-{
+  {
     ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
-}
+  }
 
 class SoftbusAdapterStandardTest : public testing::Test {
 public:
@@ -63,14 +58,11 @@ public:
     void TearDown() {}
 
 protected:
-    //static std::shared_ptr<DeviceChangerListener> observer_;
     static const std::string INVALID_DEVICE_ID;
     static const std::string EMPTY_DEVICE_ID;
     uint32_t DEFAULT_MTU_SIZE = 4096u;
     uint32_t DEFAULT_TIMEOUT = 30 * 1000;
-
 };
-//std::shared_ptr<DeviceChangerListener> SoftbusAdapterStandardTest::observer_;
 const std::string SoftbusAdapterStandardTest::INVALID_DEVICE_ID = "1234567890";
 const std::string SoftbusAdapterStandardTest::EMPTY_DEVICE_ID = "";
 
@@ -117,7 +109,7 @@ HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange02, TestSize.Level0)
     appId.pipeId = "";
     appId.userId = "groupId";
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
-    auto status = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener,appId);
+    auto status = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, appId);
     EXPECT_EQ(status, Status::SUCCESS);
 }
 
@@ -134,7 +126,7 @@ HWTEST_F(SoftbusAdapterStandardTest, StopWatchDataChange, TestSize.Level0)
     appId.pipeId = "appId";
     appId.userId = "groupId";
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
-    auto status = SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener,appId);
+    auto status = SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, appId);
     EXPECT_EQ(status, Status::SUCCESS);
 }
 
@@ -151,7 +143,7 @@ HWTEST_F(SoftbusAdapterStandardTest, StopWatchDataChange01, TestSize.Level0)
     appId.pipeId = "";
     appId.userId = "groupId";
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
-    auto status = SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener,appId);
+    auto status = SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, appId);
     EXPECT_EQ(status, Status::SUCCESS);
 }
 
@@ -195,7 +187,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetMtuSize, TestSize.Level1)
     SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id);
     DeviceId di = {"127.0.0.2"};
     auto size = SoftBusAdapter::GetInstance()->GetMtuSize(di);
-    EXPECT_EQ(size,4096);
+    EXPECT_EQ(size, 4096);
     SoftBusAdapter::GetInstance()->GetCloseSessionTask();
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
@@ -217,7 +209,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetTimeout, TestSize.Level1)
     SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id);
     DeviceId di = {"127.0.0.2"};
     auto time = SoftBusAdapter::GetInstance()->GetTimeout(di);
-    EXPECT_EQ(time,DEFAULT_TIMEOUT);
+    EXPECT_EQ(time, DEFAULT_TIMEOUT);
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
     sleep(1); // avoid thread dnet thread died, then will have pthread;
@@ -235,9 +227,9 @@ HWTEST_F(SoftbusAdapterStandardTest, IsSameStartedOnPeer, TestSize.Level1)
     id.pipeId = "appId01";
     id.userId = "groupId01";
     DeviceId di = {"127.0.0.2"};
-    SoftBusAdapter::GetInstance()->SetMessageTransFlag(id,true);
-    auto status = SoftBusAdapter::GetInstance()->IsSameStartedOnPeer(id,di);
-    EXPECT_EQ(status,true);
+    SoftBusAdapter::GetInstance()->SetMessageTransFlag(id, true);
+    auto status = SoftBusAdapter::GetInstance()->IsSameStartedOnPeer(id, di);
+    EXPECT_EQ(status, true);
 }
 
 /**

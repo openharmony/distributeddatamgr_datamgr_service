@@ -353,7 +353,6 @@ HWTEST_F(DistributedataDfxUTTest, Dfx009, TestSize.Level0)
     FakeHivew::Clear();
 }
 
-
 /**
   * @tc.name: Dfx010
   * @tc.desc: Database file size statistic.
@@ -430,7 +429,6 @@ HWTEST_F(DistributedataDfxUTTest, Dfx011, TestSize.Level0)
     FakeHivew::Clear();
 }
 
-
 /**
   * @tc.name: Dfx012
   * @tc.desc: send data to 1 device, then check send size.
@@ -487,5 +485,3 @@ HWTEST_F(DistributedataDfxUTTest, Dfx013, TestSize.Level0)
     }
     FakeHivew::Clear();
 }
-
-
