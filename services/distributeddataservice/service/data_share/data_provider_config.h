@@ -64,6 +64,8 @@ private:
     ProviderInfo providerInfo_;
     UriConfig uriConfig_;
     static constexpr const char *MODULE_SCOPE = "module";
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
+    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };
 } // namespace OHOS::DataShare
 #endif

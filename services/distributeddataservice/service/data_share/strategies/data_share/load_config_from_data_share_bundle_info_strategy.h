@@ -27,6 +27,7 @@ public:
 private:
     bool LoadConfigFromProfile(const ProfileInfo &profileInfo, std::shared_ptr<Context> context);
     bool LoadConfigFromUri(std::shared_ptr<Context> context);
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_SHARE_BUNDLE_INFO_STRAGETY_H

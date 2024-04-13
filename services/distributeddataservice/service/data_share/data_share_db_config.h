@@ -28,7 +28,6 @@
 namespace OHOS::DataShare {
 class DataShareDbConfig {
 public:
-    ~DataShareDbConfig() = default;
     std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(
         const std::string &uri, bool hasExtension, const std::string &bundleName,
         const std::string &storeName, int32_t userId);

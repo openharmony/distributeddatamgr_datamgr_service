@@ -75,7 +75,7 @@ int DataProviderConfig::GetFromProxyData()
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
             auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(
                 std::vector<AppExecFwk::Metadata>{data.metadata}, hapModuleInfo.resourcePath,
-                hapModuleInfo.hapPath, true);
+                hapModuleInfo.hapPath, DATA_SHARE_PROPERTIES_META);
             if (ret == NOT_FOUND) {
                 return E_OK;
             }
@@ -144,7 +144,7 @@ int DataProviderConfig::GetFromExtension()
         providerInfo_.readPermission = std::move(item.readPermission);
         providerInfo_.writePermission = std::move(item.writePermission);
         auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(
-            item.metadata, item.resourcePath, item.hapPath, false);
+            item.metadata, item.resourcePath, item.hapPath, DATA_SHARE_EXTENSION_META);
         if (ret == NOT_FOUND) {
             return E_OK;
         }

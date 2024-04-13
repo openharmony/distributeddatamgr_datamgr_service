@@ -124,33 +124,32 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
     }
     return changeCount;
 }
-std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableName,
+std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std::string &tableName,
     const DataSharePredicates &predicates, const std::vector<std::string> &columns,
-    const int32_t callingPid, int &errCode)
+    const int32_t callingPid)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
-        errCode = errCode_;
-        return nullptr;
+        return std::make_pair(errCode_, nullptr);
     }
     int count = resultSetCount.fetch_add(1);
     ZLOGD("start query %{public}d", count);
     if (count > MAX_RESULTSET_COUNT) {
         ZLOGE("resultSetCount is full");
         resultSetCount--;
-        return nullptr;
+        return std::make_pair(E_ERROR, nullptr);
     }
     RdbPredicates rdbPredicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicates, tableName);
     std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(rdbPredicates, columns);
     if (resultSet == nullptr) {
         ZLOGE("Query failed %{public}s", tableName.c_str());
         resultSetCount--;
-        return nullptr;
+        return std::make_pair(E_ERROR, nullptr);
     }
     int64_t beginTime = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
-    return { new DataShareResultSet(bridge), [callingPid, beginTime](auto p) {
+    std::shared_ptr<DataShareResultSet> result = { new DataShareResultSet(bridge), [callingPid, beginTime](auto p) {
         ZLOGD("release resultset");
         resultSetCount--;
         int64_t endTime = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -161,6 +160,7 @@ std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableN
         }
         delete p;
     }};
+    return std::make_pair(E_OK, result);
 }
 
 std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::string> &selectionArgs)

@@ -89,7 +89,7 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
             auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(item.metadata,
-                item.resourcePath, item.hapPath, false);
+                item.resourcePath, item.hapPath, DATA_SHARE_EXTENSION_META);
             if (ret == NOT_FOUND) {
                 return true; // optional meta data config
             }

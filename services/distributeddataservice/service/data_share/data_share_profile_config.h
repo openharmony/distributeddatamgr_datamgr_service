@@ -63,7 +63,7 @@ public:
     static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
     static std::pair<int, ProfileInfo> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
-        const std::string &resPath, const std::string &hapPath, bool isProxyData);
+        const std::string &resPath, const std::string &hapPath, const std::string &name);
     static AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:
@@ -75,11 +75,9 @@ private:
     static std::string ReadProfile(const std::string &resPath);
     static bool IsFileExisted(const std::string &filePath);
     static std::mutex infosMutex_;
-    static void SetCrossUserMode(uint8_t priority, uint8_t crossMode);
-    static AccessCrossMode GetCrossUserMode();
-    static std::pair<AccessCrossMode, int8_t> crossMode_;
+    static void SetCrossUserMode(uint8_t priority, uint8_t crossMode,
+        std::pair<AccessCrossMode, int8_t> &crossModes);
     static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
-    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAMGR_PROFILE_CONFIG_H

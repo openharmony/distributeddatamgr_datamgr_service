@@ -34,8 +34,6 @@ constexpr const char *PROFILE_FILE_PREFIX = "$profile:";
 constexpr const char *SEPARATOR = "/";
 static constexpr int PATH_SIZE = 2;
 const size_t PROFILE_PREFIX_LEN = strlen(PROFILE_FILE_PREFIX);
-std::pair<AccessCrossMode, int8_t> DataShareProfileConfig::crossMode_ =
-    std::make_pair(AccessCrossMode::USER_UNDEFINED, DataShareProfileConfig::UNDEFINED_PRIORITY);
 bool Config::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(uri)], uri);
@@ -90,12 +88,11 @@ bool ProfileInfo::Unmarshal(const json &node)
 
 std::pair<int, ProfileInfo> DataShareProfileConfig::GetDataProperties(
     const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resPath,
-    const std::string &hapPath, bool isProxyData)
+    const std::string &hapPath, const std::string &name)
 {
     ProfileInfo profileInfo;
     std::string resourcePath = !hapPath.empty() ? hapPath : resPath;
-    std::string info = GetProfileInfoByMetadata(metadata, resourcePath, hapPath,
-        isProxyData ? DATA_SHARE_PROPERTIES_META : DATA_SHARE_EXTENSION_META);
+    std::string info = GetProfileInfoByMetadata(metadata, resourcePath, hapPath, name);
     if (info.empty()) {
         return std::make_pair(NOT_FOUND, profileInfo);
     }
@@ -251,38 +248,35 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
 AccessCrossMode DataShareProfileConfig::GetAccessCrossMode(const ProfileInfo &profileInfo,
     const std::string &tableUri, const std::string &storeUri)
 {
+    auto crossMode = std::make_pair(AccessCrossMode::USER_UNDEFINED, DataShareProfileConfig::UNDEFINED_PRIORITY);
     for (auto const &item : profileInfo.tableConfig) {
         if (item.uri == tableUri) {
-            SetCrossUserMode(TABLE_MATCH_PRIORITY, item.crossUserMode);
+            SetCrossUserMode(TABLE_MATCH_PRIORITY, item.crossUserMode, crossMode);
             continue;
         }
         if (item.uri == storeUri) {
-            SetCrossUserMode(STORE_MATCH_PRIORITY, item.crossUserMode);
+            SetCrossUserMode(STORE_MATCH_PRIORITY, item.crossUserMode, crossMode);
             continue;
         }
         if (item.uri == "*") {
-            SetCrossUserMode(COMMON_MATCH_PRIORITY, item.crossUserMode);
+            SetCrossUserMode(COMMON_MATCH_PRIORITY, item.crossUserMode, crossMode);
             continue;
         }
     }
-    return GetCrossUserMode();
-}
-
-void DataShareProfileConfig::SetCrossUserMode(uint8_t priority, uint8_t crossMode)
-{
-    if (crossMode_.second < priority && crossMode > AccessCrossMode::USER_UNDEFINED &&
-        crossMode < AccessCrossMode::USER_MAX) {
-        crossMode_.first = static_cast<AccessCrossMode>(crossMode);
-        crossMode_.second = priority;
-    }
-}
-
-AccessCrossMode DataShareProfileConfig::GetCrossUserMode()
-{
-    if (crossMode_.second != UNDEFINED_PRIORITY) {
-        return crossMode_.first;
+    if (crossMode.second != UNDEFINED_PRIORITY) {
+        return crossMode.first;
     }
     return AccessCrossMode::USER_UNDEFINED;
+}
+
+void DataShareProfileConfig::SetCrossUserMode(uint8_t priority, uint8_t crossMode,
+    std::pair<AccessCrossMode, int8_t> &mode)
+{
+    if (mode.second < priority && crossMode > AccessCrossMode::USER_UNDEFINED &&
+        crossMode < AccessCrossMode::USER_MAX) {
+        mode.first = static_cast<AccessCrossMode>(crossMode);
+        mode.second = priority;
+    }
 }
 } // namespace DataShare
 } // namespace OHOS
