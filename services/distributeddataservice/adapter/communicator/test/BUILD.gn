@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/test.gni")
-
+import("//build/ohos.gni")
+import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/distributeddatafwk"
 
 ###############################################################################
@@ -74,12 +76,11 @@ ohos_unittest("SoftbusAdapterStandardTest") {
 
   sources = [ "unittest/softbus_adapter_standard_test.cpp" ]
   include_dirs = [
-    "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/communicator",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
+    "${kv_store_path}/frameworks/common",
+    "${data_service_path}/adapter/include/autils",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "../src",
   ]
   external_deps = [

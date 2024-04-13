@@ -18,7 +18,9 @@
 #include <memory.h>
 #include "account_delegate.h"
 #include "account_delegate_impl.h"
+#define private public
 #include "account_delegate_normal_impl.h"
+#undef private
 #include "ipc_skeleton.h"
 #include "log_print.h"
 namespace {
@@ -59,12 +61,12 @@ protected:
     static const std::string DEFAULT_OHOS_ACCOUNT_UID;
     static const uint32_t INVALID_TOKEN_ID;
     static const int32_t INVALID_USER;
-    static const int userId;
+    static const int USERID;
 };
 const std::string AccountDelegateTest::DEFAULT_OHOS_ACCOUNT_UID = "ohosAnonymousUid";
 const uint32_t AccountDelegateTest::INVALID_TOKEN_ID = -1;
 const int32_t AccountDelegateTest::INVALID_USER = -1;
-const int AccountDelegateTest::userId = 100;
+const int AccountDelegateTest::USERID = 100;
 
 /**
 * @tc.name: Subscribe001
@@ -227,8 +229,8 @@ HWTEST_F(AccountDelegateTest, QueryUsers, TestSize.Level0)
 */
 HWTEST_F(AccountDelegateTest, IsVerified, TestSize.Level0)
 {
-    auto user = AccountDelegate::GetInstance()->IsVerified(userId);
-    EXPECT_EQ(user, true);
+    auto user = AccountDelegate::GetInstance()->IsVerified(USERID);
+    EXPECT_EQ(user,true);
 }
 
 /**
@@ -242,7 +244,7 @@ HWTEST_F(AccountDelegateTest, RegisterHashFunc, TestSize.Level0)
 {
     AccountDelegate::HashFunc hash = nullptr;
     auto registerHash = AccountDelegate::GetInstance()->RegisterHashFunc(hash);
-    EXPECT_EQ(registerHash, true);
+    EXPECT_EQ(registerHash,true);
 }
 /**
 * @tc.name: GetCurrentAccountId

@@ -38,15 +38,15 @@ struct ServerSocketInfo {
         std::string pkgName;   /**< Peer package name */
     };
 
-  void OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info, const uint8_t *ptr, const int size,
-                   const struct PipeInfo &id) const override;
+    void OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info, const uint8_t *ptr, const int size,
+        const struct PipeInfo &id) const override;
 };
 
-  void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
-    const uint8_t *ptr, const int size, const struct PipeInfo &id) const
-  {
-    ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
-  }
+    void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
+        const uint8_t *ptr, const int size, const struct PipeInfo &id) const
+    {
+        ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
+    }
 
 class SoftbusAdapterStandardTest : public testing::Test {
 public:
@@ -92,7 +92,7 @@ HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange01, TestSize.Level0)
     appId.pipeId = "appId";
     appId.userId = "groupId";
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
-    auto status = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener,appId);
+    auto status = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, appId);
     EXPECT_EQ(status, Status::SUCCESS);
 }
 
