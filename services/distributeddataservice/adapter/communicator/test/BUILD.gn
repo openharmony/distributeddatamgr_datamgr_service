@@ -97,6 +97,7 @@ ohos_unittest("SoftbusAdapterStandardTest") {
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
+
 ###############################################################################
 config("module_comm_config") {
   visibility = [ ":*" ]
