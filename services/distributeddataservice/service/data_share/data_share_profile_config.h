@@ -55,8 +55,6 @@ enum AccessCrossMode : uint8_t {
 
 class API_EXPORT DataShareProfileConfig {
 public:
-    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
-    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
     constexpr static int8_t TABLE_MATCH_PRIORITY = 3;
     constexpr static int8_t STORE_MATCH_PRIORITY = 2;
     constexpr static int8_t COMMON_MATCH_PRIORITY = 1;
@@ -65,7 +63,7 @@ public:
     static bool GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
         std::map<std::string, ProfileInfo> &profileInfos);
     static std::pair<int, ProfileInfo> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
-        const std::string &resPath, const std::string &hapPath, const std::string &name);
+        const std::string &resPath, const std::string &hapPath, bool isProxyData);
     static AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:
@@ -80,6 +78,8 @@ private:
     static void SetCrossUserMode(uint8_t priority, uint8_t crossMode);
     static AccessCrossMode GetCrossUserMode();
     static std::pair<AccessCrossMode, int8_t> crossMode_;
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
+    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAMGR_PROFILE_CONFIG_H

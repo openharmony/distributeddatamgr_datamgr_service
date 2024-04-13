@@ -30,9 +30,6 @@
 
 namespace OHOS {
 namespace DataShare {
-// using namespace OHOS::Rdb;
-std::mutex DataShareProfileConfig::infosMutex_;
-
 constexpr const char *PROFILE_FILE_PREFIX = "$profile:";
 constexpr const char *SEPARATOR = "/";
 static constexpr int PATH_SIZE = 2;
@@ -93,16 +90,16 @@ bool ProfileInfo::Unmarshal(const json &node)
 
 std::pair<int, ProfileInfo> DataShareProfileConfig::GetDataProperties(
     const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resPath,
-    const std::string &hapPath, const std::string &name)
+    const std::string &hapPath, bool isProxyData)
 {
     ProfileInfo profileInfo;
     std::string resourcePath = !hapPath.empty() ? hapPath : resPath;
-    std::string info = GetProfileInfoByMetadata(metadata, resourcePath, hapPath, name);
+    std::string info = GetProfileInfoByMetadata(metadata, resourcePath, hapPath,
+        isProxyData ? DATA_SHARE_PROPERTIES_META : DATA_SHARE_EXTENSION_META);
     if (info.empty()) {
         return std::make_pair(NOT_FOUND, profileInfo);
     }
     if (!profileInfo.Unmarshall(info)) {
-        ZLOGE("Profile error. infos: %{public}s, name: %{public}s", info.c_str(), name.c_str());
         return std::make_pair(ERROR, profileInfo);
     }
     return std::make_pair(SUCCESS, profileInfo);
@@ -218,16 +215,14 @@ std::string DataShareProfileConfig::ReadProfile(const std::string &resPath)
         ZLOGE("the file can not open, errno is %{public}d", errno);
         return "";
     }
-    in.seekg(0, std::ios::end);
-    int64_t size = in.tellg();
-    if (size <= 0) {
+    std::ostringstream tmp;
+    tmp << in.rdbuf();
+    std::string content = tmp.str();
+    if (content.empty()) {
         ZLOGE("the file is empty, resPath is %{public}s", resPath.c_str());
         return "";
     }
-    in.seekg(0, std::ios::beg);
-    std::ostringstream tmp;
-    tmp << in.rdbuf();
-    return tmp.str();
+    return content;
 }
 
 bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
@@ -246,7 +241,6 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
         auto [ret, profileInfo] = GetDataProperties(item.metadata, item.resourcePath,
             item.hapPath, DATA_SHARE_EXTENSION_META);
         if (ret == ERROR || ret == NOT_FOUND) {
-            ZLOGE("profileInfo Unmarshall error or empty. bundleName: %{public}s", calledBundleName.c_str());
             continue;
         }
         profileInfos[item.uri] = profileInfo;

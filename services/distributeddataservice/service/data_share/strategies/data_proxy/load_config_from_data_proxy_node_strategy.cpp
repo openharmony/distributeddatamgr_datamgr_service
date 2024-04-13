@@ -53,7 +53,7 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
             }
             auto [ret, properties] = DataShareProfileConfig::GetDataProperties(
                 std::vector<AppExecFwk::Metadata>{proxyData.metadata}, hapModuleInfo.resourcePath,
-                hapModuleInfo.hapPath, DataShareProfileConfig::DATA_SHARE_PROPERTIES_META);
+                hapModuleInfo.hapPath, true);
             if (ret == ERROR || ret == NOT_FOUND) {
                 return true;
             }

@@ -38,7 +38,7 @@ public:
         const DataShareValuesBucket &valuesBucket) override;
     int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate) override;
     std::shared_ptr<DataShareResultSet> Query(const std::string &tableName, const DataSharePredicates &predicates,
-        const std::vector<std::string> &columns, int &errCode, const int32_t callingPid) override;
+        const std::vector<std::string> &columns, const int32_t callingPid, int &errCode) override;
     std::string Query(const std::string &sql, const std::vector<std::string> &selectionArgs) override;
     std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) override;
 

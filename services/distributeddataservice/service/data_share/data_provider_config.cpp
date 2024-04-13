@@ -75,10 +75,13 @@ int DataProviderConfig::GetFromProxyData()
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
             auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(
                 std::vector<AppExecFwk::Metadata>{data.metadata}, hapModuleInfo.resourcePath,
-                hapModuleInfo.hapPath, DataShareProfileConfig::DATA_SHARE_PROPERTIES_META);
-            if (ret == ERROR || ret == NOT_FOUND) {
+                hapModuleInfo.hapPath, true);
+            if (ret == NOT_FOUND) {
+                return E_OK;
+            }
+            if (ret == ERROR) {
                 ZLOGE("Profile unmarshall error.uri: %{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
-                return true;
+                return E_ERROR;
             }
             return GetFromDataProperties(profileInfo, hapModuleInfo.moduleName);
         }
@@ -95,7 +98,10 @@ int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
     providerInfo_.storeName = profileInfo.storeName;
     providerInfo_.tableName = profileInfo.tableName;
     providerInfo_.type = profileInfo.type;
-    return E_OK;
+    if (profileInfo.tableConfig.empty()) {
+        return E_OK;
+    }
+    return GetFromExtensionProperties(profileInfo, moduleName);
 }
 
 int DataProviderConfig::GetFromExtensionProperties(const ProfileInfo &profileInfo,
@@ -138,8 +144,7 @@ int DataProviderConfig::GetFromExtension()
         providerInfo_.readPermission = std::move(item.readPermission);
         providerInfo_.writePermission = std::move(item.writePermission);
         auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(
-            item.metadata, item.resourcePath,
-            item.hapPath, DataShareProfileConfig::DATA_SHARE_EXTENSION_META);
+            item.metadata, item.resourcePath, item.hapPath, false);
         if (ret == NOT_FOUND) {
             return E_OK;
         }

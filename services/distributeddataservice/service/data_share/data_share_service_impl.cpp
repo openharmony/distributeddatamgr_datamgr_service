@@ -144,7 +144,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     auto callingPid = IPCSkeleton::GetCallingPid();
     auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode, &callingPid](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
-        resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, errCode, callingPid);
+        resultSet = dbDelegate->Query(providerInfo.tableName, predicates, columns, callingPid, errCode);
         return E_OK;
     };
     errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);
@@ -715,10 +715,9 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
         return errCode;
     }
     std::string permission = isRead ? provider.readPermission : provider.writePermission;
-    if (!provider.allowEmptyPermission && permission.empty()) {
+    if (permission.empty()) {
         ZLOGE("Permission reject! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
-        return ERROR_PERMISSION_DENIED;
     }
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",

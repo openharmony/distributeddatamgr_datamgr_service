@@ -126,7 +126,7 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
 }
 std::shared_ptr<DataShareResultSet> RdbDelegate::Query(const std::string &tableName,
     const DataSharePredicates &predicates, const std::vector<std::string> &columns,
-    int &errCode, const int32_t callingPid)
+    const int32_t callingPid, int &errCode)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");

@@ -33,8 +33,8 @@ public:
         const std::string &uri, bool hasExtension, const std::string &bundleName,
         const std::string &storeName, int32_t userId);
 private:
-    bool QueryMetaData(const std::string &bundleName, const std::string &storeName, int32_t userId);
-    DistributedData::StoreMetaData metaData_;
+    std::pair<bool, DistributedData::StoreMetaData> QueryMetaData(const std::string &bundleName,
+        const std::string &storeName, int32_t userId);
 };
 } // namespace OHOS::DataShare
 #endif

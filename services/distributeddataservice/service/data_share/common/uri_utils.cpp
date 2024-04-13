@@ -119,11 +119,9 @@ UriConfig URIUtils::GetUriConfig(const std::string &uri)
     Uri uriTemp(uri);
     uriConfig.authority = uriTemp.GetAuthority();
     uriConfig.path = uriTemp.GetPath();
-    std::vector<std::string> pathSegments;
-    uriTemp.GetPathSegments(pathSegments);
-    uriConfig.pathSegments = pathSegments;
+    uriTemp.GetPathSegments(uriConfig.pathSegments);
     uriConfig.scheme = uriTemp.GetScheme();
-    std::string convertUri = uriConfig.scheme + SCHEME_SEPARATOR + uriConfig.authority + uriConfig.path;
+    std::string convertUri = DATA_PROXY_SCHEMA + uriConfig.authority + uriConfig.path;
     size_t schemePos = convertUri.find(PARAM_URI_SEPARATOR);
     if (schemePos != std::string::npos) {
         convertUri.replace(schemePos, PARAM_URI_SEPARATOR_LEN, SCHEME_SEPARATOR);
