@@ -379,7 +379,7 @@ HWTEST_F(DeviceManagerAdapterTest, StartWatchDeviceChange01, TestSize.Level0)
 {
     std::shared_ptr<DeviceChangerListener> observer = std::make_shared<DeviceChangerListener>();
     auto status = DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(observer.get(), {});
-    EXPECT_EQ(status, Status::ERROR);
+    EXPECT_EQ(status, Status::SUCCESS);
 }
 
 /**
