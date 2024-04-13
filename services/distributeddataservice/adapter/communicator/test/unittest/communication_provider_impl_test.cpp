@@ -288,7 +288,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider013, TestSize.Level
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
     DeviceId di = {"127.0.0.2"};
-    DataInfo data = {nullptr, 0};
+    DataInfo data = {nullptr , 0};
     Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
     EXPECT_EQ(status, Status::ERROR);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
@@ -338,8 +338,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider015, TestSize.Level
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
     DeviceId di = {"127.0.0.2"};
-    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
-    EXPECT_EQ(status, false);
+    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id,di);
+    EXPECT_EQ(status,false);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
@@ -361,8 +361,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider016, TestSize.Level
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
     DeviceId di = {""};
-    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
-    EXPECT_EQ(status, false);
+    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id,di);
+    EXPECT_EQ(status,false);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
@@ -384,9 +384,9 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider017, TestSize.Level
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
     DeviceId di = {"127.0.0.2"};
-    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
-    EXPECT_EQ(status, false);
-    CommunicationProvider::GetInstance().SetMessageTransFlag(id, true);
+    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id,di);
+    EXPECT_EQ(status,false);
+    CommunicationProvider::GetInstance().SetMessageTransFlag(id,true);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
