@@ -506,6 +506,8 @@ ohos_unittest("DataShareServiceImplTest") {
     "-fno-omit-frame-pointer",
     "-Wno-multichar",
     "-Wno-c99-designator",
+    "-Dprivate=public",
+    "-Dprotected=public",
   ]
 
   external_deps = [
