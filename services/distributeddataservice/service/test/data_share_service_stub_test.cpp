@@ -19,14 +19,6 @@
 #include "log_print.h"
 #include "ipc_skeleton.h"
 #include "data_share_service_impl.h"
-#include "dump/dump_manager.h"
-#include "accesstoken_kit.h"
-#include "hap_token_info.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "token_setproc.h"
-#include "message_parcel.h"
-#include "idata_share_service.h"
 #include "data_share_service_stub.h"
 
 using namespace testing::ext;
@@ -38,8 +30,6 @@ constexpr uint32_t CODE_MAX = IDataShareService::DATA_SHARE_SERVICE_CMD_MAX + 1;
 namespace OHOS::Test {
 class DataShareServiceStubTest : public testing::Test {
 public:
-    static constexpr int64_t USER_TEST = 100;
-    static constexpr int64_t TEST_SUB_ID = 100;
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
