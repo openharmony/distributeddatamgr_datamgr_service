@@ -39,6 +39,7 @@ public:
     static int32_t SetRemoteUri(uint32_t tokenId, UnifiedData &data);
 private:
     static bool VerifyCallingPermission(uint32_t tokenId, const std::string &permissionName);
+    static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);
 };
 } // namespace UDMF
 } // namespace OHOS

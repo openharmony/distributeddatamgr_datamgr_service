@@ -179,18 +179,29 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
             uris.push_back(file->GetUri());
         }
     }
-    std::unordered_map<std::string, HmdfsUriInfo> uriToDfsUriMaps;
-    int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, uriToDfsUriMaps);
-    if (ret != 0 || uriToDfsUriMaps.empty()) {
+    int ret = GetDfsUrisFromLocal(uris, userId, data);
+    if (ret != E_OK) {
         ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
-              ret, userId, uriLst.size());
+              ret, userId, uris.size());
+        return E_FS_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data)
+{
+    std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
+    int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, dfsUris);
+    if (ret != 0 || dfsUris.empty()) {
+        ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
+              ret, userId, uris.size());
         return E_FS_ERROR;
     }
     for (const auto &record : data.GetRecords()) {
         if (record != nullptr && IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
-            auto iter = uriToDfsUriMaps.find(file->GetUri());
-            if (iter != uriToDfsUriMaps.end()) {
+            auto iter = dfsUris.find(file->GetUri());
+            if (iter != dfsUris.end()) {
                 file->SetRemoteUri((iter->second).uriStr);
             }
         }
