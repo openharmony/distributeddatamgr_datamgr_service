@@ -21,7 +21,8 @@
 
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
-#include "concurrent_map.h"
+#include "lru_bucket.h"
+
 namespace OHOS::DataShare {
 class BundleMgrProxy final : public std::enable_shared_from_this<BundleMgrProxy> {
 public:
@@ -51,7 +52,7 @@ private:
     std::mutex mutex_;
     sptr<IRemoteObject> proxy_;
     sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient_;
-    ConcurrentMap<std::string, AppExecFwk::BundleInfo> bundleCache_;
+    LRUBucket<std::string, AppExecFwk::BundleInfo> bundleCache_ {16};
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H
