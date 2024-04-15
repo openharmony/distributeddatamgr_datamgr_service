@@ -28,6 +28,8 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
+#include "metadata/capability_meta_data.h"
+#include "metadata/user_meta_data.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -39,6 +41,8 @@ class ServiceMetaDataTest : public testing::Test {
 public:
     static constexpr size_t NUM_MIN = 5;
     static constexpr size_t NUM_MAX = 12;
+    static constexpr uint32_t USER_ID1 = 101;
+    static constexpr uint32_t USER_ID2 = 100;
     static constexpr uint32_t TEST_CURRENT_VERSION = 0x03000002;
     static void SetUpTestCase()
     {
@@ -634,5 +638,65 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
     EXPECT_EQ(secretkey, metaDataLoad.secretKeyMetaData.GetKey(fields));
     result = MetaDataManager::GetInstance().DelMeta(key);
     EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name: CapMetaData
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceMetaDataTest, CapMetaData, TestSize.Level1)
+{
+    CapMetaData capMetaData;
+    capMetaData.version = CapMetaData::CURRENT_VERSION;
+
+    Serializable::json node1;
+    auto result = capMetaData.Marshal(node1);
+    EXPECT_TRUE(result);
+    result = capMetaData.Unmarshal(node1);
+    EXPECT_TRUE(result);
+
+    CapMetaRow capMetaRow;
+    std::vector<uint8_t> key = capMetaRow.GetKeyFor("PEER_DEVICE_ID");
+    std::vector<uint8_t> key1 = capMetaRow.GetKeyFor("PEER_DEVICE_ID");
+    EXPECT_EQ(key, key1);
+}
+
+/**
+* @tc.name: UserMetaData
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
+{
+    UserMetaData userMetaData;
+    userMetaData.deviceId = "PEER_DEVICE_ID";
+
+    UserStatus userStatus;
+    userStatus.isActive = true;
+    userStatus.id = USER_ID1;
+    userMetaData.users = { userStatus };
+    userStatus.id = USER_ID2;
+    userMetaData.users.emplace_back(userStatus);
+
+    Serializable::json node1;
+    auto result = userMetaData.Marshal(node1);
+    EXPECT_TRUE(result);
+    result = userMetaData.Unmarshal(node1);
+    EXPECT_TRUE(result);
+
+    Serializable::json node2;
+    result = userStatus.Marshal(node2);
+    EXPECT_TRUE(result);
+    result = userStatus.Unmarshal(node2);
+    EXPECT_TRUE(result);
+
+    UserMetaRow userMetaRow;
+    auto key = userMetaRow.GetKeyFor(userMetaData.deviceId);
+    EXPECT_EQ(key, "UserMeta###PEER_DEVICE_ID");
 }
 } // namespace OHOS::Test
