@@ -38,6 +38,11 @@ public:
     using PushDataInterceptor = DistributedDB::PushDataInterceptor;
     using UpdateKeyCallback = DistributedDB::UpdateKeyCallback;
     using WatermarkInfo = DistributedDB::WatermarkInfo;
+    using ClearMode = DistributedDB::ClearMode;
+    using DataBaseSchema = DistributedDB::DataBaseSchema;
+    using ICloudDb = DistributedDB::ICloudDb;
+    using CloudSyncOption = DistributedDB::CloudSyncOption;
+    using SyncProcessCallback = DistributedDB::SyncProcessCallback;
     DBStatus Get(const Key &key, Value &value) const override;
     DBStatus GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const override;
     DBStatus GetEntries(const Key &keyPrefix, KvStoreResultSet *&resultSet) const override;
@@ -91,7 +96,12 @@ public:
     size_t GetSyncDataSize(const std::string &device) const override;
     DBStatus UpdateKey(const UpdateKeyCallback &callback) override;
     std::pair<DBStatus, WatermarkInfo> GetWatermarkInfo(const std::string &device) override;
-
+    DBStatus Sync(const CloudSyncOption &option, const SyncProcessCallback &onProcess) override;
+    DBStatus SetCloudDB(const std::map<std::string, std::shared_ptr<ICloudDb>> &cloudDBs) override;
+    DBStatus SetCloudDbSchema(const std::map<std::string, DataBaseSchema> &schema) override;
+    DBStatus RemoveDeviceData(const std::string &device, ClearMode mode) override;
+    DBStatus RemoveDeviceData(const std::string &device, const std::string &user, ClearMode mode) override;
+    int32_t GetTaskCount() override;
 private:
     static const uint32_t DEFAULT_SIZE = 0;
     DBStatus Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const;

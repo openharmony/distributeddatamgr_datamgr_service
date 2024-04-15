@@ -316,5 +316,36 @@ std::pair<DBStatus, WatermarkInfo> DBStoreMock::GetWatermarkInfo(const std::stri
     WatermarkInfo mark;
     return { DBStatus::OK, mark };
 }
+
+DBStatus DBStoreMock::Sync(const CloudSyncOption &option, const SyncProcessCallback &onProcess)
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus DBStoreMock::SetCloudDB(const std::map<std::string, std::shared_ptr<ICloudDb>> &cloudDBs)
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus DBStoreMock::SetCloudDbSchema(const std::map<std::string, DataBaseSchema> &schema)
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus DBStoreMock::RemoveDeviceData(const std::string &device, ClearMode mode)
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus DBStoreMock::RemoveDeviceData(const std::string &device, const std::string &user,
+    ClearMode mode)
+{
+    return NOT_SUPPORT;
+}
+
+int32_t DBStoreMock::GetTaskCount()
+{
+    return 0;
+}
 } // namespace DistributedData
 } // namespace OHOS
