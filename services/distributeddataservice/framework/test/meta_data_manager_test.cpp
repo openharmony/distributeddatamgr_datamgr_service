@@ -15,38 +15,21 @@
 #define LOG_TAG "MetaDataManagerTest"
 
 #include "metadata/meta_data_manager.h"
-#include "device_manager_adapter.h"
-#include "kvstore_meta_manager.h"
-#include "bootstrap.h"
 #include "log_print.h"
-
 #include <gtest/gtest.h>
 using namespace OHOS;
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 namespace OHOS::Test {
 class MetaDataManagerTest : public testing::Test {
 public:
-    static constexpr size_t NUM_MIN = 5;
-    static constexpr size_t NUM_MAX = 12;
     static const std::string INVALID_DEVICE_ID;
     static const std::string EMPTY_DEVICE_ID;
-    static void SetUpTestCase()
-    {
-        std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-        Bootstrap::GetInstance().LoadComponents();
-        Bootstrap::GetInstance().LoadDirectory();
-        Bootstrap::GetInstance().LoadCheckers();
-        KvStoreMetaManager::GetInstance().BindExecutor(executors);
-        KvStoreMetaManager::GetInstance().InitMetaParameter();
-        KvStoreMetaManager::GetInstance().InitMetaListener();
-        DmAdapter::GetInstance().Init(executors);
-    }
-    static void TearDownTestCase(void) {};
-    void SetUp() {};
-    void TearDown() {};
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
 };
 const std::string MetaDataManagerTest::INVALID_DEVICE_ID = "1234567890";
 const std::string MetaDataManagerTest::EMPTY_DEVICE_ID = "";

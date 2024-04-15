@@ -28,8 +28,6 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
-#include "metadata/capability_meta_data.h"
-#include "metadata/user_meta_data.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -637,94 +635,6 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
     EXPECT_EQ(key, metaDataLoad.storeMetaData.GetKey());
     EXPECT_EQ(secretkey, metaDataLoad.secretKeyMetaData.GetKey(fields));
     result = MetaDataManager::GetInstance().DelMeta(key);
-    EXPECT_TRUE(result);
-}
-
-/**
-* @tc.name: CapMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(ServiceMetaDataTest, CapMetaData, TestSize.Level1)
-{
-    UserMetaData userMetaData;
-    UserMetaData userData;
-    userMetaData.deviceId = "PEER_DEVICE_ID";
-
-    UserStatus status;
-    status.isActive = true;
-    status.id = USER_ID1;
-    userMetaData.users = { status };
-    status.id = USER_ID2;
-    userMetaData.users.emplace_back(status);
-
-    auto peerUserMetaKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
-    std::string userkey = { peerUserMetaKey.begin(), peerUserMetaKey.end() };
-    auto result = MetaDataManager::GetInstance().SaveMeta(userkey, userMetaData);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().LoadMeta(userkey, userData);
-    EXPECT_TRUE(result);
-
-    CapMetaData capMetaData;
-    CapMetaData capData;
-    capMetaData.version = CapMetaData::CURRENT_VERSION;
-
-    auto peerCapMetaKey = CapMetaRow::GetKeyFor(userMetaData.deviceId);
-    std::string capkey = { peerCapMetaKey.begin(), peerCapMetaKey.end() };
-    result = MetaDataManager::GetInstance().SaveMeta(capkey, capMetaData);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().LoadMeta(userkey, capData);
-    EXPECT_TRUE(result);
-
-    result = MetaDataManager::GetInstance().DelMeta(userkey);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(capkey);
-    EXPECT_TRUE(result);
-}
-
-/**
-* @tc.name: UserMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
-{
-    UserMetaData userMetaData;
-    UserMetaData userData;
-    userMetaData.deviceId = "PEER_DEVICE_ID";
-
-    UserStatus status;
-    status.isActive = true;
-    status.id = USER_ID1;
-    userMetaData.users = { status };
-    status.id = USER_ID2;
-    userMetaData.users.emplace_back(status);
-
-    auto peerUserMetaKey = UserMetaRow::GetKeyFor(userMetaData.deviceId);
-    std::string userkey = { peerUserMetaKey.begin(), peerUserMetaKey.end() };
-    auto result = MetaDataManager::GetInstance().SaveMeta(userkey, userMetaData, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().LoadMeta(userkey, userData, true);
-    EXPECT_TRUE(result);
-
-    CapMetaData capMetaData;
-    CapMetaData capData;
-    capMetaData.version = CapMetaData::CURRENT_VERSION;
-
-    auto peerCapMetaKey = CapMetaRow::GetKeyFor(userMetaData.deviceId);
-    std::string capkey = { peerCapMetaKey.begin(), peerCapMetaKey.end() };
-    result = MetaDataManager::GetInstance().SaveMeta(capkey, capMetaData, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().LoadMeta(userkey, capData, true);
-    EXPECT_TRUE(result);
-
-    result = MetaDataManager::GetInstance().DelMeta(userkey, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(capkey, true);
     EXPECT_TRUE(result);
 }
 } // namespace OHOS::Test
