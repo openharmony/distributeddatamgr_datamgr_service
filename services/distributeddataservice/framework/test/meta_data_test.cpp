@@ -39,8 +39,6 @@ class ServiceMetaDataTest : public testing::Test {
 public:
     static constexpr size_t NUM_MIN = 5;
     static constexpr size_t NUM_MAX = 12;
-    static constexpr uint32_t USER_ID1 = 101;
-    static constexpr uint32_t USER_ID2 = 100;
     static constexpr uint32_t TEST_CURRENT_VERSION = 0x03000002;
     static void SetUpTestCase()
     {
