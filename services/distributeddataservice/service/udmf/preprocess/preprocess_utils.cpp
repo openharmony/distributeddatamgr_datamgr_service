@@ -179,11 +179,13 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
             uris.push_back(file->GetUri());
         }
     }
-    int ret = GetDfsUrisFromLocal(uris, userId, data);
-    if (ret != E_OK) {
-        ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
-              ret, userId, uris.size());
-        return E_FS_ERROR;
+    if (!uris.empty()) {
+        int ret = GetDfsUrisFromLocal(uris, userId, data);
+        if (ret != E_OK) {
+            ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
+                  ret, userId, uris.size());
+            return E_FS_ERROR;
+        }
     }
     return E_OK;
 }
