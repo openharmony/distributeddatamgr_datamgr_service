@@ -126,7 +126,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
-    isPublic_ = meta.isPublic;
+    storeInfo_.isPublic = meta.isPublic;
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -169,15 +169,6 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
             return GeneralError::E_OK;
         }
 
-        BindEvent::BindEventInfo eventInfo;
-        eventInfo.tokenId = storeInfo_.tokenId;
-        eventInfo.bundleName = storeInfo_.bundleName;
-        eventInfo.storeName = storeInfo_.storeName;
-        eventInfo.user = storeInfo_.user;
-        eventInfo.instanceId = storeInfo_.instanceId;
-
-        auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
-        EventCenter::GetInstance().PostEvent(std::move(evt));
         dbClouds_.insert({ userId, std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
         bindInfos_.insert(std::move(bindInfo));
 

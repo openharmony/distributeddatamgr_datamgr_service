@@ -137,18 +137,17 @@ void KVDBServiceImpl::Init()
         StoreMetaData meta;
         meta.storeId = storeInfo.storeName;
         meta.bundleName = storeInfo.bundleName;
-        meta.user = std::to_string(storeInfo.user);
-        meta.instanceId = storeInfo.instanceId;
+        meta.user = storeInfo.isPublic ? "0" : std::to_string(storeInfo.user);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-        if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
-            meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
-            ZLOGE("StoreType not match, bundleName:%{public}s, storeId:%{public}s, storeType: %{public}d",
-                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.storeType);
-            return;
-        }
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
+            return;
+        }
+        if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
+            meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
+            ZLOGE("StoreType not match, bundleName:%{public}s, storeId:%{public}s, storeType: %{public}d",
+                  meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.storeType);
             return;
         }
         auto watchers = GetWatchers(meta.tokenId, meta.storeId);
@@ -156,6 +155,13 @@ void KVDBServiceImpl::Init()
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
+        }
+        if (meta.isPublic) {
+            auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
+                meta.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
+            auto info = ChangeEvent::EventInfo(mixMode, 0, meta.isAutoSync, nullptr, nullptr);
+            auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+            EventCenter::GetInstance().PostEvent(std::move(evt));
         }
         store->RegisterDetailProgressObserver(nullptr);
     };
@@ -234,7 +240,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
+Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
@@ -243,12 +249,13 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     storeInfo.storeName = storeId;
+    storeInfo.isPublic = metaData.isPublic;
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
         metaData.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
     auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, nullptr);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
-    return SUCCESS; // todo 异步接口，只会返回成功。
+    return SUCCESS;
 }
 
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)

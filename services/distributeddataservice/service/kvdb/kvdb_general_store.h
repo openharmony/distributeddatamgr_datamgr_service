@@ -117,7 +117,6 @@ private:
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
     StoreInfo storeInfo_;
-    bool isPublic_ = false;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H
