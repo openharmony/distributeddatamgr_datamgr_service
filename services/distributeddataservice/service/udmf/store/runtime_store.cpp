@@ -340,6 +340,8 @@ bool RuntimeStore::SaveMetaData()
     saveMeta.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
 
+    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, userId);
+
     DistributedData::StoreMetaData loadLocal;
     DistributedData::StoreMetaData syncMeta;
     if (DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), loadLocal, true) &&
@@ -348,7 +350,6 @@ bool RuntimeStore::SaveMetaData()
         return true;
     }
 
-    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, userId);
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
                  DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!saved) {
