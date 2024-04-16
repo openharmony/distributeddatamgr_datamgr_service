@@ -77,8 +77,6 @@ public:
     static DBSecurity GetDBSecurity(int32_t secLevel);
 
 private:
-    KVDBGeneralStore(const KVDBGeneralStore &store);
-    KVDBGeneralStore &operator=(const KVDBGeneralStore &store);
     using KvDelegate = DistributedDB::KvStoreNbDelegate;
     using KvManager = DistributedDB::KvStoreDelegateManager;
     using SyncProcess = DistributedDB::SyncProcess;

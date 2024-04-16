@@ -246,10 +246,8 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = appId.appId;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     storeInfo.storeName = storeId;
-    storeInfo.isPublic = metaData.isPublic;
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
         metaData.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
     auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, nullptr);
@@ -503,12 +501,9 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     }
     if (executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
-        storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
         storeInfo.bundleName = appId.appId;
-        storeInfo.storeName = storeId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
         storeInfo.user = std::stoi(meta.user);
-        storeInfo.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         executors_->Execute([storeInfo]() {
             auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
             EventCenter::GetInstance().PostEvent(move(event));

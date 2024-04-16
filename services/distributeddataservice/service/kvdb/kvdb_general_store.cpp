@@ -303,6 +303,10 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
     } else {
         return GeneralError::E_INVALID_ARGS;
     }
+    if (devices.empty()) {
+        ZLOGE("Devices is empty! mode:%{public}d", mode);
+        return GeneralError::E_INVALID_ARGS;
+    }
     auto dbStatus = DistributedDB::OK;
     if (syncMode == NEARBY_SUBSCRIBE_REMOTE) {
         dbStatus = delegate_->SubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
@@ -343,10 +347,8 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
     DBStatus status = OK;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
-              "tableName:%{public}s",
-            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode,
-            Anonymous::Change(tableName).c_str());
+        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d", devices.size(),
+            devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode);
         return GeneralError::E_ALREADY_CLOSED;
     }
     switch (mode) {
