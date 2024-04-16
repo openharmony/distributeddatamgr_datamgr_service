@@ -42,7 +42,7 @@ using UserId = OHOS::DistributedKv::UserId;
 using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 using SyncInfo = OHOS::DistributedKv::KVDBService::SyncInfo;
-static OHOS::DistributedKv::StoreId storeId = { "meta_test_storeid" };
+static OHOS::DistributedKv::StoreId storeId = { "kvdb_test_storeid" };
 static OHOS::DistributedKv::AppId appId = { "ohos.test.kvdb" };
 
 namespace OHOS::Test {
@@ -174,45 +174,6 @@ HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest002, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetStoreIdsTest003
-* @tc.desc: GetStoreIds
-* @tc.type: FUNC
-* @tc.author: wangbin
-*/
-HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest003, TestSize.Level0)
-{
-    ZLOGI("GetStoreIdsTest003 start");
-    std::vector<StoreId> storeIds;
-    storeIds.emplace_back(storeId64);
-    storeIds.emplace_back(storeId65);
-    storeIds.emplace_back(storeId);
-    OHOS::DistributedKv::AppId appId03;
-    auto status = kvdbServiceImpl_->GetStoreIds(appId03, storeIds);
-    ZLOGI("GetStoreIdsTest003 status = :%{public}d", status);
-    ASSERT_EQ(status, Status::SUCCESS);
-}
-
-/**
-* @tc.name: GetStoreIdsTest004
-* @tc.desc: GetStoreIds
-* @tc.type: FUNC
-* @tc.author: wangbin
-*/
-HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest004, TestSize.Level0)
-{
-    ZLOGI("GetStoreIdsTest004 start");
-    Status status = manager.GetSingleKvStore(create, appId, storeId, kvStore);
-    ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status, Status::SUCCESS);
-    std::vector<StoreId> storeIds;
-    storeIds.emplace_back(storeId64);
-    storeIds.emplace_back(storeId65);
-    auto status1 = kvdbServiceImpl_->GetStoreIds(appId, storeIds);
-    ZLOGI("GetStoreIdsTest004 status = :%{public}d", status);
-    ASSERT_EQ(status1, Status::SUCCESS);
-}
-
-/**
 * @tc.name: DeleteTest001
 * @tc.desc: GetStoreIds
 * @tc.type: FUNC
@@ -224,8 +185,6 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest001, TestSize.Level0)
     Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
-    std::vector<StoreId> storeIds;
-    kvdbServiceImpl_->GetStoreIds(appId, storeIds);
     auto status = kvdbServiceImpl_->Delete(appId, storeId);
     ZLOGI("DeleteTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
@@ -240,10 +199,9 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest001, TestSize.Level0)
 HWTEST_F(KvdbServiceImplTest, DeleteTest002, TestSize.Level0)
 {
     ZLOGI("DeleteTest002 start");
-    Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
-    ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status1, Status::SUCCESS);
-    auto status = kvdbServiceImpl_->Delete(appId, storeId);
+    AppId appId01 = { "ohos.kvdbserviceimpl.test01" };
+    StoreId storeId01 = { "meta_test_storeid" };
+    auto status = kvdbServiceImpl_->Delete(appId01, storeId01);
     ZLOGI("DeleteTest002 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
