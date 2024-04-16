@@ -161,7 +161,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider006, TestSize.Level
 
 /**
 * @tc.name: CommunicationProvider007
-* @tc.desc:the pipeInfo is null
+* @tc.desc:the pipeInfo is nullptr
 * @tc.type: FUNC
 * @tc.author: nhj
 */
@@ -193,7 +193,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider008, TestSize.Level
 
 /**
 * @tc.name: CommunicationProvider009
-* @tc.desc: the pipeInfo is null
+* @tc.desc: the pipeInfo is nullptr
 * @tc.type: FUNC
 * @tc.author: nhj
 */
@@ -348,7 +348,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider015, TestSize.Level
 
 /**
 * @tc.name: CommunicationProvider016
-* @tc.desc: parse sent data
+* @tc.desc: IsSameStartedOnPeer
 * @tc.type: FUNC
 * @tc.author: nhj
 */
@@ -371,7 +371,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider016, TestSize.Level
 
 /**
 * @tc.name: CommunicationProvider017
-* @tc.desc: parse sent data
+* @tc.desc: SetMessageTransFlag
 * @tc.type: FUNC
 * @tc.author: nhj
 */

@@ -370,7 +370,6 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkIdLocal, TestSize.Level0)
 * @tc.name: StartWatchDeviceChange
 * @tc.desc: start watch device change
 * @tc.type: FUNC
-* @tc.require:
 * @tc.author: nhj
  */
 HWTEST_F(DeviceManagerAdapterTest, StartWatchDeviceChange01, TestSize.Level0)
@@ -384,7 +383,6 @@ HWTEST_F(DeviceManagerAdapterTest, StartWatchDeviceChange01, TestSize.Level0)
 * @tc.name: GetDeviceInfo
 * @tc.desc: get device info
 * @tc.type: FUNC
-* @tc.require:
 * @tc.author: nhj
  */
 HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo, TestSize.Level0)
@@ -401,7 +399,6 @@ HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo, TestSize.Level0)
 * @tc.name: GetDeviceInfo
 * @tc.desc: get device info, the id is invalid
 * @tc.type: FUNC
-* @tc.require:
 * @tc.author: nhj
  */
 HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfoInvalidId01, TestSize.Level0)
@@ -414,7 +411,6 @@ HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfoInvalidId01, TestSize.Level0)
 * @tc.name: GetOnlineDevices
 * @tc.desc: get Online device
 * @tc.type: FUNC
-* @tc.require:
 * @tc.author: nhj
  */
 HWTEST_F(DeviceManagerAdapterTest, GetOnlineDevices, TestSize.Level0)

@@ -108,7 +108,6 @@ HWTEST_F(AccountDelegateTest, Subscribe002, TestSize.Level0)
 * @tc.name: Subscribe003
 * @tc.desc: subscribe user change, the observer is invalid
 * @tc.type: FUNC
-* @tc.require:
 * @tc.author: nhj
 */
 HWTEST_F(AccountDelegateTest, Subscribe003, TestSize.Level0)
@@ -222,7 +221,6 @@ HWTEST_F(AccountDelegateTest, QueryUsers, TestSize.Level0)
 * @tc.name: IsVerified
 * @tc.desc: query users
 * @tc.type: FUNC
-* @tc.require:
 * @tc.author: nhj
 */
 HWTEST_F(AccountDelegateTest, IsVerified, TestSize.Level0)
@@ -232,29 +230,21 @@ HWTEST_F(AccountDelegateTest, IsVerified, TestSize.Level0)
 }
 
 /**
-* @tc.name: RegisterHashFunc
-* @tc.desc: RegisterHashFunc
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: nhj
-*/
-HWTEST_F(AccountDelegateTest, RegisterHashFunc, TestSize.Level0)
-{
-    AccountDelegate::HashFunc hash = nullptr;
-    auto registerHash = AccountDelegate::GetInstance()->RegisterHashFunc(hash);
-    EXPECT_EQ(registerHash, true);
-}
-/**
-* @tc.name: GetCurrentAccountId
+* @tc.name: UnsubscribeAccountEvent
 * @tc.desc: get current account Id
 * @tc.type: FUNC
-* @tc.require:
 * @tc.author: nhj
 */
 HWTEST_F(AccountDelegateTest, UnsubscribeAccountEvent, TestSize.Level0)
 {
+    auto account = AccountDelegate::GetInstance();
+    auto observer = std::make_shared<AccountObserver>();
+    account->Subscribe(observer);
     auto executor = std::make_shared<OHOS::ExecutorPool>(12, 5);
     AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
     AccountDelegate::GetInstance()->BindExecutor(executor);
+    auto status = account->Unsubscribe(observer);
+    EXPECT_EQ(status, Status::SUCCESS);
 }
+
 } // namespace

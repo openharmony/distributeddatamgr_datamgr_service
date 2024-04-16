@@ -281,7 +281,6 @@ HWTEST_F(DistributedataDfxUTTest, Dfx007, TestSize.Level0)
   * @tc.name: Dfx008
   * @tc.desc: send data to 1 device, then check reporter message.
   * @tc.type: send data
-  * @tc.require: AR000CQE1L SR000CQE1J
   * @tc.author: nhj
   */
 HWTEST_F(DistributedataDfxUTTest, Dfx008, TestSize.Level0)
@@ -320,7 +319,6 @@ HWTEST_F(DistributedataDfxUTTest, Dfx008, TestSize.Level0)
   * @tc.name: Dfx009
   * @tc.desc: Set invalid information, call getKvStore, expect return INVALID_ARGS.
   * @tc.type: CreateKvStore test
-  * @tc.require: AR000CQE1L SR000CQE1J
   * @tc.author: nhj
   */
 HWTEST_F(DistributedataDfxUTTest, Dfx009, TestSize.Level0)
