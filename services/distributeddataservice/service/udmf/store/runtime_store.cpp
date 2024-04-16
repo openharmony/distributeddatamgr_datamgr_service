@@ -275,7 +275,7 @@ void RuntimeStore::Close()
 bool RuntimeStore::Init()
 {
     if (!SaveMetaData()) {  // get keyinfo about create db fail.
-        ZLOGW("SaveMetaData fail, the data can not sync to other device.");
+        ZLOGW("Save meta data fail.");
         return false;
     }
     DistributedDB::KvStoreNbDelegate::Option option;
@@ -340,11 +340,11 @@ bool RuntimeStore::SaveMetaData()
     saveMeta.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
 
-    DistributedData::StoreMetaData saveMetaLoadLocal;
-    DistributedData::StoreMetaData saveMetaLoad;
-    if (DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), saveMetaLoadLocal, true) &&
-        DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), saveMetaLoad, true)) {
-        ZLOGD("Meta data is already save.");
+    DistributedData::StoreMetaData loadLocal;
+    DistributedData::StoreMetaData syncMeta;
+    if (DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), loadLocal, true) &&
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), syncMeta, false)) {
+        ZLOGD("Meta data is already saved.");
         return true;
     }
 
