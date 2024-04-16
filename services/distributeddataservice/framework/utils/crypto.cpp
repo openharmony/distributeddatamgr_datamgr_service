@@ -48,8 +48,10 @@ std::string Crypto::Sha256(const void *data, size_t size, bool isUpper)
         unsigned char value = hash[SHA256_DIGEST_LENGTH + i];
         // uint8_t is 2 digits in hexadecimal.
         hash[i * 2] = hexCode[(value >> WIDTH) & MASK];
+        // uint8_t is 2 digits in hexadecimal.
         hash[i * 2 + 1] = hexCode[value & MASK];
     }
+    // uint8_t is 2 digits in hexadecimal.
     hash[SHA256_DIGEST_LENGTH * 2] = 0;
     return reinterpret_cast<char *>(hash);
 }
