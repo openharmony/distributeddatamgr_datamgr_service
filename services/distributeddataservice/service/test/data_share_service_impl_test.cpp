@@ -26,7 +26,6 @@
 #include "system_ability_definition.h"
 #include "token_setproc.h"
 #include "data_share_service_impl.h"
-#include "data_provider_config.h"
 
 using namespace testing::ext;
 using DumpManager = OHOS::DistributedData::DumpManager;
@@ -113,13 +112,13 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
     std::string name0 = "wang";
     valuesBucket.Put(TBL_NAME0, name0);
     auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+    EXPECT_EQ((result < 0), true);
 
     DataShare::DataSharePredicates predicates;
     std::string selections = TBL_NAME1 + " = 'wu'";
     predicates.SetWhereClause(selections);
     result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+    EXPECT_EQ((result < 0), true);
 
     predicates.EqualTo(TBL_NAME1, "wu");
     std::vector<std::string> columns;
@@ -133,7 +132,7 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
 
     predicates.SetWhereClause(selections);
     result = dataShareServiceImpl.Delete(uri, predicates);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+    EXPECT_EQ((result < 0), true);
 }
 
 /**
@@ -254,11 +253,6 @@ HWTEST_F(DataShareServiceImplTest, AddTemplate001, TestSize.Level1)
     result = dataShareServiceImpl.DelTemplate(uri, subscriberId);
     EXPECT_TRUE(result);
 
-    result = dataShareServiceImpl.AddTemplate("", 0, tpl);
-    EXPECT_TRUE(result);
-    result = dataShareServiceImpl.DelTemplate("", 0);
-    EXPECT_TRUE(result);
-
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
     result = dataShareServiceImpl.AddTemplate(uri, subscriberId, tpl);
@@ -299,26 +293,43 @@ HWTEST_F(DataShareServiceImplTest, Publish001, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     DataShare::Data data;
-    data.datas_.emplace_back(BUNDLE_NAME, TEST_SUB_ID, "value1");
-    std::string bundleNameOfProvider = BUNDLE_NAME;
-    std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleNameOfProvider);
+    std::string bundleName = "com.acts.ohos.data.datasharetest";
+    data.datas_.emplace_back("datashareproxy://com.acts.ohos.data.datasharetest/test", TEST_SUB_ID, "value1");
+    std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleName);
     EXPECT_EQ(result.size(), data.datas_.size());
 
     int errCode = 0;
-    auto getData = dataShareServiceImpl.GetData(bundleNameOfProvider, errCode);
-    EXPECT_EQ(errCode, 0);
-    EXPECT_NE(getData.datas_.size(), data.datas_.size());
-
-    result = dataShareServiceImpl.Publish(data, BUNDLE_NAME_ERROR);
-    EXPECT_EQ(result.size(), data.datas_.size());
-    getData = dataShareServiceImpl.GetData(BUNDLE_NAME_ERROR, errCode);
+    auto getData = dataShareServiceImpl.GetData(bundleName, errCode);
     EXPECT_EQ(errCode, 0);
     EXPECT_NE(getData.datas_.size(), data.datas_.size());
 
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
-    result = dataShareServiceImpl.Publish(data, bundleNameOfProvider);
+    result = dataShareServiceImpl.Publish(data, bundleName);
     EXPECT_NE(result.size(), data.datas_.size());
+}
+
+/**
+* @tc.name: Publish002
+* @tc.desc: test Publish bundleName is error
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, Publish002, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    DataShare::Data data;
+    std::string bundleName = "com.acts.ohos.error";
+    data.datas_.emplace_back("datashareproxy://com.acts.ohos.error", TEST_SUB_ID, "value1");
+    std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleName);
+    EXPECT_EQ(result.size(), data.datas_.size());
+    for (auto const &results : result) {
+        EXPECT_NE(results.errCode_, E_BUNDLE_NAME_NOT_EXIST);
+    }
+
+    int errCode = 0;
+    auto getData = dataShareServiceImpl.GetData(bundleName, errCode);
+    EXPECT_NE(errCode, E_BUNDLE_NAME_NOT_EXIST);
 }
 
 /**

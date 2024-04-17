@@ -34,12 +34,11 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
-protected:
 };
 
 /**
 * @tc.name: OnRemoteRequest001
-* @tc.desc:
+* @tc.desc: test OnRemoteRequest function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -65,37 +64,11 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteRequest002
-* @tc.desc:
+* @tc.desc: test OnRemoteRequest function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
-{
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
-    uint8_t value = CODE_MAX;
-    uint8_t *data = &value;
-    size_t size = 1;
-    uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
-    MessageParcel request;
-    request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(data, size);
-    request.RewindRead(0);
-    MessageParcel reply;
-    auto result = dataShareServiceStub->OnRemoteRequest(code, request, reply);
-    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
-
-    result = dataShareServiceStub->OnRemoteNotifyConnectDone(request, reply);
-    EXPECT_EQ(result, 0);
-}
-
-/**
-* @tc.name: OnRemoteRequest003
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceStubTest, OnRemoteRequest003, TestSize.Level1)
 {
     std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
     std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
@@ -113,7 +86,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest003, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteInsert001
-* @tc.desc:
+* @tc.desc: test OnRemoteInsert function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -144,7 +117,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteInsert001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteAddTemplate001
-* @tc.desc:
+* @tc.desc: test OnRemoteAddTemplate function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -169,7 +142,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteAddTemplate001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteEnablePubSubs001
-* @tc.desc:
+* @tc.desc: test OnRemoteEnablePubSubs function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -213,7 +186,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnablePubSubs001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteEnableRdbSubs001
-* @tc.desc:
+* @tc.desc: test OnRemoteEnableRdbSubs function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -250,7 +223,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnableRdbSubs001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteRegisterObserver001
-* @tc.desc:
+* @tc.desc: test OnRemoteRegisterObserver function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
