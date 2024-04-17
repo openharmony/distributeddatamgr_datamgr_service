@@ -39,8 +39,8 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 namespace OHOS::Test {
 class ServiceMetaDataTest : public testing::Test {
 public:
-    static constexpr size_t NUM_MIN = 5;
-    static constexpr size_t NUM_MAX = 12;
+    static constexpr size_t NUM_MIN = 1;
+    static constexpr size_t NUM_MAX = 2;
     static constexpr uint32_t USER_ID1 = 101;
     static constexpr uint32_t USER_ID2 = 100;
     static constexpr uint32_t TEST_CURRENT_VERSION = 0x03000002;
@@ -642,7 +642,7 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
 
 /**
 * @tc.name: CapMetaData
-* @tc.desc:
+* @tc.desc: test CapMetaData function
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: SQL
@@ -651,22 +651,24 @@ HWTEST_F(ServiceMetaDataTest, CapMetaData, TestSize.Level1)
 {
     CapMetaData capMetaData;
     capMetaData.version = CapMetaData::CURRENT_VERSION;
-
     Serializable::json node1;
-    auto result = capMetaData.Marshal(node1);
-    EXPECT_TRUE(result);
-    result = capMetaData.Unmarshal(node1);
-    EXPECT_TRUE(result);
+    capMetaData.Marshal(node1);
+    EXPECT_EQ(node1["version"], CapMetaData::CURRENT_VERSION);
+
+    CapMetaData capMeta;
+    capMeta.Unmarshal(node1);
+    EXPECT_EQ(capMeta.version, CapMetaData::CURRENT_VERSION);
 
     CapMetaRow capMetaRow;
-    std::vector<uint8_t> key = capMetaRow.GetKeyFor("PEER_DEVICE_ID");
-    std::vector<uint8_t> key1 = capMetaRow.GetKeyFor("PEER_DEVICE_ID");
-    EXPECT_EQ(key, key1);
+    auto key = capMetaRow.GetKeyFor("PEER_DEVICE_ID");
+    std::string str = "CapabilityMeta###PEER_DEVICE_ID";
+    std::vector<uint8_t> testKey = { str.begin(), str.end() };
+    EXPECT_EQ(key, testKey);
 }
 
 /**
 * @tc.name: UserMetaData
-* @tc.desc:
+* @tc.desc: test UserMetaData function
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: SQL
@@ -684,16 +686,22 @@ HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
     userMetaData.users.emplace_back(userStatus);
 
     Serializable::json node1;
-    auto result = userMetaData.Marshal(node1);
-    EXPECT_TRUE(result);
-    result = userMetaData.Unmarshal(node1);
-    EXPECT_TRUE(result);
+    userMetaData.Marshal(node1);
+    EXPECT_EQ(node1["deviceId"], "PEER_DEVICE_ID");
+
+    UserMetaData userMeta;
+    userMeta.Unmarshal(node1);
+    EXPECT_EQ(userMeta.deviceId, "PEER_DEVICE_ID");
 
     Serializable::json node2;
-    result = userStatus.Marshal(node2);
-    EXPECT_TRUE(result);
-    result = userStatus.Unmarshal(node2);
-    EXPECT_TRUE(result);
+    userStatus.Marshal(node2);
+    EXPECT_EQ(node2["isActive"], true);
+    EXPECT_EQ(node2["id"], USER_ID2);
+
+    UserStatus userUnmarshal;
+    userUnmarshal.Unmarshal(node2);
+    EXPECT_EQ(userUnmarshal.isActive, true);
+    EXPECT_EQ(userUnmarshal.id, USER_ID2);
 
     UserMetaRow userMetaRow;
     auto key = userMetaRow.GetKeyFor(userMetaData.deviceId);
