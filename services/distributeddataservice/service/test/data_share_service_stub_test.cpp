@@ -64,7 +64,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteRequest002
-* @tc.desc: test OnRemoteRequest function
+* @tc.desc: test OnRemoteRequest abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -86,7 +86,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteInsert001
-* @tc.desc: test OnRemoteInsert function
+* @tc.desc: test OnRemoteInsert function abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -117,7 +117,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteInsert001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteAddTemplate001
-* @tc.desc: test OnRemoteAddTemplate function
+* @tc.desc: test OnRemoteAddTemplate function abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -142,7 +142,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteAddTemplate001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteEnablePubSubs001
-* @tc.desc: test OnRemoteEnablePubSubs function
+* @tc.desc: test OnRemoteEnablePubSubs function abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -186,7 +186,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnablePubSubs001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteEnableRdbSubs001
-* @tc.desc: test OnRemoteEnableRdbSubs function
+* @tc.desc: test OnRemoteEnableRdbSubs function abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -223,7 +223,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnableRdbSubs001, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteRegisterObserver001
-* @tc.desc: test OnRemoteRegisterObserver function
+* @tc.desc: test OnRemoteRegisterObserver function abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
