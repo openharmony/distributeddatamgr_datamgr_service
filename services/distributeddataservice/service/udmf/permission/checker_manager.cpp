@@ -57,17 +57,5 @@ bool CheckerManager::IsValid(const std::vector<Privilege> &privileges, const Che
     }
     return it->second->IsValid(privileges, info);
 }
-
-bool CheckerManager::IsPersistentPrivilege(const std::vector<Privilege> &privileges, const CheckInfo &info)
-{
-    auto it = checkers_.find(DATA_CHECKER);
-    if (it == checkers_.end()) {
-        return true;
-    }
-    if (it->second == nullptr) {
-        return false;
-    }
-    return it->second->IsPersistentPrivilege(privileges, info);
-}
 } // namespace UDMF
 } // namespace OHOS

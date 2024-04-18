@@ -41,7 +41,6 @@ public:
     void RegisterChecker(const std::string &checker, std::function<Checker *()> getter);
     void LoadCheckers();
     bool IsValid(const std::vector<Privilege> &privileges, const CheckInfo &info);
-    bool IsPersistentPrivilege(const std::vector<Privilege> &privileges, const CheckInfo &info);
 
 private:
     std::map<std::string, Checker *> checkers_;

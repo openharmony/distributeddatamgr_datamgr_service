@@ -201,7 +201,7 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
             return E_NO_PERMISSION;
         }
     }
-    if (!CheckerManager::GetInstance().IsPersistentPrivilege(runtime->privileges, info) && !IsPersistentPermissionInCache(query)) {
+    if (!IsReadAndKeep(runtime->privileges, query)) {
         if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
             ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
             return E_DB_ERROR;
@@ -223,11 +223,17 @@ bool UdmfServiceImpl::IsPermissionInCache(const QueryOption &query)
     return false;
 }
 
-bool UdmfServiceImpl::IsPersistentPermissionInCache(const QueryOption &query)
+bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query)
 {
+    for (const auto &privilege : privileges) {
+        if (privilege.tokenId == query.tokenId && privilege.readPermission == PRIVILEGE_READ_AND_KEEP) {
+            return true;
+        }
+    }
+    
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId &&
-        privilege.readPermission == PRIVILEGE_READ_AND_KEEP) {
+        iter->second.readPermission == PRIVILEGE_READ_AND_KEEP) {
         return true;
     }
     return false;
