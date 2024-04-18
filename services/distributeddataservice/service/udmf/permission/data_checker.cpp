@@ -21,6 +21,8 @@
 
 namespace OHOS {
 namespace UDMF {
+constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
+
 __attribute__((used)) DataChecker DataChecker::instance_;
 DataChecker::DataChecker() noexcept
 {
@@ -46,7 +48,7 @@ bool DataChecker::IsValid(const std::vector<Privilege> &privileges, const Checke
 bool DataChecker::IsPersistentPrivilege(const std::vector<Privilege> &privileges, const CheckerManager::CheckInfo &info)
 {
     for (const auto &privilege : privileges) {
-        if (privilege.tokenId == info.tokenId && privilege.readPermission == "readAndKeep") {
+        if (privilege.tokenId == info.tokenId && privilege.readPermission == PRIVILEGE_READ_AND_KEEP) {
             return true;
         }
     }

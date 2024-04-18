@@ -37,6 +37,7 @@ using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
+constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -226,7 +227,7 @@ bool UdmfServiceImpl::IsPersistentPermissionInCache(const QueryOption &query)
 {
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId &&
-        privilege.readPermission == "readAndKeep") {
+        privilege.readPermission == PRIVILEGE_READ_AND_KEEP) {
         return true;
     }
     return false;

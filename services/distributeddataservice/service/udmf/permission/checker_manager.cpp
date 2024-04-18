@@ -69,7 +69,5 @@ bool CheckerManager::IsPersistentPrivilege(const std::vector<Privilege> &privile
     }
     return it->second->IsPersistentPrivilege(privileges, info);
 }
-
-
 } // namespace UDMF
 } // namespace OHOS
