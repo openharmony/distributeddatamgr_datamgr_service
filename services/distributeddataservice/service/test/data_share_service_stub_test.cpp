@@ -35,17 +35,17 @@ public:
     void SetUp(){};
     void TearDown(){};
 };
+std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
 
 /**
 * @tc.name: OnRemoteRequest001
-* @tc.desc: test OnRemoteRequest function
+* @tc.desc: test OnRemoteRequest data error scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 {
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
     uint8_t value = 1;
     uint8_t *data = &value;
     size_t size = 1;
@@ -70,8 +70,6 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 {
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
     uint8_t value = 1;
     uint8_t *data = &value;
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
@@ -86,14 +84,12 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 
 /**
 * @tc.name: OnRemoteInsert001
-* @tc.desc: test OnRemoteInsert function abnormal scene
+* @tc.desc: test Insert Update Query Delete function of abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteInsert001, TestSize.Level1)
 {
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
     uint8_t value = 1;
     uint8_t *data = &value;
     size_t size = 1;
@@ -123,8 +119,6 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteInsert001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteAddTemplate001, TestSize.Level1)
 {
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
     uint8_t value = 1;
     uint8_t *data = &value;
     size_t size = 1;
@@ -148,9 +142,6 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteAddTemplate001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteEnablePubSubs001, TestSize.Level1)
 {
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
-
     uint8_t value = 1;
     uint8_t *data = &value;
     size_t size = 1;
@@ -192,8 +183,6 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnablePubSubs001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteEnableRdbSubs001, TestSize.Level1)
 {
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
     uint8_t value = 1;
     uint8_t *data = &value;
     size_t size = 1;
@@ -229,8 +218,6 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnableRdbSubs001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRegisterObserver001, TestSize.Level1)
 {
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
     uint8_t value = 1;
     uint8_t *data = &value;
     size_t size = 1;

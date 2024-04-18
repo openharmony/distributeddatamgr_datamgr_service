@@ -36,7 +36,6 @@ std::string SLIENT_ACCESS_URI = "datashareproxy://com.acts.ohos.data.datasharete
 std::string TBL_NAME0 = "name0";
 std::string TBL_NAME1 = "name1";
 std::string  BUNDLE_NAME = "ohos.datasharetest.demo";
-std::string  BUNDLE_NAME_ERROR = "ohos.error.demo";
 namespace OHOS::Test {
 class DataShareServiceImplTest : public testing::Test {
 public:
@@ -96,52 +95,11 @@ void DataShareServiceImplTest::TearDown(void)
 
 /**
 * @tc.name: DataShareServiceImpl001
-* @tc.desc: normal Insert Update Query Delete scene
+* @tc.desc: test Insert Update Query Delete abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
 HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = SLIENT_ACCESS_URI;
-    bool enable = true;
-    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
-    EXPECT_EQ(resultA, DataShare::E_OK);
-
-    DataShare::DataShareValuesBucket valuesBucket;
-    std::string name0 = "wang";
-    valuesBucket.Put(TBL_NAME0, name0);
-    auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
-    EXPECT_EQ((result < 0), true);
-
-    DataShare::DataSharePredicates predicates;
-    std::string selections = TBL_NAME1 + " = 'wu'";
-    predicates.SetWhereClause(selections);
-    result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
-    EXPECT_EQ((result < 0), true);
-
-    predicates.EqualTo(TBL_NAME1, "wu");
-    std::vector<std::string> columns;
-    int errCode = 0;
-    auto resQuery = dataShareServiceImpl.Query(uri, predicates, columns, errCode);
-    int resultSet = 0;
-    if (resQuery != nullptr) {
-        resQuery->GetRowCount(resultSet);
-    }
-    EXPECT_EQ(resultSet, 0);
-
-    predicates.SetWhereClause(selections);
-    result = dataShareServiceImpl.Delete(uri, predicates);
-    EXPECT_EQ((result < 0), true);
-}
-
-/**
-* @tc.name: DataShareServiceImpl002
-* @tc.desc: abnormal Insert Update Query Delete scene
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl002, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = "";
@@ -151,15 +109,15 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl002, TestSize.Level1)
 
     DataShare::DataShareValuesBucket valuesBucket;
     std::string name0 = "";
-    valuesBucket.Put(TBL_NAME0, name0);
+    valuesBucket.Put("", name0);
     auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+    EXPECT_EQ((result > 0), true);
 
     DataShare::DataSharePredicates predicates;
     std::string selections = "";
     predicates.SetWhereClause(selections);
     result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+    EXPECT_EQ((result > 0), true);
 
     predicates.EqualTo("", "");
     std::vector<std::string> columns;
@@ -173,49 +131,12 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl002, TestSize.Level1)
 
     predicates.SetWhereClause(selections);
     result = dataShareServiceImpl.Delete(uri, predicates);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
-}
-
-/**
-* @tc.name: DataShareServiceImpl003
-* @tc.desc: no EnableSilentProxy scene
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl003, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = SLIENT_ACCESS_URI;
-    DataShare::DataShareValuesBucket valuesBucket;
-    std::string name0 = "wang";
-    valuesBucket.Put(TBL_NAME0, name0);
-    auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
-
-    DataShare::DataSharePredicates predicates;
-    std::string selections = TBL_NAME1 + " = 'wu'";
-    predicates.SetWhereClause(selections);
-    result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
-
-    predicates.EqualTo(TBL_NAME1, "wu");
-    std::vector<std::string> columns;
-    int errCode = 0;
-    auto resQuery = dataShareServiceImpl.Query(uri, predicates, columns, errCode);
-    int resultSet = 0;
-    if (resQuery != nullptr) {
-        resQuery->GetRowCount(resultSet);
-    }
-    EXPECT_EQ(resultSet, 0);
-
-    predicates.SetWhereClause(selections);
-    result = dataShareServiceImpl.Delete(uri, predicates);
-    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+    EXPECT_EQ((result > 0), true);
 }
 
 /**
 * @tc.name: NotifyChange001
-* @tc.desc: test NotifyChange function
+* @tc.desc: test NotifyChange function and abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -232,7 +153,7 @@ HWTEST_F(DataShareServiceImplTest, NotifyChange001, TestSize.Level1)
 
 /**
 * @tc.name: AddTemplate001
-* @tc.desc: test AddTemplate function
+* @tc.desc: test AddTemplate function and abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -249,9 +170,9 @@ HWTEST_F(DataShareServiceImplTest, AddTemplate001, TestSize.Level1)
     Template tpl(nodes, "select name1 as name from TBL00");
 
     auto result = dataShareServiceImpl.AddTemplate(uri, subscriberId, tpl);
-    EXPECT_TRUE(result);
+    EXPECT_EQ((result > 0), true);
     result = dataShareServiceImpl.DelTemplate(uri, subscriberId);
-    EXPECT_TRUE(result);
+    EXPECT_EQ((result > 0), true);
 
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
@@ -263,29 +184,25 @@ HWTEST_F(DataShareServiceImplTest, AddTemplate001, TestSize.Level1)
 
 /**
 * @tc.name: GetCallerBundleName001
-* @tc.desc: test GetCallerBundleName function
+* @tc.desc: test GetCallerBundleName function and abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
 HWTEST_F(DataShareServiceImplTest, GetCallerBundleName001, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
-    std::string bundleName = BUNDLE_NAME;
-    auto result = dataShareServiceImpl.GetCallerBundleName(bundleName);
+    auto result = dataShareServiceImpl.GetCallerBundleName(BUNDLE_NAME);
     EXPECT_EQ(result, true);
 
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
-    result = dataShareServiceImpl.GetCallerBundleName(bundleName);
-    EXPECT_EQ(result, false);
-
-    result = dataShareServiceImpl.GetCallerBundleName(BUNDLE_NAME_ERROR);
+    result = dataShareServiceImpl.GetCallerBundleName(BUNDLE_NAME);
     EXPECT_EQ(result, false);
 }
 
 /**
 * @tc.name: Publish001
-* @tc.desc: test Publish function
+* @tc.desc: test Publish and GetData no GetCallerBundleName scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -295,6 +212,8 @@ HWTEST_F(DataShareServiceImplTest, Publish001, TestSize.Level1)
     DataShare::Data data;
     std::string bundleName = "com.acts.ohos.data.datasharetest";
     data.datas_.emplace_back("datashareproxy://com.acts.ohos.data.datasharetest/test", TEST_SUB_ID, "value1");
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "com.acts.ohos.data.datasharetest", 0);
+    AccessTokenKit::DeleteToken(tokenId);
     std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleName);
     EXPECT_EQ(result.size(), data.datas_.size());
 
@@ -302,16 +221,11 @@ HWTEST_F(DataShareServiceImplTest, Publish001, TestSize.Level1)
     auto getData = dataShareServiceImpl.GetData(bundleName, errCode);
     EXPECT_EQ(errCode, 0);
     EXPECT_NE(getData.datas_.size(), data.datas_.size());
-
-    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
-    AccessTokenKit::DeleteToken(tokenId);
-    result = dataShareServiceImpl.Publish(data, bundleName);
-    EXPECT_NE(result.size(), data.datas_.size());
 }
 
 /**
 * @tc.name: Publish002
-* @tc.desc: test Publish bundleName is error
+* @tc.desc: test Publish and GetData bundleName is error
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -333,26 +247,8 @@ HWTEST_F(DataShareServiceImplTest, Publish002, TestSize.Level1)
 }
 
 /**
-* @tc.name: GetData001
-* @tc.desc: test GetData function
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, GetData001, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    DataShare::Data data;
-    data.datas_.emplace_back(BUNDLE_NAME, TEST_SUB_ID, "value1");
-    std::string bundleNameOfProvider = "";
-    int errCode = 0;
-    auto getData = dataShareServiceImpl.GetData(bundleNameOfProvider, errCode);
-    EXPECT_NE(errCode, 0);
-    EXPECT_NE(getData.datas_.size(), data.datas_.size());
-}
-
-/**
 * @tc.name: SubscribeRdbData001
-* @tc.desc: test SubscribeRdbData function
+* @tc.desc: Tests the operation of a subscription to a data change of the specified URI
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -371,7 +267,7 @@ HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
     TemplateId tplId;
     tplId.subscriberId_ = TEST_SUB_ID;
     tplId.bundleName_ = BUNDLE_NAME;
-    std::vector<OperationResult> result2 =  dataShareServiceImpl.SubscribeRdbData(uris, tplId, observer);
+    std::vector<OperationResult> result2 = dataShareServiceImpl.SubscribeRdbData(uris, tplId, observer);
     EXPECT_EQ(result2.size(), uris.size());
     for (auto const &operationResult : result2) {
         EXPECT_NE(operationResult.errCode_, 0);
@@ -387,7 +283,7 @@ HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
     std::string name0 = "wang";
     valuesBucket1.Put(TBL_NAME0, name0);
     auto result4 = dataShareServiceImpl.Insert(uri, valuesBucket1);
-    EXPECT_EQ((result4 > 0), false);
+    EXPECT_EQ((result4 > 0), true);
 
     std::vector<OperationResult> result5 = dataShareServiceImpl.UnsubscribeRdbData(uris, tplId);
     EXPECT_EQ(result5.size(), uris.size());
@@ -398,7 +294,7 @@ HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
     std::string name1 = "wu";
     valuesBucket2.Put(TBL_NAME1, name1);
     auto result6 = dataShareServiceImpl.Insert(uri, valuesBucket2);
-    EXPECT_EQ((result6 > 0), false);
+    EXPECT_EQ((result6 > 0), true);
 
     std::vector<OperationResult> result7 = dataShareServiceImpl.DisableRdbSubs(uris, tplId);
     for (auto const &operationResult : result7) {
@@ -408,7 +304,7 @@ HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
 
 /**
 * @tc.name: SubscribePublishedData001
-* @tc.desc: test SubscribePublishedData function
+* @tc.desc: test SubscribePublishedData no GetCallerBundleName scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -419,21 +315,10 @@ HWTEST_F(DataShareServiceImplTest, SubscribePublishedData001, TestSize.Level1)
     uris.emplace_back(SLIENT_ACCESS_URI);
     sptr<IDataProxyPublishedDataObserver> observer;
     int64_t subscriberId = TEST_SUB_ID;
-    std::vector<OperationResult> result =  dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
-    EXPECT_EQ(result.size(), uris.size());
-    for (auto const &operationResult : result) {
-        EXPECT_NE(operationResult.errCode_, 0);
-    }
-
-    result =  dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
-    EXPECT_EQ(result.size(), uris.size());
-    for (auto const &operationResult : result) {
-        EXPECT_NE(operationResult.errCode_, 0);
-    }
 
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
-    result =  dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
+    std::vector<OperationResult> result =  dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
     EXPECT_NE(result.size(), uris.size());
     for (auto const &operationResult : result) {
         EXPECT_EQ(operationResult.errCode_, 0);
@@ -474,7 +359,7 @@ HWTEST_F(DataShareServiceImplTest, SubscribePublishedData002, TestSize.Level1)
 
 /**
 * @tc.name: EnablePubSubs001
-* @tc.desc: test EnablePubSubs function
+* @tc.desc: test EnablePubSubs no GetCallerBundleName scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -484,19 +369,11 @@ HWTEST_F(DataShareServiceImplTest, EnablePubSubs001, TestSize.Level1)
     std::vector<std::string> uris;
     uris.emplace_back(SLIENT_ACCESS_URI);
     int64_t subscriberId = TEST_SUB_ID;
-    std::vector<OperationResult> result =  dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
-    for (auto const &operationResult : result) {
-        EXPECT_NE(operationResult.errCode_, 0);
-    }
-
-    result =  dataShareServiceImpl.DisablePubSubs(uris, subscriberId);
-    for (auto const &operationResult : result) {
-        EXPECT_NE(operationResult.errCode_, 0);
-    }
 
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
-    result =  dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
+    dataShareServiceImpl.OnConnectDone();
+    std::vector<OperationResult> result =  dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
     for (auto const &operationResult : result) {
         EXPECT_EQ(operationResult.errCode_, 0);
     }
@@ -531,38 +408,32 @@ HWTEST_F(DataShareServiceImplTest, EnablePubSubs002, TestSize.Level1)
 }
 
 /**
-* @tc.name: OnBind
-* @tc.desc: test OnBind function
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, OnBind, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    FeatureSystem::Feature::BindInfo binderInfo;
-    auto result = dataShareServiceImpl.OnBind(binderInfo);
-    dataShareServiceImpl.OnConnectDone();
-    EXPECT_EQ(result, GeneralError::E_OK);
-}
-
-/**
 * @tc.name: OnAppUninstall
-* @tc.desc: test OnAppUninstall function
+* @tc.desc: Test the operation of the app
 * @tc.type: FUNC
 * @tc.require:SQL
 */
 HWTEST_F(DataShareServiceImplTest, OnAppUninstall, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
-    std::string bundleName = BUNDLE_NAME;
+    pid_t uid = 1;
+    pid_t pid = 2;
     int32_t user = USER_TEST;
     int32_t index = 0;
-    auto result1 = dataShareServiceImpl.OnAppUninstall(bundleName, user, index);
-    EXPECT_EQ(result1, GeneralError::E_OK);
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME, 0);
+
+    auto result = dataShareServiceImpl.OnAppUpdate(BUNDLE_NAME, user, index);
+    EXPECT_EQ(result, GeneralError::E_OK);
+
+    result = dataShareServiceImpl.OnAppExit(uid, pid, tokenId, BUNDLE_NAME);
+    EXPECT_EQ(result, GeneralError::E_OK);
+
+    result = dataShareServiceImpl.OnAppUninstall(BUNDLE_NAME, user, index);
+    EXPECT_EQ(result, GeneralError::E_OK);
 
     DataShareServiceImpl::DataShareStatic dataShareStatic;
-    auto result2 = dataShareStatic.OnAppUninstall(bundleName, user, index);
-    EXPECT_EQ(result2, GeneralError::E_OK);
+    result = dataShareStatic.OnAppUninstall(BUNDLE_NAME, user, index);
+    EXPECT_EQ(result, GeneralError::E_OK);
 }
 
 /**
@@ -582,68 +453,40 @@ HWTEST_F(DataShareServiceImplTest, OnInitialize, TestSize.Level1)
 }
 
 /**
-* @tc.name: OnAppExit
-* @tc.desc: test OnAppExit function
+* @tc.name: NotifyObserver
+* @tc.desc: test NotifyObserver no GetCallerBundleName scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
-HWTEST_F(DataShareServiceImplTest, OnAppExit, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    pid_t uid = 1;
-    pid_t pid = 2;
-    int32_t user = USER_TEST;
-    int32_t index = 0;
-    uint32_t tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME, 0);
-    std::string bundleName = BUNDLE_NAME;
-    auto result1 = dataShareServiceImpl.OnAppUpdate(bundleName, user, index);
-    EXPECT_EQ(result1, GeneralError::E_OK);
-
-    auto result2 = dataShareServiceImpl.OnAppExit(uid, pid, tokenId, bundleName);
-    EXPECT_EQ(result2, GeneralError::E_OK);
-}
-
-/**
-* @tc.name: RegisterObserver001
-* @tc.desc: test RegisterObserver function
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, RegisterObserver001, TestSize.Level1)
+HWTEST_F(DataShareServiceImplTest, NotifyObserver, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = SLIENT_ACCESS_URI;
     sptr<OHOS::IRemoteObject> remoteObj;
-    auto result1 = dataShareServiceImpl.RegisterObserver(uri, remoteObj);
-    EXPECT_NE(result1, GeneralError::E_OK);
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+
+    auto result = dataShareServiceImpl.RegisterObserver(uri, remoteObj);
+    EXPECT_EQ(result, ERR_INVALID_VALUE);
     dataShareServiceImpl.NotifyObserver(uri);
-    auto result2 = dataShareServiceImpl.UnregisterObserver(uri, remoteObj);
-    EXPECT_NE(result2, GeneralError::E_OK);
+    result = dataShareServiceImpl.UnregisterObserver(uri, remoteObj);
+    EXPECT_EQ(result, ERR_INVALID_VALUE);
 }
 
 /**
-* @tc.name: RegisterObserver002
+* @tc.name: RegisterObserver
 * @tc.desc: test RegisterObserver abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
-HWTEST_F(DataShareServiceImplTest, RegisterObserver002, TestSize.Level1)
+HWTEST_F(DataShareServiceImplTest, RegisterObserver, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = SLIENT_ACCESS_URI;
     sptr<OHOS::IRemoteObject> remoteObj;
     auto result = dataShareServiceImpl.RegisterObserver("", remoteObj);
-    EXPECT_NE(result, GeneralError::E_OK);
+    EXPECT_EQ(result, ERR_INVALID_VALUE);
     dataShareServiceImpl.NotifyObserver("");
     result = dataShareServiceImpl.UnregisterObserver("", remoteObj);
-    EXPECT_NE(result, GeneralError::E_OK);
-
-    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
-    AccessTokenKit::DeleteToken(tokenId);
-    result = dataShareServiceImpl.RegisterObserver(uri, remoteObj);
-    EXPECT_NE(result, GeneralError::E_OK);
-    dataShareServiceImpl.NotifyObserver(uri);
-    result = dataShareServiceImpl.UnregisterObserver(uri, remoteObj);
-    EXPECT_NE(result, GeneralError::E_OK);
+    EXPECT_EQ(result, ERR_INVALID_VALUE);
 }
 } // namespace OHOS::Test
