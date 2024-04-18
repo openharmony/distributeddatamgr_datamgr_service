@@ -214,13 +214,13 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
         return INVALID_ARGS;
     }
 
-    bool result = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::SetSecurityLabel(filePath, dataLevel);
+    bool result = OHOS::FileManagement::ModuleSecurityLabel::SecurityLabel::SetSecurityLabel(filePath, dataLevel);
     if (result) {
         return OK;
     }
 
     auto error = errno;
-    std::string current = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
+    std::string current = OHOS::FileManagement::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
     ZLOGE("failed! error:%{public}d current:%{public}s label:%{public}s file:%{public}s", error, current.c_str(),
         dataLevel.c_str(), filePath.c_str());
     if (current == dataLevel) {
@@ -244,7 +244,7 @@ DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOp
         return OK;
     }
 
-    std::string value = OHOS::DistributedFS::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
+    std::string value = OHOS::FileManagement::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
     if (!IsXattrValueValid(value)) {
         option = {NOT_SET, ECE};
         return OK;

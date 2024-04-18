@@ -40,7 +40,7 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/matrix/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/session_manager",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
-    "//foundation/distributeddatamgr/distributedfile/interfaces/kits/js/src/mod_securitylabel",
+    "//foundation/filemanagement/file_api/interfaces/kits/js/src/mod_securitylabel",
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",

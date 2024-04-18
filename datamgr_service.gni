@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-distributedfilejs_path = "//foundation/distributeddatamgr/distributedfile"
+distributedfilejs_path = "//foundation/filemanagement/file_api"
 
 kv_store_path = "//foundation/distributeddatamgr/kv_store"
 
