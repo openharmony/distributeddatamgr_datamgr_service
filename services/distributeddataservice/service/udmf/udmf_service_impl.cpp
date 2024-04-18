@@ -200,11 +200,13 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
             return E_NO_PERMISSION;
         }
     }
-
-    if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
-        ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
-        return E_DB_ERROR;
+    if (!CheckerManager::GetInstance().IsPersistentPrivilege(runtime->privileges, info) && !IsPersistentPermissionInCache(query)) {
+        if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
+            ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
+            return E_DB_ERROR;
+        }
     }
+
     privilegeCache_.erase(query.key);
 
     PreProcessUtils::SetRemoteData(unifiedData);
@@ -215,6 +217,16 @@ bool UdmfServiceImpl::IsPermissionInCache(const QueryOption &query)
 {
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId) {
+        return true;
+    }
+    return false;
+}
+
+bool UdmfServiceImpl::IsPersistentPermissionInCache(const QueryOption &query)
+{
+    auto iter = privilegeCache_.find(query.key);
+    if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId &&
+        privilege.readPermission == "readAndKeep") {
         return true;
     }
     return false;

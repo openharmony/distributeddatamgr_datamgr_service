@@ -42,5 +42,16 @@ bool DataChecker::IsValid(const std::vector<Privilege> &privileges, const Checke
     ZLOGE("Invalid parameters, %{public}s", DistributedData::Anonymous::Change(std::to_string(info.tokenId)).c_str());
     return false;
 }
+
+bool DataChecker::IsPersistentPrivilege(const std::vector<Privilege> &privileges, const CheckerManager::CheckInfo &info)
+{
+    for (const auto &privilege : privileges) {
+        if (privilege.tokenId == info.tokenId && privilege.readPermission == "readAndKeep") {
+            return true;
+        }
+    }
+    ZLOGE("Invalid parameters, [0x%{public}x].", info.tokenId);;
+    return false;
+}
 } // namespace UDMF
 } // namespace OHOS
