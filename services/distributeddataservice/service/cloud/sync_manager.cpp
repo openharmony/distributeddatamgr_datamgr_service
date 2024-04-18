@@ -204,6 +204,13 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
     times++;
     return [this, times, retry, keep = std::move(ref), info = std::move(syncInfo)]() mutable {
         activeInfos_.Erase(info.syncId_);
+        bool createdByDefaultUser = false;
+        if (info.user_ == 0) {
+            std::vector<int32_t> users;
+            AccountDelegate::GetInstance()->QueryUsers(users);
+            info.user_ = users[0];
+            createdByDefaultUser = true;
+        }
         CloudInfo cloud;
         cloud.user = info.user_;
         if (!IsValid(info, cloud)) {
@@ -228,6 +235,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                 }
                 StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
                     cloud.user };
+                if (createdByDefaultUser) {
+                    storeInfo.user = 0;
+                }
                 auto status = syncStrategy_->CheckSyncAction(storeInfo);
                 if (status != SUCCESS) {
                     ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
@@ -237,7 +247,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                 }
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                    SyncEvent::EventInfo { info.mode_, info.wait_, retry, std::move(query), info.async_ });
+                    SyncEvent::EventInfo{ info.mode_, info.wait_, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
             }
         }
@@ -363,7 +373,7 @@ void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
 
 AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, bool mustBind)
 {
-    if (!Account::GetInstance()->IsVerified(user)) {
+    if (user != 0 && !Account::GetInstance()->IsVerified(user)) {
         ZLOGW("user:%{public}d is locked!", user);
         return nullptr;
     }

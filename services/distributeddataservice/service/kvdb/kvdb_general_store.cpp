@@ -295,38 +295,44 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
             devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode);
         return GeneralError::E_ALREADY_CLOSED;
     }
-    KVDBQuery *kvQuery = nullptr;
-    auto ret = query.QueryInterface(kvQuery);
-    DistributedDB::Query dbQuery;
-    if (ret == GeneralError::E_OK && kvQuery != nullptr && kvQuery->IsValidQuery()) {
-        dbQuery = kvQuery->GetDBQuery();
-    } else {
-        return GeneralError::E_INVALID_ARGS;
-    }
-    if (devices.empty()) {
-        ZLOGE("Devices is empty! mode:%{public}d", mode);
-        return GeneralError::E_INVALID_ARGS;
-    }
     auto dbStatus = DistributedDB::OK;
-    if (syncMode == NEARBY_SUBSCRIBE_REMOTE) {
-        dbStatus = delegate_->SubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
-    } else if (syncMode == NEARBY_UNSUBSCRIBE_REMOTE) {
-        dbStatus = delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
+    auto dbMode = DistributedDB::SyncMode(syncMode);
+    if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
+        DistributedDB::CloudSyncOption syncOption;
+        syncOption.devices = devices;
+        syncOption.mode = dbMode;
+        syncOption.waitTime = wait;
+        if (storeInfo_.user == 0) {
+            std::vector<int32_t> users;
+            AccountDelegate::GetInstance()->QueryUsers(users);
+            syncOption.users.push_back(std::to_string(users[0]));
+        } else {
+            syncOption.users.push_back(std::to_string(storeInfo_.user));
+        }
+        dbStatus = delegate_->Sync(syncOption, nullptr);
     } else {
-        auto dbMode = DistributedDB::SyncMode(syncMode);
-        if (syncMode < NEARBY_END) {
+        if (devices.empty()) {
+            ZLOGE("Devices is empty! mode:%{public}d", mode);
+            return GeneralError::E_INVALID_ARGS;
+        }
+        KVDBQuery *kvQuery = nullptr;
+        auto ret = query.QueryInterface(kvQuery);
+        DistributedDB::Query dbQuery;
+        if (ret == GeneralError::E_OK && kvQuery != nullptr && kvQuery->IsValidQuery()) {
+            dbQuery = kvQuery->GetDBQuery();
+        } else {
+            return GeneralError::E_INVALID_ARGS;
+        }
+        if (syncMode == NEARBY_SUBSCRIBE_REMOTE) {
+            dbStatus = delegate_->SubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
+        } else if (syncMode == NEARBY_UNSUBSCRIBE_REMOTE) {
+            dbStatus = delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
+        } else if (syncMode < NEARBY_END) {
             if (kvQuery->IsEmpty()) {
                 dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), false);
             } else {
                 dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
             }
-        } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
-            DistributedDB::CloudSyncOption syncOption;
-            syncOption.devices = devices;
-            syncOption.mode = dbMode;
-            syncOption.waitTime = wait;
-            syncOption.users.push_back(std::to_string(storeInfo_.user));
-            dbStatus = delegate_->Sync(syncOption, nullptr);
         } else {
             dbStatus = DistributedDB::INVALID_ARGS;
         }
