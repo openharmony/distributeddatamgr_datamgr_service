@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "serializable/serializable.h"
+#include "store/store_info.h"
 
 namespace OHOS::DistributedData {
 struct API_EXPORT StoreMetaData final : public Serializable {
@@ -65,6 +66,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
 
     API_EXPORT StoreMetaData();
     API_EXPORT StoreMetaData(const std::string &userId, const std::string &appId, const std::string &storeId);
+    API_EXPORT explicit StoreMetaData(const StoreInfo &storeInfo);
     API_EXPORT ~StoreMetaData();
     API_EXPORT bool operator==(const StoreMetaData &metaData) const;
     API_EXPORT bool operator!=(const StoreMetaData &metaData) const;

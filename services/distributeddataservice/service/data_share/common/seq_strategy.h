@@ -32,4 +32,4 @@ private:
     std::list<std::shared_ptr<Strategy>> actions_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_SEQ_STRAGETY_H

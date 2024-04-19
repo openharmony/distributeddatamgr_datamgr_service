@@ -16,6 +16,8 @@
 
 #include "uri_utils.h"
 
+#include <string>
+
 #include "log_print.h"
 #include "string_ex.h"
 #include "uri.h"
@@ -109,5 +111,31 @@ void URIUtils::FormatUri(std::string &uri)
     }
 
     uri.resize(pos);
+}
+
+UriConfig URIUtils::GetUriConfig(const std::string &uri)
+{
+    UriConfig uriConfig;
+    Uri uriTemp(uri);
+    uriConfig.authority = uriTemp.GetAuthority();
+    uriConfig.path = uriTemp.GetPath();
+    uriTemp.GetPathSegments(uriConfig.pathSegments);
+    uriConfig.scheme = uriTemp.GetScheme();
+    std::string convertUri = DATA_PROXY_SCHEMA + uriConfig.authority + uriConfig.path;
+    size_t schemePos = convertUri.find(PARAM_URI_SEPARATOR);
+    if (schemePos != std::string::npos) {
+        convertUri.replace(schemePos, PARAM_URI_SEPARATOR_LEN, SCHEME_SEPARATOR);
+    }
+    uriConfig.formatUri = convertUri;
+    return uriConfig;
+}
+
+std::string URIUtils::Anonymous(const std::string &uri)
+{
+    if (uri.length() <= END_LENGTH) {
+        return DEFAULT_ANONYMOUS;
+    }
+
+    return (DEFAULT_ANONYMOUS + uri.substr(uri.length() - END_LENGTH, END_LENGTH));
 }
 } // namespace OHOS::DataShare

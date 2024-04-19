@@ -90,17 +90,19 @@ private:
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
+    static constexpr ExecutorPool::Duration BUSY_INTERVAL = std::chrono::seconds(180); // second
     static constexpr int32_t RETRY_TIMES = 6; // normal retry
     static constexpr int32_t CLIENT_RETRY_TIMES = 3; // normal retry
     static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000; // high 32 bit
     static constexpr int32_t MV_BIT = 32;
 
+    static uint64_t GenerateId(int32_t user);
+    static ExecutorPool::Duration GetInterval(int32_t code);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
     std::function<void(const Event &)> GetClientChangeHandler();
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo);
-    static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
     std::pair<bool, GeneralError> IsValid(SyncInfo &info, CloudInfo &cloud);

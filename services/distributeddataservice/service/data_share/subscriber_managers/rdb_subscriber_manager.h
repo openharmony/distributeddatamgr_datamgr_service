@@ -21,9 +21,12 @@
 
 #include "concurrent_map.h"
 #include "context.h"
+#include "data_provider_config.h"
 #include "data_proxy_observer.h"
+#include "data_share_db_config.h"
 #include "datashare_template.h"
 #include "executor_pool.h"
+
 namespace OHOS::DataShare {
 struct Key {
     Key(const std::string &uri, int64_t subscriberId, const std::string &bundleName);
@@ -60,6 +63,7 @@ public:
     int Enable(const Key &key, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, int64_t subscriberId, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
+    void Emit(const std::string &uri, int32_t userId, DistributedData::StoreMetaData &metaData);
     void EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version);
     std::vector<Key> GetKeysByUri(const std::string &uri);
     void Clear();
@@ -83,4 +87,4 @@ private:
     void SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes);
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_RDB_SUBSCRIBER_MANAGER_H

@@ -239,7 +239,7 @@ size_t RdbGeneralStore::SqlConcatenate(VBucket &value, std::string &strColumnSql
 int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
 {
     if (table.empty() || values.size() == 0) {
-        ZLOGE("Insert:table maybe empty:%{public}d,value size is:%{public}d", table.empty(), values.size());
+        ZLOGE("Insert:table maybe empty:%{public}d,value size is:%{public}zu", table.empty(), values.size());
         return GeneralError::E_INVALID_ARGS;
     }
 
@@ -724,8 +724,14 @@ int32_t RdbGeneralStore::SetTrackerTable(const std::string& tableName, const std
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->SetTrackerTable({ tableName, extendColName, trackerColNames });
+    if (status == DBStatus::WITH_INVENTORY_DATA) {
+        ZLOGI("Set tracker table with inventory data, database:%{public}s, tables name:%{public}s",
+            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
+        return GeneralError::E_WITH_INVENTORY_DATA;
+    }
     if (status != DBStatus::OK) {
-        ZLOGE("Set tracker table failed! ret:%{public}d", status);
+        ZLOGE("Set tracker table failed! ret:%{public}d, database:%{public}s, tables name:%{public}s",
+            status, Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -758,6 +764,8 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_RECODE_LIMIT_EXCEEDED;
         case DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT:
             return GenErr::E_NO_SPACE_FOR_ASSET;
+        case DBStatus::BUSY:
+            return GenErr::E_BUSY;
         default:
             ZLOGI("status:0x%{public}x", status);
             break;

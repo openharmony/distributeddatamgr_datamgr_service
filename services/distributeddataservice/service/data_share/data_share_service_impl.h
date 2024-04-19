@@ -16,26 +16,26 @@
 #ifndef DATASHARESERVICE_DATA_SERVICE_IMPL_H
 #define DATASHARESERVICE_DATA_SERVICE_IMPL_H
 
+#include <cstdint>
+#include <functional>
 #include <string>
 
 #include "bundle_mgr_proxy.h"
 #include "common_event_subscribe_info.h"
 #include "common_event_subscriber.h"
 #include "data_proxy_observer.h"
+#include "data_provider_config.h"
+#include "data_share_db_config.h"
 #include "data_share_service_stub.h"
 #include "data_share_silent_config.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
-#include "delete_strategy.h"
 #include "feature/static_acts.h"
 #include "get_data_strategy.h"
-#include "insert_strategy.h"
 #include "publish_strategy.h"
-#include "query_strategy.h"
 #include "rdb_notify_strategy.h"
 #include "subscribe_strategy.h"
 #include "template_strategy.h"
-#include "update_strategy.h"
 #include "uri_utils.h"
 #include "visibility.h"
 
@@ -43,6 +43,8 @@ namespace OHOS::DataShare {
 class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
 public:
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
+    using ExecuteCallback = std::function<int32_t(DataProviderConfig::ProviderInfo &,
+        DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate>)>;
     DataShareServiceImpl() = default;
     virtual ~DataShareServiceImpl();
     int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;
@@ -110,16 +112,14 @@ private:
     bool SubscribeTimeChanged();
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);
+    int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
+    static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
-    DeleteStrategy deleteStrategy_;
-    InsertStrategy insertStrategy_;
-    QueryStrategy queryStrategy_;
-    UpdateStrategy updateStrategy_;
     TemplateStrategy templateStrategy_;
     RdbNotifyStrategy rdbNotifyStrategy_;
     BindInfo binderInfo_;
@@ -127,4 +127,4 @@ private:
     DataShareSilentConfig dataShareSilentConfig_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_DATA_SERVICE_IMPL_H

@@ -93,11 +93,7 @@ RdbServiceImpl::RdbServiceImpl()
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta;
-        meta.storeId = storeInfo.storeName;
-        meta.bundleName = storeInfo.bundleName;
-        meta.user = std::to_string(storeInfo.user);
-        meta.instanceId = storeInfo.instanceId;
+        StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
@@ -194,6 +190,7 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
         }
         return true;
     });
+    AutoCache::GetInstance().Enable(tokenId);
     return E_OK;
 }
 
@@ -977,5 +974,20 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
     auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return RDB_OK;
+}
+
+int32_t RdbServiceImpl::Disable(const RdbSyncerParam& param)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto storeId = RemoveSuffix(param.storeName_);
+    AutoCache::GetInstance().Disable(tokenId, storeId);
+    return E_OK;
+}
+int32_t RdbServiceImpl::Enable(const RdbSyncerParam& param)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto storeId = RemoveSuffix(param.storeName_);
+    AutoCache::GetInstance().Enable(tokenId, storeId);
+    return E_OK;
 }
 } // namespace OHOS::DistributedRdb

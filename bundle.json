@@ -74,8 +74,10 @@
                 "netmanager_base",
                 "os_account",
                 "relational_store",
+                "resource_management",
                 "safwk",
                 "samgr",
+                "time_service",
                 "udmf",
                 "app_file_service"
             ],

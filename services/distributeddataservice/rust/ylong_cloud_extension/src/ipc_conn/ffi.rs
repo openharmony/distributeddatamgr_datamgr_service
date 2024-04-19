@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
-use ipc_rust::CIRemoteObject;
 use std::ffi::c_int;
+
+use ipc::cxx_share::IRemoteObject;
 
 #[link(name = "conn_adapter.z")]
 extern "C" {
-    pub(crate) fn ConnectService(user_id: c_int) -> *mut CIRemoteObject;
+    pub(crate) fn ConnectService(user_id: c_int) -> *mut IRemoteObject;
 }

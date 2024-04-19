@@ -93,4 +93,4 @@ public:
         const sptr<OHOS::IRemoteObject> &remoteObj) = 0;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DISTRIBUTEDDATAFWK_IDATA_SHARE_SERVICE_H
