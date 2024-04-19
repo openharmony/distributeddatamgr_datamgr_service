@@ -30,6 +30,8 @@ constexpr uint32_t CODE_MAX = IDataShareService::DATA_SHARE_SERVICE_CMD_MAX + 1;
 namespace OHOS::Test {
 class DataShareServiceStubTest : public testing::Test {
 public:
+    static constexpr uint8_t TEST_DATA = 1;
+    static constexpr size_t TEST_DATA_SIZE = 1;
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
@@ -46,9 +48,9 @@ std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImp
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 {
-    uint8_t value = 1;
+    uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = 1;
+    size_t size = TEST_DATA_SIZE;
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
@@ -59,7 +61,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
     EXPECT_NE(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteNotifyConnectDone(request, reply);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
 }
 
 /**
@@ -70,7 +72,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 {
-    uint8_t value = 1;
+    uint8_t value = TEST_DATA;
     uint8_t *data = &value;
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
@@ -79,7 +81,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteNotifyConnectDone(request, reply);
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
 }
 
 /**
@@ -90,9 +92,9 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteInsert001, TestSize.Level1)
 {
-    uint8_t value = 1;
+    uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = 1;
+    size_t size = TEST_DATA_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
@@ -119,19 +121,19 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteInsert001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteAddTemplate001, TestSize.Level1)
 {
-    uint8_t value = 1;
+    uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = 1;
+    size_t size = TEST_DATA_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
     request.RewindRead(0);
     MessageParcel reply;
     auto result = dataShareServiceStub->OnRemoteAddTemplate(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteDelTemplate(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 }
 
 /**
@@ -142,37 +144,31 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteAddTemplate001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteEnablePubSubs001, TestSize.Level1)
 {
-    uint8_t value = 1;
+    uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = 1;
+    size_t size = TEST_DATA_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
     request.RewindRead(0);
     MessageParcel reply;
     auto result = dataShareServiceStub->OnRemoteEnablePubSubs(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemotePublish(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteGetData(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteSubscribePublishedData(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteUnsubscribePublishedData(request, reply);
-    EXPECT_EQ(result, -1);
-
-    result = dataShareServiceStub->OnRemoteEnableRdbSubs(request, reply);
-    EXPECT_EQ(result, -1);
-
-    result = dataShareServiceStub->OnRemoteDisableRdbSubs(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteDisablePubSubs(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 }
 
 /**
@@ -183,31 +179,31 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnablePubSubs001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteEnableRdbSubs001, TestSize.Level1)
 {
-    uint8_t value = 1;
+    uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = 1;
+    size_t size = TEST_DATA_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
     request.RewindRead(0);
     MessageParcel reply;
     auto result = dataShareServiceStub->OnRemoteEnablePubSubs(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemotePublish(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteEnableRdbSubs(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteSubscribeRdbData(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteUnsubscribeRdbData(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteDisableRdbSubs(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 }
 
 /**
@@ -218,9 +214,9 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnableRdbSubs001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRegisterObserver001, TestSize.Level1)
 {
-    uint8_t value = 1;
+    uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = 1;
+    size_t size = TEST_DATA_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
@@ -230,7 +226,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRegisterObserver001, TestSize.Level1)
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 
     result = dataShareServiceStub->OnRemoteNotifyObserver(request, reply);
-    EXPECT_EQ(result, -1);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnRemoteSetSilentSwitch(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
