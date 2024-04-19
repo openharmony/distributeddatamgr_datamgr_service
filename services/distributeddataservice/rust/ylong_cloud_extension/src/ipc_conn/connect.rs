@@ -13,6 +13,13 @@
  * limitations under the License.
  */
 
+use std::collections::HashMap;
+use std::sync::{RwLock, RwLockReadGuard};
+
+use ipc::parcel::{Deserialize, MsgParcel, Serialize};
+use ipc::remote::RemoteObj;
+use ipc::{IpcResult, IpcStatusCode};
+
 use crate::ipc_conn::asset::{CloudAsset, CloudAssets};
 use crate::ipc_conn::error::{Error, Errors};
 use crate::ipc_conn::ffi::ConnectService;
@@ -22,14 +29,9 @@ use crate::ipc_conn::function::CloudServiceFunc::{
 use crate::ipc_conn::{
     string_hash_map_raw_read, string_hash_map_raw_write, vec_raw_read, vec_raw_write,
 };
-use ipc_rust::{
-    BorrowedMsgParcel, Deserialize, IRemoteObj, IpcResult, IpcStatusCode, MsgParcel, RemoteObj,
-    Serialize, String16,
-};
-use std::collections::HashMap;
-use std::sync::{RwLock, RwLockReadGuard};
 
-/************** All AppSchema struct-related structures and methods **************/
+/// ************ All AppSchema struct-related structures and methods
+/// *************
 
 #[derive(Default, Debug, PartialEq, Clone)]
 pub(crate) struct Response {
@@ -39,26 +41,24 @@ pub(crate) struct Response {
 }
 
 impl Serialize for Response {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
-        let device_name = String16::new(&self.device_name);
-        let app_id = String16::new(&self.app_id);
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         parcel.write(&self.time)?;
-        parcel.write(&device_name)?;
-        parcel.write(&app_id)?;
+        parcel.write_string16(&self.device_name)?;
+        parcel.write_string16(&self.app_id)?;
         Ok(())
     }
 }
 
 impl Deserialize for Response {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let time = parcel.read::<u64>()?;
-        let device_name = parcel.read::<String16>()?;
-        let app_id = parcel.read::<String16>()?;
+        let device_name = parcel.read_string16()?;
+        let app_id = parcel.read_string16()?;
 
         let result = Response {
             time,
-            device_name: device_name.get_string(),
-            app_id: app_id.get_string(),
+            device_name,
+            app_id,
         };
         Ok(result)
     }
@@ -89,7 +89,7 @@ impl Default for AssetStatus {
 }
 
 impl Serialize for AssetStatus {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         match self {
             AssetStatus::Normal => parcel.write(&0_i32),
             AssetStatus::Insert => parcel.write(&1_i32),
@@ -102,7 +102,7 @@ impl Serialize for AssetStatus {
 }
 
 impl Deserialize for AssetStatus {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let index = parcel.read::<i32>()?;
         match index {
             0 => Ok(AssetStatus::Normal),
@@ -130,7 +130,7 @@ impl Default for SwitchStatus {
 }
 
 impl Serialize for SwitchStatus {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         match self {
             SwitchStatus::Close => parcel.write(&0_u32),
             SwitchStatus::Open => parcel.write(&1_u32),
@@ -140,7 +140,7 @@ impl Serialize for SwitchStatus {
 }
 
 impl Deserialize for SwitchStatus {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let index = parcel.read::<u32>()?;
         match index {
             0 => Ok(SwitchStatus::Close),
@@ -179,7 +179,7 @@ impl From<FieldRaw> for u8 {
 }
 
 impl Serialize for FieldRaw {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         match self {
             FieldRaw::Null => parcel.write(&0_u32),
             FieldRaw::Number(number) => {
@@ -192,8 +192,7 @@ impl Serialize for FieldRaw {
             }
             FieldRaw::Text(text) => {
                 parcel.write(&3_u32)?;
-                let text = String16::new(text);
-                parcel.write(&text)
+                parcel.write_string16(text)
             }
             FieldRaw::Bool(boolean) => {
                 parcel.write(&4_u32)?;
@@ -216,7 +215,7 @@ impl Serialize for FieldRaw {
 }
 
 impl Deserialize for FieldRaw {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let index = parcel.read::<u32>()?;
         match index {
             0 => Ok(FieldRaw::Null),
@@ -229,8 +228,8 @@ impl Deserialize for FieldRaw {
                 Ok(FieldRaw::Real(real))
             }
             3 => {
-                let text = parcel.read::<String16>()?;
-                Ok(FieldRaw::Text(text.get_string()))
+                let text = parcel.read_string16()?;
+                Ok(FieldRaw::Text(text))
             }
             4 => {
                 let boolean = parcel.read::<bool>()?;
@@ -258,13 +257,13 @@ impl Deserialize for FieldRaw {
 pub struct ValueBucket(pub HashMap<String, FieldRaw>);
 
 impl Serialize for ValueBucket {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         string_hash_map_raw_write(parcel, &self.0)
     }
 }
 
 impl Deserialize for ValueBucket {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = string_hash_map_raw_read::<FieldRaw>(parcel)?;
         Ok(ValueBucket(result))
     }
@@ -274,13 +273,13 @@ impl Deserialize for ValueBucket {
 pub(crate) struct ValueBuckets(pub(crate) Vec<ValueBucket>);
 
 impl Serialize for ValueBuckets {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         vec_raw_write(parcel, &self.0)
     }
 }
 
 impl Deserialize for ValueBuckets {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = ValueBuckets(vec_raw_read::<ValueBucket>(parcel)?);
         Ok(result)
     }
@@ -294,13 +293,13 @@ pub(crate) struct CloudData {
 }
 
 impl Deserialize for CloudData {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
-        let next_cursor = parcel.read::<String16>()?;
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let next_cursor = parcel.read_string16()?;
         let has_more = parcel.read::<bool>()?;
         let values = parcel.read::<ValueBuckets>()?;
 
         let cloud_data = CloudData {
-            next_cursor: next_cursor.get_string(),
+            next_cursor,
             has_more,
             values,
         };
@@ -316,20 +315,18 @@ pub(crate) struct Database {
 }
 
 impl Serialize for Database {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
-        let alias = String16::new(&self.alias);
-        let name = String16::new(&self.name);
-        parcel.write(&alias)?;
-        parcel.write(&name)?;
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
+        parcel.write_string16(&self.alias)?;
+        parcel.write_string16(&self.name)?;
         parcel.write(&self.tables)?;
         Ok(())
     }
 }
 
 impl Deserialize for Database {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
-        let alias = parcel.read::<String16>()?.get_string();
-        let name = parcel.read::<String16>()?.get_string();
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let alias = parcel.read_string16()?;
+        let name = parcel.read_string16()?;
         let tables = parcel.read::<SchemaOrderTables>()?;
 
         let result = Database {
@@ -389,14 +386,14 @@ impl TryFrom<u8> for FieldType {
 }
 
 impl Serialize for FieldType {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         let code = u8::from(self) as u32;
         parcel.write(&code)
     }
 }
 
 impl Deserialize for FieldType {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let index = parcel.read::<i32>()?;
         match index {
             0 => Ok(FieldType::Null),
@@ -422,11 +419,9 @@ pub(crate) struct Field {
 }
 
 impl Serialize for Field {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> IpcResult<()> {
-        let alias = String16::new(&self.alias);
-        let col_name = String16::new(&self.col_name);
-        parcel.write(&alias)?;
-        parcel.write(&col_name)?;
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
+        parcel.write_string16(&self.alias)?;
+        parcel.write_string16(&self.col_name)?;
         parcel.write(&self.typ)?;
         parcel.write(&self.primary)?;
         parcel.write(&self.nullable)?;
@@ -435,16 +430,16 @@ impl Serialize for Field {
 }
 
 impl Deserialize for Field {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> IpcResult<Self> {
-        let col_name = parcel.read::<String16>()?;
-        let cloud_name = parcel.read::<String16>()?;
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let col_name = parcel.read_string16()?;
+        let cloud_name = parcel.read_string16()?;
         let typ = parcel.read::<FieldType>()?;
         let primary = parcel.read::<bool>()?;
         let nullable = parcel.read::<bool>()?;
 
         let result = Field {
-            col_name: col_name.get_string(),
-            alias: cloud_name.get_string(),
+            col_name,
+            alias: cloud_name,
             typ,
             primary,
             nullable,
@@ -457,13 +452,13 @@ impl Deserialize for Field {
 pub(crate) struct Fields(pub(crate) Vec<Field>);
 
 impl Serialize for Fields {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         vec_raw_write(parcel, &self.0)
     }
 }
 
 impl Deserialize for Fields {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = Fields(vec_raw_read::<Field>(parcel)?);
         Ok(result)
     }
@@ -477,21 +472,19 @@ pub(crate) struct OrderTable {
 }
 
 impl Serialize for OrderTable {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
-        let alias = String16::new(&self.alias);
-        let table_name = String16::new(&self.table_name);
-        parcel.write(&alias)?;
-        parcel.write(&table_name)?;
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
+        parcel.write_string16(&self.alias)?;
+        parcel.write_string16(&self.table_name)?;
         parcel.write(&self.fields)?;
         Ok(())
     }
 }
 
 impl Deserialize for OrderTable {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = OrderTable {
-            alias: parcel.read::<String16>()?.get_string(),
-            table_name: parcel.read::<String16>()?.get_string(),
+            alias: parcel.read_string16()?,
+            table_name: parcel.read_string16()?,
             fields: parcel.read::<Fields>()?,
         };
         Ok(result)
@@ -502,13 +495,13 @@ impl Deserialize for OrderTable {
 pub(crate) struct SchemaOrderTables(pub(crate) Vec<OrderTable>);
 
 impl Serialize for SchemaOrderTables {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         vec_raw_write(parcel, &self.0)
     }
 }
 
 impl Deserialize for SchemaOrderTables {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = SchemaOrderTables(vec_raw_read::<OrderTable>(parcel)?);
         Ok(result)
     }
@@ -518,13 +511,13 @@ impl Deserialize for SchemaOrderTables {
 pub(crate) struct Databases(pub(crate) Vec<Database>);
 
 impl Serialize for Databases {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         vec_raw_write(parcel, &self.0)
     }
 }
 
 impl Deserialize for Databases {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let databases = Databases(vec_raw_read(parcel)?);
         Ok(databases)
     }
@@ -538,7 +531,7 @@ pub(crate) struct Schema {
 }
 
 impl Schema {
-    fn read(&mut self, msg_parcel: &MsgParcel) -> Result<(), Error> {
+    fn read(&mut self, msg_parcel: &mut MsgParcel) -> Result<(), Error> {
         if msg_parcel
             .read::<i32>()
             .map_err(|_| Error::ReadMsgParcelFailed)?
@@ -548,9 +541,8 @@ impl Schema {
                 .read::<i32>()
                 .map_err(|_| Error::ReadMsgParcelFailed)?;
             self.bundle_name = msg_parcel
-                .read::<String16>()
-                .map_err(|_| Error::ReadMsgParcelFailed)?
-                .get_string();
+                .read_string16()
+                .map_err(|_| Error::ReadMsgParcelFailed)?;
             self.databases = msg_parcel
                 .read::<Databases>()
                 .map_err(|_| Error::ReadMsgParcelFailed)?;
@@ -562,9 +554,9 @@ impl Schema {
 }
 
 impl Deserialize for Schema {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let version = parcel.read::<i32>()?;
-        let bundle_name = parcel.read::<String16>()?.get_string();
+        let bundle_name = parcel.read_string16()?;
         let databases = parcel.read::<Databases>()?;
 
         let result = Schema {
@@ -576,7 +568,7 @@ impl Deserialize for Schema {
     }
 }
 
-/************** All AppInfo struct-related structures and methods **************/
+/// ************ All AppInfo struct-related structures and methods *************
 
 #[derive(Default, Debug, PartialEq)]
 pub(crate) struct AppInfo {
@@ -587,9 +579,9 @@ pub(crate) struct AppInfo {
 }
 
 impl Deserialize for AppInfo {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
-        let app_id = parcel.read::<String16>()?.get_string();
-        let bundle_name = parcel.read::<String16>()?.get_string();
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let app_id = parcel.read_string16()?;
+        let bundle_name = parcel.read_string16()?;
         let cloud_switch = parcel.read::<i32>()? != 0;
         let instance_id = parcel.read::<i32>()?;
 
@@ -603,7 +595,8 @@ impl Deserialize for AppInfo {
     }
 }
 
-/************** All ServiceInfo struct-related structures and methods **************/
+/// ************ All ServiceInfo struct-related structures and methods
+/// *************
 #[derive(Default)]
 pub(crate) struct ServiceInfo {
     // Whether cloud is enabled.
@@ -623,14 +616,13 @@ pub(crate) struct ServiceInfo {
 }
 
 impl ServiceInfo {
-    fn read(&mut self, msg_parcel: &MsgParcel) -> Result<(), Error> {
+    fn read(&mut self, msg_parcel: &mut MsgParcel) -> Result<(), Error> {
         self.enable_cloud = msg_parcel
             .read::<bool>()
             .map_err(|_| Error::ReadMsgParcelFailed)?;
         self.account_id = msg_parcel
-            .read::<String16>()
-            .map_err(|_| Error::ReadMsgParcelFailed)?
-            .get_string();
+            .read_string16()
+            .map_err(|_| Error::ReadMsgParcelFailed)?;
         self.total_space = msg_parcel
             .read::<u64>()
             .map_err(|_| Error::ReadMsgParcelFailed)?;
@@ -644,7 +636,8 @@ impl ServiceInfo {
     }
 }
 
-/************** All Subscribe struct-related structures and methods **************/
+/// ************ All Subscribe struct-related structures and methods
+/// *************
 
 #[derive(Default)]
 #[non_exhaustive]
@@ -654,12 +647,12 @@ pub(crate) struct Subscription;
 pub(crate) struct SubscriptionResultValue(pub(crate) Vec<(String, String)>);
 
 impl Deserialize for SubscriptionResultValue {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let length = parcel.read::<i32>()? as usize;
         let mut vector = Vec::with_capacity(length);
         for _ in 0..length {
-            let alias = parcel.read::<String16>()?.get_string();
-            let subscription_id = parcel.read::<String16>()?.get_string();
+            let alias = parcel.read_string16()?;
+            let subscription_id = parcel.read_string16()?;
             vector.push((alias, subscription_id));
         }
         Ok(SubscriptionResultValue(vector))
@@ -670,7 +663,7 @@ impl Deserialize for SubscriptionResultValue {
 pub(crate) struct SubscriptionResult(pub(crate) (i64, HashMap<String, SubscriptionResultValue>));
 
 impl Deserialize for SubscriptionResult {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let interval = parcel.read::<i64>()?;
         let result = string_hash_map_raw_read::<SubscriptionResultValue>(parcel)?;
         Ok(SubscriptionResult((interval, result)))
@@ -681,7 +674,7 @@ impl Deserialize for SubscriptionResult {
 pub(crate) struct UnsubscriptionInfo(pub(crate) HashMap<String, Vec<String>>);
 
 impl Serialize for UnsubscriptionInfo {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         string_hash_map_raw_write(parcel, &self.0)
     }
 }
@@ -695,13 +688,13 @@ impl Subscription {
         bundle_name: &str,
         databases: &Databases,
     ) -> Result<SubscriptionResult, Errors> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Errors(vec![Error::CreateMsgParcelFailed]))?;
-        let bundle_name = String16::new(bundle_name);
+        let mut msg_parcel = MsgParcel::new();
+
         msg_parcel
             .write(&expiration)
             .map_err(|_| Errors(vec![Error::WriteMsgParcelFailed]))?;
         msg_parcel
-            .write(&bundle_name)
+            .write_string16(bundle_name)
             .map_err(|_| Errors(vec![Error::WriteMsgParcelFailed]))?;
         msg_parcel
             .write(databases)
@@ -711,8 +704,8 @@ impl Subscription {
         let remote_obj = remote
             .as_ref()
             .ok_or(Errors(vec![Error::CreateMsgParcelFailed]))?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Errors(vec![Error::SendRequestFailed]))?;
 
         let mut errs = Errors::default();
@@ -733,7 +726,8 @@ impl Subscription {
         remote: &Option<RemoteObj>,
         info: &UnsubscriptionInfo,
     ) -> Result<(), Errors> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Errors(vec![Error::CreateMsgParcelFailed]))?;
+        let mut msg_parcel = MsgParcel::new();
+
         msg_parcel
             .write(info)
             .map_err(|_| Errors(vec![Error::WriteMsgParcelFailed]))?;
@@ -742,8 +736,8 @@ impl Subscription {
         let remote_obj = remote
             .as_ref()
             .ok_or(Errors(vec![Error::CreateMsgParcelFailed]))?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Errors(vec![Error::SendRequestFailed]))?;
 
         if let Ok(errs) = receive.read::<Errors>() {
@@ -754,7 +748,7 @@ impl Subscription {
     }
 }
 
-/************** All Connect struct-related structures and methods **************/
+/// ************ All Connect struct-related structures and methods *************
 
 pub(crate) type ConnectResult<T> = Result<T, Error>;
 
@@ -764,9 +758,10 @@ pub(crate) struct Connect {
 }
 
 impl Connect {
-    // Creates a structure `Connect` for connecting to the cloud and getting various information about the cloud.
+    // Creates a structure `Connect` for connecting to the cloud and getting various
+    // information about the cloud.
     pub(crate) fn new(user_id: i32) -> ConnectResult<Self> {
-        let remote_obj = unsafe { RemoteObj::from_raw_ciremoteobj(ConnectService(user_id)) }
+        let remote_obj = unsafe { RemoteObj::from_ciremote(ConnectService(user_id)) }
             .ok_or(Error::GetProxyObjectFailed)?;
         Ok(Self {
             remote_obj: Some(remote_obj),
@@ -786,15 +781,15 @@ impl Connect {
 
         let mut lock = infos.app_infos.write().unwrap();
 
-        let msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
+        let mut msg_parcel = MsgParcel::new();
 
         let function_number = GetAppBriefInfo as u32;
         let remote_obj = self
             .remote_obj
             .as_ref()
             .ok_or(Error::GetProxyObjectFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         lock.0 = receive
@@ -819,18 +814,18 @@ impl Connect {
 
         let mut lock = infos.service_info.write().unwrap();
 
-        let msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
+        let mut msg_parcel = MsgParcel::new();
 
         let function_number = GetServiceInfo as u32;
         let remote_obj = self
             .remote_obj
             .clone()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
-        lock.read(&receive)?;
+        lock.read(&mut receive)?;
 
         drop(lock);
 
@@ -847,10 +842,10 @@ impl Connect {
 
         let mut lock = infos.app_schema.write().unwrap();
 
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let bundle_name = String16::new(bundle_name);
+        let mut msg_parcel = MsgParcel::new();
+
         msg_parcel
-            .write(&bundle_name)
+            .write_string16(bundle_name)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
 
         let function_number = GetAppSchema as u32;
@@ -858,11 +853,11 @@ impl Connect {
             .remote_obj
             .clone()
             .ok_or(Error::CreateMsgParcelFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
-        lock.read(&receive)?;
+        lock.read(&mut receive)?;
 
         drop(lock);
 
@@ -889,7 +884,7 @@ impl Connect {
 pub(crate) struct AppInfos(pub(crate) HashMap<String, AppInfo>);
 
 impl Deserialize for AppInfos {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = AppInfos(string_hash_map_raw_read::<AppInfo>(parcel)?);
         Ok(result)
     }
@@ -904,12 +899,13 @@ pub(crate) struct Infos {
 
 #[cfg(test)]
 mod connect_test {
-    use crate::ipc_conn::connect::{SubscriptionResultValue, SwitchStatus};
+    use ipc::parcel::MsgParcel;
+
+    use crate::ipc_conn::connect::{Response, SubscriptionResultValue, SwitchStatus};
     use crate::ipc_conn::{
-        connect::Response, AppInfo, AssetStatus, CloudAsset, CloudAssets, CloudData, Database,
-        Databases, FieldRaw, OrderTable, Schema, SchemaOrderTables, ValueBucket, ValueBuckets,
+        AppInfo, AssetStatus, CloudAsset, CloudAssets, CloudData, Database, Databases, FieldRaw,
+        OrderTable, Schema, SchemaOrderTables, ValueBucket, ValueBuckets,
     };
-    use ipc_rust::{MsgParcel, String16};
 
     /// UT test for response_serialize.
     ///
@@ -924,18 +920,12 @@ mod connect_test {
     fn ut_response_serialize() {
         let response = Response::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&response).unwrap();
 
         assert_eq!(msg_parcel.read::<i64>().unwrap(), 0);
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
     }
 
     /// UT test for response_deserialize.
@@ -953,7 +943,7 @@ mod connect_test {
     fn ut_response_deserialize() {
         let response = Response::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&response).unwrap();
 
         assert_eq!(msg_parcel.read::<Response>().unwrap(), response);
@@ -977,7 +967,7 @@ mod connect_test {
         let abnormal = AssetStatus::Abnormal;
         let downloading = AssetStatus::Downloading;
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&normal).unwrap();
         msg_parcel.write(&insert).unwrap();
         msg_parcel.write(&update).unwrap();
@@ -1013,7 +1003,7 @@ mod connect_test {
         let abnormal = AssetStatus::Abnormal;
         let downloading = AssetStatus::Downloading;
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&normal).unwrap();
         msg_parcel.write(&insert).unwrap();
         msg_parcel.write(&update).unwrap();
@@ -1044,7 +1034,7 @@ mod connect_test {
         let open = SwitchStatus::Open;
         let not_enable = SwitchStatus::NotEnable;
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&close).unwrap();
         msg_parcel.write(&open).unwrap();
         msg_parcel.write(&not_enable).unwrap();
@@ -1071,7 +1061,7 @@ mod connect_test {
         let open = SwitchStatus::Open;
         let not_enable = SwitchStatus::NotEnable;
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&close).unwrap();
         msg_parcel.write(&open).unwrap();
         msg_parcel.write(&not_enable).unwrap();
@@ -1094,45 +1084,21 @@ mod connect_test {
     fn ut_asset_serialize() {
         let asset = CloudAsset::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&asset).unwrap();
 
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
         assert_eq!(
             msg_parcel.read::<AssetStatus>().unwrap(),
             AssetStatus::Normal
         );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
     }
 
     /// UT test for asset_deserialize.
@@ -1150,7 +1116,7 @@ mod connect_test {
     fn ut_asset_deserialize() {
         let asset = CloudAsset::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&asset).unwrap();
 
         let result = msg_parcel.read::<CloudAsset>().unwrap();
@@ -1182,7 +1148,7 @@ mod connect_test {
         assets.0.push(asset_one);
         assets.0.push(asset_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&assets).unwrap();
 
         assert_eq!(msg_parcel.read::<u32>().unwrap(), 2);
@@ -1231,7 +1197,7 @@ mod connect_test {
         assets.0.push(asset_one);
         assets.0.push(asset_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&assets).unwrap();
 
         assert!(msg_parcel.read::<CloudAssets>().is_ok());
@@ -1257,7 +1223,7 @@ mod connect_test {
         let asset = FieldRaw::Asset(CloudAsset::default());
         let assets = FieldRaw::Assets(CloudAssets::default());
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&null).unwrap();
         msg_parcel.write(&number).unwrap();
         msg_parcel.write(&real).unwrap();
@@ -1276,10 +1242,7 @@ mod connect_test {
         assert_eq!(msg_parcel.read::<f64>().unwrap(), 2.0);
 
         assert_eq!(msg_parcel.read::<u32>().unwrap(), 3);
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("text")
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from("text"));
 
         assert_eq!(msg_parcel.read::<u32>().unwrap(), 4);
         assert!(msg_parcel.read::<bool>().unwrap());
@@ -1315,7 +1278,7 @@ mod connect_test {
         let asset = FieldRaw::Asset(CloudAsset::default());
         let assets = FieldRaw::Assets(CloudAssets::default());
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&null).unwrap();
         msg_parcel.write(&number).unwrap();
         msg_parcel.write(&text).unwrap();
@@ -1352,19 +1315,13 @@ mod connect_test {
             .0
             .insert(String::from("key2"), FieldRaw::Number(1));
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&value_bucket_data).unwrap();
 
         assert_eq!(msg_parcel.read::<i32>().unwrap(), 2);
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("key1")
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from("key1"));
         assert!(msg_parcel.read::<FieldRaw>().is_ok());
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("key2")
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from("key2"));
         assert!(msg_parcel.read::<FieldRaw>().is_ok());
     }
 
@@ -1389,7 +1346,7 @@ mod connect_test {
             .0
             .insert(String::from("key2"), FieldRaw::Number(1));
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&value_bucket_data).unwrap();
 
         assert!(msg_parcel.read::<ValueBucket>().is_ok());
@@ -1408,7 +1365,7 @@ mod connect_test {
     fn ut_value_bucket_serialize() {
         let value_bucket = ValueBucket::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&value_bucket).unwrap();
 
         assert_eq!(msg_parcel.read::<i32>().unwrap(), 0);
@@ -1429,7 +1386,7 @@ mod connect_test {
     fn ut_value_bucket_deserialize() {
         let value_bucket = ValueBucket::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&value_bucket).unwrap();
 
         assert!(msg_parcel.read::<ValueBucket>().is_ok());
@@ -1452,7 +1409,7 @@ mod connect_test {
         value_buckets.0.push(value_bucket_one);
         value_buckets.0.push(value_bucket_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&value_buckets).unwrap();
 
         assert_eq!(msg_parcel.read::<u32>().unwrap(), 2);
@@ -1480,7 +1437,7 @@ mod connect_test {
         value_buckets.0.push(value_bucket_one);
         value_buckets.0.push(value_bucket_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&value_buckets).unwrap();
 
         assert!(msg_parcel.read::<ValueBuckets>().is_ok());
@@ -1499,12 +1456,12 @@ mod connect_test {
     /// 5. Check if it is correct.
     #[test]
     fn ut_cloud_data_deserialize() {
-        let next_cursor = String16::new("");
+        let next_cursor = String::from("");
         let has_more = false;
         let values = ValueBuckets::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
-        msg_parcel.write(&next_cursor).unwrap();
+        let mut msg_parcel = MsgParcel::new();
+        msg_parcel.write_string16(&next_cursor).unwrap();
         msg_parcel.write(&has_more).unwrap();
         msg_parcel.write(&values).unwrap();
 
@@ -1524,17 +1481,11 @@ mod connect_test {
     fn ut_database_serialize() {
         let database = Database::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&database).unwrap();
 
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::from("")
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::from(""));
         assert_eq!(
             msg_parcel.read::<SchemaOrderTables>().unwrap(),
             SchemaOrderTables::default()
@@ -1556,7 +1507,7 @@ mod connect_test {
     fn ut_database_deserialize() {
         let database = Database::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&database).unwrap();
 
         assert!(msg_parcel.read::<Database>().is_ok());
@@ -1575,17 +1526,11 @@ mod connect_test {
     fn ut_order_table_serialize() {
         let order_table = OrderTable::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&order_table).unwrap();
 
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::default()
-        );
-        assert_eq!(
-            msg_parcel.read::<String16>().unwrap().get_string(),
-            String::default()
-        );
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::default());
+        assert_eq!(msg_parcel.read_string16().unwrap(), String::default());
     }
 
     /// UT test for order_table_deserialize.
@@ -1603,7 +1548,7 @@ mod connect_test {
     fn ut_order_table_deserialize() {
         let order_table = OrderTable::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&order_table).unwrap();
 
         assert_eq!(msg_parcel.read::<OrderTable>().unwrap(), order_table);
@@ -1626,7 +1571,7 @@ mod connect_test {
         schema_order_tables.0.push(order_table_one);
         schema_order_tables.0.push(order_table_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&schema_order_tables).unwrap();
 
         assert_eq!(msg_parcel.read::<i32>().unwrap(), 2);
@@ -1659,7 +1604,7 @@ mod connect_test {
         schema_order_tables.0.push(order_table_one);
         schema_order_tables.0.push(order_table_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&schema_order_tables).unwrap();
 
         assert_eq!(
@@ -1685,7 +1630,7 @@ mod connect_test {
         databases.0.push(database_one);
         databases.0.push(database_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&databases).unwrap();
 
         assert_eq!(msg_parcel.read::<i32>().unwrap(), 2);
@@ -1712,7 +1657,7 @@ mod connect_test {
         databases.0.push(database_one);
         databases.0.push(database_two);
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&databases).unwrap();
 
         assert!(msg_parcel.read::<Databases>().is_ok());
@@ -1731,9 +1676,9 @@ mod connect_test {
     /// 5. Check if it is correct.
     #[test]
     fn ut_schema_deserialize() {
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&0_i32).unwrap();
-        msg_parcel.write(&String16::new("")).unwrap();
+        msg_parcel.write_string16("").unwrap();
         msg_parcel.write(&Databases::default()).unwrap();
 
         assert!(msg_parcel.read::<Schema>().is_ok());
@@ -1754,9 +1699,9 @@ mod connect_test {
     fn ut_app_info_deserialize() {
         let app_info = AppInfo::default();
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
-        msg_parcel.write(&String16::new("")).unwrap();
-        msg_parcel.write(&String16::new("")).unwrap();
+        let mut msg_parcel = MsgParcel::new();
+        msg_parcel.write_string16("").unwrap();
+        msg_parcel.write_string16("").unwrap();
         msg_parcel.write(&bool::default()).unwrap();
         msg_parcel.write(&0_i32).unwrap();
         msg_parcel.write(&0_i32).unwrap();
@@ -1782,10 +1727,10 @@ mod connect_test {
             .0
             .push((String::from("test1"), String::from("2")));
 
-        let mut msg_parcel = MsgParcel::new().unwrap();
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel.write(&1_i32).unwrap();
-        msg_parcel.write(&String16::new("test1")).unwrap();
-        msg_parcel.write(&String16::new("2")).unwrap();
+        msg_parcel.write_string16(&String::from("test1")).unwrap();
+        msg_parcel.write_string16(&String::from("2")).unwrap();
 
         assert_eq!(
             msg_parcel.read::<SubscriptionResultValue>().unwrap(),

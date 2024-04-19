@@ -257,20 +257,28 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
     return [retryer](const Event &event) {
         auto &evt = static_cast<const SyncEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta;
-        meta.storeId = storeInfo.storeName;
-        meta.bundleName = storeInfo.bundleName;
-        meta.user = std::to_string(storeInfo.user);
-        meta.instanceId = storeInfo.instanceId;
+        GenAsync async = evt.GetAsyncDetail();
+        GenDetails details;
+        auto &detail = details[SyncInfo::DEFAULT_ID];
+        detail.progress = SYNC_FINISH;
+        StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
+            if (async) {
+                detail.code = E_ERROR;
+                async(std::move(details));
+            }
             return;
         }
         auto store = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            if (async) {
+                detail.code = E_ERROR;
+                async(std::move(details));
+            }
             return;
         }
 
@@ -284,14 +292,10 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                     return;
                 }
                 int32_t code = details.begin()->second.code;
-                retryer(code == E_LOCKED_BY_OTHERS ? LOCKED_INTERVAL : RETRY_INTERVAL, code);
+                retryer(GetInterval(code), code);
             }
             : evt.GetAsyncDetail(), syncParam);
-        GenAsync async = evt.GetAsyncDetail();
         if (status != E_OK && async) {
-            GenDetails details;
-            auto &detail = details[SyncInfo::DEFAULT_ID];
-            detail.progress = SYNC_FINISH;
             detail.code = status;
             async(std::move(details));
         }
@@ -328,6 +332,10 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
     }
     return [this, times, info = SyncInfo(syncInfo)](Duration interval, int32_t code) mutable {
         if (code == E_OK) {
+            return true;
+        }
+        if (code == E_NO_SPACE_FOR_ASSET || code == E_RECODE_LIMIT_EXCEEDED) {
+            info.SetError(code);
             return true;
         }
 
@@ -413,5 +421,17 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
     }
     return store;
+}
+
+ExecutorPool::Duration SyncManager::GetInterval(int32_t code)
+{
+    switch (code) {
+        case E_LOCKED_BY_OTHERS:
+            return LOCKED_INTERVAL;
+        case E_BUSY:
+            return BUSY_INTERVAL;
+        default:
+            return RETRY_INTERVAL;
+    }
 }
 } // namespace OHOS::CloudData

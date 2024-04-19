@@ -17,8 +17,10 @@
 #include "load_config_from_data_share_bundle_info_strategy.h"
 
 #include "bundle_mgr_proxy.h"
+#include "data_share_profile_config.h"
 #include "log_print.h"
 #include "uri_utils.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 struct ConfigData {
@@ -86,14 +88,13 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
-            std::string info;
-            auto ret = DataShareProfileInfo::GetResConfigFile(item, info);
-            if (!ret) {
+            auto [ret, profileInfo] = DataShareProfileConfig::GetDataProperties(item.metadata,
+                item.resourcePath, item.hapPath, DATA_SHARE_EXTENSION_META);
+            if (ret == NOT_FOUND) {
                 return true; // optional meta data config
             }
-            ProfileInfo profileInfo;
-            if (!profileInfo.Unmarshall(info)) {
-                ZLOGE("parse failed! %{public}s", info.c_str());
+            if (ret == ERROR) {
+                ZLOGE("parse failed! %{public}s", context->calledBundleName.c_str());
                 return false;
             }
             LoadConfigFromProfile(profileInfo, context);

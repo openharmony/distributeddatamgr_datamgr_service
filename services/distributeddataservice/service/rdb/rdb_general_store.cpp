@@ -764,6 +764,8 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_RECODE_LIMIT_EXCEEDED;
         case DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT:
             return GenErr::E_NO_SPACE_FOR_ASSET;
+        case DBStatus::BUSY:
+            return GenErr::E_BUSY;
         default:
             ZLOGI("status:0x%{public}x", status);
             break;
