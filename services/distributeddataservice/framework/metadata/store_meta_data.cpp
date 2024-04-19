@@ -113,6 +113,12 @@ StoreMetaData::StoreMetaData(const std::string &userId, const std::string &appId
 {
 }
 
+StoreMetaData::StoreMetaData(const StoreInfo& storeInfo)
+    : instanceId(storeInfo.instanceId), bundleName(storeInfo.bundleName), storeId(storeInfo.storeName),
+      user(std::to_string(storeInfo.user))
+{
+}
+
 bool StoreMetaData::operator==(const StoreMetaData &metaData) const
 {
     if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
