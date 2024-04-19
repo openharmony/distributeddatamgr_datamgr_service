@@ -212,10 +212,13 @@ HWTEST_F(DataShareServiceImplTest, Publish001, TestSize.Level1)
     DataShare::Data data;
     std::string bundleName = "com.acts.ohos.data.datasharetest";
     data.datas_.emplace_back("datashareproxy://com.acts.ohos.data.datasharetest/test", TEST_SUB_ID, "value1");
-    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "com.acts.ohos.data.datasharetest", 0);
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
     std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleName);
-    EXPECT_EQ(result.size(), data.datas_.size());
+    EXPECT_NE(result.size(), data.datas_.size());
+    for (auto const &results : result) {
+        EXPECT_NE(results.errCode_, 0);
+    }
 
     int errCode = 0;
     auto getData = dataShareServiceImpl.GetData(bundleName, errCode);
@@ -225,7 +228,7 @@ HWTEST_F(DataShareServiceImplTest, Publish001, TestSize.Level1)
 
 /**
 * @tc.name: Publish002
-* @tc.desc: test Publish and GetData bundleName is error
+* @tc.desc: test Publish uri and GetData bundleName is error
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -238,12 +241,13 @@ HWTEST_F(DataShareServiceImplTest, Publish002, TestSize.Level1)
     std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleName);
     EXPECT_EQ(result.size(), data.datas_.size());
     for (auto const &results : result) {
-        EXPECT_NE(results.errCode_, E_BUNDLE_NAME_NOT_EXIST);
+        EXPECT_EQ(results.errCode_, E_URI_NOT_EXIST);
     }
 
     int errCode = 0;
     auto getData = dataShareServiceImpl.GetData(bundleName, errCode);
-    EXPECT_NE(errCode, E_BUNDLE_NAME_NOT_EXIST);
+    EXPECT_EQ(errCode, 0);
+    EXPECT_NE(getData.datas_.size(), data.datas_.size());
 }
 
 /**
