@@ -48,6 +48,7 @@ public:
         void SetAsyncDetail(GenAsync asyncDetail);
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
+        void SetCompensation(bool isCompensation);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string& storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
@@ -63,6 +64,7 @@ public:
         std::map<std::string, std::vector<std::string>> tables_;
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
+        bool isCompensation_ = false;
     };
     SyncManager();
     ~SyncManager();

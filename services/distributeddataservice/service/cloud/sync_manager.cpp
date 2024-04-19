@@ -25,6 +25,7 @@
 #include "metadata/meta_data_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "store/auto_cache.h"
+#include "store/general_store.h"
 #include "utils/anonymous.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
@@ -76,6 +77,11 @@ void SyncManager::SyncInfo::SetAsyncDetail(GenAsync asyncDetail)
 void SyncManager::SyncInfo::SetQuery(std::shared_ptr<GenQuery> query)
 {
     query_ = query;
+}
+
+void SyncManager::SyncInfo::SetCompensation(bool isCompensation)
+{
+    isCompensation_ = isCompensation;
 }
 
 void SyncManager::SyncInfo::SetError(int32_t code) const
@@ -237,8 +243,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                     continue;
                 }
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
+                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_ };
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                    SyncEvent::EventInfo { info.mode_, info.wait_, retry, std::move(query), info.async_ });
+                    SyncEvent::EventInfo { syncParam, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
             }
         }
@@ -277,7 +284,8 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
 
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
-        auto status = store->Sync({ SyncInfo::DEFAULT_ID }, evt.GetMode(), *(evt.GetQuery()), evt.AutoRetry()
+        SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation() };
+        auto status = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()), evt.AutoRetry()
             ? [retryer](const GenDetails &details) {
                 if (details.empty()) {
                     ZLOGE("retry, details empty");
@@ -286,7 +294,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 int32_t code = details.begin()->second.code;
                 retryer(GetInterval(code), code);
             }
-            : evt.GetAsyncDetail(), evt.GetWait());
+            : evt.GetAsyncDetail(), syncParam);
         if (status != E_OK && async) {
             detail.code = status;
             async(std::move(details));
@@ -304,6 +312,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetWait(evt.GetWait());
         syncInfo.SetAsyncDetail(evt.GetAsyncDetail());
         syncInfo.SetQuery(evt.GetQuery());
+        syncInfo.SetCompensation(evt.IsCompensation());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         auto task = GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo));
         task();
