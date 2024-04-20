@@ -28,7 +28,6 @@
 #include "data_share_service_impl.h"
 
 using namespace testing::ext;
-using DumpManager = OHOS::DistributedData::DumpManager;
 using namespace OHOS::DataShare;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
