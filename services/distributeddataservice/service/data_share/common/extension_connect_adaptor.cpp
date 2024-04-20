@@ -31,7 +31,7 @@ ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(std::make_shared<Bloc
     callback_ = new (std::nothrow) CallbackImpl(data_);
 }
 
-bool ExtensionConnectAdaptor::DoConnect(const std::string &uri)
+bool ExtensionConnectAdaptor::DoConnect(const std::string &uri, const std::string &bundleName)
 {
     data_->Clear();
     if (callback_ == nullptr) {
@@ -43,6 +43,7 @@ bool ExtensionConnectAdaptor::DoConnect(const std::string &uri)
             DistributedData::Anonymous::Change(uri).c_str());
         return false;
     }
+    AppConnectManager::SetCallback(bundleName, callback_);
     bool result = data_->GetValue();
     ZLOGI("Do connect, result: %{public}d,  uri: %{public}s", result,
         DistributedData::Anonymous::Change(uri).c_str());
@@ -55,8 +56,8 @@ bool ExtensionConnectAdaptor::TryAndWait(const std::string &uri, const std::stri
     ExtensionConnectAdaptor strategy;
     return AppConnectManager::Wait(
         bundleName, maxWaitTime,
-        [&uri, &strategy]() {
-            return strategy.DoConnect(uri);
+        [&uri, &bundleName, &strategy]() {
+            return strategy.DoConnect(uri, bundleName);
         },
         [&strategy]() {
             strategy.Disconnect();
@@ -71,7 +72,6 @@ void ExtensionConnectAdaptor::Disconnect()
         return;
     }
     data_->Clear();
-    ExtensionMgrProxy::GetInstance()->DisConnect(callback_->AsObject());
     bool result = data_->GetValue();
     ZLOGI("Do disconnect, result: %{public}d", result);
     callback_ = nullptr;
