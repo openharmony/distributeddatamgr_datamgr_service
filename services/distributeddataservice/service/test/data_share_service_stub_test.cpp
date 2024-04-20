@@ -31,7 +31,7 @@ namespace OHOS::Test {
 class DataShareServiceStubTest : public testing::Test {
 public:
     static constexpr uint8_t TEST_DATA = 1;
-    static constexpr size_t TEST_DATA_SIZE = 1;
+    static constexpr size_t TEST_SIZE = 1;
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
@@ -50,7 +50,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 {
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = TEST_DATA_SIZE;
+    size_t size = TEST_SIZE;
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
@@ -94,7 +94,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteInsert001, TestSize.Level1)
 {
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = TEST_DATA_SIZE;
+    size_t size = TEST_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
@@ -123,7 +123,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteAddTemplate001, TestSize.Level1)
 {
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = TEST_DATA_SIZE;
+    size_t size = TEST_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
@@ -146,7 +146,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnablePubSubs001, TestSize.Level1)
 {
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = TEST_DATA_SIZE;
+    size_t size = TEST_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
@@ -181,7 +181,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteEnableRdbSubs001, TestSize.Level1)
 {
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = TEST_DATA_SIZE;
+    size_t size = TEST_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
@@ -216,7 +216,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRegisterObserver001, TestSize.Level1)
 {
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
-    size_t size = TEST_DATA_SIZE;
+    size_t size = TEST_SIZE;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
