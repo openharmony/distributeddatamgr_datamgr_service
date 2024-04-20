@@ -26,12 +26,12 @@ using namespace OHOS::DataShare;
 using namespace OHOS::DistributedData;
 const std::u16string INTERFACE_TOKEN = u"OHOS.DataShare.IDataShareService";
 constexpr uint32_t CODE_MIN = 0;
+constexpr size_t TEST_SIZE = 1;
+constexpr uint8_t TEST_DATA = 1;
 constexpr uint32_t CODE_MAX = IDataShareService::DATA_SHARE_SERVICE_CMD_MAX + 1;
 namespace OHOS::Test {
 class DataShareServiceStubTest : public testing::Test {
 public:
-    static constexpr uint8_t TEST_DATA = 1;
-    static constexpr size_t TEST_SIZE = 1;
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
