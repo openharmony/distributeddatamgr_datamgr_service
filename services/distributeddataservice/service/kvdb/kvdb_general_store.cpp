@@ -286,13 +286,13 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
     };
 }
 
-int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)
+int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
 {
-    auto syncMode = GeneralStore::GetSyncMode(mode);
+    auto syncMode = GeneralStore::GetSyncMode(syncParm.mode);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d", devices.size(),
-            devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode);
+            devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParm.mode);
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto dbStatus = DistributedDB::OK;
@@ -301,7 +301,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
         DistributedDB::CloudSyncOption syncOption;
         syncOption.devices = devices;
         syncOption.mode = dbMode;
-        syncOption.waitTime = wait;
+        syncOption.waitTime = syncParm.wait;
         if (storeInfo_.user == 0) {
             std::vector<int32_t> users;
             AccountDelegate::GetInstance()->QueryUsers(users);
@@ -312,7 +312,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
         dbStatus = delegate_->Sync(syncOption, nullptr);
     } else {
         if (devices.empty()) {
-            ZLOGE("Devices is empty! mode:%{public}d", mode);
+            ZLOGE("Devices is empty! mode:%{public}d", syncParm.mode);
             return GeneralError::E_INVALID_ARGS;
         }
         KVDBQuery *kvQuery = nullptr;

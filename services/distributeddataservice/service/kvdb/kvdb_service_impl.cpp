@@ -848,13 +848,15 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
         return Status::INVALID_ARGUMENT;
     }
     auto mode = ConvertGeneralSyncMode(SyncMode(info.mode), SyncAction(type));
+    SyncParam syncParam{};
+    syncParam.mode = mode;
     auto ret = store->Sync(
-        devices, mode, query,
+        devices, query,
         [this, complete](const GenDetails &result) mutable {
             auto deviceStatus = HandleGenDetails(result);
             complete(deviceStatus);
         },
-        0);
+        syncParam);
     return Status(ret);
 }
 
