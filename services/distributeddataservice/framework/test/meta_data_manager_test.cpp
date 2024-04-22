@@ -17,7 +17,6 @@
 #include <gtest/gtest.h>
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-
 using namespace OHOS;
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
