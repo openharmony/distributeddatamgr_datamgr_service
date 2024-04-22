@@ -494,7 +494,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     }
 
     auto ret = syncManager_.QueryLastSyncInfo(queryKeys, results);
-    ZLOGI("QueryLastSyncInfo code:%{public}d, accountId:%{public}s, bundleName:%{public}s, storeId:%{public}s", ret,
+    ZLOGI("code:%{public}d, accountId:%{public}s, bundleName:%{public}s, storeId:%{public}s", ret,
         Anonymous::Change(id).c_str(), bundleName.c_str(), Anonymous::Change(storeId).c_str());
     return { ret, results };
 }

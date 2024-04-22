@@ -433,7 +433,7 @@ int32_t RdbGeneralStore::MergeMigratedData(const std::string& tableName, VBucket
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
-int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)
+int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParam)
 {
     DistributedDB::Query dbQuery;
     RdbQuery *rdbQuery = nullptr;
@@ -445,20 +445,20 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &qu
         dbQuery = rdbQuery->GetQuery();
         isPriority = rdbQuery->IsPriority();
     }
-    auto syncMode = GeneralStore::GetSyncMode(mode);
+    auto syncMode = GeneralStore::GetSyncMode(syncParam.mode);
     auto dbMode = DistributedDB::SyncMode(syncMode);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
-              "wait:%{public}d",
-            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode, wait);
+              "wait:%{public}d", devices.size(),
+              devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode, syncParam.wait);
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = (syncMode < NEARBY_END)
-                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), wait != 0)
+                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0)
                   : (syncMode > NEARBY_END && syncMode < CLOUD_END)
-                  ? delegate_->Sync({ devices, dbMode, dbQuery, wait, isPriority }, GetDBProcessCB(std::move(async),
-                      GetHighMode(static_cast<uint32_t>(mode))))
+                  ? delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, isPriority, syncParam.isCompensation },
+                      GetDBProcessCB(std::move(async), GetHighMode(static_cast<uint32_t>(syncParam.mode))))
                   : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }

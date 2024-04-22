@@ -20,6 +20,11 @@ SyncEvent::EventInfo::EventInfo(int32_t mode, int32_t wait, bool retry, std::sha
     : retry_(retry), mode_(mode), wait_(wait), query_(std::move(query)), asyncDetail_(std::move(async))
 {
 }
+SyncEvent::EventInfo::EventInfo(const SyncParam &syncParam, bool retry, std::shared_ptr<GenQuery> query, GenAsync async)
+    : retry_(retry), mode_(syncParam.mode), wait_(syncParam.wait), query_(std::move(query)),
+      asyncDetail_(std::move(async)), isCompensation_(syncParam.isCompensation)
+{
+}
 
 SyncEvent::EventInfo::EventInfo(SyncEvent::EventInfo &&info) noexcept
 {
@@ -36,6 +41,7 @@ SyncEvent::EventInfo &SyncEvent::EventInfo::operator=(SyncEvent::EventInfo &&inf
     wait_ = info.wait_;
     query_ = std::move(info.query_);
     asyncDetail_ = std::move(info.asyncDetail_);
+    isCompensation_ = info.isCompensation_;
     return *this;
 }
 
@@ -72,5 +78,10 @@ std::shared_ptr<GenQuery> SyncEvent::GetQuery() const
 GenAsync SyncEvent::GetAsyncDetail() const
 {
     return info_.asyncDetail_;
+}
+
+bool SyncEvent::IsCompensation() const
+{
+    return info_.isCompensation_;
 }
 } // namespace OHOS::DistributedData

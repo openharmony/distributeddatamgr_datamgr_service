@@ -36,6 +36,7 @@ public:
     using AutoCache = DistributedData::AutoCache;
     using StoreMetaData = DistributedData::StoreMetaData;
     using Store = std::string;
+    using SchemaMeta = DistributedData::SchemaMeta;
     static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     class SyncInfo final {
     public:
@@ -51,6 +52,7 @@ public:
         void SetAsyncDetail(GenAsync asyncDetail);
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
+        void SetCompensation(bool isCompensation);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string& storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
@@ -66,6 +68,7 @@ public:
         std::map<std::string, std::vector<std::string>> tables_;
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
+        bool isCompensation_ = false;
     };
     SyncManager();
     ~SyncManager();
@@ -87,6 +90,7 @@ private:
     using SyncIdCloudInfos = ConcurrentMap<SyncId, CloudSyncInfo>;
     using GeneralError = DistributedData::GeneralError;
     using GenProgress = DistributedData::GenProgress;
+    using GenDetails = DistributedData::GenDetails;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
@@ -105,15 +109,19 @@ private:
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
-    std::pair<bool, GeneralError> IsValid(SyncInfo &info, CloudInfo &cloud);
-    void GetCloudSyncInfo(std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, SyncInfo &info,
-        CloudInfo &cloud);
-    void UpdateStartSyncInfo(SyncInfo &syncInfo, CloudInfo &cloud);
-    void UpdateFinishSyncInfo(const QueryKey &queryKey, SyncId syncId, int32_t code);
-    void BatchUpdate(SyncInfo &info, CloudInfo &cloud, int32_t code);
+    GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
+    void GetCloudSyncInfo(SyncInfo &info, CloudInfo &cloud,
+        std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
+    void UpdateStartSyncInfo(SyncInfo &syncInfo, CloudInfo &cloud,
+        std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
+    void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
         const StoreInfo &storeInfo);
     std::string GetAccountId(int32_t user);
+    std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
+        bool retry);
+    std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
+    void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
@@ -121,6 +129,7 @@ private:
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
     std::map<QueryKey, SyncIdCloudInfos> lastSyncInfos_;
+    std::mutex mutex_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
