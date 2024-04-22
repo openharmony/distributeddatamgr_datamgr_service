@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -94,12 +94,12 @@ std::vector<Entry> KVDBWatcher::ConvertToEntries(const std::vector<Values> &valu
     std::vector<Entry> changeData{};
     for (auto &info : values) {
         auto key = std::get_if<Bytes>(&info[0]);
-        if (key == nullptr) {
+        auto value = std::get_if<Bytes>(&info[1]);
+        if (key == nullptr || value == nullptr) {
             continue;
         }
-        auto value = std::get_if<Bytes>(&info[1]);
         Entry tmpEntry{ *key, *value };
-        changeData.push_back(tmpEntry);
+        changeData.push_back(std::move(tmpEntry));
     }
     return changeData;
 }
@@ -112,7 +112,7 @@ std::vector<std::string> KVDBWatcher::ConvertToKeys(const std::vector<PRIValue> 
         if (key == nullptr) {
             continue;
         }
-        keys.push_back(*key);
+        keys.push_back(std::move(*key));
     }
     return keys;
 }

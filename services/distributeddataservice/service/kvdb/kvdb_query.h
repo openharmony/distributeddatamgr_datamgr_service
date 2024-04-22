@@ -44,7 +44,7 @@ public:
 
     bool IsValidQuery()
     {
-        return !(!isSuccess_ && !query_.empty());
+        return isSuccess_;
     }
 
     bool IsEmpty()

@@ -146,8 +146,6 @@ void KVDBServiceImpl::Init()
         }
         if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
             meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
-            ZLOGE("StoreType not match, bundleName:%{public}s, storeId:%{public}s, storeType: %{public}d",
-                  meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.storeType);
             return;
         }
         auto watchers = GetWatchers(meta.tokenId, meta.storeId);
@@ -155,13 +153,6 @@ void KVDBServiceImpl::Init()
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
-        }
-        if (meta.isPublic) {
-            auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
-                meta.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
-            auto info = ChangeEvent::EventInfo(mixMode, 0, meta.isAutoSync, nullptr, nullptr);
-            auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
-            EventCenter::GetInstance().PostEvent(std::move(evt));
         }
         store->RegisterDetailProgressObserver(nullptr);
     };
@@ -429,6 +420,9 @@ Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &stor
 
 Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer)
 {
+    if (observer == nullptr) {
+        return INVALID_ARGUMENT;
+    }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), tokenId);
@@ -748,10 +742,9 @@ int32_t KVDBServiceImpl::GetInstIndex(uint32_t tokenId, const AppId &appId)
 
 KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenDetails(const GenDetails &details)
 {
-    DBResult dbResults;
+    DBResult dbResults{};
     for (const auto &[id, detail] : details) {
-        auto &dbResult = dbResults[id];
-        dbResult = DBStatus(detail.code);
+        dbResults[id] = DBStatus(detail.code);
     }
     return dbResults;
 }

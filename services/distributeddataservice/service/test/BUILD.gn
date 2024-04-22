@@ -26,6 +26,7 @@ config("module_private_config") {
     "../config/include/",
     "../crypto/include/",
     "../directory/include/",
+    "../kvdb/",
     "../matrix/include/",
     "../common/",
     "../rdb/",

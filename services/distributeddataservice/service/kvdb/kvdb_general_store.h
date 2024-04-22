@@ -26,7 +26,6 @@
 #include "kvstore_sync_callback.h"
 #include "kvstore_sync_manager.h"
 #include "metadata/store_meta_data.h"
-#include "rdb_cloud.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "store_observer.h"

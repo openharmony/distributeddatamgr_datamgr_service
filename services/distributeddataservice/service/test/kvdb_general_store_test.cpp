@@ -25,7 +25,7 @@
 #include "eventcenter/event_center.h"
 #include "feature/feature_system.h"
 #include "ipc_skeleton.h"
-#include "log_print.h"
+#include "kvdb_query.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
@@ -54,8 +54,6 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     StoreMetaData metaData_;
 };
-
-SchemaMeta CloudDataTest::schemaMeta_;
 
 void KVDBGeneralStoreTest::InitMetaData()
 {
@@ -94,7 +92,6 @@ void KVDBGeneralStoreTest::TearDown() {}
 */
 HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest, TestSize.Level0)
 {
-    ZLOGI("GetDBPasswordTest start");
     InitMetaData();
     auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
     ASSERT_TRUE(dbPassword.GetSize() == 0);
@@ -112,7 +109,6 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, GetDBSecurityTest, TestSize.Level0)
 {
-    ZLOGI("GetDBSecurityTest start");
     auto dbSecurity = KVDBGeneralStore::GetDBSecurity(SecurityLevel::INVALID_LABEL);
     EXPECT_EQ(dbSecurity.securityLabel, DistributedDB::NOT_SET);
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::ECE);
@@ -151,7 +147,6 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSecurityTest, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, GetDBOptionTest, TestSize.Level0)
 {
-    ZLOGI("GetDBOptionTest start");
     auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
     auto dbOption = KVDBGeneralStore::GetDBOption(metaData_, dbPassword);
     EXPECT_EQ(dbOption.syncDualTupleMode, true);
@@ -164,7 +159,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBOptionTest, TestSize.Level0)
     EXPECT_EQ(dbOption.cipher, DistributedDB::CipherType::AES_256_GCM);
     EXPECT_EQ(dbOption.conflictResolvePolicy, DistributedDB::LAST_WIN);
     EXPECT_EQ(dbOption.createDirByStoreIdOnly, true);
-    EXPECT_EQ(dbOption.secOption, GetDBSecurity(metaData_.securityLevel));
+    EXPECT_EQ(dbOption.secOption, KVDBGeneralStore::GetDBSecurity(metaData_.securityLevel));
 }
 
 /**
@@ -176,7 +171,6 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBOptionTest, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, CloseTest, TestSize.Level0)
 {
-    ZLOGI("CloseTest start");
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     auto ret = store->Close();
@@ -192,7 +186,6 @@ HWTEST_F(KVDBGeneralStoreTest, CloseTest, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
 {
-    ZLOGI("SyncTest start");
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::NEARBY_SUBSCRIBE_REMOTE;
@@ -200,13 +193,15 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
     auto mixMode = GeneralStore::MixMode(syncMode, highMode);
     std::string kvQuery = "";
     KVDBQuery query(kvQuery);
+    SyncParam syncParam{};
+    syncParam.mode = mixMode;
     auto ret = store->Sync(
-        {}, mixMode, query, [](const GenDetails &result) {}, 0);
+        {}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
-    auto ret = store->Sync(
-        { "default_deviceId" }, mixMode, query, [](const GenDetails &result) {}, 0);
+    ret = store->Sync(
+        { "default_deviceId" }, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_NE(ret, GeneralError::E_OK);
-    auto ret = store->Close();
+    ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
@@ -219,18 +214,12 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, CleanTest, TestSize.Level0)
 {
-    ZLOGI("CleanTest start");
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     EXPECT_EQ(store->IsValid(), true);
-    uint32_t syncMode = GeneralStore::SyncMode::NEARBY_PUSH;
-    uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
-    auto mixMode = GeneralStore::MixMode(syncMode, highMode);
-    std::string kvQuery = "";
-    KVDBQuery query(kvQuery);
     auto ret = store->Clean({}, GeneralStore::CleanMode::NEARBY_DATA, "");
     EXPECT_EQ(ret, GeneralError::E_OK);
-    auto ret = store->Close();
+    ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_OK);
 }
 } // namespace DistributedDataTest

@@ -25,6 +25,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "query_helper.h"
+#include "rdb_cloud.h"
 #include "snapshot/bind_event.h"
 #include "types.h"
 #include "user_delegate.h"
@@ -101,6 +102,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
 
     DBStatus status = DBStatus::NOT_FOUND;
     manager_.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(meta) });
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     manager_.GetKvStore(
         meta.storeId, GetDBOption(meta, GetDBPassword(meta)), [&status, this](auto dbStatus, auto *tmpStore) {
             status = dbStatus;
@@ -131,11 +133,14 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
 
 KVDBGeneralStore::~KVDBGeneralStore()
 {
-    if (delegate_ != nullptr) {
-        delegate_->UnRegisterObserver(&observer_);
+    {
+        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ != nullptr) {
+            delegate_->UnRegisterObserver(&observer_);
+        }
+        manager_.CloseKvStore(delegate_);
+        delegate_ = nullptr;
     }
-    manager_.CloseKvStore(delegate_);
-    delegate_ = nullptr;
     for (auto &bindInfo_ : bindInfos_) {
         if (bindInfo_.db_ != nullptr) {
             bindInfo_.db_->Close();
@@ -208,7 +213,7 @@ int32_t KVDBGeneralStore::Close()
 {
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
-        return 0;
+        return GeneralError::E_OK;
     }
     int32_t count = delegate_->GetTaskCount();
     if (count > 0) {
@@ -351,13 +356,13 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
     if (mode < 0 || mode > CLEAN_MODE_BUTT) {
         return GeneralError::E_INVALID_ARGS;
     }
-    DBStatus status = OK;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d", devices.size(),
             devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode);
         return GeneralError::E_ALREADY_CLOSED;
     }
+    DBStatus status = OK;
     switch (mode) {
         case CLOUD_INFO:
             status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_INFO));
@@ -460,6 +465,7 @@ KVDBGeneralStore::GenErr KVDBGeneralStore::ConvertStatus(DistributedDB::DBStatus
 
 bool KVDBGeneralStore::IsValid()
 {
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     return delegate_ != nullptr;
 }
 

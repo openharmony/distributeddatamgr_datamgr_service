@@ -407,14 +407,15 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
     }
 
     if (!store->IsBound()) {
-        std::set<std::string> activeUsers = UserDelegate::GetInstance().GetLocalUsers();
+        std::vector<int32_t> activeUsers{};
+        AccountDelegate::GetInstance()->QueryForegroundUsers(activeUsers);
         std::map<std::string, std::pair<Database, GeneralStore::BindInfo>> cloudDBs = {};
         for (auto &activeUser : activeUsers) {
-            if (activeUser == "0") {
+            if (activeUser == 0) {
                 continue;
             }
             CloudInfo info;
-            info.user = std::stoi(activeUser);
+            info.user = activeUser;
             SchemaMeta schemaMeta;
             std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
             if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
@@ -431,8 +432,9 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
                 return nullptr;
             }
             if (cloudDB != nullptr || assetLoader != nullptr) {
-                GeneralStore::BindInfo bindInfo(std::move(cloudDB), std::move(assetLoader));
-                cloudDBs[activeUser] = std::make_pair(dbMeta, bindInfo);
+                GeneralStore::BindInfo bindInfo((cloudDB != nullptr) ? std::move(cloudDB) : cloudDB,
+                    (assetLoader != nullptr) ? std::move(assetLoader) : assetLoader);
+                cloudDBs[std::to_string(activeUser)] = std::make_pair(dbMeta, bindInfo);
             }
         }
         store->Bind(cloudDBs);
