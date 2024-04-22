@@ -31,6 +31,7 @@
 #include "datashare_template.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
+#include "extension_ability_manager.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -480,6 +481,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     SubscribeTimeChanged();
     return E_OK;
 }

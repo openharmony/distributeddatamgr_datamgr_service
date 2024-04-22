@@ -58,8 +58,9 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
     const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo)
 {
     auto bundleKey = bundleName + std::to_string(userId);
-    auto find = bundleCache_.Get(bundleKey, bundleInfo);
-    if (find) {
+    auto it = bundleCache_.Find(bundleKey);
+    if (it.first) {
+        bundleInfo = it.second;
         return true;
     }
     auto bmsClient = GetBundleMgrProxy();
@@ -73,7 +74,7 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
         ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
         return false;
     }
-    bundleCache_.Set(bundleKey, bundleInfo);
+    bundleCache_.Insert(bundleKey, bundleInfo);
     return true;
 }
 
@@ -98,7 +99,7 @@ BundleMgrProxy::~BundleMgrProxy()
 
 void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId)
 {
-    bundleCache_.Delete(bundleName + std::to_string(userId));
+    bundleCache_.Erase(bundleName + std::to_string(userId));
     return;
 }
 

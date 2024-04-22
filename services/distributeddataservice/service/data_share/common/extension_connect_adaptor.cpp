@@ -20,10 +20,11 @@
 
 #include "app_connect_manager.h"
 #include "callback_impl.h"
+#include "extension_ability_manager.h"
 #include "extension_ability_info.h"
 #include "extension_mgr_proxy.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(std::make_shared<BlockData<bool>>(1))
@@ -37,16 +38,15 @@ bool ExtensionConnectAdaptor::DoConnect(const std::string &uri, const std::strin
     if (callback_ == nullptr) {
         return false;
     }
-    ErrCode ret = ExtensionMgrProxy::GetInstance()->Connect(uri, callback_->AsObject(), nullptr);
+    ErrCode ret = ExtensionAbilityManager::GetInstance().ConnectExtension(uri, bundleName, callback_->AsObject());
     if (ret != ERR_OK) {
         ZLOGE("connect ability failed, ret = %{public}d, uri: %{public}s", ret,
-            DistributedData::Anonymous::Change(uri).c_str());
+            URIUtils::Anonymous(uri).c_str());
         return false;
     }
-    AppConnectManager::SetCallback(bundleName, callback_);
     bool result = data_->GetValue();
     ZLOGI("Do connect, result: %{public}d,  uri: %{public}s", result,
-        DistributedData::Anonymous::Change(uri).c_str());
+        URIUtils::Anonymous(uri).c_str());
     return result;
 }
 

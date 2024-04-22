@@ -47,6 +47,7 @@ ohos_shared_library("data_share_service") {
     "common/bundle_mgr_proxy.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
+    "common/extension_ability_manager.cpp",
     "common/extension_connect_adaptor.cpp",
     "common/extension_mgr_proxy.cpp",
     "common/kv_delegate.cpp",

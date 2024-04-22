@@ -19,10 +19,8 @@
 #include <memory>
 #include <string>
 
-#include "ability_connect_callback_interface.h"
 #include "block_data.h"
 #include "concurrent_map.h"
-#include "executor_pool.h"
 
 namespace OHOS::DataShare {
 class AppConnectManager {
@@ -30,16 +28,9 @@ public:
     static bool Wait(const std::string &bundleName, int maxWaitTime, std::function<bool()> connect,
         std::function<void()> disconnect);
     static void Notify(const std::string &bundleName);
-    static void SetCallback(const std::string &bundleName, sptr<AAFwk::IAbilityConnection> &callback);
 
 private:
-    static void DelayDisconnect(const std::string &bundleName);
     static ConcurrentMap<std::string, BlockData<bool> *> blockCache_;
-    static ConcurrentMap<std::string, sptr<AAFwk::IAbilityConnection>> callbackCache_;
-    static std::shared_ptr<ExecutorPool> executor_;
-    static constexpr int MAX_THREADS = 5;
-    static constexpr int MIN_THREADS = 0;
-    static constexpr int WAIT_DISCONNECT_TIME = 5;
 };
 } // namespace OHOS::DataShare
-#endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H
+#endif // DATASHARESERVICE_APP_CONNECT_MANAGER_H

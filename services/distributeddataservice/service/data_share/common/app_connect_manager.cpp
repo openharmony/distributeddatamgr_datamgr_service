@@ -16,17 +16,11 @@
 
 #include "app_connect_manager.h"
 
-#include <chrono>
-
-#include "datashare_errno.h"
-#include "extension_mgr_proxy.h"
+#include "extension_ability_manager.h"
 #include "log_print.h"
 
 namespace OHOS::DataShare {
 ConcurrentMap<std::string, BlockData<bool> *> AppConnectManager::blockCache_;
-ConcurrentMap<std::string, sptr<AAFwk::IAbilityConnection>> AppConnectManager::callbackCache_;
-std::shared_ptr<ExecutorPool> AppConnectManager::executor_ = std::make_shared<ExecutorPool>(AppConnectManager::MAX_THREADS,
-    AppConnectManager::MIN_THREADS);
 bool AppConnectManager::Wait(const std::string &bundleName,
     int maxWaitTime, std::function<bool()> connect, std::function<void()> disconnect)
 {
@@ -63,33 +57,6 @@ void AppConnectManager::Notify(const std::string &bundleName)
         value->SetValue(true);
         return true;
     });
-    DelayDisconnect(bundleName);
-}
-
-void AppConnectManager::SetCallback(const std::string &bundleName, sptr<AAFwk::IAbilityConnection> &callback)
-{
-    callbackCache_.ComputeIfAbsent(bundleName, [callback](const std::string &) {
-        return std::move(callback);
-    });
-    return ;
-}
-
-void AppConnectManager::DelayDisconnect(const std::string &bundleName)
-{
-    executor_->Schedule(std::chrono::seconds(WAIT_DISCONNECT_TIME), [bundleName]() {
-        ZLOGI("delay disconnect %{public}s", bundleName.c_str());
-        callbackCache_.ComputeIfPresent(bundleName, [bundleName](const std::string &,
-            sptr<AAFwk::IAbilityConnection> &disconnect) {
-            if (disconnect == nullptr) {
-                ZLOGI("Disconnect nullptr %{public}s", bundleName.c_str());
-                return false;
-            }
-            auto ret = ExtensionMgrProxy::GetInstance()->DisConnect(disconnect->AsObject());
-            if (ret != E_OK) {
-                ZLOGE("DisConnect failed bundleName: %{public}s, ret: %{public}d", bundleName.c_str(), ret);
-            }
-            return false;
-        });
-    });
+    ExtensionAbilityManager::GetInstance().DelayDisconnect(bundleName);
 }
 } // namespace OHOS::DataShare
