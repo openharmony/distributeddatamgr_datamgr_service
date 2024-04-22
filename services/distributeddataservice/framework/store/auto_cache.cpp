@@ -55,7 +55,10 @@ AutoCache::~AutoCache()
 AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType]) {
+    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
+        disables_.ContainIf(meta.tokenId, [&meta](const std::set<std::string>& stores) -> bool {
+            return stores.count(meta.storeId) != 0;
+        })) {
         return store;
     }
 
@@ -187,6 +190,23 @@ void AutoCache::GarbageCollect(bool isForce)
         }
         return delegates.empty();
     });
+}
+
+void AutoCache::Enable(uint32_t tokenId, const std::string& storeId)
+{
+    disables_.ComputeIfPresent(tokenId, [&storeId](auto key, std::set<std::string>& stores) {
+        stores.erase(storeId);
+        return !(stores.empty() || storeId.empty());
+    });
+}
+
+void AutoCache::Disable(uint32_t tokenId, const std::string& storeId)
+{
+    disables_.Compute(tokenId, [&storeId](auto key, std::set<std::string>& stores) {
+        stores.insert(storeId);
+        return !stores.empty();
+    });
+    CloseStore(tokenId, storeId);
 }
 
 AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user)

@@ -115,7 +115,7 @@ public:
 
     virtual std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) = 0;
 
-    virtual int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) = 0;
+    virtual int32_t Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm) = 0;
 
     virtual std::shared_ptr<Cursor> PreSharing(GenQuery &query) = 0;
 

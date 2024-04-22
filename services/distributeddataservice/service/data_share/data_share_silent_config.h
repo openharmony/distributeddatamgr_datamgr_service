@@ -25,7 +25,6 @@
 #include "data_share_profile_config.h"
 
 namespace OHOS::DataShare {
-using namespace OHOS::RdbBMSAdapter;
 class DataShareSilentConfig {
 public:
     bool EnableSilentProxy(uint32_t callerTokenId, const std::string &originUriStr, bool enable);

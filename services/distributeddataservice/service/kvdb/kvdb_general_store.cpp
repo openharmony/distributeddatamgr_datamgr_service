@@ -334,6 +334,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, int32_t mode, GenQuery &q
                 dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
             }
         } else {
+            ZLOGE("Err sync mode! sync mode:%{public}d", syncMode);
             dbStatus = DistributedDB::INVALID_ARGS;
         }
     }

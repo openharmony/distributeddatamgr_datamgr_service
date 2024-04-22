@@ -58,6 +58,10 @@ public:
 
     API_EXPORT void SetObserver(uint32_t tokenId, const std::string &storeId, const Watchers &watchers);
 
+    API_EXPORT void Enable(uint32_t tokenId, const std::string &storeId = "");
+
+    API_EXPORT void Disable(uint32_t tokenId, const std::string &storeId);
+
 private:
     AutoCache();
     ~AutoCache();
@@ -88,6 +92,7 @@ private:
     std::shared_ptr<Executor> executor_;
     TaskId taskId_ = Executor::INVALID_TASK_ID;
     ConcurrentMap<uint32_t, std::map<std::string, Delegate>> stores_;
+    ConcurrentMap<uint32_t, std::set<std::string>> disables_;
     Creator creators_[MAX_CREATOR_NUM];
 };
 } // namespace OHOS::DistributedData

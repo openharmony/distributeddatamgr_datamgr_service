@@ -63,7 +63,9 @@ DBStatus RdbCloud::BatchUpdate(
 
 DBStatus RdbCloud::BatchDelete(const std::string &tableName, std::vector<DBVBucket> &extend)
 {
-    auto error = cloudDB_->BatchDelete(tableName, ValueProxy::Convert(std::move(extend)));
+    VBuckets extends = ValueProxy::Convert(std::move(extend));
+    auto error = cloudDB_->BatchDelete(tableName, extends);
+    extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
