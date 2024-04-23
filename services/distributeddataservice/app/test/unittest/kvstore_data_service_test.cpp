@@ -33,7 +33,7 @@ public:
     static constexpr int32_t TEST_USERID = 100;
     static constexpr int32_t TEST_APP_INDEX = 0;
     static constexpr int32_t TEST_TOKENID = 100;
-    std::string INDENTATIONTest = "    ";
+    std::string TEST_INDENTATION = "    ";
 };
 
 void KvStoreDataServiceTest::SetUpTestCase(void)
@@ -79,7 +79,7 @@ HWTEST_F(KvStoreDataServiceTest, GetIndentation001, TestSize.Level1)
 {
     KvStoreDataService kvStoreDataServiceTest;
     std::string indentation = kvStoreDataServiceTest.GetIndentation(1);
-    EXPECT_EQ(indentation, INDENTATIONTest);
+    EXPECT_EQ(indentation, TEST_INDENTATION);
 }
 
 /**
