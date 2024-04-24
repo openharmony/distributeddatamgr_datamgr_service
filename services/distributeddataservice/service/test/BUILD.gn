@@ -237,7 +237,21 @@ ohos_unittest("DeviceMatrixTest") {
 ohos_unittest("KVDBGeneralStoreTest") {
   module_out_path = module_output_path
   sources = [
-    "kvdb_general_store_test.cpp"
+    "kvdb_general_store_test.cpp",
+    "../common/value_proxy.cpp",
+    "../kvdb/kvdb_general_store.cpp",
+    "../rdb/rdb_cloud.cpp",
+    "../rdb/rdb_query.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/rdb",
+    "${relational_store_path}/interfaces/innerapi/clouddata/include",
+    "${relational_store_path}/interfaces/inner_api/rdb/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -250,6 +264,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
 
   deps = [
@@ -258,6 +273,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb:native_rdb",
     "//third_party/googletest:gtest_main",
   ]
 }

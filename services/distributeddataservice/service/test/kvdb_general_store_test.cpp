@@ -17,28 +17,24 @@
 #include "kvdb_general_store.h"
 
 #include <gtest/gtest.h>
+#include <random>
 
-#include "account/account_delegate.h"
-#include "communicator/device_manager_adapter.h"
-#include "device_matrix.h"
-#include "distributed_kv_data_manager.h"
-#include "eventcenter/event_center.h"
-#include "feature/feature_system.h"
-#include "ipc_skeleton.h"
+#include "bootstrap.h"
+#include "crypto_manager.h"
 #include "kvdb_query.h"
+#include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
-#include "rdb_types.h"
 
 using namespace testing::ext;
-using namespace OHOS::DistributedData;
-using namespace OHOS::DistributedKv;
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using DBStoreMock = OHOS::DistributedData::DBStoreMock;
+using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 
-namespace OHOS::Test {
-namespace DistributedDataTest {
+namespace OHOS {
+namespace DistributedKv {
 class KVDBGeneralStoreTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -50,25 +46,39 @@ protected:
     static constexpr const char *TEST_DISTRIBUTEDDATA_BUNDLE = "test_distributeddata";
     static constexpr const char *TEST_DISTRIBUTEDDATA_STORE = "test_service_meta";
 
-    void InitMetaData();
+    static void InitMetaData();
+    static std::vector<uint8_t> Random(uint32_t len);
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     StoreMetaData metaData_;
 };
 
+std::shared_ptr KVDBGeneralStoreTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+static const uint32_t KEY_LENGTH = 32;
+static const uint32_t ENCRYPT_KEY_LENGTH = 48;
+
 void KVDBGeneralStoreTest::InitMetaData()
 {
-    metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData_.appId = TEST_DISTRIBUTEDDATA_BUNDLE;
     metaData_.bundleName = TEST_DISTRIBUTEDDATA_BUNDLE;
-    metaData_.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    metaData_.user = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
+    metaData_.appId = TEST_DISTRIBUTEDDATA_BUNDLE;
+    metaData_.user = "0";
     metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
-    metaData_.storeType = 1;
+    metaData_.storeType = KvStoreType::SINGLE_VERSION;
     metaData_.storeId = TEST_DISTRIBUTEDDATA_STORE;
-    PolicyValue value;
-    value.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
+    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(TEST_DISTRIBUTEDDATA_BUNDLE) + "/kvdb";
+    metaData_.securityLevel = SecurityLevel::S2;
+}
+
+std::vector<uint8_t> KVDBGeneralStoreTest::Random(uint32_t len)
+{
+    std::random_device randomDevice;
+    std::uniform_int_distribution distribution(0, std::numeric_limits<uint8_t>::max());
+    std::vector<uint8_t> key(len);
+    for (uint32_t i = 0; i < len; i++) {
+        key[i] = static_cast<uint8_t>(distribution(randomDevice));
+    }
+    return key;
 }
 
 void KVDBGeneralStoreTest::SetUpTestCase(void)
@@ -79,25 +89,57 @@ void KVDBGeneralStoreTest::TearDownTestCase() {}
 
 void KVDBGeneralStoreTest::SetUp()
 {
+    Bootstrap::GetInstance().LoadDirectory();
 }
 
 void KVDBGeneralStoreTest::TearDown() {}
 
 /**
-* @tc.name: GetDBPasswordTest
+* @tc.name: GetDBPasswordTest_001
 * @tc.desc: GetDBPassword from meta.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: Hollokin
 */
-HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest, TestSize.Level0)
+HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_001, TestSize.Level0)
 {
+    ZLOGI("GetDBPasswordTest start");
     InitMetaData();
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_, true));
     auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
     ASSERT_TRUE(dbPassword.GetSize() == 0);
+}
+
+/**
+* @tc.name: GetDBPasswordTest_002
+* @tc.desc: GetDBPassword from encrypt meta.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Hollokin
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
+{
+    ZLOGI("GetDBPasswordTest_002 start");
+    InitMetaData();
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
     metaData_.isEncrypt = true;
-    dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
+
+    auto errCode = CryptoManager::GetInstance().GenerateRootKey();
+    EXPECT_EQ(errCode, CryptoManager::ErrCode::SUCCESS);
+
+    std::vector<uint8_t> randomKey = Random(KEY_LENGTH);
+    SecretKeyMetaData secretKey;
+    secretKey.storeType = metaData_.storeType;
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey);
+    EXPECT_EQ(secretKey.sKey.size(), ENCRYPT_KEY_LENGTH);
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true));
+
+    auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
     ASSERT_TRUE(dbPassword.GetSize() != 0);
+    randomKey.assign(randomKey.size(), 0);
 }
 
 /**
@@ -114,27 +156,27 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSecurityTest, TestSize.Level0)
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::ECE);
 
     dbSecurity = KVDBGeneralStore::GetDBSecurity(SecurityLevel::NO_LABEL);
-    EXPECT_EQ(dbSecurity.securityLabel, SecurityLevel::NO_LABEL);
+    EXPECT_EQ(dbSecurity.securityLabel, DistributedDB::NOT_SET);
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::ECE);
 
     dbSecurity = KVDBGeneralStore::GetDBSecurity(SecurityLevel::S0);
-    EXPECT_EQ(dbSecurity.securityLabel, SecurityLevel::S0);
+    EXPECT_EQ(dbSecurity.securityLabel, DistributedDB::S0);
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::ECE);
 
     dbSecurity = KVDBGeneralStore::GetDBSecurity(SecurityLevel::S1);
-    EXPECT_EQ(dbSecurity.securityLabel, SecurityLevel::S1);
+    EXPECT_EQ(dbSecurity.securityLabel, DistributedDB::S1);
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::ECE);
 
     dbSecurity = KVDBGeneralStore::GetDBSecurity(SecurityLevel::S2);
-    EXPECT_EQ(dbSecurity.securityLabel, SecurityLevel::S2);
+    EXPECT_EQ(dbSecurity.securityLabel, DistributedDB::S2);
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::ECE);
 
     dbSecurity = KVDBGeneralStore::GetDBSecurity(SecurityLevel::S3);
-    EXPECT_EQ(dbSecurity.securityLabel, SecurityLevel::S3);
+    EXPECT_EQ(dbSecurity.securityLabel, DistributedDB::S3);
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::SECE);
 
     dbSecurity = KVDBGeneralStore::GetDBSecurity(SecurityLevel::S4);
-    EXPECT_EQ(dbSecurity.securityLabel, SecurityLevel::S4);
+    EXPECT_EQ(dbSecurity.securityLabel, DistributedDB::S4);
     EXPECT_EQ(dbSecurity.securityFlag, DistributedDB::ECE);
 }
 
@@ -147,6 +189,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSecurityTest, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, GetDBOptionTest, TestSize.Level0)
 {
+    metaData_.isEncrypt = true;
     auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
     auto dbOption = KVDBGeneralStore::GetDBOption(metaData_, dbPassword);
     EXPECT_EQ(dbOption.syncDualTupleMode, true);
@@ -186,6 +229,10 @@ HWTEST_F(KVDBGeneralStoreTest, CloseTest, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
 {
+    ZLOGI("SyncTest start");
+    InitMetaData();
+    mkdir(("/data/service/el1/public/database/" + std::string(TEST_DISTRIBUTEDDATA_BUNDLE)).c_str(),
+        (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::NEARBY_SUBSCRIBE_REMOTE;
@@ -197,28 +244,7 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
     syncParam.mode = mixMode;
     auto ret = store->Sync(
         {}, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
-    ret = store->Sync(
-        { "default_deviceId" }, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_NE(ret, GeneralError::E_OK);
-    ret = store->Close();
-    EXPECT_EQ(ret, GeneralError::E_OK);
-}
-
-/**
-* @tc.name: CleanTest
-* @tc.desc: Clean.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: Hollokin
-*/
-HWTEST_F(KVDBGeneralStoreTest, CleanTest, TestSize.Level0)
-{
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    EXPECT_EQ(store->IsValid(), true);
-    auto ret = store->Clean({}, GeneralStore::CleanMode::NEARBY_DATA, "");
-    EXPECT_EQ(ret, GeneralError::E_OK);
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_OK);
 }

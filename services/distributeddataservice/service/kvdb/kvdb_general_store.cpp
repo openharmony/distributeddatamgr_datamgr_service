@@ -109,6 +109,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
             delegate_ = tmpStore;
         });
     if (delegate_ == nullptr || status != DBStatus::OK) {
+        ZLOGI("GetKvStore end. delegate is null?[%{public}d], status = %{public}d", delegate_ == nullptr, status);
         manager_.CloseKvStore(delegate_);
         return;
     }
