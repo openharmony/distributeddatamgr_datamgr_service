@@ -496,6 +496,8 @@ int32_t CloudServiceImpl::OnBind(const BindInfo &info)
 int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
     int32_t userId = atoi(user.c_str());
+    ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
+          Anonymous::Change(account).c_str());
     switch (code) {
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED):
             Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
@@ -578,8 +580,11 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
+        ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
     }
+    ZLOGI("[server] id:%{public}s, enableCloud:%{pubic}d, user:%{public}d, app size:%{public}zu",
+          Anonymous::Change(cloudInfo.id).c_str(), cloudInfo.enableCloud, cloudInfo.user, cloudInfo.apps.size());
     CloudInfo oldInfo;
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldInfo, true)) {
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
@@ -603,6 +608,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
+        ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -712,6 +718,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
     }
     std::tie(status, cloudInfo) = GetCloudInfoFromServer(userId);
     if (status != SUCCESS) {
+        ZLOGE("userId:%{public}d, status:%{public}d", userId, status);
         return { status, cloudInfo };
     }
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
