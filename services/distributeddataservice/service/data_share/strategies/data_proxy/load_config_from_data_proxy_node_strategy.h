@@ -16,11 +16,10 @@
 #ifndef DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_PROXY_NODE_STRAGETY_H
 #define DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_PROXY_NODE_STRAGETY_H
 
-#include "data_share_profile_info.h"
+#include "data_share_profile_config.h"
 #include "strategy.h"
 
 namespace OHOS::DataShare {
-using namespace OHOS::RdbBMSAdapter;
 class LoadConfigFromDataProxyNodeStrategy final : public Strategy {
 public:
     LoadConfigFromDataProxyNodeStrategy() = default;
@@ -34,7 +33,10 @@ private:
     };
     bool LoadConfigFromUri(std::shared_ptr<Context> context);
     bool GetContextInfoFromDataProperties(
-        const DataProperties &properties, const std::string &moduleName, std::shared_ptr<Context> context);
+        const ProfileInfo &properties, const std::string &moduleName, std::shared_ptr<Context> context);
+    static constexpr const char *PUBLISHED_DATA_TYPE = "publishedData";
+    static constexpr const char *MODULE_SCOPE = "module";
+    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_LOAD_CONFIG_FROM_DATA_PROXY_NODE_STRAGETY_H

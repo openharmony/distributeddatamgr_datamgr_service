@@ -24,6 +24,7 @@ public:
     class EventInfo {
     public:
         API_EXPORT EventInfo(int32_t mode, int32_t wait, bool retry, std::shared_ptr<GenQuery> query, GenAsync async);
+        API_EXPORT EventInfo(const SyncParam &syncParam, bool retry, std::shared_ptr<GenQuery> query, GenAsync async);
         API_EXPORT EventInfo(EventInfo &&info) noexcept;
         EventInfo(const EventInfo &info) = default;
         API_EXPORT EventInfo &operator=(EventInfo &&info) noexcept;
@@ -35,6 +36,7 @@ public:
         int32_t wait_ = 0;
         std::shared_ptr<GenQuery> query_;
         GenAsync asyncDetail_;
+        bool isCompensation_ = false;
     };
     SyncEvent(StoreInfo storeInfo, EventInfo info);
     ~SyncEvent() override = default;
@@ -43,6 +45,7 @@ public:
     bool AutoRetry() const;
     std::shared_ptr<GenQuery> GetQuery() const;
     GenAsync GetAsyncDetail() const;
+    bool IsCompensation() const;
 
 protected:
     SyncEvent(int32_t evtId, StoreInfo storeInfo, EventInfo info);

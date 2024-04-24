@@ -40,6 +40,8 @@ ohos_unittest("AccountDelegateTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "os_account:libaccountkits",
+    "os_account:os_account_innerkits",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

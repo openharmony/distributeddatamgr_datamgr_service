@@ -38,4 +38,4 @@ public:
     };
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_STRAGETY_H

@@ -333,8 +333,9 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         auto finish = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
         if (duration >= TIME_THRESHOLD) {
+            int64_t milliseconds = duration.count();
             ZLOGW("over time, code:%{public}u callingPid:%{public}d, cost:%{public}" PRIi64 "ms",
-                code, callingPid, duration.count());
+                code, callingPid, milliseconds);
         }
     }
     return res;
@@ -377,6 +378,40 @@ int32_t DataShareServiceStub::OnRemoteIsSilentProxyEnable(MessageParcel &data, M
     bool enable = IsSilentProxyEnable(uri);
     if (!ITypesUtil::Marshal(reply, enable)) {
         ZLOGE("Marshal enable:%{public}d failed.", enable);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnRemoteRegisterObserver(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    sptr<IRemoteObject> remoteObj;
+    if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
+        ZLOGE("Unmarshal failed,uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = RegisterObserver(uri, remoteObj);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal failed,status:0x%{public}x,uri:%{public}s", status,
+            DistributedData::Anonymous::Change(uri).c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnRemoteUnregisterObserver(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    sptr<IRemoteObject> remoteObj;
+    if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
+        ZLOGE("Unmarshal failed,uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = UnregisterObserver(uri, remoteObj);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal failed,status:0x%{public}x,uri:%{public}s", status,
+            DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return E_OK;

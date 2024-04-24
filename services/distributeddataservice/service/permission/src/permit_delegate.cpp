@@ -15,6 +15,7 @@
 
 #define LOG_TAG "PermitDelegate"
 #include "permit_delegate.h"
+#include "accesstoken_kit.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -157,5 +158,18 @@ Status PermitDelegate::VerifyStrategy(const StoreMetaData &data, const std::stri
 void PermitDelegate::DelCache(const std::string &key)
 {
     metaDataBucket_.Delete(key);
+}
+
+bool PermitDelegate::VerifyPermission(const std::string &permission,
+    uint32_t callerTokenId)
+{
+    if (!permission.empty()) {
+        int status =
+            Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerTokenId, permission);
+        if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+            return false;
+        }
+    }
+    return true;
 }
 } // namespace OHOS::DistributedData

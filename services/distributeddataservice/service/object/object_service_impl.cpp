@@ -134,7 +134,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.account = accountId;
     saveMeta.tokenId = token;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-    saveMeta.area = 1;
+    saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);

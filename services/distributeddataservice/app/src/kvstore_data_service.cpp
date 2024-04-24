@@ -569,11 +569,8 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
     KvStoreDataService::KvStoreClientDeathObserverImpl &&impl)
-    : dataService_(impl.dataService_)
+    : uid_(impl.uid_), pid_(impl.pid_), token_(impl.token_), dataService_(impl.dataService_)
 {
-    uid_ = impl.uid_;
-    pid_ = impl.pid_;
-    token_ = impl.token_;
     appId_.appId = std::move(impl.appId_.appId);
     impl.Reset();
 }

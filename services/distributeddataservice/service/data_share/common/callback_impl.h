@@ -42,4 +42,4 @@ private:
     std::shared_ptr<BlockData<bool>> data_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_CALLBACK_IMPL_H

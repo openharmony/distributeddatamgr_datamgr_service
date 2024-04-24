@@ -41,11 +41,9 @@ public:
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
     int32_t NotifyDataChange(const std::string& eventId, const std::string& extraData, int32_t userId) override;
-    int32_t OnInitialize() override;
-    int32_t OnBind(const BindInfo &info) override;
-    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
-    int32_t OnReady(const std::string &device) override;
-    int32_t Offline(const std::string &device) override;
+    std::pair<int32_t, std::map<std::string, StatisticInfos>> QueryStatistics(const std::string &id,
+        const std::string &bundleName, const std::string &storeId) override;
+    int32_t SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value>& values) override;
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string& storeId,
         const DistributedRdb::PredicatesMemo& predicates, const std::vector<std::string>& columns,
@@ -61,6 +59,14 @@ public:
         std::tuple<int32_t, std::string, std::string> &result) override;
     int32_t ChangeConfirmation(
         const std::string &sharingRes, int32_t confirmation, std::pair<int32_t, std::string> &result) override;
+
+    int32_t SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value>& values) override;
+
+    int32_t OnInitialize() override;
+    int32_t OnBind(const BindInfo &info) override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    int32_t OnReady(const std::string &device) override;
+    int32_t Offline(const std::string &device) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -89,6 +95,7 @@ private:
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
+    using AutoCache = DistributedData::AutoCache;
 
     struct HapInfo {
         int32_t user;
@@ -120,6 +127,11 @@ private:
 
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
+    std::map<std::string, StatisticInfos> ExecuteStatistics(const std::string &storeId, const CloudInfo &cloudInfo,
+        const SchemaMeta &schemaMeta);
+    StatisticInfos QueryStatistics(const StoreMetaData &storeMetaData, const DistributedData::Database &database);
+    std::pair<bool, StatisticInfo> QueryTableStatistic(const std::string &tableName, AutoCache::Store store);
+    std::string BuildStatisticSql(const std::string &tableName);
 
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);
@@ -137,6 +149,11 @@ private:
     std::pair<std::string, std::vector<std::string>> GetDbInfoFromExtraData(
         const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta);
     std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo& hapInfo);
+
+    using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
+    static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
+    static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
+
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
     std::mutex mutex_;

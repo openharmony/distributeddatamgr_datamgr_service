@@ -23,6 +23,7 @@
 #include "utils/ref_count.h"
 #include "concurrent_map.h"
 #include "cloud/cloud_info.h"
+#include "cloud/sync_strategy.h"
 namespace OHOS::CloudData {
 class SyncManager {
 public:
@@ -47,6 +48,7 @@ public:
         void SetAsyncDetail(GenAsync asyncDetail);
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
+        void SetCompensation(bool isCompensation);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string& storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
@@ -62,6 +64,7 @@ public:
         std::map<std::string, std::vector<std::string>> tables_;
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
+        bool isCompensation_ = false;
     };
     SyncManager();
     ~SyncManager();
@@ -77,20 +80,23 @@ private:
     using Retryer = std::function<bool(Duration interval, int32_t status)>;
     using CloudInfo = DistributedData::CloudInfo;
     using StoreInfo = DistributedData::StoreInfo;
+    using SyncStrategy = DistributedData::SyncStrategy;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
+    static constexpr ExecutorPool::Duration BUSY_INTERVAL = std::chrono::seconds(180); // second
     static constexpr int32_t RETRY_TIMES = 6; // normal retry
     static constexpr int32_t CLIENT_RETRY_TIMES = 3; // normal retry
     static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000; // high 32 bit
     static constexpr int32_t MV_BIT = 32;
 
+    static uint64_t GenerateId(int32_t user);
+    static ExecutorPool::Duration GetInterval(int32_t code);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
     std::function<void(const Event &)> GetClientChangeHandler();
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo);
-    static uint64_t GenerateId(int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
     bool IsValid(SyncInfo &info, CloudInfo &cloud);
@@ -99,6 +105,7 @@ private:
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
+    std::shared_ptr<SyncStrategy> syncStrategy_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

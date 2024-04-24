@@ -31,4 +31,4 @@ private:
     SeqStrategy strategies_;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_SUBSCRIBE_STRAGETY_H

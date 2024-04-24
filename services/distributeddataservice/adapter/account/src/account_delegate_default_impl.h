@@ -25,6 +25,7 @@ public:
     std::string GetCurrentAccountId() const override;
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
+    bool QueryForegroundUsers(std::vector<int> &users) override;
     bool IsVerified(int userId) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;

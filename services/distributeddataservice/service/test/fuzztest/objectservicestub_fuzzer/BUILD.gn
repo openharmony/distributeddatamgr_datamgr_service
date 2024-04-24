@@ -56,6 +56,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
   sources = [
     "${data_service_path}/service/backup/src/backup_manager.cpp",
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/config/src/config_factory.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",

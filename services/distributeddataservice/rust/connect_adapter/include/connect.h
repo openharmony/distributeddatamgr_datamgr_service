@@ -21,9 +21,44 @@
 #include "ability_connect_callback_stub.h"
 #include "extension_manager_client.h"
 #include "extension_manager_proxy.h"
+#include "hilog/log_cpp.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "iremote_broker.h"
+
+static const OHOS::HiviewDFX::HiLogLabel lable = { LOG_CORE, 0xD001610, "Connect"};
+
+#define ZLOGD(fmt, ...)                                                       \
+    do {                                                                      \
+        if (HiLogIsLoggable(lable.domain, lable.tag, LOG_DEBUG)) {            \
+            ((void)HILOG_IMPL(lable.type, LOG_DEBUG, lable.domain, lable.tag, \
+                LOG_TAG "::%{public}s: " fmt, __FUNCTION__, ##__VA_ARGS__));  \
+        }                                                                     \
+    } while (0)
+
+#define ZLOGI(fmt, ...)                                                       \
+    do {                                                                      \
+        if (HiLogIsLoggable(lable.domain, lable.tag, LOG_INFO)) {             \
+            ((void)HILOG_IMPL(lable.type, LOG_INFO, lable.domain, lable.tag,  \
+                LOG_TAG "::%{public}s: " fmt, __FUNCTION__, ##__VA_ARGS__));  \
+        }                                                                     \
+    } while (0)
+
+#define ZLOGW(fmt, ...)                                                       \
+    do {                                                                      \
+        if (HiLogIsLoggable(lable.domain, lable.tag, LOG_WARN)) {             \
+            ((void)HILOG_IMPL(lable.type, LOG_WARN, lable.domain, lable.tag,  \
+                LOG_TAG "::%{public}s: " fmt, __FUNCTION__, ##__VA_ARGS__));  \
+        }                                                                     \
+    } while (0)
+
+#define ZLOGE(fmt, ...)                                                       \
+    do {                                                                      \
+        if (HiLogIsLoggable(lable.domain, lable.tag, LOG_ERROR)) {            \
+            ((void)HILOG_IMPL(lable.type, LOG_ERROR, lable.domain, lable.tag, \
+                LOG_TAG "::%{public}s: " fmt, __FUNCTION__, ##__VA_ARGS__));  \
+        }                                                                     \
+    } while (0)
 
 class Connect : public OHOS::AAFwk::AbilityConnectionStub {
 public:

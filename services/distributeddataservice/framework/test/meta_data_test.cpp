@@ -28,6 +28,8 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
+#include "metadata/capability_meta_data.h"
+#include "metadata/user_meta_data.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -37,12 +39,14 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 namespace OHOS::Test {
 class ServiceMetaDataTest : public testing::Test {
 public:
-    static constexpr size_t NUM_MIN = 5;
-    static constexpr size_t NUM_MAX = 12;
+    static constexpr size_t NUM_MIN = 1;
+    static constexpr size_t NUM_MAX = 2;
+    static constexpr uint32_t USER_ID1 = 101;
+    static constexpr uint32_t USER_ID2 = 100;
     static constexpr uint32_t TEST_CURRENT_VERSION = 0x03000002;
     static void SetUpTestCase()
     {
-        auto executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+        std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
         Bootstrap::GetInstance().LoadCheckers();
@@ -634,5 +638,73 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
     EXPECT_EQ(secretkey, metaDataLoad.secretKeyMetaData.GetKey(fields));
     result = MetaDataManager::GetInstance().DelMeta(key);
     EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name: CapMetaData
+* @tc.desc: test CapMetaData function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceMetaDataTest, CapMetaData, TestSize.Level1)
+{
+    CapMetaData capMetaData;
+    capMetaData.version = CapMetaData::CURRENT_VERSION;
+    Serializable::json node1;
+    capMetaData.Marshal(node1);
+    EXPECT_EQ(node1["version"], CapMetaData::CURRENT_VERSION);
+
+    CapMetaData capMeta;
+    capMeta.Unmarshal(node1);
+    EXPECT_EQ(capMeta.version, CapMetaData::CURRENT_VERSION);
+
+    CapMetaRow capMetaRow;
+    auto key = capMetaRow.GetKeyFor("PEER_DEVICE_ID");
+    std::string str = "CapabilityMeta###PEER_DEVICE_ID";
+    std::vector<uint8_t> testKey = { str.begin(), str.end() };
+    EXPECT_EQ(key, testKey);
+}
+
+/**
+* @tc.name: UserMetaData
+* @tc.desc: test UserMetaData function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
+{
+    UserMetaData userMetaData;
+    userMetaData.deviceId = "PEER_DEVICE_ID";
+
+    UserStatus userStatus;
+    userStatus.isActive = true;
+    userStatus.id = USER_ID1;
+    userMetaData.users = { userStatus };
+    userStatus.id = USER_ID2;
+    userMetaData.users.emplace_back(userStatus);
+
+    Serializable::json node1;
+    userMetaData.Marshal(node1);
+    EXPECT_EQ(node1["deviceId"], "PEER_DEVICE_ID");
+
+    UserMetaData userMeta;
+    userMeta.Unmarshal(node1);
+    EXPECT_EQ(userMeta.deviceId, "PEER_DEVICE_ID");
+
+    Serializable::json node2;
+    userStatus.Marshal(node2);
+    EXPECT_EQ(node2["isActive"], true);
+    EXPECT_EQ(node2["id"], USER_ID2);
+
+    UserStatus userUnmarshal;
+    userUnmarshal.Unmarshal(node2);
+    EXPECT_EQ(userUnmarshal.isActive, true);
+    EXPECT_EQ(userUnmarshal.id, USER_ID2);
+
+    UserMetaRow userMetaRow;
+    auto key = userMetaRow.GetKeyFor(userMetaData.deviceId);
+    EXPECT_EQ(key, "UserMeta###PEER_DEVICE_ID");
 }
 } // namespace OHOS::Test

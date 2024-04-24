@@ -57,4 +57,4 @@ public:
     std::string type = "rdb";
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_CONTEXT_H

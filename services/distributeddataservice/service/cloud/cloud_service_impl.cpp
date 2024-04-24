@@ -34,10 +34,12 @@
 #include "metadata/meta_data_manager.h"
 #include "rdb_cloud_data_translate.h"
 #include "rdb_types.h"
+#include "relational_store_manager.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "sync_manager.h"
+#include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
 #include "values_bucket.h"
 namespace OHOS::CloudData {
@@ -50,6 +52,9 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
+const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
+    &CloudServiceImpl::SaveNetworkStrategy
+};
 
 CloudServiceImpl::Factory::Factory() noexcept
 {
@@ -293,7 +298,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
     if (userId != INVALID_USER_ID) {
         users.emplace_back(userId);
     } else {
-        Account::GetInstance()->QueryUsers(users);
+        Account::GetInstance()->QueryForegroundUsers(users);
     }
     for (auto user : users) {
         if (user == DEFAULT_USER) {
@@ -319,6 +324,138 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, storeId, tables));
     }
     return SUCCESS;
+}
+
+std::map<std::string, StatisticInfos> CloudServiceImpl::ExecuteStatistics(const std::string &storeId,
+    const CloudInfo &cloudInfo, const SchemaMeta &schemaMeta)
+{
+    std::map<std::string, StatisticInfos> result;
+    for (auto& database : schemaMeta.databases) {
+        if (storeId.empty() || database.alias == storeId) {
+            StoreMetaData meta;
+            meta.bundleName = schemaMeta.bundleName;
+            meta.storeId = database.name;
+            meta.user = std::to_string(cloudInfo.user);
+            meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+            auto it = cloudInfo.apps.find(schemaMeta.bundleName);
+            if (it == cloudInfo.apps.end()) {
+                ZLOGE("bundleName:%{public}s is not exist", schemaMeta.bundleName.c_str());
+                break;
+            }
+            meta.instanceId = it->second.instanceId;
+            MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+            result.insert_or_assign(database.alias, QueryStatistics(meta, database));
+        }
+    }
+    return result;
+}
+
+StatisticInfos CloudServiceImpl::QueryStatistics(const StoreMetaData &storeMetaData,
+    const DistributedData::Database &database)
+{
+    std::vector<StatisticInfo> infos;
+    auto store = AutoCache::GetInstance().GetStore(storeMetaData, {});
+    if (store == nullptr) {
+        ZLOGE("store failed, store is nullptr,bundleName:%{public}s",
+            Anonymous::Change(storeMetaData.bundleName).c_str());
+        return infos;
+    }
+    infos.reserve(database.tables.size());
+    for (auto& table : database.tables) {
+        auto [success, info] = QueryTableStatistic(table.name, store);
+        if (success) {
+            info.table = table.alias;
+            infos.push_back(std::move(info));
+        }
+    }
+    return infos;
+}
+
+std::pair<bool, StatisticInfo> CloudServiceImpl::QueryTableStatistic(const std::string &tableName,
+    AutoCache::Store store)
+{
+    StatisticInfo info;
+    auto sql = BuildStatisticSql(tableName);
+    auto cursor = store->Query(tableName, sql, {});
+    if (cursor == nullptr || cursor->GetCount() != 1 || cursor->MoveToFirst() != E_OK) {
+        ZLOGE("query failed, cursor is nullptr or move to first failed,tableName:%{public}s",
+            Anonymous::Change(tableName).c_str());
+        return { false, info };
+    }
+    DistributedData::VBucket entry;
+    if (cursor->GetEntry(entry) != E_OK) {
+        ZLOGE("get entry failed,tableName:%{public}s", Anonymous::Change(tableName).c_str());
+        return { false, info };
+    }
+    auto it = entry.find("inserted");
+    if (it != entry.end() && it->second.index() == TYPE_INDEX<int64_t>) {
+        info.inserted = std::get<int64_t>(it->second);
+    }
+    it = entry.find("updated");
+    if (it != entry.end() && it->second.index() == TYPE_INDEX<int64_t>) {
+        info.updated = std::get<int64_t>(it->second);
+    }
+    it = entry.find("normal");
+    if (it != entry.end() && it->second.index() == TYPE_INDEX<int64_t>) {
+        info.normal = std::get<int64_t>(it->second);
+    }
+    return { true, info };
+}
+
+std::string CloudServiceImpl::BuildStatisticSql(const std::string &tableName)
+{
+    std::string logTable = DistributedDB::RelationalStoreManager::GetDistributedLogTableName(tableName);
+    std::string sql = "select ";
+    sql.append("count(case when cloud_gid = '' and flag&(0x1|0x8|0x20) = 0x20 then 1 end) as inserted,");
+    sql.append("count(case when cloud_gid <> '' and flag&0x20 != 0  then 1 end) as updated,");
+    sql.append("count(case when cloud_gid <> '' and flag&(0x1|0x8|0x20) = 0 then 1 end) as normal");
+    sql.append(" from ").append(logTable);
+
+    return sql;
+}
+
+std::pair<int32_t, std::map<std::string, StatisticInfos>> CloudServiceImpl::QueryStatistics(const std::string &id,
+    const std::string &bundleName, const std::string &storeId)
+{
+    std::map<std::string, StatisticInfos> result;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+    if (status != SUCCESS) {
+        ZLOGE("get cloud meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
+        return { ERROR, result };
+    }
+    if (id != cloudInfo.id || bundleName.empty() || cloudInfo.apps.find(bundleName) == cloudInfo.apps.end()) {
+        ZLOGE("[server] id:%{public}s, [meta] id:%{public}s, bundleName:%{public}s",
+            Anonymous::Change(cloudInfo.id).c_str(), Anonymous::Change(id).c_str(), bundleName.c_str());
+        return { ERROR, result };
+    }
+    SchemaMeta schemaMeta;
+    std::string schemaKey = cloudInfo.GetSchemaKey(bundleName);
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        ZLOGE("get load meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
+        return { ERROR, result };
+    }
+    result = ExecuteStatistics(storeId, cloudInfo, schemaMeta);
+    return { SUCCESS, result };
+}
+
+int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    HapInfo hapInfo;
+    hapInfo.user = Account::GetInstance()->GetUserByToken(tokenId);
+    if (hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid user:%{public}d, strategy:%{public}d, size:%{public}zu", hapInfo.user, strategy,
+            values.size());
+        return ERROR;
+    }
+    hapInfo.bundleName = SyncStrategy::GLOBAL_BUNDLE;
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
 }
 
 int32_t CloudServiceImpl::OnInitialize()
@@ -381,12 +518,13 @@ int32_t CloudServiceImpl::OnReady(const std::string& device)
         return SUCCESS;
     }
     std::vector<int32_t> users;
-    Account::GetInstance()->QueryUsers(users);
+    Account::GetInstance()->QueryForegroundUsers(users);
     if (users.empty()) {
         return SUCCESS;
     }
-    auto it = users.begin();
-    Execute(GenTask(0, *it, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+    for (auto user : users) {
+        Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+    }
     return SUCCESS;
 }
 
@@ -583,8 +721,22 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
 
 int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
+    Subscription sub;
+    if (MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(user), sub, true)) {
+        sub.expiresTime.erase(bundleName);
+        MetaDataManager::GetInstance().SaveMeta(Subscription::GetKey(user), sub, true);
+    }
+
+    CloudInfo cloudInfo;
+    cloudInfo.user = user;
+    if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
+        cloudInfo.apps.erase(bundleName);
+        MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    }
+
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
+    MetaDataManager::GetInstance().DelMeta(NetworkSyncStrategy::GetKey(user, bundleName), true);
     return E_OK;
 }
 
@@ -623,12 +775,8 @@ void CloudServiceImpl::CloudShare(const Event &event)
 std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::PreShare(
     const StoreInfo& storeInfo, GenQuery& query)
 {
-    StoreMetaData meta;
-    meta.bundleName = storeInfo.bundleName;
-    meta.storeId = storeInfo.storeName;
-    meta.user = std::to_string(storeInfo.user);
+    StoreMetaData meta(storeInfo);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.instanceId = storeInfo.instanceId;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
         ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
@@ -1043,4 +1191,37 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
     expireTime_ = expire > now ? expire : now;
 }
 
+int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
+{
+    if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
+        ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
+        return INVALID_ARGUMENT;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto hapInfo = GetHapInfo(tokenId);
+    if (hapInfo.bundleName.empty() || hapInfo.user == INVALID_USER_ID || hapInfo.user == 0) {
+        ZLOGE("invalid, user:%{public}d, bundleName:%{public}s, strategy:%{public}d, values size:%{public}zu",
+            hapInfo.user, hapInfo.bundleName.c_str(), strategy, values.size());
+        return ERROR;
+    }
+    return STRATEGY_SAVERS[strategy](values, hapInfo);
+}
+
+int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo)
+{
+    NetworkSyncStrategy::StrategyInfo info;
+    info.strategy = 0;
+    info.user = hapInfo.user;
+    info.bundleName = hapInfo.bundleName;
+    if (values.empty()) {
+        return MetaDataManager::GetInstance().DelMeta(info.GetKey(), true) ? SUCCESS : ERROR;
+    }
+    for (auto &value : values) {
+        auto strategy = std::get_if<int64_t>(&value);
+        if (strategy != nullptr) {
+            info.strategy |= static_cast<uint32_t>(*strategy);
+        }
+    }
+    return MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true) ? SUCCESS : ERROR;
+}
 } // namespace OHOS::CloudData

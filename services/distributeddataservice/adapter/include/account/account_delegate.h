@@ -63,6 +63,7 @@ public:
     API_EXPORT virtual void SubscribeAccountEvent() = 0;
     API_EXPORT virtual void UnsubscribeAccountEvent() = 0;
     API_EXPORT virtual bool QueryUsers(std::vector<int> &users) = 0;
+    API_EXPORT virtual bool QueryForegroundUsers(std::vector<int> &users) = 0;
     API_EXPORT virtual bool IsVerified(int userId) = 0;
     API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
     API_EXPORT virtual void BindExecutor(std::shared_ptr<ExecutorPool> executors) = 0;

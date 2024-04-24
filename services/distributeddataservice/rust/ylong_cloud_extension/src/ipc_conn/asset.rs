@@ -13,18 +13,19 @@
  * limitations under the License.
  */
 
+use ipc::parcel::{Deserialize, MsgParcel, Serialize};
+use ipc::remote::RemoteObj;
+use ipc::IpcResult;
+
 use crate::ipc_conn::error::Error;
 use crate::ipc_conn::ffi::ConnectService;
 use crate::ipc_conn::function::AssetLoaderFunc::{Download, Upload};
 use crate::ipc_conn::function::CloudServiceFunc::ConnectAssetLoader;
 use crate::ipc_conn::{vec_raw_read, vec_raw_write, AssetStatus};
-use ipc_rust::{
-    BorrowedMsgParcel, Deserialize, IRemoteObj, MsgParcel, RemoteObj, Serialize, String16,
-};
-
 pub(crate) type AssetLoaderResult<T> = Result<T, Error>;
 
-/// CloudAsset struct storing relating information to upload and download assets.
+/// CloudAsset struct storing relating information to upload and download
+/// assets.
 #[derive(Default, PartialEq, Clone, Debug)]
 pub struct CloudAsset {
     pub(crate) asset_id: String,
@@ -121,50 +122,41 @@ impl CloudAsset {
 }
 
 impl Serialize for CloudAsset {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
-        let asset_name = String16::new(&self.asset_name);
-        let uri = String16::new(&self.uri);
-        let sub_path = String16::new(&self.sub_path);
-        let create_time = String16::new(&self.create_time);
-        let modify_time = String16::new(&self.modify_time);
-        let size = String16::new(&self.size);
-        let asset_id = String16::new(&self.asset_id);
-        let hash = String16::new(&self.hash);
-
-        parcel.write(&asset_name)?;
-        parcel.write(&uri)?;
-        parcel.write(&sub_path)?;
-        parcel.write(&create_time)?;
-        parcel.write(&modify_time)?;
-        parcel.write(&size)?;
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
+        parcel.write_string16(&self.asset_name)?;
+        parcel.write_string16(&self.uri)?;
+        parcel.write_string16(&self.sub_path)?;
+        parcel.write_string16(&self.create_time)?;
+        parcel.write_string16(&self.modify_time)?;
+        parcel.write_string16(&self.size)?;
         parcel.write(&self.status)?;
-        parcel.write(&asset_id)?;
-        parcel.write(&hash)?;
+        parcel.write_string16(&self.asset_id)?;
+        parcel.write_string16(&self.hash)?;
         Ok(())
     }
 }
 
 impl Deserialize for CloudAsset {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
-        let asset_name = parcel.read::<String16>()?;
-        let uri = parcel.read::<String16>()?;
-        let sub_path = parcel.read::<String16>()?;
-        let create_time = parcel.read::<String16>()?;
-        let modify_time = parcel.read::<String16>()?;
-        let size = parcel.read::<String16>()?;
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
+        let asset_name = parcel.read_string16()?;
+        let uri = parcel.read_string16()?;
+        let sub_path = parcel.read_string16()?;
+        let create_time = parcel.read_string16()?;
+        let modify_time = parcel.read_string16()?;
+        let size = parcel.read_string16()?;
         let operation_type = parcel.read::<AssetStatus>()?;
-        let asset_id = parcel.read::<String16>()?;
-        let hash = parcel.read::<String16>()?;
+        let asset_id = parcel.read_string16()?;
+        let hash = parcel.read_string16()?;
 
         let result = CloudAsset {
-            asset_id: asset_id.get_string(),
-            asset_name: asset_name.get_string(),
-            hash: hash.get_string(),
-            uri: uri.get_string(),
-            sub_path: sub_path.get_string(),
-            create_time: create_time.get_string(),
-            modify_time: modify_time.get_string(),
-            size: size.get_string(),
+            asset_id,
+            asset_name,
+            hash,
+            uri,
+            sub_path,
+            create_time,
+            modify_time,
+            size,
             status: operation_type,
         };
         Ok(result)
@@ -176,13 +168,13 @@ impl Deserialize for CloudAsset {
 pub struct CloudAssets(pub Vec<CloudAsset>);
 
 impl Serialize for CloudAssets {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<()> {
+    fn serialize(&self, parcel: &mut MsgParcel) -> IpcResult<()> {
         vec_raw_write(parcel, &self.0)
     }
 }
 
 impl Deserialize for CloudAssets {
-    fn deserialize(parcel: &BorrowedMsgParcel<'_>) -> ipc_rust::IpcResult<Self> {
+    fn deserialize(parcel: &mut MsgParcel) -> IpcResult<Self> {
         let result = CloudAssets(vec_raw_read::<CloudAsset>(parcel)?);
         Ok(result)
     }
@@ -194,16 +186,16 @@ pub(crate) struct AssetLoader {
 
 impl AssetLoader {
     pub(crate) fn new(user_id: i32) -> AssetLoaderResult<Self> {
-        let msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
+        let mut msg_parcel = MsgParcel::new();
         let function_number = ConnectAssetLoader as u32;
-        let remote_obj = unsafe { RemoteObj::from_raw_ciremoteobj(ConnectService(user_id)) }
+        let remote_obj = unsafe { RemoteObj::from_ciremote(ConnectService(user_id)) }
             .ok_or(Error::GetProxyObjectFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let result = receive
-            .read::<RemoteObj>()
+            .read_remote()
             .map_err(|_| Error::ReadMsgParcelFailed)?;
         Ok(Self {
             remote_obj: Some(result),
@@ -218,18 +210,15 @@ impl AssetLoader {
         prefix: &str,
         assets: &CloudAssets,
     ) -> AssetLoaderResult<Vec<Result<CloudAsset, Error>>> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let table = String16::new(table);
-        let gid = String16::new(gid);
-        let prefix = String16::new(prefix);
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
-            .write(&table)
+            .write_string16(table)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
-            .write(&gid)
+            .write_string16(gid)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
-            .write(&prefix)
+            .write_string16(prefix)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
             .write(assets)
@@ -240,8 +229,8 @@ impl AssetLoader {
             .remote_obj
             .as_ref()
             .ok_or(Error::GetProxyObjectFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let mut results = vec![];
@@ -273,18 +262,15 @@ impl AssetLoader {
         prefix: &str,
         assets: &CloudAssets,
     ) -> AssetLoaderResult<Vec<Result<CloudAsset, Error>>> {
-        let mut msg_parcel = MsgParcel::new().ok_or(Error::CreateMsgParcelFailed)?;
-        let table = String16::new(table);
-        let gid = String16::new(gid);
-        let prefix = String16::new(prefix);
+        let mut msg_parcel = MsgParcel::new();
         msg_parcel
-            .write(&table)
+            .write_string16(table)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
-            .write(&gid)
+            .write_string16(gid)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
-            .write(&prefix)
+            .write_string16(prefix)
             .map_err(|_| Error::WriteMsgParcelFailed)?;
         msg_parcel
             .write(assets)
@@ -295,8 +281,8 @@ impl AssetLoader {
             .remote_obj
             .as_ref()
             .ok_or(Error::GetProxyObjectFailed)?;
-        let receive = remote_obj
-            .send_request(function_number, &msg_parcel, false)
+        let mut receive = remote_obj
+            .send_request(function_number, &mut msg_parcel)
             .map_err(|_| Error::SendRequestFailed)?;
 
         let mut results = vec![];

@@ -24,6 +24,7 @@ enum GeneralError : int32_t {
     E_LOCKED_BY_OTHERS,
     E_RECODE_LIMIT_EXCEEDED,
     E_NO_SPACE_FOR_ASSET,
+    E_BLOCKED_BY_NETWORK_STRATEGY,
     E_BUSY,
     E_INVALID_ARGS,
     E_NOT_INIT,
@@ -36,6 +37,7 @@ enum GeneralError : int32_t {
     E_USER_UNLOCK,
     E_VERSION_CONFLICT,
     E_RECORD_EXIST_CONFLICT,
+    E_WITH_INVENTORY_DATA,
     E_BUTT,
 };
 }

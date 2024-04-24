@@ -42,7 +42,14 @@ Status LifeCycleManager::OnGot(const UnifiedKey &key)
         return E_INVALID_PARAMETERS;
     }
     auto policy = findPolicy->second;
-    return policy->OnGot(key);
+    ExecutorPool::TaskId taskId = executors_->Execute([=] {
+        policy->OnGot(key);
+    });
+    if (taskId == ExecutorPool::INVALID_TASK_ID) {
+        ZLOGE("OnGot task execute failed.");
+        return E_ERROR;
+    }
+    return E_OK;
 }
 
 Status LifeCycleManager::OnStart()
