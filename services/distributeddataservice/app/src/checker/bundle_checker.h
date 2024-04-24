@@ -28,10 +28,19 @@ public:
     std::string GetAppId(const CheckerManager::StoreInfo &info) override;
     bool IsValid(const CheckerManager::StoreInfo &info) override;
     bool IsDistrust(const CheckerManager::StoreInfo &info) override;
+    bool SetDynamicStores(const std::vector<CheckerManager::StoreInfo> &storeInfos) override;
+    bool SetStaticStores(const std::vector<CheckerManager::StoreInfo> &storeInfos) override;
+    std::vector<CheckerManager::StoreInfo> GetDynamicStores() override;
+    std::vector<CheckerManager::StoreInfo> GetStaticStores() override;
+    bool IsDynamicStores(const CheckerManager::StoreInfo &info) override;
+    bool IsStaticStores(const CheckerManager::StoreInfo &info) override;
+
 private:
     static BundleChecker instance_;
     std::map<std::string, std::string> trusts_;
     std::map<std::string, std::string> distrusts_;
+    std::vector<CheckerManager::StoreInfo> dynamicStores_;
+    std::vector<CheckerManager::StoreInfo> staticStores_;
 };
 } // namespace DistributedData
 } // namespace OHOS

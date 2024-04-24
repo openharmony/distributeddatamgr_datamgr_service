@@ -108,5 +108,41 @@ bool BundleChecker::IsDistrust(const CheckerManager::StoreInfo &info)
     }
     return false;
 }
+std::vector<CheckerManager::StoreInfo> BundleChecker::GetDynamicStores()
+{
+    return dynamicStores_;
+}
+std::vector<CheckerManager::StoreInfo> BundleChecker::GetStaticStores()
+{
+    return staticStores_;
+}
+bool BundleChecker::IsDynamicStores(const CheckerManager::StoreInfo &info)
+{
+    for (const auto &store : dynamicStores_) {
+        if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
+            return true;
+        }
+    }
+    return false;
+}
+bool BundleChecker::IsStaticStores(const CheckerManager::StoreInfo &info)
+{
+    for (const auto &store : staticStores_) {
+        if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
+            return true;
+        }
+    }
+    return false;
+}
+bool BundleChecker::SetDynamicStores(const std::vector<CheckerManager::StoreInfo> &storeInfos)
+{
+    dynamicStores_ = storeInfos;
+    return true;
+}
+bool BundleChecker::SetStaticStores(const std::vector<CheckerManager::StoreInfo> &storeInfos)
+{
+    staticStores_ = storeInfos;
+    return true;
+}
 } // namespace DistributedData
 } // namespace OHOS
