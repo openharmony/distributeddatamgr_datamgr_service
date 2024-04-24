@@ -37,7 +37,7 @@ Status UriPermissionManager::GrantUriPermission(
     for (size_t index = 0; index < allUri.size(); index += GRANT_URI_PERMISSION_MAX_SIZE) {
         std::vector<Uri> uriLst(
             allUri.begin() + index, allUri.begin() + std::min(index + GRANT_URI_PERMISSION_MAX_SIZE, allUri.size()));
-        auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermission(
+        auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermissionPrivileged(
             uriLst, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName);
         if (status != ERR_OK) {
             ZLOGE("GrantUriPermission failed, status:%{public}d, queryKey:%{public}s", status, queryKey.c_str());

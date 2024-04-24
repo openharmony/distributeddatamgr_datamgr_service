@@ -29,13 +29,15 @@
 #include "remote_file_share.h"
 #include "uri.h"
 #include "utils/crypto.h"
+#include "want.h"
+#include "uri_permission_manager_client.h"
 namespace OHOS {
 namespace UDMF {
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
 const char SPECIAL = '^';
-const std::string PERMISSION_PROXY_AUTHORIZATION_URI = "ohos.permission.PROXY_AUTHORIZATION_URI";
+static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 
@@ -156,7 +158,6 @@ bool PreProcessUtils::IsFileType(UDType udType)
 int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
 {
     int32_t userId = GetHapUidByToken(tokenId);
-    std::string bundleName = data.GetRuntime()->createPackage;
     std::vector<std::string> uris;
     for (const auto &record : data.GetRecords()) {
         if (record != nullptr && IsFileType(record->GetType())) {
@@ -170,16 +171,15 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
                 ZLOGW("Get uri authority empty.");
                 continue;
             }
-            if (uri.GetAuthority() != bundleName
-                && !VerifyCallingPermission(tokenId, PERMISSION_PROXY_AUTHORIZATION_URI)) {
-                ZLOGE("No auth to handle this uri, authority=%{public}s, bundleName=%{public}s.",
-                      uri.GetAuthority().c_str(), bundleName.c_str());
-                return E_NO_PERMISSION;
-            }
             uris.push_back(file->GetUri());
         }
     }
     if (!uris.empty()) {
+        if (!CheckUriAuthorization(uris, tokenId)) {
+            ZLOGE("CheckUriAuthorization failed, bundleName:%{public}s, tokenId: %{public}d, uris size:%{public}zu.",
+                  data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
+            return E_NO_PERMISSION;
+        }
         int ret = GetDfsUrisFromLocal(uris, userId, data);
         if (ret != E_OK) {
             ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
@@ -211,14 +211,18 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
     return E_OK;
 }
 
-bool PreProcessUtils::VerifyCallingPermission(uint32_t tokenId, const std::string &permissionName)
+bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId)
 {
-    int32_t ret = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
-    if (ret != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-        ZLOGE("Permission %{public}s: PERMISSION_DENIED, ret=%{public}d ", permissionName.c_str(), ret);
-        return false;
+    for (size_t index = 0; index < uris.size(); index += VERIFY_URI_PERMISSION_MAX_SIZE) {
+        std::vector<std::string> urisToBeChecked(
+            uris.begin() + index, uris.begin() + std::min(index + VERIFY_URI_PERMISSION_MAX_SIZE, uris.size()));
+        auto checkResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
+            urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
+        auto iter = find(checkResults.begin(), checkResults.end(), false);
+        if (iter != checkResults.end()) {
+            return false;
+        }
     }
-    ZLOGD("Verify AccessToken success, %{public}s", permissionName.c_str());
     return true;
 }
 } // namespace UDMF
