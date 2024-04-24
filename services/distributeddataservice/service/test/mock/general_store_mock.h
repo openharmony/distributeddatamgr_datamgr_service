@@ -16,7 +16,7 @@
 #define OHOS_DISTRIBUTEDDATA_SERVICE_TEST_GENERAL_STORE_MOCK_H
 
 #include "cursor_mock.h"
-#include "rdb_general_store.h"
+#include "store/general_store.h"
 namespace OHOS {
 namespace DistributedData {
 class GeneralStoreMock : public GeneralStore {
@@ -35,7 +35,7 @@ public:
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
-    int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) override;
+    int32_t Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm) override;
     std::shared_ptr<Cursor> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;

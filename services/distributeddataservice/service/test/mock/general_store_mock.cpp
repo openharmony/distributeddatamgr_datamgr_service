@@ -68,7 +68,7 @@ std::shared_ptr<Cursor> GeneralStoreMock::Query(const std::string &table, GenQue
     return nullptr;
 }
 
-int32_t GeneralStoreMock::Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait)
+int32_t GeneralStoreMock::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
 {
     return 0;
 }
