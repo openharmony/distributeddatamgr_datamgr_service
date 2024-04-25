@@ -36,7 +36,6 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     bool isManualClean = false;
     bool isSearchable = false;
     bool isNeedCompress = false;
-    bool isPublic = false;
     int32_t storeType = -1;
     int32_t securityLevel = 0;
     int32_t area = 0;

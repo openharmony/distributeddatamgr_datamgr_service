@@ -121,7 +121,6 @@ KVDBServiceImpl::KVDBServiceImpl()
                 std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, refCount, std::placeholders::_1));
         }
     });
-    Init();
 }
 
 KVDBServiceImpl::~KVDBServiceImpl()
@@ -137,7 +136,7 @@ void KVDBServiceImpl::Init()
         StoreMetaData meta;
         meta.storeId = storeInfo.storeName;
         meta.bundleName = storeInfo.bundleName;
-        meta.user = storeInfo.isPublic ? "0" : std::to_string(storeInfo.user);
+        meta.user = std::to_string(storeInfo.user);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
@@ -497,7 +496,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
-        storeInfo.user = std::stoi(meta.user);
+        storeInfo.user = std::atoi(meta.user.c_str());
         executors_->Execute([storeInfo]() {
             auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
             EventCenter::GetInstance().PostEvent(move(event));
@@ -675,7 +674,6 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isNeedCompress = options.isNeedCompress;
-    metaData.isPublic = options.isPublic;
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
@@ -1038,6 +1036,7 @@ int32_t KVDBServiceImpl::OnInitialize()
 {
     RegisterKvServiceInfo();
     RegisterHandler();
+    Init();
     return SUCCESS;
 }
 } // namespace OHOS::DistributedKv

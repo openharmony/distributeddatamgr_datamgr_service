@@ -129,7 +129,6 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
-    storeInfo_.isPublic = meta.isPublic;
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -522,7 +521,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChang
 
 void KVDBGeneralStore::ObserverProxy::ConvertChangeData(const std::list<DBEntry> &entries, std::vector<Values> &values)
 {
-    for (auto entry : entries) {
+    for (auto &entry : entries) {
         auto value = std::vector<Value>{ entry.key, entry.value };
         values.push_back(value);
     }
