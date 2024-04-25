@@ -155,17 +155,14 @@ int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, st
     return GenErr::E_OK;
 }
 
-int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, BindInfo>> &cloudDBs)
+int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos)
 {
-    if (cloudDBs.empty()) {
+    if (bindInfos.empty()) {
         ZLOGW("No cloudDB!");
         return GeneralError::E_OK;
     }
     std::map<std::string, DataBaseSchema> schemas{};
-    for (auto &[userId, cloudDB] : cloudDBs) {
-        auto database = cloudDB.first;
-        auto bindInfo = cloudDB.second;
-
+    for (auto &[userId, bindInfo] : bindInfos) {
         if (bindInfo.db_ == nullptr) {
             return GeneralError::E_INVALID_ARGS;
         }
@@ -174,7 +171,7 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
             return GeneralError::E_OK;
         }
 
-        dbClouds_.insert({ userId, std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
+        dbClouds_.insert({ std::to_string(userId), std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
         bindInfos_.insert(std::move(bindInfo));
 
         DBSchema schema;
@@ -193,7 +190,7 @@ int32_t KVDBGeneralStore::Bind(const std::map<std::string, std::pair<Database, B
                 dbTable.fields.push_back(std::move(dbField));
             }
         }
-        schemas.insert({ userId, schema });
+        schemas.insert({ std::to_string(userId), schema });
     }
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {

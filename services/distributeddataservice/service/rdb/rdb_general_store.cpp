@@ -120,13 +120,12 @@ int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std
     return GenErr::E_OK;
 }
 
-int32_t RdbGeneralStore::Bind(const std::map<std::string, std::pair<Database, BindInfo>> &cloudDBs)
+int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos)
 {
-    if (cloudDBs.empty()) {
+    if (bindInfos.empty()) {
         return GeneralError::E_OK;
     }
-    auto database = cloudDBs.begin()->second.first;
-    auto bindInfo = cloudDBs.begin()->second.second;
+    auto bindInfo = bindInfos.begin()->second;
     if (bindInfo.db_ == nullptr || bindInfo.loader_ == nullptr) {
         return GeneralError::E_INVALID_ARGS;
     }

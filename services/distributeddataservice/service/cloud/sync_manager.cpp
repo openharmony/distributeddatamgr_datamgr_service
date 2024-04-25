@@ -187,7 +187,7 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
         info.SetError(E_CLOUD_DISABLED);
         ZLOGE("cloudInfo invalid:%{public}d, <syncId:%{public}s, metaId:%{public}s>", cloud.IsValid(),
             Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
-        return false;
+        return E_CLOUD_DISABLED;
     }
     if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
         info.SetError(E_CLOUD_DISABLED);
@@ -220,7 +220,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     continue;
                 }
                 StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
-                    cloud.user, "", info.syncId_ };
+                                        info.user, "", info.syncId_ };
                 auto status = syncStrategy_->CheckSyncAction(storeInfo);
                 if (status != SUCCESS) {
                     ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
@@ -245,6 +245,15 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
     times++;
     return [this, times, retry, keep = std::move(ref), info = std::move(syncInfo)]() mutable {
         activeInfos_.Erase(info.syncId_);
+        bool createdByDefaultUser = false;
+        if (info.user_ == 0) {
+            std::vector<int32_t> users;
+            AccountDelegate::GetInstance()->QueryUsers(users);
+            if (!users.empty()) {
+                info.user_ = users[0];
+            }
+            createdByDefaultUser = true;
+        }
         CloudInfo cloud;
         cloud.user = info.user_;
         auto retryer = GetRetryer(times, info);
@@ -270,6 +279,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         }
 
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
+        if (createdByDefaultUser) {
+            info.user_ = 0;
+        }
         auto task = GetPostEventTask(schemas, cloud, info, retry);
         if (task != nullptr) {
             task();
@@ -421,25 +433,32 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
     }
 
     if (!store->IsBound()) {
-        std::vector<int32_t> activeUsers{};
-        AccountDelegate::GetInstance()->QueryForegroundUsers(activeUsers);
-        std::map<std::string, std::pair<Database, GeneralStore::BindInfo>> cloudDBs = {};
-        for (auto &activeUser : activeUsers) {
+        std::vector<int32_t> users{};
+        CloudInfo info;
+        if (user == 0) {
+            AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+            if (!users.empty()) {
+                info.user = users[0];
+            }
+        } else {
+            info.user = user;
+            users.push_back(user);
+        }
+        SchemaMeta schemaMeta;
+        std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
+        if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
+            ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                  meta.GetStoreAlias().c_str());
+            return nullptr;
+        }
+        auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
+        std::map<uint32_t, GeneralStore::BindInfo> bindInfos = {};
+        for (auto &activeUser : users) {
             if (activeUser == 0) {
                 continue;
             }
-            CloudInfo info;
-            info.user = activeUser;
-            SchemaMeta schemaMeta;
-            std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
-            if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
-                ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                    meta.GetStoreAlias().c_str());
-                return nullptr;
-            }
-            auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
-            auto cloudDB = instance->ConnectCloudDB(meta.bundleName, info.user, dbMeta);
-            auto assetLoader = instance->ConnectAssetLoader(meta.bundleName, info.user, dbMeta);
+            auto cloudDB = instance->ConnectCloudDB(meta.bundleName, activeUser, dbMeta);
+            auto assetLoader = instance->ConnectAssetLoader(meta.bundleName, activeUser, dbMeta);
             if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
                 ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
                     Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
@@ -448,10 +467,10 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
             if (cloudDB != nullptr || assetLoader != nullptr) {
                 GeneralStore::BindInfo bindInfo((cloudDB != nullptr) ? std::move(cloudDB) : cloudDB,
                     (assetLoader != nullptr) ? std::move(assetLoader) : assetLoader);
-                cloudDBs[std::to_string(activeUser)] = std::make_pair(dbMeta, bindInfo);
+                bindInfos[activeUser] = bindInfo;
             }
         }
-        store->Bind(cloudDBs);
+        store->Bind(dbMeta, bindInfos);
     }
     return store;
 }

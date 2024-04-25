@@ -43,7 +43,7 @@ public:
 
     explicit KVDBGeneralStore(const StoreMetaData &meta);
     ~KVDBGeneralStore();
-    int32_t Bind(const std::map<std::string, std::pair<Database, BindInfo>> &cloudDBs) override;
+    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) override;
     bool IsBound() override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;

@@ -90,7 +90,7 @@ public:
     };
     virtual ~GeneralStore() = default;
 
-    virtual int32_t Bind(const std::map<std::string, std::pair<Database, BindInfo>> &cloudDBs) = 0;
+    virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) = 0;
 
     virtual bool IsBound() = 0;
 
