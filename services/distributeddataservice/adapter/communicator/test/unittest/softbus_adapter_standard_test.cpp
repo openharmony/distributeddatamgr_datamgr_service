@@ -14,15 +14,15 @@
  */
 #define LOG_TAG "SoftbusAdapterStandardTest"
 
-#include "gtest/gtest.h"
-#include "types.h"
-#include "log_print.h"
-#include <cstdint>
-#include <vector>
-#include <unistd.h>
-#include <iostream>
-#include "softbus_adapter.h"
 #include "app_device_change_listener.h"
+#include <cstdint>
+#include "gtest/gtest.h"
+#include <iostream>
+#include "log_print.h"
+#include "softbus_adapter.h"
+#include "types.h"
+#include <unistd.h>
+#include <vector>
 
 namespace {
 using namespace testing::ext;
