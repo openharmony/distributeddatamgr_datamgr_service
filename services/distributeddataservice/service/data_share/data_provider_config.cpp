@@ -160,18 +160,18 @@ int DataProviderConfig::GetFromExtension()
 bool DataProviderConfig::GetFromUriPath()
 {
     auto& pathSegments = uriConfig_.pathSegments;
-    if (pathSegments.size() < static_cast<int32_t>(PATH_PARAM::PARAM_SIZE) ||
-        pathSegments[static_cast<int32_t>(PATH_PARAM::BUNDLE_NAME)].empty() ||
-        pathSegments[static_cast<int32_t>(PATH_PARAM::MODULE_NAME)].empty() ||
-        pathSegments[static_cast<int32_t>(PATH_PARAM::STORE_NAME)].empty() ||
-        pathSegments[static_cast<int32_t>(PATH_PARAM::TABLE_NAME)].empty()) {
+    if (pathSegments.size() < static_cast<std::size_t>(PATH_PARAM::PARAM_SIZE) ||
+        pathSegments[static_cast<std::size_t>(PATH_PARAM::BUNDLE_NAME)].empty() ||
+        pathSegments[static_cast<std::size_t>(PATH_PARAM::MODULE_NAME)].empty() ||
+        pathSegments[static_cast<std::size_t>(PATH_PARAM::STORE_NAME)].empty() ||
+        pathSegments[static_cast<std::size_t>(PATH_PARAM::TABLE_NAME)].empty()) {
         ZLOGE("Invalid uri ! uri: %{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
         return false;
     }
-    providerInfo_.bundleName = pathSegments[static_cast<int32_t>(PATH_PARAM::BUNDLE_NAME)];
-    providerInfo_.moduleName = pathSegments[static_cast<int32_t>(PATH_PARAM::MODULE_NAME)];
-    providerInfo_.storeName = pathSegments[static_cast<int32_t>(PATH_PARAM::STORE_NAME)];
-    providerInfo_.tableName = pathSegments[static_cast<int32_t>(PATH_PARAM::TABLE_NAME)];
+    providerInfo_.bundleName = pathSegments[static_cast<std::size_t>(PATH_PARAM::BUNDLE_NAME)];
+    providerInfo_.moduleName = pathSegments[static_cast<std::size_t>(PATH_PARAM::MODULE_NAME)];
+    providerInfo_.storeName = pathSegments[static_cast<std::size_t>(PATH_PARAM::STORE_NAME)];
+    providerInfo_.tableName = pathSegments[static_cast<std::size_t>(PATH_PARAM::TABLE_NAME)];
     return true;
 }
 

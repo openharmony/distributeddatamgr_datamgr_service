@@ -35,6 +35,7 @@ using namespace OHOS::Security::AccessToken;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
 constexpr int PEER_USER_ID1 = 101;
 constexpr int PEER_USER_ID2 = 100;
+constexpr int METADATA_UID = 2000000;
 
 void GrantPermissionNative()
 {
@@ -95,8 +96,8 @@ public:
         metaData.storeId = "test_store";
         metaData.user = "100";
         metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-        metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-        metaData.uid = 2000000;
+        metaData.tokenId = AccessTokenKit::GetHapTokenID(PEER_USER_ID2, "ohos.test.demo", 0);
+        metaData.uid = METADATA_UID;
         metaData.storeType = 1;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
         GrantPermissionNative();
@@ -112,8 +113,8 @@ public:
         metaData.storeId = "test_store";
         metaData.user = "100";
         metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-        metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-        metaData.uid = 2000000;
+        metaData.tokenId = AccessTokenKit::GetHapTokenID(PEER_USER_ID2, "ohos.test.demo", 0);
+        metaData.uid = METADATA_UID;
         metaData.storeType = 1;
         MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     }

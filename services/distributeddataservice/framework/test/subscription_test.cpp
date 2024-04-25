@@ -19,11 +19,15 @@
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
+namespace OHOS::Test {
 class SubscriptionTest : public testing::Test {
 public:
     const std::map<std::string, std::string> testRelation = { { "testUserId", "testBundleName" } };
     const std::map<std::string, uint64_t> testExpiresTime = { { "1h", 3600 } };
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 /**
@@ -157,3 +161,39 @@ HWTEST_F(SubscriptionTest, GetPrefix, TestSize.Level1)
     std::string prefix = Subscription::GetPrefix(fields);
     ASSERT_EQ(prefix, "CLOUD_SUBSCRIPTION###field1###field2");
 }
+
+/**
+* @tc.name: GetMinExpireTime001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(SubscriptionTest, GetMinExpireTime001, TestSize.Level1)
+{
+    Subscription subscription;
+    subscription.userId = 100;
+    subscription.id = "testId";
+    subscription.expiresTime = testExpiresTime;
+    auto expire = subscription.GetMinExpireTime();
+    EXPECT_EQ(expire, 3600);
+}
+
+/**
+* @tc.name: GetMinExpireTime002
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(SubscriptionTest, GetMinExpireTime002, TestSize.Level1)
+{
+    Subscription subscription;
+    subscription.userId = 100;
+    subscription.id = "testId";
+    std::map<std::string, uint64_t> testExpiresTimes = { { } };
+    subscription.expiresTime = testExpiresTimes;
+    auto expire = subscription.GetMinExpireTime();
+    EXPECT_EQ(expire, 0);
+}
+} // namespace OHOS::Test

@@ -321,6 +321,7 @@ bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, 
     //                ^                                                                                  ^
     //                |                                                                                  |
     //              pointer                                                                             end
+    // first fieldValue, or END if list is empty
     if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) {
         ZLOGE("In not enough params.");
         return false;
@@ -356,6 +357,7 @@ bool QueryHelper::HandleNotIn(const std::vector<std::string> &words, int &pointe
     //                 ^                                                                                     ^
     //                 |                                                                                     |
     //               pointer                                                                                end
+    // first fieldValue, or END if list is empty
     if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) {
         ZLOGE("NotIn not enough params.");
         return false;

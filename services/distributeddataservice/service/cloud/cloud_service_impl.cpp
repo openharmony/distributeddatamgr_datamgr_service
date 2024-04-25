@@ -458,6 +458,47 @@ int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::v
     return STRATEGY_SAVERS[strategy](values, hapInfo);
 }
 
+std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const std::string &id,
+    const std::string &bundleName, const std::string &storeId)
+{
+    QueryLastResults results;
+    auto user = Account::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        return { ERROR, results };
+    }
+    if (cloudInfo.apps.find(bundleName) == cloudInfo.apps.end()) {
+        ZLOGE("Invalid bundleName: %{public}s", bundleName.c_str());
+        return { INVALID_ARGUMENT, results };
+    }
+    std::vector<SchemaMeta> schemas;
+    auto key = cloudInfo.GetSchemaPrefix(bundleName);
+    if (!MetaDataManager::GetInstance().LoadMeta(key, schemas, true) || schemas.empty()) {
+        return { ERROR, results };
+    }
+
+    std::vector<QueryKey> queryKeys;
+    for (const auto &schema : schemas) {
+        if (schema.bundleName != bundleName) {
+            continue;
+        }
+        for (const auto &database : schema.databases) {
+            if (storeId.empty() || database.alias == storeId) {
+                queryKeys.push_back({ id, bundleName, database.name });
+            }
+        }
+        if (queryKeys.empty()) {
+            ZLOGE("Invalid storeId: %{public}s", Anonymous::Change(storeId).c_str());
+            return { INVALID_ARGUMENT, results };
+        }
+    }
+
+    auto ret = syncManager_.QueryLastSyncInfo(queryKeys, results);
+    ZLOGI("code:%{public}d, accountId:%{public}s, bundleName:%{public}s, storeId:%{public}s", ret,
+        Anonymous::Change(id).c_str(), bundleName.c_str(), Anonymous::Change(storeId).c_str());
+    return { ret, results };
+}
+
 int32_t CloudServiceImpl::OnInitialize()
 {
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
@@ -496,6 +537,8 @@ int32_t CloudServiceImpl::OnBind(const BindInfo &info)
 int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
     int32_t userId = atoi(user.c_str());
+    ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
+          Anonymous::Change(account).c_str());
     switch (code) {
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED):
             Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
@@ -579,8 +622,11 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
+        ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
     }
+    ZLOGI("[server] id:%{public}s, enableCloud:%{pubic}d, user:%{public}d, app size:%{public}zu",
+          Anonymous::Change(cloudInfo.id).c_str(), cloudInfo.enableCloud, cloudInfo.user, cloudInfo.apps.size());
     CloudInfo oldInfo;
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldInfo, true)) {
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
@@ -604,6 +650,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
+        ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -713,6 +760,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
     }
     std::tie(status, cloudInfo) = GetCloudInfoFromServer(userId);
     if (status != SUCCESS) {
+        ZLOGE("userId:%{public}d, status:%{public}d", userId, status);
         return { status, cloudInfo };
     }
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
@@ -721,6 +769,19 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
 
 int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
+    Subscription sub;
+    if (MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(user), sub, true)) {
+        sub.expiresTime.erase(bundleName);
+        MetaDataManager::GetInstance().SaveMeta(Subscription::GetKey(user), sub, true);
+    }
+
+    CloudInfo cloudInfo;
+    cloudInfo.user = user;
+    if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
+        cloudInfo.apps.erase(bundleName);
+        MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    }
+
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
     MetaDataManager::GetInstance().DelMeta(NetworkSyncStrategy::GetKey(user, bundleName), true);

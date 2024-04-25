@@ -27,10 +27,10 @@ public:
     TimerInfo();
     virtual ~TimerInfo();
     void OnTrigger() override;
-    void SetType(const int &type) override;
-    void SetRepeat(bool repeat) override;
-    void SetInterval(const uint64_t &interval) override;
-    void SetWantAgent(std::shared_ptr<AbilityRuntime::WantAgent::WantAgent> wantAgent) override;
+    void SetType(const int &type_) override;
+    void SetRepeat(bool repeat_) override;
+    void SetInterval(const uint64_t &interval_) override;
+    void SetWantAgent(std::shared_ptr<AbilityRuntime::WantAgent::WantAgent> wantAgent_) override;
     void SetCallbackInfo(const std::function<void()> &callBack);
 private:
     std::function<void()> callBack_ = nullptr;
@@ -56,24 +56,24 @@ void TimerInfo::SetCallbackInfo(const std::function<void()> &callBack)
     callBack_ = callBack;
 }
 
-void TimerInfo::SetType(const int &inputType)
+void TimerInfo::SetType(const int &type_)
 {
-    type = inputType;
+    type = type_;
 }
 
-void TimerInfo::SetRepeat(bool inputRepeat)
+void TimerInfo::SetRepeat(bool repeat_)
 {
-    repeat = inputRepeat;
+    repeat = repeat_;
 }
 
-void TimerInfo::SetInterval(const uint64_t &inputInterval)
+void TimerInfo::SetInterval(const uint64_t &interval_)
 {
-    interval = inputInterval;
+    interval = interval_;
 }
 
-void TimerInfo::SetWantAgent(std::shared_ptr<AbilityRuntime::WantAgent::WantAgent> inputWantAgent)
+void TimerInfo::SetWantAgent(std::shared_ptr<AbilityRuntime::WantAgent::WantAgent> wantAgent_)
 {
-    wantAgent = inputWantAgent;
+    wantAgent = wantAgent_;
 }
 }
 #endif // DATASHARESERVICE_TIMER_INFO_H
