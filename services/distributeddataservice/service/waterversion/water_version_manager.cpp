@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Huawei Device Co., Ltd.
+* Copyright (c) 2024 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -12,7 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#define LOG_TAG "DeviceMatrix"
+#define LOG_TAG "WaterVersionManager"
 #include "water_version_manager.h"
 
 #include "checker/checker_manager.h"
@@ -311,7 +311,8 @@ std::pair<std::string, std::string> WaterVersionManager::Split(const std::string
         res.push_back(key.substr(pos, found - pos));
         pos = found + delim.size();
     }
-    if (res.size() < 2) {
+    // The number of res should more than 1
+    if (res.size() <= 1) {
         return { "", "" };
     }
     return { res[0], res[1] };

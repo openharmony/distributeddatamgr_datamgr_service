@@ -127,25 +127,25 @@ std::vector<CheckerManager::StoreInfo> CheckerManager::GetStaticStores()
     }
     return res;
 }
-bool CheckerManager::IsDynamicStores(const CheckerManager::StoreInfo &info)
+bool CheckerManager::IsDynamic(const CheckerManager::StoreInfo &info)
 {
     for (auto &[name, checker] : checkers_) {
         if (checker == nullptr) {
             continue;
         }
-        if (checker->IsDynamicStores(info)) {
+        if (checker->IsDynamic(info)) {
             return true;
         }
     }
     return false;
 }
-bool CheckerManager::IsStaticStores(const CheckerManager::StoreInfo &info)
+bool CheckerManager::IsStatic(const CheckerManager::StoreInfo &info)
 {
     for (auto &[name, checker] : checkers_) {
         if (checker == nullptr) {
             continue;
         }
-        if (checker->IsStaticStores(info)) {
+        if (checker->IsStatic(info)) {
             return true;
         }
     }

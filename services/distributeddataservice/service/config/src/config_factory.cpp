@@ -77,5 +77,10 @@ BackupConfig *ConfigFactory::GetBackupConfig()
 {
     return config_.backup;
 }
+
+CloudConfig *ConfigFactory::GetCloudConfig()
+{
+    return config_.cloud;
+}
 } // namespace DistributedData
 } // namespace OHOS

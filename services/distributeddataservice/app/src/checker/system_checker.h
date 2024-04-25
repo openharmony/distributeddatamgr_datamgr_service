@@ -29,12 +29,12 @@ public:
     std::string GetAppId(const CheckerManager::StoreInfo &info) override;
     bool IsValid(const CheckerManager::StoreInfo &info) override;
     bool IsDistrust(const CheckerManager::StoreInfo &info) override;
-    bool SetDynamicStores(const std::vector<CheckerManager::StoreInfo> &storeInfos) override;
-    bool SetStaticStores(const std::vector<CheckerManager::StoreInfo> &storeInfos) override;
+    bool AddDynamicStore(const CheckerManager::StoreInfo &storeInfos) override;
+    bool AddStaticStore(const CheckerManager::StoreInfo &storeInfos) override;
     std::vector<CheckerManager::StoreInfo> GetDynamicStores() override;
     std::vector<CheckerManager::StoreInfo> GetStaticStores() override;
-    bool IsDynamicStores(const CheckerManager::StoreInfo &info) override;
-    bool IsStaticStores(const CheckerManager::StoreInfo &info) override;
+    bool IsDynamic(const CheckerManager::StoreInfo &info) override;
+    bool IsStatic(const CheckerManager::StoreInfo &info) override;
 
 private:
     std::map<std::string, std::string> trusts_;

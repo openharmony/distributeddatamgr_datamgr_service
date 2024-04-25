@@ -20,6 +20,7 @@
 #include "backup_manager.h"
 #include "backuprule/backup_rule_manager.h"
 #include "checker/checker_manager.h"
+#include "cloud/cloud_config_manager.h"
 #include "config_factory.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
@@ -100,6 +101,20 @@ void Bootstrap::LoadCheckers()
         }
         checker->SetDistrustInfo(distrust);
     }
+    for (const auto &dynamicStore : checkers->dynamicStores) {
+        auto *checker = CheckerManager::GetInstance().GetChecker(dynamicStore.checker);
+        if (checker == nullptr) {
+            continue;
+        }
+        checker->AddDynamicStore(dynamicStore);
+    }
+    for (const auto &staticStore : checkers->staticStores) {
+        auto *checker = CheckerManager::GetInstance().GetChecker(staticStore.checker);
+        if (checker == nullptr) {
+            continue;
+        }
+        checker->AddDynamicStore(staticStore);
+    }
 }
 
 void Bootstrap::LoadBackup(std::shared_ptr<ExecutorPool> executors)
@@ -131,6 +146,19 @@ void Bootstrap::LoadDirectory()
         strategies[i] = config->strategy[i];
     }
     DirectoryManager::GetInstance().Initialize(strategies);
+}
+
+void Bootstrap::LoadCloud()
+{
+    auto *config = ConfigFactory::GetInstance().GetCloudConfig();
+    if (config == nullptr) {
+        return;
+    }
+    std::vector<CloudConfigManager::Info> infos;
+    for (auto &info : config->mapper) {
+        infos.push_back({ info.localBundle, info.cloudBundle });
+    }
+    CloudConfigManager::GetInstance().Initialize(infos);
 }
 } // namespace DistributedData
 } // namespace OHOS

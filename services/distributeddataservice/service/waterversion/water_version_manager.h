@@ -74,8 +74,8 @@ private:
     std::pair<std::string, std::string> Split(const std::string &key);
     static constexpr size_t MAX_DEVICES = 16;
     std::mutex mutex_;
-    std::vector<std::string> staticKeys_;// = { "bundle0###store0", "bundle1###store0", "bundle2###store0" };
-    std::vector<std::string> dynamicKeys_;// = { "bundle0###store1", "bundle1###store1", "bundle4###store0" };
+    std::vector<std::string> staticKeys_;
+    std::vector<std::string> dynamicKeys_;
     LRUBucket<std::string, WaterVersionMetaData> staticVersions_{ MAX_DEVICES };
     LRUBucket<std::string, WaterVersionMetaData> dynamicVersions_{ MAX_DEVICES };
     void UpdateWaterVersion(WaterVersionMetaData &metaData) const;

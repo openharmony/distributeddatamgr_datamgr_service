@@ -116,7 +116,7 @@ std::vector<CheckerManager::StoreInfo> BundleChecker::GetStaticStores()
 {
     return staticStores_;
 }
-bool BundleChecker::IsDynamicStores(const CheckerManager::StoreInfo &info)
+bool BundleChecker::IsDynamic(const CheckerManager::StoreInfo &info)
 {
     for (const auto &store : dynamicStores_) {
         if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
@@ -125,7 +125,7 @@ bool BundleChecker::IsDynamicStores(const CheckerManager::StoreInfo &info)
     }
     return false;
 }
-bool BundleChecker::IsStaticStores(const CheckerManager::StoreInfo &info)
+bool BundleChecker::IsStatic(const CheckerManager::StoreInfo &info)
 {
     for (const auto &store : staticStores_) {
         if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
@@ -134,14 +134,15 @@ bool BundleChecker::IsStaticStores(const CheckerManager::StoreInfo &info)
     }
     return false;
 }
-bool BundleChecker::SetDynamicStores(const std::vector<CheckerManager::StoreInfo> &storeInfos)
+
+bool BundleChecker::AddDynamicStore(const CheckerManager::StoreInfo &storeInfo)
 {
-    dynamicStores_ = storeInfos;
+    dynamicStores_.push_back(storeInfo);
     return true;
 }
-bool BundleChecker::SetStaticStores(const std::vector<CheckerManager::StoreInfo> &storeInfos)
+bool BundleChecker::AddStaticStore(const CheckerManager::StoreInfo &storeInfo)
 {
-    staticStores_ = storeInfos;
+    staticStores_.push_back(storeInfo);
     return true;
 }
 } // namespace DistributedData
