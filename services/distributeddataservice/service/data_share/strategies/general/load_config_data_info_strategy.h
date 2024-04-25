@@ -31,4 +31,4 @@ public:
     LoadConfigDataInfoStrategy();
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_LOAD_CONFIG_DATA_INFO_STRAGETY_H

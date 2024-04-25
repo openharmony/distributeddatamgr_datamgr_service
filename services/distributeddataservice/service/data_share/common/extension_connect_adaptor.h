@@ -22,15 +22,14 @@
 namespace OHOS::DataShare {
 class ExtensionConnectAdaptor {
 public:
-    static bool TryAndWait(std::shared_ptr<Context> context, int maxWaitTime = 2);
+    static bool TryAndWait(const std::string &uri, const std::string &bundleName,
+        int maxWaitTime = 2);
     ExtensionConnectAdaptor();
-
 private:
-    bool Connect(std::shared_ptr<Context> context);
     void Disconnect();
-    bool DoConnect(std::shared_ptr<Context> context);
+    bool DoConnect(const std::string &uri);
     std::shared_ptr<BlockData<bool>> data_;
     sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_EXTENSION_CONNECT_ADAPTOR_H

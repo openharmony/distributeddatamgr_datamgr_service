@@ -81,6 +81,12 @@ struct Reference {
     std::map<std::string, std::string> refFields;
 };
 
+struct SyncParam {
+    int32_t mode;
+    int32_t wait;
+    bool isCompensation = false;
+};
+
 using Assets = std::vector<Asset>;
 using Bytes = std::vector<uint8_t>;
 using Relations = std::map<std::string, std::string>;

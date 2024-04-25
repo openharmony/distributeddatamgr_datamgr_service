@@ -27,7 +27,7 @@ using namespace OHOS::AAFwk;
 class CommonEventSubscriberListener : public CommonEventSubscriber {
 public:
     explicit CommonEventSubscriberListener(const CommonEventSubscribeInfo &subscriberInfo);
-    virtual ~CommonEventSubscriberListener(){}
+    virtual ~CommonEventSubscriberListener() {}
     virtual void OnReceiveEvent(const CommonEventData &data);
 };
 

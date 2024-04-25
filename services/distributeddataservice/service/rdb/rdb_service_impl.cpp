@@ -93,11 +93,7 @@ RdbServiceImpl::RdbServiceImpl()
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta;
-        meta.storeId = storeInfo.storeName;
-        meta.bundleName = storeInfo.bundleName;
-        meta.user = std::to_string(storeInfo.user);
-        meta.instanceId = storeInfo.instanceId;
+        StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
@@ -194,6 +190,7 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
         }
         return true;
     });
+    AutoCache::GetInstance().Enable(tokenId);
     return E_OK;
 }
 
@@ -401,15 +398,16 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
                                                  : DmAdapter::ToUUID(rdbQuery.GetDevices());
     if (!option.isAsync) {
+        SyncParam syncParam = { option.mode, 1, option.isCompensation };
         Details details = {};
         auto status = store->Sync(
-            devices, option.mode, rdbQuery,
+            devices, rdbQuery,
             [&details, &param](const GenDetails &result) mutable {
                 ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
                     Anonymous::Change(param.storeName_).c_str());
                 details = HandleGenDetails(result);
             },
-            true);
+            syncParam);
         if (async != nullptr) {
             async(std::move(details));
         }
@@ -417,12 +415,13 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     }
     ZLOGD("seqNum=%{public}u", option.seqNum);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
+    SyncParam syncParam = { option.mode, 0, option.isCompensation };
     return store->Sync(
-        devices, option.mode, rdbQuery,
+        devices, rdbQuery,
         [this, tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
             OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
         },
-        false);
+        syncParam);
 }
 
 void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
@@ -477,7 +476,8 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     };
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode,
         option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
-    auto info = ChangeEvent::EventInfo(mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isAutoSync, query,
+    SyncParam syncParam = { mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isCompensation };
+    auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
         : option.isAsync  ? asyncCallback
                           : syncCallback);
@@ -977,5 +977,20 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
     auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return RDB_OK;
+}
+
+int32_t RdbServiceImpl::Disable(const RdbSyncerParam& param)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto storeId = RemoveSuffix(param.storeName_);
+    AutoCache::GetInstance().Disable(tokenId, storeId);
+    return E_OK;
+}
+int32_t RdbServiceImpl::Enable(const RdbSyncerParam& param)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto storeId = RemoveSuffix(param.storeName_);
+    AutoCache::GetInstance().Enable(tokenId, storeId);
+    return E_OK;
 }
 } // namespace OHOS::DistributedRdb

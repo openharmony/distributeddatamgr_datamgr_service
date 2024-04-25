@@ -23,4 +23,4 @@ public:
     LoadConfigFromBundleInfoStrategy();
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_LOAD_CONFIG_FROM_BUNDLE_INFO_STRAGETY_H

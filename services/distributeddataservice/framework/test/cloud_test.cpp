@@ -234,3 +234,105 @@ HWTEST_F(CloudInfoTest, TableTest, TestSize.Level0)
     table2.Unmarshal(node1);
     EXPECT_EQ(Serializable::Marshall(table1), Serializable::Marshall(table2));
 }
+
+/**
+* @tc.name: IsAllSwitchOffTest
+* @tc.desc: Determine if all apps have their cloud synchronization disabled.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Anvette
+*/
+HWTEST_F(CloudInfoTest, IsAllSwitchOffTest, TestSize.Level0)
+{
+    CloudInfo cloudInfo;
+    auto result = cloudInfo.IsAllSwitchOff();
+    ASSERT_TRUE(result);
+
+    CloudInfo cloudInfo1;
+    CloudInfo::AppInfo appInfo;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    appInfo.bundleName = "test_cloud_bundleName";
+    appInfo.appId = "test_cloud_id";
+    appInfo.version = 0;
+    appInfo.instanceId = 100;
+    appInfo.cloudSwitch = true;
+    apps = { { "test_cloud", appInfo } };
+    cloudInfo1.apps = apps;
+    result = cloudInfo1.IsAllSwitchOff();
+    ASSERT_FALSE(result);
+}
+
+/**
+* @tc.name: GetSchemaKey
+* @tc.desc: Get schema key.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Anvette
+*/
+HWTEST_F(CloudInfoTest, GetSchemaKeyTest1, TestSize.Level0)
+{
+    std::string bundleName = "test_cloud_bundleName";
+    int32_t instanceId = 123;
+    CloudInfo cloudInfo;
+    auto result = cloudInfo.GetSchemaKey(bundleName, instanceId);
+    ASSERT_EQ(result, "CLOUD_SCHEMA###0###test_cloud_bundleName###123");
+}
+
+/**
+* @tc.name: GetSchemaKey
+* @tc.desc: Get schema key.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Anvette
+*/
+HWTEST_F(CloudInfoTest, GetSchemaKeyTest2, TestSize.Level0)
+{
+    int32_t user = 123;
+    std::string bundleName = "test_cloud_bundleName";
+    int32_t instanceId = 456;
+    CloudInfo cloudInfo;
+    auto result = cloudInfo.GetSchemaKey(user, bundleName, instanceId);
+    ASSERT_EQ(result, "CLOUD_SCHEMA###123###test_cloud_bundleName###456");
+}
+
+/**
+* @tc.name: GetSchemaKey
+* @tc.desc: Get schema key.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Anvette
+*/
+HWTEST_F(CloudInfoTest, GetSchemaKeyTest3, TestSize.Level0)
+{
+    StoreMetaData meta;
+    meta.bundleName = "test_cloud_bundleName";
+    meta.user = "123";
+    CloudInfo cloudInfo;
+    auto result = cloudInfo.GetSchemaKey(meta);
+    ASSERT_EQ(result, "CLOUD_SCHEMA###123###test_cloud_bundleName###0");
+}
+
+/**
+* @tc.name: GetSchemaKey
+* @tc.desc: Get schema key.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Anvette
+*/
+HWTEST_F(CloudInfoTest, GetSchemaKeyTest4, TestSize.Level0)
+{
+    CloudInfo cloudInfo;
+    CloudInfo::AppInfo appInfo;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    appInfo.bundleName = "test_cloud_bundleName";
+    appInfo.appId = "test_cloud_id";
+    appInfo.version = 0;
+    appInfo.instanceId = 100;
+    appInfo.cloudSwitch = true;
+    apps = { { "test_cloud", appInfo } };
+    cloudInfo.apps = apps;
+    std::map<std::string, std::string> info;
+    info = { {"test_cloud_bundleName", "CLOUD_SCHEMA###0###test_cloud###100"} };
+    auto result = cloudInfo.GetSchemaKey();
+    ASSERT_EQ(info, result);
+}

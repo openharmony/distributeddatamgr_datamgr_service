@@ -20,12 +20,11 @@
 
 #include "account/account_delegate.h"
 #include "bundle_mgr_proxy.h"
-#include "data_share_profile_info.h"
+#include "data_share_profile_config.h"
 #include "hap_module_info.h"
 #include "uri_utils.h"
 
 namespace OHOS::DataShare {
-using namespace OHOS::RdbBMSAdapter;
 using BundleInfo = OHOS::AppExecFwk::BundleInfo;
 using ExtensionAbility = OHOS::AppExecFwk::ExtensionAbilityInfo;
 class DataProviderConfig {
@@ -41,13 +40,20 @@ public:
         std::string tableName;
         std::string readPermission;
         std::string writePermission;
+        std::string type = "rdb";
+        bool singleton = false;
+        bool hasExtension = false;
+        bool allowEmptyPermission = false;
+        AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
     };
 
-    std::pair<int, ProviderInfo> GetProviderInfo(bool isProxyData);
+    std::pair<int, ProviderInfo> GetProviderInfo();
 private:
     bool GetFromUriPath();
     int GetFromProxyData();
     int GetFromExtension();
+    int GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
+    int GetFromExtensionProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
         MODULE_NAME,
@@ -56,6 +62,10 @@ private:
         PARAM_SIZE
     };
     ProviderInfo providerInfo_;
+    UriConfig uriConfig_;
+    static constexpr const char *MODULE_SCOPE = "module";
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
+    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };
 } // namespace OHOS::DataShare
 #endif

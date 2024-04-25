@@ -17,6 +17,7 @@
 #include "rdb_subscriber_manager.h"
 
 #include <cinttypes>
+#include <utility>
 
 #include "ipc_skeleton.h"
 #include "general/load_config_data_info_strategy.h"
@@ -239,6 +240,24 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
     });
     SchedulerManager::GetInstance().Execute(
         uri, context->currentUserId, context->calledSourceDir, context->version);
+}
+
+void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
+    DistributedData::StoreMetaData &metaData)
+{
+    if (!URIUtils::IsDataProxyURI(uri)) {
+        return;
+    }
+    rdbCache_.ForEach([&uri, &userId, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
+        if (key.uri != uri) {
+            return false;
+        }
+        Notify(key, userId, val, metaData.dataDir, metaData.version);
+        SetObserverNotifyOnEnabled(val);
+        return false;
+    });
+    SchedulerManager::GetInstance().Execute(
+        uri, userId, metaData.dataDir, metaData.version);
 }
 
 void RdbSubscriberManager::SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes)

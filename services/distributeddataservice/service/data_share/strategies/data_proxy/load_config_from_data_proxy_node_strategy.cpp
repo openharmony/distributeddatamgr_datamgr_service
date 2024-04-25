@@ -18,8 +18,10 @@
 
 #include "bundle_mgr_proxy.h"
 #include "common/uri_utils.h"
+#include "data_share_profile_config.h"
 #include "datashare_errno.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> context)
@@ -27,7 +29,7 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
     if (!LoadConfigFromUri(context)) {
         return false;
     }
-    context->type = DataProperties::PUBLISHED_DATA_TYPE;
+    context->type = PUBLISHED_DATA_TYPE;
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
         context->calledBundleName, context->currentUserId, context->bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
@@ -49,11 +51,10 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
             if (context->permission.empty()) {
                 context->permission = "reject";
             }
-            DataProperties properties;
-            bool isCompressed = !hapModuleInfo.hapPath.empty();
-            std::string resourcePath = isCompressed ? hapModuleInfo.hapPath : hapModuleInfo.resourcePath;
-            if (!DataShareProfileInfo::GetDataPropertiesFromProxyDatas(
-                proxyData, resourcePath, isCompressed, properties)) {
+            auto [ret, properties] = DataShareProfileConfig::GetDataProperties(
+                std::vector<AppExecFwk::Metadata>{proxyData.metadata}, hapModuleInfo.resourcePath,
+                hapModuleInfo.hapPath, DATA_SHARE_PROPERTIES_META);
+            if (ret == ERROR || ret == NOT_FOUND) {
                 return true;
             }
             GetContextInfoFromDataProperties(properties, hapModuleInfo.moduleName, context);
@@ -74,10 +75,10 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
     return false;
 }
 
-bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const DataProperties &properties,
+bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const ProfileInfo &properties,
     const std::string &moduleName, std::shared_ptr<Context> context)
 {
-    if (properties.scope == DataProperties::MODULE_SCOPE) {
+    if (properties.scope == MODULE_SCOPE) {
         // module scope
         context->calledModuleName = moduleName;
     }

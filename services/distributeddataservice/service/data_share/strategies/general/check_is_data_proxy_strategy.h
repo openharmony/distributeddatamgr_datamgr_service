@@ -23,4 +23,4 @@ public:
     bool operator()(std::shared_ptr<Context> context) override;
 };
 } // namespace OHOS::DataShare
-#endif
+#endif // DATASHARESERVICE_CHECK_IS_DATA_PROXY_STRAGETY_H

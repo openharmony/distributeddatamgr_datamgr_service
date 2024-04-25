@@ -34,7 +34,7 @@
 namespace OHOS {
 namespace AppDistributedKv {
 using Context = DistributedData::CommunicatorContext;
-constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
+constexpr uint32_t DEFAULT_MTU_SIZE = 4096 * 1024u;
 constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
 using namespace std;
 using namespace OHOS::DistributedDataDfx;
