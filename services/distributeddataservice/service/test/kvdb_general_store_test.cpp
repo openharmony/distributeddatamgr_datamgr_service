@@ -43,37 +43,37 @@ public:
     void TearDown();
 
 protected:
-    static constexpr const char *TEST_DISTRIBUTEDDATA_BUNDLE = "test_distributeddata";
-    static constexpr const char *TEST_DISTRIBUTEDDATA_STORE = "test_service_meta";
+    static constexpr const char *bundleName = "test_distributeddata";
+    static constexpr const char *storeName = "test_service_meta";
 
-    static void InitMetaData();
+    void InitMetaData();
     static std::vector<uint8_t> Random(uint32_t len);
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     StoreMetaData metaData_;
 };
 
-std::shared_ptr KVDBGeneralStoreTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+std::shared_ptr<DBStoreMock> KVDBGeneralStoreTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 static const uint32_t KEY_LENGTH = 32;
 static const uint32_t ENCRYPT_KEY_LENGTH = 48;
 
 void KVDBGeneralStoreTest::InitMetaData()
 {
-    metaData_.bundleName = TEST_DISTRIBUTEDDATA_BUNDLE;
-    metaData_.appId = TEST_DISTRIBUTEDDATA_BUNDLE;
+    metaData_.bundleName = bundleName;
+    metaData_.appId = bundleName;
     metaData_.user = "0";
     metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
     metaData_.storeType = KvStoreType::SINGLE_VERSION;
-    metaData_.storeId = TEST_DISTRIBUTEDDATA_STORE;
-    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(TEST_DISTRIBUTEDDATA_BUNDLE) + "/kvdb";
+    metaData_.storeId = storeName;
+    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(bundleName) + "/kvdb";
     metaData_.securityLevel = SecurityLevel::S2;
 }
 
 std::vector<uint8_t> KVDBGeneralStoreTest::Random(uint32_t len)
 {
     std::random_device randomDevice;
-    std::uniform_int_distribution distribution(0, std::numeric_limits<uint8_t>::max());
+    std::uniform_int_distribution<int> distribution(0, std::numeric_limits<uint8_t>::max());
     std::vector<uint8_t> key(len);
     for (uint32_t i = 0; i < len; i++) {
         key[i] = static_cast<uint8_t>(distribution(randomDevice));
@@ -90,6 +90,7 @@ void KVDBGeneralStoreTest::TearDownTestCase() {}
 void KVDBGeneralStoreTest::SetUp()
 {
     Bootstrap::GetInstance().LoadDirectory();
+    InitMetaData();
 }
 
 void KVDBGeneralStoreTest::TearDown() {}
@@ -104,7 +105,6 @@ void KVDBGeneralStoreTest::TearDown() {}
 HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_001, TestSize.Level0)
 {
     ZLOGI("GetDBPasswordTest start");
-    InitMetaData();
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_, true));
@@ -122,7 +122,6 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_001, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
 {
     ZLOGI("GetDBPasswordTest_002 start");
-    InitMetaData();
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
     metaData_.isEncrypt = true;
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
@@ -230,8 +229,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloseTest, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
 {
     ZLOGI("SyncTest start");
-    InitMetaData();
-    mkdir(("/data/service/el1/public/database/" + std::string(TEST_DISTRIBUTEDDATA_BUNDLE)).c_str(),
+    mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);

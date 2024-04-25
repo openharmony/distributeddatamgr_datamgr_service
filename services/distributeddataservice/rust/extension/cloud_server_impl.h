@@ -40,8 +40,10 @@ public:
     DBSchemaMeta GetAppSchema(int32_t userId, const std::string &bundleName) override;
     int32_t Subscribe(int32_t userId, const std::map<std::string, std::vector<DBMeta>> &dbs) override;
     int32_t Unsubscribe(int32_t userId, const std::map<std::string, std::vector<DBMeta>> &dbs) override;
+    std::shared_ptr<DBAssetLoader> ConnectAssetLoader(uint32_t tokenId, const DBMeta &dbMeta) override;
     std::shared_ptr<DBAssetLoader> ConnectAssetLoader(
         const std::string &bundleName, int user, const DBMeta &dbMeta) override;
+    std::shared_ptr<DBCloudDB> ConnectCloudDB(uint32_t tokenId, const DBMeta &dbMeta) override;
     std::shared_ptr<DBCloudDB> ConnectCloudDB(const std::string &bundleName, int user, const DBMeta &dbMeta) override;
 
 private:

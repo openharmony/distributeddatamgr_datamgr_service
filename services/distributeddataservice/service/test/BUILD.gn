@@ -237,11 +237,11 @@ ohos_unittest("DeviceMatrixTest") {
 ohos_unittest("KVDBGeneralStoreTest") {
   module_out_path = module_output_path
   sources = [
-    "kvdb_general_store_test.cpp",
     "../common/value_proxy.cpp",
     "../kvdb/kvdb_general_store.cpp",
     "../rdb/rdb_cloud.cpp",
     "../rdb/rdb_query.cpp",
+    "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
   ]
@@ -268,12 +268,10 @@ ohos_unittest("KVDBGeneralStoreTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//foundation/distributeddatamgr/relational_store/interfaces/inner_api/rdb:native_rdb",
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
 }

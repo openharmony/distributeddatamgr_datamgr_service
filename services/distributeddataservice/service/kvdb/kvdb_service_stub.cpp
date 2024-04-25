@@ -30,7 +30,6 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnAfterCreate,
     &KVDBServiceStub::OnDelete,
     &KVDBServiceStub::OnSync,
-    &KVDBServiceStub::OnCloudSync,
     &KVDBServiceStub::OnRegisterCallback,
     &KVDBServiceStub::OnUnregisterCallback,
     &KVDBServiceStub::OnSetSyncParam,
@@ -44,6 +43,7 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnUnsubscribe,
     &KVDBServiceStub::OnGetBackupPassword,
     &KVDBServiceStub::OnSyncExt,
+    &KVDBServiceStub::OnCloudSync,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)

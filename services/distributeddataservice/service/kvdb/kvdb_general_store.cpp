@@ -109,7 +109,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
             delegate_ = tmpStore;
         });
     if (delegate_ == nullptr || status != DBStatus::OK) {
-        ZLOGI("GetKvStore end. delegate is null?[%{public}d], status = %{public}d", delegate_ == nullptr, status);
+        ZLOGE("GetKvStore failed. delegate is null?[%{public}d], status = %{public}d", delegate_ == nullptr, status);
         manager_.CloseKvStore(delegate_);
         return;
     }
@@ -152,7 +152,7 @@ KVDBGeneralStore::~KVDBGeneralStore()
 
 int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
 {
-    return GenErr::E_OK;
+    return GenErr::E_NOT_SUPPORT;
 }
 
 int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos)
@@ -229,28 +229,28 @@ int32_t KVDBGeneralStore::Close()
 
 int32_t KVDBGeneralStore::Execute(const std::string &table, const std::string &sql)
 {
-    return GeneralError::E_OK;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 int32_t KVDBGeneralStore::Insert(const std::string &table, VBuckets &&values)
 {
-    return GeneralError::E_OK;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 int32_t KVDBGeneralStore::Update(const std::string &table, const std::string &setSql, Values &&values,
     const std::string &whereSql, Values &&conditions)
 {
-    return GeneralError::E_OK;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 int32_t KVDBGeneralStore::Delete(const std::string &table, const std::string &sql, Values &&args)
 {
-    return GeneralError::E_OK;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 int32_t KVDBGeneralStore::Replace(const std::string &table, VBucket &&value)
 {
-    return GeneralError::E_OK;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 std::shared_ptr<Cursor> KVDBGeneralStore::Query(
@@ -266,7 +266,7 @@ std::shared_ptr<Cursor> KVDBGeneralStore::Query(const std::string &table, GenQue
 
 int32_t KVDBGeneralStore::MergeMigratedData(const std::string &tableName, VBuckets &&values)
 {
-    return GeneralError::E_OK;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsync async)
@@ -288,6 +288,22 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
     };
 }
 
+DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, int64_t wait)
+{
+    DistributedDB::CloudSyncOption syncOption;
+    syncOption.devices = devices;
+    syncOption.mode = cloudSyncMode;
+    syncOption.waitTime = wait;
+    if (storeInfo_.user == 0) {
+        std::vector<int32_t> users;
+        AccountDelegate::GetInstance()->QueryUsers(users);
+        syncOption.users.push_back(std::to_string(users[0]));
+    } else {
+        syncOption.users.push_back(std::to_string(storeInfo_.user));
+    }
+    return delegate_->Sync(syncOption, nullptr);
+}
+
 int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
 {
     auto syncMode = GeneralStore::GetSyncMode(syncParm.mode);
@@ -300,18 +316,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
     auto dbStatus = DistributedDB::OK;
     auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
-        DistributedDB::CloudSyncOption syncOption;
-        syncOption.devices = devices;
-        syncOption.mode = dbMode;
-        syncOption.waitTime = syncParm.wait;
-        if (storeInfo_.user == 0) {
-            std::vector<int32_t> users;
-            AccountDelegate::GetInstance()->QueryUsers(users);
-            syncOption.users.push_back(std::to_string(users[0]));
-        } else {
-            syncOption.users.push_back(std::to_string(storeInfo_.user));
-        }
-        dbStatus = delegate_->Sync(syncOption, nullptr);
+        dbStatus = CloudSync(devices, dbMode, syncParm.wait);
     } else {
         if (devices.empty()) {
             ZLOGE("Devices is empty! mode:%{public}d", syncParm.mode);
@@ -328,7 +333,8 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
         if (syncMode == NEARBY_SUBSCRIBE_REMOTE) {
             dbStatus = delegate_->SubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
         } else if (syncMode == NEARBY_UNSUBSCRIBE_REMOTE) {
-            dbStatus = delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
+            dbStatus =
+                delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
         } else if (syncMode < NEARBY_END) {
             if (kvQuery->IsEmpty()) {
                 dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), false);
@@ -487,7 +493,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::strin
     genOrigin.store = storeId_;
     Watcher::ChangeInfo changeInfo;
     for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
-        auto &info = changeInfo[data.tableName][i];
+        auto &info = changeInfo[storeId_][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             Convert(std::move(*(priData.begin())), value);

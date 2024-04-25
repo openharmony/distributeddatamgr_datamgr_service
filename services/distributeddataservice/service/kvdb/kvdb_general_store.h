@@ -83,6 +83,7 @@ private:
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DBStatus status);
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
+    DBStatus CloudSync(const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, int64_t wait);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;

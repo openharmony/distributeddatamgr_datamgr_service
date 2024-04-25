@@ -260,6 +260,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
                 Anonymous::Change(storeId.storeId).c_str());
             return Status::SUCCESS;
         }
+        CloudSync(appId, storeId);
     }
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),

@@ -44,7 +44,7 @@ int32_t KVDBWatcher::OnChange(const Origin &origin, const PRIFields &primaryFiel
         DataOrigin dataOrigin;
         dataOrigin.id = origin.id;
         dataOrigin.store = origin.store;
-        for(auto &observer : observers) {
+        for (auto &observer : observers) {
             observer->OnChange(dataOrigin, std::move(keys));
         }
     }
@@ -64,7 +64,7 @@ int32_t KVDBWatcher::OnChange(const Origin &origin, const Fields &fields, Change
         auto updates = ConvertToEntries(changeData->second[OP_UPDATE]);
         auto deletes = ConvertToEntries(changeData->second[OP_DELETE]);
         ChangeNotification change(std::move(inserts), std::move(updates), std::move(deletes), {}, false);
-        for(auto &observer : observers) {
+        for (auto &observer : observers) {
             observer->OnChange(change);
         }
     }

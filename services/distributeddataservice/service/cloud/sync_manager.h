@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,17 +15,20 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
+
+#include "cloud/cloud_event.h"
+#include "cloud/cloud_info.h"
+#include "cloud/sync_strategy.h"
+#include "cloud_types.h"
+#include "concurrent_map.h"
 #include "eventcenter/event.h"
 #include "executor_pool.h"
+#include "metadata/store_meta_data_local.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "utils/ref_count.h"
-#include "concurrent_map.h"
-#include "cloud/cloud_info.h"
-#include "cloud/sync_strategy.h"
-#include "cloud_types.h"
-#include "cloud/cloud_event.h"
+
 namespace OHOS::CloudData {
 class SyncManager {
 public:
@@ -54,7 +57,7 @@ public:
         void SetError(int32_t code) const;
         void SetCompensation(bool isCompensation);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
-        bool Contains(const std::string& storeName);
+        bool Contains(const std::string &storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
 
     private:
@@ -102,6 +105,8 @@ private:
 
     static uint64_t GenerateId(int32_t user);
     static ExecutorPool::Duration GetInterval(int32_t code);
+    static std::map<uint32_t, GenStore::BindInfo> GetBindInfos(const StoreMetaData &meta,
+        const std::vector<int32_t> &users, CloudInfo &info, DistributedData::Database &schemaDatabase, bool mustBind);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);

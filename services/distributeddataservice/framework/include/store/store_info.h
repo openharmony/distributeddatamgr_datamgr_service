@@ -26,7 +26,6 @@ struct StoreInfo {
     int32_t instanceId = 0;
     int32_t user = 0;
     std::string deviceId;
-    bool isPublic = false;
     uint64_t syncId = 0;
 };
 } // namespace OHOS::DistributedData
