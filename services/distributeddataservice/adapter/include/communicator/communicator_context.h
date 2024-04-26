@@ -25,11 +25,13 @@ class API_EXPORT CommunicatorContext {
 public:
     using OnSendAble = DistributedDB::OnSendAble;
     using DeviceInfos = DistributedDB::DeviceInfos;
+    using OnCloseAble = std::function<void(const std::string &deviceId)>;
 
     API_EXPORT static CommunicatorContext &GetInstance();
     API_EXPORT void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     std::shared_ptr<ExecutorPool> GetThreadPool();
     void SetSessionListener(const OnSendAble &sendAbleCallback);
+    void SetSessionListener(const OnCloseAble &closeAbleCallback);
     void NotifySessionChanged(const std::string &deviceId);
 
 private:
@@ -41,7 +43,8 @@ private:
     CommunicatorContext &operator=(CommunicatorContext &&) = delete;
 
     mutable std::mutex sessionMutex_;
-    OnSendAble sessionListener_;
+    OnSendAble sendListener_;
+    OnCloseAble closeListener_;
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedData
