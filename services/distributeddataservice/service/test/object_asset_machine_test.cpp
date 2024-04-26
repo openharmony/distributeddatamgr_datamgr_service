@@ -181,6 +181,31 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer004, TestSize.Level0)
 }
 
 /**
+* @tc.name: StatusTransfer005
+* @tc.desc: Transfer event
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(ObjectAssetMachineTest, StatusTransfer005, TestSize.Level0)
+{
+    auto machine = std::make_shared<ObjectAssetMachine>();
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_2", asset };
+    changedAssets_[uri_].status = STATUS_UPLOADING;
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
+    ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
+    ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
+}
+
+/**
 * @tc.name: StatusUpload001
 * @tc.desc: No conflict scenarios: normal cloud sync.
 * @tc.type: FUNC
@@ -231,6 +256,60 @@ HWTEST_F(ObjectAssetMachineTest, StatusUpload002, TestSize.Level0)
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
 
     machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
+}
+
+/**
+* @tc.name: StatusDownload001
+* @tc.desc: No conflict scenarios: normal cloud sync.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(ObjectAssetMachineTest, StatusDownload001, TestSize.Level0)
+{
+    auto machine = std::make_shared<ObjectAssetMachine>();
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
+    machine->DFAPostEvent(DOWNLOAD, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_DOWNLOADING);
+
+    machine->DFAPostEvent(DOWNLOAD_FINISHED, changedAssets_[uri_], asset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+}
+
+/**
+* @tc.name: StatusDownload002
+* @tc.desc: Conflict scenario: Download before transfer.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(ObjectAssetMachineTest, StatusDownload002, TestSize.Level0)
+{
+    auto machine = std::make_shared<ObjectAssetMachine>();
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
+    machine->DFAPostEvent(DOWNLOAD, changedAssets_[uri_], asset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_DOWNLOADING);
+
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
+    ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
+
+    machine->DFAPostEvent(DOWNLOAD_FINISHED, changedAssets_[uri_], asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
 }
 } // namespace OHOS::Test
