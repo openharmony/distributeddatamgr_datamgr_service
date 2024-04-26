@@ -354,7 +354,7 @@ HWTEST_F(DataShareServiceImplTest, SubscribePublishedData002, TestSize.Level1)
     }
 
     result = dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
-    EXPECT_EQ(result1.size(), uris.size());
+    EXPECT_EQ(result.size(), uris.size());
     for (auto const &operationResult : result) {
         EXPECT_NE(operationResult.errCode_, 0);
     }

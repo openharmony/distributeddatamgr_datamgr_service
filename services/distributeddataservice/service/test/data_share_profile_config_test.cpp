@@ -18,9 +18,10 @@
 #include <unistd.h>
 #include "log_print.h"
 #include "datashare_errno.h"
+#include "data_provider_config.h"
 #include "data_share_db_config.h"
 #include "data_share_profile_config.h"
-#include "data_share/data_provider_config.h"
+
 
 using namespace testing::ext;
 using namespace OHOS::DataShare;
