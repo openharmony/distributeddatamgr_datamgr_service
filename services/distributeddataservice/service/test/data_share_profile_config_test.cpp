@@ -16,19 +16,19 @@
 
 #include <gtest/gtest.h>
 #include <unistd.h>
-#include "log_print.h"
+
 #include "datashare_errno.h"
-#include "data_provider_config.h"
 #include "data_share_db_config.h"
 #include "data_share_profile_config.h"
+#include "data_share_service_impl.h"
+#include "log_print.h"
 
-
+namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::DataShare;
 using namespace OHOS::DistributedData;
 std::string DATA_SHARE_URI = "datashare:///com.acts.datasharetest";
 constexpr uint32_t CALLERTOKENID = 100;
-namespace OHOS::Test {
 class DataShareProfileConfigTest : public testing::Test {
 public:
     static constexpr int64_t USER_TEST = 100;
