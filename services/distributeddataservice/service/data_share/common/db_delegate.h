@@ -44,6 +44,8 @@ public:
     virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
     virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
+private:
+    static constexpr int NO_CHANGE_VERSION = -1;
 };
 
 class Id : public DistributedData::Serializable {
