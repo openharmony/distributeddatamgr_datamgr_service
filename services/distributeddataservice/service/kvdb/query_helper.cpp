@@ -48,7 +48,8 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
     size_t pos = query.find_first_not_of(DataQuery::SPACE);
     std::string inputTrim = (pos == std::string::npos) ? "" : query.substr(pos);
     std::regex regex(" ");
-    std::vector<std::string> words(std::sregex_token_iterator(inputTrim.begin(), inputTrim.end(), regex, -1), // regex split string by space
+    // regex split string by space
+    std::vector<std::string> words(std::sregex_token_iterator(inputTrim.begin(), inputTrim.end(), regex, -1),
         std::sregex_token_iterator());
 
     if (words.empty()) {
@@ -57,7 +58,8 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
     }
     int pointer = 0;            // Read pointer starts at 0
     int end = words.size() - 1; // Read pointer ends at size - 1
-    for (int count = 0; pointer <= end && count <= MAX_QUERY_COMPLEXITY; ++count) { // Counts how many keywords has been handled
+    // Counts how many keywords has been handled
+    for (int count = 0; pointer <= end && count <= MAX_QUERY_COMPLEXITY; ++count) {
         std::string keyword = words.at(pointer);
         if (keyword == DataQuery::EQUAL_TO) {
             isSuccess = HandleEqualTo(words, pointer, end, dbQuery);
