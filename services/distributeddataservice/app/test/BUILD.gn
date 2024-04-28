@@ -89,6 +89,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "file_api:securitylabel",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -96,7 +97,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "file_api:securitylabel"
   ]
 
   if (datamgr_service_power) {
@@ -144,11 +144,11 @@ ohos_unittest("SessionManagerTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "file_api:securitylabel",
     "hilog:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "file_api:securitylabel"
   ]
 
   if (datamgr_service_power) {
@@ -185,11 +185,11 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "file_api:securitylabel",
     "hilog:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "file_api:securitylabel"
   ]
 
   if (datamgr_service_power) {
@@ -240,6 +240,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "file_api:securitylabel",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -250,7 +251,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "file_api:securitylabel"
   ]
 
   if (datamgr_service_power) {

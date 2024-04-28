@@ -125,6 +125,7 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "file_api:securitylabel",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -135,7 +136,6 @@ ohos_shared_library("distributeddataservice") {
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "file_api:securitylabel"
   ]
 
   if (datamgr_service_power) {
