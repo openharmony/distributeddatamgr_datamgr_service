@@ -138,12 +138,4 @@ std::string URIUtils::Anonymous(const std::string &uri)
 
     return (DEFAULT_ANONYMOUS + uri.substr(uri.length() - END_LENGTH, END_LENGTH));
 }
-
-bool URIUtils::IsPrefix(const std::string &prefix, const std::string &fullString)
-{
-    if (prefix.length() > fullString.length()) {
-        return false;
-    }
-    return fullString.compare(0, prefix.length(), prefix) == 0;
-}
 } // namespace OHOS::DataShare

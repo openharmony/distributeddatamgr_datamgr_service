@@ -81,7 +81,8 @@ int DataProviderConfig::GetFromProxyData()
             return curr.uri.length() > prev.uri.length();
         });
         for (auto &data : proxyDatas) {
-            if (!URIUtils::IsPrefix(data.uri, uriConfig_.formatUri)) {
+            if (data.uri.length() > uriConfig_.formatUri.length() ||
+                uriConfig_.formatUri.compare(0, data.uri.length(), data.uri) != 0) {
                 continue;
             }
             providerInfo_.readPermission = std::move(data.requiredReadPermission);
