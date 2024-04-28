@@ -26,82 +26,67 @@
 
 namespace OHOS::DistributedData {
 using DMAdapter = DeviceManagerAdapter;
+using WaterVersionMetaData = WaterVersionManager::WaterVersionMetaData;
 
 WaterVersionManager &WaterVersionManager::GetInstance()
 {
     static WaterVersionManager waterVersionManager;
     return waterVersionManager;
 }
-WaterVersionManager::WaterVersionManager()
+WaterVersionManager::WaterVersionManager() : waterVersions_(BUTT)
 {
     std::vector<WaterVersionMetaData> metas;
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
+    for (int i = 0; i < BUTT; ++i) {
+        waterVersions_[i].SetType(static_cast<Type>(i));
+    }
     for (const auto &store : stores) {
-        dynamicKeys_.push_back(Merge(store.bundleName, store.storeId));
+        waterVersions_[DYNAMIC].AddKey(Merge(store.bundleName, store.storeId));
     }
     stores = CheckerManager::GetInstance().GetStaticStores();
     for (const auto &store : stores) {
-        staticKeys_.push_back(Merge(store.bundleName, store.storeId));
+        waterVersions_[STATIC].AddKey(Merge(store.bundleName, store.storeId));
     }
     MetaDataManager::GetInstance().LoadMeta(WaterVersionMetaData::GetPrefix(), metas, true);
     for (auto &meta : metas) {
-        if (meta.type == DYNAMIC) {
-            if (dynamicKeys_ != meta.keys || meta.version != WaterVersionMetaData::DEFAULT_VERSION) {
-                meta = Upgrade(dynamicKeys_, meta);
-            }
-            dynamicVersions_.Set(meta.deviceId, meta);
-            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+        if (meta.type < 0 || meta.type > BUTT) {
+            ZLOGW("error meta:%{public}s", meta.ToAnonymousString().c_str());
+            continue;
         }
-        if (meta.type == STATIC) {
-            if (staticKeys_ != meta.keys || meta.version != WaterVersionMetaData::DEFAULT_VERSION) {
-                meta = Upgrade(staticKeys_, meta);
-            }
-            staticVersions_.Set(meta.deviceId, meta);
-            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-        }
+        waterVersions_[meta.type].InitWaterVersion(meta);
     }
 }
-std::string WaterVersionManager::GenerateWaterVersion(const std::string &bundleName, const std::string &storeName)
+std::string WaterVersionManager::GenerateWaterVersion(const std::string &bundleName, const std::string &storeName,
+    Type type)
 {
-    WaterVersionMetaData meta;
-    std::string key = Merge(bundleName, storeName);
-    for (size_t i = 0; i < staticKeys_.size(); ++i) {
-        if (staticKeys_[i] == key) {
-            meta.type = STATIC;
-            meta.keys = staticKeys_;
-            return InnerGenerate(i, staticVersions_, meta) ? Serializable::Marshall(meta) : "";
-        }
+    if (type < 0 || type >= BUTT || bundleName.empty() || storeName.empty()) {
+        ZLOGE("invalid args. bundleName:%{public}s, storeName:%{public}s, type:%{public}d", bundleName.c_str(),
+            Anonymous::Change(storeName).c_str(), type);
+        return "";
     }
-    for (size_t i = 0; i < dynamicKeys_.size(); ++i) {
-        if (dynamicKeys_[i] == key) {
-            meta.type = DYNAMIC;
-            meta.keys = dynamicKeys_;
-            return InnerGenerate(i, dynamicVersions_, meta) ? Serializable::Marshall(meta) : "";
-        }
-    }
-    ZLOGE("invalid param. bundleName:%{public}s, storeName:%{public}s", bundleName.c_str(), storeName.c_str());
-    return "";
+    auto [success, meta] = waterVersions_[type].GenerateWaterVersion(Merge(bundleName, storeName));
+    return success ? Serializable::Marshall(meta) : "";
 }
 
-bool WaterVersionManager::GetWaterVersion(const std::string &deviceId, WaterVersionManager::Type type,
-    std::string &waterVersion)
+std::pair<bool, uint64_t> WaterVersionManager::GetVersion(const std::string &deviceId,
+    WaterVersionManager::Type type)
 {
-    WaterVersionMetaData meta;
-    if (InnerGetWaterVersion(deviceId, type, meta)) {
-        waterVersion = Serializable::Marshall(meta);
-        return true;
+    if (type < 0 || type >= BUTT || deviceId.empty()) {
+        ZLOGE("invalid args, type:%{public}d", type);
+        return { false, 0 };
     }
-    return false;
+    auto [success, waterVersion] = waterVersions_[type].GetWaterVersion(deviceId);
+    return { success, success ? waterVersion.waterVersion : 0 };
 }
-bool WaterVersionManager::GetWaterVersion(const std::string &deviceId, WaterVersionManager::Type type,
-    uint64_t &waterVersion)
+
+std::string WaterVersionManager::GetWaterVersion(const std::string &deviceId, WaterVersionManager::Type type)
 {
-    WaterVersionMetaData meta;
-    if (InnerGetWaterVersion(deviceId, type, meta)) {
-        waterVersion = meta.GetVersion();
-        return true;
+    if (type < 0 || type >= BUTT || deviceId.empty()) {
+        ZLOGE("invalid args, type:%{public}d", type);
+        return { false, 0 };
     }
-    return false;
+    auto [success, waterVersion] = waterVersions_[type].GetWaterVersion(deviceId);
+    return success ? Serializable::Marshall(waterVersion) : "";
 }
 
 bool WaterVersionManager::SetWaterVersion(const std::string &bundleName, const std::string &storeName,
@@ -110,134 +95,24 @@ bool WaterVersionManager::SetWaterVersion(const std::string &bundleName, const s
     WaterVersionMetaData metaData;
     if (!Serializable::Unmarshall(waterVersion, metaData) || metaData.deviceId.empty() || !metaData.IsValid() ||
         metaData.deviceId == DMAdapter::GetInstance().GetLocalDevice().uuid) {
-        ZLOGE("invalid param. meta:%{public}s, bundleName:%{public}s, storeName:%{public}s",
+        ZLOGE("invalid args. meta:%{public}s, bundleName:%{public}s, storeName:%{public}s",
             metaData.ToAnonymousString().c_str(), bundleName.c_str(), Anonymous::Change(storeName).c_str());
         return false;
     }
 
     std::string key = Merge(bundleName, storeName);
-    for (size_t i = 0; i < staticKeys_.size(); ++i) {
-        if (metaData.type != STATIC) {
-            break;
-        }
-        if (staticKeys_[i] == key) {
-            return InnerSetWaterVersion(key, metaData, staticVersions_);
-        }
-    }
-    for (size_t i = 0; i < dynamicKeys_.size(); ++i) {
-        if (metaData.type != DYNAMIC) {
-            break;
-        }
-        if (dynamicKeys_[i] == key) {
-            return InnerSetWaterVersion(key, metaData, dynamicVersions_);
-        }
-    }
     ZLOGE("error key. deviceId:%{public}s, bundleName:%{public}s, storeName:%{public}s",
         Anonymous::Change(metaData.deviceId).c_str(), bundleName.c_str(), Anonymous::Change(storeName).c_str());
-    return false;
+    return waterVersions_[metaData.type].SetWaterVersion(Merge(bundleName, storeName), metaData);
 }
 
 bool WaterVersionManager::DelWaterVersion(const std::string &deviceId)
 {
-    WaterVersionMetaData meta;
-    if (dynamicVersions_.Get(deviceId, meta)) {
-        dynamicVersions_.Delete(deviceId);
-        MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    bool res = true;
+    for (auto &waterVersion : waterVersions_) {
+        res = res && waterVersion.DelWaterVersion(deviceId);
     }
-    if (staticVersions_.Get(deviceId, meta)) {
-        staticVersions_.Delete(deviceId);
-        MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
-    }
-    return true;
-}
-
-bool WaterVersionManager::InnerGenerate(int index, LRUBucket<std::string, WaterVersionMetaData> &bucket,
-    WaterVersionMetaData &metaData)
-{
-    metaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    if (metaData.deviceId.empty()) {
-        ZLOGE("GetLocalDevice failed!");
-        return false;
-    }
-    metaData.infos = { metaData.keys.size(), std::vector<uint64_t>(metaData.keys.size(), 0) };
-    // ensure serial execution
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    auto status = bucket.Get(metaData.deviceId, metaData);
-    if (!status && !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
-        ZLOGW("no WaterVersion, start InitMeta");
-        InitMeta(metaData);
-    }
-    metaData.waterVersion++;
-    // It has been initialized above, so there is no need to check for out of bounds
-    metaData.infos[index][index] = metaData.waterVersion;
-    for (size_t i = 0; i < metaData.keys.size(); ++i) {
-        metaData.infos[index][i] = metaData.infos[i][i];
-    }
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-    ZLOGI("generate meta:%{public}s", metaData.ToAnonymousString().c_str());
-    return bucket.Set(DMAdapter::GetInstance().GetLocalDevice().uuid, metaData);
-}
-
-bool WaterVersionManager::InnerGetWaterVersion(const std::string &deviceId, WaterVersionManager::Type type,
-    WaterVersionManager::WaterVersionMetaData &meta)
-{
-    if (deviceId.empty() || type < 0 || type > DYNAMIC) {
-        ZLOGE("invalid param. deviceId:%{public}s, type:%{public}d", Anonymous::Change(deviceId).c_str(), type);
-        return false;
-    }
-    meta.type = type;
-    meta.deviceId = deviceId;
-    bool flag = false;
-    switch (type) {
-        case DYNAMIC:
-            flag = dynamicVersions_.Get(deviceId, meta);
-            break;
-        case STATIC:
-            flag = staticVersions_.Get(deviceId, meta);
-            break;
-        default:
-            ZLOGE("error type:%{public}d. deviceId:%{public}s", type, Anonymous::Change(deviceId).c_str());
-            return false;
-    }
-    if (!flag && MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-        type == DYNAMIC ? dynamicVersions_.Set(deviceId, meta) : staticVersions_.Set(deviceId, meta);
-    }
-    ZLOGI("get meta:%{public}s, flag:%{public}d", meta.ToAnonymousString().c_str(), flag);
-    return true;
-}
-
-bool WaterVersionManager::InnerSetWaterVersion(const std::string &key,
-    const WaterVersionMetaData &metaData, LRUBucket<std::string, WaterVersionMetaData> &bucket)
-{
-    WaterVersionMetaData oldMeta;
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    bool success = bucket.Get(metaData.deviceId, oldMeta);
-    if (!success && !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta, true)) {
-        ZLOGI("save meta:%{public}s", metaData.ToAnonymousString().c_str());
-        return MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), metaData, true) &&
-               bucket.Set(metaData.deviceId, metaData);
-    }
-    if (oldMeta.keys.size() != metaData.keys.size() || oldMeta.version != metaData.version) {
-        ZLOGI("upgrade meta. old:%{public}s, new:%{public}s", oldMeta.ToAnonymousString().c_str(),
-            metaData.ToAnonymousString().c_str());
-        oldMeta = metaData;
-        for (size_t i = 0; i < metaData.keys.size(); ++i) {
-            // Set all unSync items to 0
-            if (metaData.keys[i] != key) {
-                oldMeta.infos[i] = std::vector<uint64_t>(metaData.keys.size(), 0);
-            }
-        }
-    } else {
-        for (size_t i = 0; i < oldMeta.keys.size(); ++i) {
-            if (oldMeta.keys[i] == key) {
-                oldMeta.infos[i] = metaData.infos[i];
-                break;
-            }
-        }
-    }
-    UpdateWaterVersion(oldMeta);
-    return MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true) &&
-           bucket.Set(metaData.deviceId, oldMeta);
+    return res;
 }
 
 bool WaterVersionManager::InitMeta(WaterVersionMetaData &metaData)
@@ -252,20 +127,21 @@ bool WaterVersionManager::InitMeta(WaterVersionMetaData &metaData)
         storeMetaData.instanceId = 0;
         if (!MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData, true)) {
             ZLOGE("no store! bundleName:%{public}s, storeName:%{public}s", storeMetaData.bundleName.c_str(),
-                storeMetaData.storeId.c_str());
+                storeMetaData.GetStoreAlias().c_str());
             continue;
         }
         auto store = AutoCache::GetInstance().GetStore(storeMetaData, {});
         if (store == nullptr) {
             ZLOGE("store is null! bundleName:%{public}s, storeName:%{public}s", storeMetaData.bundleName.c_str(),
-                storeMetaData.storeId.c_str());
+                storeMetaData.GetStoreAlias().c_str());
             continue;
         }
         auto waterVersion = store->GetWaterVersion(uuid);
         WaterVersionMetaData meta;
         if (waterVersion.empty() || !Serializable::Unmarshall(waterVersion, meta)) {
             ZLOGE("GetWaterVersion failed! bundleName:%{public}s, storeName:%{public}s, meta:%{public}s",
-                storeMetaData.bundleName.c_str(), storeMetaData.storeId.c_str(), meta.ToAnonymousString().c_str());
+                storeMetaData.bundleName.c_str(), storeMetaData.GetStoreAlias().c_str(),
+                meta.ToAnonymousString().c_str());
             continue;
         }
         if (meta.version != metaData.version || meta.keys != metaData.keys) {
@@ -276,7 +152,8 @@ bool WaterVersionManager::InitMeta(WaterVersionMetaData &metaData)
     UpdateWaterVersion(metaData);
     return true;
 }
-void WaterVersionManager::UpdateWaterVersion(WaterVersionManager::WaterVersionMetaData &metaData) const
+
+void WaterVersionManager::UpdateWaterVersion(WaterVersionMetaData &metaData)
 {
     ZLOGI("before update meta:%{public}s", metaData.ToAnonymousString().c_str());
     for (size_t i = 0; i < metaData.keys.size(); ++i) {
@@ -318,8 +195,8 @@ std::pair<std::string, std::string> WaterVersionManager::Split(const std::string
     return { res[0], res[1] };
 }
 
-WaterVersionManager::WaterVersionMetaData WaterVersionManager::Upgrade(const std::vector<std::string> &keys,
-    const WaterVersionManager::WaterVersionMetaData &meta)
+WaterVersionMetaData WaterVersionManager::Upgrade(const std::vector<std::string> &keys,
+    const WaterVersionMetaData &meta)
 {
     WaterVersionMetaData newMeta;
     newMeta.keys = keys;
@@ -333,6 +210,7 @@ WaterVersionManager::WaterVersionMetaData WaterVersionManager::Upgrade(const std
         for (size_t j = 0; j < meta.keys.size(); ++j) {
             if (meta.keys[j] == keys[i]) {
                 mp[j] = i;
+                continue;
             }
         }
     }
@@ -349,7 +227,8 @@ WaterVersionManager::WaterVersionMetaData WaterVersionManager::Upgrade(const std
     }
     return newMeta;
 }
-bool WaterVersionManager::WaterVersionMetaData::Marshal(Serializable::json &node) const
+
+bool WaterVersionMetaData::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(deviceId)], deviceId);
     SetValue(node[GET_NAME(version)], version);
@@ -359,14 +238,15 @@ bool WaterVersionManager::WaterVersionMetaData::Marshal(Serializable::json &node
     SetValue(node[GET_NAME(infos)], infos);
     return true;
 }
-bool WaterVersionManager::WaterVersionMetaData::Unmarshal(const Serializable::json &node)
+
+bool WaterVersionMetaData::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(deviceId), deviceId);
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(waterVersion), waterVersion);
     int32_t tmp = -1;
     GetValue(node, GET_NAME(type), tmp);
-    if (tmp < 0 || tmp > DYNAMIC) {
+    if (tmp < 0 || tmp >= BUTT) {
         return false;
     }
     type = static_cast<Type>(tmp);
@@ -374,28 +254,35 @@ bool WaterVersionManager::WaterVersionMetaData::Unmarshal(const Serializable::js
     GetValue(node, GET_NAME(infos), infos);
     return true;
 }
-std::string WaterVersionManager::WaterVersionMetaData::ToAnonymousString() const
+
+std::string WaterVersionMetaData::ToAnonymousString() const
 {
     json root;
     Marshal(root);
     SetValue(root[GET_NAME(deviceId)], Anonymous::Change(deviceId));
     return root.dump(-1, ' ', false, error_handler_t::replace);
 }
-std::string WaterVersionManager::WaterVersionMetaData::GetKey() const
+
+std::string WaterVersionMetaData::GetKey() const
 {
     return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, { deviceId, std::to_string(type) });
 }
-uint64_t WaterVersionManager::WaterVersionMetaData::GetVersion()
+
+uint64_t WaterVersionMetaData::GetVersion()
 {
     return waterVersion;
 }
-std::string WaterVersionManager::WaterVersionMetaData::GetPrefix()
+
+std::string WaterVersionMetaData::GetPrefix()
 {
     return KEY_PREFIX;
 }
 
-bool WaterVersionManager::WaterVersionMetaData::IsValid()
+bool WaterVersionMetaData::IsValid()
 {
+    if (type < 0 || type >= BUTT) {
+        return false;
+    }
     if (keys.size() != infos.size()) {
         return false;
     }
@@ -404,6 +291,128 @@ bool WaterVersionManager::WaterVersionMetaData::IsValid()
             return false;
         }
     }
+    return true;
+}
+
+void WaterVersionManager::WaterVersion::SetType(WaterVersionManager::Type type)
+{
+    type_ = type;
+}
+
+void WaterVersionManager::WaterVersion::AddKey(const std::string &key)
+{
+    keys_.push_back(key);
+}
+
+std::pair<bool, WaterVersionMetaData> WaterVersionManager::WaterVersion::GenerateWaterVersion(const std::string &key)
+{
+    WaterVersionMetaData metaData;
+    for (size_t i = 0; i < keys_.size(); ++i) {
+        if (keys_[i] != key) {
+            continue;
+        }
+        metaData.type = STATIC;
+        metaData.keys = keys_;
+        metaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+        if (metaData.deviceId.empty()) {
+            ZLOGE("GetLocalDevice failed!");
+            break;
+        }
+        metaData.infos = { metaData.keys.size(), std::vector<uint64_t>(metaData.keys.size(), 0) };
+        // ensure serial execution
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        auto status = versions_.Get(metaData.deviceId, metaData);
+        if (!status && !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
+            ZLOGW("no WaterVersion, start InitMeta");
+            InitMeta(metaData);
+        }
+        metaData.waterVersion++;
+        // It has been initialized above, so there is no need to check for out of bounds
+        metaData.infos[i][i] = metaData.waterVersion;
+        for (size_t j = 0; j < metaData.keys.size(); ++j) {
+            metaData.infos[i][j] = metaData.infos[j][j];
+        }
+        ZLOGI("generate meta:%{public}s", metaData.ToAnonymousString().c_str());
+        return { MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true) &&
+                 versions_.Set(DMAdapter::GetInstance().GetLocalDevice().uuid, metaData),
+                 metaData };
+    }
+    return { false, metaData };
+}
+
+std::pair<bool, WaterVersionMetaData> WaterVersionManager::WaterVersion::GetWaterVersion(const std::string &deviceId)
+{
+    WaterVersionMetaData meta;
+    if (versions_.Get(deviceId, meta)) {
+        return { true, meta };
+    }
+    meta.deviceId = deviceId;
+    meta.type = type_;
+    if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+        versions_.Set(deviceId, meta);
+        return { true, meta };
+    }
+    return { false, meta };
+}
+
+bool WaterVersionManager::WaterVersion::SetWaterVersion(const std::string &key,
+    const WaterVersionMetaData &metaData)
+{
+    if (std::find(keys_.begin(), keys_.end(), key) == keys_.end()) {
+        ZLOGE("invalid key:%{public}s", metaData.ToAnonymousString().c_str());
+        return false;
+    }
+    WaterVersionMetaData oldMeta;
+    // ensure serial execution
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    if (!versions_.Get(metaData.deviceId, oldMeta) &&
+        !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta, true)) {
+        ZLOGI("save meta:%{public}s", metaData.ToAnonymousString().c_str());
+        oldMeta = metaData;
+        UpdateWaterVersion(oldMeta);
+        return MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true) &&
+               versions_.Set(metaData.deviceId, oldMeta);
+    }
+    if (oldMeta.keys.size() != metaData.keys.size() || oldMeta.version != metaData.version) {
+        ZLOGI("upgrade meta. old:%{public}s, new:%{public}s", oldMeta.ToAnonymousString().c_str(),
+            metaData.ToAnonymousString().c_str());
+        oldMeta = metaData;
+        for (size_t i = 0; i < metaData.keys.size(); ++i) {
+            // Set all unSync items to 0
+            if (metaData.keys[i] != key) {
+                oldMeta.infos[i] = std::vector<uint64_t>(metaData.keys.size(), 0);
+            }
+        }
+    } else {
+        for (size_t i = 0; i < oldMeta.keys.size(); ++i) {
+            if (oldMeta.keys[i] == key) {
+                oldMeta.infos[i] = metaData.infos[i];
+                break;
+            }
+        }
+    }
+    UpdateWaterVersion(oldMeta);
+    return MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true) &&
+           versions_.Set(metaData.deviceId, oldMeta);
+}
+
+bool WaterVersionManager::WaterVersion::DelWaterVersion(const std::string &deviceId)
+{
+    WaterVersionMetaData meta;
+    if (versions_.Get(deviceId, meta)) {
+        return versions_.Delete(deviceId) && MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    }
+    return true;
+}
+
+bool WaterVersionManager::WaterVersion::InitWaterVersion(const WaterVersionMetaData &metaData)
+{
+    if (keys_ != metaData.keys || metaData.version != WaterVersionMetaData::DEFAULT_VERSION) {
+        auto meta = Upgrade(keys_, metaData);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+        versions_.Set(meta.deviceId, meta);
+    }
+    versions_.Set(metaData.deviceId, metaData);
     return true;
 }
 } // namespace OHOS::DistributedData

@@ -25,8 +25,9 @@ namespace DistributedData {
 class WaterVersionManager {
 public:
     enum Type {
+        DYNAMIC,
         STATIC,
-        DYNAMIC
+        BUTT
     };
     class WaterVersionMetaData final : public Serializable {
     public:
@@ -50,35 +51,37 @@ public:
     };
     static WaterVersionManager &GetInstance();
     WaterVersionManager();
-    // 生成本地水位
-    std::string GenerateWaterVersion(const std::string &bundleName, const std::string &storeName);
-    // 根据deviceId和type获取水位
-    bool GetWaterVersion(const std::string &deviceId, Type type, std::string &waterVersion);
-    // 根据deviceId和type获取水位
-    bool GetWaterVersion(const std::string &deviceId, Type type, uint64_t &waterVersion);
-    // 更新其它设备水位
+    std::string GenerateWaterVersion(const std::string &bundleName, const std::string &storeName, Type type);
+    std::pair<bool, uint64_t> GetVersion(const std::string &deviceId, Type type);
+    std::string GetWaterVersion(const std::string &deviceId, Type type);
     bool SetWaterVersion(const std::string &bundleName, const std::string &storeName,
         const std::string &waterVersion);
-    // 删除水位
     bool DelWaterVersion(const std::string &deviceId);
 
 private:
-    bool InnerGenerate(int index, LRUBucket<std::string, WaterVersionMetaData> &bucket,
-        WaterVersionMetaData &metaData);
-    bool InnerGetWaterVersion(const std::string &deviceId, Type type, WaterVersionMetaData &waterVersion);
-    bool InnerSetWaterVersion(const std::string &key, const WaterVersionMetaData &waterVersionMetaData,
-        LRUBucket<std::string, WaterVersionMetaData> &bucket);
-    bool InitMeta(WaterVersionMetaData &);
-    WaterVersionMetaData Upgrade(const std::vector<std::string> &keys, const WaterVersionMetaData& meta);
-    std::string Merge(const std::string &bundleName, const std::string &storeName);
-    std::pair<std::string, std::string> Split(const std::string &key);
     static constexpr size_t MAX_DEVICES = 16;
-    std::mutex mutex_;
-    std::vector<std::string> staticKeys_;
-    std::vector<std::string> dynamicKeys_;
-    LRUBucket<std::string, WaterVersionMetaData> staticVersions_{ MAX_DEVICES };
-    LRUBucket<std::string, WaterVersionMetaData> dynamicVersions_{ MAX_DEVICES };
-    void UpdateWaterVersion(WaterVersionMetaData &metaData) const;
+    class WaterVersion {
+    public:
+        WaterVersion() = default;
+        void SetType(Type type);
+        void AddKey(const std::string &key);
+        bool InitWaterVersion(const WaterVersionMetaData &metaData);
+        std::pair<bool, WaterVersionMetaData> GenerateWaterVersion(const std::string &key);
+        std::pair<bool, WaterVersionMetaData> GetWaterVersion(const std::string &deviceId);
+        bool SetWaterVersion(const std::string &key, const WaterVersionMetaData &metaData);
+        bool DelWaterVersion(const std::string &deviceId);
+    private:
+        Type type_;
+        std::mutex mutex_;
+        std::vector<std::string> keys_;
+        LRUBucket<std::string, WaterVersionMetaData> versions_{ MAX_DEVICES };
+    };
+    static bool InitMeta(WaterVersionMetaData &);
+    static WaterVersionMetaData Upgrade(const std::vector<std::string> &keys, const WaterVersionMetaData& meta);
+    static std::string Merge(const std::string &bundleName, const std::string &storeName);
+    static std::pair<std::string, std::string> Split(const std::string &key);
+    static void UpdateWaterVersion(WaterVersionMetaData &metaData);
+    std::vector<WaterVersion> waterVersions_;
 };
 } // namespace DistributedData
 } // namespace OHOS

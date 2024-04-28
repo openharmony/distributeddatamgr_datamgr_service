@@ -14,6 +14,7 @@
  */
 
 #include "cloud/cloud_extra_data.h"
+#include "cloud/cloud_config_manager.h"
 
 namespace OHOS::DistributedData {
 bool ExtensionInfo::Marshal(Serializable::json &node) const
@@ -30,6 +31,7 @@ bool ExtensionInfo::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(accountId), accountId);
     GetValue(node, GET_NAME(bundleName), bundleName);
+    bundleName = CloudConfigManager::GetInstance().ToLocal(bundleName);
     GetValue(node, GET_NAME(containerName), containerName);
     GetValue(node, GET_NAME(databaseScopes), databaseScopes);
     if (!Unmarshall(databaseScopes, scopes)) {
