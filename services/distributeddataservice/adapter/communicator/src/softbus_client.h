@@ -67,9 +67,9 @@ private:
             QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 }
         },
         { // HML QOS
-            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
-            QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 },
-            QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 }
+            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 90 * 1024 * 1024 },
+            QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 10000 },
+            QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 2000 }
         }
     };
     std::atomic_bool isOpening_ = false;
