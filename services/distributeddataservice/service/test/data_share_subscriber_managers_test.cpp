@@ -118,7 +118,7 @@ HWTEST_F(DataShareSubscriberManagersTest, Add, TestSize.Level1)
 
 /**
 * @tc.name: Key
-* @tc.desc: test Key operator< function
+* @tc.desc: test Key operator< subscriberId function
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -170,7 +170,7 @@ HWTEST_F(DataShareSubscriberManagersTest, Disable, TestSize.Level1)
 
 /**
 * @tc.name: Emit
-* @tc.desc: test Emit abnormal case
+* @tc.desc: test Emit EmitByKey GetEnableObserverCount abnormal case
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -191,7 +191,7 @@ HWTEST_F(DataShareSubscriberManagersTest, Emit, TestSize.Level1)
 
 /**
 * @tc.name: IsNotifyOnEnabled
-* @tc.desc: test IsNotifyOnEnabled abnormal case
+* @tc.desc: test IsNotifyOnEnabled PutInto SetObserversNotifiedOnEnabled abnormal case
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -206,9 +206,26 @@ HWTEST_F(DataShareSubscriberManagersTest, IsNotifyOnEnabled, TestSize.Level1)
     std::vector<PublishedDataSubscriberManager::ObserverNode> val;
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> callbacks;
     PublishedDataSubscriberManager::GetInstance().PutInto(callbacks, val, key, observer);
+    std::vector<PublishedDataKey> publishedKeys;
+    PublishedDataSubscriberManager::GetInstance().SetObserversNotifiedOnEnabled(publishedKeys);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME_TEST, USER_TEST);
     DataShare::PublishedDataKey keys("", "", 0);
     auto result = PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(keys, tokenId);
     EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name: PublishedDataKey
+* @tc.desc: test PublishedDataKey operator< bundleName function
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareSubscriberManagersTest, PublishedDataKey, TestSize.Level1)
+{
+    DataShare::PublishedDataKey key1(DATA_SHARE_URI_TEST, "ohos.subscribermanagertest.demo", TEST_SUB_ID);
+    DataShare::PublishedDataKey key2(DATA_SHARE_URI_TEST, "ohos.error.demo", TEST_SUB_ID);
+
+    EXPECT_FALSE(key1 < key2);
+    EXPECT_TRUE(key2 < key1);
 }
 } // namespace OHOS::Test
