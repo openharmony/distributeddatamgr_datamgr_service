@@ -52,6 +52,10 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
         std::sregex_token_iterator(inputTrim.begin(), inputTrim.end(), regex, -1), // regex split string by space
         std::sregex_token_iterator());
 
+    if (words.empty()) {
+        ZLOGE("not enough params.");
+        return dbQuery;
+    }
     int pointer = 0;            // Read pointer starts at 0
     int end = words.size() - 1; // Read pointer ends at size - 1
     int count = 0;              // Counts how many keywords has been handled
