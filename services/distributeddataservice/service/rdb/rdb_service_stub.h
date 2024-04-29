@@ -34,8 +34,6 @@ private:
 
     int32_t OnRemoteObtainDistributedTableName(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnGetSchema(MessageParcel& data, MessageParcel& reply);
-
     int32_t OnDelete(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteInitNotifier(MessageParcel& data, MessageParcel& reply);
@@ -60,6 +58,10 @@ private:
 
     int32_t OnRemoteQuerySharingResource(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnBeforeOpen(MessageParcel& data, MessageParcel& reply);
+
+    int32_t OnAfterOpen(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnDisable(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnEnable(MessageParcel& data, MessageParcel& reply);
@@ -76,7 +78,6 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_SUBSCRIBE)] = &RdbServiceStub::OnRemoteDoSubscribe,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNSUBSCRIBE)] = &RdbServiceStub::OnRemoteDoUnSubscribe,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REMOTE_QUERY)] = &RdbServiceStub::OnRemoteDoRemoteQuery,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_SCHEMA)] = &RdbServiceStub::OnGetSchema,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_DELETE)] = &RdbServiceStub::OnDelete,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REGISTER_AUTOSYNC_PROGRESS_OBSERVER)] =
             &RdbServiceStub::OnRemoteRegisterDetailProgressObserver,
@@ -88,6 +89,8 @@ private:
             &RdbServiceStub::OnRemoteQuerySharingResource,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_DISABLE)] = &RdbServiceStub::OnDisable,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_ENABLE)] = &RdbServiceStub::OnEnable,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_BEFORE_OPEN)] = &RdbServiceStub::OnBeforeOpen,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_AFTER_OPEN)] = &RdbServiceStub::OnAfterOpen
     };
 };
 } // namespace OHOS::DistributedRdb

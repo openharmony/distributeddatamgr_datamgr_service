@@ -26,6 +26,7 @@ config("module_private_config") {
     "../config/include/",
     "../crypto/include/",
     "../directory/include/",
+    "../kvdb/",
     "../matrix/include/",
     "../common/",
     "../rdb/",
@@ -229,6 +230,48 @@ ohos_unittest("DeviceMatrixTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
+ohos_unittest("KVDBGeneralStoreTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../common/value_proxy.cpp",
+    "../kvdb/kvdb_general_store.cpp",
+    "../rdb/rdb_cloud.cpp",
+    "../rdb/rdb_query.cpp",
+    "kvdb_general_store_test.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/rdb",
+    "${relational_store_path}/interfaces/innerapi/clouddata/include",
+    "${relational_store_path}/interfaces/inner_api/rdb/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
 }
@@ -628,6 +671,7 @@ group("unittest") {
     ":DataShareServiceImplTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
+    ":KVDBGeneralStoreTest",
     ":MetaDataTest",
     ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",

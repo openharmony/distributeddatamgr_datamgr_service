@@ -655,18 +655,74 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(StoreI
     return result;
 }
 
-int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
+int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
+{
+    auto meta = GetStoreMetaData(param);
+    auto isCreated =
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+    if (!isCreated) {
+        return RDB_OK;
+    }
+    SetReturnParam(meta, param);
+    return RDB_OK;
+}
+
+void RdbServiceImpl::SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param)
+{
+    param.bundleName_ = metadata.bundleName;
+    param.type_ = metadata.storeType;
+    param.level_ = metadata.securityLevel;
+    param.area_ = metadata.area;
+    param.hapName_ = metadata.hapName;
+    param.customDir_ = metadata.customDir;
+    param.isEncrypt_ = metadata.isEncrypt;
+    param.isAutoClean_ = !metadata.isManualClean;
+    param.isSearchable_ = metadata.isSearchable;
+}
+
+int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    StoreMetaData storeMeta;
-    if (CreateMetaData(param, storeMeta) != RDB_OK) {
+    auto meta = GetStoreMetaData(param);
+    StoreMetaData old;
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
+    if (!isCreated || meta != old) {
+        Upgrade(param, old);
+        ZLOGD("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
+            old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+    }
+    AppIDMetaData appIdMeta;
+    appIdMeta.bundleName = meta.bundleName;
+    appIdMeta.appId = meta.appId;
+    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
+        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
+            old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
+    if (!param.isEncrypt_ || param.password_.empty()) {
+        return RDB_OK;
+    }
+    auto ret = SetSecretKey(param, meta);
+    if (ret != RDB_OK) {
+        ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
+              meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return ret;
+    }
+    GetCloudSchema(param);
+    return RDB_OK;
+}
 
+void RdbServiceImpl::GetCloudSchema(const RdbSyncerParam &param)
+{
     if (executors_ != nullptr) {
         StoreInfo storeInfo;
         storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
@@ -682,7 +738,6 @@ int32_t RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
             return;
         });
     }
-    return RDB_OK;
 }
 
 StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
@@ -709,42 +764,6 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.isManualClean = !param.isAutoClean_;
     metaData.isSearchable = param.isSearchable_;
     return metaData;
-}
-
-int32_t RdbServiceImpl::CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old)
-{
-    auto meta = GetStoreMetaData(param);
-    bool isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
-    if (isCreated && (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-                         old.area != meta.area)) {
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        return RDB_ERROR;
-    }
-    if (!isCreated || meta != old) {
-        Upgrade(param, old);
-        ZLOGD("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-    }
-    AppIDMetaData appIdMeta;
-    appIdMeta.bundleName = meta.bundleName;
-    appIdMeta.appId = meta.appId;
-    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        return RDB_ERROR;
-    }
-    if (!param.isEncrypt_ || param.password_.empty()) {
-        return RDB_OK;
-    }
-    return SetSecretKey(param, meta);
 }
 
 int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta)

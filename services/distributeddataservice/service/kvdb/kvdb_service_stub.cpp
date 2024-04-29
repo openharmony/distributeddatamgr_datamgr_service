@@ -43,6 +43,7 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnUnsubscribe,
     &KVDBServiceStub::OnGetBackupPassword,
     &KVDBServiceStub::OnSyncExt,
+    &KVDBServiceStub::OnCloudSync,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
@@ -164,6 +165,17 @@ int32_t KVDBServiceStub::OnSync(const AppId &appId, const StoreId &storeId, Mess
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnCloudSync(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    int32_t status = CloudSync(appId, storeId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;

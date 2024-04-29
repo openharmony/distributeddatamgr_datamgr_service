@@ -34,6 +34,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnNotifyDataChange,
     &CloudServiceStub::OnNotifyChange,
     &CloudServiceStub::OnQueryStatistics,
+    &CloudServiceStub::OnQueryLastSyncInfo,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnAllocResourceAndShare,
     &CloudServiceStub::OnShare,
@@ -145,6 +146,20 @@ int32_t CloudServiceStub::OnNotifyDataChange(MessageParcel &data, MessageParcel 
     }
     auto result = NotifyDataChange(id, CloudConfigManager::GetInstance().ToLocal(bundleName));
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnQueryLastSyncInfo(MessageParcel &data, MessageParcel &reply)
+{
+    std::string id;
+    std::string bundleName;
+    std::string storeId;
+    if (!ITypesUtil::Unmarshal(data, id, bundleName, storeId)) {
+        ZLOGE("Unmarshal id:%{public}s, bundleName:%{public}s, storeId:%{public}s", Anonymous::Change(id).c_str(),
+            bundleName.c_str(), Anonymous::Change(storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [status, results] = QueryLastSyncInfo(id, bundleName, storeId);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
 int32_t CloudServiceStub::OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply)

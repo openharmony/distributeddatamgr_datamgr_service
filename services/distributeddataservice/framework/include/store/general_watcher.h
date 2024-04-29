@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_WATCHER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_WATCHER_H
 #include <cstdint>
+
 #include "store/general_value.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
@@ -51,9 +52,12 @@ public:
     // PK primary key
     using PRIValue = std::variant<std::monostate, std::string, int64_t, double>;
     using PRIFields = std::map<std::string, std::string>;
+    using Fields = std::map<std::string, std::vector<std::string>>;
     using ChangeInfo = std::map<std::string, std::vector<PRIValue>[OP_BUTT]>;
+    using ChangeData = std::map<std::string, std::vector<Values>[OP_BUTT]>;
     virtual ~GeneralWatcher() = default;
     virtual int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) = 0;
+    virtual int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) = 0;
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_WATCHER_H
