@@ -43,9 +43,12 @@ private:
         std::string &schedulerSQL);
     void ExecuteSchedulerSQL(const std::string &rdbDir, const int32_t userId, int version, const Key &key,
         std::shared_ptr<DBDelegate> delegate);
+    bool SetTimerTask(uint64_t &timerId, const std::function<void()> &callback, int64_t reminderTime);
+    void DestoryTimerTask(int64_t timerId);
+    void ResetTimerTask(int64_t timerId, int64_t reminderTime);
 
     std::mutex mutex_;
-    std::map<Key, Executor::TaskId> timerCache_;
+    std::map<Key, int64_t> timerCache_;
     std::shared_ptr<ExecutorPool> executor_ = nullptr;
 };
 } // namespace OHOS::DataShare

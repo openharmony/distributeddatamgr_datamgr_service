@@ -77,6 +77,18 @@ bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)
     return AccountSA::OsAccountManager::QueryActiveOsAccountIds(users) == 0;
 }
 
+bool AccountDelegateNormalImpl::QueryForegroundUsers(std::vector<int> &users)
+{
+    std::vector<AccountSA::ForegroundOsAccount> accounts;
+    if (AccountSA::OsAccountManager::GetForegroundOsAccounts(accounts) != 0) {
+        return false;
+    }
+    for (auto &account : accounts) {
+        users.push_back(account.localId);
+    }
+    return true;
+}
+
 bool AccountDelegateNormalImpl::IsVerified(int userId)
 {
     auto [success, res] = userStatus_.Find(userId);

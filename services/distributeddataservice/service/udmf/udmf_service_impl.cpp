@@ -107,7 +107,8 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGE("SetRemoteUri failed, ret: %{public}d.", ret);
+            ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+                  unifiedData.GetRuntime()->createPackage.c_str());
             return ret;
         }
     }
@@ -196,7 +197,7 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
     if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = ProcessUri(query, unifiedData);
         if (ret != E_OK) {
-            ZLOGE("DragUriProcessing failed. ret=%{public}d", ret);
+            ZLOGE("ProcessUri failed. ret=%{public}d", ret);
             return E_NO_PERMISSION;
         }
     }
@@ -237,6 +238,13 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGE("GetHapBundleNameByToken fail, key=%{public}s, tokenId=%{private}d.", query.key.c_str(), query.tokenId);
         return E_ERROR;
     }
+
+    if (localDeviceId == sourceDeviceId && bundleName == unifiedData.GetRuntime()->sourcePackage) {
+        ZLOGW("No need to grant uri permissions, queryKey=%{public}s.", query.key.c_str());
+        return E_OK;
+    }
+
+    std::vector<Uri> allUri;
     for (auto record : records) {
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
@@ -249,16 +257,13 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
                 ZLOGW("Get authority is empty, key=%{public}s.", query.key.c_str());
                 continue;
             }
-            if (localDeviceId == sourceDeviceId && bundleName == unifiedData.GetRuntime()->sourcePackage) {
-                ZLOGW("No need to grant uri permissions, bundleName=%{public}s.", bundleName.c_str());
-                continue;
-            }
-            if (UriPermissionManager::GetInstance().GrantUriPermission(file->GetUri(), bundleName) != E_OK) {
-                ZLOGE("GrantUriPermission fail, uriAuthority=%{public}s, bundleName=%{public}s, key=%{public}s.",
-                    uri.GetAuthority().c_str(), bundleName.c_str(), query.key.c_str());
-                return E_NO_PERMISSION;
-            }
+            allUri.push_back(uri);
         }
+    }
+    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, bundleName, query.key) != E_OK) {
+        ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
+              bundleName.c_str(), query.key.c_str());
+        return E_NO_PERMISSION;
     }
     return E_OK;
 }

@@ -40,18 +40,26 @@ std::shared_ptr<ExecutorPool> CommunicatorContext::GetThreadPool()
 void CommunicatorContext::SetSessionListener(const OnSendAble &sendAbleCallback)
 {
     std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
-    sessionListener_ = sendAbleCallback;
+    sendListener_ = sendAbleCallback;
+}
+
+void CommunicatorContext::SetSessionListener(const OnCloseAble &closeAbleCallback)
+{
+    std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
+    closeListener_ = closeAbleCallback;
 }
 
 void CommunicatorContext::NotifySessionChanged(const std::string &deviceId)
 {
     ZLOGI("Notify session begin, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId).c_str());
     std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
-    if (sessionListener_ == nullptr) {
-        return;
+    if (closeListener_ != nullptr) {
+        closeListener_(deviceId);
     }
-    DeviceInfos devInfo;
-    devInfo.identifier = deviceId;
-    sessionListener_(devInfo);
+    if (sendListener_ != nullptr) {
+        DeviceInfos devInfo;
+        devInfo.identifier = deviceId;
+        sendListener_(devInfo);
+    }
 }
 } // namespace OHOS::DistributedData

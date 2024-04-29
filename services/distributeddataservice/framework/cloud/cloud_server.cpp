@@ -55,7 +55,19 @@ std::shared_ptr<AssetLoader> CloudServer::ConnectAssetLoader(uint32_t tokenId, c
     return nullptr;
 }
 
+std::shared_ptr<AssetLoader> CloudServer::ConnectAssetLoader(
+    const std::string &bundleName, int user, const CloudServer::Database &dbMeta)
+{
+    return nullptr;
+}
+
 std::shared_ptr<CloudDB> CloudServer::ConnectCloudDB(uint32_t tokenId, const CloudServer::Database &dbMeta)
+{
+    return nullptr;
+}
+
+std::shared_ptr<CloudDB> CloudServer::ConnectCloudDB(
+    const std::string &bundleName, int user, const CloudServer::Database &dbMeta)
 {
     return nullptr;
 }

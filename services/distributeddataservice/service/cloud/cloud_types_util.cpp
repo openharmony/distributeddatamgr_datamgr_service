@@ -97,4 +97,16 @@ bool Unmarshalling(Strategy &output, MessageParcel &data)
     output = static_cast<Strategy>(result);
     return true;
 }
+
+template<>
+bool Marshalling(const CloudSyncInfo &input, MessageParcel &data)
+{
+    return Marshal(data, input.startTime, input.finishTime, input.code);
+}
+
+template<>
+bool Unmarshalling(CloudSyncInfo &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.startTime, output.finishTime, output.code);
+}
 } // namespace OHOS::ITypesUtil

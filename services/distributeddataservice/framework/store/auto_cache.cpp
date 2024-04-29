@@ -55,7 +55,10 @@ AutoCache::~AutoCache()
 AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType]) {
+    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
+        disables_.ContainIf(meta.tokenId, [&meta](const std::set<std::string>& stores) -> bool {
+            return stores.count(meta.storeId) != 0;
+        })) {
         return store;
     }
 
@@ -189,6 +192,23 @@ void AutoCache::GarbageCollect(bool isForce)
     });
 }
 
+void AutoCache::Enable(uint32_t tokenId, const std::string& storeId)
+{
+    disables_.ComputeIfPresent(tokenId, [&storeId](auto key, std::set<std::string>& stores) {
+        stores.erase(storeId);
+        return !(stores.empty() || storeId.empty());
+    });
+}
+
+void AutoCache::Disable(uint32_t tokenId, const std::string& storeId)
+{
+    disables_.Compute(tokenId, [&storeId](auto key, std::set<std::string>& stores) {
+        stores.insert(storeId);
+        return !stores.empty();
+    });
+    CloseStore(tokenId, storeId);
+}
+
 AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user)
     : store_(delegate), watchers_(watchers), user_(user)
 {
@@ -261,6 +281,24 @@ int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &pri
             continue;
         }
         watcher->OnChange(origin, primaryFields, (remain != 0) ? ChangeInfo(values) : std::move(values));
+    }
+    return Error::E_OK;
+}
+
+int32_t AutoCache::Delegate::OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas)
+{
+    Watchers watchers;
+    {
+        std::unique_lock<decltype(mutex_)> lock(mutex_);
+        watchers = watchers_;
+    }
+    size_t remain = watchers.size();
+    for (auto &watcher : watchers) {
+        remain--;
+        if (watcher == nullptr) {
+            continue;
+        }
+        watcher->OnChange(origin, fields, (remain != 0) ? ChangeData(datas) : std::move(datas));
     }
     return Error::E_OK;
 }

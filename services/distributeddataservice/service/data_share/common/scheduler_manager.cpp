@@ -19,11 +19,13 @@
 #include <cinttypes>
 
 #include "log_print.h"
+#include "timer_info.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
 static constexpr int64_t MAX_MILLISECONDS = 31536000000; // 365 days
+static constexpr int32_t DELAYED_MILLISECONDS = 200;
 SchedulerManager &SchedulerManager::GetInstance()
 {
     static SchedulerManager instance;
@@ -56,6 +58,36 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const std::
     ExecuteSchedulerSQL(rdbDir, userId, version, key, delegate);
 }
 
+bool SchedulerManager::SetTimerTask(uint64_t &timerId, const std::function<void()> &callback,
+    int64_t reminderTime)
+{
+    auto timerInfo = std::make_shared<TimerInfo>();
+    timerInfo->SetType(timerInfo->TIMER_TYPE_EXACT);
+    timerInfo->SetRepeat(false);
+    auto wantAgent = std::shared_ptr<AbilityRuntime::WantAgent::WantAgent>();
+    timerInfo->SetWantAgent(wantAgent);
+    timerInfo->SetCallbackInfo(callback);
+    timerId = TimeServiceClient::GetInstance()->CreateTimer(timerInfo);
+    if (timerId == 0) {
+        return false;
+    }
+    TimeServiceClient::GetInstance()->StartTimer(timerId, static_cast<uint64_t>(reminderTime));
+    return true;
+}
+
+void SchedulerManager::DestoryTimerTask(int64_t timerId)
+{
+    if (timerId > 0) {
+        TimeServiceClient::GetInstance()->DestroyTimer(timerId);
+    }
+}
+
+void SchedulerManager::ResetTimerTask(int64_t timerId, int64_t reminderTime)
+{
+    TimeServiceClient::GetInstance()->StopTimer(timerId);
+    TimeServiceClient::GetInstance()->StartTimer(timerId, static_cast<uint64_t>(reminderTime));
+}
+
 void SchedulerManager::SetTimer(
     const std::string &dbPath, const int32_t userId, int version, const Key &key, int64_t reminderTime)
 {
@@ -64,49 +96,48 @@ void SchedulerManager::SetTimer(
         ZLOGE("executor_ is nullptr");
         return;
     }
-    int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
-    // reminder time must is in future
+    int64_t now = 0;
+    TimeServiceClient::GetInstance()->GetWallTimeMs(now);
     if (reminderTime <= now || reminderTime - now >= MAX_MILLISECONDS) {
         ZLOGE("invalid args, %{public}" PRId64 ", %{public}" PRId64 ", subId=%{public}" PRId64
             ", bundleName=%{public}s.", reminderTime, now, key.subscriberId, key.bundleName.c_str());
         return;
     }
-    auto duration = std::chrono::milliseconds(reminderTime - now);
+    auto duration = reminderTime - now;
     ZLOGI("the task will notify in %{public}" PRId64 " ms, %{public}" PRId64 ", %{public}s.",
-          reminderTime - now, key.subscriberId, key.bundleName.c_str());
+          duration, key.subscriberId, key.bundleName.c_str());
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
-        // has current timer, reset time
         ZLOGD("has current taskId, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
             key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
-        auto taskId = executor_->Reset(it->second, duration);
-        if (taskId == ExecutorPool::INVALID_TASK_ID) {
-          ZLOGE("the task %{public}" PRIu64 " already invalid, %{public}" PRId64 ", %{public}s.", it->second,
-                key.subscriberId, key.bundleName.c_str());
-        }
+        auto timerId = it->second;
+        ResetTimerTask(timerId, reminderTime);
         return;
     }
-    // not find task in map, create new timer
-    auto taskId = executor_->Schedule(duration, [key, dbPath, version, userId, this]() {
+    auto callback = [key, dbPath, version, userId, this]() {
         ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
               "%{public}s", key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
+        int64_t timerId = -1;
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            timerCache_.erase(key);
+            auto it = timerCache_.find(key);
+            if (it != timerCache_.end()) {
+                timerId = it->second;
+                timerCache_.erase(key);
+            }
         }
-        // 1. execute schedulerSQL in next time
+        DestoryTimerTask(timerId);
         Execute(key, userId, dbPath, version);
-        // 2. notify
         RdbSubscriberManager::GetInstance().EmitByKey(key, userId, dbPath, version);
-    });
-    if (taskId == ExecutorPool::INVALID_TASK_ID) {
-        ZLOGE("create timer failed, over the max capacity");
+    };
+    uint64_t timerId = 0;
+    if (!SetTimerTask(timerId, callback, reminderTime)) {
+        ZLOGE("create timer failed.");
         return;
     }
     ZLOGI("create new task success, uri is %{public}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
         DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
-    timerCache_.emplace(key, taskId);
+    timerCache_.emplace(key, timerId);
 }
 
 void SchedulerManager::ExecuteSchedulerSQL(const std::string &rdbDir, const int32_t userId, int version, const Key &key,
@@ -173,7 +204,7 @@ void SchedulerManager::RemoveTimer(const Key &key)
     if (it != timerCache_.end()) {
         ZLOGW("RemoveTimer %{public}s %{public}s %{public}" PRId64,
             DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
-        executor_->Remove(it->second);
+        DestoryTimerTask(it->second);
         timerCache_.erase(key);
     }
 }
@@ -188,7 +219,7 @@ void SchedulerManager::ClearTimer()
     }
     auto it = timerCache_.begin();
     while (it != timerCache_.end()) {
-        executor_->Remove(it->second);
+        DestoryTimerTask(it->second);
         it = timerCache_.erase(it);
     }
 }
@@ -201,9 +232,12 @@ void SchedulerManager::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)
 void SchedulerManager::ReExecuteAll()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (auto &item : timerCache_) {
+    for (const auto &item : timerCache_) {
         // restart in 200ms
-        executor_->Reset(item.second, std::chrono::milliseconds(200));
+        auto timerId = item.second;
+        int64_t currentTime = 0;
+        TimeServiceClient::GetInstance()->GetWallTimeMs(currentTime);
+        ResetTimerTask(timerId, currentTime + DELAYED_MILLISECONDS);
     }
 }
 } // namespace OHOS::DataShare

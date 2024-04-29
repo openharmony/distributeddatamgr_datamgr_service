@@ -76,8 +76,6 @@ public:
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
-    int32_t GetSchema(const RdbSyncerParam &param) override;
-
     int32_t Delete(const RdbSyncerParam &param) override;
 
     std::pair<int32_t, std::shared_ptr<ResultSet>> QuerySharingResource(const RdbSyncerParam& param,
@@ -88,6 +86,12 @@ public:
     int32_t OnInitialize() override;
 
     int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData) override;
+    int32_t Disable(const RdbSyncerParam& param) override;
+    int32_t Enable(const RdbSyncerParam& param) override;
+
+    int32_t BeforeOpen(RdbSyncerParam &param) override;
+
+    int32_t AfterOpen(const RdbSyncerParam &param) override;
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
@@ -152,8 +156,6 @@ private:
 
     void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details&& result);
 
-    int32_t CreateMetaData(const RdbSyncerParam &param, StoreMetaData &old);
-
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 
     int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
@@ -172,6 +174,10 @@ private:
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
     static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+
+    void GetCloudSchema(const RdbSyncerParam &param);
+
+    void SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;

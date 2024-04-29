@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,14 +20,17 @@
 
 #include "concurrent_map.h"
 #include "device_matrix.h"
+#include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "kvdb_service_stub.h"
+#include "kvdb_watcher.h"
 #include "kvstore_sync_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
+#include "store/auto_cache.h"
+#include "store/general_value.h"
 #include "utils/ref_count.h"
-#include "store_cache.h"
 namespace OHOS::DistributedKv {
 class API_EXPORT KVDBServiceImpl final : public KVDBServiceStub {
 public:
@@ -41,6 +44,7 @@ public:
     Status AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
         const std::vector<uint8_t> &password) override;
     Status Delete(const AppId &appId, const StoreId &storeId) override;
+    Status CloudSync(const AppId &appId, const StoreId &storeId) override;
     Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status SyncExt(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback) override;
@@ -62,6 +66,7 @@ public:
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnReady(const std::string &device) override;
+
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
@@ -80,10 +85,15 @@ private:
     struct SyncAgent {
         pid_t pid_ = 0;
         AppId appId_;
+        int32_t count_ = 0;
         sptr<IKvStoreSyncCallback> callback_;
         std::map<std::string, uint32_t> delayTimes_;
-        std::map<std::string, std::shared_ptr<StoreCache::Observers>> observers_;
+        std::shared_ptr<KVDBWatcher> watcher_;
+        std::set<sptr<KvStoreObserverProxy>> observers_;
         void ReInit(pid_t pid, const AppId &appId);
+        void SetObserver(sptr<KvStoreObserverProxy> observer);
+        void SetWatcher(std::shared_ptr<KVDBWatcher> watcher);
+        void ClearObservers();
     };
     class Factory {
     public:
@@ -93,6 +103,7 @@ private:
         std::shared_ptr<KVDBServiceImpl> product_;
     };
 
+    void Init();
     void AddOptions(const Options &options, StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
@@ -106,7 +117,9 @@ private:
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
     std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
-    std::shared_ptr<StoreCache::Observers> GetObservers(uint32_t tokenId, const std::string &storeId);
+    DistributedData::GeneralStore::SyncMode ConvertGeneralSyncMode(SyncMode syncMode, SyncAction syncAction) const;
+    DBResult HandleGenDetails(const DistributedData::GenDetails &details);
+    DistributedData::AutoCache::Watchers GetWatchers(uint32_t tokenId, const std::string &storeId);
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
@@ -115,7 +128,6 @@ private:
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
-    StoreCache storeCache_;
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedKv

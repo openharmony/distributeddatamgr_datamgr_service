@@ -41,7 +41,7 @@ int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, 
     return RDB_OK;
 }
 
-int32_t RdbServiceStub::OnGetSchema(MessageParcel &data, MessageParcel &reply)
+int32_t RdbServiceStub::OnBeforeOpen(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {
@@ -49,7 +49,23 @@ int32_t RdbServiceStub::OnGetSchema(MessageParcel &data, MessageParcel &reply)
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto status = GetSchema(param);
+    auto status = BeforeOpen(param);
+    if (!ITypesUtil::Marshal(reply, status, param)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceStub::OnAfterOpen(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = AfterOpen(param);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -296,6 +312,40 @@ int32_t RdbServiceStub::OnRemoteQuerySharingResource(MessageParcel& data, Messag
     auto [status, resultSet] = QuerySharingResource(param, predicates, columns);
     sptr<RdbResultSetStub> object = new RdbResultSetStub(resultSet);
     if (!ITypesUtil::Marshal(reply, status, object->AsObject())) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceStub::OnDisable(MessageParcel& data, MessageParcel& reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto status = Disable(param);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceStub::OnEnable(MessageParcel& data, MessageParcel& reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto status = Enable(param);
+    if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

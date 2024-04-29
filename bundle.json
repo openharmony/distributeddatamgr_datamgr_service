@@ -69,6 +69,7 @@
                 "hitrace",
                 "huks",
                 "kv_store",
+                "image_framework",
                 "ipc",
                 "napi",
                 "netmanager_base",
@@ -77,6 +78,7 @@
                 "resource_management",
                 "safwk",
                 "samgr",
+                "time_service",
                 "udmf",
                 "app_file_service"
             ],
