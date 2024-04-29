@@ -349,7 +349,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
 {
     if (times >= RETRY_TIMES) {
         return [info = SyncInfo(syncInfo)](Duration, int32_t code) mutable {
-            if (code == E_OK) {
+            if (code == E_OK || code == E_SYNC_TASK_MERGED) {
                 return true;
             }
             info.SetError(code);
@@ -357,7 +357,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
         };
     }
     return [this, times, info = SyncInfo(syncInfo)](Duration interval, int32_t code) mutable {
-        if (code == E_OK) {
+        if (code == E_OK || code == E_SYNC_TASK_MERGED) {
             return true;
         }
         if (code == E_NO_SPACE_FOR_ASSET || code == E_RECODE_LIMIT_EXCEEDED) {
