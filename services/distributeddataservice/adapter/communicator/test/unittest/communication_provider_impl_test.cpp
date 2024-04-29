@@ -156,7 +156,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider006, TestSize.Level
     CommunicationProvider::GetInstance().StartWatchDataChange(nullptr, appId);
     auto secRegister = CommunicationProvider::GetInstance().StartWatchDataChange(nullptr, appId);
     EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -170,7 +169,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider007, TestSize.Level
     ZLOGI("begin.");
     auto secRegister = CommunicationProvider::GetInstance().StartWatchDataChange(nullptr, {});
     EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -188,7 +186,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider008, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(nullptr, appId);
     auto secRegister = CommunicationProvider::GetInstance().StopWatchDataChange(nullptr, appId);
     EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -202,7 +199,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider009, TestSize.Level
     ZLOGI("begin.");
     auto secRegister = CommunicationProvider::GetInstance().StopWatchDataChange(nullptr, {});
     EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -218,7 +214,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider010, TestSize.Level
     appId.userId = "groupId";
     auto status = CommunicationProvider::GetInstance().Start(appId);
     EXPECT_EQ(Status::INVALID_ARGUMENT, status);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -244,7 +239,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider011, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -270,7 +264,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider012, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -294,7 +287,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider013, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -320,7 +312,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider014, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -343,7 +334,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider015, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -366,7 +356,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider016, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -390,5 +379,4 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider017, TestSize.Level
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
