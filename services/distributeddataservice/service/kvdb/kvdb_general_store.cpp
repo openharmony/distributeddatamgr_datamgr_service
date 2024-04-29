@@ -115,11 +115,11 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     }
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
+    if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
+        delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
+        DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
+    }
     if (meta.isAutoSync) {
-        auto code = DeviceMatrix::GetInstance().GetCode(meta);
-        delegate_->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
-            DeviceMatrix::GetInstance().OnExchanged(info.deviceId, code, true);
-        });
         bool param = true;
         auto data = static_cast<DistributedDB::PragmaData>(&param);
         delegate_->Pragma(DistributedDB::SET_SYNC_RETRY, data);
