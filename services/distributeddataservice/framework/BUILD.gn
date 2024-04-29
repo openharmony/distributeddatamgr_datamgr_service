@@ -51,6 +51,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "backuprule/backup_rule_manager.cpp",
     "checker/checker_manager.cpp",
     "cloud/asset_loader.cpp",
+    "cloud/cloud_config_manager.cpp",
     "cloud/cloud_db.cpp",
     "cloud/cloud_event.cpp",
     "cloud/cloud_extra_data.cpp",

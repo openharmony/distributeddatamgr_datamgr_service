@@ -83,6 +83,7 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",
     "config/src/model/checker_config.cpp",
+    "config/src/model/cloud_config.cpp",
     "config/src/model/component_config.cpp",
     "config/src/model/directory_config.cpp",
     "config/src/model/global_config.cpp",
