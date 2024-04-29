@@ -118,7 +118,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
         delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
             DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
-        }
+        });
     }
     if (meta.isAutoSync) {
         bool param = true;
