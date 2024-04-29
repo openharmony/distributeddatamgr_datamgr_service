@@ -58,7 +58,7 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const std::
     ExecuteSchedulerSQL(rdbDir, userId, version, key, delegate);
 }
 
-bool SchedulerManager::SetTimerTask(int64_t &timerId, const std::function<void()> &callback,
+bool SchedulerManager::SetTimerTask(uint64_t &timerId, const std::function<void()> &callback,
     int64_t reminderTime)
 {
     auto timerInfo = std::make_shared<TimerInfo>();
@@ -68,7 +68,7 @@ bool SchedulerManager::SetTimerTask(int64_t &timerId, const std::function<void()
     timerInfo->SetWantAgent(wantAgent);
     timerInfo->SetCallbackInfo(callback);
     timerId = TimeServiceClient::GetInstance()->CreateTimer(timerInfo);
-    if (timerId <= 0) {
+    if (timerId == 0) {
         return false;
     }
     TimeServiceClient::GetInstance()->StartTimer(timerId, static_cast<uint64_t>(reminderTime));
@@ -130,7 +130,7 @@ void SchedulerManager::SetTimer(
         Execute(key, userId, dbPath, version);
         RdbSubscriberManager::GetInstance().EmitByKey(key, userId, dbPath, version);
     };
-    int64_t timerId = 0;
+    uint64_t timerId = 0;
     if (!SetTimerTask(timerId, callback, reminderTime)) {
         ZLOGE("create timer failed.");
         return;
@@ -232,7 +232,7 @@ void SchedulerManager::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)
 void SchedulerManager::ReExecuteAll()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (auto &item : timerCache_) {
+    for (const auto &item : timerCache_) {
         // restart in 200ms
         auto timerId = item.second;
         int64_t currentTime = 0;

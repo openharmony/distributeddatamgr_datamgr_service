@@ -28,7 +28,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int versi
 
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData)
 {
-    return std::make_shared<RdbDelegate>(metaData.dataDir, metaData.version, true,
+    return std::make_shared<RdbDelegate>(metaData.dataDir, -1, true,
         metaData.isEncrypt, metaData.isEncrypt ? metaData.GetSecretKey() : "");
 }
 

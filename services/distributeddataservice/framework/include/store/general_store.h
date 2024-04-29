@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,10 +19,10 @@
 #include <memory>
 #include <set>
 
+#include "snapshot/snapshot.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
-#include "snapshot/snapshot.h"
 namespace OHOS::DistributedData {
 class CloudDB;
 class AssetLoader;
@@ -43,7 +43,9 @@ public:
         CLOUD_NATIVE_FIRST,
         CLOUD_ClOUD_FIRST,
         CLOUD_END,
-        MODE_BUTT = CLOUD_END,
+        NEARBY_SUBSCRIBE_REMOTE,
+        NEARBY_UNSUBSCRIBE_REMOTE,
+        MODE_BUTT,
     };
     enum HighMode : uint32_t {
         MANUAL_SYNC_MODE = 0x00000,
@@ -77,22 +79,28 @@ public:
             : db_(std::move(db)), loader_(std::move(loader))
         {
         }
+
+        bool operator<(const BindInfo &bindInfo) const
+        {
+            return db_ < bindInfo.db_;
+        }
+
         std::shared_ptr<CloudDB> db_;
         std::shared_ptr<AssetLoader> loader_;
     };
     virtual ~GeneralStore() = default;
 
-    virtual int32_t Bind(const Database &database, BindInfo bindInfo) = 0;
+    virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) = 0;
 
     virtual bool IsBound() = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
-    virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type,
-	    const std::vector<Reference> &references) = 0;
+    virtual int32_t SetDistributedTables(
+        const std::vector<std::string> &tables, int type, const std::vector<Reference> &references) = 0;
 
-    virtual int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
-        const std::string& extendColName) = 0;
+    virtual int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
+        const std::string &extendColName) = 0;
 
     virtual int32_t Insert(const std::string &table, VBuckets &&values) = 0;
 
@@ -125,11 +133,11 @@ public:
 
     virtual int32_t AddRef() = 0;
 
-    virtual int32_t Release()  = 0;
+    virtual int32_t Release() = 0;
 
     virtual int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) = 0;
 
-    virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) = 0;
+    virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
