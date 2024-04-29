@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_GLOBAL_CONFIG_H
 #include "serializable/serializable.h"
 #include "model/checker_config.h"
+#include "model/cloud_config.h"
 #include "model/component_config.h"
 #include "model/network_config.h"
 #include "model/directory_config.h"
@@ -34,6 +35,7 @@ public:
     NetworkConfig *networks = nullptr;
     DirectoryConfig *directory = nullptr;
     BackupConfig *backup = nullptr;
+    CloudConfig *cloud = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

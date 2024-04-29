@@ -64,6 +64,7 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/config_factory.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
