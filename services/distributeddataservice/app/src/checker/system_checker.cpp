@@ -46,6 +46,12 @@ bool SystemChecker::SetDistrustInfo(const CheckerManager::Distrust &distrust)
     return true;
 }
 
+bool SystemChecker::SetSwitchesInfo(const CheckerManager::Switches &switches)
+{
+    switches_[switches.bundleName] = switches.appId;
+    return true;
+}
+
 std::string SystemChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (!IsValid(info)) {
@@ -72,6 +78,14 @@ bool SystemChecker::IsDistrust(const CheckerManager::StoreInfo &info)
         return true;
     }
     return false;
+}
+
+bool SystemChecker::IsSwitches(const CheckerManager::StoreInfo &info)
+{
+    if (!IsValid(info)) {
+        return false;
+    }
+    return switches_.find(info.bundleName) != switches_.end();
 }
 } // namespace DistributedData
 } // namespace OHOS

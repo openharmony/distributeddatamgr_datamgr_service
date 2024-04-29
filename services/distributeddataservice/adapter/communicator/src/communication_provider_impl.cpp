@@ -74,13 +74,13 @@ void CommunicationProviderImpl::SetMessageTransFlag(const PipeInfo &pipeInfo, bo
     appPipeMgr_.SetMessageTransFlag(pipeInfo, flag);
 }
 
-int32_t CommunicationProviderImpl::Broadcast(const PipeInfo &pipeInfo, uint16_t mask)
+Status CommunicationProviderImpl::Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo)
 {
-    return SoftBusAdapter::GetInstance()->Broadcast(pipeInfo, mask);
+    return SoftBusAdapter::GetInstance()->Broadcast(pipeInfo, levelInfo);
 }
 
 int32_t CommunicationProviderImpl::ListenBroadcastMsg(const PipeInfo &pipeInfo,
-    std::function<void(const std::string &, uint16_t)> listener)
+    std::function<void(const std::string &, const LevelInfo &)> listener)
 {
     return SoftBusAdapter::GetInstance()->ListenBroadcastMsg(pipeInfo, std::move(listener));
 }

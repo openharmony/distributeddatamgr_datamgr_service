@@ -51,6 +51,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(storeId)], storeId);
     SetValue(node[GET_NAME(user)], user);
     SetValue(node[GET_NAME(account)], account);
+    SetValue(node[GET_NAME(dataType)], dataType);
 
     // compatible with the versions which lower than VERSION_TAG_0000
     SetValue(node[GET_NAME(kvStoreType)], storeType);
@@ -88,6 +89,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(storeId), storeId);
     GetValue(node, GET_NAME(user), user);
     GetValue(node, GET_NAME(account), account);
+    GetValue(node, GET_NAME(dataType), dataType);
 
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
@@ -127,10 +129,11 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
         Constant::NotEqual(isNeedCompress, metaData.isNeedCompress)) {
         return false;
     }
-    return (version == metaData.version && storeType == metaData.storeType &&
+    return (version == metaData.version && storeType == metaData.storeType && dataType == metaData.dataType &&
             securityLevel == metaData.securityLevel && area == metaData.area && uid == metaData.uid &&
             tokenId == metaData.tokenId && instanceId == metaData.instanceId && appId == metaData.appId &&
-            appType == metaData.appType && bundleName == metaData.bundleName && dataDir == metaData.dataDir
+            appType == metaData.appType && bundleName == metaData.bundleName && dataDir == metaData.dataDir &&
+            storeId == metaData.storeId && user == metaData.user && deviceId == metaData.deviceId
             );
 }
 

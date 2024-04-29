@@ -36,7 +36,14 @@
         "checker": "SystemChecker"
       }
     ],
-    "distrusts": []
+    "distrusts": [],
+    "switches": [
+      {
+        "bundleName": "distributed_device_profile_service",
+        "appId": "distributed_device_profile_service",
+        "checker": "SystemChecker"
+      }
+    ]
   },
   "networks": {
     "chains": [

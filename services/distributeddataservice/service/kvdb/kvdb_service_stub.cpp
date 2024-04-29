@@ -15,7 +15,6 @@
 #define LOG_TAG "KVDBServiceStub"
 #include "kvdb_service_stub.h"
 
-#include "checker/checker_manager.h"
 #include "ipc_skeleton.h"
 #include "itypes_util.h"
 #include "log_print.h"
@@ -30,8 +29,8 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnAfterCreate,
     &KVDBServiceStub::OnDelete,
     &KVDBServiceStub::OnSync,
-    &KVDBServiceStub::OnRegisterCallback,
-    &KVDBServiceStub::OnUnregisterCallback,
+    &KVDBServiceStub::OnRegServiceNotifier,
+    &KVDBServiceStub::OnUnregServiceNotifier,
     &KVDBServiceStub::OnSetSyncParam,
     &KVDBServiceStub::OnGetSyncParam,
     &KVDBServiceStub::OnEnableCap,
@@ -44,6 +43,11 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnGetBackupPassword,
     &KVDBServiceStub::OnSyncExt,
     &KVDBServiceStub::OnCloudSync,
+    &KVDBServiceStub::OnNotifyDataChange,
+    &KVDBServiceStub::OnPutSwitch,
+    &KVDBServiceStub::OnGetSwitch,
+    &KVDBServiceStub::OnSubscribeSwitchData,
+    &KVDBServiceStub::OnUnsubscribeSwitchData,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
@@ -62,34 +66,50 @@ int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Message
               static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT));
         return -1;
     }
-
-    AppId appId;
-    StoreId storeId;
-    if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
-            Anonymous::Change(storeId.storeId).c_str());
-        return IPC_STUB_INVALID_DATA_ERR;
+    auto [status, storeInfo] = GetStoreInfo(code, data);
+    if (status != ERR_NONE) {
+        return status;
     }
-    appId.appId = Constant::TrimCopy(appId.appId);
-    storeId.storeId = Constant::TrimCopy(storeId.storeId);
-
-    CheckerManager::StoreInfo info;
-    info.uid = IPCSkeleton::GetCallingUid();
-    info.tokenId = IPCSkeleton::GetCallingTokenID();
-    info.bundleName = appId.appId;
-    info.storeId = storeId.storeId;
-    if (CheckerManager::GetInstance().IsValid(info)) {
-        return (this->*HANDLERS[code])(appId, storeId, data, reply);
+    if (CheckPermission(code, storeInfo)) {
+        return (this->*HANDLERS[code])({ storeInfo.bundleName }, { storeInfo.storeId }, data, reply);
     }
-    ZLOGE("PERMISSION_DENIED uid:%{public}d appId:%{public}s storeId:%{public}s", info.uid, info.bundleName.c_str(),
-        Anonymous::Change(info.storeId).c_str());
+    ZLOGE("PERMISSION_DENIED uid:%{public}d appId:%{public}s storeId:%{public}s", storeInfo.uid,
+        storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeId).c_str());
 
     if (!ITypesUtil::Marshal(reply, static_cast<int32_t>(PERMISSION_DENIED))) {
         ZLOGE("Marshal PERMISSION_DENIED code:%{public}u appId:%{public}s storeId:%{public}s", code,
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+            storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
+}
+
+std::pair<int32_t, KVDBServiceStub::StoreInfo> KVDBServiceStub::GetStoreInfo(uint32_t code, MessageParcel &data)
+{
+    AppId appId;
+    StoreId storeId;
+    if (!ITypesUtil::Unmarshal(data, appId, storeId)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s",
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        return { IPC_STUB_INVALID_DATA_ERR, StoreInfo() };
+    }
+    appId.appId = Constant::TrimCopy(appId.appId);
+    storeId.storeId = Constant::TrimCopy(storeId.storeId);
+    StoreInfo info;
+    info.uid = IPCSkeleton::GetCallingUid();
+    info.tokenId = IPCSkeleton::GetCallingTokenID();
+    info.bundleName = std::move(appId.appId);
+    info.storeId = std::move(storeId.storeId);
+    return { ERR_NONE, info };
+}
+
+bool KVDBServiceStub::CheckPermission(uint32_t code, const StoreInfo &storeInfo)
+{
+    if (code >= static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_PUT_SWITCH) &&
+        code < static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)) {
+        return CheckerManager::GetInstance().IsSwitches(storeInfo);
+    }
+    return CheckerManager::GetInstance().IsValid(storeInfo);
 }
 
 int32_t KVDBServiceStub::OnGetStoreIds(
@@ -200,7 +220,19 @@ int32_t KVDBServiceStub::OnSyncExt(
     return ERR_NONE;
 }
 
-int32_t KVDBServiceStub::OnRegisterCallback(
+int32_t KVDBServiceStub::OnNotifyDataChange(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    int32_t status = NotifyDataChange(appId, storeId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s",
+            status, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnRegServiceNotifier(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> remoteObj;
@@ -209,8 +241,8 @@ int32_t KVDBServiceStub::OnRegisterCallback(
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto syncCallback = (remoteObj == nullptr) ? nullptr : iface_cast<IKvStoreSyncCallback>(remoteObj);
-    int32_t status = RegisterSyncCallback(appId, syncCallback);
+    auto notifier = (remoteObj == nullptr) ? nullptr : iface_cast<IKVDBNotifier>(remoteObj);
+    int32_t status = RegServiceNotifier(appId, notifier);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -219,10 +251,10 @@ int32_t KVDBServiceStub::OnRegisterCallback(
     return ERR_NONE;
 }
 
-int32_t KVDBServiceStub::OnUnregisterCallback(
+int32_t KVDBServiceStub::OnUnregServiceNotifier(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    int32_t status = UnregisterSyncCallback(appId);
+    int32_t status = UnregServiceNotifier(appId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -391,6 +423,63 @@ int32_t KVDBServiceStub::OnGetBackupPassword(
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     password.assign(password.size(), 0);
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnPutSwitch(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    SwitchData switchData;
+    if (!ITypesUtil::Unmarshal(data, switchData)) {
+        ZLOGE("Unmarshal appId:%{public}s", appId.appId.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = PutSwitch(appId, switchData);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnGetSwitch(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    std::string networkId;
+    if (!ITypesUtil::Unmarshal(data, networkId)) {
+        ZLOGE("Unmarshal appId:%{public}s networkId:%{public}s",
+            appId.appId.c_str(), Anonymous::Change(networkId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    SwitchData switchData;
+    int32_t status = GetSwitch(appId, networkId, switchData);
+    if (!ITypesUtil::Marshal(reply, status, switchData)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s networkId:%{public}s",
+            status, appId.appId.c_str(), Anonymous::Change(networkId).c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnSubscribeSwitchData(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    int32_t status = SubscribeSwitchData(appId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnUnsubscribeSwitchData(
+    const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    int32_t status = UnsubscribeSwitchData(appId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
     return ERR_NONE;
 }
 } // namespace OHOS::DistributedKv

@@ -61,9 +61,9 @@ public:
 
     virtual void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) = 0;
 
-    virtual int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) = 0;
+    virtual Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo) = 0;
     virtual int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
-        std::function<void(const std::string &, uint16_t)> listener) = 0;
+        std::function<void(const std::string &, const LevelInfo &)> listener) = 0;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

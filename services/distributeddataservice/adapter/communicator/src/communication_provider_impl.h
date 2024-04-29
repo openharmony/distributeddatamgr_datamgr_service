@@ -48,9 +48,9 @@ public:
     bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const override;
     void SetMessageTransFlag(const struct PipeInfo &pipeInfo, bool flag) override;
 
-    int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask) override;
+    Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo) override;
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
-        std::function<void(const std::string &, uint16_t)> listener) override;
+        std::function<void(const std::string &, const LevelInfo &)> listener) override;
 
 protected:
     virtual Status Initialize();

@@ -40,6 +40,8 @@ public:
     int32_t Online(const std::string &device);
     int32_t Offline(const std::string &device);
     int32_t OnReady(const std::string &device);
+    int32_t OnSessionReady(const std::string &device);
+
 private:
     std::shared_ptr<FeatureSystem::Feature> featureImpl_;
 };

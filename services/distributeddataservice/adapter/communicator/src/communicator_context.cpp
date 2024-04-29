@@ -19,7 +19,8 @@
 #include "kvstore_utils.h"
 
 namespace OHOS::DistributedData {
-using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
+using KvUtils = OHOS::DistributedKv::KvStoreUtils;
+using Status = OHOS::DistributedKv::Status;
 
 CommunicatorContext &CommunicatorContext::GetInstance()
 {
@@ -37,29 +38,80 @@ std::shared_ptr<ExecutorPool> CommunicatorContext::GetThreadPool()
     return executors_;
 }
 
-void CommunicatorContext::SetSessionListener(const OnSendAble &sendAbleCallback)
+Status CommunicatorContext::RegSessionListener(const DevChangeListener *observer)
 {
-    std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
-    sendListener_ = sendAbleCallback;
+    if (observer == nullptr) {
+        ZLOGE("observer is nullptr");
+        return Status::INVALID_ARGUMENT;
+    }
+    if (!observers_.Insert(observer, observer)) {
+        ZLOGE("insert observer fail");
+        return Status::ERROR;
+    }
+    return Status::SUCCESS;
 }
 
 void CommunicatorContext::SetSessionListener(const OnCloseAble &closeAbleCallback)
 {
-    std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
+    std::lock_guard<decltype(sessionMutex_)> sessionLockGard(sessionMutex_);
     closeListener_ = closeAbleCallback;
 }
 
-void CommunicatorContext::NotifySessionChanged(const std::string &deviceId)
+Status CommunicatorContext::UnRegSessionListener(const DevChangeListener *observer)
 {
-    ZLOGI("Notify session begin, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId).c_str());
-    std::lock_guard<std::mutex> sessionLockGard(sessionMutex_);
-    if (closeListener_ != nullptr) {
+    if (observer == nullptr) {
+        ZLOGE("observer is nullptr");
+        return Status::INVALID_ARGUMENT;
+    }
+    if (!observers_.Erase(observer)) {
+        ZLOGE("erase observer fail");
+        return Status::ERROR;
+    }
+    return Status::SUCCESS;
+}
+
+void CommunicatorContext::NotifySessionReady(const std::string &deviceId)
+{
+    if (deviceId.empty()) {
+        ZLOGE("deviceId empty");
+        return;
+    }
+    devices_.Insert(deviceId, deviceId);
+    std::vector<const DevChangeListener *> observers;
+    observers_.ForEach([&observers](const auto &key, auto &value) {
+        observers.emplace_back(value);
+        return false;
+    });
+    ZLOGI("Notify session begin, deviceId:%{public}s, observer count:%{public}zu",
+        KvUtils::ToBeAnonymous(deviceId).c_str(), observers.size());
+    DeviceInfo devInfo;
+    devInfo.uuid = deviceId;
+    for (const auto &observer : observers) {
+        if (observer != nullptr) {
+            observer->OnSessionReady(devInfo);
+        }
+    }
+    std::lock_guard<decltype(sessionMutex_)> sessionLockGard(sessionMutex_);
+    if (closeListener_) {
         closeListener_(deviceId);
     }
-    if (sendListener_ != nullptr) {
-        DeviceInfos devInfo;
-        devInfo.identifier = deviceId;
-        sendListener_(devInfo);
+}
+
+void CommunicatorContext::NotifySessionClose(const std::string &deviceId)
+{
+    if (deviceId.empty()) {
+        ZLOGE("deviceId empty");
+        return;
     }
+    devices_.Erase(deviceId);
+}
+
+bool CommunicatorContext::IsSessionReady(const std::string &deviceId)
+{
+    if (deviceId.empty()) {
+        ZLOGE("deviceId empty");
+        return false;
+    }
+    return devices_.Contains(deviceId);
 }
 } // namespace OHOS::DistributedData

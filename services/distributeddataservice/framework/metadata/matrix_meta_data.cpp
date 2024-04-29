@@ -19,18 +19,24 @@ namespace OHOS::DistributedData {
 bool MatrixMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(version)], version);
-    SetValue(node[GET_NAME(mask)], mask);
+    SetValue(node[GET_NAME(dynamic)], dynamic);
+    SetValue(node[GET_NAME(statics)], statics);
     SetValue(node[GET_NAME(deviceId)], deviceId);
-    SetValue(node[GET_NAME(maskInfo)], maskInfo);
+    SetValue(node[GET_NAME(dynamicInfo)], dynamicInfo);
+    SetValue(node[GET_NAME(staticsInfo)], staticsInfo);
+    SetValue(node[GET_NAME(origin)], origin);
     return true;
 }
 
 bool MatrixMetaData::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(version), version);
-    GetValue(node, GET_NAME(mask), mask);
+    GetValue(node, GET_NAME(dynamic), dynamic);
+    GetValue(node, GET_NAME(statics), statics);
     GetValue(node, GET_NAME(deviceId), deviceId);
-    GetValue(node, GET_NAME(maskInfo), maskInfo);
+    GetValue(node, GET_NAME(dynamicInfo), dynamicInfo);
+    GetValue(node, GET_NAME(staticsInfo), staticsInfo);
+    GetValue(node, GET_NAME(origin), origin);
     return true;
 }
 
@@ -39,8 +45,24 @@ std::string MatrixMetaData::GetKey() const
     return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, { deviceId });
 }
 
+std::string MatrixMetaData::GetConsistentKey() const
+{
+    return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, { deviceId, RMOTE_CONSISTENT });
+}
+
 std::string MatrixMetaData::GetPrefix(const std::initializer_list<std::string> &fields)
 {
     return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, fields);
+}
+
+bool MatrixMetaData::operator==(const MatrixMetaData &meta) const
+{
+    return (dynamic == meta.dynamic) && (statics == meta.statics) &&
+        (deviceId == meta.deviceId) && (origin == meta.origin);
+}
+
+bool MatrixMetaData::operator!=(const MatrixMetaData &meta) const
+{
+    return !(*this == meta);
 }
 } // namespace OHOS::DistributedData

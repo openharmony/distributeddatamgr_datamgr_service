@@ -338,6 +338,7 @@ bool RuntimeStore::SaveMetaData()
     saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = static_cast<int32_t>(getuid());
     saveMeta.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
+    saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
 
     SetDelegateManager(saveMeta.dataDir, saveMeta.appId, userId);

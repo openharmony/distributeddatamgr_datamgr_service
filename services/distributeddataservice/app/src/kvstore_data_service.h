@@ -110,6 +110,8 @@ public:
 
     void OnDeviceOnReady(const AppDistributedKv::DeviceInfo &info);
 
+    void OnSessionReady(const AppDistributedKv::DeviceInfo &info);
+
     int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index);
 
     int32_t OnUpdate(const std::string &bundleName, int32_t user, int32_t index);

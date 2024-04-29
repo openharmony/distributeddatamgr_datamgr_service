@@ -234,6 +234,45 @@ ohos_unittest("DeviceMatrixTest") {
   ]
 }
 
+ohos_unittest("AutoSyncMatrixTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "auto_sync_matrix_test.cpp",
+  ]
+
+   include_dirs = [
+     "${data_service_path}/app/src",
+     "${data_service_path}/service/kvdb",
+     "${data_service_path}/adapter/include/account",
+     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+   ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
+    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ohos_unittest("KVDBGeneralStoreTest") {
   module_out_path = module_output_path
   sources = [
@@ -593,6 +632,7 @@ group("unittest") {
   }
 
   deps += [
+    ":AutoSyncMatrixTest",
     ":CloudDataTest",
     ":CloudTest",
     ":CryptoManagerTest",

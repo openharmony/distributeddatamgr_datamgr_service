@@ -50,6 +50,12 @@ bool BundleChecker::SetDistrustInfo(const CheckerManager::Distrust &distrust)
     return true;
 }
 
+bool BundleChecker::SetSwitchesInfo(const CheckerManager::Switches &switches)
+{
+    switches_[switches.bundleName] = switches.appId;
+    return true;
+}
+
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
@@ -106,6 +112,11 @@ bool BundleChecker::IsDistrust(const CheckerManager::StoreInfo &info)
     if (it != distrusts_.end() && (it->second == tokenInfo.appID)) {
         return true;
     }
+    return false;
+}
+
+bool BundleChecker::IsSwitches(const CheckerManager::StoreInfo &info)
+{
     return false;
 }
 } // namespace DistributedData
