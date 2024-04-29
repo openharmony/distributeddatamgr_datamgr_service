@@ -48,6 +48,8 @@ ohos_unittest("AccountDelegateTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "os_account:libaccountkits",
+    "os_account:os_account_innerkits",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

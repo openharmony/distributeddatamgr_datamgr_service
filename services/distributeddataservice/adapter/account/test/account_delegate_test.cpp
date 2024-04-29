@@ -20,6 +20,8 @@
 #include "account_delegate_impl.h"
 #include "account_delegate_normal_impl.h"
 #include "ipc_skeleton.h"
+#include "ohos_account_kits.h"
+#include "os_account_manager.h"
 #include "log_print.h"
 namespace {
 using namespace OHOS::DistributedKv;
@@ -247,4 +249,22 @@ HWTEST_F(AccountDelegateTest, UnsubscribeAccountEvent, TestSize.Level0)
     EXPECT_EQ(status, Status::SUCCESS);
 }
 
+/**
+* @tc.name: QueryForegroundUsers
+* @tc.desc: query foreground users
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: ht
+*/
+HWTEST_F(AccountDelegateTest, QueryForegroundUsers, TestSize.Level0)
+{
+    std::vector<int32_t> users;
+    EXPECT_TRUE(AccountDelegate::GetInstance()->QueryForegroundUsers(users));
+    std::vector<OHOS::AccountSA::ForegroundOsAccount> accounts;
+    OHOS::AccountSA::OsAccountManager::GetForegroundOsAccounts(accounts);
+    EXPECT_EQ(accounts.size(), users.size());
+    for (int i = 0; i < users.size(); i++) {
+        EXPECT_EQ(users[i], accounts[i].localId);
+    }
+}
 } // namespace

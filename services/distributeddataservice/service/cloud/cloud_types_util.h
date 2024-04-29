@@ -31,6 +31,7 @@ using ValueObject = OHOS::NativeRdb::ValueObject;
 using ValuesBucket = OHOS::NativeRdb::ValuesBucket;
 using StatisticInfo = OHOS::CloudData::StatisticInfo;
 using Strategy = OHOS::CloudData::Strategy;
+using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
 
 template<>
 bool Marshalling(const Participant &input, MessageParcel &data);
@@ -62,5 +63,10 @@ bool Unmarshalling(StatisticInfo &output, MessageParcel &data);
 
 template<>
 bool Unmarshalling(Strategy &output, MessageParcel &data);
+
+template<>
+bool Marshalling(const CloudSyncInfo &input, MessageParcel &data);
+template<>
+bool Unmarshalling(CloudSyncInfo &output, MessageParcel &data);
 } // namespace OHOS::ITypesUtil
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H

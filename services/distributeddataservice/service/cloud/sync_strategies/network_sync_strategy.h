@@ -35,7 +35,7 @@ public:
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
         std::string GetKey();
-        static constexpr uint32_t INVALID_USER = -1;
+        static constexpr int32_t INVALID_USER = -1;
         static constexpr const char *PREFIX = "NETWORK_SYNC_STRATEGY";
     };
     NetworkSyncStrategy();

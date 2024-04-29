@@ -37,12 +37,11 @@ void RdbObserverProxy::OnChangeFromRdb(RdbChangeNode &changeNode)
     MessageParcel reply;
     MessageOption option;
     int32_t result = Remote()->SendRequest(REQUEST_CODE, parcel, reply, option);
-    if (result == ERR_NONE) {
-        ZLOGI("SendRequest ok, retval is %{public}d", reply.ReadInt32());
-    } else {
+    if (result != ERR_NONE) {
         ZLOGE("SendRequest error, result=%{public}d", result);
         return;
     }
+    ZLOGI("SendRequest ok, retval is %{public}d", reply.ReadInt32());
 }
 
 void PublishedDataObserverProxy::OnChangeFromPublishedData(PublishedDataChangeNode &changeNode)
@@ -60,12 +59,11 @@ void PublishedDataObserverProxy::OnChangeFromPublishedData(PublishedDataChangeNo
     MessageParcel reply;
     MessageOption option;
     int32_t result = Remote()->SendRequest(REQUEST_CODE, parcel, reply, option);
-    if (result == ERR_NONE) {
-        ZLOGI("SendRequest ok, retval is %{public}d", reply.ReadInt32());
-    } else {
+    if (result != ERR_NONE) {
         ZLOGE("SendRequest error, result=%{public}d", result);
         return;
     }
+    ZLOGI("SendRequest ok, retval is %{public}d", reply.ReadInt32());
 }
 } // namespace DataShare
 } // namespace OHOS

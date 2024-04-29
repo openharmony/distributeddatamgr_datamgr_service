@@ -17,13 +17,15 @@
 
 #include "data_share_service_impl.h"
 
+#include <cstdint>
+#include <utility>
+
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "data_ability_observer_interface.h"
-#include "data_provider_config.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_template.h"
@@ -34,6 +36,7 @@
 #include "log_print.h"
 #include "matching_skills.h"
 #include "permit_delegate.h"
+#include "rdb_helper.h"
 #include "scheduler_manager.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
 #include "template_data.h"
@@ -42,6 +45,7 @@
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
+using ProviderInfo = DataProviderConfig::ProviderInfo;
 using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
 DataShareServiceImpl::Factory::Factory()
@@ -59,16 +63,19 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
 {
     ZLOGD("Insert enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    auto context = std::make_shared<Context>(uri);
-    auto ret = insertStrategy_.Execute(context, valuesBucket);
-    if (ret) {
-        NotifyChange(uri);
-        RdbSubscriberManager::GetInstance().Emit(uri, context);
-    }
-    return ret;
+    auto callBack = [&uri, &valuesBucket, this](ProviderInfo &providerInfo,
+            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+        auto ret = dbDelegate->Insert(providerInfo.tableName, valuesBucket);
+        if (ret > 0) {
+            NotifyChange(uri);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+        }
+        return ret;
+    };
+    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 bool DataShareServiceImpl::NotifyChange(const std::string &uri)
@@ -92,32 +99,37 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
 {
     ZLOGD("Update enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    auto context = std::make_shared<Context>(uri);
-    auto ret = updateStrategy_.Execute(context, predicate, valuesBucket);
-    if (ret) {
-        NotifyChange(uri);
-        RdbSubscriberManager::GetInstance().Emit(uri, context);
-    }
-    return ret;
+    auto callBack = [&uri, &predicate, &valuesBucket, this](ProviderInfo &providerInfo,
+            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+        auto ret = dbDelegate->Update(providerInfo.tableName, predicate, valuesBucket);
+        if (ret > 0) {
+            NotifyChange(uri);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+        }
+        return ret;
+    };
+    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
 {
-    ZLOGD("Delete enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    auto context = std::make_shared<Context>(uri);
-    auto ret = deleteStrategy_.Execute(context, predicate);
-    if (ret) {
-        NotifyChange(uri);
-        RdbSubscriberManager::GetInstance().Emit(uri, context);
-    }
-    return ret;
+    auto callBack = [&uri, &predicate, this](ProviderInfo &providerInfo,
+            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+        auto ret = dbDelegate->Delete(providerInfo.tableName, predicate);
+        if (ret > 0) {
+            NotifyChange(uri);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+        }
+        return ret;
+    };
+    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri,
@@ -125,11 +137,21 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
 {
     ZLOGD("Query enter.");
     if (!IsSilentProxyEnable(uri)) {
-        ZLOGW("silent proxy disable, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return nullptr;
     }
-    auto context = std::make_shared<Context>(uri);
-    return queryStrategy_.Execute(context, predicates, columns, errCode);
+    std::shared_ptr<DataShareResultSet> resultSet;
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode, &callingPid](ProviderInfo &providerInfo,
+            DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+        auto [err, result] = dbDelegate->Query(providerInfo.tableName,
+            predicates, columns, callingPid);
+        errCode = std::move(err);
+        resultSet = std::move(result);
+        return E_OK;
+    };
+    errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);
+    return resultSet;
 }
 
 int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt)
@@ -452,7 +474,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.account = accountId;
     saveMeta.tokenId = binderInfo.selfTokenId;
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-    saveMeta.area = 1;
+    saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
@@ -479,7 +501,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string 
     PublishedData::Delete(bundleName, user);
     PublishedData::ClearAging();
     TemplateData::Delete(bundleName, user);
-    RdbHelper::ClearCache();
+    NativeRdb::RdbHelper::ClearCache();
     return E_OK;
 }
 
@@ -628,26 +650,23 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
 {
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
-    auto isProxyData = PROXY_URI_SCHEMA == Uri(uri).GetScheme();
-    auto [errCode, providerInfo] = providerConfig.GetProviderInfo(isProxyData);
+    auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
-            errCode, DistributedData::Anonymous::Change(providerInfo.uri).c_str());
-        return errCode;
+            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
-    if (isProxyData && providerInfo.readPermission.empty()) {
+    if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
-        return ERR_PERMISSION_DENIED;
     }
-    if (!PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
+    if (!providerInfo.readPermission.empty() &&
+        !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             callerTokenId, providerInfo.readPermission.c_str(),
-            DistributedData::Anonymous::Change(providerInfo.uri).c_str());
-        return ERR_PERMISSION_DENIED;
+            URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
     if (obServer == nullptr) {
-        ZLOGE("ObServer is nullptr, uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("ObServer is nullptr, uri: %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERR_INVALID_VALUE;
     }
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
@@ -662,22 +681,19 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
 {
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
-    auto isProxyData = PROXY_URI_SCHEMA == Uri(uri).GetScheme();
-    auto [errCode, providerInfo] = providerConfig.GetProviderInfo(isProxyData);
+    auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
-            errCode, DistributedData::Anonymous::Change(providerInfo.uri).c_str());
-        return errCode;
+            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
-    if (isProxyData && providerInfo.readPermission.empty()) {
+    if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
-        return ERR_PERMISSION_DENIED;
     }
-    if (!PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
+    if (!providerInfo.readPermission.empty() &&
+        !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             callerTokenId, providerInfo.readPermission.c_str(),
-            DistributedData::Anonymous::Change(providerInfo.uri).c_str());
-        return ERR_PERMISSION_DENIED;
+            URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
     if (obsMgrClient == nullptr) {
@@ -685,9 +701,38 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     }
     auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
     if (obServer == nullptr) {
-        ZLOGE("ObServer is nullptr, uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("ObServer is nullptr, uri: %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERR_INVALID_VALUE;
     }
     return obsMgrClient->UnregisterObserver(Uri(uri), obServer);
+}
+
+int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t tokenId,
+    bool isRead, ExecuteCallback callback)
+{
+    DataProviderConfig providerConfig(uri, tokenId);
+    auto [errCode, provider] = providerConfig.GetProviderInfo();
+    if (errCode != E_OK) {
+        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
+            errCode, URIUtils::Anonymous(provider.uri).c_str());
+        return errCode;
+    }
+    std::string permission = isRead ? provider.readPermission : provider.writePermission;
+    if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
+        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
+            tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
+        return ERROR_PERMISSION_DENIED;
+    }
+    DataShareDbConfig dbConfig;
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(provider.uri,
+        provider.hasExtension, provider.bundleName, provider.storeName,
+        provider.singleton ? 0 : provider.currentUserId);
+    if (code != E_OK) {
+        ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
+            provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
+            URIUtils::Anonymous(provider.uri).c_str());
+        return code;
+    }
+    return callback(provider, metaData, dbDelegate);
 }
 } // namespace OHOS::DataShare

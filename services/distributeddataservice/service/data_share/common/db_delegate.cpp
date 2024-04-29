@@ -26,6 +26,12 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int versi
     return std::make_shared<RdbDelegate>(dir, version, registerFunction, isEncrypt, secretMetaKey);
 }
 
+std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData)
+{
+    return std::make_shared<RdbDelegate>(metaData.dataDir, -1, true,
+        metaData.isEncrypt, metaData.isEncrypt ? metaData.GetSecretKey() : "");
+}
+
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
     bool reInit, const std::string &dir, const std::shared_ptr<ExecutorPool> &executors)
 {

@@ -28,7 +28,7 @@ using namespace OHOS::DistributedRdb;
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedRdb.IRdbService";
 constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = 10;
+constexpr uint32_t CODE_MAX = static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX) + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 

@@ -33,7 +33,7 @@ constexpr int USER_ID = 100;
 constexpr int INST_INDEX = 0;
 const std::u16string INTERFACE_TOKEN = u"OHOS.CloudData.CloudServer";
 constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = 4;
+constexpr uint32_t CODE_MAX = CloudService::TransId::TRANS_BUTT + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 

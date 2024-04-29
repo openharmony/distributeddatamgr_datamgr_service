@@ -17,28 +17,34 @@
 #include "uri_permission_manager.h"
 
 #include "want.h"
-#include "uri.h"
 #include "uri_permission_manager_client.h"
 
 #include "log_print.h"
-
 namespace OHOS {
 namespace UDMF {
+constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 500;
 UriPermissionManager &UriPermissionManager::GetInstance()
 {
     static UriPermissionManager instance;
     return instance;
 }
 
-Status UriPermissionManager::GrantUriPermission(const std::string &path, const std::string &bundleName)
+Status UriPermissionManager::GrantUriPermission(
+    const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey)
 {
-    Uri uri(path);
-    auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermission(
-        uri, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName);
-    if (status != ERR_OK) {
-        ZLOGE("GrantUriPermission failed, %{public}d", status);
-        return E_ERROR;
+    //  GrantUriPermission is time-consuming, need recording the begin,end time in log.
+    ZLOGI("GrantUriPermission begin, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
+    for (size_t index = 0; index < allUri.size(); index += GRANT_URI_PERMISSION_MAX_SIZE) {
+        std::vector<Uri> uriLst(
+            allUri.begin() + index, allUri.begin() + std::min(index + GRANT_URI_PERMISSION_MAX_SIZE, allUri.size()));
+        auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermissionPrivileged(
+            uriLst, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName);
+        if (status != ERR_OK) {
+            ZLOGE("GrantUriPermission failed, status:%{public}d, queryKey:%{public}s", status, queryKey.c_str());
+            return E_NO_PERMISSION;
+        }
     }
+    ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
     return E_OK;
 }
 } // namespace UDMF

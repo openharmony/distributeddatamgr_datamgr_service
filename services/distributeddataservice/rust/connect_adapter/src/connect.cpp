@@ -12,17 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#define LOG_TAG "Connect"
 
 #include "connect.h"
 #include <thread>
-#include "hilog/log_cpp.h"
 #include "iostream"
 
 const int RESULT_OK = 0;
 
 using namespace OHOS;
-
-static const OHOS::HiviewDFX::HiLogLabel g_CONNECT_LABEL = { LOG_CORE, 0xD001610, "Connect"};
 
 namespace {
     constexpr const char *BUNDLE_NAME = "com.example.cloudsync";
@@ -36,12 +34,10 @@ void Connect::OnAbilityConnectDone(const OHOS::AppExecFwk::ElementName &element,
                                    int resultCode)
 {
     if (resultCode != RESULT_OK) {
-        OHOS::HiviewDFX::HiLog::Error(g_CONNECT_LABEL, "ability connect failed, error code:%{public}d", resultCode);
+        ZLOGE("ability connect failed, error code:%{public}d", resultCode);
     }
 
-    OHOS::HiviewDFX::HiLog::Debug(g_CONNECT_LABEL,
-        "ability connect success, ability name:%{public}s",
-        element.GetAbilityName().c_str());
+    ZLOGD("ability connect success, ability name:%{public}s", element.GetAbilityName().c_str());
     remoteObject_ = remoteObject;
     std::unique_lock<std::mutex> lock(mtx_);
     flag_ = true;
@@ -52,7 +48,7 @@ void Connect::OnAbilityConnectDone(const OHOS::AppExecFwk::ElementName &element,
 void Connect::OnAbilityDisconnectDone(const OHOS::AppExecFwk::ElementName &element, int resultCode)
 {
     if (resultCode != RESULT_OK) {
-        OHOS::HiviewDFX::HiLog::Error(g_CONNECT_LABEL, "ability disconnect failed, error code:%{public}d", resultCode);
+        ZLOGE("ability disconnect failed, error code:%{public}d", resultCode);
     }
     remoteObject_ = nullptr;
     std::unique_lock<std::mutex> lock(mtx_);
@@ -78,14 +74,14 @@ void Connect::WaitConnect()
 namespace ConnectInner {
 void DoConnect(int userId)
 {
-    OHOS::HiviewDFX::HiLog::Info(g_CONNECT_LABEL, "do connect");
+    ZLOGI("do connect");
     AAFwk::Want want;
     want.SetAction("");
     want.SetElementName(BUNDLE_NAME, ABILITY_NAME);
     auto ret = AAFwk::ExtensionManagerClient::GetInstance().ConnectServiceExtensionAbility(
         want, g_connect->AsObject(), userId);
     if (ret != ERR_OK) {
-        OHOS::HiviewDFX::HiLog::Error(g_CONNECT_LABEL, "connect ability fail, error code:%{public}d", ret);
+        ZLOGE("connect ability fail, error code:%{public}d", ret);
         return;
     }
     g_connect->WaitConnect();
@@ -93,12 +89,12 @@ void DoConnect(int userId)
 
 OHOS::sptr<OHOS::IRemoteObject> ConnectServiceInner(int userId)
 {
-    OHOS::HiviewDFX::HiLog::Info(g_CONNECT_LABEL, "Connect Service Inner access");
+    ZLOGI("Connect Service Inner access");
     std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
     if (g_connect == nullptr) {
         sptr<Connect> ipcConnect = new(std::nothrow) Connect();
         if (ipcConnect == nullptr) {
-            OHOS::HiviewDFX::HiLog::Error(g_CONNECT_LABEL, "ipc connect is null");
+            ZLOGE("ipc connect is null");
             return nullptr;
         }
         g_connect = ipcConnect;

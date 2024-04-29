@@ -88,6 +88,7 @@ private:
     using Duration = std::chrono::steady_clock::duration;
     using Task = ExecutorPool::Task;
     std::string DelConnect(int32_t socket);
+    void StartCloseSessionTask(const std::string &deviceId);
     Task GetCloseSessionTask();
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;

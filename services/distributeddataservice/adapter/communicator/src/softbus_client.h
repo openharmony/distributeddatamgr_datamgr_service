@@ -55,10 +55,10 @@ private:
 
     static constexpr int32_t INVALID_SOCKET_ID = -1;
     static constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
-    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096u;
+    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096 * 1024u;
     static constexpr Duration BR_CLOSE_DELAY = std::chrono::seconds(5);
     static constexpr Duration HML_CLOSE_DELAY = std::chrono::seconds(3);
-    static constexpr Duration MAX_DELAY = std::chrono::seconds(60 * 60 * 24 * 365);
+    static constexpr Duration MAX_DELAY = std::chrono::seconds(20);
     static constexpr uint32_t QOS_COUNT = 3;
     static constexpr QosTV QOS_INFOS[QOS_BUTT][QOS_COUNT] = {
         { // BR QOS
@@ -67,9 +67,9 @@ private:
             QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 }
         },
         { // HML QOS
-            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
-            QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 },
-            QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 }
+            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 90 * 1024 * 1024 },
+            QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 10000 },
+            QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 2000 }
         }
     };
     std::atomic_bool isOpening_ = false;

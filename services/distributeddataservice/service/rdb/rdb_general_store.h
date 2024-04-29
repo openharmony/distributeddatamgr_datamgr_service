@@ -47,7 +47,7 @@ public:
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
-    int32_t Bind(const Database &database, BindInfo bindInfo) override;
+    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) override;
     bool IsBound() override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
@@ -62,7 +62,8 @@ public:
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, const std::string &sql, Values &&args) override;
     std::shared_ptr<Cursor> Query(const std::string &table, GenQuery &query) override;
-    int32_t Sync(const Devices &devices, int32_t mode, GenQuery &query, DetailAsync async, int32_t wait) override;
+    int32_t Sync(
+        const Devices &devices, GenQuery &query, DetailAsync async, DistributedData::SyncParam &syncParam) override;
     std::shared_ptr<Cursor> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
