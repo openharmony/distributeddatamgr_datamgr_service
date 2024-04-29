@@ -285,7 +285,6 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const S
                 Anonymous::Change(storeId.storeId).c_str());
             return Status::SUCCESS;
         }
-        CloudSync(appId, storeId);
     }
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
@@ -321,6 +320,7 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, cons
 
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId)
 {
+    CloudSync(appId, storeId);
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
