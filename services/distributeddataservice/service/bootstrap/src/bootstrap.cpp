@@ -113,7 +113,7 @@ void Bootstrap::LoadCheckers()
         if (checker == nullptr) {
             continue;
         }
-        checker->AddDynamicStore(staticStore);
+        checker->AddStaticStore(staticStore);
     }
 }
 

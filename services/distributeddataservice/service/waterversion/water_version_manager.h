@@ -51,6 +51,7 @@ public:
     };
     static WaterVersionManager &GetInstance();
     WaterVersionManager();
+    void Init();
     std::string GenerateWaterVersion(const std::string &bundleName, const std::string &storeName, Type type);
     std::pair<bool, uint64_t> GetVersion(const std::string &deviceId, Type type);
     std::string GetWaterVersion(const std::string &deviceId, Type type);

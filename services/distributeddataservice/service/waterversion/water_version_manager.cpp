@@ -35,11 +35,15 @@ WaterVersionManager &WaterVersionManager::GetInstance()
 }
 WaterVersionManager::WaterVersionManager() : waterVersions_(BUTT)
 {
-    std::vector<WaterVersionMetaData> metas;
-    auto stores = CheckerManager::GetInstance().GetDynamicStores();
     for (int i = 0; i < BUTT; ++i) {
         waterVersions_[i].SetType(static_cast<Type>(i));
     }
+}
+
+void WaterVersionManager::Init()
+{
+    std::vector<WaterVersionMetaData> metas;
+    auto stores = CheckerManager::GetInstance().GetDynamicStores();
     for (const auto &store : stores) {
         waterVersions_[DYNAMIC].AddKey(Merge(store.bundleName, store.storeId));
     }
@@ -56,6 +60,7 @@ WaterVersionManager::WaterVersionManager() : waterVersions_(BUTT)
         waterVersions_[meta.type].InitWaterVersion(meta);
     }
 }
+
 std::string WaterVersionManager::GenerateWaterVersion(const std::string &bundleName, const std::string &storeName,
     Type type)
 {
@@ -311,7 +316,7 @@ std::pair<bool, WaterVersionMetaData> WaterVersionManager::WaterVersion::Generat
         if (keys_[i] != key) {
             continue;
         }
-        metaData.type = STATIC;
+        metaData.type = type_;
         metaData.keys = keys_;
         metaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (metaData.deviceId.empty()) {

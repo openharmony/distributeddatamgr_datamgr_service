@@ -482,6 +482,12 @@ int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
+
+std::string KVDBGeneralStore::GetWaterVersion(const std::string &deviceId)
+{
+    return "";
+}
+
 void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data)
 {
     if (!HasWatcher()) {
