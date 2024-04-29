@@ -47,6 +47,11 @@ int32_t RdbWatcher::OnChange(const Origin &origin, const PRIFields &primaryField
     return E_OK;
 }
 
+int32_t RdbWatcher::OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas)
+{
+    return E_OK;
+}
+
 sptr<RdbNotifierProxy> RdbWatcher::GetNotifier() const
 {
     std::shared_lock<decltype(mutex_)> lock(mutex_);

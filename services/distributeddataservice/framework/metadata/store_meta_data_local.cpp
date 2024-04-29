@@ -67,6 +67,7 @@ bool StoreMetaDataLocal::Marshal(json &node) const
     SetValue(node[GET_NAME(dataDir)], dataDir);
     SetValue(node[GET_NAME(schema)], schema);
     SetValue(node[GET_NAME(policies)], policies);
+    SetValue(node[GET_NAME(isPublic)], isPublic);
     return true;
 }
 
@@ -79,6 +80,7 @@ bool StoreMetaDataLocal::Unmarshal(const json &node)
     GetValue(node, GET_NAME(dataDir), dataDir);
     GetValue(node, GET_NAME(schema), schema);
     GetValue(node, GET_NAME(policies), policies);
+    GetValue(node, GET_NAME(isPublic), isPublic);
     return true;
 }
 

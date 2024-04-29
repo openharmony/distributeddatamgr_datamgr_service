@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Huawei Device Co., Ltd.
+* Copyright (c) 2022-2024 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -17,9 +17,9 @@
 
 #include "backup_manager.h"
 #include "directory/directory_manager.h"
+#include "kvdb_general_store.h"
 #include "log_print.h"
 #include "reporter.h"
-#include "store_cache.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedDataDfx;
@@ -30,8 +30,8 @@ void KVDBExporter::Exporter(const StoreMetaData &meta, const std::string &backup
     DBManager manager(meta.appId, meta.user);
     auto path = DirectoryManager::GetInstance().GetStorePath(meta);
     manager.SetKvStoreConfig({ path });
-    auto dbPassword = StoreCache::GetDBPassword(meta);
-    auto dbOption = StoreCache::GetDBOption(meta, dbPassword);
+    auto dbPassword = KVDBGeneralStore::GetDBPassword(meta);
+    auto dbOption = KVDBGeneralStore::GetDBOption(meta, dbPassword);
 
     manager.GetKvStore(meta.storeId, dbOption, [&manager, &backupPath, &dbPassword, &result]
         (DistributedDB::DBStatus dbstatus, DistributedDB::KvStoreNbDelegate *delegate) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <cinttypes>
+
 #include "cache_cursor.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
@@ -42,7 +43,7 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
-using namespace  CloudData;
+using namespace CloudData;
 using namespace std::chrono;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
@@ -119,8 +120,12 @@ int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std
     return GenErr::E_OK;
 }
 
-int32_t RdbGeneralStore::Bind(const Database &database, BindInfo bindInfo)
+int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos)
 {
+    if (bindInfos.empty()) {
+        return GeneralError::E_OK;
+    }
+    auto bindInfo = bindInfos.begin()->second;
     if (bindInfo.db_ == nullptr || bindInfo.loader_ == nullptr) {
         return GeneralError::E_INVALID_ARGS;
     }
@@ -420,7 +425,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuer
     return nullptr;
 }
 
-int32_t RdbGeneralStore::MergeMigratedData(const std::string& tableName, VBuckets&& values)
+int32_t RdbGeneralStore::MergeMigratedData(const std::string &tableName, VBuckets &&values)
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -465,9 +470,9 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
-std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
+std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery &query)
 {
-    RdbQuery* rdbQuery = nullptr;
+    RdbQuery *rdbQuery = nullptr;
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
         ZLOGE("not RdbQuery!");
@@ -504,7 +509,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery& query)
     return std::make_shared<CacheCursor>(std::move(values));
 }
 
-VBuckets RdbGeneralStore::ExtractExtend(VBuckets& values) const
+VBuckets RdbGeneralStore::ExtractExtend(VBuckets &values) const
 {
     VBuckets extends(values.size());
     for (auto value = values.begin(), extend = extends.begin(); value != values.end() && extend != extends.end();
@@ -522,13 +527,13 @@ VBuckets RdbGeneralStore::ExtractExtend(VBuckets& values) const
     return extends;
 }
 
-std::string RdbGeneralStore::BuildSql(const std::string& table, const std::string& statement,
-    const std::vector<std::string>& columns) const
+std::string RdbGeneralStore::BuildSql(
+    const std::string &table, const std::string &statement, const std::vector<std::string> &columns) const
 {
     std::string sql = "select ";
     sql.append(CLOUD_GID);
     std::string sqlNode = "select rowid";
-    for (auto& column : columns) {
+    for (auto &column : columns) {
         sql.append(", ").append(column);
         sqlNode.append(", ").append(column);
     }
@@ -629,10 +634,10 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t highMode)
 {
     if (!async && (highMode == MANUAL_SYNC_MODE || !async_)) {
-        return [](auto&) {};
+        return [](auto &) {};
     }
 
-    return [async, autoAsync = async_, highMode](const std::map<std::string, SyncProcess>& processes) {
+    return [async, autoAsync = async_, highMode](const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
@@ -717,8 +722,8 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
-    const std::string& extendColName)
+int32_t RdbGeneralStore::SetTrackerTable(
+    const std::string &tableName, const std::set<std::string> &trackerColNames, const std::string &extendColName)
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -793,7 +798,7 @@ int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
-VBuckets RdbGeneralStore::QuerySql(const std::string& sql, Values &&args)
+VBuckets RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
 {
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
@@ -822,7 +827,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
     data.GetStoreProperty(property);
     genOrigin.id.push_back(networkId);
     genOrigin.store = storeId_;
-    watcher_->OnChange(genOrigin, {}, {});
+    GeneralWatcher::ChangeInfo changeInfo{};
+    watcher_->OnChange(genOrigin, {}, std::move(changeInfo));
     return;
 }
 
@@ -834,9 +840,9 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     ZLOGD("store:%{public}s table:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
         Anonymous::Change(data.tableName).c_str(), Anonymous::Change(originalId).c_str());
     GenOrigin genOrigin;
-    genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)   ? GenOrigin::ORIGIN_LOCAL
-                       : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD
-                                                            : GenOrigin::ORIGIN_NEARBY;
+    genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)
+                           ? GenOrigin::ORIGIN_LOCAL
+                           : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD : GenOrigin::ORIGIN_NEARBY;
     genOrigin.dataType = data.type == DistributedDB::ASSET ? GenOrigin::ASSET_DATA : GenOrigin::BASIC_DATA;
     genOrigin.id.push_back(originalId);
     genOrigin.store = storeId_;

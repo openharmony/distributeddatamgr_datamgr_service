@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,9 +26,9 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
-#include "store/auto_cache.h"
-#include "store/general_store.h"
+#include "user_delegate.h"
 #include "utils/anonymous.h"
+
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace DistributedKv;
@@ -104,9 +104,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     }
     class SyncQuery final : public GenQuery {
     public:
-        explicit SyncQuery(const std::vector<std::string> &tables) : tables_(tables)
-        {
-        }
+        explicit SyncQuery(const std::vector<std::string> &tables) : tables_(tables) {}
 
         bool IsEqual(uint64_t tid) override
         {
@@ -125,7 +123,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     return std::make_shared<SyncQuery>(it == tables_.end() || it->second.empty() ? tables : it->second);
 }
 
-bool SyncManager::SyncInfo::Contains(const std::string& storeName)
+bool SyncManager::SyncInfo::Contains(const std::string &storeName)
 {
     return tables_.empty() || tables_.find(storeName) != tables_.end();
 }
@@ -187,7 +185,7 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
         (info.id_ != SyncInfo::DEFAULT_ID && cloud.id != info.id_)) {
         info.SetError(E_CLOUD_DISABLED);
         ZLOGE("cloudInfo invalid:%{public}d, <syncId:%{public}s, metaId:%{public}s>", cloud.IsValid(),
-              Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
+            Anonymous::Change(info.id_).c_str(), Anonymous::Change(cloud.id).c_str());
         return E_CLOUD_DISABLED;
     }
     if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
@@ -221,7 +219,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     continue;
                 }
                 StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
-                    cloud.user, "", info.syncId_ };
+                                        info.user_, "", info.syncId_ };
                 auto status = syncStrategy_->CheckSyncAction(storeInfo);
                 if (status != SUCCESS) {
                     ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
@@ -246,6 +244,15 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
     times++;
     return [this, times, retry, keep = std::move(ref), info = std::move(syncInfo)]() mutable {
         activeInfos_.Erase(info.syncId_);
+        bool createdByDefaultUser = false;
+        if (info.user_ == 0) {
+            std::vector<int32_t> users;
+            AccountDelegate::GetInstance()->QueryUsers(users);
+            if (!users.empty()) {
+                info.user_ = users[0];
+            }
+            createdByDefaultUser = true;
+        }
         CloudInfo cloud;
         cloud.user = info.user_;
 
@@ -273,6 +280,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         }
 
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
+        if (createdByDefaultUser) {
+            info.user_ = 0;
+        }
         auto task = GetPostEventTask(schemas, cloud, info, retry);
         if (task != nullptr) {
             task();
@@ -292,10 +302,14 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                meta.GetStoreAlias().c_str());
-            DoExceptionalCallback(async, details, storeInfo);
-            return;
+            meta.user = "0"; // check if it is a public store.
+            StoreMetaDataLocal localMetaData;
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMetaData, true) ||
+                !localMetaData.isPublic || !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+                ZLOGE("failed, no store meta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                    meta.GetStoreAlias().c_str());
+                return DoExceptionalCallback(async, details, storeInfo);
+            }
         }
         auto store = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
@@ -303,7 +317,6 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             DoExceptionalCallback(async, details, storeInfo);
             return;
         }
-
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation() };
@@ -405,9 +418,38 @@ void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
     EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo));
 }
 
+std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const StoreMetaData &meta,
+    const std::vector<int32_t> &users, CloudInfo &info, Database &schemaDatabase, bool mustBind)
+{
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGD("not support cloud sync");
+        return {};
+    }
+    std::map<uint32_t, GeneralStore::BindInfo> bindInfos = {};
+    for (auto &activeUser : users) {
+        if (activeUser == 0) {
+            continue;
+        }
+        auto cloudDB = instance->ConnectCloudDB(meta.bundleName, activeUser, schemaDatabase);
+        auto assetLoader = instance->ConnectAssetLoader(meta.bundleName, activeUser, schemaDatabase);
+        if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
+            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
+                Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
+            return {};
+        }
+        if (cloudDB != nullptr || assetLoader != nullptr) {
+            GeneralStore::BindInfo bindInfo((cloudDB != nullptr) ? std::move(cloudDB) : cloudDB,
+                (assetLoader != nullptr) ? std::move(assetLoader) : assetLoader);
+            bindInfos[activeUser] = bindInfo;
+        }
+    }
+    return bindInfos;
+}
+
 AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, bool mustBind)
 {
-    if (!Account::GetInstance()->IsVerified(user)) {
+    if (user != 0 && !Account::GetInstance()->IsVerified(user)) {
         ZLOGW("user:%{public}d is locked!", user);
         return nullptr;
     }
@@ -416,16 +458,23 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         ZLOGD("not support cloud sync");
         return nullptr;
     }
-
     auto store = AutoCache::GetInstance().GetStore(meta, {});
     if (store == nullptr) {
         ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
         return nullptr;
     }
-
     if (!store->IsBound()) {
+        std::vector<int32_t> users{};
         CloudInfo info;
-        info.user = user;
+        if (user == 0) {
+            AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+            if (!users.empty()) {
+                info.user = users[0];
+            }
+        } else {
+            info.user = user;
+            users.push_back(user);
+        }
         SchemaMeta schemaMeta;
         std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
         if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
@@ -434,17 +483,8 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
             return nullptr;
         }
         auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
-        auto cloudDB = instance->ConnectCloudDB(meta.tokenId, dbMeta);
-        auto assetLoader = instance->ConnectAssetLoader(meta.tokenId, dbMeta);
-        if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
-            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
-                Anonymous::Change(dbMeta.name).c_str(), Anonymous::Change(dbMeta.alias).c_str());
-            return nullptr;
-        }
-
-        if (cloudDB != nullptr || assetLoader != nullptr) {
-            store->Bind(dbMeta, { std::move(cloudDB), std::move(assetLoader) });
-        }
+        std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, info, dbMeta, mustBind);
+        store->Bind(dbMeta, bindInfos);
     }
     return store;
 }

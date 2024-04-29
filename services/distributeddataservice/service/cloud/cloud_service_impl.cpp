@@ -806,7 +806,13 @@ void CloudServiceImpl::GetSchema(const Event &event)
     auto &storeInfo = rdbEvent.GetStoreInfo();
     ZLOGD("Start GetSchema, bundleName:%{public}s, storeName:%{public}s, instanceId:%{public}d",
         storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
-    GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
+    if (storeInfo.user == 0) {
+        std::vector<int32_t> users;
+        AccountDelegate::GetInstance()->QueryUsers(users);
+        GetSchemaMeta(users[0], storeInfo.bundleName, storeInfo.instanceId);
+    } else {
+        GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
+    }
 }
 
 void CloudServiceImpl::CloudShare(const Event &event)

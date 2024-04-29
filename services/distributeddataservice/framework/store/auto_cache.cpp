@@ -284,4 +284,22 @@ int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &pri
     }
     return Error::E_OK;
 }
+
+int32_t AutoCache::Delegate::OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas)
+{
+    Watchers watchers;
+    {
+        std::unique_lock<decltype(mutex_)> lock(mutex_);
+        watchers = watchers_;
+    }
+    size_t remain = watchers.size();
+    for (auto &watcher : watchers) {
+        remain--;
+        if (watcher == nullptr) {
+            continue;
+        }
+        watcher->OnChange(origin, fields, (remain != 0) ? ChangeData(datas) : std::move(datas));
+    }
+    return Error::E_OK;
+}
 } // namespace OHOS::DistributedData
