@@ -310,6 +310,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${kv_store_distributeddb_path}:distributeddb",
+    "${relational_store_inner_api_path}:native_rdb_static",
     "//third_party/googletest:gtest_main",
   ]
 }

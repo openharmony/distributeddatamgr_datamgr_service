@@ -31,8 +31,6 @@ private:
     int32_t OnGetAllColumnNames(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetColumnCount(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetColumnType(MessageParcel &data, MessageParcel &reply);
-    int32_t OnGetColumnIndex(MessageParcel &data, MessageParcel &reply);
-    int32_t OnGetColumnName(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetRowCount(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetRowIndex(MessageParcel &data, MessageParcel &reply);
     int32_t OnGoTo(MessageParcel &data, MessageParcel &reply);
@@ -45,12 +43,8 @@ private:
     int32_t OnIsStarted(MessageParcel &data, MessageParcel &reply);
     int32_t OnIsAtFirstRow(MessageParcel &data, MessageParcel &reply);
     int32_t OnIsAtLastRow(MessageParcel &data, MessageParcel &reply);
-    int32_t OnGetBlob(MessageParcel &data, MessageParcel &reply);
-    int32_t OnGetString(MessageParcel &data, MessageParcel &reply);
-    int32_t OnGetInt(MessageParcel &data, MessageParcel &reply);
-    int32_t OnGetLong(MessageParcel &data, MessageParcel &reply);
-    int32_t OnGetDouble(MessageParcel &data, MessageParcel &reply);
-    int32_t OnIsColumnNull(MessageParcel &data, MessageParcel &reply);
+    int32_t OnGet(MessageParcel &data, MessageParcel &reply);
+    int32_t OnGetSize(MessageParcel &data, MessageParcel &reply);
     int32_t OnIsClosed(MessageParcel &data, MessageParcel &reply);
     int32_t OnClose(MessageParcel &data, MessageParcel &reply);
 
@@ -60,8 +54,6 @@ private:
         [Code::CMD_GET_ALL_COLUMN_NAMES] = &RdbResultSetStub::OnGetAllColumnNames,
         [Code::CMD_GET_COLUMN_COUNT] = &RdbResultSetStub::OnGetColumnCount,
         [Code::CMD_GET_COLUMN_TYPE] = &RdbResultSetStub::OnGetColumnType,
-        [Code::CMD_GET_COLUMN_INDEX] = &RdbResultSetStub::OnGetColumnIndex,
-        [Code::CMD_GET_COLUMN_NAME] = &RdbResultSetStub::OnGetColumnName,
         [Code::CMD_GET_ROW_COUNT] = &RdbResultSetStub::OnGetRowCount,
         [Code::CMD_GET_ROW_INDEX] = &RdbResultSetStub::OnGetRowIndex,
         [Code::CMD_GO_TO] = &RdbResultSetStub::OnGoTo,
@@ -74,13 +66,8 @@ private:
         [Code::CMD_IS_STARTED_ROW] = &RdbResultSetStub::OnIsStarted,
         [Code::CMD_IS_AT_FIRST_ROW] = &RdbResultSetStub::OnIsAtFirstRow,
         [Code::CMD_IS_AT_LAST_ROW] = &RdbResultSetStub::OnIsAtLastRow,
-        [Code::CMD_GET_BLOB] = &RdbResultSetStub::OnGetBlob,
-        [Code::CMD_GET_STRING] = &RdbResultSetStub::OnGetString,
-        [Code::CMD_GET_INT] = &RdbResultSetStub::OnGetInt,
-        [Code::CMD_GET_LONG] = &RdbResultSetStub::OnGetLong,
-        [Code::CMD_GET_DOUBLE] = &RdbResultSetStub::OnGetDouble,
-        [Code::CMD_IS_COLUMN_NULL] = &RdbResultSetStub::OnIsColumnNull,
-        [Code::CMD_IS_CLOSED] = &RdbResultSetStub::OnIsClosed,
+        [Code::CMD_GET] = &RdbResultSetStub::OnGet,
+        [Code::CMD_GET_SIZE] = &RdbResultSetStub::OnGetSize,
         [Code::CMD_CLOSE] = &RdbResultSetStub::OnClose
     };
     std::shared_ptr<NativeRdb::ResultSet> resultSet_;
