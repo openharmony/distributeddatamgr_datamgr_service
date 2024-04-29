@@ -153,7 +153,6 @@ private:
     std::map<std::string, Mask> onLines_;
     std::map<std::string, Mask> offLines_;
     std::map<std::string, Mask> remotes_;
-    // { "distributed_device_profile_service", "DistributedSchedule" };
     std::vector<std::string> dynamicApps_ = { "distributed_device_profile_service", "bundle_manager_service",
         "dtbhardware_manager_service" };
     std::vector<std::string> staticsApps_ = { "distributed_device_profile_service", "dtbhardware_manager_service" };

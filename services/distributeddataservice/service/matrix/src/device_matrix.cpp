@@ -345,7 +345,7 @@ void DeviceMatrix::Broadcast(const DataLevel &dataLevel)
         EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_BROADCAST, "", matrix));
         return;
     }
-    matrix.dynamic |= Low(lastest_.dynamic); 
+    matrix.dynamic |= Low(lastest_.dynamic);
     matrix.statics |= Low(lastest_.statics);
     if (High(matrix.dynamic) != INVALID_HIGH &&  High(lastest_.dynamic)!= INVALID_HIGH &&
         High(matrix.dynamic) < High(lastest_.dynamic)) {
@@ -506,16 +506,16 @@ void DeviceMatrix::UpdateConsistentMeta(const std::string &device, const Mask &r
     MetaDataManager::GetInstance().SaveMeta(metaData.GetConsistentKey(), metaData, true);
  }
 
- void DeviceMatrix::OnExchanged(const std::string &device, const StoreMetaData &metaData, ChangeType type)
- {
-    if (metaData.dataType < LevelType::STATICS || metaData.dataType > LevelType::DYNAMIC) {
-        return;
-    }
-    auto code = GetCode(metaData);
-    if (code != 0) {
-        OnExchanged(device, code, static_cast<LevelType>(metaData.dataType), type);
-    }
- }
+void DeviceMatrix::OnExchanged(const std::string &device, const StoreMetaData &metaData, ChangeType type)
+{
+   if (metaData.dataType < LevelType::STATICS || metaData.dataType > LevelType::DYNAMIC) {
+       return;
+   }
+   auto code = GetCode(metaData);
+   if (code != 0) {
+       OnExchanged(device, code, static_cast<LevelType>(metaData.dataType), type);
+   }
+}
 
 uint16_t DeviceMatrix::GetCode(const StoreMetaData &metaData)
 {

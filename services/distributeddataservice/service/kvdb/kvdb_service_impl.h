@@ -95,7 +95,7 @@ private:
     };
     struct SyncAgent {
         pid_t pid_ = 0;
-        int32_t switchesObserverCount_ = 0; 
+        int32_t switchesObserverCount_ = 0;
         bool changed_ = false;
         AppId appId_;
         int32_t count_ = 0;

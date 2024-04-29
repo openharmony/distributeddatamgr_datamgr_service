@@ -1386,7 +1386,7 @@ int32_t KVDBServiceImpl::OnInitialize()
     RegisterKvServiceInfo();
     RegisterHandler();
     Init();
-	RegisterMatrixChange();
+    RegisterMatrixChange();
     return SUCCESS;
 }
 } // namespace OHOS::DistributedKv

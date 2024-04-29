@@ -247,7 +247,6 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
             }
             return conn.empty();
         });
-
         Time next = INVALID_NEXT;
         lock_guard<decltype(taskMutex_)> lg(taskMutex_);
         connects_.ForEach([&next](const auto &key, auto &connects) -> bool {
