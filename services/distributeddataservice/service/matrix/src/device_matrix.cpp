@@ -81,7 +81,7 @@ bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
     auto status = Commu::GetInstance().Broadcast(
         { pipe }, { INVALID_LEVEL, INVALID_LEVEL, INVALID_VALUE, INVALID_LENGTH });
     isSupportBroadcast_ = (status != DistributedKv::Status::NOT_SUPPORT_BROADCAST);
-
+    ZLOGI("Is support broadcast:%{public}d", isSupportBroadcast_);
     tokenId_ = token;
     storeId_ = std::move(storeId);
     MatrixMetaData oldMeta;
