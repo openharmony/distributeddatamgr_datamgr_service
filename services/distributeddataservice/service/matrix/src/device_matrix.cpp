@@ -504,17 +504,17 @@ void DeviceMatrix::UpdateConsistentMeta(const std::string &device, const Mask &r
         metaData.dynamic = meta.dynamic;
     }
     MetaDataManager::GetInstance().SaveMeta(metaData.GetConsistentKey(), metaData, true);
- }
+}
 
 void DeviceMatrix::OnExchanged(const std::string &device, const StoreMetaData &metaData, ChangeType type)
 {
-   if (metaData.dataType < LevelType::STATICS || metaData.dataType > LevelType::DYNAMIC) {
-       return;
-   }
-   auto code = GetCode(metaData);
-   if (code != 0) {
-       OnExchanged(device, code, static_cast<LevelType>(metaData.dataType), type);
-   }
+    if (metaData.dataType < LevelType::STATICS || metaData.dataType > LevelType::DYNAMIC) {
+        return;
+    }
+    auto code = GetCode(metaData);
+    if (code != 0) {
+        OnExchanged(device, code, static_cast<LevelType>(metaData.dataType), type);
+    }
 }
 
 uint16_t DeviceMatrix::GetCode(const StoreMetaData &metaData)
