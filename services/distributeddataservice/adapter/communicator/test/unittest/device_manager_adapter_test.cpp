@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 #include "device_manager_adapter.h"
 #include "gtest/gtest.h"
 #include "accesstoken_kit.h"
