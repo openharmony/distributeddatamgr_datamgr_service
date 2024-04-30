@@ -139,9 +139,19 @@ void KVDBServiceImpl::Init()
         meta.user = std::to_string(storeInfo.user);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                meta.GetStoreAlias().c_str());
-            return;
+            if (meta.user == "0") {
+                ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
+                    meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
+                return;
+            }
+            meta.user = "0";
+            StoreMetaDataLocal localMeta;
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true) || !localMeta.isPublic ||
+                !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+                ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
+                    meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
+                return;
+            }
         }
         if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
             meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
