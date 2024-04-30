@@ -347,15 +347,15 @@ HWTEST_F(DataShareServiceImplTest, SubscribePublishedData002, TestSize.Level1)
     uris.emplace_back("");
     sptr<IDataProxyPublishedDataObserver> observer;
     int64_t subscriberId = 0;
-    std::vector<OperationResult> result =  dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
+    std::vector<OperationResult> result = dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
     EXPECT_EQ(result.size(), uris.size());
     for (auto const &operationResult : result) {
         EXPECT_NE(operationResult.errCode_, 0);
     }
 
-    std::vector<OperationResult> result1 =  dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
-    EXPECT_EQ(result1.size(), uris.size());
-    for (auto const &operationResult : result1) {
+    result = dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
+    EXPECT_EQ(result.size(), uris.size());
+    for (auto const &operationResult : result) {
         EXPECT_NE(operationResult.errCode_, 0);
     }
 }
@@ -376,12 +376,12 @@ HWTEST_F(DataShareServiceImplTest, EnablePubSubs001, TestSize.Level1)
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
     dataShareServiceImpl.OnConnectDone();
-    std::vector<OperationResult> result =  dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
+    std::vector<OperationResult> result = dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
     for (auto const &operationResult : result) {
         EXPECT_EQ(operationResult.errCode_, 0);
     }
 
-    result =  dataShareServiceImpl.DisablePubSubs(uris, subscriberId);
+    result = dataShareServiceImpl.DisablePubSubs(uris, subscriberId);
     for (auto const &operationResult : result) {
         EXPECT_EQ(operationResult.errCode_, 0);
     }
@@ -399,13 +399,13 @@ HWTEST_F(DataShareServiceImplTest, EnablePubSubs002, TestSize.Level1)
     std::vector<std::string> uris;
     uris.emplace_back("");
     int64_t subscriberId = 0;
-    std::vector<OperationResult> result =  dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
+    std::vector<OperationResult> result = dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
     for (auto const &operationResult : result) {
         EXPECT_NE(operationResult.errCode_, 0);
     }
 
-    std::vector<OperationResult> result1 =  dataShareServiceImpl.DisablePubSubs(uris, subscriberId);
-    for (auto const &operationResult : result1) {
+    result = dataShareServiceImpl.DisablePubSubs(uris, subscriberId);
+    for (auto const &operationResult : result) {
         EXPECT_NE(operationResult.errCode_, 0);
     }
 }

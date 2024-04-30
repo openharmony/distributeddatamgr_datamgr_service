@@ -529,8 +529,10 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
+    "data_share_profile_config_test.cpp",
     "data_share_service_impl_test.cpp",
     "data_share_service_stub_test.cpp",
+    "data_share_subscriber_managers_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
