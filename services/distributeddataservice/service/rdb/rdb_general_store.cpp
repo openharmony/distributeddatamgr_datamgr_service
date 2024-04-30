@@ -811,9 +811,9 @@ VBuckets RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
     return ValueProxy::Convert(std::move(changedData));
 }
 
-std::string RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
+std::vector<std::string> RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
 {
-    return "";
+    return {};
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

@@ -139,7 +139,7 @@ public:
 
     virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) = 0;
 
-    virtual std::string GetWaterVersion(const std::string &deviceId) = 0;
+    virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

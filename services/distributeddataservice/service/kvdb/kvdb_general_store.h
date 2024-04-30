@@ -70,7 +70,7 @@ public:
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
-    std::string GetWaterVersion(const std::string &deviceId) override;
+    std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
 
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
@@ -84,7 +84,9 @@ private:
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DBStatus status);
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
+    DBProcessCB GetDBProcessCB(DetailAsync async);
     DBStatus CloudSync(const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, int64_t wait);
+    void InitWaterVersion(const StoreMetaData &meta);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;
@@ -116,6 +118,7 @@ private:
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
     StoreInfo storeInfo_;
+    std::function<void()> callback_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

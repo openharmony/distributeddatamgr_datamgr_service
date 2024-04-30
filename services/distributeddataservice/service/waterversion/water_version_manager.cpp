@@ -1,23 +1,25 @@
 /*
-* Copyright (c) 2024 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #define LOG_TAG "WaterVersionManager"
 #include "water_version_manager.h"
 
 #include "checker/checker_manager.h"
+#include "cloud/cloud_sync_finished_event.h"
 #include "store/auto_cache.h"
 #include "device_manager_adapter.h"
+#include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
@@ -59,6 +61,18 @@ void WaterVersionManager::Init()
         }
         waterVersions_[meta.type].InitWaterVersion(meta);
     }
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC_FINISHED, [this](const Event &event) {
+        auto &cloudSyncFinishedEvent = static_cast<const CloudSyncFinishedEvent &>(event);
+        auto storeMeta = cloudSyncFinishedEvent.GetStoreMeta();
+        auto store = AutoCache::GetInstance().GetStore(StoreMetaData(storeMeta), {});
+        if (store == nullptr) {
+            return;
+        }
+        auto versions = store->GetWaterVersion("");
+        for (auto &version : versions) {
+            SetWaterVersion(storeMeta.bundleName, storeMeta.storeId, version);
+        }
+    });
 }
 
 std::string WaterVersionManager::GenerateWaterVersion(const std::string &bundleName, const std::string &storeName,
@@ -143,7 +157,7 @@ bool WaterVersionManager::InitMeta(WaterVersionMetaData &metaData)
         }
         auto waterVersion = store->GetWaterVersion(uuid);
         WaterVersionMetaData meta;
-        if (waterVersion.empty() || !Serializable::Unmarshall(waterVersion, meta)) {
+        if (waterVersion.empty() || !Serializable::Unmarshall(*waterVersion.begin(), meta)) {
             ZLOGE("GetWaterVersion failed! bundleName:%{public}s, storeName:%{public}s, meta:%{public}s",
                 storeMetaData.bundleName.c_str(), storeMetaData.GetStoreAlias().c_str(),
                 meta.ToAnonymousString().c_str());
