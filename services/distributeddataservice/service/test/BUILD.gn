@@ -583,6 +583,44 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 }
 
+ohos_unittest("KvdbServiceImplTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "kvdb_service_impl_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/adapter/include/account",
+    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -601,6 +639,7 @@ group("unittest") {
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
     ":KVDBGeneralStoreTest",
+    ":KvdbServiceImplTest",
     ":MetaDataTest",
     ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",
