@@ -249,6 +249,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   include_dirs = [
     "${data_service_path}/service/common",
     "${data_service_path}/service/rdb",
+    "${data_service_path}/service/waterversion",
     "${relational_store_path}/interfaces/innerapi/clouddata/include",
     "${relational_store_path}/interfaces/inner_api/rdb/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",

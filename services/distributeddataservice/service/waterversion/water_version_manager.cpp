@@ -118,10 +118,6 @@ bool WaterVersionManager::SetWaterVersion(const std::string &bundleName, const s
             metaData.ToAnonymousString().c_str(), bundleName.c_str(), Anonymous::Change(storeName).c_str());
         return false;
     }
-
-    std::string key = Merge(bundleName, storeName);
-    ZLOGE("error key. deviceId:%{public}s, bundleName:%{public}s, storeName:%{public}s",
-        Anonymous::Change(metaData.deviceId).c_str(), bundleName.c_str(), Anonymous::Change(storeName).c_str());
     return waterVersions_[metaData.type].SetWaterVersion(Merge(bundleName, storeName), metaData);
 }
 
@@ -381,7 +377,7 @@ bool WaterVersionManager::WaterVersion::SetWaterVersion(const std::string &key,
     const WaterVersionMetaData &metaData)
 {
     if (std::find(keys_.begin(), keys_.end(), key) == keys_.end()) {
-        ZLOGE("invalid key:%{public}s", metaData.ToAnonymousString().c_str());
+        ZLOGE("invalid key. meta:%{public}s", metaData.ToAnonymousString().c_str());
         return false;
     }
     WaterVersionMetaData oldMeta;
