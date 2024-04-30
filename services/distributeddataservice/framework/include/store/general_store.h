@@ -137,7 +137,7 @@ public:
 
     virtual int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) = 0;
 
-    virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) = 0;
+    virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) = 0;
 
     virtual std::string GetWaterVersion(const std::string &deviceId) = 0;
 };

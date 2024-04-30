@@ -72,6 +72,7 @@ private:
         bool SetWaterVersion(const std::string &key, const WaterVersionMetaData &metaData);
         bool DelWaterVersion(const std::string &deviceId);
     private:
+        static constexpr uint16_t INVALID_VERSION = 0xFFF;
         Type type_;
         std::mutex mutex_;
         std::vector<std::string> keys_;

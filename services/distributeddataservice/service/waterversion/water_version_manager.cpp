@@ -332,6 +332,9 @@ std::pair<bool, WaterVersionMetaData> WaterVersionManager::WaterVersion::Generat
             InitMeta(metaData);
         }
         metaData.waterVersion++;
+        if ((metaData.waterVersion & INVALID_VERSION) == INVALID_VERSION) {
+            metaData.waterVersion++;
+        }
         // It has been initialized above, so there is no need to check for out of bounds
         metaData.infos[i][i] = metaData.waterVersion;
         for (size_t j = 0; j < metaData.keys.size(); ++j) {
