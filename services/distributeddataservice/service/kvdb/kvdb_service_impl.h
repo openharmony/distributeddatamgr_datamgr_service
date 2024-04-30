@@ -44,7 +44,7 @@ public:
     Status AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
         const std::vector<uint8_t> &password) override;
     Status Delete(const AppId &appId, const StoreId &storeId) override;
-    Status CloudSync(const AppId &appId, const StoreId &storeId) override;
+    Status CloudSync(const AppId &appId, const StoreId &storeId, const AsyncDetail &async) override;
     Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status SyncExt(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback) override;
@@ -118,7 +118,7 @@ private:
     DBMode ConvertDBMode(SyncMode syncMode) const;
     std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     DistributedData::GeneralStore::SyncMode ConvertGeneralSyncMode(SyncMode syncMode, SyncAction syncAction) const;
-    DBResult HandleGenDetails(const DistributedData::GenDetails &details);
+    DBResult HandleGenBriefDetails(const DistributedData::GenDetails &details);
     DistributedData::AutoCache::Watchers GetWatchers(uint32_t tokenId, const std::string &storeId);
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
@@ -126,6 +126,7 @@ private:
     void RegisterKvServiceInfo();
     void RegisterHandler();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
+    ProgressDetail HandleGenDetails(const DistributedData::GenDetails &details);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

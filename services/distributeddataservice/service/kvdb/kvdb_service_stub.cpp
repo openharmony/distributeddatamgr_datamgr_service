@@ -17,10 +17,10 @@
 
 #include "checker/checker_manager.h"
 #include "ipc_skeleton.h"
-#include "itypes_util.h"
+#include "kv_types_util.h"
 #include "log_print.h"
-#include "utils/constant.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 const KVDBServiceStub::Handler
@@ -173,9 +173,12 @@ int32_t KVDBServiceStub::OnSync(const AppId &appId, const StoreId &storeId, Mess
 int32_t KVDBServiceStub::OnCloudSync(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    int32_t status = CloudSync(appId, storeId);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status:0x%{public}x", status);
+    ProgressDetail detail;
+    int32_t status = CloudSync(appId, storeId, [&detail](ProgressDetail &&progressDetail) {
+        detail = std::move(progressDetail);
+    });
+    if (!ITypesUtil::Marshal(reply, status, detail)) {
+        ZLOGE("Marshal status:0x%{public}x, detail code:%{public}d", status, detail.code);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;

@@ -240,7 +240,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
+Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const AsyncDetail &async)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
@@ -248,9 +248,16 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
     storeInfo.bundleName = appId.appId;
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     storeInfo.storeName = storeId;
+    GenAsync syncCallback = [async, &storeId, &appId, this](const GenDetails &details) {
+        ZLOGD("Cloud Sync complete, appId:%{public}s, storeId:%{public}s", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        if (async != nullptr) {
+            async(HandleGenDetails(details));
+        }
+    };
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
         metaData.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
-    auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, nullptr);
+    auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, syncCallback);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return SUCCESS;
@@ -328,6 +335,25 @@ Status KVDBServiceImpl::UnregisterSyncCallback(const AppId &appId)
         return true;
     });
     return SUCCESS;
+}
+
+ProgressDetail KVDBServiceImpl::HandleGenDetails(const GenDetails &details)
+{
+    ProgressDetail progressDetail;
+    if (details.begin() == details.end()) {
+        return {};
+    }
+    auto genDetail = details.begin()->second;
+    progressDetail.progress = genDetail.progress;
+    progressDetail.code = genDetail.code;
+    auto tableDetails = genDetail.details;
+    if (tableDetails.begin() == tableDetails.end()) {
+        return progressDetail;
+    }
+    auto genTableDetail = tableDetails.begin()->second;
+    auto tableDetail = progressDetail.details;
+    Constant::Copy(&genTableDetail, &tableDetail);
+    return progressDetail;
 }
 
 Status KVDBServiceImpl::SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam)
@@ -749,7 +775,7 @@ int32_t KVDBServiceImpl::GetInstIndex(uint32_t tokenId, const AppId &appId)
     return tokenInfo.instIndex;
 }
 
-KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenDetails(const GenDetails &details)
+KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetails &details)
 {
     DBResult dbResults{};
     for (const auto &[id, detail] : details) {
@@ -855,7 +881,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     auto ret = store->Sync(
         devices, query,
         [this, complete](const GenDetails &result) mutable {
-            auto deviceStatus = HandleGenDetails(result);
+            auto deviceStatus = HandleGenBriefDetails(result);
             complete(deviceStatus);
         },
         syncParam);
