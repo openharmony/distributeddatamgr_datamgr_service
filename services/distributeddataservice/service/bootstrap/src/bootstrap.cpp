@@ -24,6 +24,7 @@
 #include "config_factory.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
+#include "water_version_manager.h"
 namespace OHOS {
 namespace DistributedData {
 Bootstrap &Bootstrap::GetInstance()
@@ -101,6 +102,21 @@ void Bootstrap::LoadCheckers()
         }
         checker->SetDistrustInfo(distrust);
     }
+    for (const auto &dynamicStore : checkers->dynamicStores) {
+        auto *checker = CheckerManager::GetInstance().GetChecker(dynamicStore.checker);
+        if (checker == nullptr) {
+            continue;
+        }
+        checker->AddDynamicStore(dynamicStore);
+    }
+    for (const auto &staticStore : checkers->staticStores) {
+        auto *checker = CheckerManager::GetInstance().GetChecker(staticStore.checker);
+        if (checker == nullptr) {
+            continue;
+        }
+        checker->AddStaticStore(staticStore);
+    }
+    WaterVersionManager::GetInstance().Init();
 }
 
 void Bootstrap::LoadBackup(std::shared_ptr<ExecutorPool> executors)

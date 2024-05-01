@@ -36,10 +36,11 @@ config("module_public_config") {
     "object",
     "permission/include",
     "rdb",
+    "waterversion",
     "//third_party/json/single_include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/framework/include",
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
@@ -126,6 +127,7 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_service_impl.cpp",
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_watcher.cpp",
+    "waterversion/water_version_manager.cpp",
   ]
   cflags = [
     "-Wno-multichar",
