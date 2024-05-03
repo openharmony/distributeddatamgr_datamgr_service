@@ -27,7 +27,7 @@ public:
     ExtensionConnectAdaptor();
 private:
     void Disconnect();
-    bool DoConnect(const std::string &uri);
+    bool DoConnect(const std::string &uri, const std::string &bundleName);
     std::shared_ptr<BlockData<bool>> data_;
     sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };
