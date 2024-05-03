@@ -143,13 +143,12 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     }
     std::shared_ptr<DataShareResultSet> resultSet;
     auto callingPid = IPCSkeleton::GetCallingPid();
-    auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode, &callingPid](ProviderInfo &providerInfo,
+    auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto [err, result] = dbDelegate->Query(providerInfo.tableName,
             predicates, columns, callingPid);
-        errCode = std::move(err);
         resultSet = std::move(result);
-        return E_OK;
+        return err;
     };
     errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);
     return resultSet;
