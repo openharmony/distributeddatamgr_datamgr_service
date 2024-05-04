@@ -62,6 +62,7 @@ private:
     };
     static constexpr int32_t END_LENGTH = 10;
     static constexpr const char *DEFAULT_ANONYMOUS = "******";
+    static constexpr int DECIMAL_TEN = 10;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_URI_UTILS_H

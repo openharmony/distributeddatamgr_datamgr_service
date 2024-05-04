@@ -147,7 +147,7 @@ std::string URIUtils::Anonymous(const std::string &uri)
     return (DEFAULT_ANONYMOUS + uri.substr(uri.length() - END_LENGTH, END_LENGTH));
 }
 
-std::pair<bool, uint32_t> URIUtils::Strtoul(const std::string &str) 
+std::pair<bool, uint32_t> URIUtils::Strtoul(const std::string &str)
 {
     unsigned long data = 0;
     if (str.empty()) {
@@ -155,7 +155,7 @@ std::pair<bool, uint32_t> URIUtils::Strtoul(const std::string &str)
     }
     char* end = nullptr;
     errno = 0;
-    data = strtoul(str.c_str(), &end, 10);
+    data = strtoul(str.c_str(), &end, DECIMAL_TEN);
     if (errno == ERANGE || end == str || *end != '\0') {
         return std::make_pair(false, data);
     }
