@@ -16,6 +16,7 @@
 #ifndef DATASHARESERVICE_URI_UTILS_H
 #define DATASHARESERVICE_URI_UTILS_H
 
+#include <map>
 #include <string>
 namespace OHOS::DataShare {
 struct UriInfo {
@@ -37,12 +38,12 @@ class URIUtils {
 public:
     static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo);
     static bool GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName);
-    static bool GetInfoFromProxyURI(
-        const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName);
     static bool IsDataProxyURI(const std::string &uri);
     static void FormatUri(std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);
     static std::string Anonymous(const std::string &uri);
+    static std::map<std::string, std::string> GetQueryParams(const std::string& uri);
+    static std::pair<bool, uint32_t> Strtoul(const std::string &str);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
     static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";
     static constexpr const char *PARAM_URI_SEPARATOR = ":///";
