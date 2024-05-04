@@ -68,50 +68,21 @@ bool URIUtils::GetBundleNameFromProxyURI(const std::string &uri, std::string &bu
 bool URIUtils::GetInfoFromProxyURI(
     const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName)
 {
-    auto queryPos = uri.find_last_of('?');
-    if (queryPos == std::string::npos) {
-        return true;
-    }
-    std::string query = uri.substr(queryPos + 1);
-    std::string::size_type pos = 0;
-    std::string::size_type nextPos;
-    std::string::size_type valueStartPos;
-    while (pos != std::string::npos) {
-        valueStartPos = query.find_first_of('=', pos);
-        if (valueStartPos == std::string::npos) {
-            ZLOGE("parse failed %{public}s", query.c_str());
+    auto queryParams = GetQueryParams(uri);
+    if (!queryParams[USER_PARAM].empty()) {
+        auto [success, data] = Strtoul(queryParams[USER_PARAM]);
+        if (!success) {
             return false;
         }
-        valueStartPos += 1;
-        nextPos = query.find_first_of('&', pos);
-        std::string value = (nextPos == std::string::npos ? query.substr(valueStartPos)
-                                                        : query.substr(valueStartPos, nextPos - valueStartPos));
-        if (value.empty()) {
-            if (nextPos == std::string::npos) {
-                break;
-            }
-            pos = nextPos + 1;
-            continue;
+        user = std::move(data);
+    } else if (!queryParams[TOKEN_ID_PARAM].empty()) {
+        auto [success, data] = Strtoul(queryParams[TOKEN_ID_PARAM]);
+        if (!success) {
+            return false;
         }
-        if (query.compare(pos, sizeof(USER_PARAM) - 1, USER_PARAM) == 0) {
-            auto [success, data] = Strtoul(value);
-            if (!success) {
-                return false;
-            }
-            user = std::move(data);
-        } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
-            auto [success, data] = Strtoul(value);
-            if (!success) {
-                return false;
-            }
-            callerTokenId = std::move(data);
-        } else if (query.compare(pos, sizeof(DST_BUNDLE_NAME_PARAM) - 1, DST_BUNDLE_NAME_PARAM) == 0) {
-            calledBundleName = value;
-        }
-        if (nextPos == std::string::npos) {
-            break;
-        }
-        pos = nextPos + 1;
+        callerTokenId = std::move(data);
+    } else if (!queryParams[DST_BUNDLE_NAME_PARAM].empty()) {
+        calledBundleName = queryParams[DST_BUNDLE_NAME_PARAM];
     }
     return true;
 }
@@ -160,10 +131,37 @@ std::pair<bool, uint32_t> URIUtils::Strtoul(const std::string &str)
     }
     char* end = nullptr;
     errno = 0;
-    data = strtoul(str.c_str(), &end, DECIMAL_TEN);
+    data = strtoul(str.c_str(), &end, 10);
     if (errno == ERANGE || end == str || *end != '\0') {
         return std::make_pair(false, data);
     }
     return std::make_pair(true, data);
+}
+
+std::map<std::string, std::string> URIUtils::GetQueryParams(const std::string& uri)
+{
+    size_t queryStartPos = uri.find('?');
+    if (queryStartPos == std::string::npos) {
+        return {};
+    }
+    std::map<std::string, std::string> params;
+    std::string queryParams = uri.substr(queryStartPos + 1);
+    size_t startPos = 0;
+    while (startPos < queryParams.size()) {
+        size_t delimiterIndex = queryParams.find('&', startPos);
+        if (delimiterIndex == std::string::npos) {
+            delimiterIndex = queryParams.size();
+        }
+        size_t equalIndex = queryParams.find('=', startPos);
+        if (equalIndex == std::string::npos || equalIndex > delimiterIndex) {
+            startPos = delimiterIndex + 1;
+            continue;
+        }
+        std::string key = queryParams.substr(startPos, equalIndex - startPos);
+        std::string value = queryParams.substr(equalIndex + 1, delimiterIndex - equalIndex - 1);
+        params[key] = value;
+        startPos = delimiterIndex + 1;
+    }
+    return params;
 }
 } // namespace OHOS::DataShare

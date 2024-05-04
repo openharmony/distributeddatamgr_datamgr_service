@@ -16,6 +16,7 @@
 #ifndef DATASHARESERVICE_URI_UTILS_H
 #define DATASHARESERVICE_URI_UTILS_H
 
+#include <map>
 #include <string>
 namespace OHOS::DataShare {
 struct UriInfo {
@@ -43,6 +44,7 @@ public:
     static void FormatUri(std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);
     static std::string Anonymous(const std::string &uri);
+    static std::map<std::string, std::string> GetQueryParams(const std::string& uri);
     static std::pair<bool, uint32_t> Strtoul(const std::string &str);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
     static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";
@@ -62,7 +64,6 @@ private:
     };
     static constexpr int32_t END_LENGTH = 10;
     static constexpr const char *DEFAULT_ANONYMOUS = "******";
-    static constexpr int DECIMAL_TEN = 10;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_URI_UTILS_H
