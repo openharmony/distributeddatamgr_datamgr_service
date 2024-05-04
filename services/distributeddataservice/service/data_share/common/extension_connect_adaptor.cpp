@@ -20,10 +20,11 @@
 
 #include "app_connect_manager.h"
 #include "callback_impl.h"
+#include "extension_ability_manager.h"
 #include "extension_ability_info.h"
 #include "extension_mgr_proxy.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(std::make_shared<BlockData<bool>>(1))
@@ -31,21 +32,21 @@ ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(std::make_shared<Bloc
     callback_ = new (std::nothrow) CallbackImpl(data_);
 }
 
-bool ExtensionConnectAdaptor::DoConnect(const std::string &uri)
+bool ExtensionConnectAdaptor::DoConnect(const std::string &uri, const std::string &bundleName)
 {
     data_->Clear();
     if (callback_ == nullptr) {
         return false;
     }
-    ErrCode ret = ExtensionMgrProxy::GetInstance()->Connect(uri, callback_->AsObject(), nullptr);
+    ErrCode ret = ExtensionAbilityManager::GetInstance().ConnectExtension(uri, bundleName, callback_->AsObject());
     if (ret != ERR_OK) {
         ZLOGE("connect ability failed, ret = %{public}d, uri: %{public}s", ret,
-            DistributedData::Anonymous::Change(uri).c_str());
+            URIUtils::Anonymous(uri).c_str());
         return false;
     }
     bool result = data_->GetValue();
     ZLOGI("Do connect, result: %{public}d,  uri: %{public}s", result,
-        DistributedData::Anonymous::Change(uri).c_str());
+        URIUtils::Anonymous(uri).c_str());
     return result;
 }
 
@@ -55,8 +56,8 @@ bool ExtensionConnectAdaptor::TryAndWait(const std::string &uri, const std::stri
     ExtensionConnectAdaptor strategy;
     return AppConnectManager::Wait(
         bundleName, maxWaitTime,
-        [&uri, &strategy]() {
-            return strategy.DoConnect(uri);
+        [&uri, &bundleName, &strategy]() {
+            return strategy.DoConnect(uri, bundleName);
         },
         [&strategy]() {
             strategy.Disconnect();
@@ -71,7 +72,6 @@ void ExtensionConnectAdaptor::Disconnect()
         return;
     }
     data_->Clear();
-    ExtensionMgrProxy::GetInstance()->DisConnect(callback_->AsObject());
     bool result = data_->GetValue();
     ZLOGI("Do disconnect, result: %{public}d", result);
     callback_ = nullptr;

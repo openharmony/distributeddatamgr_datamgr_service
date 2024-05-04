@@ -287,6 +287,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   include_dirs = [
     "${data_service_path}/service/common",
     "${data_service_path}/service/rdb",
+    "${data_service_path}/service/waterversion",
     "${relational_store_path}/interfaces/innerapi/clouddata/include",
     "${relational_store_path}/interfaces/inner_api/rdb/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
@@ -348,6 +349,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${kv_store_distributeddb_path}:distributeddb",
+    "${relational_store_inner_api_path}:native_rdb_static",
     "//third_party/googletest:gtest_main",
   ]
 }
@@ -502,6 +504,78 @@ ohos_unittest("UdmfRunTimeStoreTest") {
   ]
 }
 
+ohos_unittest("WaterVersionManagerTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  sources = [
+    "${data_service_path}/service/backup/src/backup_manager.cpp",
+    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/backup_config.cpp",
+    "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
+    "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/directory_config.cpp",
+    "${data_service_path}/service/config/src/model/global_config.cpp",
+    "${data_service_path}/service/config/src/model/network_config.cpp",
+    "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/waterversion/water_version_manager.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
+    "water_version_manager_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/cloud",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/dumper/include",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/object",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/rdb",
+    "${data_service_path}/service/waterversion",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/framework/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dsoftbus:softbus_client",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_distributeddb_path}:distributeddb",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_shared",
+  ]
+}
+
 ohos_unittest("DataShareServiceImplTest") {
   module_out_path = module_output_path
 
@@ -530,6 +604,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/db_delegate.cpp",
     "${data_service_path}/service/data_share/common/div_strategy.cpp",
+    "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
     "${data_service_path}/service/data_share/common/extension_connect_adaptor.cpp",
     "${data_service_path}/service/data_share/common/extension_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/kv_delegate.cpp",
@@ -566,8 +641,10 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
+    "data_share_profile_config_test.cpp",
     "data_share_service_impl_test.cpp",
     "data_share_service_stub_test.cpp",
+    "data_share_subscriber_managers_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -620,6 +697,44 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 }
 
+ohos_unittest("KvdbServiceImplTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "kvdb_service_impl_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/adapter/include/account",
+    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -639,11 +754,13 @@ group("unittest") {
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
     ":KVDBGeneralStoreTest",
+    ":KvdbServiceImplTest",
     ":MetaDataTest",
     ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",
     ":UdmfRunTimeStoreTest",
     ":ValueProxyTest",
+    ":WaterVersionManagerTest",
   ]
 }
 ###############################################################################

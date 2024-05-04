@@ -35,6 +35,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/object",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb",
+    "${data_service_path}/service/waterversion",
     "${kv_store_common_path}",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
@@ -69,6 +70,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/config_factory.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
@@ -88,6 +90,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
+    "${data_service_path}/service/waterversion/water_version_manager.cpp",
     "rdbservicestub_fuzzer.cpp",
   ]
 
@@ -96,6 +99,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${kv_store_distributeddb_path}:distributeddb",
+    "${relational_store_inner_api_path}:native_rdb_static",
   ]
 
   external_deps = [

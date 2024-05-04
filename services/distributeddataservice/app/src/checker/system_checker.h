@@ -31,11 +31,20 @@ public:
     bool IsValid(const CheckerManager::StoreInfo &info) override;
     bool IsDistrust(const CheckerManager::StoreInfo &info) override;
     bool IsSwitches(const CheckerManager::StoreInfo &info) override;
+    bool AddDynamicStore(const CheckerManager::StoreInfo &storeInfos) override;
+    bool AddStaticStore(const CheckerManager::StoreInfo &storeInfos) override;
+    std::vector<CheckerManager::StoreInfo> GetDynamicStores() override;
+    std::vector<CheckerManager::StoreInfo> GetStaticStores() override;
+    bool IsDynamic(const CheckerManager::StoreInfo &info) override;
+    bool IsStatic(const CheckerManager::StoreInfo &info) override;
+
 private:
     std::map<std::string, std::string> trusts_;
     std::map<std::string, std::string> distrusts_;
     std::map<std::string, std::string> switches_;
     static SystemChecker instance_;
+    std::vector<CheckerManager::StoreInfo> dynamicStores_;
+    std::vector<CheckerManager::StoreInfo> staticStores_;
 };
 } // namespace DistributedData
 } // namespace OHOS

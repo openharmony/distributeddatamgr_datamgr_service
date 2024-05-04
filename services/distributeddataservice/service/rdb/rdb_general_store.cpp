@@ -549,7 +549,7 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
     if (mode < 0 || mode > CLEAN_MODE_BUTT) {
         return GeneralError::E_INVALID_ARGS;
     }
-    DBStatus status;
+    DBStatus status = DistributedDB::DB_ERROR;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
@@ -809,6 +809,11 @@ VBuckets RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
         return {};
     }
     return ValueProxy::Convert(std::move(changedData));
+}
+
+std::vector<std::string> RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
+{
+    return {};
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

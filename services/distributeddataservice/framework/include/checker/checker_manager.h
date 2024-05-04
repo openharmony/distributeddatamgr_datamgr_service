@@ -47,12 +47,22 @@ public:
         virtual bool IsValid(const StoreInfo &info) = 0;
         virtual bool IsDistrust(const StoreInfo &info) = 0;
         virtual bool IsSwitches(const StoreInfo &info) = 0;
+        virtual bool AddDynamicStore(const StoreInfo& storeInfo) = 0;
+        virtual bool AddStaticStore(const StoreInfo& storeInfo) = 0;
+        virtual std::vector<StoreInfo> GetDynamicStores() = 0;
+        virtual std::vector<StoreInfo> GetStaticStores() = 0;
+        virtual bool IsDynamic(const StoreInfo &info) = 0;
+        virtual bool IsStatic(const StoreInfo &info) = 0;
     protected:
         API_EXPORT ~Checker() = default;
     };
     API_EXPORT static CheckerManager &GetInstance();
     API_EXPORT void RegisterPlugin(const std::string &checker, std::function<Checker *()> getter);
     API_EXPORT std::string GetAppId(const StoreInfo &info);
+    API_EXPORT std::vector<StoreInfo> GetDynamicStores();
+    API_EXPORT std::vector<StoreInfo> GetStaticStores();
+    API_EXPORT bool IsDynamic(const StoreInfo &info);
+    API_EXPORT bool IsStatic(const StoreInfo &info);
     API_EXPORT bool IsValid(const StoreInfo &info);
     API_EXPORT bool IsDistrust(const StoreInfo &info);
     API_EXPORT bool IsSwitches(const StoreInfo &info);

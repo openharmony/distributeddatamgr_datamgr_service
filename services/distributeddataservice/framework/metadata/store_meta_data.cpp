@@ -200,5 +200,15 @@ std::string StoreMetaData::GetPrefix(const std::initializer_list<std::string> &f
 {
     return GetKey(fields).append(Constant::KEY_SEPARATOR);
 }
+
+StoreInfo StoreMetaData::GetStoreInfo() const
+{
+    StoreInfo info;
+    info.instanceId = instanceId;
+    info.bundleName = bundleName;
+    info.storeName = storeId;
+    info.user = atoi(user.c_str());
+    return info;
+}
 } // namespace DistributedData
 } // namespace OHOS

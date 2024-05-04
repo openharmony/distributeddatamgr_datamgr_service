@@ -27,6 +27,7 @@ using OHOS::NativeRdb::ColumnType;
 namespace OHOS::DistributedRdb {
 using OHOS::DistributedData::GeneralError;
 using Cursor = OHOS::DistributedData::Cursor;
+using namespace OHOS::NativeRdb;
 RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<Cursor> resultSet) : resultSet_(std::move(resultSet))
 {
     if (resultSet_ != nullptr) {
@@ -314,26 +315,65 @@ ColumnType RdbResultSetImpl::ConvertColumnType(int32_t columnType) const
 
 int RdbResultSetImpl::GetAsset(int32_t col, NativeRdb::ValueObject::Asset& value)
 {
-    return NativeRdb::E_NOT_SUPPORT;
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_ALREADY_CLOSED;
+    }
+    return Get(col, value);
 }
+
 int RdbResultSetImpl::GetAssets(int32_t col, NativeRdb::ValueObject::Assets& value)
 {
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_ALREADY_CLOSED;
+    }
+    return Get(col, value);
+}
+
+int RdbResultSetImpl::GetFloat32Array(int32_t index, NativeRdb::ValueObject::FloatVector& vecs)
+{
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_ALREADY_CLOSED;
+    }
     return NativeRdb::E_NOT_SUPPORT;
 }
+
 int RdbResultSetImpl::Get(int32_t col, NativeRdb::ValueObject& value)
 {
-    return NativeRdb::E_NOT_SUPPORT;
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    if (resultSet_ == nullptr) {
+        return NativeRdb::E_ALREADY_CLOSED;
+    }
+    auto [errCode, object] = GetValue(col);
+    value = std::move(object);
+    return errCode;
 }
+
 int RdbResultSetImpl::GetRow(NativeRdb::RowEntity& rowEntity)
 {
     return NativeRdb::E_NOT_SUPPORT;
 }
-int RdbResultSetImpl::GetModifyTime(std::string& modifyTime)
+
+int RdbResultSetImpl::GetSize(int col, size_t& size)
 {
-    return NativeRdb::E_NOT_SUPPORT;
-}
-int RdbResultSetImpl::GetSize(int columnIndex, size_t& size)
-{
-    return NativeRdb::E_NOT_SUPPORT;
+    auto [errCode, value] = GetValue(col);
+    if (errCode != NativeRdb::E_OK) {
+        return errCode;
+    }
+    auto object = static_cast<ValueObject>(value);
+    if (object.GetType() == ValueObject::TYPE_STRING) {
+        auto val = std::get_if<std::string>(&object.value);
+        if (val != nullptr) {
+            size = val->size();
+        }
+    } else if (object.GetType() == ValueObject::TYPE_BLOB) {
+        auto val = std::get_if<std::vector<uint8_t>>(&object.value);
+        if (val != nullptr) {
+            size = val->size();
+        }
+    }
+    return NativeRdb::E_OK;
 }
 } // namespace OHOS::DistributedRdb
