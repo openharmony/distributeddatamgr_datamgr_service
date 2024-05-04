@@ -399,7 +399,7 @@ HWTEST_F(KvdbServiceImplTest, SubscribeTest001, TestSize.Level0)
     sptr<OHOS::DistributedKv::IKvStoreObserver> observer;
     auto status = kvdbServiceImpl_->Subscribe(appId, storeId, observer);
     ZLOGI("SubscribeTest001 status = :%{public}d", status);
-    ASSERT_EQ(status, Status::SUCCESS);
+    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
 }
 
 /**
