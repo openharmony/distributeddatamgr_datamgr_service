@@ -16,6 +16,7 @@
 
 #include "uri_utils.h"
 
+#include <sstream>
 #include <string>
 
 #include "log_print.h"
@@ -88,9 +89,21 @@ bool URIUtils::GetInfoFromProxyURI(
                                                         : query.substr(valueStartPos, nextPos - valueStartPos));
         if (!value.empty()) {
             if (query.compare(pos, sizeof(USER_PARAM) - 1, USER_PARAM) == 0) {
-                user = std::stoi(value);
+                std::istringstream si(value);
+                int32_t userId = 0;
+                if (!(si >> userId) || si.fail()) {
+                    ZLOGE("Invalid user: %{public}s", value.c_str());
+                    return false;
+                }
+                user = std::move(userId);
             } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
-                callerTokenId = std::stoul(value);
+                std::istringstream sul(value);
+                uint32_t tokenId = 0;
+                if (!(sul >> tokenId) || sul.fail()) {
+                    ZLOGE("Invalid callerTokenId: %{public}s", value.c_str());
+                    return false;
+                }
+                callerTokenId = std::move(tokenId);
             } else if (query.compare(pos, sizeof(DST_BUNDLE_NAME_PARAM) - 1, DST_BUNDLE_NAME_PARAM) == 0) {
                 calledBundleName = value;
             }
