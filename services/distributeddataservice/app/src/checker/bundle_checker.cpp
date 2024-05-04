@@ -119,10 +119,12 @@ bool BundleChecker::IsSwitches(const CheckerManager::StoreInfo &info)
 {
     return false;
 }
+
 std::vector<CheckerManager::StoreInfo> BundleChecker::GetDynamicStores()
 {
     return dynamicStores_;
 }
+
 std::vector<CheckerManager::StoreInfo> BundleChecker::GetStaticStores()
 {
     return staticStores_;

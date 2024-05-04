@@ -236,8 +236,8 @@ HWTEST_F(KvdbServiceImplTest, RegisterSyncCallbackTest001, TestSize.Level0)
     Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
-    sptr<OHOS::DistributedKv::IKvStoreSyncCallback> callbacks;
-    auto status = kvdbServiceImpl_->RegisterSyncCallback(appId, callbacks);
+    sptr<OHOS::DistributedKv::IKVDBNotifier> notifier;
+    auto status = kvdbServiceImpl_->RegServiceNotifier(appId, notifier);
     ZLOGI("RegisterSyncCallbackTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
@@ -254,7 +254,7 @@ HWTEST_F(KvdbServiceImplTest, UnregisterSyncCallbackTest001, TestSize.Level0)
     Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
-    auto status = kvdbServiceImpl_->UnregisterSyncCallback(appId);
+    auto status = kvdbServiceImpl_->UnregServiceNotifier(appId);
     ZLOGI("UnregisterSyncCallbackTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
