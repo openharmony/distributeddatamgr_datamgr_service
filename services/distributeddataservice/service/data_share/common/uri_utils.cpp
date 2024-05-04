@@ -86,22 +86,27 @@ bool URIUtils::GetInfoFromProxyURI(
         nextPos = query.find_first_of('&', pos);
         std::string value = (nextPos == std::string::npos ? query.substr(valueStartPos)
                                                         : query.substr(valueStartPos, nextPos - valueStartPos));
-        if (!value.empty()) {
-            if (query.compare(pos, sizeof(USER_PARAM) - 1, USER_PARAM) == 0) {
-                auto [success, data] = Strtoul(value);
-                if (!success) {
-                    return false;
-                }
-                user = std::move(data);
-            } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
-                auto [success, data] = Strtoul(value);
-                if (!success) {
-                    return false;
-                }
-                callerTokenId = std::move(data);
-            } else if (query.compare(pos, sizeof(DST_BUNDLE_NAME_PARAM) - 1, DST_BUNDLE_NAME_PARAM) == 0) {
-                calledBundleName = value;
+        if (value.empty()) {
+            if (nextPos == std::string::npos) {
+                break;
             }
+            pos = nextPos + 1;
+            continue;
+        }
+        if (query.compare(pos, sizeof(USER_PARAM) - 1, USER_PARAM) == 0) {
+            auto [success, data] = Strtoul(value);
+            if (!success) {
+                return false;
+            }
+            user = std::move(data);
+        } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
+            auto [success, data] = Strtoul(value);
+            if (!success) {
+                return false;
+            }
+            callerTokenId = std::move(data);
+        } else if (query.compare(pos, sizeof(DST_BUNDLE_NAME_PARAM) - 1, DST_BUNDLE_NAME_PARAM) == 0) {
+            calledBundleName = value;
         }
         if (nextPos == std::string::npos) {
             break;
