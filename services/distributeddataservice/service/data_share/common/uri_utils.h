@@ -43,6 +43,8 @@ public:
     static void FormatUri(std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);
     static std::string Anonymous(const std::string &uri);
+    template<typename T>
+    static bool ParseValue(const std::string& value, T& result);
     static constexpr const char *DATA_SHARE_SCHEMA = "datashare:///";;
     static constexpr const char DATA_PROXY_SCHEMA[] = "datashareproxy://";
     static constexpr const char *PARAM_URI_SEPARATOR = ":///";
