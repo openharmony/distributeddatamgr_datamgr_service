@@ -16,7 +16,6 @@
 
 #include "uri_utils.h"
 
-#include <sstream>
 #include <string>
 
 #include "log_print.h"
@@ -89,13 +88,17 @@ bool URIUtils::GetInfoFromProxyURI(
                                                         : query.substr(valueStartPos, nextPos - valueStartPos));
         if (!value.empty()) {
             if (query.compare(pos, sizeof(USER_PARAM) - 1, USER_PARAM) == 0) {
-                if (!ParseValue(value, user)) {
+                auto [success, data] = Strtoul(value);
+                if (!success) {
                     return false;
                 }
+                user = std::move(data);
             } else if (query.compare(pos, sizeof(TOKEN_ID_PARAM) - 1, TOKEN_ID_PARAM) == 0) {
-                if (!ParseValue(value, callerTokenId)) {
+                auto [success, data] = Strtoul(value);
+                if (!success) {
                     return false;
                 }
+                callerTokenId = std::move(data);
             } else if (query.compare(pos, sizeof(DST_BUNDLE_NAME_PARAM) - 1, DST_BUNDLE_NAME_PARAM) == 0) {
                 calledBundleName = value;
             }
@@ -144,15 +147,18 @@ std::string URIUtils::Anonymous(const std::string &uri)
     return (DEFAULT_ANONYMOUS + uri.substr(uri.length() - END_LENGTH, END_LENGTH));
 }
 
-template<typename T>
-bool URIUtils::ParseValue(const std::string& value, T& result) {
-    std::istringstream iss(value);
-    T data;
-    if (!(iss >> data) || iss.fail()) {
-        ZLOGE("Invalid value: %{public}s", value.c_str());
-        return false;
+std::pair<bool, uint32_t> URIUtils::Strtoul(const std::string &str) 
+{
+    unsigned long data = 0;
+    if (str.empty()) {
+        return std::make_pair(false, data);
     }
-    result = std::move(data);
-    return true;
+    char* end = nullptr;
+    errno = 0;
+    data = strtoul(str.c_str(), &end, 10);
+    if (errno == ERANGE || end == str || *end != '\0') {
+        return std::make_pair(false, data);
+    }
+    return std::make_pair(true, data);
 }
 } // namespace OHOS::DataShare
