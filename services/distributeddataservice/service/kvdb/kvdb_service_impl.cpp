@@ -527,7 +527,7 @@ Status KVDBServiceImpl::SubscribeSwitchData(const AppId &appId)
             notification.data.length = metaData.length;
             notification.state = ConvertAction(static_cast<Action>(action));
             if (notifier != nullptr) {
-                notifier->OnSwicthChange(std::move(notification));
+                notifier->OnSwitchChange(std::move(notification));
             }
             return true;
         }, true);

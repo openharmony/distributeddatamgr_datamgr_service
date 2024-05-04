@@ -28,7 +28,7 @@ public:
     ~KVDBNotifierProxy() = default;
     void SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId) override;
     void OnRemoteChange(const std::map<std::string, bool> &mask) override;
-    void OnSwicthChange(const SwitchNotification &notification) override;
+    void OnSwitchChange(const SwitchNotification &notification) override;
 
 private:
     static inline BrokerDelegator<KVDBNotifierProxy> delegator_;

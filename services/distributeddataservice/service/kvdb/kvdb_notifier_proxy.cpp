@@ -77,7 +77,7 @@ void KVDBNotifierProxy::OnRemoteChange(const std::map<std::string, bool> &mask)
     }
 }
 
-void KVDBNotifierProxy::OnSwicthChange(const SwitchNotification &notification)
+void KVDBNotifierProxy::OnSwitchChange(const SwitchNotification &notification)
 {
     MessageParcel reply;
     int32_t status = IPC_SEND(static_cast<uint32_t>(
