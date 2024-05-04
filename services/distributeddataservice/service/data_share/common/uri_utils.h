@@ -38,8 +38,6 @@ class URIUtils {
 public:
     static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo);
     static bool GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName);
-    static bool GetInfoFromProxyURI(
-        const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName);
     static bool IsDataProxyURI(const std::string &uri);
     static void FormatUri(std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);

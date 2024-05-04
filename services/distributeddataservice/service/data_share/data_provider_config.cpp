@@ -23,6 +23,7 @@
 #include "datashare_errno.h"
 #include "hap_token_info.h"
 #include "log_print.h"
+#include "strategies/general/load_config_common_strategy.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
 
@@ -33,7 +34,7 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
     providerInfo_.uri = uri;
     providerInfo_.currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     if (providerInfo_.currentUserId == 0) {
-        URIUtils::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.currentUserId,
+        LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.currentUserId,
             callerTokenId, providerInfo_.bundleName);
         URIUtils::FormatUri(providerInfo_.uri);
     }

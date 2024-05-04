@@ -23,6 +23,9 @@
 #include "uri_utils.h"
 
 namespace OHOS::DataShare {
+constexpr const char USER_PARAM[] = "user";
+constexpr const char TOKEN_ID_PARAM[] = "srcToken";
+constexpr const char DST_BUNDLE_NAME_PARAM[] = "dstBundleName";
 bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
 {
     if (context->callerTokenId == 0) {
@@ -31,7 +34,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
     // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
-        URIUtils::GetInfoFromProxyURI(
+        GetInfoFromProxyURI(
             context->uri, context->currentUserId, context->callerTokenId, context->calledBundleName);
         URIUtils::FormatUri(context->uri);
     }
@@ -43,6 +46,30 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
             return false;
         }
         context->callerBundleName = tokenInfo.bundleName;
+    }
+    return true;
+}
+
+bool LoadConfigCommonStrategy::GetInfoFromProxyURI(
+    const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName)
+{
+    auto queryParams = URIUtils::GetQueryParams(uri);
+    if (!queryParams[USER_PARAM].empty()) {
+        auto [success, data] = URIUtils::Strtoul(queryParams[USER_PARAM]);
+        if (!success) {
+            return false;
+        }
+        user = std::move(data);
+    }
+    if (!queryParams[TOKEN_ID_PARAM].empty()) {
+        auto [success, data] = URIUtils::Strtoul(queryParams[TOKEN_ID_PARAM]);
+        if (!success) {
+            return false;
+        }
+        callerTokenId = std::move(data);
+    }
+    if (!queryParams[DST_BUNDLE_NAME_PARAM].empty()) {
+        calledBundleName = queryParams[DST_BUNDLE_NAME_PARAM];
     }
     return true;
 }

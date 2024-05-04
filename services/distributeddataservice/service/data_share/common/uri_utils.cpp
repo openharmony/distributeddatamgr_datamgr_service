@@ -24,9 +24,6 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-constexpr const char USER_PARAM[] = "user";
-constexpr const char TOKEN_ID_PARAM[] = "srcToken";
-constexpr const char DST_BUNDLE_NAME_PARAM[] = "dstBundleName";
 bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 {
     Uri uriTemp(uri);
@@ -61,28 +58,6 @@ bool URIUtils::GetBundleNameFromProxyURI(const std::string &uri, std::string &bu
     Uri uriTemp(uri);
     if (!uriTemp.GetAuthority().empty()) {
         bundleName = uriTemp.GetAuthority();
-    }
-    return true;
-}
-
-bool URIUtils::GetInfoFromProxyURI(
-    const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName)
-{
-    auto queryParams = GetQueryParams(uri);
-    if (!queryParams[USER_PARAM].empty()) {
-        auto [success, data] = Strtoul(queryParams[USER_PARAM]);
-        if (!success) {
-            return false;
-        }
-        user = std::move(data);
-    } else if (!queryParams[TOKEN_ID_PARAM].empty()) {
-        auto [success, data] = Strtoul(queryParams[TOKEN_ID_PARAM]);
-        if (!success) {
-            return false;
-        }
-        callerTokenId = std::move(data);
-    } else if (!queryParams[DST_BUNDLE_NAME_PARAM].empty()) {
-        calledBundleName = queryParams[DST_BUNDLE_NAME_PARAM];
     }
     return true;
 }
