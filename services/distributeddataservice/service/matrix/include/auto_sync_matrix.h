@@ -28,7 +28,7 @@ public:
     void Online(const std::string &device);
     void Offline(const std::string &device);
     void OnChanged(const StoreMetaData &metaData);
-    void OnExchanged(const StoreMetaData &metaData);
+    void OnExchanged(const std::string &device, const StoreMetaData &metaData);
     std::vector<StoreMetaData> GetChangedStore(const std::string &device);
 
 private:

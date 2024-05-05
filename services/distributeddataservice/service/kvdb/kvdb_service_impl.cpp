@@ -1174,7 +1174,7 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
     for (const auto &device : info.devices) {
         auto it = result.find(device);
         if (it != result.end() && it->second == SUCCESS) {
-            AutoSyncMatrix::GetInstance().OnExchanged(meta);
+            AutoSyncMatrix::GetInstance().OnExchanged(device, meta);
             DeviceMatrix::GetInstance().OnExchanged(device, meta, ConvertType(static_cast<SyncMode>(info.mode)));
         }
     }

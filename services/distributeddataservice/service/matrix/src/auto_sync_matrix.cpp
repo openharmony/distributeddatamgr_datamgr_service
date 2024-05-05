@@ -217,7 +217,7 @@ void AutoSyncMatrix::OnChanged(const StoreMetaData &metaData)
     }
 }
     
-void AutoSyncMatrix::OnExchanged(const StoreMetaData &metaData)
+void AutoSyncMatrix::OnExchanged(const std::string &device, const StoreMetaData &metaData)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     auto it = std::find(metas_.begin(), metas_.end(), metaData);
@@ -225,11 +225,13 @@ void AutoSyncMatrix::OnExchanged(const StoreMetaData &metaData)
         return;
     }
     size_t pos = it - metas_.begin();
-    for (auto &[device, mask] : onlines_) {
-        mask.Reset(pos);
+    auto iter = onlines_.find(device);
+    if (iter != onlines_.end()) {
+        iter->second.Reset(pos);
     }
-    for (auto &[device, mask] : offlines_) {
-        mask.Reset(pos);
+    iter = offlines_.find(device);
+    if (iter != offlines_.end()) {
+        iter->second.Reset(pos);
     }
 }
 

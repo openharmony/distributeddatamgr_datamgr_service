@@ -192,7 +192,7 @@ HWTEST_F(AutoSyncMatrixTest, AutoSyncMatrixOnExchanged, TestSize.Level0)
     AutoSyncMatrix::GetInstance().Online(TEST_DEVICE);
     auto metas1 = AutoSyncMatrix::GetInstance().GetChangedStore(TEST_DEVICE);
     ASSERT_GE(metas1.size(), 0);
-    AutoSyncMatrix::GetInstance().OnExchanged(metaData_);
+    AutoSyncMatrix::GetInstance().OnExchanged(TEST_DEVICE, metaData_);
     auto metas2 = AutoSyncMatrix::GetInstance().GetChangedStore(TEST_DEVICE);
     ASSERT_EQ(metas2.size(), metas1.size() - 1);
     AutoSyncMatrix::GetInstance().Offline(TEST_DEVICE);
