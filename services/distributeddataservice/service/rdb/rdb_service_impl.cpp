@@ -708,15 +708,15 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
             old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
-    if (!param.isEncrypt_ || param.password_.empty()) {
-        return RDB_OK;
+    if (param.isEncrypt_ && !param.password_.empty()) {
+        auto ret = SetSecretKey(param, meta);
+        if (ret != RDB_OK) {
+            ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
+                  meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+            return RDB_ERROR;
+        }
     }
-    auto ret = SetSecretKey(param, meta);
-    if (ret != RDB_OK) {
-        ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
-              meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return ret;
-    }
+
     GetCloudSchema(param);
     return RDB_OK;
 }
