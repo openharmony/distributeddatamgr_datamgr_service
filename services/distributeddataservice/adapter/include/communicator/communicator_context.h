@@ -52,7 +52,8 @@ private:
     mutable std::mutex sessionMutex_;
     OnCloseAble closeListener_;
     std::shared_ptr<ExecutorPool> executors_;
-    ConcurrentMap<const DevChangeListener *, const DevChangeListener *> observers_ {};
+    std::mutex mutex_;
+    std::vector<const DevChangeListener *> observers_;
     ConcurrentMap<const std::string, const std::string> devices_ {};
 };
 } // namespace OHOS::DistributedData

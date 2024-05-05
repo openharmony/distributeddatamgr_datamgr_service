@@ -150,7 +150,7 @@ void KvStoreMetaManager::InitDeviceOnline()
                 EventCenter::GetInstance().PostEvent(std::move(finEvent));
             };
         auto store = GetMetaKvStore();
-        uint16_t mask = data.dynamic & 0x000F;
+        uint16_t mask = data.dynamic & DEFAULT_MASK;
         if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
             auto status = store->Sync({ deviceId }, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
             if (status == OK) {

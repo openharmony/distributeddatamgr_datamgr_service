@@ -44,9 +44,10 @@ Status CommunicatorContext::RegSessionListener(const DevChangeListener *observer
         ZLOGE("observer is nullptr");
         return Status::INVALID_ARGUMENT;
     }
-    if (!observers_.Insert(observer, observer)) {
-        ZLOGE("insert observer fail");
-        return Status::ERROR;
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    auto it = std::find(observers_.begin(), observers_.end(), observer);
+    if (it == observers_.end()) {
+        observers_.emplace_back(observer);
     }
     return Status::SUCCESS;
 }
@@ -63,9 +64,10 @@ Status CommunicatorContext::UnRegSessionListener(const DevChangeListener *observ
         ZLOGE("observer is nullptr");
         return Status::INVALID_ARGUMENT;
     }
-    if (!observers_.Erase(observer)) {
-        ZLOGE("erase observer fail");
-        return Status::ERROR;
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    auto it = std::find(observers_.begin(), observers_.end(), observer);
+    if (it != observers_.end()) {
+        observers_.erase(it);
     }
     return Status::SUCCESS;
 }
@@ -77,19 +79,17 @@ void CommunicatorContext::NotifySessionReady(const std::string &deviceId)
         return;
     }
     devices_.Insert(deviceId, deviceId);
-    std::vector<const DevChangeListener *> observers;
-    observers_.ForEach([&observers](const auto &key, auto &value) {
-        observers.emplace_back(value);
-        return false;
-    });
-    ZLOGI("Notify session begin, deviceId:%{public}s, observer count:%{public}zu",
-        KvUtils::ToBeAnonymous(deviceId).c_str(), observers.size());
     DeviceInfo devInfo;
     devInfo.uuid = deviceId;
-    for (const auto &observer : observers) {
-        if (observer != nullptr) {
-            observer->OnSessionReady(devInfo);
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        for (const auto &observer : observers_) {
+            if (observer != nullptr) {
+                observer->OnSessionReady(devInfo);
+            }
         }
+        ZLOGI("Notify session begin, deviceId:%{public}s, observer count:%{public}zu",
+            KvUtils::ToBeAnonymous(deviceId).c_str(), observers_.size());
     }
     std::lock_guard<decltype(sessionMutex_)> sessionLockGard(sessionMutex_);
     if (closeListener_) {
