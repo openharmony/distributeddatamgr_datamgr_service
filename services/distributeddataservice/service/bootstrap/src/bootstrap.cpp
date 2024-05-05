@@ -102,6 +102,13 @@ void Bootstrap::LoadCheckers()
         }
         checker->SetDistrustInfo(distrust);
     }
+    for (const auto &switches : checkers->switches) {
+        auto *checker = CheckerManager::GetInstance().GetChecker(switches.checker);
+        if (checker == nullptr) {
+            continue;
+        }
+        checker->SetSwitchesInfo(switches);
+    }
     for (const auto &dynamicStore : checkers->dynamicStores) {
         auto *checker = CheckerManager::GetInstance().GetChecker(dynamicStore.checker);
         if (checker == nullptr) {

@@ -36,7 +36,8 @@
         "checker": "SystemChecker"
       }
     ],
-    "distrusts": []
+    "distrusts": [],
+    "switches": []
   },
   "networks": {
     "chains": [

@@ -22,6 +22,7 @@
 #include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
+#include "auto_sync_matrix.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
@@ -122,6 +123,7 @@ void KvStoreDataService::Initialize()
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
+    CommunicatorContext::GetInstance().RegSessionListener(deviceInnerListener_.get());
     auto translateCall = [](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
         StoreMetaData meta;
         AppIDMetaData appIdMeta;
@@ -336,6 +338,7 @@ void KvStoreDataService::StartService()
     ZLOGI("begin.");
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
+    AutoSyncMatrix::GetInstance().Initialize();
     LoadFeatures();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
@@ -740,6 +743,17 @@ void KvStoreDataService::OnDeviceOnReady(const AppDistributedKv::DeviceInfo &inf
     }
     features_.ForEachCopies([&info](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
         value->OnReady(info.uuid);
+        return false;
+    });
+}
+
+void KvStoreDataService::OnSessionReady(const AppDistributedKv::DeviceInfo &info)
+{
+    if (info.uuid.empty()) {
+        return;
+    }
+    features_.ForEachCopies([info](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnSessionReady(info.uuid);
         return false;
     });
 }

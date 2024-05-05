@@ -23,16 +23,26 @@
 namespace OHOS::DistributedData {
 class API_EXPORT MatrixEvent : public Event {
 public:
-    MatrixEvent(int32_t evtId, const std::string &device, uint16_t mask);
+    struct MatrixData {
+        static constexpr uint16_t INVALID_LEVEL = 0xFFFF;
+        static constexpr uint32_t INVALID_VALUE = 0xFFFFFFFF;
+        static constexpr uint16_t INVALID_LENGTH = 0;
+        uint16_t dynamic = INVALID_LEVEL;
+        uint16_t statics = INVALID_LEVEL;
+        uint32_t switches = INVALID_VALUE;
+        uint16_t switchesLen = INVALID_LENGTH;
+        bool IsValid() const;
+    };
+    MatrixEvent(int32_t evtId, const std::string &device, const MatrixData &data);
     ~MatrixEvent() = default;
-    uint16_t GetMask() const;
+    MatrixData GetMatrixData() const;
     std::string GetDeviceId() const;
     void SetRefCount(RefCount refCount);
     RefCount StealRefCount() const;
     bool Equals(const Event &event) const override;
 
 private:
-    uint16_t mask_;
+    MatrixData data_;
     std::string deviceId_;
     mutable RefCount refCount_;
 };

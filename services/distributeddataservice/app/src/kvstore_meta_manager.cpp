@@ -105,11 +105,24 @@ void KvStoreMetaManager::InitBroadcast()
 {
     auto pipe = Bootstrap::GetInstance().GetProcessLabel() + "-" + "default";
     auto result = Commu::GetInstance().ListenBroadcastMsg({ pipe },
-        [](const std::string &device, uint16_t mask) { DeviceMatrix::GetInstance().OnBroadcast(device, mask); });
+        [](const std::string &device, const AppDistributedKv::LevelInfo &levelInfo) {
+            DistributedData::DeviceMatrix::DataLevel level;
+            level.dynamic = levelInfo.dynamic;
+            level.statics = levelInfo.statics;
+            level.switches = levelInfo.switches;
+            level.switchesLen = levelInfo.switchesLen;
+            DeviceMatrix::GetInstance().OnBroadcast(device, std::move(level));
+        });
 
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_BROADCAST, [pipe](const Event &event) {
         auto &matrixEvent = static_cast<const MatrixEvent &>(event);
-        Commu::GetInstance().Broadcast({ pipe }, matrixEvent.GetMask());
+        auto matrixData = matrixEvent.GetMatrixData();
+        AppDistributedKv::LevelInfo level;
+        level.dynamic = matrixData.dynamic;
+        level.statics = matrixData.statics;
+        level.switches = matrixData.switches;
+        level.switchesLen = matrixData.switchesLen;
+        Commu::GetInstance().Broadcast({ pipe }, std::move(level));
     });
 
     ZLOGI("observer matrix broadcast %{public}d.", result);
@@ -121,20 +134,23 @@ void KvStoreMetaManager::InitDeviceOnline()
     using DBStatuses = std::map<std::string, DBStatus>;
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_ONLINE, [this](const Event &event) {
         auto &matrixEvent = static_cast<const MatrixEvent &>(event);
-        auto mask = matrixEvent.GetMask();
+        auto data = matrixEvent.GetMatrixData();
         auto deviceId = matrixEvent.GetDeviceId();
+        auto onComplete =
+            [deviceId, data, refCount = matrixEvent.StealRefCount()](const DBStatuses &statuses) mutable {
+                auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, data);
+                finEvent->SetRefCount(std::move(refCount));
+                auto it = statuses.find(deviceId);
+                if (it != statuses.end() && it->second == DBStatus::OK) {
+                    DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
+                }
+                ZLOGI("dynamic:0x%{public}08x statics:0x%{public}08x device:%{public}s status:%{public}d online",
+                    data.dynamic, data.statics, Anonymous::Change(deviceId).c_str(),
+                    it == statuses.end() ? DBStatus::OK : it->second);
+                EventCenter::GetInstance().PostEvent(std::move(finEvent));
+            };
         auto store = GetMetaKvStore();
-        auto onComplete = [deviceId, mask, refCount = matrixEvent.StealRefCount()](const DBStatuses &statuses) mutable {
-            auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
-            finEvent->SetRefCount(std::move(refCount));
-            auto it = statuses.find(deviceId);
-            if (it != statuses.end() && it->second == DBStatus::OK) {
-                DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
-            }
-            ZLOGI("matrix 0x%{public}08x device:%{public}s status:%{public}d online",
-                mask, Anonymous::Change(deviceId).c_str(), it == statuses.end() ? DBStatus::OK : it->second);
-            EventCenter::GetInstance().PostEvent(std::move(finEvent));
-        };
+        uint16_t mask = data.dynamic & DEFAULT_MASK;
         if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
             auto status = store->Sync({ deviceId }, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
             if (status == OK) {
@@ -170,6 +186,7 @@ void KvStoreMetaManager::InitMetaData()
     data.isBackup = false;
     data.isEncrypt = false;
     data.storeType = KvStoreType::SINGLE_VERSION;
+    data.dataType = DataType::TYPE_DYNAMICAL;
     data.schema = "";
     data.storeId = Bootstrap::GetInstance().GetMetaDBName();
     data.account = accountId;
@@ -284,7 +301,8 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
         return nullptr;
     }
     delegate->SetRemotePushFinishedNotify([](const RemotePushNotifyInfo &info) {
-        DeviceMatrix::GetInstance().OnExchanged(info.deviceId, DeviceMatrix::META_STORE_MASK);
+        DeviceMatrix::GetInstance().OnExchanged(info.deviceId, DeviceMatrix::META_STORE_MASK,
+            DeviceMatrix::LevelType::DYNAMIC, DeviceMatrix::ChangeType::CHANGE_REMOTE);
     });
     bool param = true;
     auto data = static_cast<DistributedDB::PragmaData>(&param);

@@ -116,6 +116,11 @@ int32_t FeatureSystem::Feature::OnReady(const std::string &device)
     return E_OK;
 }
 
+int32_t FeatureSystem::Feature::OnSessionReady(const std::string &device)
+{
+    return E_OK;
+}
+
 int32_t FeatureSystem::Feature::OnBind(const FeatureSystem::Feature::BindInfo &bindInfo)
 {
     return E_OK;

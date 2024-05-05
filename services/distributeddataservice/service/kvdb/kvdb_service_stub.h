@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
 #define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
+#include "checker/checker_manager.h"
 #include "distributeddata_kvdb_ipc_interface_code.h"
 #include "iremote_stub.h"
 #include "kvdb_service.h"
@@ -25,6 +26,7 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
 private:
+    using StoreInfo = DistributedData::CheckerManager::StoreInfo;
     using Handler = int32_t (KVDBServiceStub::*)(
         const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetStoreIds(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
@@ -33,8 +35,10 @@ private:
     int32_t OnDelete(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnSync(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnCloudSync(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnRegisterCallback(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnUnregisterCallback(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnRegServiceNotifier(
+        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnregServiceNotifier(
+        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnSetSyncParam(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetSyncParam(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnEnableCap(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
@@ -46,7 +50,17 @@ private:
     int32_t OnUnsubscribe(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetBackupPassword(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnSyncExt(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnNotifyDataChange(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnPutSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnGetSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnSubscribeSwitchData(
+        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnsubscribeSwitchData(
+        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)];
+
+    bool CheckPermission(uint32_t code, const StoreInfo &storeInfo);
+    std::pair<int32_t, StoreInfo> GetStoreInfo(uint32_t code, MessageParcel &data);
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H

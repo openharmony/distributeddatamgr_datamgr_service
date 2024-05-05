@@ -41,6 +41,7 @@ bool CheckerConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(checkers)], checkers);
     SetValue(node[GET_NAME(trusts)], trusts);
     SetValue(node[GET_NAME(distrusts)], distrusts);
+    SetValue(node[GET_NAME(switches)], switches);
     SetValue(node[GET_NAME(staticStores)], staticStores);
     SetValue(node[GET_NAME(dynamicStores)], dynamicStores);
     return true;
@@ -51,6 +52,7 @@ bool CheckerConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(checkers), checkers);
     GetValue(node, GET_NAME(trusts), trusts);
     GetValue(node, GET_NAME(distrusts), distrusts);
+    GetValue(node, GET_NAME(switches), switches);
     GetValue(node, GET_NAME(staticStores), staticStores);
     GetValue(node, GET_NAME(dynamicStores), dynamicStores);
     return true;
@@ -65,6 +67,7 @@ bool CheckerConfig::StaticStore::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(checker)], checker);
     return true;
 }
+
 bool CheckerConfig::StaticStore::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(uid), uid);

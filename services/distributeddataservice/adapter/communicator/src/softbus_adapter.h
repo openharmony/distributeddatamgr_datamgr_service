@@ -73,9 +73,10 @@ public:
 
     bool GetPeerSocketInfo(int32_t socket, ServerSocketInfo &info);
 
-    int32_t Broadcast(const PipeInfo &pipeInfo, uint16_t mask);
-    void OnBroadcast(const DeviceId &device, uint16_t mask);
-    int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo, std::function<void(const std::string &, uint16_t)> listener);
+    Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo);
+    void OnBroadcast(const DeviceId &device, const LevelInfo &levelInfo);
+    int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
+        std::function<void(const std::string &, const LevelInfo &)> listener);
 
     uint32_t GetMtuSize(const DeviceId &deviceId);
     uint32_t GetTimeout(const DeviceId &deviceId);
@@ -90,6 +91,7 @@ private:
     std::string DelConnect(int32_t socket);
     void StartCloseSessionTask(const std::string &deviceId);
     Task GetCloseSessionTask();
+    static constexpr const char *PKG_NAME = "distributeddata-default";
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;
     static constexpr QosTV Qos[QOS_COUNT] = { { .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
@@ -98,7 +100,7 @@ private:
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
     ConcurrentMap<std::string, std::vector<std::shared_ptr<SoftBusClient>>> connects_;
     bool flag_ = true; // only for br flag
-    std::function<void(const std::string &, uint16_t)> onBroadcast_;
+    std::function<void(const std::string &, const LevelInfo &)> onBroadcast_;
     std::mutex taskMutex_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     Time next_ = INVALID_NEXT;

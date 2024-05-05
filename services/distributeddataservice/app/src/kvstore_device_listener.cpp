@@ -34,6 +34,11 @@ void KvStoreDeviceListener::OnDeviceChanged(
     ZLOGI("device is %{public}d", type);
 }
 
+void KvStoreDeviceListener::OnSessionReady(const AppDistributedKv::DeviceInfo &info) const
+{
+    kvStoreDataService_.OnSessionReady(info);
+}
+
 KvStoreDeviceListener::KvStoreDeviceListener(KvStoreDataService &kvStoreDataService)
     : kvStoreDataService_(kvStoreDataService)
 {

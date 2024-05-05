@@ -151,6 +151,14 @@ public:
     {
         return false;
     }
+    bool IsSwitches(const CheckerManager::StoreInfo &info) override
+    {
+        return false;
+    }
+    bool SetSwitchesInfo(const CheckerManager::Switches &switches) override
+    {
+        return true;
+    }
 
 private:
     vector<CheckerManager::StoreInfo> dynamicInfos_;
