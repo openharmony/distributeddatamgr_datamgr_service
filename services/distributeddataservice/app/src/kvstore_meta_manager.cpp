@@ -267,6 +267,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     option.isMemoryDb = false;
     option.createDirByStoreIdOnly = true;
     option.isEncryptedDb = false;
+    option.isNeedIntegrityCheck = true;
     option.isNeedRmCorruptedDb = true;
     option.isNeedCompressOnSync = true;
     option.compressionRate = COMPRESS_RATE;
