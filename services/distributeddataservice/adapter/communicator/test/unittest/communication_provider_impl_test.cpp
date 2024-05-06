@@ -232,7 +232,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider011, TestSize.Level
     CommunicationProvider::GetInstance().Start(id);
     std::string content = "";
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
     Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
     EXPECT_EQ(status, Status::ERROR);
@@ -251,8 +251,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider012, TestSize.Level
 {
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
     PipeInfo id;
-    id.pipeId = "appId01";
-    id.userId = "groupId01";
+    id.pipeId = "appId";
+    id.userId = "groupId";
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
     std::string content = "hello";
@@ -280,7 +280,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider013, TestSize.Level
     id.userId = "groupId";
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     DataInfo data = {nullptr, 0};
     Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
     EXPECT_EQ(status, Status::ERROR);
@@ -305,7 +305,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider014, TestSize.Level
     CommunicationProvider::GetInstance().Start(id);
     std::string content = "hello";
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
     Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
     EXPECT_EQ(status, Status::ERROR);
@@ -328,7 +328,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider015, TestSize.Level
     id.userId = "groupId";
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
     EXPECT_EQ(status, false);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
@@ -372,7 +372,7 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider017, TestSize.Level
     id.userId = "userId";
     CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Start(id);
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
     EXPECT_EQ(status, false);
     CommunicationProvider::GetInstance().SetMessageTransFlag(id, true);
