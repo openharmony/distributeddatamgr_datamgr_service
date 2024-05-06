@@ -337,18 +337,7 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    if (!DeviceMatrix::GetInstance().IsSupportBroadcast()) {
-        TryToSync(meta, true);
-        return SUCCESS;
-    }
-    if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
-        DeviceMatrix::GetInstance().OnChanged(meta);
-        return SUCCESS;
-    }
-    if (meta.isAutoSync) {
-        AutoSyncMatrix::GetInstance().OnChanged(meta);
-        TryToSync(meta);
-    }
+    TryToSync(meta, true);
     return SUCCESS;
 }
 
