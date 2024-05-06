@@ -32,6 +32,7 @@ config("module_private_config") {
     "../rdb/",
     "../object/",
     "../../framework/include/",
+    "../cloud/",
     "${dataobject_path}/interfaces/innerkits",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
   ]
@@ -45,30 +46,38 @@ config("module_private_config") {
 ohos_unittest("CloudDataTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_types_util.cpp",
+    "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
+    "${data_service_path}/service/common/common_types_utils.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "cloud_data_test.cpp",
-    "mock/db_change_data_mock.cpp",
-    "mock/db_store_mock.cpp",
   ]
-
-  include_dirs =
-      [ "../../../../../relational_store/interfaces/inner_api/rdb/include" ]
 
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "ability_base:base",
     "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
 
   deps = [
-    "${kv_store_distributeddb_path}:distributeddb",
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
+    "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
   ]
 }
