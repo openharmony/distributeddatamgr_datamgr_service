@@ -107,7 +107,8 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGE("SetRemoteUri failed, ret: %{public}d.", ret);
+            ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+                  unifiedData.GetRuntime()->createPackage.c_str());
             return ret;
         }
     }

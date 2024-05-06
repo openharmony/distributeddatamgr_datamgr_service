@@ -50,6 +50,12 @@ bool BundleChecker::SetDistrustInfo(const CheckerManager::Distrust &distrust)
     return true;
 }
 
+bool BundleChecker::SetSwitchesInfo(const CheckerManager::Switches &switches)
+{
+    switches_[switches.bundleName] = switches.appId;
+    return true;
+}
+
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
@@ -107,6 +113,53 @@ bool BundleChecker::IsDistrust(const CheckerManager::StoreInfo &info)
         return true;
     }
     return false;
+}
+
+bool BundleChecker::IsSwitches(const CheckerManager::StoreInfo &info)
+{
+    return false;
+}
+
+std::vector<CheckerManager::StoreInfo> BundleChecker::GetDynamicStores()
+{
+    return dynamicStores_;
+}
+
+std::vector<CheckerManager::StoreInfo> BundleChecker::GetStaticStores()
+{
+    return staticStores_;
+}
+
+bool BundleChecker::IsDynamic(const CheckerManager::StoreInfo &info)
+{
+    for (const auto &store : dynamicStores_) {
+        if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool BundleChecker::IsStatic(const CheckerManager::StoreInfo &info)
+{
+    for (const auto &store : staticStores_) {
+        if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool BundleChecker::AddDynamicStore(const CheckerManager::StoreInfo &storeInfo)
+{
+    dynamicStores_.push_back(storeInfo);
+    return true;
+}
+
+bool BundleChecker::AddStaticStore(const CheckerManager::StoreInfo &storeInfo)
+{
+    staticStores_.push_back(storeInfo);
+    return true;
 }
 } // namespace DistributedData
 } // namespace OHOS

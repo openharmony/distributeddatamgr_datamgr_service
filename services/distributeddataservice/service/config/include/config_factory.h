@@ -30,6 +30,7 @@ public:
     API_EXPORT GlobalConfig *GetGlobalConfig();
     API_EXPORT DirectoryConfig *GetDirectoryConfig();
     API_EXPORT BackupConfig *GetBackupConfig();
+    API_EXPORT CloudConfig *GetCloudConfig();
 private:
     static constexpr const char *CONF_PATH = "/system/etc/distributeddata/conf";
     ConfigFactory();

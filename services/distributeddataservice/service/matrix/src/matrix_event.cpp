@@ -14,14 +14,14 @@
  */
 #include "matrix_event.h"
 namespace OHOS::DistributedData {
-MatrixEvent::MatrixEvent(int32_t evtId, const std::string &device, uint16_t mask)
-    : Event(evtId), mask_(mask), deviceId_(device)
+MatrixEvent::MatrixEvent(int32_t evtId, const std::string &device, const MatrixData &data)
+    : Event(evtId), data_(data), deviceId_(device)
 {
 }
 
-uint16_t MatrixEvent::GetMask() const
+MatrixEvent::MatrixData MatrixEvent::GetMatrixData() const
 {
-    return mask_;
+    return data_;
 }
 
 std::string MatrixEvent::GetDeviceId() const
@@ -32,7 +32,7 @@ std::string MatrixEvent::GetDeviceId() const
 bool MatrixEvent::Equals(const Event &event) const
 {
     auto &evt = static_cast<const MatrixEvent &>(event);
-    return (deviceId_ == evt.deviceId_) && (mask_ == evt.mask_);
+    return deviceId_ == evt.deviceId_;
 }
 
 void MatrixEvent::SetRefCount(RefCount refCount)
@@ -43,5 +43,11 @@ void MatrixEvent::SetRefCount(RefCount refCount)
 RefCount MatrixEvent::StealRefCount() const
 {
     return std::move(refCount_);
+}
+
+bool MatrixEvent::MatrixData::IsValid() const
+{
+    return !(dynamic == INVALID_LEVEL && statics == INVALID_LEVEL &&
+        switches == INVALID_VALUE && switchesLen == INVALID_LENGTH);
 }
 } // namespace OHOS::DistributedData

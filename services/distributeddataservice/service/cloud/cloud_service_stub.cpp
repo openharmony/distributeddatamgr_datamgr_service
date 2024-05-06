@@ -17,6 +17,7 @@
 
 #include "ipc_skeleton.h"
 #include "cloud_types_util.h"
+#include "cloud/cloud_config_manager.h"
 #include "log_print.h"
 #include "permission/permission_validator.h"
 #include "rdb_types.h"
@@ -33,6 +34,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnNotifyDataChange,
     &CloudServiceStub::OnNotifyChange,
     &CloudServiceStub::OnQueryStatistics,
+    &CloudServiceStub::OnQueryLastSyncInfo,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnAllocResourceAndShare,
     &CloudServiceStub::OnShare,
@@ -86,7 +88,11 @@ int32_t CloudServiceStub::OnEnableCloud(MessageParcel &data, MessageParcel &repl
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto result = EnableCloud(id, switches);
+    std::map<std::string, int32_t> localSwitches;
+    for (auto &[bundle, status] : switches) {
+        localSwitches.insert_or_assign(CloudConfigManager::GetInstance().ToLocal(bundle), status);
+    }
+    auto result = EnableCloud(id, localSwitches);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -110,7 +116,7 @@ int32_t CloudServiceStub::OnChangeAppSwitch(MessageParcel &data, MessageParcel &
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto result = ChangeAppSwitch(id, bundleName, appSwitch);
+    auto result = ChangeAppSwitch(id, CloudConfigManager::GetInstance().ToLocal(bundleName), appSwitch);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -122,7 +128,11 @@ int32_t CloudServiceStub::OnClean(MessageParcel &data, MessageParcel &reply)
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto result = Clean(id, actions);
+    std::map<std::string, int32_t> localActions;
+    for (auto &[bundle, action] : actions) {
+        localActions.insert_or_assign(CloudConfigManager::GetInstance().ToLocal(bundle), action);
+    }
+    auto result = Clean(id, localActions);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -134,8 +144,22 @@ int32_t CloudServiceStub::OnNotifyDataChange(MessageParcel &data, MessageParcel 
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto result = NotifyDataChange(id, bundleName);
+    auto result = NotifyDataChange(id, CloudConfigManager::GetInstance().ToLocal(bundleName));
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnQueryLastSyncInfo(MessageParcel &data, MessageParcel &reply)
+{
+    std::string id;
+    std::string bundleName;
+    std::string storeId;
+    if (!ITypesUtil::Unmarshal(data, id, bundleName, storeId)) {
+        ZLOGE("Unmarshal id:%{public}s, bundleName:%{public}s, storeId:%{public}s", Anonymous::Change(id).c_str(),
+            bundleName.c_str(), Anonymous::Change(storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [status, results] = QueryLastSyncInfo(id, bundleName, storeId);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
 int32_t CloudServiceStub::OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply)

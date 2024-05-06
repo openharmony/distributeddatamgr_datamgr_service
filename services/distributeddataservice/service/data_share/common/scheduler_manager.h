@@ -43,7 +43,7 @@ private:
         std::string &schedulerSQL);
     void ExecuteSchedulerSQL(const std::string &rdbDir, const int32_t userId, int version, const Key &key,
         std::shared_ptr<DBDelegate> delegate);
-    bool SetTimerTask(int64_t &timerId, const std::function<void()> &callback, int64_t reminderTime);
+    bool SetTimerTask(uint64_t &timerId, const std::function<void()> &callback, int64_t reminderTime);
     void DestoryTimerTask(int64_t timerId);
     void ResetTimerTask(int64_t timerId, int64_t reminderTime);
 

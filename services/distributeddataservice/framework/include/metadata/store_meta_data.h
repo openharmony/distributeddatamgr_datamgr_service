@@ -36,12 +36,13 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     bool isManualClean = false;
     bool isSearchable = false;
     bool isNeedCompress = false;
+    int32_t dataType = -1;
     int32_t storeType = -1;
     int32_t securityLevel = 0;
     int32_t area = 0;
     int32_t uid = -1;
-    uint32_t tokenId = 0;
     int32_t instanceId = 0;
+    uint32_t tokenId = 0;
     std::string appId = "";
     std::string appType = "";
     std::string bundleName = "";
@@ -78,6 +79,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     API_EXPORT std::string GetStrategyKey() const;
     API_EXPORT std::string GetBackupSecretKey() const;
     API_EXPORT std::string GetStoreAlias() const;
+    API_EXPORT StoreInfo GetStoreInfo() const;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
 };

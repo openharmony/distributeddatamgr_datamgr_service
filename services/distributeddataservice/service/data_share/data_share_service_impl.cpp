@@ -31,6 +31,7 @@
 #include "datashare_template.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
+#include "extension_ability_manager.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -142,13 +143,12 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     }
     std::shared_ptr<DataShareResultSet> resultSet;
     auto callingPid = IPCSkeleton::GetCallingPid();
-    auto callBack = [&uri, &predicates, &columns, &resultSet, &errCode, &callingPid](ProviderInfo &providerInfo,
+    auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
         auto [err, result] = dbDelegate->Query(providerInfo.tableName,
             predicates, columns, callingPid);
-        errCode = std::move(err);
         resultSet = std::move(result);
-        return E_OK;
+        return err;
     };
     errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);
     return resultSet;
@@ -480,6 +480,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     SubscribeTimeChanged();
     return E_OK;
 }

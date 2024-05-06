@@ -26,6 +26,8 @@ public:
     void OnDeviceChanged(
         const AppDistributedKv::DeviceInfo &info, const AppDistributedKv::DeviceChangeType &type) const override;
     AppDistributedKv::ChangeLevelType GetChangeLevelType() const override;
+    void OnSessionReady(const AppDistributedKv::DeviceInfo &info) const override;
+
 private:
     KvStoreDataService &kvStoreDataService_;
 };

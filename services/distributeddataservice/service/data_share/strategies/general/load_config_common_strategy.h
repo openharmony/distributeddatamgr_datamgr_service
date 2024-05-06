@@ -21,6 +21,8 @@ namespace OHOS::DataShare {
 class LoadConfigCommonStrategy final : public Strategy {
 public:
     bool operator()(std::shared_ptr<Context> context) override;
+    static bool GetInfoFromProxyURI(
+        const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName);
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_LOAD_CONFIG_COMMON_STRAGETY_H

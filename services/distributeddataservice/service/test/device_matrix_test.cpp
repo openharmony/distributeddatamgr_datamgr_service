@@ -39,7 +39,7 @@ public:
     void TearDown();
 protected:
     struct Result {
-        uint16_t mask_ = MatrixMetaData::DEFAULT_MASK;
+        uint16_t mask_ = DeviceMatrix::INVALID_LEVEL;
         std::string deviceId_;
         Result() {};
     };
@@ -70,16 +70,16 @@ void DeviceMatrixTest::SetUpTestCase(void)
     DeviceMatrix::GetInstance().Initialize(selfToken_, "service_meta");
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_ONLINE, [](const Event &event) {
         auto &evt = static_cast<const MatrixEvent &>(event);
-        auto mask = evt.GetMask();
+        auto data = evt.GetMatrixData();
         auto deviceId = evt.GetDeviceId();
-        if ((mask & DeviceMatrix::META_STORE_MASK) != 0) {
+        if ((data.dynamic & DeviceMatrix::META_STORE_MASK) != 0) {
             auto onComplete = [deviceId](const std::map<std::string, DBStatus> &) {
                 DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
             };
             dbStoreMock_->Sync({ deviceId }, SYNC_MODE_PUSH_PULL, onComplete, false);
         }
 #ifdef TEST_ON_DEVICE
-        auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, mask);
+        auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, data);
         EventCenter::GetInstance().PostEvent(std::move(finEvent));
 #endif
     });
@@ -88,7 +88,7 @@ void DeviceMatrixTest::SetUpTestCase(void)
         auto &evt = static_cast<const MatrixEvent &>(event);
         Result result;
         result.deviceId_ = evt.GetDeviceId();
-        result.mask_ = evt.GetMask();
+        result.mask_ = evt.GetMatrixData().dynamic;
         isFinished_.SetValue(result);
     });
 
@@ -121,9 +121,10 @@ void DeviceMatrixTest::InitRemoteMatrixMeta()
 {
     MatrixMetaData metaData;
     metaData.version = 1;
-    metaData.mask = 0xF;
+    metaData.dynamic = 0xF;
     metaData.deviceId = TEST_DEVICE;
-    metaData.maskInfo = { "distributed_device_profile_service", "bundle_manager_service",
+    metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
+    metaData.dynamicInfo = { "distributed_device_profile_service", "bundle_manager_service",
         "dtbhardware_manager_service" };
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
@@ -141,6 +142,7 @@ void DeviceMatrixTest::InitMetaData()
     metaData_.isAutoSync = true;
     metaData_.storeType = true;
     metaData_.storeId = TEST_STORE;
+    metaData_.dataType = 1;
     PolicyValue value;
     value.type = PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
     localMeta_.policies = { std::move(value) };
@@ -239,6 +241,7 @@ HWTEST_F(DeviceMatrixTest, GetMetaStoreCode, TestSize.Level0)
     meta.bundleName = "distributeddata";
     meta.tokenId = selfToken_;
     meta.storeId = "service_meta";
+    meta.dataType = 1;
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
     ASSERT_EQ(code, DeviceMatrix::META_STORE_MASK);
 }
@@ -282,8 +285,11 @@ HWTEST_F(DeviceMatrixTest, GetOtherStoreCode, TestSize.Level0)
 */
 HWTEST_F(DeviceMatrixTest, BroadcastMeta, TestSize.Level0)
 {
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
-    ASSERT_EQ(mask, DeviceMatrix::META_STORE_MASK);
+    DeviceMatrix::DataLevel level = {
+        .dynamic = DeviceMatrix::META_STORE_MASK,
+    };
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
 }
 
 /**
@@ -299,8 +305,11 @@ HWTEST_F(DeviceMatrixTest, BroadcastDP, TestSize.Level0)
     meta.appId = "distributed_device_profile_service";
     meta.bundleName = "distributed_device_profile_service";
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, code);
-    ASSERT_EQ(mask, 0x2);
+    DeviceMatrix::DataLevel level = {
+        .dynamic = code,
+    };
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0x2);
 }
 
 /**
@@ -314,8 +323,11 @@ HWTEST_F(DeviceMatrixTest, BroadcastOthers, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, code);
-    ASSERT_EQ(mask, 0);
+    DeviceMatrix::DataLevel level = {
+        .dynamic = code,
+    };
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0);
 }
 
 /**
@@ -327,24 +339,31 @@ HWTEST_F(DeviceMatrixTest, BroadcastOthers, TestSize.Level0)
 */
 HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
 {
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
-    ASSERT_EQ(mask, DeviceMatrix::META_STORE_MASK);
+    DeviceMatrix::DataLevel level = {
+        .dynamic = DeviceMatrix::META_STORE_MASK,
+    };
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
     StoreMetaData meta = metaData_;
     meta.appId = "distributed_device_profile_service";
     meta.bundleName = "distributed_device_profile_service";
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, code);
-    ASSERT_EQ(mask, 0x3);
+    level.dynamic = code;
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0x3);
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, 0x2);
 
     meta = metaData_;
     code = DeviceMatrix::GetInstance().GetCode(meta);
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, code);
-    ASSERT_EQ(mask, 0);
+    level.dynamic = code;
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0);
 
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, 0xFFFF);
-    ASSERT_EQ(mask, 0xF);
+    level.dynamic = 0xFFFF;
+    level.statics = 0x000D;
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0x0);
 }
 
 /**
@@ -357,10 +376,11 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
 HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
 {
     MatrixMetaData metaData;
-    metaData.version = 3;
-    metaData.mask = 0x1F;
+    metaData.version = 4;
+    metaData.dynamic = 0x1F;
     metaData.deviceId = TEST_DEVICE;
-    metaData.maskInfo = { TEST_BUNDLE, "distributed_device_profile_service" };
+    metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
+    metaData.dynamicInfo = { TEST_BUNDLE, "distributed_device_profile_service" };
     MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }),
         [](const std::string &, const std::string &value, int32_t flag) {
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
@@ -379,15 +399,22 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
 
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, 0x2);
-    ASSERT_EQ(mask, 0);
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
-    ASSERT_EQ(mask, DeviceMatrix::META_STORE_MASK);
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, 0x4);
-    ASSERT_EQ(mask, 0x3);
+    DeviceMatrix::DataLevel level = {
+        .dynamic = 0x2,
+    };
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0);
+    level.dynamic = DeviceMatrix::META_STORE_MASK;
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
+    level.dynamic = 0x4;
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0x3);
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, 0x2);
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, 0xFFFF);
-    ASSERT_EQ(mask, 0x3);
+    level.dynamic = 0xFFFF;
+    level.statics = 0x000D;
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    ASSERT_EQ(mask.first, 0x0);
     MetaDataManager::GetInstance().Unsubscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }));
 }

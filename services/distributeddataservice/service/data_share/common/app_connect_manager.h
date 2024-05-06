@@ -33,4 +33,4 @@ private:
     static ConcurrentMap<std::string, BlockData<bool> *> blockCache_;
 };
 } // namespace OHOS::DataShare
-#endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H
+#endif // DATASHARESERVICE_APP_CONNECT_MANAGER_H

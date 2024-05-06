@@ -25,10 +25,20 @@ public:
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
     };
+    struct StaticStore final : public Serializable, public CheckerManager::StoreInfo {
+        std::string checker;
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
+    };
     using Distrust = Trust;
+    using Switches = Trust;
+    using DynamicStore = StaticStore;
     std::vector<std::string> checkers;
     std::vector<Trust> trusts;
     std::vector<Distrust> distrusts;
+    std::vector<Switches> switches;
+    std::vector<StaticStore> staticStores;
+    std::vector<DynamicStore> dynamicStores;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

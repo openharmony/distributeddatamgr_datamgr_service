@@ -47,6 +47,16 @@ HWTEST_F(GeneralStoreTest, GetSyncMode, TestSize.Level1)
     auto mixMode = GeneralStore::MixMode(syncMode, highMode);
     auto ret = GeneralStore::GetSyncMode(mixMode);
     ASSERT_EQ(ret, syncMode);
+
+    syncMode = GeneralStore::SyncMode::NEARBY_SUBSCRIBE_REMOTE;
+    mixMode = GeneralStore::MixMode(syncMode, highMode);
+    ret = GeneralStore::GetSyncMode(mixMode);
+    ASSERT_EQ(ret, syncMode);
+
+    syncMode = GeneralStore::SyncMode::NEARBY_UNSUBSCRIBE_REMOTE;
+    mixMode = GeneralStore::MixMode(syncMode, highMode);
+    ret = GeneralStore::GetSyncMode(mixMode);
+    ASSERT_EQ(ret, syncMode);
 }
 
 /**

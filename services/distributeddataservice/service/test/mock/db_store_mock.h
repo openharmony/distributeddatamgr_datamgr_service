@@ -43,6 +43,7 @@ public:
     using ICloudDb = DistributedDB::ICloudDb;
     using CloudSyncOption = DistributedDB::CloudSyncOption;
     using SyncProcessCallback = DistributedDB::SyncProcessCallback;
+    using GenerateCloudVersionCallback = DistributedDB::GenerateCloudVersionCallback;
     DBStatus Get(const Key &key, Value &value) const override;
     DBStatus GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const override;
     DBStatus GetEntries(const Key &keyPrefix, KvStoreResultSet *&resultSet) const override;
@@ -102,6 +103,8 @@ public:
     DBStatus RemoveDeviceData(const std::string &device, ClearMode mode) override;
     DBStatus RemoveDeviceData(const std::string &device, const std::string &user, ClearMode mode) override;
     int32_t GetTaskCount() override;
+    void SetGenCloudVersionCallback(const GenerateCloudVersionCallback &callback) override;
+    std::pair<DBStatus, std::map<std::string, std::string>> GetCloudVersion(const std::string &device) override;
 private:
     static const uint32_t DEFAULT_SIZE = 0;
     DBStatus Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const;

@@ -30,6 +30,7 @@ public:
         std::string checker;
     };
     using Distrust = Trust;
+    using Switches = Trust;
     struct StoreInfo {
         pid_t uid;
         uint32_t tokenId;
@@ -41,17 +42,30 @@ public:
         virtual void Initialize() = 0;
         virtual bool SetTrustInfo(const Trust &trust) = 0;
         virtual bool SetDistrustInfo(const Distrust &distrust) = 0;
+        virtual bool SetSwitchesInfo(const Switches &switches) = 0;
         virtual std::string GetAppId(const StoreInfo &info) = 0;
         virtual bool IsValid(const StoreInfo &info) = 0;
         virtual bool IsDistrust(const StoreInfo &info) = 0;
+        virtual bool IsSwitches(const StoreInfo &info) = 0;
+        virtual bool AddDynamicStore(const StoreInfo& storeInfo) = 0;
+        virtual bool AddStaticStore(const StoreInfo& storeInfo) = 0;
+        virtual std::vector<StoreInfo> GetDynamicStores() = 0;
+        virtual std::vector<StoreInfo> GetStaticStores() = 0;
+        virtual bool IsDynamic(const StoreInfo &info) = 0;
+        virtual bool IsStatic(const StoreInfo &info) = 0;
     protected:
         API_EXPORT ~Checker() = default;
     };
     API_EXPORT static CheckerManager &GetInstance();
     API_EXPORT void RegisterPlugin(const std::string &checker, std::function<Checker *()> getter);
     API_EXPORT std::string GetAppId(const StoreInfo &info);
+    API_EXPORT std::vector<StoreInfo> GetDynamicStores();
+    API_EXPORT std::vector<StoreInfo> GetStaticStores();
+    API_EXPORT bool IsDynamic(const StoreInfo &info);
+    API_EXPORT bool IsStatic(const StoreInfo &info);
     API_EXPORT bool IsValid(const StoreInfo &info);
     API_EXPORT bool IsDistrust(const StoreInfo &info);
+    API_EXPORT bool IsSwitches(const StoreInfo &info);
     API_EXPORT void LoadCheckers(std::vector<std::string> &checkers);
     API_EXPORT Checker *GetChecker(const std::string &checker);
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,10 +22,10 @@
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
+#include "kvdb_general_store.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
-#include "store_cache.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using system_clock = std::chrono::system_clock;
@@ -91,7 +91,7 @@ Upgrade::DBStatus Upgrade::ExportStore(const StoreMeta &old, const StoreMeta &me
 void Upgrade::UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &password)
 {
     if (!meta.isEncrypt) {
-        return ;
+        return;
     }
 
     SecretKeyMetaData secretKey;
@@ -146,7 +146,7 @@ Upgrade::AutoStore Upgrade::GetDBStore(const StoreMeta &meta, const std::vector<
     DBPassword password;
     password.SetValue(pwd.data(), pwd.size());
     AutoStore dbStore(nullptr, release);
-    manager.GetKvStore(meta.storeId, StoreCache::GetDBOption(meta, password),
+    manager.GetKvStore(meta.storeId, KVDBGeneralStore::GetDBOption(meta, password),
         [&dbStore](auto dbStatus, auto *tmpStore) {
             dbStore.reset(tmpStore);
         });
@@ -171,4 +171,4 @@ std::string Upgrade::GetEncryptedUuidByMeta(const StoreMeta &meta)
     calcUuid_.Insert(keyUuid, uuid);
     return uuid;
 }
-}
+} // namespace OHOS::DistributedKv

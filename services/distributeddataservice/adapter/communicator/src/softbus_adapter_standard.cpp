@@ -17,12 +17,14 @@
 #include <thread>
 
 #include "communicator_context.h"
+#include "data_level.h"
 #include "device_manager_adapter.h"
 #include "dfx_types.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "reporter.h"
 #include "securec.h"
+#include "session.h"
 #include "softbus_adapter.h"
 #include "softbus_bus_center.h"
 #include "softbus_error_code.h"
@@ -65,31 +67,23 @@ SoftBusAdapter *AppDataListenerWrap::softBusAdapter_;
 std::shared_ptr<SoftBusAdapter> SoftBusAdapter::instance_;
 
 namespace {
-void NotCareEvent(NodeBasicInfo *info)
+void OnDataLevelChanged(const char* networkId, const DataLevel dataLevel)
 {
-    return;
-}
-
-void NotCareEvent(NodeBasicInfoType type, NodeBasicInfo *info)
-{
-    return;
-}
-
-void OnCareEvent(NodeStatusType type, NodeStatus *status)
-{
-    if (type != TYPE_DATABASE_STATUS || status == nullptr) {
+    if (networkId == nullptr) {
         return;
     }
-    auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(status->basicInfo.networkId);
-    SoftBusAdapter::GetInstance()->OnBroadcast({ uuid }, status->dataBaseStatus);
+    LevelInfo level = {
+        .dynamic = dataLevel.dynamicLevel,
+        .statics = dataLevel.staticLevel,
+        .switches = dataLevel.switchLevel,
+        .switchesLen = dataLevel.switchLength,
+    };
+    auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(networkId);
+    SoftBusAdapter::GetInstance()->OnBroadcast({ uuid }, std::move(level));
 }
 
-INodeStateCb g_callback = {
-    .events = EVENT_NODE_STATUS_CHANGED,
-    .onNodeOnline = NotCareEvent,
-    .onNodeOffline = NotCareEvent,
-    .onNodeBasicInfoChanged = NotCareEvent,
-    .onNodeStatusChanged = OnCareEvent,
+IDataLevelCb g_callback = {
+    .OnDataLevelChanged = OnDataLevelChanged,
 };
 } // namespace
 SoftBusAdapter::SoftBusAdapter()
@@ -110,13 +104,17 @@ SoftBusAdapter::SoftBusAdapter()
     if (status != Status::SUCCESS) {
         ZLOGW("register device change failed, status:%d", static_cast<int>(status));
     }
+
+    Context::GetInstance().SetSessionListener([this](const std::string &deviceId) {
+        StartCloseSessionTask(deviceId);
+    });
 }
 
 SoftBusAdapter::~SoftBusAdapter()
 {
     ZLOGI("begin");
     if (onBroadcast_) {
-        UnregNodeDeviceStateCb(&g_callback);
+        UnregDataLevelChangeCb(PKG_NAME);
     }
     connects_.Clear();
 }
@@ -172,7 +170,6 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
                     return true;
                 }
             }
-
             auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
             connects.emplace_back(connect);
             conn = connect;
@@ -181,7 +178,6 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     if (conn == nullptr) {
         return Status::ERROR;
     }
-
     auto status = conn->SendData(dataInfo, &clientListener_);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
         Time now = std::chrono::steady_clock::now();
@@ -190,16 +186,37 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
             taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
             next_ = expireTime;
-            if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
-                return status;
-            }
-        }
-        if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
-            taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
-            next_ = expireTime;
         }
     }
     return status;
+}
+
+void SoftBusAdapter::StartCloseSessionTask(const std::string &deviceId)
+{
+    std::shared_ptr<SoftBusClient> conn;
+    bool isReady = DmAdapter::GetInstance().IsDeviceReady(deviceId);
+    uint32_t qosType = isReady ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    auto connects = connects_.Find(deviceId);
+    if (!connects.first) {
+        return;
+    }
+    for (auto &connect : connects.second) {
+        if (connect->GetQoSType() == qosType) {
+            conn = connect;
+            break;
+        }
+    }
+    if (conn == nullptr) {
+        return;
+    }
+    Time now = std::chrono::steady_clock::now();
+    auto expireTime = conn->GetExpireTime() > now ? conn->GetExpireTime() : now;
+    lock_guard<decltype(taskMutex_)> lock(taskMutex_);
+    if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
+        ZLOGI("Start close session, deviceId:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId).c_str());
+        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(expireTime - now, GetCloseSessionTask());
+        next_ = expireTime;
+    }
 }
 
 SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
@@ -225,9 +242,11 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
             return false;
         });
         connects_.EraseIf([](const auto &key, const auto &conn) -> bool {
+            if (conn.empty()) {
+                Context::GetInstance().NotifySessionClose(key);
+            }
             return conn.empty();
         });
-
         Time next = INVALID_NEXT;
         lock_guard<decltype(taskMutex_)> lg(taskMutex_);
         connects_.ForEach([&next](const auto &key, auto &connects) -> bool {
@@ -246,9 +265,8 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
             taskId_ = ExecutorPool::INVALID_TASK_ID;
             return;
         }
-        taskId_ =
-            Context::GetInstance().GetThreadPool()->Schedule(next > now ? next - now : ExecutorPool::INVALID_DELAY,
-                GetCloseSessionTask());
+        taskId_ = Context::GetInstance().GetThreadPool()->Schedule(
+            next > now ? next - now : ExecutorPool::INVALID_DELAY, GetCloseSessionTask());
         next_ = next;
     };
 }
@@ -370,31 +388,39 @@ void SoftBusAdapter::NotifyDataListeners(const uint8_t *data, int size, const st
     }
 }
 
-int32_t SoftBusAdapter::Broadcast(const PipeInfo &pipeInfo, uint16_t mask)
+Status SoftBusAdapter::Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo)
 {
-    return SetNodeDataChangeFlag(pipeInfo.pipeId.c_str(), DmAdapter::GetInstance().GetLocalDevice().networkId.c_str(),
-        mask);
+    DataLevel level = {
+        .dynamicLevel = levelInfo.dynamic,
+        .staticLevel = levelInfo.statics,
+        .switchLevel = levelInfo.switches,
+        .switchLength = levelInfo.switchesLen,
+    };
+    auto status = SetDataLevel(&level);
+    if (status == SOFTBUS_FUNC_NOT_SUPPORT) {
+        return Status::NOT_SUPPORT_BROADCAST;
+    }
+    return status ? Status::ERROR : Status::SUCCESS;
 }
 
-void SoftBusAdapter::OnBroadcast(const DeviceId &device, uint16_t mask)
+void SoftBusAdapter::OnBroadcast(const DeviceId &device, const LevelInfo &levelInfo)
 {
-    ZLOGI("device:%{public}s mask:0x%{public}x", KvStoreUtils::ToBeAnonymous(device.deviceId).c_str(), mask);
+    ZLOGI("device:%{public}s", KvStoreUtils::ToBeAnonymous(device.deviceId).c_str());
     if (!onBroadcast_) {
-        ZLOGW("no listener device:%{public}s mask:0x%{public}x", KvStoreUtils::ToBeAnonymous(device.deviceId).c_str(),
-            mask);
+        ZLOGW("no listener device:%{public}s", KvStoreUtils::ToBeAnonymous(device.deviceId).c_str());
         return;
     }
-    onBroadcast_(device.deviceId, mask);
+    onBroadcast_(device.deviceId, levelInfo);
 }
 
 int32_t SoftBusAdapter::ListenBroadcastMsg(const PipeInfo &pipeInfo,
-    std::function<void(const std::string &, uint16_t)> listener)
+    std::function<void(const std::string &, const LevelInfo &)> listener)
 {
     if (onBroadcast_) {
         return SOFTBUS_ALREADY_EXISTED;
     }
     onBroadcast_ = std::move(listener);
-    return RegNodeDeviceStateCb(pipeInfo.pipeId.c_str(), &g_callback);
+    return RegDataLevelChangeCb(pipeInfo.pipeId.c_str(), &g_callback);
 }
 
 void AppDataListenerWrap::SetDataHandler(SoftBusAdapter *handler)

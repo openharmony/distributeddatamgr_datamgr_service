@@ -114,7 +114,16 @@ DBStatus ProcessCommunicatorImpl::RegOnDataReceive(const OnDataReceive &callback
 
 void ProcessCommunicatorImpl::RegOnSendAble(const OnSendAble &sendAbleCallback)
 {
-    CommunicatorContext::GetInstance().SetSessionListener(sendAbleCallback);
+    {
+        std::lock_guard<decltype(sessionMutex_)> lock(sessionMutex_);
+        sessionListener_ = sendAbleCallback;
+    }
+    if (!sendAbleCallback) {
+        ZLOGE("send callback is nullptr.");
+        return;
+    }
+    auto status = CommunicatorContext::GetInstance().RegSessionListener(this);
+    ZLOGD("reg status:%{public}d", status);
 }
 
 DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const uint8_t *data, uint32_t length)
@@ -210,6 +219,17 @@ void ProcessCommunicatorImpl::OnDeviceChanged(const DeviceInfo &info, const Devi
     DeviceInfos devInfo;
     devInfo.identifier = info.uuid;
     onDeviceChangeHandler_(devInfo, (type == DeviceChangeType::DEVICE_ONLINE));
+}
+
+void ProcessCommunicatorImpl::OnSessionReady(const DeviceInfo &info) const
+{
+    std::lock_guard<decltype(sessionMutex_)> lock(sessionMutex_);
+    if (sessionListener_ == nullptr) {
+        return;
+    }
+    DeviceInfos devInfos;
+    devInfos.identifier = info.uuid;
+    sessionListener_(devInfos);
 }
 
 std::shared_ptr<ExtendHeaderHandle> ProcessCommunicatorImpl::GetExtendHeaderHandle(const ExtendInfo &info)

@@ -116,4 +116,12 @@ int32_t FeatureStubImpl::OnReady(const std::string &device)
     }
     return featureImpl_->OnReady(device);
 }
+
+int32_t FeatureStubImpl::OnSessionReady(const std::string &device)
+{
+    if (featureImpl_ == nullptr) {
+        return -1;
+    }
+    return featureImpl_->OnSessionReady(device);
+}
 }

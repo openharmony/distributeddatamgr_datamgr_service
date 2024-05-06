@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Copyright (c) 2022-2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -36,10 +36,11 @@ config("module_public_config") {
     "object",
     "permission/include",
     "rdb",
+    "waterversion",
     "//third_party/json/single_include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/framework/include",
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
@@ -83,6 +84,7 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/config_factory.cpp",
     "config/src/model/backup_config.cpp",
     "config/src/model/checker_config.cpp",
+    "config/src/model/cloud_config.cpp",
     "config/src/model/component_config.cpp",
     "config/src/model/directory_config.cpp",
     "config/src/model/global_config.cpp",
@@ -92,13 +94,16 @@ ohos_shared_library("distributeddatasvc") {
     "dumper/src/dump_helper.cpp",
     "kvdb/auth_delegate.cpp",
     "kvdb/kvdb_exporter.cpp",
+    "kvdb/kvdb_general_store.cpp",
+    "kvdb/kvdb_notifier_proxy.cpp",
     "kvdb/kvdb_service_impl.cpp",
     "kvdb/kvdb_service_stub.cpp",
+    "kvdb/kvdb_watcher.cpp",
     "kvdb/kvstore_sync_manager.cpp",
     "kvdb/query_helper.cpp",
-    "kvdb/store_cache.cpp",
     "kvdb/upgrade.cpp",
     "kvdb/user_delegate.cpp",
+    "matrix/src/auto_sync_matrix.cpp",
     "matrix/src/device_matrix.cpp",
     "matrix/src/matrix_event.cpp",
     "object/object_asset_loader.cpp",
@@ -124,6 +129,7 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_service_impl.cpp",
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_watcher.cpp",
+    "waterversion/water_version_manager.cpp",
   ]
   cflags = [
     "-Wno-multichar",
