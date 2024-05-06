@@ -156,7 +156,7 @@ HWTEST_F(SoftbusAdapterStandardTest, SendData, TestSize.Level1)
     PipeInfo id;
     id.pipeId = "appId";
     id.userId = "groupId";
-    auto secRegister = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id17);
+    auto secRegister = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id);
     EXPECT_EQ(Status::SUCCESS, secRegister);
     std::string content = "Helloworlds";
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
