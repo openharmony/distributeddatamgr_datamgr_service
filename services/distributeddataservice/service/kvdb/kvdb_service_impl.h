@@ -22,9 +22,11 @@
 #include "device_matrix.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
+#include "kvdb_notifier_proxy.h"
 #include "kvdb_service_stub.h"
 #include "kvdb_watcher.h"
 #include "kvstore_sync_manager.h"
+#include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
@@ -47,8 +49,8 @@ public:
     Status CloudSync(const AppId &appId, const StoreId &storeId, const AsyncDetail &async) override;
     Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status SyncExt(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status RegisterSyncCallback(const AppId &appId, sptr<IKvStoreSyncCallback> callback) override;
-    Status UnregisterSyncCallback(const AppId &appId) override;
+    Status RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifier> notifier) override;
+    Status UnregServiceNotifier(const AppId &appId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
     Status GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam) override;
     Status EnableCapability(const AppId &appId, const StoreId &storeId) override;
@@ -60,23 +62,32 @@ public:
     Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
     Status GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password) override;
+    Status NotifyDataChange(const AppId &appId, const StoreId &storeId) override;
+    Status PutSwitch(const AppId &appId, const SwitchData &data) override;
+    Status GetSwitch(const AppId &appId, const std::string &networkId, SwitchData &data) override;
+    Status SubscribeSwitchData(const AppId &appId) override;
+    Status UnsubscribeSwitchData(const AppId &appId) override;
     int32_t OnBind(const BindInfo &bindInfo) override;
     int32_t OnInitialize() override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    int32_t Online(const std::string &device) override;
     int32_t OnReady(const std::string &device) override;
+    int32_t OnSessionReady(const std::string &device) override;
 
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
     using StoreMetaDataLocal = OHOS::DistributedData::StoreMetaDataLocal;
+    using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
     using DBStore = DistributedDB::KvStoreNbDelegate;
     using DBManager = DistributedDB::KvStoreDelegateManager;
     using SyncEnd = KvStoreSyncManager::SyncEnd;
     using DBResult = std::map<std::string, DistributedDB::DBStatus>;
     using DBStatus = DistributedDB::DBStatus;
     using DBMode = DistributedDB::SyncMode;
+    using Action = OHOS::DistributedData::MetaDataManager::Action;
     enum SyncAction {
         ACTION_SYNC,
         ACTION_SUBSCRIBE,
@@ -84,9 +95,11 @@ private:
     };
     struct SyncAgent {
         pid_t pid_ = 0;
+        int32_t switchesObserverCount_ = 0;
+        bool changed_ = false;
         AppId appId_;
         int32_t count_ = 0;
-        sptr<IKvStoreSyncCallback> callback_;
+        sptr<IKVDBNotifier> notifier_;
         std::map<std::string, uint32_t> delayTimes_;
         std::shared_ptr<KVDBWatcher> watcher_;
         std::set<sptr<KvStoreObserverProxy>> observers_;
@@ -116,6 +129,9 @@ private:
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
+    ChangeType ConvertType(SyncMode syncMode) const;
+    SwitchState ConvertAction(Action action) const;
+    SyncMode GetSyncMode(bool local, bool remote) const;
     std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     DistributedData::GeneralStore::SyncMode ConvertGeneralSyncMode(SyncMode syncMode, SyncAction syncAction) const;
     DBResult HandleGenBriefDetails(const DistributedData::GenDetails &details);
@@ -125,8 +141,13 @@ private:
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
     void RegisterKvServiceInfo();
     void RegisterHandler();
+    void RegisterMatrixChange();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     ProgressDetail HandleGenDetails(const DistributedData::GenDetails &details);
+    void TryToSync(const StoreMetaData &metaData, bool force = false);
+    void SyncOnSessionReady(const std::string &device);
+    void OldOnlineSync(const StoreMetaData &data, const std::string &deviceId, RefCount refCount, uint16_t mask);
+    bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

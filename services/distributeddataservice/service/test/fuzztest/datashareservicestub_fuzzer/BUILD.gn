@@ -54,6 +54,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/db_delegate.cpp",
     "${data_service_path}/service/data_share/common/div_strategy.cpp",
+    "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
     "${data_service_path}/service/data_share/common/extension_connect_adaptor.cpp",
     "${data_service_path}/service/data_share/common/extension_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/kv_delegate.cpp",

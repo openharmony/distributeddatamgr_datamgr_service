@@ -478,10 +478,12 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     }
 
     std::vector<QueryKey> queryKeys;
+    std::vector<Database> databases;
     for (const auto &schema : schemas) {
         if (schema.bundleName != bundleName) {
             continue;
         }
+        databases = schema.databases;
         for (const auto &database : schema.databases) {
             if (storeId.empty() || database.alias == storeId) {
                 queryKeys.push_back({ id, bundleName, database.name });
@@ -496,6 +498,16 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     auto ret = syncManager_.QueryLastSyncInfo(queryKeys, results);
     ZLOGI("code:%{public}d, accountId:%{public}s, bundleName:%{public}s, storeId:%{public}s", ret,
         Anonymous::Change(id).c_str(), bundleName.c_str(), Anonymous::Change(storeId).c_str());
+    if (results.empty()) {
+        return { ret, results };
+    }
+    for (const auto &database : databases) {
+        if (results.find(database.name) != results.end()) {
+            auto node = results.extract(database.name);
+            node.key() = database.alias;
+            results.insert(std::move(node));
+        }
+    }
     return { ret, results };
 }
 

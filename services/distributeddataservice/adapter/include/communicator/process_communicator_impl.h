@@ -57,6 +57,7 @@ public:
     std::vector<DeviceInfos> GetRemoteOnlineDeviceInfosList() override;
     bool IsSameProcessLabelStartedOnPeerDevice(const DeviceInfos &peerDevInfo) override;
     void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
+    void OnSessionReady(const DeviceInfo &info) const override;
 
     API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;
@@ -70,10 +71,12 @@ private:
     std::string thisProcessLabel_;
     OnDeviceChange onDeviceChangeHandler_;
     OnDataReceive onDataReceiveHandler_;
+    OnSendAble sessionListener_;
     RouteHeadHandlerCreator routeHeadHandlerCreator_; // route header handler creator
 
     mutable std::mutex onDeviceChangeMutex_;
     mutable std::mutex onDataReceiveMutex_;
+    mutable std::mutex sessionMutex_;
 
     static constexpr uint32_t MTU_SIZE = 4194304; // the max transmission unit size(4M - 80B)
     static constexpr uint32_t MTU_SIZE_WATCH = 81920; // the max transmission unit size(80K)

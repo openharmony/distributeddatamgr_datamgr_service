@@ -54,6 +54,7 @@ private:
     int GetFromExtension();
     int GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
     int GetFromExtensionProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
+    std::pair<int, BundleInfo> GetBundleInfo();
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
         MODULE_NAME,

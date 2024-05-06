@@ -76,7 +76,7 @@ private:
     static bool IsFileExisted(const std::string &filePath);
     static std::mutex infosMutex_;
     static void SetCrossUserMode(uint8_t priority, uint8_t crossMode,
-        std::pair<AccessCrossMode, int8_t> &crossModes);
+        std::pair<AccessCrossMode, int8_t> &mode);
     static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
 };
 } // namespace OHOS::DataShare

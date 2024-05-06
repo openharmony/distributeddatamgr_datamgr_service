@@ -16,7 +16,9 @@
 #include "kvdb_general_store.h"
 
 #include "cloud/schema_meta.h"
+#include "cloud/cloud_sync_finished_event.h"
 #include "crypto_manager.h"
+#include "checker/checker_manager.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
@@ -30,6 +32,7 @@
 #include "types.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
+#include "water_version_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -115,11 +118,13 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     }
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
-    if (meta.isAutoSync) {
-        auto code = DeviceMatrix::GetInstance().GetCode(meta);
-        delegate_->SetRemotePushFinishedNotify([code](const DistributedDB::RemotePushNotifyInfo &info) {
-            DeviceMatrix::GetInstance().OnExchanged(info.deviceId, code, true);
+    InitWaterVersion(meta);
+    if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
+        delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
+            DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
         });
+    }
+    if (meta.isAutoSync) {
         bool param = true;
         auto data = static_cast<DistributedDB::PragmaData>(&param);
         delegate_->Pragma(DistributedDB::SET_SYNC_RETRY, data);
@@ -301,7 +306,7 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     } else {
         syncOption.users.push_back(std::to_string(storeInfo_.user));
     }
-    return delegate_->Sync(syncOption, nullptr);
+    return delegate_->Sync(syncOption, GetDBProcessCB(nullptr));
 }
 
 int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
@@ -482,6 +487,26 @@ int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
+std::vector<std::string> KVDBGeneralStore::GetWaterVersion(const std::string &deviceId)
+{
+    return {};
+}
+
+void KVDBGeneralStore::InitWaterVersion(const StoreMetaData &meta)
+{
+    CheckerManager::StoreInfo info = { atoi(meta.user.c_str()), meta.tokenId, meta.bundleName, meta.storeId };
+    bool isDynamic = CheckerManager::GetInstance().IsDynamic(info);
+    bool isStatic = CheckerManager::GetInstance().IsStatic(info);
+    if (!isDynamic && !isStatic) {
+        return;
+    }
+    // SetGenCloudVersionCallback
+    callback_ = [meta]() {
+        auto event = std::make_unique<CloudSyncFinishedEvent>(CloudEvent::CLOUD_SYNC_FINISHED, meta);
+        EventCenter::GetInstance().PostEvent(std::move(event));
+    };
+}
+
 void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data)
 {
     if (!HasWatcher()) {
@@ -528,5 +553,39 @@ void KVDBGeneralStore::ObserverProxy::ConvertChangeData(const std::list<DBEntry>
         auto value = std::vector<Value>{ entry.key, entry.value };
         values.push_back(value);
     }
+}
+
+KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async)
+{
+    return [async, callback = callback_](const std::map<std::string, SyncProcess> &processes) {
+        if (!async && !callback) {
+            return;
+        }
+        DistributedData::GenDetails details;
+        bool isFinished = false;
+        for (auto &[id, process] : processes) {
+            auto &detail = details[id];
+            isFinished |= process.process == FINISHED;
+            detail.progress = process.process;
+            detail.code = ConvertStatus(process.errCode);
+            for (auto [key, value] : process.tableProcess) {
+                auto &table = detail.details[key];
+                table.upload.total = value.upLoadInfo.total;
+                table.upload.success = value.upLoadInfo.successCount;
+                table.upload.failed = value.upLoadInfo.failCount;
+                table.upload.untreated = table.upload.total - table.upload.success - table.upload.failed;
+                table.download.total = value.downLoadInfo.total;
+                table.download.success = value.downLoadInfo.successCount;
+                table.download.failed = value.downLoadInfo.failCount;
+                table.download.untreated = table.download.total - table.download.success - table.download.failed;
+            }
+        }
+        if (async) {
+            async(details);
+        }
+        if (isFinished && callback) {
+            callback();
+        }
+    };
 }
 } // namespace OHOS::DistributedKv

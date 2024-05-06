@@ -23,6 +23,7 @@
 #include "datashare_errno.h"
 #include "hap_token_info.h"
 #include "log_print.h"
+#include "strategies/general/load_config_common_strategy.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
 
@@ -33,30 +34,38 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
     providerInfo_.uri = uri;
     providerInfo_.currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     if (providerInfo_.currentUserId == 0) {
-        URIUtils::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.currentUserId,
+        LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.currentUserId,
             callerTokenId, providerInfo_.bundleName);
         URIUtils::FormatUri(providerInfo_.uri);
     }
     uriConfig_ = URIUtils::GetUriConfig(providerInfo_.uri);
 }
 
-int DataProviderConfig::GetFromProxyData()
+std::pair<int, BundleInfo> DataProviderConfig::GetBundleInfo()
 {
+    BundleInfo bundleInfo;
     providerInfo_.bundleName = uriConfig_.authority;
     if (providerInfo_.bundleName.empty()) {
         if (uriConfig_.pathSegments.empty()) {
-            ZLOGE("Authority and path empty! uri: %{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
-            return E_URI_NOT_EXIST;
+            return std::make_pair(E_URI_NOT_EXIST, bundleInfo);
         }
         providerInfo_.bundleName = uriConfig_.pathSegments[0];
     }
-    BundleInfo bundleInfo;
     if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
         providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo)) {
-        ZLOGE("BundleInfo failed! bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
+        return std::make_pair(E_BUNDLE_NAME_NOT_EXIST, bundleInfo);
+    }
+    return std::make_pair(E_OK, bundleInfo);
+}
+
+int DataProviderConfig::GetFromProxyData()
+{
+    auto [errCode, bundleInfo] = GetBundleInfo();
+    if (errCode != E_OK) {
+        ZLOGE("Get bundleInfo failed! bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
             providerInfo_.bundleName.c_str(), providerInfo_.currentUserId,
             URIUtils::Anonymous(providerInfo_.uri).c_str());
-        return E_BUNDLE_NAME_NOT_EXIST;
+        return errCode;
     }
     providerInfo_.singleton = bundleInfo.singleton;
     for (auto &item : bundleInfo.extensionInfos) {
@@ -67,8 +76,14 @@ int DataProviderConfig::GetFromProxyData()
         break;
     }
     for (auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
-        for (auto &data : hapModuleInfo.proxyDatas) {
-            if (data.uri != uriConfig_.formatUri) {
+        auto &proxyDatas = hapModuleInfo.proxyDatas;
+        std::sort(proxyDatas.begin(), proxyDatas.end(), [](const AppExecFwk::ProxyData &curr,
+            const AppExecFwk::ProxyData &prev) {
+            return curr.uri.length() > prev.uri.length();
+        });
+        for (auto &data : proxyDatas) {
+            if (data.uri.length() > uriConfig_.formatUri.length() ||
+                uriConfig_.formatUri.compare(0, data.uri.length(), data.uri) != 0) {
                 continue;
             }
             providerInfo_.readPermission = std::move(data.requiredReadPermission);

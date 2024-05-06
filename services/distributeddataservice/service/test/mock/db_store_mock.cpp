@@ -347,5 +347,14 @@ int32_t DBStoreMock::GetTaskCount()
 {
     return 0;
 }
+
+void DBStoreMock::SetGenCloudVersionCallback(const GenerateCloudVersionCallback &callback)
+{
+}
+
+std::pair<DBStatus, std::map<std::string, std::string>> DBStoreMock::GetCloudVersion(const std::string &device)
+{
+    return { NOT_SUPPORT, {} };
+}
 } // namespace DistributedData
 } // namespace OHOS

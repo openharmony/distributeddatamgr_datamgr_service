@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 #define LOG_TAG "AppConnectManager"
+
 #include "app_connect_manager.h"
+
+#include "extension_ability_manager.h"
 #include "log_print.h"
 
 namespace OHOS::DataShare {
@@ -54,5 +57,6 @@ void AppConnectManager::Notify(const std::string &bundleName)
         value->SetValue(true);
         return true;
     });
+    ExtensionAbilityManager::GetInstance().DelayDisconnect(bundleName);
 }
 } // namespace OHOS::DataShare

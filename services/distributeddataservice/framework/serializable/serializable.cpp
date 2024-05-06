@@ -113,6 +113,16 @@ bool Serializable::GetValue(const json &node, const std::string &name, uint64_t 
     return true;
 }
 
+bool Serializable::GetValue(const json &node, const std::string &name, uint16_t &value)
+{
+    auto &subNode = GetSubNode(node, name);
+    if (subNode.is_null() || !subNode.is_number_unsigned()) {
+        return false;
+    }
+    subNode.get_to(value);
+    return true;
+}
+
 bool Serializable::GetValue(const json &node, const std::string &name, bool &value)
 {
     auto &subNode = GetSubNode(node, name);
@@ -181,6 +191,12 @@ bool Serializable::SetValue(json &node, const double &value)
 }
 
 bool Serializable::SetValue(json &node, const uint64_t &value)
+{
+    node = value;
+    return true;
+}
+
+bool Serializable::SetValue(json &node, const uint16_t &value)
 {
     node = value;
     return true;

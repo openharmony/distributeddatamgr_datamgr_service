@@ -114,7 +114,7 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
         ZLOGI("Bind Start, socket:%{public}d type:%{public}u", clientSocket, type);
         auto status = client->Open(clientSocket, QOS_INFOS[type % QOS_BUTT], listener);
         if (status == Status::SUCCESS) {
-            Context::GetInstance().NotifySessionChanged(client->device_.deviceId);
+            Context::GetInstance().NotifySessionReady(client->device_.deviceId);
         }
         client->isOpening_.store(false);
     };

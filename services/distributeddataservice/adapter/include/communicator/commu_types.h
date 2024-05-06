@@ -72,5 +72,12 @@ enum class API_EXPORT DeviceStatus {
     OFFLINE = 0,
     ONLINE = 1,
 };
+
+struct API_EXPORT LevelInfo {
+    uint16_t dynamic;
+    uint16_t statics;
+    uint32_t switches;
+    uint16_t switchesLen;
+};
 }
 #endif // OHOS_DISTRIBUTED_DATA_ADAPTER_COMMUNICATOR_COMMU_TYPES_H

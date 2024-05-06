@@ -31,6 +31,7 @@ public:
         DATA_CHANGE,
         CLOUD_SHARE,
         MAKE_QUERY,
+        CLOUD_SYNC_FINISHED,
         CLOUD_BUTT
     };
 

@@ -24,6 +24,7 @@ namespace OHOS::DistributedRdb {
 RdbResultSetStub::RdbResultSetStub(std::shared_ptr<NativeRdb::ResultSet> resultSet) : resultSet_(std::move(resultSet))
 {
 }
+
 int RdbResultSetStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
@@ -79,34 +80,6 @@ int32_t RdbResultSetStub::OnGetColumnType(MessageParcel &data, MessageParcel &re
     if (!ITypesUtil::Marshal(reply, status, static_cast<int32_t>(columnType))) {
         ZLOGE("Write status or columnType failed, status:%{public}d, columnIndex:%{public}d, columnType:%{public}d.",
             status, columnIndex, static_cast<int32_t>(columnType));
-        return -1;
-    }
-    return 0;
-}
-
-int32_t RdbResultSetStub::OnGetColumnIndex(MessageParcel &data, MessageParcel &reply)
-{
-    std::string columnName;
-    ITypesUtil::Unmarshal(data, columnName);
-    int columnIndex;
-    int status = resultSet_->GetColumnIndex(columnName, columnIndex);
-    if (!ITypesUtil::Marshal(reply, status, columnIndex)) {
-        ZLOGE("Write status or columnIndex failed, status:%{public}d, columnIndex:%{public}d, columnName:%{public}s.",
-            status, columnIndex, columnName.c_str());
-        return -1;
-    }
-    return 0;
-}
-
-int32_t RdbResultSetStub::OnGetColumnName(MessageParcel &data, MessageParcel &reply)
-{
-    int columnIndex;
-    ITypesUtil::Unmarshal(data, columnIndex);
-    std::string columnName;
-    int status = resultSet_->GetColumnName(columnIndex, columnName);
-    if (!ITypesUtil::Marshal(reply, status, columnName)) {
-        ZLOGE("Write status or columnName failed, status:%{public}d, columnIndex:%{public}d, columnName:%{public}s.",
-            status, columnIndex, columnName.c_str());
         return -1;
     }
     return 0;
@@ -242,79 +215,27 @@ int32_t RdbResultSetStub::OnIsAtLastRow(MessageParcel &data, MessageParcel &repl
     return 0;
 }
 
-int32_t RdbResultSetStub::OnGetBlob(MessageParcel &data, MessageParcel &reply)
+int32_t RdbResultSetStub::OnGet(MessageParcel &data, MessageParcel &reply)
 {
     int columnIndex;
     ITypesUtil::Unmarshal(data, columnIndex);
-    std::vector<uint8_t> blob;
-    int status = resultSet_->GetBlob(columnIndex, blob);
-    if (!ITypesUtil::Marshal(reply, status, blob)) {
-        ZLOGE("Write status or blob failed, status:%{public}d, columnIndex:%{public}d.", status, columnIndex);
-        return -1;
-    }
-    return 0;
-}
-
-int32_t RdbResultSetStub::OnGetString(MessageParcel &data, MessageParcel &reply)
-{
-    int columnIndex;
-    ITypesUtil::Unmarshal(data, columnIndex);
-    std::string value;
-    int status = resultSet_->GetString(columnIndex, value);
+    NativeRdb::ValueObject value;
+    int status = resultSet_->Get(columnIndex, value);
     if (!ITypesUtil::Marshal(reply, status, value)) {
-        ZLOGE("Write status or string value failed, status:%{public}d, columnIndex:%{public}d.", status, columnIndex);
+        ZLOGE("status:%{public}d, columnIndex:%{public}d", status, columnIndex);
         return -1;
     }
     return 0;
 }
 
-int32_t RdbResultSetStub::OnGetInt(MessageParcel &data, MessageParcel &reply)
+int32_t RdbResultSetStub::OnGetSize(MessageParcel &data, MessageParcel &reply)
 {
-    int columnIndex;
-    ITypesUtil::Unmarshal(data, columnIndex);
-    int value;
-    int status = resultSet_->GetInt(columnIndex, value);
+    int col;
+    ITypesUtil::Unmarshal(data, col);
+    size_t value = 0;
+    int status = resultSet_->GetSize(col, value);
     if (!ITypesUtil::Marshal(reply, status, value)) {
-        ZLOGE("Write status or int value failed, status:%{public}d, columnIndex:%{public}d", status, columnIndex);
-        return -1;
-    }
-    return 0;
-}
-
-int32_t RdbResultSetStub::OnGetLong(MessageParcel &data, MessageParcel &reply)
-{
-    int columnIndex;
-    ITypesUtil::Unmarshal(data, columnIndex);
-    int64_t value;
-    int status = resultSet_->GetLong(columnIndex, value);
-    if (!ITypesUtil::Marshal(reply, status, value)) {
-        ZLOGE("Write status or long value failed, status:%{public}d, columnIndex:%{public}d", status, columnIndex);
-        return -1;
-    }
-    return 0;
-}
-
-int32_t RdbResultSetStub::OnGetDouble(MessageParcel &data, MessageParcel &reply)
-{
-    int columnIndex;
-    ITypesUtil::Unmarshal(data, columnIndex);
-    double value;
-    int status = resultSet_->GetDouble(columnIndex, value);
-    if (!ITypesUtil::Marshal(reply, status, value)) {
-        ZLOGE("Write status or double value failed, status:%{public}d, columnIndex:%{public}d", status, columnIndex);
-        return -1;
-    }
-    return 0;
-}
-
-int32_t RdbResultSetStub::OnIsColumnNull(MessageParcel &data, MessageParcel &reply)
-{
-    int columnIndex;
-    ITypesUtil::Unmarshal(data, columnIndex);
-    bool isColumnNull;
-    int status = resultSet_->IsColumnNull(columnIndex, isColumnNull);
-    if (!ITypesUtil::Marshal(reply, status, isColumnNull)) {
-        ZLOGE("Write status or isColumnNull failed, status:%{public}d, columnIndex:%{public}d.", status, columnIndex);
+        ZLOGE("failed, status:%{public}d, col:%{public}d, size:%{public}zu", status, col, value);
         return -1;
     }
     return 0;

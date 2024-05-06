@@ -137,6 +137,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
+    saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
     bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&

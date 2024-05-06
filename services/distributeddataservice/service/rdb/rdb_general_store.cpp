@@ -459,12 +459,14 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
               devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode, syncParam.wait);
         return GeneralError::E_ALREADY_CLOSED;
     }
+    auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
     auto status = (syncMode < NEARBY_END)
-                  ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0)
-                  : (syncMode > NEARBY_END && syncMode < CLOUD_END)
-                  ? delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, isPriority, syncParam.isCompensation },
-                      GetDBProcessCB(std::move(async), GetHighMode(static_cast<uint32_t>(syncParam.mode))))
-                  : DistributedDB::INVALID_ARGS;
+                      ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0)
+                  : (syncMode > NEARBY_END && syncMode < CLOUD_END) ? delegate_->Sync(
+                      { devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
+                          syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE },
+                      GetDBProcessCB(std::move(async), highMode))
+                                                                  : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
@@ -547,7 +549,7 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
     if (mode < 0 || mode > CLEAN_MODE_BUTT) {
         return GeneralError::E_INVALID_ARGS;
     }
-    DBStatus status;
+    DBStatus status = DistributedDB::DB_ERROR;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
@@ -657,7 +659,8 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
             async(details);
         }
 
-        if (highMode == AUTO_SYNC_MODE && autoAsync) {
+        if (highMode == AUTO_SYNC_MODE && autoAsync
+            && (details.empty() || details.begin()->second.code != E_SYNC_TASK_MERGED)) {
             autoAsync(details);
         }
     };
@@ -806,6 +809,11 @@ VBuckets RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
         return {};
     }
     return ValueProxy::Convert(std::move(changedData));
+}
+
+std::vector<std::string> RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
+{
+    return {};
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)

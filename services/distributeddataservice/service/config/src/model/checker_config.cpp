@@ -41,6 +41,9 @@ bool CheckerConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(checkers)], checkers);
     SetValue(node[GET_NAME(trusts)], trusts);
     SetValue(node[GET_NAME(distrusts)], distrusts);
+    SetValue(node[GET_NAME(switches)], switches);
+    SetValue(node[GET_NAME(staticStores)], staticStores);
+    SetValue(node[GET_NAME(dynamicStores)], dynamicStores);
     return true;
 }
 
@@ -49,6 +52,29 @@ bool CheckerConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(checkers), checkers);
     GetValue(node, GET_NAME(trusts), trusts);
     GetValue(node, GET_NAME(distrusts), distrusts);
+    GetValue(node, GET_NAME(switches), switches);
+    GetValue(node, GET_NAME(staticStores), staticStores);
+    GetValue(node, GET_NAME(dynamicStores), dynamicStores);
+    return true;
+}
+
+bool CheckerConfig::StaticStore::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(uid)], uid);
+    SetValue(node[GET_NAME(tokenId)], tokenId);
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(storeId)], storeId);
+    SetValue(node[GET_NAME(checker)], checker);
+    return true;
+}
+
+bool CheckerConfig::StaticStore::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(uid), uid);
+    GetValue(node, GET_NAME(tokenId), tokenId);
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    GetValue(node, GET_NAME(storeId), storeId);
+    GetValue(node, GET_NAME(checker), checker);
     return true;
 }
 } // namespace DistributedData
