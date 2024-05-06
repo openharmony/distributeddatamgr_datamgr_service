@@ -80,7 +80,8 @@
                 "samgr",
                 "time_service",
                 "udmf",
-                "app_file_service"
+                "app_file_service",
+                "file_api"
             ],
             "third_party": [
                 "cJSON",
