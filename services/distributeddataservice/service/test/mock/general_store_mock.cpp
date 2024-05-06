@@ -15,7 +15,7 @@
 #include "general_store_mock.h"
 namespace OHOS {
 namespace DistributedData {
-int32_t GeneralStoreMock::Bind(const Database &database, BindInfo bindInfo)
+int32_t GeneralStoreMock::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos)
 {
     return 0;
 }
@@ -131,6 +131,11 @@ int32_t GeneralStoreMock::MergeMigratedData(const std::string &tableName, VBucke
 std::shared_ptr<Cursor> GeneralStoreMock::Query(const std::string &table, const std::string &sql, Values &&args)
 {
     return cursor_;
+}
+
+std::vector<std::string> GeneralStoreMock::GetWaterVersion(const std::string &deviceId)
+{
+    return std::vector<std::string>();
 }
 
 void GeneralStoreMock::MakeCursor(const std::map<std::string, Value> &entry)

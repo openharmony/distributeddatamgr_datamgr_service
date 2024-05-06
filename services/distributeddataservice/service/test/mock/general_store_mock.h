@@ -21,7 +21,7 @@ namespace OHOS {
 namespace DistributedData {
 class GeneralStoreMock : public GeneralStore {
 public:
-    int32_t Bind(const Database &database, BindInfo bindInfo) override;
+    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) override;
     bool IsBound() override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(
@@ -47,6 +47,7 @@ public:
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
+    std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void MakeCursor(const std::map<std::string, Value> &entry);
 
 private:
