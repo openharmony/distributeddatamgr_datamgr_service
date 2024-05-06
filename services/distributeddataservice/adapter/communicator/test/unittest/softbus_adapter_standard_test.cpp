@@ -153,20 +153,19 @@ HWTEST_F(SoftbusAdapterStandardTest, StopWatchDataChange01, TestSize.Level0)
 HWTEST_F(SoftbusAdapterStandardTest, SendData, TestSize.Level1)
 {
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
-    PipeInfo id17;
-    id17.pipeId = "appId";
-    id17.userId = "groupId";
+    PipeInfo id;
+    id.pipeId = "appId";
+    id.userId = "groupId";
     auto secRegister = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id17);
     EXPECT_EQ(Status::SUCCESS, secRegister);
     std::string content = "Helloworlds";
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
-    DeviceId di17 = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
-    Status status = SoftBusAdapter::GetInstance()->SendData(id17, di17, data, 11, { MessageType::DEFAULT });
+    Status status = SoftBusAdapter::GetInstance()->SendData(id, di, data, 11, { MessageType::DEFAULT });
     EXPECT_NE(status, Status::SUCCESS);
-    SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id17);
+    SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -182,13 +181,12 @@ HWTEST_F(SoftbusAdapterStandardTest, GetMtuSize, TestSize.Level1)
     id.pipeId = "appId";
     id.userId = "groupId";
     SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id);
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     auto size = SoftBusAdapter::GetInstance()->GetMtuSize(di);
     EXPECT_EQ(size, 4096);
     SoftBusAdapter::GetInstance()->GetCloseSessionTask();
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -204,12 +202,11 @@ HWTEST_F(SoftbusAdapterStandardTest, GetTimeout, TestSize.Level1)
     id.pipeId = "appId01";
     id.userId = "groupId01";
     SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id);
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     auto time = SoftBusAdapter::GetInstance()->GetTimeout(di);
     EXPECT_EQ(time, DEFAULT_TIMEOUT);
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
 
 /**
@@ -223,7 +220,7 @@ HWTEST_F(SoftbusAdapterStandardTest, IsSameStartedOnPeer, TestSize.Level1)
     PipeInfo id;
     id.pipeId = "appId01";
     id.userId = "groupId01";
-    DeviceId di = {"127.0.0.2"};
+    DeviceId di = {"DeviceId"};
     SoftBusAdapter::GetInstance()->SetMessageTransFlag(id, true);
     auto status = SoftBusAdapter::GetInstance()->IsSameStartedOnPeer(id, di);
     EXPECT_EQ(status, true);
