@@ -174,17 +174,15 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
             ZLOGE("failed, no schema meta:bundleName:%{public}s", bundle.c_str());
             return ERROR;
         }
+        StoreMetaData meta;
+        meta.bundleName = schemaMeta.bundleName;
+        meta.user = std::to_string(cloudInfo.user);
+        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        meta.instanceId = cloudInfo.apps[bundle].instanceId;
         for (const auto &database : schemaMeta.databases) {
             // action
-            StoreMetaData meta;
-            meta.bundleName = schemaMeta.bundleName;
             meta.storeId = database.name;
-            meta.user = std::to_string(cloudInfo.user);
-            meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-            meta.instanceId = cloudInfo.apps[bundle].instanceId;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-                ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                    meta.GetStoreAlias().c_str());
+            if (!GetStoreMetaData(meta)) {
                 continue;
             }
             AutoCache::Store store = SyncManager::GetStore(meta, cloudInfo.user, false);
@@ -202,6 +200,26 @@ int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::stri
         }
     }
     return SUCCESS;
+}
+
+bool CloudServiceImpl::GetStoreMetaData(StoreMetaData &meta)
+{
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+        if (meta.user == "0") {
+            ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
+                  meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
+            return false;
+        }
+        meta.user = "0";
+        StoreMetaDataLocal localMeta;
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) ||
+            !localMeta.isPublic || !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
+                  meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
+            return false;
+        }
+    }
+    return true;
 }
 
 int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::string, int32_t> &actions)
