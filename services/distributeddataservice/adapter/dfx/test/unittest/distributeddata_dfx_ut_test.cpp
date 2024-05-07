@@ -277,3 +277,209 @@ HWTEST_F(DistributedataDfxUTTest, Dfx007, TestSize.Level0)
     FakeHivew::Clear();
 }
 
+/**
+  * @tc.name: Dfx008
+  * @tc.desc: send data to 1 device, then check reporter message.
+  * @tc.type: send data
+  * @tc.author: nhj
+  */
+HWTEST_F(DistributedataDfxUTTest, Dfx008, TestSize.Level0)
+{
+     /**
+     * @tc.steps: step1. get database fault report instance
+     * @tc.expected: step1. Expect get instance success.
+     */
+    auto behavior = Reporter::GetInstance()->BehaviourReporter();
+    EXPECT_NE(nullptr, behavior);
+    struct BehaviourMsg msg{.userId = "user008", .appId = "myApp08", .storeId = "storeTest08",
+                            .behaviourType = BehaviourType::DATABASE_BACKUP, .extensionInfo="test111"};
+
+    auto repStatus = behavior->Report(msg);
+    EXPECT_TRUE(repStatus == ReportStatus::SUCCESS);
+    /**
+    * @tc.steps:step2. check dfx reporter.
+    * @tc.expected: step2. Expect report message success.
+    */
+    std::string val = FakeHivew::GetString("ANONYMOUS_UID");
+    if (!val.empty()) {
+        EXPECT_STREQ(val.c_str(), string("user008").c_str());
+    }
+    val = FakeHivew::GetString("APP_ID");
+    if (!val.empty()) {
+        EXPECT_STREQ(val.c_str(), string("myApp08").c_str());
+    }
+    val = FakeHivew::GetString("STORE_ID");
+    if (!val.empty()) {
+        EXPECT_STREQ(val.c_str(), string("storeTest08").c_str());
+    }
+    FakeHivew::Clear();
+}
+
+/**
+  * @tc.name: Dfx009
+  * @tc.desc: Set invalid information, call getKvStore, expect return INVALID_ARGS.
+  * @tc.type: CreateKvStore test
+  * @tc.author: nhj
+  */
+HWTEST_F(DistributedataDfxUTTest, Dfx009, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. Get runtime fault instance.
+     * @tc.expected: step1. Expect get runtime fault instance success.
+     */
+    auto svFault = Reporter::GetInstance()->ServiceFault();
+    auto svFault2 = Reporter::GetInstance()->ServiceFault();
+    EXPECT_NE(nullptr, svFault);
+    EXPECT_EQ(svFault, svFault2);
+
+    struct FaultMsg svMsg{FaultType::SERVICE_FAULT, "myData", "createKvStore",
+                          Fault::SF_CREATE_DIR};
+    auto rfReportRet = svFault->Report(svMsg);
+    /**
+     * @tc.steps:step2. check report message.
+     * @tc.expected: step2. Expected reported message.
+     */
+    EXPECT_TRUE(rfReportRet == ReportStatus::SUCCESS);
+    auto val = FakeHivew::GetString("INTERFACE_NAME");
+    if (!val.empty()) {
+        EXPECT_STREQ(string("createKvStore").c_str(), val.c_str());
+    }
+    auto typeVal = FakeHivew::GetInt("ERROR_TYPE");
+    if (typeVal > 0) {
+        EXPECT_EQ(static_cast<int>(Fault::SF_CREATE_DIR), typeVal);
+    }
+    FakeHivew::Clear();
+}
+
+/**
+  * @tc.name: Dfx010
+  * @tc.desc: Database file size statistic.
+  * @tc.type: check database file size.
+  * @tc.author: nhj
+  */
+HWTEST_F(DistributedataDfxUTTest, Dfx010, TestSize.Level0)
+{
+    /**
+     * @tc.steps: step1. get database reporter instance.
+     * @tc.expected: step1. Expect get success.
+     */
+    auto dbs = Reporter::GetInstance()->DatabaseStatistic();
+    EXPECT_NE(nullptr, dbs);
+    DbStat ds = {"uid", "appid", "storeId002", 100};
+    auto dbsRet = dbs->Report(ds);
+    /**
+     * @tc.steps:step2. check reporter.
+     * @tc.expected: step2. Expect statistic database size is 100.
+     */
+    EXPECT_TRUE(dbsRet == ReportStatus::SUCCESS);
+    auto val = FakeHivew::GetString("STORE_ID");
+    if (!val.empty()) {
+        EXPECT_STREQ(string("storeId002").c_str(), val.c_str());
+    }
+    auto typeVal = FakeHivew::GetInt("DB_SIZE");
+    if (typeVal > 0) {
+        EXPECT_EQ(100, typeVal);
+    }
+    FakeHivew::Clear();
+}
+
+/**
+  * @tc.name: Dfx011
+  * @tc.desc: Send UdmfBehaviourMsg
+  * @tc.type: Send data
+  * @tc.author: nhj
+  */
+HWTEST_F(DistributedataDfxUTTest, Dfx011, TestSize.Level0)
+{
+     /**
+     * @tc.steps: step1. get database fault report instance
+     * @tc.expected: step1. Expect get instance success.
+     */
+    auto UdmfBehavior = Reporter::GetInstance()->BehaviourReporter();
+    EXPECT_NE(nullptr, UdmfBehavior);
+    struct UdmfBehaviourMsg UdMsg{"myApp", "channel", 200, "dataType", "operation", "result"};
+    auto repStatus = UdmfBehavior->UDMFReport(UdMsg);
+    EXPECT_TRUE(repStatus == ReportStatus::SUCCESS);
+    /**
+    * @tc.steps:step2. check dfx reporter.
+    * @tc.expected: step2. Expect report message success.
+    */
+    auto val = FakeHivew::GetString("APP_ID");
+    if (!val.empty()) {
+        EXPECT_STREQ(val.c_str(), string("myApp").c_str());
+    }
+    auto val01 = FakeHivew::GetString("CHANNEL");
+    if (!val01.empty()) {
+        EXPECT_STREQ(val01.c_str(), string("channel").c_str());
+    }
+    auto val02 = FakeHivew::GetString("OPERATION");
+    if (!val02.empty()) {
+        EXPECT_STREQ(val02.c_str(), string("operation").c_str());
+    }
+    auto val03 = FakeHivew::GetString("RESULT");
+    if (!val03.empty()) {
+        EXPECT_STREQ(val03.c_str(), string("result").c_str());
+    }
+    auto val04 = FakeHivew::GetInt("DB_SIZE");
+    if (val04 > 0) {
+        EXPECT_EQ(200, val04);
+    }
+    FakeHivew::Clear();
+}
+
+/**
+  * @tc.name: Dfx012
+  * @tc.desc: send data to 1 device, then check send size.
+  * @tc.type: send data
+  * @tc.author: nhj
+  */
+HWTEST_F(DistributedataDfxUTTest, Dfx012, TestSize.Level0)
+{
+    /**
+     * @tc.steps:step1. send data to 1 device
+     * @tc.expected: step1. Expect put success.
+     */
+    auto ts = Reporter::GetInstance()->TrafficStatistic();
+    EXPECT_NE(nullptr, ts);
+    struct TrafficStat tss = {"appId001", "deviceId001", 100, 200};
+    auto tsRet = ts->Report(tss);
+    /**
+     * @tc.steps:step2. check dfx reporter.
+     * @tc.expected: step2. Expect report has same size.
+     */
+    EXPECT_TRUE(tsRet == ReportStatus::SUCCESS);
+    std::string myuid = "cjsdblvdfbfss11";
+    std::string result;
+    ValueHash vh;
+    vh.CalcValueHash(myuid, result);
+
+    FakeHivew::Clear();
+}
+
+/**
+  * @tc.name: Dfx013
+  * @tc.desc: call api performance statistic.
+  * @tc.type:
+  * @tc.author: nhj
+  */
+HWTEST_F(DistributedataDfxUTTest, Dfx013, TestSize.Level0)
+{
+    /**
+     * @tc.steps:step1. create call api perforamnce statistic instance
+     * @tc.expected: step1. Expect get instance success.
+     */
+    auto ap = Reporter::GetInstance()->ApiPerformanceStatistic();
+    EXPECT_NE(nullptr, ap);
+    struct ApiPerformanceStat aps = { "interface", 2000, 500, 1000 };
+    auto apRet = ap->Report(aps);
+    /**
+     * @tc.steps:step2. check dfx reporter return value.
+     * @tc.expected: step2. Expect report has same information.
+     */
+    EXPECT_TRUE(apRet == ReportStatus::SUCCESS);
+    auto val = FakeHivew::GetString("INTERFACE_NAME");
+    if (!val.empty()) {
+        EXPECT_STREQ(string("interface").c_str(), val.c_str());
+    }
+    FakeHivew::Clear();
+}

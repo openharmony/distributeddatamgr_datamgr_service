@@ -14,7 +14,6 @@
  */
 
 #include "device_manager_adapter.h"
-
 #include "gtest/gtest.h"
 #include "accesstoken_kit.h"
 #include "executor_pool.h"
@@ -25,7 +24,9 @@ namespace {
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
 using namespace OHOS::DistributedData;
+using namespace OHOS::DistributedHardware;
 using namespace OHOS::Security::AccessToken;
+using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
 class DeviceChangerListener final : public AppDeviceChangeListener {
 public:
     void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override
@@ -363,4 +364,58 @@ HWTEST_F(DeviceManagerAdapterTest, DeviceIdToNetworkIdLocal, TestSize.Level0)
     auto networkIdToNetworkId = DeviceManagerAdapter::GetInstance().ToNetworkID(dvInfo.networkId);
     EXPECT_EQ(networkIdToNetworkId, dvInfo.networkId);
 }
+
+/**
+* @tc.name: StartWatchDeviceChange
+* @tc.desc: start watch device change
+* @tc.type: FUNC
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, StartWatchDeviceChange01, TestSize.Level0)
+{
+    std::shared_ptr<DeviceChangerListener> observer = std::make_shared<DeviceChangerListener>();
+    auto status = DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(observer.get(), {});
+    EXPECT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: GetDeviceInfo
+* @tc.desc: get device info
+* @tc.type: FUNC
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo, TestSize.Level0)
+{
+    auto executors = std::make_shared<OHOS::ExecutorPool>(0, 0);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(EMPTY_DEVICE_ID);
+    EXPECT_TRUE(dvInfo.uuid.empty());
+    EXPECT_TRUE(dvInfo.udid.empty());
+    EXPECT_TRUE(dvInfo.networkId.empty());
+}
+
+/**
+* @tc.name: GetDeviceInfo
+* @tc.desc: get device info, the id is invalid
+* @tc.type: FUNC
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfoInvalidId01, TestSize.Level0)
+{
+    auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(EMPTY_DEVICE_ID);
+    EXPECT_TRUE(dvInfo.uuid.empty());
+}
+
+/**
+* @tc.name: GetOnlineDevices
+* @tc.desc: get Online device
+* @tc.type: FUNC
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetOnlineDevices, TestSize.Level0)
+{
+    auto onInfos = DeviceManagerAdapter::GetInstance().GetOnlineDevices();
+    EXPECT_TRUE(onInfos.empty());
+}
+
 } // namespace

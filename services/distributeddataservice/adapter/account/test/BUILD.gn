@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/test.gni")
-
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/distributeddatafwk"
 
 ###############################################################################
@@ -26,6 +26,11 @@ ohos_unittest("AccountDelegateTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/utils",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
+    "${data_service_path}/adapter/account/src",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
   ]
 
   deps = [
@@ -40,6 +45,9 @@ ohos_unittest("AccountDelegateTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "os_account:libaccountkits",
     "os_account:os_account_innerkits",
   ]

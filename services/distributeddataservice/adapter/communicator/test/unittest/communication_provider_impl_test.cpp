@@ -140,3 +140,243 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider005, TestSize.Level
     delete dataListener17;
     sleep(1); // avoid thread dnet thread died, then will have pthread;
 }
+
+/**
+* @tc.name: CommunicationProvider006
+* @tc.desc:the observer is nullptr
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider006, TestSize.Level1)
+{
+    ZLOGI("begin.");
+    PipeInfo appId;
+    appId.pipeId = "appId06";
+    appId.userId = "groupId06";
+    CommunicationProvider::GetInstance().StartWatchDataChange(nullptr, appId);
+    auto secRegister = CommunicationProvider::GetInstance().StartWatchDataChange(nullptr, appId);
+    EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
+}
+
+/**
+* @tc.name: CommunicationProvider007
+* @tc.desc:the pipeInfo is nullptr
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider007, TestSize.Level1)
+{
+    ZLOGI("begin.");
+    auto secRegister = CommunicationProvider::GetInstance().StartWatchDataChange(nullptr, {});
+    EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
+}
+
+/**
+* @tc.name: CommunicationProvider008
+* @tc.desc:the observer is nullptr
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider008, TestSize.Level1)
+{
+    ZLOGI("begin.");
+    PipeInfo appId;
+    appId.pipeId = "appId06";
+    appId.userId = "groupId06";
+    CommunicationProvider::GetInstance().StopWatchDataChange(nullptr, appId);
+    auto secRegister = CommunicationProvider::GetInstance().StopWatchDataChange(nullptr, appId);
+    EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
+}
+
+/**
+* @tc.name: CommunicationProvider009
+* @tc.desc: the pipeInfo is nullptr
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider009, TestSize.Level1)
+{
+    ZLOGI("begin.");
+    auto secRegister = CommunicationProvider::GetInstance().StopWatchDataChange(nullptr, {});
+    EXPECT_EQ(Status::INVALID_ARGUMENT, secRegister);
+}
+
+/**
+* @tc.name: CommunicationProvider010
+* @tc.desc: Start pipe
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider010, TestSize.Level1)
+{
+    PipeInfo appId;
+    appId.pipeId = "";
+    appId.userId = "groupId";
+    auto status = CommunicationProvider::GetInstance().Start(appId);
+    EXPECT_EQ(Status::INVALID_ARGUMENT, status);
+}
+
+/**
+* @tc.name: CommunicationProvider011
+* @tc.desc: parse sent data
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider011, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo id;
+    id.pipeId = "appId";
+    id.userId = "groupId";
+    CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Start(id);
+    std::string content = "";
+    const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
+    DeviceId di = {"DeviceId"};
+    DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
+    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status, Status::ERROR);
+    CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Stop(id);
+    delete dataListener;
+}
+
+/**
+* @tc.name: CommunicationProvider012
+* @tc.desc: parse sent data
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider012, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo id;
+    id.pipeId = "appId";
+    id.userId = "groupId";
+    CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Start(id);
+    std::string content = "hello";
+    const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
+    DeviceId di = {""};
+    DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
+    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status, Status::ERROR);
+    CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Stop(id);
+    delete dataListener;
+}
+
+/**
+* @tc.name: CommunicationProvider013
+* @tc.desc: parse sent data
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider013, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo id;
+    id.pipeId = "appId";
+    id.userId = "groupId";
+    CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Start(id);
+    DeviceId di = {"DeviceId"};
+    DataInfo data = {nullptr, 0};
+    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status, Status::ERROR);
+    CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Stop(id);
+    delete dataListener;
+}
+
+/**
+* @tc.name: CommunicationProvider014
+* @tc.desc: parse sent data
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider014, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo id;
+    id.pipeId = "";
+    id.userId = "groupId";
+    CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Start(id);
+    std::string content = "hello";
+    const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
+    DeviceId di = {"DeviceId"};
+    DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
+    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status, Status::ERROR);
+    CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Stop(id);
+    delete dataListener;
+}
+
+/**
+* @tc.name: CommunicationProvider015
+* @tc.desc: parse sent data
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider015, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo id;
+    id.pipeId = "";
+    id.userId = "groupId";
+    CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Start(id);
+    DeviceId di = {"DeviceId"};
+    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
+    EXPECT_EQ(status, false);
+    CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Stop(id);
+    delete dataListener;
+}
+
+/**
+* @tc.name: CommunicationProvider016
+* @tc.desc: IsSameStartedOnPeer
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider016, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo id;
+    id.pipeId = "pipeid";
+    id.userId = "userId";
+    CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Start(id);
+    DeviceId di = {""};
+    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
+    EXPECT_EQ(status, false);
+    CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Stop(id);
+    delete dataListener;
+}
+
+/**
+* @tc.name: CommunicationProvider017
+* @tc.desc: SetMessageTransFlag
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(CommunicationProviderImplTest, CommunicationProvider017, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo id;
+    id.pipeId = "pipeid";
+    id.userId = "userId";
+    CommunicationProvider::GetInstance().StartWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Start(id);
+    DeviceId di = {"DeviceId"};
+    auto status = CommunicationProvider::GetInstance().IsSameStartedOnPeer(id, di);
+    EXPECT_EQ(status, false);
+    CommunicationProvider::GetInstance().SetMessageTransFlag(id, true);
+    CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
+    CommunicationProvider::GetInstance().Stop(id);
+    delete dataListener;
+}
