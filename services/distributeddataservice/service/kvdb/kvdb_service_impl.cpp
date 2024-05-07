@@ -24,6 +24,7 @@
 #include "backup_manager.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
+#include "cloud/cloud_server.h"
 #include "communication_provider.h"
 #include "communicator_context.h"
 #include "crypto_manager.h"
@@ -171,7 +172,7 @@ void KVDBServiceImpl::Init()
             }
             meta.user = "0";
             StoreMetaDataLocal localMeta;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true) || !localMeta.isPublic ||
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) || !localMeta.isPublic ||
                 !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
                 ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
                     meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
@@ -267,6 +268,9 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
 
 Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
 {
+    if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+        return Status::CLOUD_DISABLED;
+    }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     DistributedData::StoreInfo storeInfo;
