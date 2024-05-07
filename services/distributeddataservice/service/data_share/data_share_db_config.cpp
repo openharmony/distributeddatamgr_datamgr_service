@@ -41,25 +41,33 @@ std::pair<bool, DistributedData::StoreMetaData> DataShareDbConfig::QueryMetaData
     return std::make_pair(isCreated, metaData);
 }
 
-std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbConfig::GetDbConfig(
-    const std::string &uri, bool hasExtension, const std::string &bundleName, const std::string &storeName,
-    int32_t userId)
+std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(const std::string &uri,
+    const std::string &bundleName, const std::string &storeName, int32_t userId, bool hasExtension)
 {
     auto [success, metaData] = QueryMetaData(bundleName, storeName, userId);
     if (!success) {
         if (!hasExtension) {
-            ZLOGE("DB not exist, bundleName:%{public}s, storeName:%{public}s, userId:%{public}d",
-                bundleName.c_str(), storeName.c_str(), userId);
-            return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, metaData, nullptr);
+            return std::pair(NativeRdb::E_DB_NOT_EXIST, metaData);
         }
         ExtensionConnectAdaptor::TryAndWait(uri, bundleName);
         auto [succ, meta] = QueryMetaData(bundleName, storeName, userId);
         if (!succ) {
-            ZLOGE("Query metaData fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
-                bundleName.c_str(), userId, URIUtils::Anonymous(uri).c_str());
-            return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, meta, nullptr);
+            return std::pair(NativeRdb::E_DB_NOT_EXIST, meta);
         }
         metaData = std::move(meta);
+    }
+    return std::pair(E_OK, metaData);
+}
+
+std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbConfig::GetDbConfig(
+    const std::string &uri, bool hasExtension, const std::string &bundleName, const std::string &storeName,
+    int32_t userId)
+{
+    auto [errCode, metaData] = GetMetaData(uri, bundleName, storeName, userId, hasExtension);
+    if (errCode != E_OK) {
+        ZLOGE("DB not exist,bundleName:%{public}s,storeName:%{public}s,user:%{public}d,err:%{public}d,uri:%{public}s",
+            bundleName.c_str(), storeName.c_str(), userId, errCode, URIUtils::Anonymous(uri).c_str());
+        return std::make_tuple(errCode, metaData, nullptr);
     }
     auto dbDelegate = DBDelegate::Create(metaData);
     if (dbDelegate == nullptr) {

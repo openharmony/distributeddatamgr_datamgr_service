@@ -87,7 +87,7 @@ public:
     virtual void OnConnectDone() = 0;
     virtual void NotifyObserver(const std::string &uri) = 0;
     virtual int32_t EnableSilentProxy(const std::string &uri, bool enable) = 0;
-    virtual bool IsSilentProxyEnable(const std::string &uri) = 0;
+    virtual int32_t IsSilentProxyEnable(const std::string &uri) = 0;
     virtual int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) = 0;
     virtual int32_t UnregisterObserver(const std::string &uri,
         const sptr<OHOS::IRemoteObject> &remoteObj) = 0;

@@ -375,7 +375,7 @@ int32_t DataShareServiceStub::OnRemoteIsSilentProxyEnable(MessageParcel &data, M
         ZLOGE("Unmarshal silent enable failed. uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    bool enable = IsSilentProxyEnable(uri);
+    int32_t enable = IsSilentProxyEnable(uri);
     if (!ITypesUtil::Marshal(reply, enable)) {
         ZLOGE("Marshal enable:%{public}d failed.", enable);
         return IPC_STUB_WRITE_PARCEL_ERR;
