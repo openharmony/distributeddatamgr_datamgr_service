@@ -274,7 +274,7 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = storeId;
-    GenAsync syncCallback = [async, tokenId = storeInfo.tokenId, seqId = option.seqId, this](
+    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](
                              const GenDetails &details) {
         OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
     };
@@ -286,12 +286,12 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
     return SUCCESS;
 }
 
-void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, ProgressDetail &&detail)
+void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail)
 {
-    ZLOGI("tokenId=%{public}x seqnum=%{public}u", tokenId, seqNum);
+    ZLOGI("tokenId=%{public}x seqnum=%{public}" PRIu64, tokenId, seqNum);
     auto [success, agent] = syncAgents_.Find(tokenId);
     if (success && agent.notifier_ != nullptr) {
-        agent.notifier_->OnComplete(seqNum, std::move(result));
+        agent.notifier_->SyncCompleted(seqNum, std::move(detail));
     }
 }
 
@@ -344,7 +344,7 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, cons
 
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId)
 {
-    CloudSync(appId, storeId);
+    CloudSync(appId, storeId, {});
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
@@ -583,8 +583,8 @@ ProgressDetail KVDBServiceImpl::HandleGenDetails(const GenDetails &details)
         return progressDetail;
     }
     auto genTableDetail = tableDetails.begin()->second;
-    auto tableDetail = progressDetail.details;
-    Constant::Copy(&genTableDetail, &tableDetail);
+    auto &tableDetail = progressDetail.details;
+    Constant::Copy(&tableDetail, &genTableDetail);
     return progressDetail;
 }
 

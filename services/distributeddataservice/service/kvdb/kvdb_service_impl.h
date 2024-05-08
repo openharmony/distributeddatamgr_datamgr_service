@@ -135,7 +135,8 @@ private:
     std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     DistributedData::GeneralStore::SyncMode ConvertGeneralSyncMode(SyncMode syncMode, SyncAction syncAction) const;
     DBResult HandleGenBriefDetails(const DistributedData::GenDetails &details);
-    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, ProgressDetail &&detail);
+    ProgressDetail HandleGenDetails(const DistributedData::GenDetails &details);
+    void OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail);
     DistributedData::AutoCache::Watchers GetWatchers(uint32_t tokenId, const std::string &storeId);
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
@@ -144,7 +145,6 @@ private:
     void RegisterHandler();
     void RegisterMatrixChange();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
-    ProgressDetail HandleGenDetails(const DistributedData::GenDetails &details);
     void TryToSync(const StoreMetaData &metaData, bool force = false);
     void SyncOnSessionReady(const std::string &device);
     void OldOnlineSync(const StoreMetaData &data, const std::string &deviceId, RefCount refCount, uint16_t mask);
