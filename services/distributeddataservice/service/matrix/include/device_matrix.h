@@ -41,12 +41,12 @@ public:
         MATRIX_BROADCAST,
         MATRIX_BUTT
     };
-    enum LevelType: int32_t {
+    enum LevelType : int32_t {
         STATICS = 0,
         DYNAMIC,
         BUTT,
     };
-    enum ChangeType: int32_t {
+    enum ChangeType : int32_t {
         CHANGE_LOCAL = 0,
         CHANGE_REMOTE,
         CHANGE_ALL,

@@ -47,6 +47,7 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
+#include "water_version_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -268,21 +269,13 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
 
 Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
 {
-    if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
-        return Status::CLOUD_DISABLED;
-    }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    DistributedData::StoreInfo storeInfo;
-    storeInfo.bundleName = appId.appId;
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    storeInfo.storeName = storeId;
-    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
-        metaData.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
-    auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, nullptr);
-    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
-    EventCenter::GetInstance().PostEvent(std::move(evt));
-    return SUCCESS;
+    if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+        ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        return Status::INVALID_ARGUMENT;
+    }
+    return DoCloudSync(metaData);
 }
 
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
@@ -334,14 +327,27 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, cons
 
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId)
 {
-    CloudSync(appId, storeId);
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    TryToSync(meta, true);
+    DoCloudSync(meta);
+//    TryToSync(meta, true);
+    if (!DeviceMatrix::GetInstance().IsSupportBroadcast()) {
+        TryToSync(meta, true);
+        return SUCCESS;
+    }
+    if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
+        WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
+        DeviceMatrix::GetInstance().OnChanged(meta);
+        return SUCCESS;
+    }
+    if (meta.isAutoSync) {
+        AutoSyncMatrix::GetInstance().OnChanged(meta);
+        TryToSync(meta);
+    }
     return SUCCESS;
 }
 
@@ -1048,6 +1054,23 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenDetails(const GenDetails &de
         dbResults[id] = DBStatus(detail.code);
     }
     return dbResults;
+}
+
+Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta)
+{
+    if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+        return Status::CLOUD_DISABLED;
+    }
+    DistributedData::StoreInfo storeInfo;
+    storeInfo.bundleName = meta.bundleName;
+    storeInfo.user = atoi(meta.user.c_str());
+    storeInfo.storeName = meta.storeId;
+    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
+        meta.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
+    auto info = ChangeEvent::EventInfo(mixMode, 0, meta.isAutoSync, nullptr, nullptr);
+    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return SUCCESS;
 }
 
 Status KVDBServiceImpl::DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type)

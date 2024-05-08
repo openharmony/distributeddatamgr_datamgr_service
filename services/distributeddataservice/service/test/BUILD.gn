@@ -288,6 +288,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "../kvdb/kvdb_general_store.cpp",
     "../rdb/rdb_cloud.cpp",
     "../rdb/rdb_query.cpp",
+    "../waterversion/water_version_manager.cpp",
     "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",

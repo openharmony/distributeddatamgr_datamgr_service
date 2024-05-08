@@ -59,6 +59,7 @@
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "water_version_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -114,6 +115,7 @@ void KvStoreDataService::Initialize()
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
 
+    WaterVersionManager::GetInstance().Init();
     AppDistributedKv::CommunicationProvider::GetInstance();
     PermitDelegate::GetInstance().Init();
     InitSecurityAdapter(executors_);
