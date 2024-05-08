@@ -48,6 +48,7 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnGetSwitch,
     &KVDBServiceStub::OnSubscribeSwitchData,
     &KVDBServiceStub::OnUnsubscribeSwitchData,
+    &KVDBServiceStub::OnClose,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
@@ -165,6 +166,17 @@ int32_t KVDBServiceStub::OnAfterCreate(
 int32_t KVDBServiceStub::OnDelete(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
     int32_t status = Delete(appId, storeId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnClose(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
+{
+    int32_t status = Close(appId, storeId);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());

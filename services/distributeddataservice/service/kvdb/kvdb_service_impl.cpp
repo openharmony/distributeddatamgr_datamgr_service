@@ -266,6 +266,19 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
+Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId)
+{
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    if (metaData.instanceId < 0) {
+        return ILLEGAL_STATE;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    AutoCache::GetInstance().CloseStore(tokenId, storeId);
+    ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
+        Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
+    return SUCCESS;
+}
+
 Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
 {
     if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
