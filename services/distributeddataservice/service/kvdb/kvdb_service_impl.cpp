@@ -265,20 +265,18 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const AsyncDetail &async)
+Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = appId.appId;
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = storeId;
-    GenAsync syncCallback = [async, &storeId, &appId, this](const GenDetails &details) {
-        ZLOGD("Cloud Sync complete, appId:%{public}s, storeId:%{public}s", appId.appId.c_str(),
-              Anonymous::Change(storeId.storeId).c_str());
-        if (async != nullptr) {
-            async(HandleGenDetails(details));
-        }
+    GenAsync syncCallback = [async, tokenId = storeInfo.tokenId, seqId = option.seqId, this](
+                             const GenDetails &details) {
+        OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
     };
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
         metaData.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
@@ -286,6 +284,15 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return SUCCESS;
+}
+
+void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, ProgressDetail &&detail)
+{
+    ZLOGI("tokenId=%{public}x seqnum=%{public}u", tokenId, seqNum);
+    auto [success, agent] = syncAgents_.Find(tokenId);
+    if (success && agent.notifier_ != nullptr) {
+        agent.notifier_->OnComplete(seqNum, std::move(result));
+    }
 }
 
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)

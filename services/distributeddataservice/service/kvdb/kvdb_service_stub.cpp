@@ -193,12 +193,16 @@ int32_t KVDBServiceStub::OnSync(const AppId &appId, const StoreId &storeId, Mess
 int32_t KVDBServiceStub::OnCloudSync(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    ProgressDetail detail;
-    int32_t status = CloudSync(appId, storeId, [&detail](ProgressDetail &&progressDetail) {
-        detail = std::move(progressDetail);
-    });
-    if (!ITypesUtil::Marshal(reply, status, detail)) {
-        ZLOGE("Marshal status:0x%{public}x, detail code:%{public}d", status, detail.code);
+    SyncInfo syncInfo;
+    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = CloudSync(appId, storeId, syncInfo);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
