@@ -85,7 +85,7 @@ public:
     std::map<std::string, uint16_t> GetRemoteDynamicMask();
     bool IsDynamic(const StoreMetaData &metaData);
     bool IsStatics(const StoreMetaData &metaData);
-    bool IsSupportBroadcast();
+    bool IsSupportMatrix();
 
 private:
     static constexpr uint32_t RESET_MASK_DELAY = 10; // min

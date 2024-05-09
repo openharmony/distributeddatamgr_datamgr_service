@@ -720,7 +720,7 @@ bool DeviceMatrix::DataLevel::IsValid() const
         switches == INVALID_VALUE && switchesLen == INVALID_LENGTH);
 }
 
-bool DeviceMatrix::IsSupportBroadcast()
+bool DeviceMatrix::IsSupportMatrix()
 {
     return isSupportBroadcast_;
 }
