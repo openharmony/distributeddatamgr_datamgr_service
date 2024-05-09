@@ -22,17 +22,26 @@ config("module_private_config") {
 
   include_dirs = [
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
-    "../bootstrap/include/",
-    "../config/include/",
-    "../crypto/include/",
-    "../directory/include/",
-    "../kvdb/",
-    "../matrix/include/",
-    "../common/",
-    "../rdb/",
-    "../object/",
-    "../../framework/include/",
-    "../cloud/",
+    "${data_service_path}/service/bootstrap/include/",
+    "${data_service_path}/service/config/include/",
+    "${data_service_path}/service/directory/include/",
+    "${data_service_path}/service/matrix/include/",
+    "${data_service_path}/service/common/",
+    "${data_service_path}/service/rdb/",
+    "${data_service_path}/service/object/",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/data_share/common",
+    "${data_service_path}/service/data_share/data",
+    "${data_service_path}/service/data_share/strategies",
+    "${data_service_path}/service/data_share/subscriber_managers",
+    "${data_service_path}/service/data_share",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/permission/include",
+
+    "${data_service_path}/service/cloud/",
     "${dataobject_path}/interfaces/innerkits",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
   ]
@@ -363,6 +372,46 @@ ohos_unittest("RdbResultSetImplTest") {
   ]
 }
 
+ohos_unittest("RdbServiceTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/rdb/cache_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "rdb_asset_loader_test.cpp",
+    "rdb_cache_cursor_test.cpp",
+  ]
+
+  include_dirs = [
+    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
+    "${relational_store_path}/interfaces/inner_api/rdb/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${kv_store_distributeddb_path}:distributeddb",
+    "//third_party/googletest:gmock_main",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ohos_unittest("CacheCursorTest") {
   module_out_path = module_output_path
   sources = [
@@ -589,17 +638,6 @@ ohos_unittest("DataShareServiceImplTest") {
   module_out_path = module_output_path
 
   include_dirs = [
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/app/src",
-    "${data_service_path}/framework/include",
-    "${data_service_path}/service/crypto/include",
-    "${data_service_path}/service/data_share/common",
-    "${data_service_path}/service/data_share/data",
-    "${data_service_path}/service/data_share/strategies",
-    "${data_service_path}/service/data_share/subscriber_managers",
-    "${data_service_path}/service/data_share",
-    "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/permission/include",
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
@@ -767,6 +805,7 @@ group("unittest") {
     ":MetaDataTest",
     ":ObjectAssetMachineTest",
     ":RdbResultSetImplTest",
+    ":RdbServiceTest",
     ":UdmfRunTimeStoreTest",
     ":ValueProxyTest",
     ":WaterVersionManagerTest",
