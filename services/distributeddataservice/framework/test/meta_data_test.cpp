@@ -17,7 +17,6 @@
 #include "utils/constant.h"
 #include <nlohmann/json.hpp>
 #include "bootstrap.h"
-#include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/corrupted_meta_data.h"
@@ -35,7 +34,6 @@ using namespace testing::ext;
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 namespace OHOS::Test {
 class ServiceMetaDataTest : public testing::Test {
 public:
@@ -53,7 +51,6 @@ public:
         KvStoreMetaManager::GetInstance().BindExecutor(executors);
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
-        DmAdapter::GetInstance().Init(executors);
     }
     static void TearDownTestCase(void) {};
     void SetUp() {};
@@ -514,6 +511,25 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData007, TestSize.Level1)
 }
 
 /**
+* @tc.name: GetStoreInfo
+* @tc.desc: test StoreMetaData GetStoreInfo function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceMetaDataTest, GetStoreInfo, TestSize.Level1)
+{
+    StoreMetaData storeMetaData("100", "appid", "test_store");
+    storeMetaData.version = TEST_CURRENT_VERSION;
+    storeMetaData.instanceId = 1;
+
+    auto result = storeMetaData.GetStoreInfo();
+    EXPECT_EQ(result.instanceId, storeMetaData.instanceId);
+    EXPECT_EQ(result.bundleName, storeMetaData.bundleName);
+    EXPECT_EQ(result.storeName, storeMetaData.storeId);
+}
+
+/**
 * @tc.name: StrategyMeta001
 * @tc.desc:
 * @tc.type: FUNC
@@ -522,7 +538,7 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData007, TestSize.Level1)
 */
 HWTEST_F(ServiceMetaDataTest, StrategyMeta001, TestSize.Level1)
 {
-    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    auto deviceId = "deviceId";
     StrategyMeta strategyMeta(deviceId, "100", "ohos.test.demo", "test_store");
     std::vector<std::string> local = {"local1"};
     std::vector<std::string> remote = {"remote1"};
@@ -534,10 +550,10 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta001, TestSize.Level1)
     StrategyMeta strategyMetaData(deviceId, "200", "ohos.test.test", "test_stores");
 
     std::string key = strategyMeta.GetKey();
-    EXPECT_EQ(key, "StrategyMetaData######100###default###ohos.test.demo###test_store");
+    EXPECT_EQ(key, "StrategyMetaData###deviceId###100###default###ohos.test.demo###test_store");
     std::initializer_list<std::string> fields = { deviceId, "100", "default", "ohos.test.demo", "test_store" };
     std::string prefix = strategyMeta.GetPrefix(fields);
-    EXPECT_EQ(prefix, "StrategyMetaData######100###default###ohos.test.demo###test_store");
+    EXPECT_EQ(prefix, "StrategyMetaData###deviceId###100###default###ohos.test.demo###test_store");
 
     result = MetaDataManager::GetInstance().SaveMeta(key, strategyMeta, true);
     EXPECT_TRUE(result);
@@ -569,7 +585,7 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta001, TestSize.Level1)
 */
 HWTEST_F(ServiceMetaDataTest, StrategyMeta002, TestSize.Level1)
 {
-    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    auto deviceId = "deviceId";
     StrategyMeta strategyMeta(deviceId, "100", "ohos.test.demo", "test_store");
     std::vector<std::string> local = {"local1"};
     std::vector<std::string> remote = {"remote1"};
@@ -582,7 +598,7 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta002, TestSize.Level1)
     StrategyMeta strategyMetaData(deviceId, "200", "ohos.test.test", "test_stores");
 
     std::string key = strategyMeta.GetKey();
-    EXPECT_EQ(key, "StrategyMetaData######100###default###ohos.test.demo###test_store###1");
+    EXPECT_EQ(key, "StrategyMetaData###deviceId###100###default###ohos.test.demo###test_store###1");
 
     result = MetaDataManager::GetInstance().SaveMeta(key, strategyMeta, true);
     EXPECT_TRUE(result);
@@ -706,5 +722,30 @@ HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
     UserMetaRow userMetaRow;
     auto key = userMetaRow.GetKeyFor(userMetaData.deviceId);
     EXPECT_EQ(key, "UserMeta###PEER_DEVICE_ID");
+}
+
+/**
+* @tc.name: CapabilityRange
+* @tc.desc: test CapabilityRange function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceMetaDataTest, CapabilityRange, TestSize.Level1)
+{
+    CapabilityRange capabilityRange;
+    std::vector<std::string> local = {"local1"};
+    std::vector<std::string> remote = {"remote1"};
+    capabilityRange.localLabel = local;
+    capabilityRange.remoteLabel = remote;
+    Serializable::json node1;
+    capabilityRange.Marshal(node1);
+    EXPECT_EQ(node1["localLabel"], local);
+    EXPECT_EQ(node1["remoteLabel"], remote);
+
+    CapabilityRange capRange;
+    capRange.Unmarshal(node1);
+    EXPECT_EQ(capRange.localLabel, local);
+    EXPECT_EQ(capRange.remoteLabel, remote);
 }
 } // namespace OHOS::Test
