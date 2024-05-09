@@ -30,7 +30,6 @@ ohos_static_library("distributeddata_checker_static") {
   include_dirs = [
     "${kv_store_common_path}",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
   ]
 
   if (build_public_version) {
@@ -48,6 +47,7 @@ ohos_static_library("distributeddata_checker_static") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
