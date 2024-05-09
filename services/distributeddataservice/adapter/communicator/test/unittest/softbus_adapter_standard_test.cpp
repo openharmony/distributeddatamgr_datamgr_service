@@ -55,13 +55,13 @@ public:
     void TearDown() {}
 
 protected:
-    static const std::string INVALID_DEVICE_ID;
-    static const std::string EMPTY_DEVICE_ID;
-    uint32_t DEFAULT_MTU_SIZE = 4096u;
-    uint32_t DEFAULT_TIMEOUT = 30 * 1000;
+    static const std::string invalidDeviceId;
+    static const std::string emptyDeviceId;
+    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096 * 1024u;
+    static constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
 };
-const std::string SoftbusAdapterStandardTest::INVALID_DEVICE_ID = "1234567890";
-const std::string SoftbusAdapterStandardTest::EMPTY_DEVICE_ID = "";
+const std::string SoftbusAdapterStandardTest::invalidDeviceId = "1234567890";
+const std::string SoftbusAdapterStandardTest::emptyDeviceId = "";
 
 /**
 * @tc.name: StartWatchDeviceChange
@@ -183,7 +183,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetMtuSize, TestSize.Level1)
     SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id);
     DeviceId di = {"DeviceId"};
     auto size = SoftBusAdapter::GetInstance()->GetMtuSize(di);
-    EXPECT_EQ(size, 4096);
+    EXPECT_EQ(size, DEFAULT_MTU_SIZE);
     SoftBusAdapter::GetInstance()->GetCloseSessionTask();
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
