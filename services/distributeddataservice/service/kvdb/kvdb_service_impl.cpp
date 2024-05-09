@@ -441,7 +441,9 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
             continue;
         }
         bool changed = ((mask & code) == code);
-        clientMask.insert_or_assign(networkId, changed);
+        if (changed) {
+            clientMask.insert_or_assign(networkId, changed);
+        }
     }
     notifier->OnRemoteChange(std::move(clientMask));
     return Status::SUCCESS;
