@@ -60,7 +60,8 @@ HWTEST_F(RdbAssetLoaderTest, Download, TestSize.Level0)
     std::string groupId = "testGroup";
     Type prefix;
     std::map<std::string, DistributedDB::Assets> assets;
-    EXPECT_CALL(*cloudAssetLoader, Download(tableName, groupId, _, _)).WillRepeatedly(testing::Return(GeneralError::E_OK));
+    EXPECT_CALL(*cloudAssetLoader,
+        Download(tableName, groupId, _, _)).WillRepeatedly(testing::Return(GeneralError::E_OK));
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::OK);
 }
