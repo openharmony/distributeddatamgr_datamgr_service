@@ -221,7 +221,7 @@ HWTEST_F(AutoSyncMatrixTest, AutoSyncMatrixDeleteMeta, TestSize.Level0)
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     auto metas2 = AutoSyncMatrix::GetInstance().GetChangedStore(TEST_DEVICE);
     ASSERT_GE(metas2.size(), metas1.size() -1);
-    for (auto meta : meta2) {
+    for (auto meta : metas2) {
         ASSERT_NE(metaData_.GetKey(), meta.GetKey());
     }
 }
