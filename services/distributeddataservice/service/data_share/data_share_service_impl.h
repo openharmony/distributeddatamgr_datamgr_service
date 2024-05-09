@@ -82,7 +82,7 @@ public:
     void DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     int32_t OnInitialize() override;
     int32_t EnableSilentProxy(const std::string &uri, bool enable) override;
-    int32_t IsSilentProxyEnable(const std::string &uri) override;
+    int32_t IsSilentProxyEnable(const std::string &uri, bool isCreateHelper = true) override;
     int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
     int32_t UnregisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
 

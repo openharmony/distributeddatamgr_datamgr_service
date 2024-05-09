@@ -63,7 +63,7 @@ DataShareServiceImpl::Factory::~Factory() {}
 int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Insert enter.");
-    if (!IsSilentProxyEnable(uri)) {
+    if (IsSilentProxyEnable(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
@@ -99,7 +99,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
     const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Update enter.");
-    if (!IsSilentProxyEnable(uri)) {
+    if (IsSilentProxyEnable(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
@@ -117,7 +117,7 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
 
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
 {
-    if (!IsSilentProxyEnable(uri)) {
+    if (IsSilentProxyEnable(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
@@ -137,7 +137,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
     ZLOGD("Query enter.");
-    if (!IsSilentProxyEnable(uri)) {
+    if (IsSilentProxyEnable(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return nullptr;
     }
@@ -626,14 +626,16 @@ int32_t DataShareServiceImpl::EnableSilentProxy(const std::string &uri, bool ena
     return E_OK;
 }
 
-int32_t DataShareServiceImpl::IsSilentProxyEnable(const std::string &uri)
+int32_t DataShareServiceImpl::IsSilentProxyEnable(const std::string &uri, bool isCreateHelper)
 {
     uint32_t callerTokenId = IPCSkeleton::GetCallingTokenID();
-    auto errCode = IsBMSAndMetaDataReady(uri, callerTokenId);
-    if (errCode != E_OK) {
-        ZLOGE("BMS or metaData not ready to complete, token:0x%{public}x, uri:%{public}s",
-            callerTokenId, URIUtils::Anonymous(uri).c_str());
-        return errCode;
+    if (isCreateHelper) {
+        auto errCode = IsBMSAndMetaDataReady(uri, callerTokenId);
+        if (errCode != E_OK) {
+            ZLOGE("BMS or metaData not ready to complete, token:0x%{public}x, uri:%{public}s",
+                callerTokenId, URIUtils::Anonymous(uri).c_str());
+            return errCode;
+        }
     }
     int32_t currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     UriInfo uriInfo;
@@ -760,7 +762,7 @@ int32_t DataShareServiceImpl::IsBMSAndMetaDataReady(const std::string &uri, cons
         ZLOGE("Get metaData fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             calledInfo.bundleName.c_str(), calledInfo.tableName.c_str(), tokenId,
             URIUtils::Anonymous(calledInfo.uri).c_str());
-        return E_MATADATA_NOT_EXISTS;
+        return E_METADATA_NOT_EXISTS;
     }
     return E_OK;
 }
