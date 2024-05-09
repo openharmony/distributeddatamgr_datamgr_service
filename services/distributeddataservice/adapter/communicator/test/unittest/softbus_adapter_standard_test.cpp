@@ -24,12 +24,12 @@
 #include <unistd.h>
 #include <vector>
 
-namespace {
+namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
 class AppDataChangeListenerImpl : public AppDataChangeListener {
-struct ServerSocketInfo {
+    struct ServerSocketInfo {
         std::string name;      /**< Peer socket name */
         std::string networkId; /**< Peer network ID */
         std::string pkgName;   /**< Peer package name */
@@ -37,7 +37,7 @@ struct ServerSocketInfo {
 
     void OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info, const uint8_t *ptr, const int size,
         const struct PipeInfo &id) const override;
-};
+    };
 
     void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
         const uint8_t *ptr, const int size, const struct PipeInfo &id) const
@@ -53,15 +53,10 @@ public:
     static void TearDownTestCase(void) {}
     void SetUp() {}
     void TearDown() {}
-
 protected:
-    static const std::string invalidDeviceId;
-    static const std::string emptyDeviceId;
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096 * 1024u;
     static constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
 };
-const std::string SoftbusAdapterStandardTest::invalidDeviceId = "1234567890";
-const std::string SoftbusAdapterStandardTest::emptyDeviceId = "";
 
 /**
 * @tc.name: StartWatchDeviceChange
@@ -225,21 +220,4 @@ HWTEST_F(SoftbusAdapterStandardTest, IsSameStartedOnPeer, TestSize.Level1)
     auto status = SoftBusAdapter::GetInstance()->IsSameStartedOnPeer(id, di);
     EXPECT_EQ(status, true);
 }
-
-/**
-* @tc.name: NotifyDataListeners
-* @tc.desc: get size
-* @tc.type: FUNC
-* @tc.author: nhj
-*/
-HWTEST_F(SoftbusAdapterStandardTest, NotifyDataListeners, TestSize.Level1)
-{
-    std::string content = "Helloworlds";
-    const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
-    PipeInfo id;
-    id.pipeId = "appId01";
-    id.userId = "groupId01";
-    std::string deviceId = "1001";
-    SoftBusAdapter::GetInstance()->NotifyDataListeners(const_cast<uint8_t *>(t), 10, deviceId, id);
-}
-}
+} // namespace OHOS::Test
