@@ -16,6 +16,7 @@
 #include "device_matrix.h"
 
 #include "bootstrap.h"
+#include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -77,6 +78,16 @@ DeviceMatrix::~DeviceMatrix()
 
 bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
 {
+    auto stores = CheckerManager::GetInstance().GetDynamicStores();
+    dynamicApps_.clear();
+    for (auto &store : stores) {
+        dynamicApps_.push_back(std::move(store.bundleName));
+    }
+    stores = CheckerManager::GetInstance().GetStaticStores();
+    staticsApps_.clear();
+    for (auto &store : stores) {
+        staticsApps_.push_back(std::move(store.bundleName));
+    }
     auto pipe = Bootstrap::GetInstance().GetProcessLabel() + "-" + "default";
     auto status = Commu::GetInstance().Broadcast(
         { pipe }, { INVALID_LEVEL, INVALID_LEVEL, INVALID_VALUE, INVALID_LENGTH });

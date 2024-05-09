@@ -21,7 +21,9 @@
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include "gtest/gtest.h"
+#include "metadata/matrix_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "mock/checker_mock.h"
 #include "mock/db_store_mock.h"
 #include "nativetoken_kit.h"
 #include "serializable/serializable.h"
@@ -57,7 +59,7 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static WaterVersionMetaData dynamicMeta_;
     static WaterVersionMetaData staticMeta_;
-    static TestChecker instance_;
+    static CheckerMock instance_;
 };
 
 void WaterVersionManagerTest::GrantPermissionNative()
@@ -80,95 +82,7 @@ void WaterVersionManagerTest::GrantPermissionNative()
     AccessTokenKit::ReloadNativeTokenInfo();
     delete[] perms;
 }
-
-class TestChecker : public CheckerManager::Checker {
-public:
-    TestChecker() noexcept
-    {
-        CheckerManager::GetInstance().RegisterPlugin(
-            "SystemChecker", [this]() -> auto { return this; });
-    }
-    ~TestChecker() {}
-    void Initialize() override
-    {
-        staticInfos_.clear();
-        dynamicInfos_.clear();
-        for (auto &it : staticStores_) {
-            staticInfos_.push_back({ 0, 0, it.first, it.second });
-        }
-        for (auto &it : dynamicStores_) {
-            dynamicInfos_.push_back({ 0, 0, it.first, it.second });
-        }
-    }
-    bool SetTrustInfo(const CheckerManager::Trust &trust) override
-    {
-        return true;
-    }
-    std::string GetAppId(const CheckerManager::StoreInfo &info) override
-    {
-        return info.bundleName;
-    }
-    bool IsValid(const CheckerManager::StoreInfo &info) override
-    {
-        return true;
-    }
-    bool SetDistrustInfo(const CheckerManager::Distrust &distrust) override
-    {
-        return true;
-    };
-
-    bool IsDistrust(const CheckerManager::StoreInfo &info) override
-    {
-        return true;
-    }
-    vector<CheckerManager::StoreInfo> GetDynamicStores() override
-    {
-        return dynamicInfos_;
-    }
-    vector<CheckerManager::StoreInfo> GetStaticStores() override
-    {
-        return staticInfos_;
-    }
-    bool IsDynamic(const CheckerManager::StoreInfo &info) override
-    {
-        for (const auto &store : dynamicInfos_) {
-            if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool IsStatic(const CheckerManager::StoreInfo &info) override
-    {
-        for (const auto &store : staticInfos_) {
-            if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool AddDynamicStore(const CheckerManager::StoreInfo &storeInfo) override
-    {
-        return false;
-    }
-    bool AddStaticStore(const CheckerManager::StoreInfo &storeInfo) override
-    {
-        return false;
-    }
-    bool IsSwitches(const CheckerManager::StoreInfo &info) override
-    {
-        return false;
-    }
-    bool SetSwitchesInfo(const CheckerManager::Switches &switches) override
-    {
-        return true;
-    }
-
-private:
-    vector<CheckerManager::StoreInfo> dynamicInfos_;
-    vector<CheckerManager::StoreInfo> staticInfos_;
-};
-TestChecker WaterVersionManagerTest::instance_;
+CheckerMock WaterVersionManagerTest::instance_;
 std::shared_ptr<DBStoreMock> WaterVersionManagerTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 WaterVersionMetaData WaterVersionManagerTest::staticMeta_;
 WaterVersionMetaData WaterVersionManagerTest::dynamicMeta_;
@@ -179,6 +93,16 @@ void WaterVersionManagerTest::SetUpTestCase(void)
     DeviceManagerAdapter::GetInstance().Init(std::make_shared<OHOS::ExecutorPool>(max, min));
     GrantPermissionNative();
     Bootstrap::GetInstance().LoadCheckers();
+    std::vector<CheckerManager::StoreInfo> dynamicStores;
+    for (auto &[bundle, store] : dynamicStores_) {
+        dynamicStores.push_back({ 0, 0, bundle, store });
+        instance_.SetDynamic(dynamicStores);
+    }
+    std::vector<CheckerManager::StoreInfo> staticStores;
+    for (auto &[bundle, store] : staticStores_) {
+        staticStores.push_back({ 0, 0, bundle, store });
+        instance_.SetStatic(staticStores);
+    }
     WaterVersionManager::GetInstance().Init();
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
 
@@ -213,6 +137,9 @@ void WaterVersionManagerTest::TearDown()
     WvManager::GetInstance().DelWaterVersion(DMAdapter::GetInstance().GetLocalDevice().uuid);
     MetaDataManager::GetInstance().DelMeta(staticMeta_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(dynamicMeta_.GetKey(), true);
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    MetaDataManager::GetInstance().DelMeta(matrixMetaData.GetKey(), true);
 }
 
 void WaterVersionManagerTest::InitMetaData()
@@ -412,6 +339,12 @@ HWTEST_F(WaterVersionManagerTest, GenerateWaterVersionTest1, TestSize.Level0)
     waterVersion = WvManager::GetInstance().GenerateWaterVersion(staticStores_[0].first, staticStores_[0].second);
     ASSERT_TRUE(Serializable::Unmarshall(waterVersion, meta)) << "waterVersion: " << waterVersion;
     EXPECT_EQ(meta.waterVersion, 3) << "waterVersion: " << waterVersion;
+
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    auto key = matrixMetaData.GetKey();
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(key, matrixMetaData, true));
+    EXPECT_EQ(matrixMetaData.statics & 0xFFF0, 3 << 4);
 }
 
 /**
@@ -435,6 +368,12 @@ HWTEST_F(WaterVersionManagerTest, GenerateWaterVersionTest2, TestSize.Level0)
     auto [success, version] =
         WvManager::GetInstance().GetVersion(DMAdapter::GetInstance().GetLocalDevice().uuid, WvManager::DYNAMIC);
     EXPECT_EQ(version, 10);
+
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    auto key = matrixMetaData.GetKey();
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(key, matrixMetaData, true));
+    EXPECT_EQ(matrixMetaData.dynamic & 0xFFF0, version << 4);
 }
 
 /**

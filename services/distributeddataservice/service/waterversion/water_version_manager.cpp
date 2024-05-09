@@ -158,10 +158,12 @@ bool WaterVersionManager::SetWaterVersion(const std::string &bundleName, const s
     const std::string &waterVersion)
 {
     WaterVersionMetaData metaData;
-    if (!Serializable::Unmarshall(waterVersion, metaData) || metaData.deviceId.empty() || !metaData.IsValid() ||
-        metaData.deviceId == DMAdapter::GetInstance().GetLocalDevice().uuid) {
+    if (!Serializable::Unmarshall(waterVersion, metaData) || metaData.deviceId.empty() || !metaData.IsValid()) {
         ZLOGE("invalid args. meta:%{public}s, bundleName:%{public}s, storeName:%{public}s",
             metaData.ToAnonymousString().c_str(), bundleName.c_str(), Anonymous::Change(storeName).c_str());
+        return false;
+    }
+    if (metaData.deviceId == DMAdapter::GetInstance().GetLocalDevice().uuid) {
         return false;
     }
     return waterVersions_[metaData.type].SetWaterVersion(Merge(bundleName, storeName), metaData);
@@ -231,8 +233,10 @@ void WaterVersionManager::UpdateWaterVersion(WaterVersionMetaData &metaData)
     }
     if (isUpdated) {
         SaveMatrix(metaData);
+        ZLOGI("after update meta:%{public}s", metaData.ToAnonymousString().c_str());
+    } else {
+        ZLOGD("after update meta:%{public}s", metaData.ToAnonymousString().c_str());
     }
-    ZLOGI("after update meta:%{public}s", metaData.ToAnonymousString().c_str());
 }
 
 std::string WaterVersionManager::Merge(const std::string &bundleName, const std::string &storeName)
@@ -302,7 +306,7 @@ void WaterVersionManager::SaveMatrix(const WaterVersionMetaData &metaData)
     auto key = matrixMetaData.deviceId == localUuid ? matrixMetaData.GetKey()
                                                     : matrixMetaData.GetConsistentKey();
     MetaDataManager::GetInstance().LoadMeta(key, matrixMetaData);
-    uint16_t version = (metaData.version & 0xFFF) << 4;
+    uint16_t version = (metaData.waterVersion & 0xFFF) << 4;
     if (metaData.type == STATIC && version > (matrixMetaData.statics & 0xFFF0)) {
         matrixMetaData.statics = version | (matrixMetaData.statics & 0xF);
     } else if (metaData.type == DYNAMIC && version > (matrixMetaData.dynamic & 0xFFF0)) {
