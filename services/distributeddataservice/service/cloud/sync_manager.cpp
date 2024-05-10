@@ -91,7 +91,7 @@ void SyncManager::SyncInfo::SetError(int32_t code) const
     if (async_) {
         GenDetails details;
         auto &detail = details[id_];
-        detail.progress = SYNC_FINISH;
+        detail.progress = GenProgress::SYNC_FINISH;
         detail.code = code;
         async_(std::move(details));
     }
@@ -298,7 +298,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         GenAsync async = evt.GetAsyncDetail();
         GenDetails details;
         auto &detail = details[SyncInfo::DEFAULT_ID];
-        detail.progress = SYNC_FINISH;
+        detail.progress = GenProgress::SYNC_FINISH;
         StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {

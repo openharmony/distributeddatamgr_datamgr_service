@@ -85,7 +85,8 @@ private:
     static GenErr ConvertStatus(DBStatus status);
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
-    DBStatus CloudSync(const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, int64_t wait);
+    DBStatus CloudSync(
+        const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait);
     void InitWaterVersion(const StoreMetaData &meta);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:

@@ -67,6 +67,16 @@ void KVDBNotifierProxy::SyncCompleted(const std::map<std::string, Status> &resul
     }
 }
 
+void KVDBNotifierProxy::SyncCompleted(uint64_t seqNum, ProgressDetail &&detail)
+{
+    MessageParcel reply;
+    int32_t status =
+        IPC_SEND(static_cast<uint32_t>(KVDBNotifierCode::TRANS_CLOUD_SYNC_COMPLETED), reply, seqNum, detail);
+    if (status != SUCCESS) {
+        ZLOGE("status:%{public}d, sequenceId:%{public}" PRIu64, status, seqNum);
+    }
+}
+
 void KVDBNotifierProxy::OnRemoteChange(const std::map<std::string, bool> &mask)
 {
     MessageParcel reply;

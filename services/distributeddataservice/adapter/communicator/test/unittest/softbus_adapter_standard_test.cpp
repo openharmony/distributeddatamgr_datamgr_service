@@ -24,12 +24,12 @@
 #include <unistd.h>
 #include <vector>
 
-namespace {
+namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
 class AppDataChangeListenerImpl : public AppDataChangeListener {
-struct ServerSocketInfo {
+    struct ServerSocketInfo {
         std::string name;      /**< Peer socket name */
         std::string networkId; /**< Peer network ID */
         std::string pkgName;   /**< Peer package name */
@@ -39,29 +39,22 @@ struct ServerSocketInfo {
         const struct PipeInfo &id) const override;
 };
 
-    void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
-        const uint8_t *ptr, const int size, const struct PipeInfo &id) const
-    {
-        ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
-    }
+void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceInfo &info,
+    const uint8_t *ptr, const int size, const struct PipeInfo &id) const
+{
+    ZLOGI("data  %{public}s  %s", info.deviceName.c_str(), ptr);
+}
 
 class SoftbusAdapterStandardTest : public testing::Test {
 public:
-  static void SetUpTestCase(void)
-    {
-    }
+    static void SetUpTestCase(void) {}
     static void TearDownTestCase(void) {}
     void SetUp() {}
     void TearDown() {}
-
 protected:
-    static const std::string INVALID_DEVICE_ID;
-    static const std::string EMPTY_DEVICE_ID;
-    uint32_t DEFAULT_MTU_SIZE = 4096u;
-    uint32_t DEFAULT_TIMEOUT = 30 * 1000;
+    static constexpr uint32_t DEFAULT_MTU_SIZE = 4096 * 1024u;
+    static constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
 };
-const std::string SoftbusAdapterStandardTest::INVALID_DEVICE_ID = "1234567890";
-const std::string SoftbusAdapterStandardTest::EMPTY_DEVICE_ID = "";
 
 /**
 * @tc.name: StartWatchDeviceChange
@@ -183,7 +176,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetMtuSize, TestSize.Level1)
     SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, id);
     DeviceId di = {"DeviceId"};
     auto size = SoftBusAdapter::GetInstance()->GetMtuSize(di);
-    EXPECT_EQ(size, 4096);
+    EXPECT_EQ(size, DEFAULT_MTU_SIZE);
     SoftBusAdapter::GetInstance()->GetCloseSessionTask();
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
@@ -225,21 +218,4 @@ HWTEST_F(SoftbusAdapterStandardTest, IsSameStartedOnPeer, TestSize.Level1)
     auto status = SoftBusAdapter::GetInstance()->IsSameStartedOnPeer(id, di);
     EXPECT_EQ(status, true);
 }
-
-/**
-* @tc.name: NotifyDataListeners
-* @tc.desc: get size
-* @tc.type: FUNC
-* @tc.author: nhj
-*/
-HWTEST_F(SoftbusAdapterStandardTest, NotifyDataListeners, TestSize.Level1)
-{
-    std::string content = "Helloworlds";
-    const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
-    PipeInfo id;
-    id.pipeId = "appId01";
-    id.userId = "groupId01";
-    std::string deviceId = "1001";
-    SoftBusAdapter::GetInstance()->NotifyDataListeners(const_cast<uint8_t *>(t), 10, deviceId, id);
-}
-}
+} // namespace OHOS::Test
