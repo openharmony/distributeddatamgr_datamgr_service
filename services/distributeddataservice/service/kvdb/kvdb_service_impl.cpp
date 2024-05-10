@@ -266,7 +266,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
+Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
     if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
         return Status::CLOUD_DISABLED;
@@ -275,14 +275,28 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId)
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = appId.appId;
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = storeId;
+    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](
+                             const GenDetails &details) {
+        OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
+    };
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
         metaData.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
-    auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, nullptr);
+    auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, syncCallback);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return SUCCESS;
+}
+
+void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail)
+{
+    ZLOGI("tokenId=%{public}x seqnum=%{public}" PRIu64, tokenId, seqNum);
+    auto [success, agent] = syncAgents_.Find(tokenId);
+    if (success && agent.notifier_ != nullptr) {
+        agent.notifier_->SyncCompleted(seqNum, std::move(detail));
+    }
 }
 
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
@@ -334,7 +348,7 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, cons
 
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId)
 {
-    CloudSync(appId, storeId);
+    CloudSync(appId, storeId, {});
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
@@ -556,6 +570,25 @@ Status KVDBServiceImpl::UnsubscribeSwitchData(const AppId &appId)
         ZLOGI("unsubscribe switch status %{public}d", status);
     }
     return SUCCESS;
+}
+
+ProgressDetail KVDBServiceImpl::HandleGenDetails(const GenDetails &details)
+{
+    ProgressDetail progressDetail;
+    if (details.begin() == details.end()) {
+        return {};
+    }
+    auto genDetail = details.begin()->second;
+    progressDetail.progress = genDetail.progress;
+    progressDetail.code = genDetail.code;
+    auto tableDetails = genDetail.details;
+    if (tableDetails.begin() == tableDetails.end()) {
+        return progressDetail;
+    }
+    auto genTableDetail = tableDetails.begin()->second;
+    auto &tableDetail = progressDetail.details;
+    Constant::Copy(&tableDetail, &genTableDetail);
+    return progressDetail;
 }
 
 Status KVDBServiceImpl::SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam)
@@ -1051,7 +1084,7 @@ int32_t KVDBServiceImpl::GetInstIndex(uint32_t tokenId, const AppId &appId)
     return tokenInfo.instIndex;
 }
 
-KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenDetails(const GenDetails &details)
+KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetails &details)
 {
     DBResult dbResults{};
     for (const auto &[id, detail] : details) {
@@ -1158,7 +1191,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     auto ret = store->Sync(
         devices, query,
         [this, complete](const GenDetails &result) mutable {
-            auto deviceStatus = HandleGenDetails(result);
+            auto deviceStatus = HandleGenBriefDetails(result);
             complete(deviceStatus);
         },
         syncParam);

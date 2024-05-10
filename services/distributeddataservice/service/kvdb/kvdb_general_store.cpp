@@ -293,7 +293,8 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
     };
 }
 
-DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, int64_t wait)
+DBStatus KVDBGeneralStore::CloudSync(
+    const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait)
 {
     DistributedDB::CloudSyncOption syncOption;
     syncOption.devices = devices;
@@ -306,7 +307,7 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     } else {
         syncOption.users.push_back(std::to_string(storeInfo_.user));
     }
-    return delegate_->Sync(syncOption, GetDBProcessCB(nullptr));
+    return delegate_->Sync(syncOption, GetDBProcessCB(async));
 }
 
 int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
@@ -321,7 +322,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
     auto dbStatus = DistributedDB::OK;
     auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
-        dbStatus = CloudSync(devices, dbMode, syncParm.wait);
+        dbStatus = CloudSync(devices, dbMode, async, syncParm.wait);
     } else {
         if (devices.empty()) {
             ZLOGE("Devices is empty! mode:%{public}d", syncParm.mode);
