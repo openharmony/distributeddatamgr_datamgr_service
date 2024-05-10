@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,7 +14,6 @@
  */
 #define LOG_TAG "RdbAssetLoaderTest"
 
-#include <gmock/gmock.h>
 #include "gtest/gtest.h"
 #include "log_print.h"
 #include "rdb_asset_loader.h"
@@ -38,10 +37,16 @@ public:
 
 class MockAssetLoader : public DistributedData::AssetLoader {
 public:
-    MOCK_METHOD4(Download, int32_t(const std::string &, const std::string &,
-        const DistributedData::Value &, VBucket &));
-    MOCK_METHOD4(RemoveLocalAssets, int32_t(const std::string &, const std::string &,
-        const DistributedData::Value &, VBucket &));
+    int32_t Download(const std::string &tableName, const std::string &gid,
+        const DistributedData::Value &prefix, VBucket &assets) override
+    {
+        return GeneralError::E_OK;
+    }
+    int32_t RemoveLocalAssets(const std::string &tableName, const std::string &gid,
+        const DistributedData::Value &prefix, VBucket &assets) override
+    {
+        return GeneralError::E_OK;
+    }
 };
 
 /**
@@ -60,8 +65,6 @@ HWTEST_F(RdbAssetLoaderTest, Download, TestSize.Level0)
     std::string groupId = "testGroup";
     Type prefix;
     std::map<std::string, DistributedDB::Assets> assets;
-    EXPECT_CALL(*cloudAssetLoader,
-        Download(tableName, groupId, _, _)).WillRepeatedly(testing::Return(GeneralError::E_OK));
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::OK);
 }
@@ -79,7 +82,6 @@ HWTEST_F(RdbAssetLoaderTest, RemoveLocalAssets, TestSize.Level0)
     std::shared_ptr<MockAssetLoader> cloudAssetLoader = std::make_shared<MockAssetLoader>();
     DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
     std::vector<DistributedDB::Asset> assets;
-    EXPECT_CALL(*cloudAssetLoader, RemoveLocalAssets(_, _, _, _)).WillRepeatedly(testing::Return(GeneralError::E_OK));
     auto result = rdbAssetLoader.RemoveLocalAssets(assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::OK);
 }
@@ -95,13 +97,12 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent, TestSize.Level0)
 {
     BindAssets bindAssets;
     bindAssets.bindAssets = nullptr;
-    std::shared_ptr<MockAssetLoader> cloudAssetLoader = std::make_shared<MockAssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    std::shared_ptr<AssetLoader> assetLoader = std::make_shared<AssetLoader>();
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(assetLoader, &bindAssets);
     std::string tableName = "testTable";
     std::string groupId = "testGroup";
     Type prefix;
     std::map<std::string, DistributedDB::Assets> assets;
-    EXPECT_CALL(*cloudAssetLoader, Download(tableName, groupId, _, _)).WillRepeatedly(testing::Return(E_NOT_SUPPORT));
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::CLOUD_ERROR);
 }
