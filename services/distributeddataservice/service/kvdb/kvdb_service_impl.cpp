@@ -419,6 +419,10 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
         value.notifier_ = notifier;
         return true;
     });
+    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
+        ZLOGD("not support matrix");
+        return Status::SUCCESS;
+    }
     StoreMetaData meta;
     meta.appId = appId.appId;
     meta.tokenId = tokenId;
@@ -437,7 +441,9 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
             continue;
         }
         bool changed = ((mask & code) == code);
-        clientMask.insert_or_assign(networkId, changed);
+        if (changed) {
+            clientMask.insert_or_assign(networkId, changed);
+        }
     }
     notifier->OnRemoteChange(std::move(clientMask));
     return Status::SUCCESS;
@@ -445,6 +451,10 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
 
 void KVDBServiceImpl::RegisterMatrixChange()
 {
+    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
+        ZLOGD("not support matrix");
+        return;
+    }
     DeviceMatrix::GetInstance().RegRemoteChange([this](const std::string &device, uint16_t mask) {
         auto networkId = DMAdapter::GetInstance().ToNetworkID(device);
         if (networkId.empty()) {
@@ -462,7 +472,7 @@ void KVDBServiceImpl::RegisterMatrixChange()
             uint16_t code = DeviceMatrix::GetInstance().GetCode(meta);
             std::map<std::string, bool> clientMask;
             bool changed = ((mask & code) == code);
-            if ((value.changed_ && changed) || (!value.changed_ && changed)) {
+            if ((value.changed_ && changed) || (!value.changed_ && !changed)) {
                 return false;
             }
             value.changed_ = changed;

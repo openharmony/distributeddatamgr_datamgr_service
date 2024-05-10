@@ -580,7 +580,7 @@ std::map<std::string, uint16_t> DeviceMatrix::GetRemoteDynamicMask()
     std::map<std::string, uint16_t> masks;
     std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
     for (const auto &[device, mask] : remotes_) {
-        masks.insert_or_assign(device, mask.dynamic);
+        masks.insert_or_assign(device, Low(mask.dynamic));
     }
     return masks;
 }
@@ -720,7 +720,7 @@ bool DeviceMatrix::DataLevel::IsValid() const
         switches == INVALID_VALUE && switchesLen == INVALID_LENGTH);
 }
 
-bool DeviceMatrix::IsSupportBroadcast()
+bool DeviceMatrix::IsSupportMatrix()
 {
     return isSupportBroadcast_;
 }
