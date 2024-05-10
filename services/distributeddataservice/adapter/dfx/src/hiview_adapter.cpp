@@ -24,6 +24,7 @@ namespace OHOS {
 namespace DistributedDataDfx {
 using namespace DistributedKv;
 namespace {
+constexpr const char *DATAMGR_DOMAIN = "DISTDATAMGR";
 // fault key
 constexpr const char *FAULT_TYPE = "FAULT_TYPE";
 constexpr const char *MODULE_NAME = "MODULE_NAME";
@@ -71,7 +72,6 @@ const std::map<int, std::string> EVENT_COVERT_TABLE = {
     { DfxCodeConstant::UDMF_DATA_BEHAVIOR, "UDMF_DATA_BEHAVIOR" },
 };
 }
-using OHOS::HiviewDFX::HiSysEvent;
 std::mutex HiViewAdapter::visitMutex_;
 std::map<std::string, StatisticWrap<VisitStat>> HiViewAdapter::visitStat_;
 
@@ -90,13 +90,31 @@ std::mutex HiViewAdapter::runMutex_;
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
     ExecutorPool::Task task([dfxCode, msg]() {
-        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-            CoverEventID(dfxCode),
-            HiSysEvent::EventType::FAULT,
-            FAULT_TYPE, static_cast<int>(msg.faultType),
-            MODULE_NAME, msg.moduleName,
-            INTERFACE_NAME, msg.interfaceName,
-            ERROR_TYPE, static_cast<int>(msg.errorType));
+        struct HiSysEventParam params[] = {
+            { .name = { *FAULT_TYPE },
+                .t = HISYSEVENT_INT32,
+                .v = { .i32 = static_cast<int32_t>(msg.faultType) },
+                .arraySize = 0 },
+            { .name = { *MODULE_NAME },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.moduleName.c_str()) },
+                .arraySize = 0 },
+            { .name = { *INTERFACE_NAME },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.interfaceName.c_str()) },
+                .arraySize = 0 },
+            { .name = { *ERROR_TYPE },
+                .t = HISYSEVENT_INT32,
+                .v = { .i32 = static_cast<int32_t>(msg.errorType) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(dfxCode).c_str(),
+            HISYSEVENT_FAULT,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
     });
     executors->Execute(std::move(task));
 }
@@ -104,13 +122,31 @@ void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg, std::shared_pt
 void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
     ExecutorPool::Task task([dfxCode, msg]() {
-        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-            CoverEventID(dfxCode),
-            HiSysEvent::EventType::FAULT,
-            APP_ID, msg.appId,
-            STORE_ID, msg.storeId,
-            MODULE_NAME, msg.moduleName,
-            ERROR_TYPE, static_cast<int>(msg.errorType));
+        struct HiSysEventParam params[] = {
+            { .name = { *APP_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.appId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *STORE_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *MODULE_NAME },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.moduleName.c_str()) },
+                .arraySize = 0 },
+            { .name = { *ERROR_TYPE },
+                .t = HISYSEVENT_INT32,
+                .v = { .i32 = static_cast<int32_t>(msg.errorType) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(dfxCode).c_str(),
+            HISYSEVENT_FAULT,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
     });
     executors->Execute(std::move(task));
 }
@@ -121,16 +157,34 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
         std::string message;
         for (size_t i = 0; i < msg.deviceId.size(); i++) {
             message.append("No: ").append(std::to_string(i))
-            .append(" sync to device: ").append(msg.deviceId[i])
-            .append(" has error, errCode:").append(std::to_string(msg.errorCode[i])).append(". ");
+                .append(" sync to device: ").append(msg.deviceId[i])
+                .append(" has error, errCode:").append(std::to_string(msg.errorCode[i])).append(". ");
         }
-        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-            CoverEventID(dfxCode),
-            HiSysEvent::EventType::FAULT,
-            USER_ID, msg.userId,
-            APP_ID, msg.appId,
-            STORE_ID, msg.storeId,
-            SYNC_ERROR_INFO, message);
+        struct HiSysEventParam params[] = {
+            { .name = { *USER_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.userId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *APP_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.appId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *STORE_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *SYNC_ERROR_INFO },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(message.c_str()) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(dfxCode).c_str(),
+            HISYSEVENT_FAULT,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
     });
     executors->Execute(std::move(task));
 }
@@ -141,13 +195,31 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::s
         std::string message;
         message.append("Behaviour type : ").append(std::to_string(static_cast<int>(msg.behaviourType)))
             .append(" behaviour info : ").append(msg.extensionInfo);
-        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-            CoverEventID(dfxCode),
-            HiSysEvent::EventType::BEHAVIOR,
-            USER_ID, msg.userId,
-            APP_ID, msg.appId,
-            STORE_ID, msg.storeId,
-            BEHAVIOUR_INFO, message);
+        struct HiSysEventParam params[] = {
+            { .name = { *USER_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.userId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *APP_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.appId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *STORE_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *BEHAVIOUR_INFO },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(message.c_str()) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(dfxCode).c_str(),
+            HISYSEVENT_BEHAVIOR,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
     });
     executors->Execute(std::move(task));
 }
@@ -177,10 +249,28 @@ void HiViewAdapter::ReportDbSize(const StatisticWrap<DbStat> &stat)
         return;
     }
 
-    HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-        CoverEventID(stat.code),
-        HiSysEvent::EventType::STATISTIC,
-        USER_ID, userId, APP_ID, stat.val.appId, STORE_ID, stat.val.storeId, DB_SIZE, dbSize);
+    struct HiSysEventParam params[] = {
+        { .name = { *USER_ID },
+            .t = HISYSEVENT_STRING,
+            .v = { .s = const_cast<char *>(userId.c_str()) },
+            .arraySize = 0 },
+        { .name = { *APP_ID },
+            .t = HISYSEVENT_STRING,
+            .v = { .s = const_cast<char *>(stat.val.appId.c_str()) },
+            .arraySize = 0 },
+        { .name = { *STORE_ID },
+            .t = HISYSEVENT_STRING,
+            .v = { .s = const_cast<char *>(stat.val.storeId.c_str()) },
+            .arraySize = 0 },
+        { .name = { *DB_SIZE }, .t = HISYSEVENT_UINT64, .v = { .ui64 = dbSize }, .arraySize = 0 },
+    };
+    OH_HiSysEvent_Write(
+        DATAMGR_DOMAIN,
+        CoverEventID(stat.code).c_str(),
+        HISYSEVENT_STATISTIC,
+        params,
+        sizeof(params) / sizeof(params[0])
+    );
 }
 
 void HiViewAdapter::InvokeDbSize()
@@ -235,15 +325,32 @@ void HiViewAdapter::InvokeTraffic()
         if (!vh.CalcValueHash(kv.second.val.deviceId, deviceId)) {
             continue;
         }
-
-        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-            CoverEventID(kv.second.code),
-            HiSysEvent::EventType::STATISTIC,
-            TAG, POWERSTATS,
-            APP_ID, kv.second.val.appId,
-            DEVICE_ID, deviceId,
-            SEND_SIZE, kv.second.val.sendSize,
-            RECEIVED_SIZE, kv.second.val.receivedSize);
+        struct HiSysEventParam params[] = {
+            { .name = { *TAG }, .t = HISYSEVENT_STRING, .v = { .s = const_cast<char *>(POWERSTATS) }, .arraySize = 0 },
+            { .name = { *APP_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(kv.second.val.appId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *DEVICE_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(deviceId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *SEND_SIZE },
+                .t = HISYSEVENT_INT64,
+                .v = { .i64 = static_cast<int64_t>(kv.second.val.sendSize) },
+                .arraySize = 0 },
+            { .name = { *RECEIVED_SIZE },
+                .t = HISYSEVENT_INT64,
+                .v = { .i64 = static_cast<int64_t>(kv.second.val.receivedSize) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(kv.second.code).c_str(),
+            HISYSEVENT_STATISTIC,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
     }
     trafficStat_.clear();
 }
@@ -267,13 +374,31 @@ void HiViewAdapter::InvokeVisit()
 {
     std::lock_guard<std::mutex> lock(visitMutex_);
     for (auto const &kv : visitStat_) {
-        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-            CoverEventID(kv.second.code),
-            HiSysEvent::EventType::STATISTIC,
-            TAG, POWERSTATS,
-            APP_ID, kv.second.val.appId,
-            INTERFACE_NAME, kv.second.val.interfaceName,
-            TIMES, kv.second.times);
+        struct HiSysEventParam params[] = {
+            { .name = { *TAG },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(POWERSTATS) },
+                .arraySize = 0 },
+            { .name = { *APP_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(kv.second.val.appId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *INTERFACE_NAME },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(kv.second.val.interfaceName.c_str()) },
+                .arraySize = 0 },
+            { .name = { *BEHAVIOUR_INFO },
+                .t = HISYSEVENT_INT64,
+                .v = { .i64 = static_cast<int64_t>(kv.second.times) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(kv.second.code).c_str(),
+            HISYSEVENT_STATISTIC,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
     }
     visitStat_.clear();
 }
@@ -312,15 +437,39 @@ void HiViewAdapter::ReportUdmfBehaviour(
         return;
     }
     ExecutorPool::Task task([dfxCode, msg]() {
-        HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-            CoverEventID(dfxCode),
-            HiSysEvent::EventType::BEHAVIOR,
-            APP_ID, msg.appId,
-            CHANNEL, msg.channel,
-            DATA_SIZE, msg.dataSize,
-            DATA_TYPE, msg.dataType,
-            OPERATION, msg.operation,
-            RESULT, msg.result);
+        struct HiSysEventParam params[] = {
+            { .name = { *APP_ID },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.appId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *CHANNEL },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.channel.c_str()) },
+                .arraySize = 0 },
+            { .name = { *DATA_SIZE },
+                .t = HISYSEVENT_INT64,
+                .v = { .i64 = msg.dataSize },
+                .arraySize = 0 },
+            { .name = { *DATA_TYPE },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.dataType.c_str()) },
+                .arraySize = 0 },
+            { .name = { *OPERATION },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.operation.c_str()) },
+                .arraySize = 0 },
+            { .name = { *RESULT },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.result.c_str()) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(dfxCode).c_str(),
+            HISYSEVENT_BEHAVIOR,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
     });
     executors->Execute(std::move(task));
 }
@@ -332,16 +481,26 @@ void HiViewAdapter::InvokeApiPerformance()
     std::lock_guard<std::mutex> lock(apiPerformanceMutex_);
     for (auto const &kv : apiPerformanceStat_) {
         message.append("{\"CODE\":\"").append(std::to_string(kv.second.code)).append("\",")
-        .append("\"").append(INTERFACE_NAME).append("\":\"").append(kv.second.val.interfaceName).append("\",")
-        .append("\"").append(TIMES).append("\":").append(std::to_string(kv.second.times)).append(",")
-        .append("\"").append(AVERAGE_TIMES).append("\":").append(std::to_string(kv.second.val.averageTime)).append(",")
-        .append("\"").append(WORST_TIMES).append("\":").append(std::to_string(kv.second.val.worstTime)).append("}");
+            .append("\"").append(INTERFACE_NAME).append("\":\"").append(kv.second.val.interfaceName).append("\",")
+            .append("\"").append(TIMES).append("\":").append(std::to_string(kv.second.times)).append(",")
+            .append("\"").append(AVERAGE_TIMES).append("\":").append(std::to_string(kv.second.val.averageTime))
+            .append(",").append("\"").append(WORST_TIMES).append("\":").append(std::to_string(kv.second.val.worstTime))
+            .append("}");
     }
     message.append("]");
-    HiSysEventWrite(HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-        CoverEventID(DfxCodeConstant::API_PERFORMANCE_STATISTIC),
-        HiSysEvent::EventType::STATISTIC,
-        INTERFACES, message);
+    struct HiSysEventParam params[] = {
+        { .name = { *INTERFACES },
+            .t = HISYSEVENT_STRING,
+            .v = { .s = const_cast<char *>(message.c_str()) },
+            .arraySize = 0 },
+    };
+    OH_HiSysEvent_Write(
+        DATAMGR_DOMAIN,
+        CoverEventID(DfxCodeConstant::API_PERFORMANCE_STATISTIC).c_str(),
+        HISYSEVENT_STATISTIC,
+        params,
+        sizeof(params) / sizeof(params[0])
+    );
     apiPerformanceStat_.clear();
     ZLOGI("DdsTrace interface: clean");
 }
@@ -373,7 +532,7 @@ void HiViewAdapter::StartTimerThread(std::shared_ptr<ExecutorPool> executors)
 
 std::string HiViewAdapter::CoverEventID(int dfxCode)
 {
-    std::string sysEventID = "";
+    std::string sysEventID;
     auto operatorIter = EVENT_COVERT_TABLE.find(dfxCode);
     if (operatorIter != EVENT_COVERT_TABLE.end()) {
         sysEventID = operatorIter->second;
