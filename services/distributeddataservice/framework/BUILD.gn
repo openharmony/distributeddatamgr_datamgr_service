@@ -107,9 +107,9 @@ ohos_shared_library("distributeddatasvcfwk") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "hilog:libhilog",
-    "openssl:libcrypto_shared",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"
 
