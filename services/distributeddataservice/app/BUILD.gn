@@ -51,7 +51,6 @@ config("module_private_config") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/backup/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
-    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "../adapter/include/account",
     "../adapter/include/permission",
     "../adapter/include/installer",
@@ -66,7 +65,6 @@ config("module_private_config") {
     "src",
     "src/security",
     "src/backup_rule/include",
-    "//third_party/json/single_include",
   ]
 
   cflags = [ "-Wno-multichar" ]
@@ -125,12 +123,14 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",

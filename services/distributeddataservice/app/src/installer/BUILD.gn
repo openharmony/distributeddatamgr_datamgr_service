@@ -35,7 +35,6 @@ ohos_static_library("distributeddata_installer_static") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/permission/include",
-    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "//third_party/json/single_include",
   ]
 
@@ -53,6 +52,7 @@ ohos_static_library("distributeddata_installer_static") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddb",

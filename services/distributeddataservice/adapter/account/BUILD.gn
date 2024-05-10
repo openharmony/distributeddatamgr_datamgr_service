@@ -35,7 +35,6 @@ ohos_static_library("distributeddata_account_static") {
     "${kv_store_common_path}",
     "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "${ipc_core_path}/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -49,6 +48,7 @@ ohos_static_library("distributeddata_account_static") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
+    "ipc:ipc_core",
   ]
 
   if (os_account_part_is_enabled) {

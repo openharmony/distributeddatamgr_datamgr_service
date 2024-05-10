@@ -43,12 +43,10 @@ ohos_static_library("distributeddata_dfx_static") {
     "../include/autils",
     "${kv_store_common_path}",
     "${kv_store_path}/interfaces/inner_api/distributeddata/include",
-    "//third_party/openssl/include/",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  deps = [ "//third_party/openssl:libcrypto_shared" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
@@ -56,6 +54,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

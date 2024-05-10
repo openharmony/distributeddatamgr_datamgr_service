@@ -45,7 +45,6 @@ ohos_static_library("distributeddata_communicator_static") {
     "../include/log",
     "../include/autils",
     "../include/utils",
-    "${dsoftbus_core_path}",
     "${kv_store_common_path}",
     "${kv_store_distributeddb_path}/interfaces/include",
     "${kv_store_distributeddb_path}/include",
