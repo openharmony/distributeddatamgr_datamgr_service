@@ -275,7 +275,7 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    return DoCloudSync(metaData);
+    return DoCloudSync(metaData, syncInfo);
 }
 
 void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail)
@@ -342,21 +342,13 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    DoCloudSync(meta);
-//    TryToSync(meta, true);
-    if (!DeviceMatrix::GetInstance().IsSupportBroadcast()) {
-        TryToSync(meta, true);
-        return SUCCESS;
-    }
+    DoCloudSync(meta, {});
     if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
         WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
         return SUCCESS;
     }
-    if (meta.isAutoSync) {
-        AutoSyncMatrix::GetInstance().OnChanged(meta);
-        TryToSync(meta);
-    }
+    TryToSync(meta, true);
     return SUCCESS;
 }
 
@@ -1094,7 +1086,7 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
     return dbResults;
 }
 
-Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta)
+Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
 {
     if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
         return Status::CLOUD_DISABLED;
