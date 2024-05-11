@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SHARING_CENTER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SHARING_CENTER_H
 
+#include <errors.h>
 #include <vector>
 #include <string>
 #include <tuple>
@@ -59,7 +60,10 @@ public:
     using Participants = std::vector<Participant>;
     using Results = std::tuple<int32_t, std::string, std::vector<std::pair<int32_t, std::string>>>;
     using QueryResults = std::tuple<int32_t, std::string, Participants>;
-
+    enum CloudShareModule {
+        CLOUD_SHARE_MODULE_ID = 12,
+    };
+    static const ErrCode SHARING_ERR_OFFSET = ErrCodeOffset(SUBSYS_DISTRIBUTEDDATAMNG, CLOUD_SHARE_MODULE_ID);
     enum SharingCode : int32_t {
         SUCCESS = 0,
         REPEATED_REQUEST,
@@ -75,6 +79,7 @@ public:
         INVALID_INVITATION,
         RATE_LIMIT,
         IPC_ERROR,
+        NOT_SUPPORT,
         CUSTOM_ERROR = 1000,
     };
 

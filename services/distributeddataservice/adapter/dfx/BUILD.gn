@@ -27,6 +27,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "src/fault/runtime_fault_impl.cpp",
     "src/fault/service_fault_impl.cpp",
     "src/hiview_adapter.cpp",
+    "src/radar_reporter.cpp",
     "src/reporter.cpp",
     "src/statistic/api_performance_statistic_impl.cpp",
     "src/statistic/database_statistic_impl.cpp",
@@ -41,6 +42,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "../include/dfx",
     "../include/log",
     "../include/autils",
+    "../include/communicator",
     "${kv_store_common_path}",
     "${kv_store_path}/interfaces/inner_api/distributeddata/include",
     "//third_party/openssl/include/",
@@ -51,6 +53,7 @@ ohos_static_library("distributeddata_dfx_static") {
   deps = [ "//third_party/openssl:libcrypto_shared" ]
   external_deps = [
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",

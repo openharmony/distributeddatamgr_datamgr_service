@@ -23,8 +23,10 @@
 #include "rdb_types.h"
 #include "utils/anonymous.h"
 #include "tokenid_kit.h"
+#include "dfx/radar_reporter.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
+using namespace DistributedDataDfx;
 using namespace OHOS::Security::AccessToken;
 const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnEnableCloud,
@@ -92,7 +94,9 @@ int32_t CloudServiceStub::OnEnableCloud(MessageParcel &data, MessageParcel &repl
     for (auto &[bundle, status] : switches) {
         localSwitches.insert_or_assign(CloudConfigManager::GetInstance().ToLocal(bundle), status);
     }
+    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::CLOUD_SYNC_SWITCH, __FUNCTION__);
     auto result = EnableCloud(id, localSwitches);
+    radar = result;
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -103,7 +107,9 @@ int32_t CloudServiceStub::OnDisableCloud(MessageParcel &data, MessageParcel &rep
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::CLOUD_SYNC_SWITCH, __FUNCTION__);
     auto result = DisableCloud(id);
+    radar = result;
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -116,7 +122,9 @@ int32_t CloudServiceStub::OnChangeAppSwitch(MessageParcel &data, MessageParcel &
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::CLOUD_SYNC_SWITCH, __FUNCTION__);
     auto result = ChangeAppSwitch(id, CloudConfigManager::GetInstance().ToLocal(bundleName), appSwitch);
+    radar = result;
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -144,7 +152,9 @@ int32_t CloudServiceStub::OnNotifyDataChange(MessageParcel &data, MessageParcel 
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::CLOUD_DATA_CHANGE, __FUNCTION__);
     auto result = NotifyDataChange(id, CloudConfigManager::GetInstance().ToLocal(bundleName));
+    radar = result;
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -197,7 +207,9 @@ int32_t CloudServiceStub::OnNotifyChange(MessageParcel &data, MessageParcel &rep
         ZLOGE("Unmarshal eventId:%{public}s", Anonymous::Change(eventId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::CLOUD_DATA_CHANGE, __FUNCTION__);
     auto result = NotifyDataChange(eventId, extraData, userId);
+    radar = result;
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
