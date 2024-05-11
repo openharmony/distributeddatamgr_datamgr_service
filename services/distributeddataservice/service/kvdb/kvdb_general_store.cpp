@@ -89,7 +89,7 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
 
     if (data.storeType == KvStoreType::SINGLE_VERSION) {
         dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
-    } else if (data.storeType == KvStoreType::DEVICE_COLLABORATION) {
+    } else if (data.storeType == KvStoreType::DEVICE_COLLABORATION || data.enableCloud) {
         dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
     }
 
@@ -134,6 +134,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
+    enableCloud_ = meta.enableCloud;
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -322,6 +323,9 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
     auto dbStatus = DistributedDB::OK;
     auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
+        if (!enableCloud_) {
+            return GeneralError::E_NOT_SUPPORT;
+        }
         dbStatus = CloudSync(devices, dbMode, async, syncParm.wait);
     } else {
         if (devices.empty()) {

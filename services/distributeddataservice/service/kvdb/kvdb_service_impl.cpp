@@ -269,6 +269,11 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    if (!metaData.enableCloud) {
+        ZLOGE("appId:%{public}s storeId:%{public}s  instanceId:%{public}d not supports cloud sync",
+              appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
+        return NOT_SUPPORT;
+    }
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = appId.appId;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
@@ -761,7 +766,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, old.dataType, options.dataType);
         return Status::STORE_META_CHANGED;
     }
-    if (executors_ != nullptr) {
+    if (options.enableCloud || executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
@@ -1017,6 +1022,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isNeedCompress = options.isNeedCompress;
     metaData.dataType = options.dataType;
+    metaData.enableCloud = options.enableCloud;
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
@@ -1028,6 +1034,7 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     localMetaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
     localMetaData.schema = options.schema;
     localMetaData.isPublic = options.isPublic;
+    localMetaData.enableCloud = options.enableCloud;
     for (auto &policy : options.policies) {
         OHOS::DistributedData::PolicyValue value;
         value.type = policy.type;
