@@ -115,7 +115,6 @@ void KvStoreDataService::Initialize()
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
 
-    WaterVersionManager::GetInstance().Init();
     AppDistributedKv::CommunicationProvider::GetInstance();
     PermitDelegate::GetInstance().Init();
     InitSecurityAdapter(executors_);
@@ -341,6 +340,7 @@ void KvStoreDataService::StartService()
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
     AutoSyncMatrix::GetInstance().Initialize();
+    WaterVersionManager::GetInstance().Init();
     LoadFeatures();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {

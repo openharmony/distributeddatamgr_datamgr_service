@@ -342,12 +342,13 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    DoCloudSync(meta, {});
     if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
         WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
+        DoCloudSync(meta, {});
         return SUCCESS;
     }
+    DoCloudSync(meta, {});
     TryToSync(meta, true);
     return SUCCESS;
 }

@@ -39,7 +39,6 @@ using WaterVersionMetaData = WvManager::WaterVersionMetaData;
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
-class TestChecker;
 static std::vector<std::pair<std::string, std::string>> staticStores_ = { { "bundle0", "store0" },
     { "bundle1", "store0" }, { "bundle2", "store0" } };
 static std::vector<std::pair<std::string, std::string>> dynamicStores_ = { { "bundle0", "store1" },

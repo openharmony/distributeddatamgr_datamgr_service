@@ -82,6 +82,7 @@ public:
     std::pair<bool, uint16_t> GetConsLevel(const std::string &device, LevelType type = LevelType::DYNAMIC);
     std::pair<bool, bool> IsConsistent(const std::string &device);
     std::pair<bool, MatrixMetaData> GetMatrixMeta(const std::string &device, bool IsConsistent = false);
+    void SetMatrixMeta(const MatrixMetaData &meta, bool IsConsistent = false);
     std::map<std::string, uint16_t> GetRemoteDynamicMask();
     bool IsDynamic(const StoreMetaData &metaData);
     bool IsStatics(const StoreMetaData &metaData);
