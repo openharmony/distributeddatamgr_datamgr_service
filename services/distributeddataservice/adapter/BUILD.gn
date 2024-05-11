@@ -67,10 +67,8 @@ ohos_shared_library("distributeddata_adapter") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
   ]
-  
-  public_external_deps = [
-  "kv_store:distributeddata_inner",
-  ]
+
+  public_external_deps = [ "kv_store:distributeddata_inner" ]
 
   public_configs = [ ":distributeddata_adapter_public_config" ]
 
