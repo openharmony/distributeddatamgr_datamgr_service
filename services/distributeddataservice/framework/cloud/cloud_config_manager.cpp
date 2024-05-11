@@ -26,7 +26,7 @@ CloudConfigManager &CloudConfigManager::GetInstance()
 
 void CloudConfigManager::Initialize(const std::vector<Info> &mapper)
 {
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
+    // Only called once during initialization, so it can be unlocked
     for (const auto &info : mapper) {
         toLocalMapper_.insert_or_assign(info.cloudBundle, info.localBundle);
         toCloudMapper_.insert_or_assign(info.localBundle, info.cloudBundle);
@@ -35,14 +35,12 @@ void CloudConfigManager::Initialize(const std::vector<Info> &mapper)
 
 std::string CloudConfigManager::ToLocal(const std::string &bundleName)
 {
-    std::shared_lock<decltype(mutex_)> lock(mutex_);
     auto it = toLocalMapper_.find(bundleName);
     return it == toLocalMapper_.end() ? bundleName : it->second;
 }
 
 std::string CloudConfigManager::ToCloud(const std::string &bundleName)
 {
-    std::shared_lock<decltype(mutex_)> lock(mutex_);
     auto it = toCloudMapper_.find(bundleName);
     return it == toCloudMapper_.end() ? bundleName : it->second;
 }

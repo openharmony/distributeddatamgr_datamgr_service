@@ -35,7 +35,6 @@ public:
 private:
     std::map<std::string, std::string> toLocalMapper_;
     std::map<std::string, std::string> toCloudMapper_;
-    std::shared_mutex mutex_;
 };
 
 } // namespace DistributedData

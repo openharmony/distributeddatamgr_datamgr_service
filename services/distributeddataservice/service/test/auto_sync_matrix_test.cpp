@@ -203,5 +203,27 @@ HWTEST_F(AutoSyncMatrixTest, AutoSyncMatrixOnExchanged, TestSize.Level0)
     auto metas4 = AutoSyncMatrix::GetInstance().GetChangedStore(TEST_DEVICE);
     ASSERT_GE(metas4.size(), metas1.size());
 }
+
+/**
+* @tc.name: AutoSyncMatrixDeleteMeta
+* @tc.desc: auto sync matrix on delete Meta.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: zuojiangjiang
+*/
+HWTEST_F(AutoSyncMatrixTest, AutoSyncMatrixDeleteMeta, TestSize.Level0)
+{
+    AutoSyncMatrix::GetInstance().Online(TEST_DEVICE);
+    AutoSyncMatrix::GetInstance().OnChanged(metaData_);
+    auto metas1 = AutoSyncMatrix::GetInstance().GetChangedStore(TEST_DEVICE);
+    ASSERT_GE(metas1.size(), 0);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    auto metas2 = AutoSyncMatrix::GetInstance().GetChangedStore(TEST_DEVICE);
+    ASSERT_GE(metas2.size(), metas1.size() -1);
+    for (auto meta : metas2) {
+        ASSERT_NE(metaData_.GetKey(), meta.GetKey());
+    }
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
