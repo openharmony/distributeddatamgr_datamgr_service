@@ -121,6 +121,7 @@ private:
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
+    Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,

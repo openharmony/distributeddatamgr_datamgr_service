@@ -21,7 +21,9 @@
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include "gtest/gtest.h"
+#include "metadata/matrix_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "mock/checker_mock.h"
 #include "mock/db_store_mock.h"
 #include "nativetoken_kit.h"
 #include "serializable/serializable.h"
@@ -38,8 +40,10 @@ using WaterVersionMetaData = WvManager::WaterVersionMetaData;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 class TestChecker;
-static std::vector<std::pair<std::string, std::string>> stores_ = { { "bundle0", "store0" }, { "bundle1", "store0" },
-    { "bundle2", "store0" } };
+static std::vector<std::pair<std::string, std::string>> staticStores_ = { { "bundle0", "store0" },
+    { "bundle1", "store0" }, { "bundle2", "store0" } };
+static std::vector<std::pair<std::string, std::string>> dynamicStores_ = { { "bundle0", "store1" },
+    { "bundle3", "store0" }, { "bundle4", "store0" } };
 class WaterVersionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -55,7 +59,7 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static WaterVersionMetaData dynamicMeta_;
     static WaterVersionMetaData staticMeta_;
-    static TestChecker instance_;
+    static CheckerMock instance_;
 };
 
 void WaterVersionManagerTest::GrantPermissionNative()
@@ -78,93 +82,7 @@ void WaterVersionManagerTest::GrantPermissionNative()
     AccessTokenKit::ReloadNativeTokenInfo();
     delete[] perms;
 }
-
-class TestChecker : public CheckerManager::Checker {
-public:
-    TestChecker() noexcept
-    {
-        CheckerManager::GetInstance().RegisterPlugin(
-            "SystemChecker", [this]() -> auto { return this; });
-    }
-    ~TestChecker() {}
-    void Initialize() override
-    {
-        staticInfos_.clear();
-        dynamicInfos_.clear();
-        for (auto &it : stores_) {
-            staticInfos_.push_back({ 0, 0, it.first, it.second });
-            dynamicInfos_.push_back({ 0, 0, it.first, it.second });
-        }
-    }
-    bool SetTrustInfo(const CheckerManager::Trust &trust) override
-    {
-        return true;
-    }
-    std::string GetAppId(const CheckerManager::StoreInfo &info) override
-    {
-        return info.bundleName;
-    }
-    bool IsValid(const CheckerManager::StoreInfo &info) override
-    {
-        return true;
-    }
-    bool SetDistrustInfo(const CheckerManager::Distrust &distrust) override
-    {
-        return true;
-    };
-
-    bool IsDistrust(const CheckerManager::StoreInfo &info) override
-    {
-        return true;
-    }
-    vector<CheckerManager::StoreInfo> GetDynamicStores() override
-    {
-        return dynamicInfos_;
-    }
-    vector<CheckerManager::StoreInfo> GetStaticStores() override
-    {
-        return staticInfos_;
-    }
-    bool IsDynamic(const CheckerManager::StoreInfo &info) override
-    {
-        for (const auto &store : dynamicInfos_) {
-            if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool IsStatic(const CheckerManager::StoreInfo &info) override
-    {
-        for (const auto &store : staticInfos_) {
-            if (info.bundleName == store.bundleName && info.storeId == store.storeId) {
-                return true;
-            }
-        }
-        return false;
-    }
-    bool AddDynamicStore(const CheckerManager::StoreInfo &storeInfo) override
-    {
-        return false;
-    }
-    bool AddStaticStore(const CheckerManager::StoreInfo &storeInfo) override
-    {
-        return false;
-    }
-    bool IsSwitches(const CheckerManager::StoreInfo &info) override
-    {
-        return false;
-    }
-    bool SetSwitchesInfo(const CheckerManager::Switches &switches) override
-    {
-        return true;
-    }
-
-private:
-    vector<CheckerManager::StoreInfo> dynamicInfos_;
-    vector<CheckerManager::StoreInfo> staticInfos_;
-};
-TestChecker WaterVersionManagerTest::instance_;
+CheckerMock WaterVersionManagerTest::instance_;
 std::shared_ptr<DBStoreMock> WaterVersionManagerTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 WaterVersionMetaData WaterVersionManagerTest::staticMeta_;
 WaterVersionMetaData WaterVersionManagerTest::dynamicMeta_;
@@ -175,6 +93,17 @@ void WaterVersionManagerTest::SetUpTestCase(void)
     DeviceManagerAdapter::GetInstance().Init(std::make_shared<OHOS::ExecutorPool>(max, min));
     GrantPermissionNative();
     Bootstrap::GetInstance().LoadCheckers();
+    std::vector<CheckerManager::StoreInfo> dynamicStores;
+    for (auto &[bundle, store] : dynamicStores_) {
+        dynamicStores.push_back({ 0, 0, bundle, store });
+        instance_.SetDynamic(dynamicStores);
+    }
+    std::vector<CheckerManager::StoreInfo> staticStores;
+    for (auto &[bundle, store] : staticStores_) {
+        staticStores.push_back({ 0, 0, bundle, store });
+        instance_.SetStatic(staticStores);
+    }
+    WaterVersionManager::GetInstance().Init();
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
 
     staticMeta_.deviceId = TEST_DEVICE;
@@ -182,11 +111,16 @@ void WaterVersionManagerTest::SetUpTestCase(void)
     staticMeta_.waterVersion = 0;
     staticMeta_.type = WvManager::STATIC;
     staticMeta_.keys.clear();
-    for (auto &it : stores_) {
+    for (auto &it : staticStores_) {
         staticMeta_.keys.push_back(Constant::Join(it.first, Constant::KEY_SEPARATOR, { it.second }));
     }
     staticMeta_.infos = { staticMeta_.keys.size(), std::vector<uint64_t>(staticMeta_.keys.size(), 0) };
     dynamicMeta_ = staticMeta_;
+    dynamicMeta_.keys.clear();
+    for (auto &it : dynamicStores_) {
+        dynamicMeta_.keys.push_back(Constant::Join(it.first, Constant::KEY_SEPARATOR, { it.second }));
+    }
+    dynamicMeta_.infos = { dynamicMeta_.keys.size(), std::vector<uint64_t>(dynamicMeta_.keys.size(), 0) };
     dynamicMeta_.type = WvManager::DYNAMIC;
 }
 
@@ -203,6 +137,9 @@ void WaterVersionManagerTest::TearDown()
     WvManager::GetInstance().DelWaterVersion(DMAdapter::GetInstance().GetLocalDevice().uuid);
     MetaDataManager::GetInstance().DelMeta(staticMeta_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(dynamicMeta_.GetKey(), true);
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    MetaDataManager::GetInstance().DelMeta(matrixMetaData.GetKey(), true);
 }
 
 void WaterVersionManagerTest::InitMetaData()
@@ -227,8 +164,8 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest1, TestSize.Level0)
     meta.infos[0] = { 1, 0, 0 };
     meta.waterVersion = 1;
 
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[0].first, stores_[0].second, Serializable::Marshall(meta)))
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(staticStores_[0].first, staticStores_[0].second,
+        Serializable::Marshall(meta)))
         << Serializable::Marshall(meta);
 
     waterVersion = WvManager::GetInstance().GetWaterVersion(TEST_DEVICE, WvManager::STATIC);
@@ -254,16 +191,16 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest2, TestSize.Level0)
     // first store update
     meta.infos[0] = { 1, 0, 0 };
     meta.waterVersion = 1;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[0].first, stores_[0].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(staticStores_[0].first, staticStores_[0].second,
+        Serializable::Marshall(meta)));
     auto [_, version] = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::STATIC);
     EXPECT_EQ(version, 1);
 
     // second store update
     meta.infos[1] = { 1, 2, 0 };
     meta.waterVersion = 2;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[1].first, stores_[1].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(staticStores_[1].first, staticStores_[1].second,
+        Serializable::Marshall(meta)));
     std::tie(_, version) = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::STATIC);
     EXPECT_EQ(version, 2);
 }
@@ -286,8 +223,8 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest3, TestSize.Level0)
     //bundle2 updated later, but sync first. Do not update waterVersion
     meta.infos[1] = { 1, 2, 0 };
     meta.waterVersion = 2;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[1].first, stores_[1].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(dynamicStores_[1].first, dynamicStores_[1].second,
+        Serializable::Marshall(meta)));
     auto res = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::STATIC);
     EXPECT_TRUE(res.first && res.second == 0)
         << "success:" << res.first << " version:" << res.second << " meta: " << meta.ToAnonymousString();
@@ -295,8 +232,8 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest3, TestSize.Level0)
     //bundle1 updated earlier, but sync later. update waterVersion
     meta.infos[0] = { 1, 0, 0 };
     meta.waterVersion = 1;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[0].first, stores_[0].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(dynamicStores_[0].first, dynamicStores_[0].second,
+        Serializable::Marshall(meta)));
     res = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::DYNAMIC);
     EXPECT_TRUE(res.first && res.second == 2)
         << "success:" << res.first << " version:" << res.second << " meta: " << meta.ToAnonymousString();
@@ -320,8 +257,8 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest4, TestSize.Level0)
     //bundle1 updated twice, but sync once. update waterVersion
     meta.infos[0] = { 2, 0, 0 };
     meta.waterVersion = 2;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[0].first, stores_[0].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(staticStores_[0].first, staticStores_[0].second,
+        Serializable::Marshall(meta)));
 
     auto res = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::STATIC);
     EXPECT_TRUE(res.first && res.second == 2)
@@ -350,8 +287,8 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest5, TestSize.Level0)
     meta.infos[1] = { 1, 2, 0 };
     meta.infos[2] = { 0, 0, 0 };
     meta.waterVersion = 2;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[1].first, stores_[1].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(dynamicStores_[1].first, dynamicStores_[1].second,
+        Serializable::Marshall(meta)));
 
     auto res = WvManager::GetInstance().GetVersion(TEST_DEVICE, type);
     EXPECT_TRUE(res.first && res.second == 0)
@@ -362,8 +299,8 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest5, TestSize.Level0)
     meta.infos[1] = { 1, 2, 0 };
     meta.infos[2] = { 3, 2, 4 };
     meta.waterVersion = 4;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[2].first, stores_[2].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(dynamicStores_[2].first, dynamicStores_[2].second,
+        Serializable::Marshall(meta)));
     res = WvManager::GetInstance().GetVersion(TEST_DEVICE, type);
     EXPECT_TRUE(res.first && res.second == 0)
         << "success:" << res.first << " version:" << res.second << " meta: " << meta.ToAnonymousString();
@@ -373,8 +310,8 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest5, TestSize.Level0)
     meta.infos[1] = { 1, 2, 0 };
     meta.infos[2] = { 0, 0, 0 };
     meta.waterVersion = 3;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[0].first, stores_[0].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(dynamicStores_[0].first, dynamicStores_[0].second,
+        Serializable::Marshall(meta)));
     res = WvManager::GetInstance().GetVersion(TEST_DEVICE, type);
     EXPECT_TRUE(res.first && res.second == 4)
         << "success:" << res.first << " version:" << res.second << " meta: " << meta.ToAnonymousString();
@@ -390,20 +327,24 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest5, TestSize.Level0)
 HWTEST_F(WaterVersionManagerTest, GenerateWaterVersionTest1, TestSize.Level0)
 {
     std::string waterVersion =
-        WvManager::GetInstance().GenerateWaterVersion(stores_[0].first, stores_[0].second, WvManager::STATIC);
+        WvManager::GetInstance().GenerateWaterVersion(staticStores_[0].first, staticStores_[0].second);
     WvManager::WaterVersionMetaData meta;
     ASSERT_TRUE(Serializable::Unmarshall(waterVersion, meta)) << "waterVersion: " << waterVersion;
     EXPECT_EQ(meta.waterVersion, 1) << "waterVersion: " << waterVersion;
 
-    waterVersion =
-        WvManager::GetInstance().GenerateWaterVersion(stores_[1].first, stores_[1].second, WvManager::STATIC);
+    waterVersion = WvManager::GetInstance().GenerateWaterVersion(staticStores_[1].first, staticStores_[1].second);
     ASSERT_TRUE(Serializable::Unmarshall(waterVersion, meta)) << "waterVersion: " << waterVersion;
     EXPECT_EQ(meta.waterVersion, 2) << "waterVersion: " << waterVersion;
 
-    waterVersion =
-        WvManager::GetInstance().GenerateWaterVersion(stores_[0].first, stores_[0].second, WvManager::STATIC);
+    waterVersion = WvManager::GetInstance().GenerateWaterVersion(staticStores_[0].first, staticStores_[0].second);
     ASSERT_TRUE(Serializable::Unmarshall(waterVersion, meta)) << "waterVersion: " << waterVersion;
     EXPECT_EQ(meta.waterVersion, 3) << "waterVersion: " << waterVersion;
+
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    auto key = matrixMetaData.GetKey();
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(key, matrixMetaData, true));
+    EXPECT_EQ(matrixMetaData.statics & 0xFFF0, 3 << 4);
 }
 
 /**
@@ -416,9 +357,10 @@ HWTEST_F(WaterVersionManagerTest, GenerateWaterVersionTest1, TestSize.Level0)
 HWTEST_F(WaterVersionManagerTest, GenerateWaterVersionTest2, TestSize.Level0)
 {
     auto executorPool = std::make_shared<ExecutorPool>(5, 5);
-    for (int i = 0; i < 10; ++i) {
-        executorPool->Execute([] {
-            WvManager::GetInstance().GenerateWaterVersion(stores_[0].first, stores_[0].second, WvManager::DYNAMIC);
+    auto len = dynamicStores_.size();
+    for (size_t i = 0; i < 10; ++i) {
+        executorPool->Execute([index = i % len] {
+            WvManager::GetInstance().GenerateWaterVersion(dynamicStores_[index].first, dynamicStores_[index].second);
         });
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -426,6 +368,35 @@ HWTEST_F(WaterVersionManagerTest, GenerateWaterVersionTest2, TestSize.Level0)
     auto [success, version] =
         WvManager::GetInstance().GetVersion(DMAdapter::GetInstance().GetLocalDevice().uuid, WvManager::DYNAMIC);
     EXPECT_EQ(version, 10);
+
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    auto key = matrixMetaData.GetKey();
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(key, matrixMetaData, true));
+    EXPECT_EQ(matrixMetaData.dynamic & 0xFFF0, version << 4);
+}
+
+/**
+* @tc.name: GetWaterVersionTest1
+* @tc.desc: GetWaterVersion by different key
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: ht
+*/
+HWTEST_F(WaterVersionManagerTest, GetWaterVersionTest1, TestSize.Level0)
+{
+    auto len = staticStores_.size();
+    for (size_t i = 0; i < 10; ++i) {
+        auto bundle = staticStores_[i % len].first;
+        auto store = staticStores_[i % len].second;
+        ASSERT_FALSE(WvManager::GetInstance().GenerateWaterVersion(bundle, store).empty());
+    }
+    for (size_t i = 0; i < len; i++) {
+        auto waterVersion = WvManager::GetInstance().GetWaterVersion(staticStores_[i].first, staticStores_[i].second);
+        WvManager::WaterVersionMetaData meta;
+        ASSERT_TRUE(Serializable::Unmarshall(waterVersion, meta)) << "waterVersion: " << waterVersion;
+        EXPECT_EQ(meta.waterVersion, 10 / len * len + i + 1 - len * (10 % len <= i ? 1 : 0));
+    }
 }
 
 /**
@@ -438,14 +409,14 @@ HWTEST_F(WaterVersionManagerTest, GenerateWaterVersionTest2, TestSize.Level0)
 HWTEST_F(WaterVersionManagerTest, MixCallTest1, TestSize.Level0)
 {
     std::string waterVersion =
-        WvManager::GetInstance().GenerateWaterVersion(stores_[0].first, stores_[0].second, WvManager::STATIC);
+        WvManager::GetInstance().GenerateWaterVersion(staticStores_[0].first, staticStores_[0].second);
     WvManager::WaterVersionMetaData meta;
     ASSERT_TRUE(Serializable::Unmarshall(waterVersion, meta)) << "waterVersion: " << waterVersion;
     EXPECT_EQ(meta.waterVersion, 1) << "waterVersion: " << waterVersion;
 
     meta.deviceId = TEST_DEVICE;
-    EXPECT_TRUE(
-        WvManager::GetInstance().SetWaterVersion(stores_[0].first, stores_[0].second, Serializable::Marshall(meta)));
+    EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(staticStores_[0].first, staticStores_[0].second,
+        Serializable::Marshall(meta)));
 
     auto [_, version] = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::STATIC);
     EXPECT_EQ(version, 1) << "version: " << version;
@@ -464,13 +435,13 @@ HWTEST_F(WaterVersionManagerTest, MixCallTest2, TestSize.Level0)
     uint64_t version = 0;
     for (int i = 1; i < 11; ++i) {
         int index = i % dynamicMeta_.keys.size();
-        std::string waterVersion = WvManager::GetInstance().GenerateWaterVersion(stores_[index].first,
-            stores_[index].second, WvManager::DYNAMIC);
+        std::string waterVersion =
+            WvManager::GetInstance().GenerateWaterVersion(dynamicStores_[index].first, dynamicStores_[index].second);
         WvManager::WaterVersionMetaData meta;
         ASSERT_TRUE(Serializable::Unmarshall(waterVersion, meta)) << "waterVersion: " << waterVersion;
         EXPECT_EQ(meta.waterVersion, i) << "waterVersion: " << waterVersion;
         meta.deviceId = TEST_DEVICE;
-        EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(stores_[index].first, stores_[index].second,
+        EXPECT_TRUE(WvManager::GetInstance().SetWaterVersion(dynamicStores_[index].first, dynamicStores_[index].second,
             Serializable::Marshall(meta)));
 
         std::tie(success, version) = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::DYNAMIC);

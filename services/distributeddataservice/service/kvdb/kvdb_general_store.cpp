@@ -15,10 +15,10 @@
 #define LOG_TAG "KVDBGeneralStore"
 #include "kvdb_general_store.h"
 
-#include "cloud/schema_meta.h"
-#include "cloud/cloud_sync_finished_event.h"
-#include "crypto_manager.h"
 #include "checker/checker_manager.h"
+#include "cloud/cloud_sync_finished_event.h"
+#include "cloud/schema_meta.h"
+#include "crypto_manager.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
@@ -490,7 +490,20 @@ int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
 
 std::vector<std::string> KVDBGeneralStore::GetWaterVersion(const std::string &deviceId)
 {
-    return {};
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("store already closed! deviceId:%{public}s", Anonymous::Change(deviceId).c_str());
+        return {};
+    }
+    auto [status, versions] = delegate_->GetCloudVersion(deviceId);
+    if (status != DBStatus::OK || versions.empty()) {
+        return {};
+    }
+    std::vector<std::string> res;
+    for (auto &[_, version] : versions) {
+        res.push_back(std::move(version));
+    }
+    return res;
 }
 
 void KVDBGeneralStore::InitWaterVersion(const StoreMetaData &meta)
@@ -501,7 +514,9 @@ void KVDBGeneralStore::InitWaterVersion(const StoreMetaData &meta)
     if (!isDynamic && !isStatic) {
         return;
     }
-    // SetGenCloudVersionCallback
+    delegate_->SetGenCloudVersionCallback([info](auto &originVersion) {
+        return WaterVersionManager::GetInstance().GetWaterVersion(info.bundleName, info.storeId);
+    });
     callback_ = [meta]() {
         auto event = std::make_unique<CloudSyncFinishedEvent>(CloudEvent::CLOUD_SYNC_FINISHED, meta);
         EventCenter::GetInstance().PostEvent(std::move(event));
