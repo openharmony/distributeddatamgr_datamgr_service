@@ -55,6 +55,9 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
 constexpr const char *VALUES = " VALUES ";
+constexpr const LockAction LOCK_ACTION = static_cast<LockAction>(static_cast<uint32_t>(LockAction::INSERT) |
+    static_cast<uint32_t>(LockAction::UPDATE) | static_cast<uint32_t>(LockAction::DELETE) |
+    static_cast<uint32_t>(LockAction::DOWNLOAD));
 
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
@@ -464,7 +467,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
                       ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0)
                   : (syncMode > NEARBY_END && syncMode < CLOUD_END) ? delegate_->Sync(
                       { devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
-                          syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE },
+                          syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
                       GetDBProcessCB(std::move(async), highMode))
                                                                   : DistributedDB::INVALID_ARGS;
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
