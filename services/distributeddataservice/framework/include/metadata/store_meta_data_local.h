@@ -37,7 +37,6 @@ struct API_EXPORT StoreMetaDataLocal final : public Serializable {
     bool isDirty = false;
     bool isEncrypt = false;
     bool isPublic = false;
-    bool enableCloud = false;
     std::string dataDir = "";
     std::string schema = "";
     std::vector<PolicyValue> policies {};

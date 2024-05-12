@@ -68,7 +68,6 @@ bool StoreMetaDataLocal::Marshal(json &node) const
     SetValue(node[GET_NAME(schema)], schema);
     SetValue(node[GET_NAME(policies)], policies);
     SetValue(node[GET_NAME(isPublic)], isPublic);
-    SetValue(node[GET_NAME(enableCloud)], enableCloud);
     return true;
 }
 
@@ -82,7 +81,6 @@ bool StoreMetaDataLocal::Unmarshal(const json &node)
     GetValue(node, GET_NAME(schema), schema);
     GetValue(node, GET_NAME(policies), policies);
     GetValue(node, GET_NAME(isPublic), isPublic);
-    GetValue(node, GET_NAME(enableCloud), enableCloud);
     return true;
 }
 
@@ -97,7 +95,8 @@ StoreMetaDataLocal::~StoreMetaDataLocal()
 bool StoreMetaDataLocal::operator==(const StoreMetaDataLocal &metaData) const
 {
     if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
-        Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt)) {
+        Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt) ||
+        Constant::NotEqual(isPublic, metaData.isPublic)) {
         return false;
     }
     return dataDir == metaData.dataDir;

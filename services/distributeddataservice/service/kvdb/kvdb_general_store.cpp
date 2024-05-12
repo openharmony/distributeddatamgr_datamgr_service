@@ -86,10 +86,14 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
         dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
         dbOption.passwd = password;
     }
+    StoreMetaDataLocal local;
+    MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), local, true);
 
-    if (data.storeType == KvStoreType::SINGLE_VERSION) {
+    if (local.isPublic) {
+        dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
+    } else if (data.storeType == KvStoreType::SINGLE_VERSION) {
         dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
-    } else if (data.storeType == KvStoreType::DEVICE_COLLABORATION || data.enableCloud) {
+    } else if (data.storeType == KvStoreType::DEVICE_COLLABORATION) {
         dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
     }
 

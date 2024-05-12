@@ -53,6 +53,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(account)], account);
     SetValue(node[GET_NAME(dataType)], dataType);
     SetValue(node[GET_NAME(enableCloud)], enableCloud);
+    SetValue(node[GET_NAME(cloudAutoSync)], cloudAutoSync);
 
     // compatible with the versions which lower than VERSION_TAG_0000
     SetValue(node[GET_NAME(kvStoreType)], storeType);
@@ -92,6 +93,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(account), account);
     GetValue(node, GET_NAME(dataType), dataType);
     GetValue(node, GET_NAME(enableCloud), enableCloud);
+    GetValue(node, GET_NAME(cloudAutoSync), cloudAutoSync);
 
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
@@ -128,7 +130,9 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
     if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
         Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt) ||
         Constant::NotEqual(isSearchable, metaData.isSearchable) ||
-        Constant::NotEqual(isNeedCompress, metaData.isNeedCompress)) {
+        Constant::NotEqual(isNeedCompress, metaData.isNeedCompress) ||
+        Constant::NotEqual(enableCloud, metaData.enableCloud) ||
+        Constant::NotEqual(cloudAutoSync, metaData.cloudAutoSync)) {
         return false;
     }
     return (version == metaData.version && storeType == metaData.storeType && dataType == metaData.dataType &&
