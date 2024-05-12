@@ -21,7 +21,7 @@
 #include "kvdb_service.h"
 #include "feature/feature_system.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT KVDBServiceStub : public KVDBService, public DistributedData::FeatureSystem::Feature {
+class KVDBServiceStub : public KVDBService, public DistributedData::FeatureSystem::Feature {
 public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
 
