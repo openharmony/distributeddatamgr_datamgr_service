@@ -80,7 +80,8 @@ int32_t CursorMock::MoveToPrev()
 
 int32_t CursorMock::GetEntry(DistributedData::VBucket &entry)
 {
-    return GeneralError::E_NOT_SUPPORT;
+    GetRow(entry);
+    return GeneralError::E_OK;
 }
 
 int32_t CursorMock::GetRow(DistributedData::VBucket &data)

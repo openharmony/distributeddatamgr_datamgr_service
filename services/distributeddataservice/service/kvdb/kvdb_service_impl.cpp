@@ -24,6 +24,7 @@
 #include "backup_manager.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
+#include "cloud/cloud_server.h"
 #include "communication_provider.h"
 #include "communicator_context.h"
 #include "crypto_manager.h"
@@ -46,6 +47,7 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
+#include "water_version_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -171,7 +173,7 @@ void KVDBServiceImpl::Init()
             }
             meta.user = "0";
             StoreMetaDataLocal localMeta;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true) || !localMeta.isPublic ||
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) || !localMeta.isPublic ||
                 !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
                 ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
                     meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
@@ -268,27 +270,17 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
 Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+        ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        return Status::INVALID_ARGUMENT;
+    }
     if (!metaData.enableCloud) {
         ZLOGE("appId:%{public}s storeId:%{public}s  instanceId:%{public}d not supports cloud sync",
               appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
         return NOT_SUPPORT;
     }
-    DistributedData::StoreInfo storeInfo;
-    storeInfo.bundleName = appId.appId;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-    storeInfo.storeName = storeId;
-    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](
-                             const GenDetails &details) {
-        OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
-    };
-    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
-        metaData.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
-    auto info = ChangeEvent::EventInfo(mixMode, 0, metaData.isAutoSync, nullptr, syncCallback);
-    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
-    EventCenter::GetInstance().PostEvent(std::move(evt));
-    return SUCCESS;
+    return DoCloudSync(metaData, syncInfo);
 }
 
 void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail)
@@ -349,25 +341,19 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, cons
 
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId)
 {
-    CloudSync(appId, storeId, {});
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    if (!DeviceMatrix::GetInstance().IsSupportBroadcast()) {
-        TryToSync(meta, true);
-        return SUCCESS;
-    }
+    DoCloudSync(meta, {});
     if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
+        WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
         return SUCCESS;
     }
-    if (meta.isAutoSync) {
-        AutoSyncMatrix::GetInstance().OnChanged(meta);
-        TryToSync(meta);
-    }
+    TryToSync(meta, true);
     return SUCCESS;
 }
 
@@ -445,6 +431,10 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
         value.notifier_ = notifier;
         return true;
     });
+    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
+        ZLOGD("not support matrix");
+        return Status::SUCCESS;
+    }
     StoreMetaData meta;
     meta.appId = appId.appId;
     meta.tokenId = tokenId;
@@ -463,7 +453,9 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
             continue;
         }
         bool changed = ((mask & code) == code);
-        clientMask.insert_or_assign(networkId, changed);
+        if (changed) {
+            clientMask.insert_or_assign(networkId, changed);
+        }
     }
     notifier->OnRemoteChange(std::move(clientMask));
     return Status::SUCCESS;
@@ -471,6 +463,10 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
 
 void KVDBServiceImpl::RegisterMatrixChange()
 {
+    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
+        ZLOGD("not support matrix");
+        return;
+    }
     DeviceMatrix::GetInstance().RegRemoteChange([this](const std::string &device, uint16_t mask) {
         auto networkId = DMAdapter::GetInstance().ToNetworkID(device);
         if (networkId.empty()) {
@@ -488,7 +484,7 @@ void KVDBServiceImpl::RegisterMatrixChange()
             uint16_t code = DeviceMatrix::GetInstance().GetCode(meta);
             std::map<std::string, bool> clientMask;
             bool changed = ((mask & code) == code);
-            if ((value.changed_ && changed) || (!value.changed_ && changed)) {
+            if ((value.changed_ && changed) || (!value.changed_ && !changed)) {
                 return false;
             }
             value.changed_ = changed;
@@ -1095,6 +1091,29 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
         dbResults[id] = DBStatus(detail.code);
     }
     return dbResults;
+}
+
+Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
+{
+    if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+        return Status::CLOUD_DISABLED;
+    }
+
+    DistributedData::StoreInfo storeInfo;
+    storeInfo.bundleName = meta.bundleName;
+    storeInfo.user = atoi(meta.user.c_str());
+    storeInfo.tokenId = meta.tokenId;
+    storeInfo.storeName = meta.storeId;
+    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](
+                             const GenDetails &details) {
+        OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
+    };
+    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
+        meta.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
+    auto info = ChangeEvent::EventInfo(mixMode, 0, meta.isAutoSync, nullptr, syncCallback);
+    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return SUCCESS;
 }
 
 Status KVDBServiceImpl::DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type)

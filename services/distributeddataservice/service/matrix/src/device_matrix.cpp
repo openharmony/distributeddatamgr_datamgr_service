@@ -16,6 +16,7 @@
 #include "device_matrix.h"
 
 #include "bootstrap.h"
+#include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -77,6 +78,16 @@ DeviceMatrix::~DeviceMatrix()
 
 bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
 {
+    auto stores = CheckerManager::GetInstance().GetDynamicStores();
+    dynamicApps_.clear();
+    for (auto &store : stores) {
+        dynamicApps_.push_back(std::move(store.bundleName));
+    }
+    stores = CheckerManager::GetInstance().GetStaticStores();
+    staticsApps_.clear();
+    for (auto &store : stores) {
+        staticsApps_.push_back(std::move(store.bundleName));
+    }
     auto pipe = Bootstrap::GetInstance().GetProcessLabel() + "-" + "default";
     auto status = Commu::GetInstance().Broadcast(
         { pipe }, { INVALID_LEVEL, INVALID_LEVEL, INVALID_VALUE, INVALID_LENGTH });
@@ -580,7 +591,7 @@ std::map<std::string, uint16_t> DeviceMatrix::GetRemoteDynamicMask()
     std::map<std::string, uint16_t> masks;
     std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
     for (const auto &[device, mask] : remotes_) {
-        masks.insert_or_assign(device, mask.dynamic);
+        masks.insert_or_assign(device, Low(mask.dynamic));
     }
     return masks;
 }
@@ -720,7 +731,7 @@ bool DeviceMatrix::DataLevel::IsValid() const
         switches == INVALID_VALUE && switchesLen == INVALID_LENGTH);
 }
 
-bool DeviceMatrix::IsSupportBroadcast()
+bool DeviceMatrix::IsSupportMatrix()
 {
     return isSupportBroadcast_;
 }

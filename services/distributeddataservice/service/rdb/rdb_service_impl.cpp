@@ -100,6 +100,10 @@ RdbServiceImpl::RdbServiceImpl()
                 meta.GetStoreAlias().c_str());
             return;
         }
+        if (meta.storeType < StoreMetaData::STORE_RELATIONAL_BEGIN ||
+            meta.storeType > StoreMetaData::STORE_RELATIONAL_END) {
+            return;
+        }
         auto watchers = GetWatchers(meta.tokenId, meta.storeId);
         auto store = AutoCache::GetInstance().GetStore(meta, watchers);
         if (store == nullptr) {

@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-distributedfilejs_path = "//foundation/distributeddatamgr/distributedfile"
-
 kv_store_path = "//foundation/distributeddatamgr/kv_store"
 
 relational_store_path = "//foundation/distributeddatamgr/relational_store"

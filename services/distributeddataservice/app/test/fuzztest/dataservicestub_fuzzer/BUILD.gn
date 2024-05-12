@@ -40,6 +40,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/service/backup/include",
     "${data_service_path}/service/dumper/include",
     "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/waterversion",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/installer",
@@ -48,7 +49,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/adapter/include",
     "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
-    "${distributedfilejs_path}/interfaces/kits/js/src/mod_securitylabel",
     "//third_party/json/single_include",
   ]
 
@@ -99,6 +99,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "file_api:securitylabel",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
