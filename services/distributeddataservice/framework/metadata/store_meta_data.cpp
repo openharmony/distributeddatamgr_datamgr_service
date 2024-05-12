@@ -135,8 +135,8 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
             securityLevel == metaData.securityLevel && area == metaData.area && uid == metaData.uid &&
             tokenId == metaData.tokenId && instanceId == metaData.instanceId && appId == metaData.appId &&
             appType == metaData.appType && bundleName == metaData.bundleName && dataDir == metaData.dataDir &&
-            storeId == metaData.storeId && user == metaData.user && deviceId == metaData.deviceId
-            );
+            storeId == metaData.storeId && user == metaData.user && deviceId == metaData.deviceId &&
+            account == metaData.account);
 }
 
 bool StoreMetaData::operator!=(const StoreMetaData &metaData) const
