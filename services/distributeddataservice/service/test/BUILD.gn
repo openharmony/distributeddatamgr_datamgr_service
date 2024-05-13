@@ -40,7 +40,6 @@ config("module_private_config") {
     "${data_service_path}/service/data_share",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
-
     "${data_service_path}/service/cloud/",
     "${dataobject_path}/interfaces/innerkits",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
@@ -379,8 +378,10 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "cache_cursor_test.cpp",
     "rdb_asset_loader_test.cpp",
+    "rdb_cursor_test.cpp",
   ]
 
   include_dirs = [
@@ -391,6 +392,11 @@ ohos_unittest("RdbServiceTest") {
 
   configs = [ ":module_private_config" ]
 
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
   external_deps = [
     "ability_base:base",
     "ability_base:want",
@@ -399,6 +405,8 @@ ohos_unittest("RdbServiceTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [

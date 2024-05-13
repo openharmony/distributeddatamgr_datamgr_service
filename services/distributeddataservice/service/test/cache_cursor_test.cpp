@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
-namespace DistributedDataTest {
+namespace DistributedRDBTest {
 static constexpr int MAX_DATA_NUM = 100;
 static constexpr int AGE = 25;
 static constexpr const char *NAME = "tony";
@@ -77,7 +77,7 @@ HWTEST_F(CacheCursorTest, CacheCursorTest001, TestSize.Level1)
 {
     auto cursor = CacheCursorTest::GetCursor();
     EXPECT_NE(cursor, nullptr);
-    std::vector<std::string> expectedNames {"age", "identifier", "name", "phoneNumber"};
+    std::vector<std::string> expectedNames = {"age", "identifier", "name", "phoneNumber"};
     std::vector<std::string> names;
     auto result = cursor->GetColumnNames(names);
     EXPECT_EQ(result, GeneralError::E_OK);
@@ -127,7 +127,7 @@ HWTEST_F(CacheCursorTest, UnCacheCursorTest001, TestSize.Level1)
 {
     auto cursor = CacheCursorTest::GetCursor();
     EXPECT_NE(cursor, nullptr);
-    std::vector<std::string> expectedNames {"age", "identifier", "name", "phoneNumber"};
+    std::vector<std::string> expectedNames = {"age", "identifier", "name", "phoneNumber"};
     std::vector<std::string> names;
     auto result = cursor->GetColumnNames(names);
     EXPECT_EQ(result, GeneralError::E_OK);
@@ -255,5 +255,5 @@ HWTEST_F(CacheCursorTest, UnCacheCursorTest002, TestSize.Level0)
     err = cursor->Close();
     EXPECT_EQ(err, GeneralError::E_OK);
 }
-} // namespace DistributedDataTest
+} // namespace DistributedRDBTest
 } // namespace OHOS::Test

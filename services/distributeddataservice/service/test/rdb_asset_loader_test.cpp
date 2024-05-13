@@ -42,6 +42,7 @@ public:
     {
         return GeneralError::E_OK;
     }
+
     int32_t RemoveLocalAssets(const std::string &tableName, const std::string &gid,
         const DistributedData::Value &prefix, VBucket &assets) override
     {
