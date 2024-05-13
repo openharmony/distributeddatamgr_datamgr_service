@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+# Copyright (c) 2022 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -22,25 +22,25 @@ config("module_private_config") {
 
   include_dirs = [
     "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
-    "${data_service_path}/service/bootstrap/include/",
-    "${data_service_path}/service/config/include/",
-    "${data_service_path}/service/directory/include/",
-    "${data_service_path}/service/matrix/include/",
-    "${data_service_path}/service/common/",
-    "${data_service_path}/service/rdb/",
-    "${data_service_path}/service/object/",
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/bootstrap/include/",
+    "${data_service_path}/service/cloud/",
+    "${data_service_path}/service/config/include/",
+    "${data_service_path}/service/common/",
     "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/directory/include/",
     "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/data_share/data",
     "${data_service_path}/service/data_share/strategies",
     "${data_service_path}/service/data_share/subscriber_managers",
     "${data_service_path}/service/data_share",
+    "${data_service_path}/service/matrix/include/",
     "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/object/",
     "${data_service_path}/service/permission/include",
-    "${data_service_path}/service/cloud/",
+    "${data_service_path}/service/rdb/",
     "${dataobject_path}/interfaces/innerkits",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
   ]
