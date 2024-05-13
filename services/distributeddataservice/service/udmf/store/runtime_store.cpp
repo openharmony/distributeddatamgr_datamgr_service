@@ -149,7 +149,7 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
     }
     for (const auto &record : unifiedData.GetRecords()) {
         int64_t recordSize = record->GetSize();
-        auto udType = UD_TYPE_MAP.at(record->GetType());
+        auto udType = UtdUtils::ConvertUtdTypeToJsUtdType(record->GetType());
         auto it = summary.summary.find(udType);
         if (it == summary.summary.end()) {
             summary.summary[udType] = recordSize;
