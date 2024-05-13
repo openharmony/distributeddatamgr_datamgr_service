@@ -16,6 +16,7 @@
 #include "bundle_mgr_proxy.h"
 
 #include "account/account_delegate.h"
+#include "datashare_radar_reporter.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "log_print.h"
@@ -65,12 +66,16 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
     }
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
+        RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS, RadarReporter::GET_BMS, RadarReporter::FAILED,
+            RadarReporter::ERROR_CODE, RadarReporter::GET_BMS_FAILED);
         ZLOGE("GetBundleMgrProxy is nullptr!");
         return false;
     }
     bool ret = bmsClient->GetBundleInfo(
         bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo, userId);
     if (!ret) {
+        RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS, RadarReporter::GET_BMS, RadarReporter::FAILED,
+            RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
         ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
         return false;
     }

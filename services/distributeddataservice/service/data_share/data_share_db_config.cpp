@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "datashare_errno.h"
+#include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "extension_connect_adaptor.h"
 #include "log_print.h"
@@ -50,6 +51,9 @@ std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> Dat
         if (!hasExtension) {
             ZLOGE("DB not exist, bundleName:%{public}s, storeName:%{public}s, userId:%{public}d",
                 bundleName.c_str(), storeName.c_str(), userId);
+            RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS,
+                RadarReporter::PROXY_MATEDATA_EXISTS, RadarReporter::FAILED,
+                RadarReporter::ERROR_CODE, RadarReporter::META_DATA_NOT_EXISTS);
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, metaData, nullptr);
         }
         ExtensionConnectAdaptor::TryAndWait(uri, bundleName);
@@ -57,6 +61,9 @@ std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> Dat
         if (!succ) {
             ZLOGE("Query metaData fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
                 bundleName.c_str(), userId, URIUtils::Anonymous(uri).c_str());
+            RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS,
+                RadarReporter::PROXY_MATEDATA_EXISTS, RadarReporter::FAILED,
+                RadarReporter::ERROR_CODE, RadarReporter::META_DATA_NOT_EXISTS);
             return std::make_tuple(NativeRdb::E_DB_NOT_EXIST, meta, nullptr);
         }
         metaData = std::move(meta);
