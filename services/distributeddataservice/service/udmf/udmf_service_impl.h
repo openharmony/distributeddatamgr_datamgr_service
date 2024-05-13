@@ -56,6 +56,7 @@ private:
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
     void SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records);
     bool IsPermissionInCache(const QueryOption &query);
+    bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
 
     using StaticActs = DistributedData::StaticActs;
     class UdmfStatic : public StaticActs {

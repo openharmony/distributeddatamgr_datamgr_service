@@ -41,12 +41,12 @@ public:
         MATRIX_BROADCAST,
         MATRIX_BUTT
     };
-    enum LevelType: int32_t {
+    enum LevelType : int32_t {
         STATICS = 0,
         DYNAMIC,
         BUTT,
     };
-    enum ChangeType: int32_t {
+    enum ChangeType : int32_t {
         CHANGE_LOCAL = 0,
         CHANGE_REMOTE,
         CHANGE_ALL,
@@ -82,10 +82,11 @@ public:
     std::pair<bool, uint16_t> GetConsLevel(const std::string &device, LevelType type = LevelType::DYNAMIC);
     std::pair<bool, bool> IsConsistent(const std::string &device);
     std::pair<bool, MatrixMetaData> GetMatrixMeta(const std::string &device, bool IsConsistent = false);
+    void SetMatrixMeta(const MatrixMetaData &meta, bool IsConsistent = false);
     std::map<std::string, uint16_t> GetRemoteDynamicMask();
     bool IsDynamic(const StoreMetaData &metaData);
     bool IsStatics(const StoreMetaData &metaData);
-    bool IsSupportBroadcast();
+    bool IsSupportMatrix();
 
 private:
     static constexpr uint32_t RESET_MASK_DELAY = 10; // min
@@ -153,9 +154,8 @@ private:
     std::map<std::string, Mask> onLines_;
     std::map<std::string, Mask> offLines_;
     std::map<std::string, Mask> remotes_;
-    std::vector<std::string> dynamicApps_ = { "distributed_device_profile_service", "bundle_manager_service",
-        "dtbhardware_manager_service" };
-    std::vector<std::string> staticsApps_ = { "distributed_device_profile_service", "dtbhardware_manager_service" };
+    std::vector<std::string> dynamicApps_;
+    std::vector<std::string> staticsApps_;
     std::function<void(const std::string &, uint16_t)> observer_;
     LRUBucket<std::string, MatrixMetaData> matrixs_{ MAX_DEVICES };
     LRUBucket<std::string, MatrixMetaData> versions_{ MAX_DEVICES };

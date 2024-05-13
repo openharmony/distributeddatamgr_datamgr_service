@@ -59,7 +59,7 @@ bool LoadConfigCommonStrategy::GetInfoFromProxyURI(
         if (!success) {
             return false;
         }
-        user = std::move(data);
+        user = static_cast<int32_t>(std::move(data));
     }
     if (!queryParams[TOKEN_ID_PARAM].empty()) {
         auto [success, data] = URIUtils::Strtoul(queryParams[TOKEN_ID_PARAM]);

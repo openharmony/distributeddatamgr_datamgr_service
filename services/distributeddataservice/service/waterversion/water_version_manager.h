@@ -49,10 +49,10 @@ public:
     private:
         static constexpr const char *KEY_PREFIX = "WaterVersionMeta";
     };
-    static WaterVersionManager &GetInstance();
-    WaterVersionManager();
-    void Init();
-    std::string GenerateWaterVersion(const std::string &bundleName, const std::string &storeName, Type type);
+    API_EXPORT static WaterVersionManager &GetInstance();
+    API_EXPORT void Init();
+    std::string GenerateWaterVersion(const std::string &bundleName, const std::string &storeName);
+    std::string GetWaterVersion(const std::string &bundleName, const std::string &storeName);
     std::pair<bool, uint64_t> GetVersion(const std::string &deviceId, Type type);
     std::string GetWaterVersion(const std::string &deviceId, Type type);
     bool SetWaterVersion(const std::string &bundleName, const std::string &storeName,
@@ -60,6 +60,12 @@ public:
     bool DelWaterVersion(const std::string &deviceId);
 
 private:
+    WaterVersionManager();
+    ~WaterVersionManager();
+    WaterVersionManager(const WaterVersionManager &) = delete;
+    WaterVersionManager(WaterVersionManager &&) noexcept = delete;
+    WaterVersionManager& operator=(const WaterVersionManager &) = delete;
+    WaterVersionManager& operator=(WaterVersionManager &&) = delete;
     static constexpr size_t MAX_DEVICES = 16;
     class WaterVersion {
     public:
@@ -83,6 +89,7 @@ private:
     static std::string Merge(const std::string &bundleName, const std::string &storeName);
     static std::pair<std::string, std::string> Split(const std::string &key);
     static void UpdateWaterVersion(WaterVersionMetaData &metaData);
+    static void SaveMatrix(const WaterVersionMetaData &metaData);
     std::vector<WaterVersion> waterVersions_;
 };
 } // namespace DistributedData

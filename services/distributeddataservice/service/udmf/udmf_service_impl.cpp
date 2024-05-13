@@ -37,6 +37,7 @@ using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
+constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -201,11 +202,13 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
             return E_NO_PERMISSION;
         }
     }
-
-    if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
-        ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
-        return E_DB_ERROR;
+    if (!IsReadAndKeep(runtime->privileges, query)) {
+        if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
+            ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
+            return E_DB_ERROR;
+        }
     }
+
     privilegeCache_.erase(query.key);
 
     PreProcessUtils::SetRemoteData(unifiedData);
@@ -216,6 +219,22 @@ bool UdmfServiceImpl::IsPermissionInCache(const QueryOption &query)
 {
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId) {
+        return true;
+    }
+    return false;
+}
+
+bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query)
+{
+    for (const auto &privilege : privileges) {
+        if (privilege.tokenId == query.tokenId && privilege.readPermission == PRIVILEGE_READ_AND_KEEP) {
+            return true;
+        }
+    }
+    
+    auto iter = privilegeCache_.find(query.key);
+    if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId &&
+        iter->second.readPermission == PRIVILEGE_READ_AND_KEEP) {
         return true;
     }
     return false;
