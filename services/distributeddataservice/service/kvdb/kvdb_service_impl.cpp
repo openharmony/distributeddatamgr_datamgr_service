@@ -342,15 +342,20 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    if (meta.cloudAutoSync) {
-        DoCloudSync(meta, {});
-    }
     if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
         WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
+        if (meta.cloudAutoSync) {
+            DoCloudSync(meta, {});
+        }
         return SUCCESS;
     }
-    TryToSync(meta, true);
+    if (meta.cloudAutoSync) {
+        DoCloudSync(meta, {});
+    }
+    if (meta.isAutoSync) {
+        TryToSync(meta, true);
+    }
     return SUCCESS;
 }
 
@@ -765,7 +770,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
             old.enableCloud, meta.enableCloud, oldLocal.isPublic, options.isPublic);
         return Status::STORE_META_CHANGED;
     }
-    if (options.enableCloud || executors_ != nullptr) {
+    if (options.cloudConfig.enableCloud || executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);

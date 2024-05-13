@@ -26,6 +26,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "metadata/store_meta_data_local.h"
 #include "query_helper.h"
 #include "rdb_cloud.h"
 #include "snapshot/bind_event.h"
@@ -88,13 +89,10 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
     }
     StoreMetaDataLocal local;
     MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), local, true);
-
-    if (local.isPublic) {
+    if (local.isPublic || data.storeType == KvStoreType::DEVICE_COLLABORATION) {
         dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
     } else if (data.storeType == KvStoreType::SINGLE_VERSION) {
         dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
-    } else if (data.storeType == KvStoreType::DEVICE_COLLABORATION) {
-        dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
     }
 
     dbOption.schema = data.schema;
@@ -305,6 +303,7 @@ DBStatus KVDBGeneralStore::CloudSync(
     syncOption.devices = devices;
     syncOption.mode = cloudSyncMode;
     syncOption.waitTime = wait;
+    syncOption.lockAction = DistributedDB::LockAction::NONE;
     if (storeInfo_.user == 0) {
         std::vector<int32_t> users;
         AccountDelegate::GetInstance()->QueryUsers(users);

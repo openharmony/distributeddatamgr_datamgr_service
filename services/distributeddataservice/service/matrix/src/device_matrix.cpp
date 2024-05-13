@@ -663,6 +663,14 @@ std::pair<bool, MatrixMetaData> DeviceMatrix::GetMatrixMeta(const std::string &d
     return { success, meta };
 }
 
+void DeviceMatrix::SetMatrixMeta(const MatrixMetaData &meta, bool IsConsistent)
+{
+    if (!IsConsistent) {
+        matrixs_.Set(meta.deviceId, meta);
+    }
+    MetaDataManager::GetInstance().SaveMeta(IsConsistent ? meta.GetConsistentKey() : meta.GetKey(), meta, true);
+}
+
 MatrixMetaData DeviceMatrix::GetMatrixInfo(const std::string &device)
 {
     MatrixMetaData meta;

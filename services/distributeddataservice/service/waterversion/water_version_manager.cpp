@@ -17,6 +17,7 @@
 
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
+#include "device_matrix.h"
 #include "store/auto_cache.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -219,19 +220,21 @@ bool WaterVersionManager::InitMeta(WaterVersionMetaData &metaData)
 void WaterVersionManager::UpdateWaterVersion(WaterVersionMetaData &metaData)
 {
     ZLOGI("before update meta:%{public}s", metaData.ToAnonymousString().c_str());
-    bool isUpdated = false;
+    uint64_t maxVersion = 0;
+    uint64_t consistentVersion = 0;
     for (size_t i = 0; i < metaData.keys.size(); ++i) {
         for (size_t j = 0; j < metaData.keys.size(); ++j) {
+            maxVersion = std::max(maxVersion, metaData.infos[j][j]);
             if (metaData.infos[i][j] > metaData.infos[j][j]) {
                 break;
             }
-            if (j == metaData.keys.size() - 1 && metaData.infos[i][i] > metaData.waterVersion) {
-                metaData.waterVersion = metaData.infos[i][i];
-                isUpdated = true;
+            if (j == metaData.keys.size() - 1 && metaData.infos[i][i] > consistentVersion) {
+                consistentVersion = metaData.infos[i][i];
             }
         }
     }
-    if (isUpdated) {
+    if (consistentVersion > metaData.waterVersion || maxVersion < metaData.waterVersion) {
+        metaData.waterVersion = consistentVersion;
         SaveMatrix(metaData);
         ZLOGI("after update meta:%{public}s", metaData.ToAnonymousString().c_str());
     } else {
@@ -314,7 +317,7 @@ void WaterVersionManager::SaveMatrix(const WaterVersionMetaData &metaData)
     } else {
         return;
     }
-    MetaDataManager::GetInstance().SaveMeta(key, matrixMetaData, true);
+    DeviceMatrix::GetInstance().SetMatrixMeta(matrixMetaData, matrixMetaData.deviceId != localUuid);
 }
 
 bool WaterVersionMetaData::Marshal(Serializable::json &node) const
@@ -510,10 +513,9 @@ bool WaterVersionManager::WaterVersion::InitWaterVersion(const WaterVersionMetaD
 {
     if (keys_ != metaData.keys || metaData.version != WaterVersionMetaData::DEFAULT_VERSION) {
         auto meta = Upgrade(keys_, metaData);
-        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-        versions_.Set(meta.deviceId, meta);
+        return MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true) &&
+               versions_.Set(meta.deviceId, meta);
     }
-    versions_.Set(metaData.deviceId, metaData);
-    return true;
+    return versions_.Set(metaData.deviceId, metaData);
 }
 } // namespace OHOS::DistributedData
