@@ -82,7 +82,7 @@ public:
     void DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     int32_t OnInitialize() override;
     int32_t EnableSilentProxy(const std::string &uri, bool enable) override;
-    int32_t IsSilentProxyEnable(const std::string &uri, bool isCreateHelper = true) override;
+    int32_t GetSilentProxyStatus(const std::string &uri, bool isCreateHelper) override;
     int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
     int32_t UnregisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
 
@@ -113,7 +113,7 @@ private:
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);
     int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
-    int32_t IsBMSAndMetaDataReady(const std::string &uri, const int32_t tokenId);
+    int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;

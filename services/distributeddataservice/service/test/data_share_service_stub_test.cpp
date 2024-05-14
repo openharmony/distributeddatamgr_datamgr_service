@@ -231,7 +231,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRegisterObserver001, TestSize.Level1)
     result = dataShareServiceStub->OnRemoteSetSilentSwitch(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 
-    result = dataShareServiceStub->OnRemoteIsSilentProxyEnable(request, reply);
+    result = dataShareServiceStub->OnRemoteGetSilentProxyStatus(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 
     result = dataShareServiceStub->OnRemoteUnregisterObserver(request, reply);

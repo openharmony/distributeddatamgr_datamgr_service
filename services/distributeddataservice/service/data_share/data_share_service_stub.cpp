@@ -368,14 +368,14 @@ int32_t DataShareServiceStub::OnRemoteSetSilentSwitch(MessageParcel &data, Messa
     return E_OK;
 }
 
-int32_t DataShareServiceStub::OnRemoteIsSilentProxyEnable(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRemoteGetSilentProxyStatus(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     if (!ITypesUtil::Unmarshal(data, uri)) {
         ZLOGE("Unmarshal silent enable failed. uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t enable = IsSilentProxyEnable(uri);
+    int32_t enable = GetSilentProxyStatus(uri);
     if (!ITypesUtil::Marshal(reply, enable)) {
         ZLOGE("Marshal enable:%{public}d failed.", enable);
         return IPC_STUB_WRITE_PARCEL_ERR;

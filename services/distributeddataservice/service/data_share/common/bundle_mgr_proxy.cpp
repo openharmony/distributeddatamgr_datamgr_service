@@ -34,13 +34,9 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
         ZLOGE("Failed to get system ability mgr.");
         return nullptr;
     }
-    if (systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID) == nullptr) {
-        ZLOGE("BMS service not ready to complete.");
-        return nullptr;
-    }
-    proxy_ = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    proxy_ = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (proxy_ == nullptr) {
-        ZLOGE("Failed to get bundle manager proxy.");
+        ZLOGE("BMS service not ready to complete.");
         return nullptr;
     }
     deathRecipient_ = new (std::nothrow)BundleMgrProxy::ServiceDeathRecipient(weak_from_this());

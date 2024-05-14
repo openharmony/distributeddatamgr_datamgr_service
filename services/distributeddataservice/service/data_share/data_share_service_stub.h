@@ -47,7 +47,7 @@ private:
     int32_t OnRemoteNotifyConnectDone(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteNotifyObserver(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteSetSilentSwitch(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRemoteIsSilentProxyEnable(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRemoteGetSilentProxyStatus(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteRegisterObserver(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoteUnregisterObserver(MessageParcel& data, MessageParcel& reply);
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
@@ -71,7 +71,7 @@ private:
         &DataShareServiceStub::OnRemoteNotifyConnectDone,
         &DataShareServiceStub::OnRemoteNotifyObserver,
         &DataShareServiceStub::OnRemoteSetSilentSwitch,
-        &DataShareServiceStub::OnRemoteIsSilentProxyEnable,
+        &DataShareServiceStub::OnRemoteGetSilentProxyStatus,
         &DataShareServiceStub::OnRemoteRegisterObserver,
         &DataShareServiceStub::OnRemoteUnregisterObserver};
 };
