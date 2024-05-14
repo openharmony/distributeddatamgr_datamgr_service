@@ -28,6 +28,7 @@ ohos_static_library("distributeddata_permission_static") {
     "../include/permission",
     "../include/utils",
     "${kv_store_common_path}",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
   ]
 
@@ -41,7 +42,6 @@ ohos_static_library("distributeddata_permission_static") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "hilog:libhilog",
-    "kv_store:distributeddata_inner",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

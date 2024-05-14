@@ -29,6 +29,9 @@ ohos_static_library("distributeddata_installer_static") {
   include_dirs = [
     "../../../adapter/include/account",
     "../../src",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/permission/include",
@@ -52,8 +55,6 @@ ohos_static_library("distributeddata_installer_static") {
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

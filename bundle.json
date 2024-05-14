@@ -73,7 +73,6 @@
                 "ipc",
                 "napi",
                 "netmanager_base",
-                "openssl",
                 "os_account",
                 "relational_store",
                 "resource_management",
@@ -88,6 +87,7 @@
                 "cJSON",
                 "jsoncpp",
                 "libuv",
+                "openssl",
                 "sqlite",
                 "zlib"
             ]
@@ -152,32 +152,6 @@
                             "utils/ref_count.h"
                         ],
                         "header_base": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include"
-                    }
-                },
-                {
-                    "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-                    "header": {
-                        "header_files": [
-                            "account/account_delegate.h",
-                            "broadcaster/broadcast_sender.h",
-                            "communicator/app_data_change_listener.h",
-                            "communicator/commu_types.h",
-                            "communicator/communication_provider.h",
-                            "communicator/communicator_context.h",
-                            "communicator/device_manager_adapter.h",
-                            "communicator/idevice_query.h",
-                            "communicator/process_communicator_impl.h",
-                            "communicator/route_head_handler.h",
-                            "dfx/behaviour_reporter.h",
-                            "dfx/db_meta_callback_delegate.h",
-                            "dfx/dfx_types.h",
-                            "dfx/fault_reporter.h",
-                            "dfx/reporter.h",
-                            "dfx/statistic_reporter.h",
-                            "permission/permission_validator.h",
-                            "utils/kvstore_utils.h"
-                        ],
-                        "header_base": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include"
                     }
                 }
             ],
