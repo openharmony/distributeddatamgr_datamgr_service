@@ -84,7 +84,6 @@
                 "app_file_service",
                 "file_api",
                 "json",
-                "openssl",
                 "data_object"
             ],
             "third_party": [
