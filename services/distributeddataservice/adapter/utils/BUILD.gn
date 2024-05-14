@@ -35,13 +35,13 @@ ohos_static_library("distributeddata_utils_static") {
     "../include/communicator",
     "../include/dfx",
     "${kv_store_common_path}",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "kv_store:distributeddata_inner",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
