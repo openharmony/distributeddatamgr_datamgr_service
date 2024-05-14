@@ -400,6 +400,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
         return false;
     }
 
+    auto accountId = AccountDelegate::::GetInstance()->GetHosAccountId();
     for (const auto &storeMeta : entries) {
         if ((!param.userId.empty() && (param.userId != storeMeta.user)) || (localDeviceId != storeMeta.deviceId) ||
             ((StoreMetaData::STORE_RELATIONAL_BEGIN <= storeMeta.storeType) &&
@@ -408,13 +409,13 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
             continue;
         }
         const std::string &itemTripleIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(storeMeta.user, storeMeta.appId,
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(accountId, storeMeta.appId,
                 storeMeta.storeId, false);
         const std::string &itemDualIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
         if (identifier == itemTripleIdentifier && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
             // old triple tuple identifier, should SetEqualIdentifier
-            ResolveAutoLaunchCompatible(storeMeta, identifier);
+            ResolveAutoLaunchCompatible(storeMeta, identifier, accountId);
         }
         if (identifier == itemDualIdentifier || identifier == itemTripleIdentifier) {
             ZLOGI("identifier  find");
@@ -464,17 +465,18 @@ DistributedDB::SecurityOption KvStoreDataService::ConvertSecurity(int securityLe
     }
 }
 
-void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeMeta, const std::string &identifier)
+void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeMeta, const std::string &identifier,
+    const std::string &accountId)
 {
-    ZLOGI("AutoLaunch:peer device is old tuple, begin to open store");
-    if (storeMeta.storeType > KvStoreType::SINGLE_VERSION || storeMeta.version > STORE_VERSION) {
+    if (storeMeta.storeType > KvStoreType::SINGLE_VERSION) {
         ZLOGW("no longer support multi or higher version store type");
         return;
     }
-
+    ZLOGI("AutoLaunch:peer device is old tuple, begin to open store, storeId:%{public}",
+        Anonymous::Change(storeMeta.storeId).c_str());
     // open store and SetEqualIdentifier, then close store after 60s
     DistributedDB::KvStoreDelegateManager delegateManager(storeMeta.appId, storeMeta.user);
-    delegateManager.SetKvStoreConfig({ storeMeta.dataDir });
+    delegateManager.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(storeMeta) });
     Options options = {
         .createIfMissing = false,
         .encrypt = storeMeta.isEncrypt,
@@ -497,9 +499,8 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
         [&store, &storeMeta](int status, DistributedDB::KvStoreNbDelegate *delegate) {
             ZLOGI("temporary open db for equal identifier, ret:%{public}d", status);
             if (delegate != nullptr) {
-                KvStoreTuple tuple = { storeMeta.user, storeMeta.appId, storeMeta.storeId };
-                UpgradeManager::SetCompatibleIdentifyByType(delegate, tuple, IDENTICAL_ACCOUNT_GROUP);
-                UpgradeManager::SetCompatibleIdentifyByType(delegate, tuple, PEER_TO_PEER_GROUP);
+                KvStoreTuple tuple = { accountId, storeMeta.appId, storeMeta.storeId };
+                UpgradeManager::SetCompatibleIdentifyByType(delegate, tuple);
                 store = delegate;
             }
         });

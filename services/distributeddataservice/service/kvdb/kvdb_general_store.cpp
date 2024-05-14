@@ -33,6 +33,7 @@
 #include "user_delegate.h"
 #include "utils/anonymous.h"
 #include "water_version_manager.h"
+#include "device_manager_adapter.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -41,7 +42,7 @@ using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
-
+using DMAdapter = DistributedData::DeviceManagerAdapter;
 KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
 {
     DBPassword dbPassword;
@@ -353,6 +354,35 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
         }
     }
     return ConvertStatus(dbStatus);
+}
+
+void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId)
+{
+    std::vector<std::string> accDevs, defaultAccDevs;
+    std::string accDevsId, defaultDevsId;
+    auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
+    for (const auto &devid : uuids) {
+        if (DmAdapter::GetInstance().IsOHOSType(devid)) {
+            continue;
+        }
+        auto type = DmAdapter::GetInstance().GetAccountType(devid);
+        if (type == IDENTICAL_ACCOUNT) {
+            accDevsId = AccountDelegate::::GetInstance()->GetHosAccountId();
+            accDevs.push_back(devid);
+        }
+        if (type == NO_ACCOUNT) {
+            defaultDevsId = "default";
+            defaultAccDevs.push_back(devid);
+        }
+    }
+    if (!accDevs.empty()) {
+        auto syncIdentifier = KvManager::GetKvStoreIdentifier(accDevsId, appId, storeId);
+        delegate_->SetEqualIdentifier(syncIdentifier, accDevs);
+    }
+    if (!defaultAccDevs.empty()) {
+        auto syncIdentifier = KvManager::GetKvStoreIdentifier(defaultDevsId, appId, storeId);
+        delegate_->SetEqualIdentifier(syncIdentifier, defaultAccDevs);
+    }
 }
 
 std::shared_ptr<Cursor> KVDBGeneralStore::PreSharing(GenQuery &query)

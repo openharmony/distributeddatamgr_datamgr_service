@@ -395,7 +395,8 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
         return false;
     }
     if (uuid == CLOUD_DEVICE_UUID) {
-        dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, OH_OS_TYPE };
+        dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, OH_OS_TYPE,
+            static_cast<int32_t>(dmInfo.authForm)};
         return true;
     }
     DeviceExtraInfo deviceExtraInfo;
@@ -403,7 +404,8 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
         ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
         return false;
     }
-    dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE };
+    dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE,
+        static_cast<int32_t>(dmInfo.authForm)};
     return true;
 }
 
@@ -467,7 +469,8 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
             continue;
         }
         DeviceInfo dvInfo = { std::move(uuid), std::move(udid), std::move(networkId),
-                              std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE };
+                              std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE,
+                              static_cast<int32_t>(dmInfo.authForm) };
         dvInfos.emplace_back(std::move(dvInfo));
     }
     return dvInfos;
@@ -495,9 +498,22 @@ bool DeviceManagerAdapter::IsOHOsType(const std::string& id)
     DeviceInfo dvInfo;
     if (!deviceInfos_.Get(id, dvInfo)) {
         InitDeviceInfo();
-        return deviceInfos_.Get(id, dvInfo);
+        deviceInfos_.Get(id, dvInfo);
+    }
+    if (dvInfo.osType != OH_OS_TYPE) {
+        return false;
     }
     return true;
+}
+
+bool DeviceManagerAdapter::GetAccountType(const std::string& id)
+{
+    DeviceInfo dvInfo;
+    if (!deviceInfos_.Get(id, dvInfo)) {
+        InitDeviceInfo();
+        deviceInfos_.Get(id, dvInfo);
+    }
+    return static_cast<int32_t>(dvInfo.authForm);
 }
 
 size_t DeviceManagerAdapter::GetOnlineSize()

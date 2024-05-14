@@ -32,9 +32,9 @@ public:
     static UpgradeManager &GetInstance();
     void Init(std::shared_ptr<ExecutorPool> executors);
     CapMetaData GetCapability(const std::string &deviceId, bool &status);
-    static void SetCompatibleIdentifyByType(
-        KvStoreNbDelegate *storeDelegate, const KvStoreTuple &tuple, AUTH_GROUP_TYPE groupType);
     static std::string GetIdentifierByType(int32_t groupType, bool &isSuccess);
+    static void SetCompatibleIdentifyByType(
+        KvStoreNbDelegate *storeDelegate, const KvStoreTuple &tuple);
 
 private:
     static constexpr int RETRY_INTERVAL = 500; // milliseconds

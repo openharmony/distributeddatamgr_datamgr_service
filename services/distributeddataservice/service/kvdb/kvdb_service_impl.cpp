@@ -1203,6 +1203,10 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
         return Status::INVALID_ARGUMENT;
     }
     auto mode = ConvertGeneralSyncMode(SyncMode(info.mode), SyncAction(type));
+    if (GeneralStore::GetSyncMode(mode) < KVDBGeneralStore::NEARBY_END) {
+        store->SetEqualIdentifier(meta.appId, meta.stordId)
+    }
+
     SyncParam syncParam{};
     syncParam.mode = mode;
     auto ret = store->Sync(

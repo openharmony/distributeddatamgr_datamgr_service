@@ -71,6 +71,7 @@ public:
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
+    void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
 
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
@@ -120,6 +121,9 @@ private:
     mutable std::shared_mutex rwMutex_;
     StoreInfo storeInfo_;
     std::function<void()> callback_;
+
+    static constexpr int32_t NO_ACCOUNT = 0;
+    static constexpr int32_t IDENTICAL_ACCOUNT = 1;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

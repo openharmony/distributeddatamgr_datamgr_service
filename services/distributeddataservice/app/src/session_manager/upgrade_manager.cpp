@@ -88,57 +88,51 @@ bool UpgradeManager::InitLocalCapability()
 }
 
 void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegate *storeDelegate,
-    const KvStoreTuple &tuple, DistributedData::AUTH_GROUP_TYPE groupType)
+    const KvStoreTuple &tuple)
 {
+    static constexpr int32_t NO_ACCOUNT = 0;
+    static constexpr int32_t IDENTICAL_ACCOUNT = 1;
     if (storeDelegate == nullptr) {
         ZLOGE("null store delegate");
         return;
     }
-    auto localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    auto devices =
-        AuthDelegate::GetInstance()->GetTrustedDevicesByType(groupType, std::stoi(tuple.userId), tuple.appId);
-    auto result = std::remove_if(devices.begin(), devices.end(), [&localDevice](const std::string &device) {
-        if (localDevice == device) {
-            return true;
-        }
-        bool flag = false;
-        auto capability = DistributedData::UpgradeManager::GetInstance().GetCapability(device, flag);
-        return !flag || capability.version >= DistributedData::CapMetaData::CURRENT_VERSION;
-    });
-    devices.erase(result, devices.end());
 
-    bool isSuccess = false;
-    auto compatibleUser = UpgradeManager::GetIdentifierByType(groupType, isSuccess);
-    if (!isSuccess) {
-        ZLOGW("get identifier by type failed");
+    auto devices = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevice());
+    if (devices.empty()) {
+        ZLOGI("no remote devs");
         return;
     }
 
-    auto syncIdentifier =
-        DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(compatibleUser, tuple.appId, tuple.storeId);
-    ZLOGI("set compatible identifier, store:%{public}s, user:%{public}s, device:%{public}.10s",
-        Anonymous::Change(tuple.storeId).c_str(), compatibleUser.c_str(),
-        DistributedData::Serializable::Marshall(devices).c_str());
-    storeDelegate->SetEqualIdentifier(syncIdentifier, devices);
-}
-
-std::string UpgradeManager::GetIdentifierByType(int32_t groupType, bool &isSuccess)
-{
-    isSuccess = true;
-    if (groupType == PEER_TO_PEER_GROUP) {
-        return "default";
-    } else if (groupType == IDENTICAL_ACCOUNT_GROUP) {
-        auto accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-        if (accountId.empty()) {
-            ZLOGE("failed to get current account id");
-            isSuccess = false;
-            return {};
+    std::vector<std::string> accDevs, defaultAccDevs;
+    std::string accDevsId, defaultDevsId;
+    for (const auto &devid : devices) {
+        if (DmAdapter::GetInstance().IsOHOSType(devid)) {
+            continue;
         }
-        return accountId;
-    } else {
-        ZLOGW("not supported group type:%{public}d", groupType);
-        isSuccess = false;
-        return {};
+        auto netType = DmAdapter::GetInstance().GetAccountType(devid);
+        if (netType == IDENTICAL_ACCOUNT) {
+            accDevsId = tuple.userId;
+            accDevs.push_back(devid);
+        }
+        if (netType == NO_ACCOUNT) {
+            defaultDevsId = "default";
+            defaultAccDevs.push_back(devid);
+        }
+    }
+    if (!accDevs.empty()) {
+        auto syncIdentifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(accDevsId, tuple.appId, tuple.storeId);
+        ZLOGI("account set compatible identifier, store:%{public}s, user:%{public}s, device:%{public}.10s",
+            Anonymous::Change(tuple.storeId).c_str(), accDevsId.c_str(),
+            DistributedData::Serializable::Marshall(accDevs).c_str());
+        storeDelegate->SetEqualIdentifier(syncIdentifier, accDevs);
+    }
+    if (!defaultAccDevs.empty()) {
+        auto syncIdentifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(defaultDevsId, tuple.appId, tuple.storeId);
+        ZLOGI("no account set compatible identifier, store:%{public}s, device:%{public}.10s",
+            Anonymous::Change(tuple.storeId).c_str(), DistributedData::Serializable::Marshall(accDevs).c_str());
+        storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccDevs);
     }
 }
 } // namespace OHOS::DistributedData

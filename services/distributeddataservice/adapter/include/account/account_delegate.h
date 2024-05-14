@@ -67,6 +67,10 @@ public:
     API_EXPORT virtual bool IsVerified(int userId) = 0;
     API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
     API_EXPORT virtual void BindExecutor(std::shared_ptr<ExecutorPool> executors) = 0;
+    API_EXPORT virtual std::string GetHosAccountId(int32_t userId = 0) const
+    {
+        return "";
+    }
     API_EXPORT static AccountDelegate *GetInstance();
 
 private:
