@@ -106,6 +106,10 @@ private:
     static ExecutorPool::Duration GetInterval(int32_t code);
     static std::map<uint32_t, GenStore::BindInfo> GetBindInfos(const StoreMetaData &meta,
         const std::vector<int32_t> &users, CloudInfo &info, DistributedData::Database &schemaDatabase, bool mustBind);
+    static std::string GetAccountId(int32_t user);
+    static void GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
+        std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
+    static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
@@ -114,17 +118,12 @@ private:
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
     GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
-    void GetCloudSyncInfo(SyncInfo &info, CloudInfo &cloud,
-        std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
-    void UpdateStartSyncInfo(SyncInfo &syncInfo, CloudInfo &cloud,
-        std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
+    void UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
         const StoreInfo &storeInfo);
-    std::string GetAccountId(int32_t user);
     std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry);
-    std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
     void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo);
 
     static std::atomic<uint32_t> genId_;
