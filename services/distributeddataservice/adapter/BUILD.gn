@@ -34,7 +34,6 @@ config("distributeddata_adapter_public_config") {
     "include/autils",
     "include/utils",
     "include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include/",
     "${kv_store_common_path}",
     "${data_service_path}/framework/include",
   ]
@@ -68,6 +67,8 @@ ohos_shared_library("distributeddata_adapter") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
   ]
+
+  public_external_deps = [ "kv_store:distributeddata_inner" ]
 
   public_configs = [ ":distributeddata_adapter_public_config" ]
 

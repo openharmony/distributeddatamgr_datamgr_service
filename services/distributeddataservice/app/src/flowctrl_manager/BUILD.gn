@@ -26,9 +26,6 @@ ohos_static_library("distributeddata_flowctrl_static") {
   include_dirs = [
     "../../../adapter/include/account",
     "../../src",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -36,6 +33,8 @@ ohos_static_library("distributeddata_flowctrl_static") {
   external_deps = [
     "c_utils:utils",
     "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
   ]
 
   subsystem_name = "distributeddatamgr"

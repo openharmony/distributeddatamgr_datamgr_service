@@ -29,6 +29,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/object",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/waterversion",
     "${kv_store_common_path}",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",

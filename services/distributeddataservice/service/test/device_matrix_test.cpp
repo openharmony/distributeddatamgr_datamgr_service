@@ -15,6 +15,8 @@
 #include "device_matrix.h"
 
 #include "block_data.h"
+#include "bootstrap.h"
+#include "checker/checker_manager.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "feature/feature_system.h"
@@ -23,6 +25,7 @@
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data_local.h"
+#include "mock/checker_mock.h"
 #include "mock/db_store_mock.h"
 #include "types.h"
 using namespace testing::ext;
@@ -41,7 +44,7 @@ protected:
     struct Result {
         uint16_t mask_ = DeviceMatrix::INVALID_LEVEL;
         std::string deviceId_;
-        Result() {};
+        Result(){};
     };
     static constexpr const char *TEST_DEVICE = "14a0a92a428005db27c40bad46bf145fede38ec37effe0347cd990fcb031f320";
     static constexpr const char *TEST_BUNDLE = "matrix_test";
@@ -50,15 +53,21 @@ protected:
     void InitRemoteMatrixMeta();
     void InitMetaData();
 
+    static inline std::vector<std::pair<std::string, std::string>> staticStores_ = { { "bundle0", "store0" },
+        { "bundle1", "store0" }, { "bundle2", "store0" } };
+    static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = { { "bundle0", "store1" },
+        { "bundle3", "store0" }, { "bundle4", "store0" } };
     static BlockData<Result> isFinished_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static uint32_t selfToken_;
     StoreMetaData metaData_;
     StoreMetaDataLocal localMeta_;
+    static CheckerMock instance_;
 };
 BlockData<DeviceMatrixTest::Result> DeviceMatrixTest::isFinished_(1, Result());
 std::shared_ptr<DBStoreMock> DeviceMatrixTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 uint32_t DeviceMatrixTest::selfToken_ = 0;
+CheckerMock DeviceMatrixTest::instance_;
 void DeviceMatrixTest::SetUpTestCase(void)
 {
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
@@ -67,6 +76,17 @@ void DeviceMatrixTest::SetUpTestCase(void)
     });
     selfToken_ = IPCSkeleton::GetCallingTokenID();
     FeatureSystem::GetInstance().GetCreator("kv_store")();
+    std::vector<CheckerManager::StoreInfo> dynamicStores;
+    for (auto &[bundle, store] : dynamicStores_) {
+        dynamicStores.push_back({ 0, 0, bundle, store });
+        instance_.SetDynamic(dynamicStores);
+    }
+    std::vector<CheckerManager::StoreInfo> staticStores;
+    for (auto &[bundle, store] : staticStores_) {
+        staticStores.push_back({ 0, 0, bundle, store });
+        instance_.SetStatic(staticStores);
+    }
+    Bootstrap::GetInstance().LoadCheckers();
     DeviceMatrix::GetInstance().Initialize(selfToken_, "service_meta");
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_ONLINE, [](const Event &event) {
         auto &evt = static_cast<const MatrixEvent &>(event);
@@ -124,8 +144,10 @@ void DeviceMatrixTest::InitRemoteMatrixMeta()
     metaData.dynamic = 0xF;
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
-    metaData.dynamicInfo = { "distributed_device_profile_service", "bundle_manager_service",
-        "dtbhardware_manager_service" };
+    metaData.dynamicInfo.clear();
+    for (auto &[bundleName, _] : dynamicStores_) {
+        metaData.dynamicInfo.push_back(bundleName);
+    }
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
 }
@@ -247,19 +269,21 @@ HWTEST_F(DeviceMatrixTest, GetMetaStoreCode, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetDPCode
-* @tc.desc: get the device profile store mask code;
+* @tc.name: GetAllCode
+* @tc.desc: get all dynamic store mask code;
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: blue sky
 */
-HWTEST_F(DeviceMatrixTest, GetDPCode, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetAllCode, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
-    meta.appId = "distributed_device_profile_service";
-    meta.bundleName = "distributed_device_profile_service";
-    auto code = DeviceMatrix::GetInstance().GetCode(meta);
-    ASSERT_EQ(code, 0x2);
+
+    for (size_t i = 0; i < dynamicStores_.size(); ++i) {
+        meta.appId = dynamicStores_[i].first;
+        meta.bundleName = dynamicStores_[i].first;
+        ASSERT_EQ(DeviceMatrix::GetInstance().GetCode(meta), 0x1 << (i + 1));
+    }
 }
 
 /**
@@ -293,23 +317,24 @@ HWTEST_F(DeviceMatrixTest, BroadcastMeta, TestSize.Level0)
 }
 
 /**
-* @tc.name: BroadcastDP
-* @tc.desc: broadcast the device profile store change;
+* @tc.name: BroadcastFirst
+* @tc.desc: broadcast all stores change;
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: blue sky
 */
-HWTEST_F(DeviceMatrixTest, BroadcastDP, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, BroadcastFirst, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
-    meta.appId = "distributed_device_profile_service";
-    meta.bundleName = "distributed_device_profile_service";
+    meta.appId = dynamicStores_[0].first;
+    meta.bundleName = dynamicStores_[0].first;
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
+    ASSERT_EQ(code, 0x2);
     DeviceMatrix::DataLevel level = {
         .dynamic = code,
     };
     auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
-    ASSERT_EQ(mask.first, 0x2);
+    ASSERT_EQ(mask.first, code);
 }
 
 /**
@@ -345,18 +370,17 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
     auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
     ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
     StoreMetaData meta = metaData_;
-    meta.appId = "distributed_device_profile_service";
-    meta.bundleName = "distributed_device_profile_service";
-    auto code = DeviceMatrix::GetInstance().GetCode(meta);
-    level.dynamic = code;
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
-    ASSERT_EQ(mask.first, 0x3);
+    for (size_t i = 0; i < dynamicStores_.size(); ++i) {
+        meta.appId = dynamicStores_[i].first;
+        meta.bundleName = dynamicStores_[i].first;
+        auto code = DeviceMatrix::GetInstance().GetCode(meta);
+        level.dynamic = code;
+        mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+        ASSERT_EQ(mask.first, (0x1 << (i + 1)) + 1);
+        DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, code);
+    }
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
-    DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, 0x2);
-
-    meta = metaData_;
-    code = DeviceMatrix::GetInstance().GetCode(meta);
-    level.dynamic = code;
+    level.dynamic = DeviceMatrix::GetInstance().GetCode(metaData_);
     mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0);
 
@@ -380,7 +404,7 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
     metaData.dynamic = 0x1F;
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
-    metaData.dynamicInfo = { TEST_BUNDLE, "distributed_device_profile_service" };
+    metaData.dynamicInfo = { TEST_BUNDLE, dynamicStores_[0].first };
     MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }),
         [](const std::string &, const std::string &value, int32_t flag) {
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {

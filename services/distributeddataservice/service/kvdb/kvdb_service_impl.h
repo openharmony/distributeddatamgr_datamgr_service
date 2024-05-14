@@ -46,7 +46,7 @@ public:
     Status AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
         const std::vector<uint8_t> &password) override;
     Status Delete(const AppId &appId, const StoreId &storeId) override;
-    Status CloudSync(const AppId &appId, const StoreId &storeId) override;
+    Status CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status SyncExt(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifier> notifier) override;
@@ -121,6 +121,7 @@ private:
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
+    Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,
@@ -134,7 +135,9 @@ private:
     SyncMode GetSyncMode(bool local, bool remote) const;
     std::vector<std::string> ConvertDevices(const std::vector<std::string> &deviceIds) const;
     DistributedData::GeneralStore::SyncMode ConvertGeneralSyncMode(SyncMode syncMode, SyncAction syncAction) const;
-    DBResult HandleGenDetails(const DistributedData::GenDetails &details);
+    DBResult HandleGenBriefDetails(const DistributedData::GenDetails &details);
+    ProgressDetail HandleGenDetails(const DistributedData::GenDetails &details);
+    void OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail);
     DistributedData::AutoCache::Watchers GetWatchers(uint32_t tokenId, const std::string &storeId);
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);

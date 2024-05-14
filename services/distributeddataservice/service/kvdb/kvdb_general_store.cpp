@@ -15,10 +15,10 @@
 #define LOG_TAG "KVDBGeneralStore"
 #include "kvdb_general_store.h"
 
-#include "cloud/schema_meta.h"
-#include "cloud/cloud_sync_finished_event.h"
-#include "crypto_manager.h"
 #include "checker/checker_manager.h"
+#include "cloud/cloud_sync_finished_event.h"
+#include "cloud/schema_meta.h"
+#include "crypto_manager.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
@@ -293,7 +293,8 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
     };
 }
 
-DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, int64_t wait)
+DBStatus KVDBGeneralStore::CloudSync(
+    const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait)
 {
     DistributedDB::CloudSyncOption syncOption;
     syncOption.devices = devices;
@@ -306,7 +307,7 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     } else {
         syncOption.users.push_back(std::to_string(storeInfo_.user));
     }
-    return delegate_->Sync(syncOption, GetDBProcessCB(nullptr));
+    return delegate_->Sync(syncOption, GetDBProcessCB(async));
 }
 
 int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
@@ -321,7 +322,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
     auto dbStatus = DistributedDB::OK;
     auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
-        dbStatus = CloudSync(devices, dbMode, syncParm.wait);
+        dbStatus = CloudSync(devices, dbMode, async, syncParm.wait);
     } else {
         if (devices.empty()) {
             ZLOGE("Devices is empty! mode:%{public}d", syncParm.mode);
@@ -489,7 +490,20 @@ int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
 
 std::vector<std::string> KVDBGeneralStore::GetWaterVersion(const std::string &deviceId)
 {
-    return {};
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("store already closed! deviceId:%{public}s", Anonymous::Change(deviceId).c_str());
+        return {};
+    }
+    auto [status, versions] = delegate_->GetCloudVersion(deviceId);
+    if (status != DBStatus::OK || versions.empty()) {
+        return {};
+    }
+    std::vector<std::string> res;
+    for (auto &[_, version] : versions) {
+        res.push_back(std::move(version));
+    }
+    return res;
 }
 
 void KVDBGeneralStore::InitWaterVersion(const StoreMetaData &meta)
@@ -500,7 +514,9 @@ void KVDBGeneralStore::InitWaterVersion(const StoreMetaData &meta)
     if (!isDynamic && !isStatic) {
         return;
     }
-    // SetGenCloudVersionCallback
+    delegate_->SetGenCloudVersionCallback([info](auto &originVersion) {
+        return WaterVersionManager::GetInstance().GetWaterVersion(info.bundleName, info.storeId);
+    });
     callback_ = [meta]() {
         auto event = std::make_unique<CloudSyncFinishedEvent>(CloudEvent::CLOUD_SYNC_FINISHED, meta);
         EventCenter::GetInstance().PostEvent(std::move(event));

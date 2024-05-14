@@ -59,6 +59,7 @@
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "water_version_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -339,6 +340,7 @@ void KvStoreDataService::StartService()
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
     AutoSyncMatrix::GetInstance().Initialize();
+    WaterVersionManager::GetInstance().Init();
     LoadFeatures();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {
