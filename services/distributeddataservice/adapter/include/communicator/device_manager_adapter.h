@@ -114,8 +114,8 @@ private:
     std::shared_ptr<ExecutorPool> executors_;
     static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
     static constexpr int32_t NET_LOST_DURATION = 10 * 1000; // ms
-    uint64_t expireTime_ = GetTimeStamp();
-    uint64_t netLostTime_ = GetTimeStamp();
+    uint64_t expireTime_ = 0;
+    uint64_t netLostTime_ = 0;
     NetworkType defaultNetwork_ = NONE;
     ConcurrentMap<std::string, std::pair<DeviceState, DeviceInfo>> readyDevices_;
 };
