@@ -76,6 +76,7 @@ private:
     public:
         ~CloudStatic() override {};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
     };
     class Factory {
     public:
@@ -123,9 +124,10 @@ private:
     bool DoCloudSync(int32_t user);
     bool StopCloudSync(int32_t user);
 
-    std::pair<int32_t, CloudInfo> GetCloudInfo(int32_t userId);
-    std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);
-    std::pair<int32_t, CloudInfo> GetCloudInfoFromServer(int32_t userId);
+    static std::pair<int32_t, CloudInfo> GetCloudInfo(int32_t userId);
+    static std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);
+    static std::pair<int32_t, CloudInfo> GetCloudInfoFromServer(int32_t userId);
+    static int32_t UpdateCloudInfoFromServer(int32_t user);
 
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
