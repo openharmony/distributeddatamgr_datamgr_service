@@ -95,7 +95,8 @@ StoreMetaDataLocal::~StoreMetaDataLocal()
 bool StoreMetaDataLocal::operator==(const StoreMetaDataLocal &metaData) const
 {
     if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
-        Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt)) {
+        Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt) ||
+        Constant::NotEqual(isPublic, metaData.isPublic)) {
         return false;
     }
     return dataDir == metaData.dataDir;
