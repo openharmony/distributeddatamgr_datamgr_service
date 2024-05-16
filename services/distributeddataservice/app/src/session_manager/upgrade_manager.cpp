@@ -113,8 +113,7 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         if (netType == IDENTICAL_ACCOUNT) {
             accDevsId = tuple.userId;
             accDevs.push_back(devid);
-        }
-        if (netType == NO_ACCOUNT) {
+        } else if (netType == NO_ACCOUNT) {
             defaultDevsId = "default";
             defaultAccDevs.push_back(devid);
         }

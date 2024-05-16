@@ -500,10 +500,7 @@ bool DeviceManagerAdapter::IsOHOSType(const std::string &id)
         InitDeviceInfo();
         deviceInfos_.Get(id, dvInfo);
     }
-    if (dvInfo.osType != OH_OS_TYPE) {
-        return false;
-    }
-    return true;
+    return dvInfo.osType == OH_OS_TYPE;
 }
 
 int32_t DeviceManagerAdapter::GetAccountType(const std::string &id)
