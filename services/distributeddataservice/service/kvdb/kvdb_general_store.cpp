@@ -731,5 +731,6 @@ std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, cons
     uuidLen = htole32(uuidLen);
     uint8_t *buf = reinterpret_cast<uint8_t *>(&uuidLen);
     out.insert(out.end(), buf, buf + sizeof(uuidLen));
+    return out;
 }
 } // namespace OHOS::DistributedKv
