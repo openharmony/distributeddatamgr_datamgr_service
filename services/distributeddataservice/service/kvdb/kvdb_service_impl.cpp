@@ -267,6 +267,19 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     return SUCCESS;
 }
 
+Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId)
+{
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    if (metaData.instanceId < 0) {
+        return ILLEGAL_STATE;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    AutoCache::GetInstance().CloseStore(tokenId, storeId);
+    ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
+        Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
+    return SUCCESS;
+}
+
 Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
@@ -345,11 +358,17 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
     if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
         WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
-        DoCloudSync(meta, {});
+        if (meta.cloudAutoSync) {
+            DoCloudSync(meta, {});
+        }
         return SUCCESS;
     }
-    DoCloudSync(meta, {});
-    TryToSync(meta, true);
+    if (meta.cloudAutoSync) {
+        DoCloudSync(meta, {});
+    }
+    if (meta.isAutoSync) {
+        TryToSync(meta, true);
+    }
     return SUCCESS;
 }
 
@@ -750,15 +769,21 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     if (!isCreated) {
         return SUCCESS;
     }
+    StoreMetaDataLocal oldLocal;
+    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), oldLocal, true);
     if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-        old.area != meta.area || !options.persistent || old.dataType != meta.dataType) {
+        old.area != meta.area || !options.persistent || old.dataType != meta.dataType ||
+        Constant::NotEqual(old.enableCloud, meta.enableCloud) ||
+        Constant::NotEqual(oldLocal.isPublic, options.isPublic)) {
         ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d persistent:%{public}d dataType:%{public}d->%{public}d",
+              "area:%{public}d->%{public}d persistent:%{public}d dataType:%{public}d->%{public}d "
+              "enableCloud:%{public}d->%{public}d isPublic:%{public}d->%{public}d",
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, old.dataType, options.dataType);
+            old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, old.dataType, options.dataType,
+            old.enableCloud, meta.enableCloud, oldLocal.isPublic, options.isPublic);
         return Status::STORE_META_CHANGED;
     }
-    if (executors_ != nullptr) {
+    if (options.cloudConfig.enableCloud || executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
@@ -1014,6 +1039,8 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isNeedCompress = options.isNeedCompress;
     metaData.dataType = options.dataType;
+    metaData.enableCloud = options.cloudConfig.enableCloud;
+    metaData.cloudAutoSync = options.cloudConfig.autoSync;
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
@@ -1089,6 +1116,11 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
 
 Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
 {
+    if (!meta.enableCloud) {
+        ZLOGE("appId:%{public}s storeId:%{public}s  instanceId:%{public}d not supports cloud sync",
+              meta.appId.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        return Status::NOT_SUPPORT;
+    }
     if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
         return Status::CLOUD_DISABLED;
     }

@@ -41,7 +41,11 @@ config("module_public_config") {
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
     "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${kv_store_distributeddb_path}/include/",
+    "${kv_store_distributeddb_path}/interfaces/include/",
+    "${kv_store_distributeddb_path}/interfaces/include/relational",
   ]
 }
 
@@ -55,6 +59,10 @@ ohos_shared_library("distributeddatasvc") {
   include_dirs = [
     "${dataobject_path}/frameworks/innerkitsimpl/include",
     "${dataobject_path}/frameworks/innerkitsimpl/include/common",
+    "../../../../relational_store/interfaces/inner_api/cloud_data/include",
+    "../../../../relational_store/interfaces/inner_api/common_type/include",
+    "../../../../relational_store/interfaces/inner_api/rdb/include",
+    "${kv_store_distributeddb_path}",
   ]
   sources = [
     "backup/src/backup_manager.cpp",

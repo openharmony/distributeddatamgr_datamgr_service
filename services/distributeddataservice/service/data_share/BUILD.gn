@@ -110,7 +110,6 @@ ohos_shared_library("data_share_service") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",

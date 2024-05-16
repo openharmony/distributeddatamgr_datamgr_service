@@ -49,7 +49,7 @@ public:
         DATA_SHARE_SERVICE_CMD_NOTIFY,
         DATA_SHARE_SERVICE_CMD_NOTIFY_OBSERVERS,
         DATA_SHARE_SERVICE_CMD_SET_SILENT_SWITCH,
-        DATA_SHARE_SERVICE_CMD_IS_SILENT_PROXY_ENABLE,
+        DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS,
         DATA_SHARE_SERVICE_CMD_REGISTER_OBSERVER,
         DATA_SHARE_SERVICE_CMD_UNREGISTER_OBSERVER,
         DATA_SHARE_SERVICE_CMD_MAX
@@ -87,7 +87,7 @@ public:
     virtual void OnConnectDone() = 0;
     virtual void NotifyObserver(const std::string &uri) = 0;
     virtual int32_t EnableSilentProxy(const std::string &uri, bool enable) = 0;
-    virtual bool IsSilentProxyEnable(const std::string &uri) = 0;
+    virtual int32_t GetSilentProxyStatus(const std::string &uri, bool isCreateHelper = true) = 0;
     virtual int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) = 0;
     virtual int32_t UnregisterObserver(const std::string &uri,
         const sptr<OHOS::IRemoteObject> &remoteObj) = 0;

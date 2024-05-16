@@ -33,6 +33,7 @@ private:
     int32_t OnBeforeCreate(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnAfterCreate(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnDelete(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnClose(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnSync(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnCloudSync(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnRegServiceNotifier(

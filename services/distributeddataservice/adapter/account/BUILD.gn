@@ -33,6 +33,7 @@ ohos_static_library("distributeddata_account_static") {
     "../include/utils",
     "./src",
     "${kv_store_common_path}",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
   ]
 
@@ -55,7 +56,6 @@ ohos_static_library("distributeddata_account_static") {
     cflags_cc += [ "-DOS_ACCOUNT_PART_IS_ENABLED" ]
     external_deps += [
       "access_token:libaccesstoken_sdk",
-      "kv_store:distributeddata_inner",
       "os_account:libaccountkits",
       "os_account:os_account_innerkits",
     ]

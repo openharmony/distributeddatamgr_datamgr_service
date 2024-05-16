@@ -46,6 +46,9 @@ ohos_static_library("distributeddata_communicator_static") {
     "../include/autils",
     "../include/utils",
     "${kv_store_common_path}",
+    "${kv_store_distributeddb_path}/interfaces/include",
+    "${kv_store_distributeddb_path}/include",
+    "${kv_store_distributeddb_path}/interfaces/include/relational",
     "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "${data_service_path}/framework/include",
   ]
@@ -64,8 +67,6 @@ ohos_static_library("distributeddata_communicator_static") {
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
     "netmanager_base:net_conn_manager_if",
   ]
 
