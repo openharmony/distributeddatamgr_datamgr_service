@@ -311,7 +311,6 @@ void KvStoreDataService::OnStart()
         std::placeholders::_2);
     DumpManager::GetInstance().AddHandler("BUNDLE_INFO", uintptr_t(this), handlerBundleInfo);
     StartService();
-    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(GetPid(), 1, 1, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -367,7 +366,9 @@ void KvStoreDataService::StartService()
         return status;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
-    ZLOGI("Publish ret: %{public}d", static_cast<int>(ret));
+    ZLOGI("Start distributedata Success, Publish ret: %{public}d", static_cast<int>(ret));
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 1,
+                                                            DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 void KvStoreDataService::OnStoreMetaChanged(
@@ -552,6 +553,8 @@ Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vec
 void KvStoreDataService::OnStop()
 {
     ZLOGI("begin.");
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 0,
+                                                            DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
