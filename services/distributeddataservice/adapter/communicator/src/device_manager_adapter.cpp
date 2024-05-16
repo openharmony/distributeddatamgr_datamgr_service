@@ -493,7 +493,7 @@ bool DeviceManagerAdapter::IsDeviceReady(const std::string& id)
     return (it.first && it.second.first == DeviceState::DEVICE_ONREADY);
 }
 
-bool DeviceManagerAdapter::IsOHOsType(const std::string& id)
+bool DeviceManagerAdapter::IsOHOSType(const std::string &id)
 {
     DeviceInfo dvInfo;
     if (!deviceInfos_.Get(id, dvInfo)) {
@@ -506,7 +506,7 @@ bool DeviceManagerAdapter::IsOHOsType(const std::string& id)
     return true;
 }
 
-bool DeviceManagerAdapter::GetAccountType(const std::string& id)
+int32_t DeviceManagerAdapter::GetAccountType(const std::string &id)
 {
     DeviceInfo dvInfo;
     if (!deviceInfos_.Get(id, dvInfo)) {
