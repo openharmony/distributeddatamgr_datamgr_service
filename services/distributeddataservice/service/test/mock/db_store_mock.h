@@ -106,6 +106,7 @@ public:
     int32_t GetTaskCount() override;
     void SetGenCloudVersionCallback(const GenerateCloudVersionCallback &callback) override;
     std::pair<DBStatus, std::map<std::string, std::string>> GetCloudVersion(const std::string &device) override;
+    DBStatus SetReceiveDataInterceptor(const DataInterceptor &interceptor) override;
 private:
     static const uint32_t DEFAULT_SIZE = 0;
     DBStatus Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const;

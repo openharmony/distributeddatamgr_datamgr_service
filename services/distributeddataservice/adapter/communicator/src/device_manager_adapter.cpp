@@ -744,7 +744,7 @@ std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string 
         return "";
     }
     std::string encryptedUuid;
-    auto ret = DeviceManager::GetInstance().GetEncryptedUuidByNetworkId(PKG_NAME, networkId, uuid);
+    auto ret = DeviceManager::GetInstance().GetEncryptedUuidByNetworkId(PKG_NAME, networkId, encryptedUuid);
     if (ret != DM_OK) {
         ZLOGE("failed, result:%{public}d", ret);
         return "";
