@@ -44,6 +44,7 @@ public:
     using CloudSyncOption = DistributedDB::CloudSyncOption;
     using SyncProcessCallback = DistributedDB::SyncProcessCallback;
     using GenerateCloudVersionCallback = DistributedDB::GenerateCloudVersionCallback;
+    using DataInterceptor = DistributedDB::DataInterceptor;
     DBStatus Get(const Key &key, Value &value) const override;
     DBStatus GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const override;
     DBStatus GetEntries(const Key &keyPrefix, KvStoreResultSet *&resultSet) const override;
