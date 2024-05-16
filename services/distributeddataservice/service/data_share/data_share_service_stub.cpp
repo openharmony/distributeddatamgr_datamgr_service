@@ -38,7 +38,7 @@ bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
     return true;
 }
 
-int32_t DataShareServiceStub::OnRemoteInsert(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnInsert(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     DataShareValuesBucket bucket;
@@ -55,7 +55,7 @@ int32_t DataShareServiceStub::OnRemoteInsert(MessageParcel &data, MessageParcel 
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteUpdate(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnUpdate(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     DataSharePredicates predicate;
@@ -73,7 +73,7 @@ int32_t DataShareServiceStub::OnRemoteUpdate(MessageParcel &data, MessageParcel 
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteDelete(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnDelete(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     DataSharePredicates predicate;
@@ -89,7 +89,7 @@ int32_t DataShareServiceStub::OnRemoteDelete(MessageParcel &data, MessageParcel 
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnQuery(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     DataSharePredicates predicate;
@@ -108,7 +108,7 @@ int32_t DataShareServiceStub::OnRemoteQuery(MessageParcel &data, MessageParcel &
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteAddTemplate(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnAddTemplate(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     int64_t subscriberId;
@@ -125,7 +125,7 @@ int32_t DataShareServiceStub::OnRemoteAddTemplate(MessageParcel &data, MessagePa
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteDelTemplate(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnDelTemplate(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     int64_t subscriberId;
@@ -141,7 +141,7 @@ int32_t DataShareServiceStub::OnRemoteDelTemplate(MessageParcel &data, MessagePa
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemotePublish(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnPublish(MessageParcel &data, MessageParcel &reply)
 {
     Data publishData;
     std::string bundleName;
@@ -157,7 +157,7 @@ int32_t DataShareServiceStub::OnRemotePublish(MessageParcel &data, MessageParcel
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteGetData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnGetData(MessageParcel &data, MessageParcel &reply)
 {
     std::string bundleName;
     if (!ITypesUtil::Unmarshal(data, bundleName)) {
@@ -174,7 +174,7 @@ int32_t DataShareServiceStub::OnRemoteGetData(MessageParcel &data, MessageParcel
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteSubscribeRdbData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnSubscribeRdbData(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     TemplateId templateId;
@@ -196,7 +196,7 @@ int32_t DataShareServiceStub::OnRemoteSubscribeRdbData(MessageParcel &data, Mess
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteUnsubscribeRdbData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnUnsubscribeRdbData(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     TemplateId templateId;
@@ -212,7 +212,7 @@ int32_t DataShareServiceStub::OnRemoteUnsubscribeRdbData(MessageParcel &data, Me
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteEnableRdbSubs(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnEnableRdbSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     TemplateId templateId;
@@ -228,7 +228,7 @@ int32_t DataShareServiceStub::OnRemoteEnableRdbSubs(MessageParcel &data, Message
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteDisableRdbSubs(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnDisableRdbSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     TemplateId templateId;
@@ -244,7 +244,7 @@ int32_t DataShareServiceStub::OnRemoteDisableRdbSubs(MessageParcel &data, Messag
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteSubscribePublishedData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnSubscribePublishedData(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     int64_t subscriberId;
@@ -265,7 +265,7 @@ int32_t DataShareServiceStub::OnRemoteSubscribePublishedData(MessageParcel &data
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteUnsubscribePublishedData(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnUnsubscribePublishedData(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     int64_t subscriberId;
@@ -281,7 +281,7 @@ int32_t DataShareServiceStub::OnRemoteUnsubscribePublishedData(MessageParcel &da
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteEnablePubSubs(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnEnablePubSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     int64_t subscriberId;
@@ -297,7 +297,7 @@ int32_t DataShareServiceStub::OnRemoteEnablePubSubs(MessageParcel &data, Message
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteDisablePubSubs(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnDisablePubSubs(MessageParcel &data, MessageParcel &reply)
 {
     std::vector<std::string> uris;
     int64_t subscriberId;
@@ -313,7 +313,7 @@ int32_t DataShareServiceStub::OnRemoteDisablePubSubs(MessageParcel &data, Messag
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteNotifyConnectDone(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessageParcel &reply)
 {
     OnConnectDone();
     return 0;
@@ -341,7 +341,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     return res;
 }
 
-int32_t DataShareServiceStub::OnRemoteNotifyObserver(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnNotifyObserver(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     if (!ITypesUtil::Unmarshal(data, uri)) {
@@ -352,7 +352,7 @@ int32_t DataShareServiceStub::OnRemoteNotifyObserver(MessageParcel &data, Messag
     return 0;
 }
 
-int32_t DataShareServiceStub::OnRemoteSetSilentSwitch(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnSetSilentSwitch(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     bool enable = false;
@@ -368,14 +368,14 @@ int32_t DataShareServiceStub::OnRemoteSetSilentSwitch(MessageParcel &data, Messa
     return E_OK;
 }
 
-int32_t DataShareServiceStub::OnRemoteIsSilentProxyEnable(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnGetSilentProxyStatus(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     if (!ITypesUtil::Unmarshal(data, uri)) {
         ZLOGE("Unmarshal silent enable failed. uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    bool enable = IsSilentProxyEnable(uri);
+    int32_t enable = GetSilentProxyStatus(uri);
     if (!ITypesUtil::Marshal(reply, enable)) {
         ZLOGE("Marshal enable:%{public}d failed.", enable);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -383,7 +383,7 @@ int32_t DataShareServiceStub::OnRemoteIsSilentProxyEnable(MessageParcel &data, M
     return E_OK;
 }
 
-int32_t DataShareServiceStub::OnRemoteRegisterObserver(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnRegisterObserver(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     sptr<IRemoteObject> remoteObj;
@@ -400,7 +400,7 @@ int32_t DataShareServiceStub::OnRemoteRegisterObserver(MessageParcel &data, Mess
     return E_OK;
 }
 
-int32_t DataShareServiceStub::OnRemoteUnregisterObserver(MessageParcel &data, MessageParcel &reply)
+int32_t DataShareServiceStub::OnUnregisterObserver(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
     sptr<IRemoteObject> remoteObj;

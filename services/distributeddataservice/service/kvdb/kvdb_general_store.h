@@ -127,6 +127,7 @@ private:
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
+    bool enableCloud_ = false;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

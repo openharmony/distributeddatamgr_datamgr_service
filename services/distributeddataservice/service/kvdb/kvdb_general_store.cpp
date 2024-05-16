@@ -27,6 +27,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "metadata/store_meta_data_local.h"
 #include "query_helper.h"
 #include "rdb_cloud.h"
 #include "snapshot/bind_event.h"
@@ -91,11 +92,12 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
         dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
         dbOption.passwd = password;
     }
-
-    if (data.storeType == KvStoreType::SINGLE_VERSION) {
-        dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
-    } else if (data.storeType == KvStoreType::DEVICE_COLLABORATION) {
+    StoreMetaDataLocal local;
+    MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), local, true);
+    if (local.isPublic || data.storeType == KvStoreType::DEVICE_COLLABORATION) {
         dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
+    } else if (data.storeType == KvStoreType::SINGLE_VERSION) {
+        dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
     }
 
     dbOption.schema = data.schema;
@@ -141,6 +143,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
+    enableCloud_ = meta.enableCloud;
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -307,6 +310,7 @@ DBStatus KVDBGeneralStore::CloudSync(
     syncOption.devices = devices;
     syncOption.mode = cloudSyncMode;
     syncOption.waitTime = wait;
+    syncOption.lockAction = DistributedDB::LockAction::NONE;
     if (storeInfo_.user == 0) {
         std::vector<int32_t> users;
         AccountDelegate::GetInstance()->QueryUsers(users);
@@ -329,6 +333,9 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
     auto dbStatus = DistributedDB::OK;
     auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
+        if (!enableCloud_) {
+            return GeneralError::E_NOT_SUPPORT;
+        }
         dbStatus = CloudSync(devices, dbMode, async, syncParm.wait);
     } else {
         if (devices.empty()) {
