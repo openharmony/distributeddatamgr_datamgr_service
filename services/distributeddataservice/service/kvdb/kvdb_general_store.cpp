@@ -15,6 +15,7 @@
 #define LOG_TAG "KVDBGeneralStore"
 #include "kvdb_general_store.h"
 
+#include <endian.h>
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
