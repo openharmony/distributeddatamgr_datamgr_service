@@ -494,7 +494,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
     InitNbDbOption(options, secretKey.sKey, dbOptions);
     DistributedDB::KvStoreNbDelegate *store = nullptr;
     delegateManager.GetKvStore(storeMeta.storeId, dbOptions,
-        [&store, &storeMetaa, &accountId](int status, DistributedDB::KvStoreNbDelegate *delegate) {
+        [&store, &storeMeta, &accountId](int status, DistributedDB::KvStoreNbDelegate *delegate) {
             ZLOGI("temporary open db for equal identifier, ret:%{public}d", status);
             if (delegate != nullptr) {
                 KvStoreTuple tuple = { accountId, storeMeta.appId, storeMeta.storeId };
