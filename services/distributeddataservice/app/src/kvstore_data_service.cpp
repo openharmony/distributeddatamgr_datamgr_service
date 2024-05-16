@@ -414,7 +414,6 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
         const std::string &itemDualIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
         if (identifier == itemTripleIdentifier && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
-            // old triple tuple identifier, should SetEqualIdentifier
             ResolveAutoLaunchCompatible(storeMeta, identifier, accountId);
         }
         if (identifier == itemDualIdentifier || identifier == itemTripleIdentifier) {

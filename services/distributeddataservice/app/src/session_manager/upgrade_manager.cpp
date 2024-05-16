@@ -103,8 +103,10 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         return;
     }
 
-    std::vector<std::string> accDevs, defaultAccDevs;
-    std::string accDevsId, defaultDevsId;
+    std::vector<std::string> accDevs {}; 
+    std::vector<std::string> defaultAccDevs {};
+    std::string accDevsId = "";
+    std::string defaultDevsId = "";
     for (const auto &devid : devices) {
         if (DmAdapter::GetInstance().IsOHOSType(devid)) {
             continue;

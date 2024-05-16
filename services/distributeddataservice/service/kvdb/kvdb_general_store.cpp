@@ -371,8 +371,10 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
 
 void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId)
 {
-    std::vector<std::string> accDevs, defaultAccDevs;
-    std::string accDevsId, defaultDevsId;
+    std::vector<std::string> accDevs {};
+    std::vector<std::string> defaultAccDevs {};
+    std::string accDevsId = "";
+    std::string defaultDevsId = "";
     auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
     for (const auto &devid : uuids) {
         if (DmAdapter::GetInstance().IsOHOSType(devid)) {
