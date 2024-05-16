@@ -39,6 +39,8 @@
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "log_print.h"
+#include "mem_mgr_client.h"
+#include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
@@ -309,6 +311,7 @@ void KvStoreDataService::OnStart()
         std::placeholders::_2);
     DumpManager::GetInstance().AddHandler("BUNDLE_INFO", uintptr_t(this), handlerBundleInfo);
     StartService();
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(GetPid(), 1, 1, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)

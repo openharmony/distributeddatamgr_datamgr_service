@@ -71,6 +71,7 @@
                 "kv_store",
                 "image_framework",
                 "ipc",
+                "memmgr",
                 "napi",
                 "netmanager_base",
                 "os_account",
