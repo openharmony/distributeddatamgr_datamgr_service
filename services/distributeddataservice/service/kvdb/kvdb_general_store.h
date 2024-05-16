@@ -120,6 +120,7 @@ private:
     mutable std::shared_mutex rwMutex_;
     StoreInfo storeInfo_;
     std::function<void()> callback_;
+    bool enableCloud_ = false;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

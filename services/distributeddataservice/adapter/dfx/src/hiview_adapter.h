@@ -22,7 +22,7 @@
 #include "dfx_code_constant.h"
 #include "dfx_types.h"
 #include "executor_pool.h"
-#include "hisysevent.h"
+#include "hisysevent_c.h"
 #include "value_hash.h"
 
 namespace OHOS {
