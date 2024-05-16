@@ -43,6 +43,9 @@ using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
+using DBInterceptedData = DistributedDB::InterceptedData;
+constexpr int UUID_WIDTH = 4;
+
 KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
 {
     DBPassword dbPassword;
@@ -117,6 +120,8 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
         manager_.CloseKvStore(delegate_);
         return;
     }
+    SetDBPushDataInterceptor(meta.storeType);
+    SetDBReceiveDataInterceptor(meta.storeType);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
     InitWaterVersion(meta);
@@ -633,5 +638,88 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
             callback();
         }
     };
+}
+
+void KVDBGeneralStore::SetDBPushDataInterceptor(int32_t storeType)
+{
+    delegate_->SetPushDataInterceptor(
+        [this, storeType](DBInterceptedData &data, const std::string &sourceID, const std::string &targetID) {
+            int errCode = DBStatus::OK;
+            if (storeType != KvStoreType::DEVICE_COLLABORATION || DMAdapter::GetInstance().IsOHOSType(targetID)) {
+                return errCode;
+            }
+            if (targetID.empty()) {
+                ZLOGW("targetID empty");
+                return static_cast<int>(DBStatus::DB_ERROR);
+            }
+            auto entries = data.GetEntries();
+            for (size_t i = 0; i < entries.size(); i++) {
+                if (entries[i].key.empty()) {
+                    continue;
+                }
+                auto oriKey = entries[i].key;
+                auto newKey = GetNewKey(oriKey, sourceID);
+                errCode = data.ModifyKey(i, newKey);
+                if (errCode != DBStatus::OK) {
+                    ZLOGW("ModifyKey err: %{public}d", errCode);
+                    break;
+                }
+            }
+            return errCode;
+        }
+    );
+}
+
+void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
+{
+    delegate_->SetReceiveDataInterceptor(
+        [this, storeType](DBInterceptedData &data, const std::string &sourceID, const std::string &targetID) {
+            int errCode = DBStatus::OK;
+            if (storeType != KvStoreType::DEVICE_COLLABORATION || DMAdapter::GetInstance().IsOHOSType(sourceID)) {
+                return errCode;
+            }
+            if (sourceID.empty()) {
+                ZLOGW("targetID empty");
+                return static_cast<int>(DBStatus::DB_ERROR);
+            }
+            auto entries = data.GetEntries();
+            for (size_t i = 0; i < entries.size(); i++) {
+                if (entries[i].key.empty()) {
+                    continue;
+                }
+
+                auto networkId = DMAdapter::GetInstance().ToNetworkID(sourceID);
+                auto encyptedUuid = DMAdapter::GetInstance().GetEncrytedUuidByNetworkId(networkId);
+                if (encyptedUuid.empty()) {
+                    ZLOGE("get encyptedUuid failed");
+                    continue;
+                }
+
+                auto oriKey = entries[i].key;
+                auto newKey = GetNewKey(oriKey, encyptedUuid);
+                errCode = data.ModifyKey(i, newKey);
+                if (errCode != DBStatus::OK) {
+                    ZLOGW("ModifyKey err: %{public}d", errCode);
+                    break;
+                }
+            }
+            return errCode;
+        }
+    );
+}
+
+std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, const std::string &uuid)
+{
+    uint32_t remoteLen = *(reinterpret_cast<uint32_t *>(&(*(key.end() - sizeof(uint32_t)))));
+    remoteLen = le32toh(remoteLen);
+    uint32_t uuidLen = uuid.size();
+
+    std::vector<uint8_t> out;
+    std::vector<uint8_t> oriKey(key.begin() + remoteLen, key.end() - UUID_WIDTH);
+    out.insert(out.end(), uuid.begin(), uuid.end());
+    out.insert(out.end(), oriKey.begin(), oriKey.end());
+    uuidLen = htole32(uuidLen);
+    uint8_t *buf = reinterpret_cast<uint8_t *>(&uuidLen);
+    out.insert(out.end(), buf, buf + sizeof(uuidLen));
 }
 } // namespace OHOS::DistributedKv

@@ -736,4 +736,19 @@ DeviceManagerAdapter::NetworkType DeviceManagerAdapter::RefreshNet()
     }
     return SetNet(Convert(*capabilities.bearerTypes_.begin()));
 }
+
+std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string &networkId)
+{
+    if (networkId.empty()) {
+        ZLOGE("failed! networkId empty");
+        return "";
+    }
+    std::string encryptedUuid;
+    auto ret = DeviceManager::GetInstance().GetEncryptedUuidByNetworkId(PKG_NAME, networkId, uuid);
+    if (ret != DM_OK) {
+        ZLOGE("failed, result:%{public}d", ret);
+        return "";
+    }
+    return encryptedUuid;
+}
 } // namespace OHOS::DistributedData

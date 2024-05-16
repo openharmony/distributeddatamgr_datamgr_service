@@ -62,6 +62,7 @@ public:
     std::vector<DeviceInfo> GetOnlineDevices();
     bool IsDeviceReady(const std::string &id);
     bool IsOHOSType(const std::string &id);
+    std::string GetEncrytedUuidByNetworkId(const std::string &networkId);
     size_t GetOnlineSize();
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);

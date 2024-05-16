@@ -84,6 +84,9 @@ private:
     using DBSyncCallback = std::function<void(const std::map<std::string, DBStatus> &status)>;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DBStatus status);
+    void SetDBPushDataInterceptor(int32_t storeType);
+    void SetDBReceiveDataInterceptor(int32_t storeType);
+    std::vector<uint8_t> GetNewKey(std::vector<uint8_t> &key, const std::string &uuid);
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
     DBStatus CloudSync(
