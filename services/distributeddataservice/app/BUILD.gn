@@ -106,14 +106,14 @@ ohos_shared_library("distributeddataservice") {
 
   configs = [ ":module_private_config" ]
   deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/app/src/checker:distributeddata_checker_static",
+    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "${data_service_path}/app/src/installer:distributeddata_installer_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
   ]
 
   external_deps = [
@@ -124,7 +124,6 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

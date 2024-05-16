@@ -75,7 +75,6 @@ ohos_shared_library("udmf_server") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "image_framework:image",
     "ipc:ipc_core",

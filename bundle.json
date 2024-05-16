@@ -82,14 +82,13 @@
                 "udmf",
                 "app_file_service",
                 "file_api",
-                "json",
-                "data_object"
+                "openssl",
+                "json"
             ],
             "third_party": [
                 "cJSON",
                 "jsoncpp",
                 "libuv",
-                "openssl",
                 "sqlite",
                 "zlib"
             ]

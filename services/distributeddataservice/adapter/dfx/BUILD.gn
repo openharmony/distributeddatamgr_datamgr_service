@@ -47,7 +47,6 @@ ohos_static_library("distributeddata_dfx_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  deps = []
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",

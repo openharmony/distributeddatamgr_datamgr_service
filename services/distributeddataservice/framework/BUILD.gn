@@ -101,8 +101,6 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   public_configs = [ ":module_public_config" ]
 
-  deps = []
-
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
