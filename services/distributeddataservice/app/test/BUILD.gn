@@ -140,6 +140,12 @@ ohos_unittest("SessionManagerTest") {
     "unittest/session_manager_test.cpp",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   cflags_cc = [ "-DUT_TEST" ]
   configs = [ ":module_private_config" ]
 
@@ -235,6 +241,12 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "${data_service_path}/app/src/task_manager.cpp",
     "unittest/kvstore_data_service_clear_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   configs = [ ":module_private_config" ]
 
