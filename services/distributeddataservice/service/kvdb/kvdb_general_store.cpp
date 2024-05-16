@@ -377,12 +377,12 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     std::string defaultDevsId = "";
     auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
     for (const auto &devid : uuids) {
-        if (DmAdapter::GetInstance().IsOHOSType(devid)) {
+        if (DMAdapter::GetInstance().IsOHOSType(devid)) {
             continue;
         }
-        auto type = DmAdapter::GetInstance().GetAccountType(devid);
+        auto type = DMAdapter::GetInstance().GetAccountType(devid);
         if (type == IDENTICAL_ACCOUNT) {
-            accDevsId = AccountDelegate::::GetInstance()->GetHosAccountId();
+            accDevsId = AccountDelegate::GetInstance()->GetHosAccountId();
             accDevs.push_back(devid);
         }
         if (type == NO_ACCOUNT) {
@@ -699,7 +699,7 @@ void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
                 }
 
                 auto networkId = DMAdapter::GetInstance().ToNetworkID(sourceID);
-                auto encyptedUuid = DMAdapter::GetInstance().GetEncrytedUuidByNetworkId(networkId);
+                auto encyptedUuid = DMAdapter::GetInstance().GetEncryptedUuidByNetworkId(networkId);
                 if (encyptedUuid.empty()) {
                     ZLOGE("get encyptedUuid failed");
                     continue;

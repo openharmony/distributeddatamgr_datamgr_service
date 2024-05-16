@@ -392,7 +392,6 @@ void KvStoreDataService::OnStoreMetaChanged(
 bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
     const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
-    ZLOGI("start");
     std::vector<StoreMetaData> entries;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), entries)) {
@@ -400,7 +399,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
         return false;
     }
 
-    auto accountId = AccountDelegate::::GetInstance()->GetHosAccountId();
+    auto accountId = AccountDelegate::GetInstance()->GetHosAccountId();
     for (const auto &storeMeta : entries) {
         if ((!param.userId.empty() && (param.userId != storeMeta.user)) || (localDeviceId != storeMeta.deviceId) ||
             ((StoreMetaData::STORE_RELATIONAL_BEGIN <= storeMeta.storeType) &&
@@ -471,7 +470,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
         ZLOGW("no longer support multi or higher version store type");
         return;
     }
-    ZLOGI("AutoLaunch:peer device is old tuple, begin to open store, storeId:%{public}",
+    ZLOGI("AutoLaunch:peer device is old tuple, begin to open store, storeId: %{public}s",
         Anonymous::Change(storeMeta.storeId).c_str());
     // open store and SetEqualIdentifier, then close store after 60s
     DistributedDB::KvStoreDelegateManager delegateManager(storeMeta.appId, storeMeta.user);
@@ -495,7 +494,7 @@ void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeM
     InitNbDbOption(options, secretKey.sKey, dbOptions);
     DistributedDB::KvStoreNbDelegate *store = nullptr;
     delegateManager.GetKvStore(storeMeta.storeId, dbOptions,
-        [&store, &storeMeta](int status, DistributedDB::KvStoreNbDelegate *delegate) {
+        [&store, &storeMetaa, &accountId](int status, DistributedDB::KvStoreNbDelegate *delegate) {
             ZLOGI("temporary open db for equal identifier, ret:%{public}d", status);
             if (delegate != nullptr) {
                 KvStoreTuple tuple = { accountId, storeMeta.appId, storeMeta.storeId };

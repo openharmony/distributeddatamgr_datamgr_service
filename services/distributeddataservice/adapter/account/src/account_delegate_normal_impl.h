@@ -35,7 +35,7 @@ public:
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
-    std::string GetHosAccountId(int32_t userId = 0) override;
+    std::string GetHosAccountId(int32_t userId = 0) const override;
 private:
     ~AccountDelegateNormalImpl();
     std::string Sha256AccountId(const std::string &plainText) const;

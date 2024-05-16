@@ -1236,7 +1236,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     }
     auto mode = ConvertGeneralSyncMode(SyncMode(info.mode), SyncAction(type));
     if (GeneralStore::GetSyncMode(mode) < KVDBGeneralStore::NEARBY_END) {
-        store->SetEqualIdentifier(meta.appId, meta.stordId)
+        store->SetEqualIdentifier(meta.appId, meta.storeId);
     }
 
     SyncParam syncParam{};

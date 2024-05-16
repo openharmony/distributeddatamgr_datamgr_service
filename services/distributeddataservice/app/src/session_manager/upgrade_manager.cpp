@@ -97,13 +97,13 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         return;
     }
 
-    auto devices = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevice());
+    auto devices = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices());
     if (devices.empty()) {
         ZLOGI("no remote devs");
         return;
     }
 
-    std::vector<std::string> accDevs {}; 
+    std::vector<std::string> accDevs {};
     std::vector<std::string> defaultAccDevs {};
     std::string accDevsId = "";
     std::string defaultDevsId = "";
