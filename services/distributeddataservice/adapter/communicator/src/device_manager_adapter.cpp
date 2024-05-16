@@ -254,12 +254,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         return;
     }
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
-    if (dvInfo.osType != OH_OS_TYPE) {
-        ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d is not oh device",
-              KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
-        NotifyReadyEvent(dvInfo.uuid);
-        return;
-    }
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
@@ -363,11 +357,6 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
-    if (dvInfo.osType != OH_OS_TYPE) {
-        ZLOGW("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d is not oh device",
-              KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
-        return;
-    }
     readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
@@ -463,9 +452,6 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
         DeviceExtraInfo deviceExtraInfo;
         if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
             ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
-            continue;
-        }
-        if (deviceExtraInfo.OS_TYPE != OH_OS_TYPE) {
             continue;
         }
         DeviceInfo dvInfo = { std::move(uuid), std::move(udid), std::move(networkId),

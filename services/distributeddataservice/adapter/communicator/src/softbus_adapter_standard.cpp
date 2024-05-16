@@ -462,13 +462,6 @@ void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data
         return;
     };
     std::string peerDevUuid = DmAdapter::GetInstance().GetUuidByNetworkId(std::string(info.networkId));
-    if (!DmAdapter::GetInstance().IsOHOSType(peerDevUuid)) {
-        ZLOGD("[OnBytesReceived] Not OH device socket:%{public}d, peer name:%{public}s, peer devId:%{public}s,"
-            "data len:%{public}u", socket, info.name.c_str(), KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str(),
-            dataLen);
-        return;
-    }
-
     ZLOGD("[OnBytesReceived] socket:%{public}d, peer name:%{public}s, peer devId:%{public}s, data len:%{public}u",
         socket, info.name.c_str(), KvStoreUtils::ToBeAnonymous(peerDevUuid).c_str(), dataLen);
 
