@@ -150,7 +150,7 @@ private:
         DistributedData::GenQuery& query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
-    std::pair<std::string, std::vector<std::string>> GetDbInfoFromExtraData(
+    std::map<std::string, std::vector<std::string>> GetDbInfoFromExtraData(
         const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta);
     std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo& hapInfo);
     bool GetStoreMetaData(StoreMetaData &meta);
