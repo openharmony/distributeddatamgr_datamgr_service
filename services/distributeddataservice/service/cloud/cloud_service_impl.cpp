@@ -25,8 +25,10 @@
 #include "cloud/cloud_server.h"
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
+#include "cloud/sharing_center.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
+#include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
@@ -42,12 +44,14 @@
 #include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
 #include "values_bucket.h"
+
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace DistributedKv;
 using namespace std::chrono;
 using namespace SharingUtil;
 using namespace Security::AccessToken;
+using namespace DistributedDataDfx;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
@@ -127,7 +131,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (cloudInfo.id != id) {
         ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s", Anonymous::Change(id).c_str(),
             Anonymous::Change(cloudInfo.id).c_str());
-        return ERROR;
+        return INVALID_ARGUMENT;
     }
     cloudInfo.enableCloud = false;
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
@@ -148,7 +152,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     if (cloudInfo.id != id || !cloudInfo.Exist(bundleName)) {
         ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
             Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
-        return ERROR;
+        return INVALID_ARGUMENT;
     }
     cloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
@@ -634,7 +638,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
-        return { ERROR, cloudInfo };
+        return { NETWORK_ERROR, cloudInfo };
     }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
@@ -643,7 +647,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
     cloudInfo = instance->GetServerInfo(cloudInfo.user);
     if (!cloudInfo.IsValid()) {
         ZLOGE("cloud is empty, user%{public}d", cloudInfo.user);
-        return { ERROR, cloudInfo };
+        return { CLOUD_INFO_INVALID, cloudInfo };
     }
     return { SUCCESS, cloudInfo };
 }
@@ -678,9 +682,11 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
 
 bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
+    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::META_DATA_SYNC, __FUNCTION__);
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
+        radar = status;
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -688,6 +694,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
         SchemaMeta schemaMeta;
         std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
         if (status != SUCCESS) {
+            radar = status;
             continue;
         }
         MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
@@ -699,7 +706,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t 
 {
     SchemaMeta schemaMeta;
     if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
-        return { ERROR, schemaMeta };
+        return { NETWORK_ERROR, schemaMeta };
     }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
@@ -708,7 +715,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t 
     schemaMeta = instance->GetAppSchema(user, bundleName);
     if (!schemaMeta.IsValid()) {
         ZLOGE("schema is InValid, user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
-        return { ERROR, schemaMeta };
+        return { SCHEMA_INVALID, schemaMeta };
     }
     return { SUCCESS, schemaMeta };
 }
@@ -768,6 +775,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
         return { SUCCESS, schemaMeta };
     }
     if (!Account::GetInstance()->IsVerified(userId)) {
+        ZLOGE("user:%{public}d is locked!", userId);
         return { ERROR, schemaMeta };
     }
     std::tie(status, schemaMeta) = GetAppSchemaFromServer(userId, bundleName);
@@ -902,14 +910,13 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
     sub.userId = user;
     MetaDataManager::GetInstance().LoadMeta(sub.GetKey(), sub, true);
     if (CloudServer::GetInstance() == nullptr) {
-        ZLOGI("not support cloud server");
+        ZLOGE("not support cloud server");
         return true;
     }
 
     CloudInfo cloudInfo;
     cloudInfo.user = sub.userId;
-    auto exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true);
-    if (!exits) {
+    if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         ZLOGW("error, there is no cloud info for user(%{public}d)", sub.userId);
         return false;
     }
@@ -939,8 +946,7 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         }
 
         SchemaMeta schemaMeta;
-        exits = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(bundle), schemaMeta, true);
-        if (exits) {
+        if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(bundle), schemaMeta, true)) {
             dbs.insert_or_assign(bundle, std::move(schemaMeta.databases));
         }
     }
@@ -949,7 +955,8 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         sub.userId, subDbs.size(), unsubDbs.size());
     ZLOGD("Subscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(subDbs).c_str());
     ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
-    CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
+    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::SUBSCRIBE_DATA_CHANGE, __FUNCTION__);
+    radar = Convert(static_cast<GeneralError>(CloudServer::GetInstance()->Subscribe(sub.userId, subDbs)));
     CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
     return subDbs.empty() && unsubDbs.empty();
 }
@@ -1082,51 +1089,63 @@ CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 
 int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participants &participants, Results &results)
 {
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::SHARE, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
         return NOT_SUPPORT;
     }
     results = instance->Share(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
     int32_t status = std::get<0>(results);
+    radar = (status == CenterCode::SUCCESS) ? CenterCode::SUCCESS : (status + SharingCenter::SHARING_ERR_OFFSET);
     ZLOGD("status:%{public}d", status);
     return Convert(static_cast<CenterCode>(status));
 }
 
 int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participants &participants, Results &results)
 {
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::UNSHARE, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
         return NOT_SUPPORT;
     }
     results = instance->Unshare(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
     int32_t status = std::get<0>(results);
+    radar = (status == CenterCode::SUCCESS) ? CenterCode::SUCCESS : (status + SharingCenter::SHARING_ERR_OFFSET);
     ZLOGD("status:%{public}d", status);
     return Convert(static_cast<CenterCode>(status));
 }
 
 int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result)
 {
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::EXIT_SHARING, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
         return NOT_SUPPORT;
     }
     result = instance->Exit(hapInfo.user, hapInfo.bundleName, sharingRes);
     int32_t status = result.first;
+    radar = (status == CenterCode::SUCCESS) ? CenterCode::SUCCESS : (status + SharingCenter::SHARING_ERR_OFFSET);
     ZLOGD("status:%{public}d", status);
     return Convert(static_cast<CenterCode>(status));
 }
@@ -1134,17 +1153,21 @@ int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t,
 int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const Participants &participants,
     Results &results)
 {
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CHANGE_PRIVILEGE, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
         return NOT_SUPPORT;
     }
     results = instance->ChangePrivilege(hapInfo.user, hapInfo.bundleName, sharingRes, Convert(participants));
     int32_t status = std::get<0>(results);
+    radar = (status == CenterCode::SUCCESS) ? CenterCode::SUCCESS : (status + SharingCenter::SHARING_ERR_OFFSET);
     ZLOGD("status:%{public}d", status);
     return Convert(static_cast<CenterCode>(status));
 }
@@ -1188,18 +1211,22 @@ int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, Query
 int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32_t confirmation,
     std::tuple<int32_t, std::string, std::string> &result)
 {
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CONFIRM_INVITATION, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, invitation:%{public}s, confirmation:%{public}d",
             Anonymous::Change(invitation).c_str(), confirmation);
+        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
         return NOT_SUPPORT;
     }
     result = instance->ConfirmInvitation(hapInfo.user, hapInfo.bundleName, invitation, confirmation);
     int32_t status = std::get<0>(result);
+    radar = (status == CenterCode::SUCCESS) ? CenterCode::SUCCESS : (status + SharingCenter::SHARING_ERR_OFFSET);
     ZLOGD("status:%{public}d", status);
     return Convert(static_cast<CenterCode>(status));
 }
@@ -1207,17 +1234,21 @@ int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32
 int32_t CloudServiceImpl::ChangeConfirmation(const std::string &sharingRes, int32_t confirmation,
     std::pair<int32_t, std::string> &result)
 {
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CHANGE_CONFIRMATION, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
+        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
         return NOT_SUPPORT;
     }
     result = instance->ChangeConfirmation(hapInfo.user, hapInfo.bundleName, sharingRes, confirmation);
     int32_t status = result.first;
+    radar = (status == CenterCode::SUCCESS) ? CenterCode::SUCCESS : (status + SharingCenter::SHARING_ERR_OFFSET);
     ZLOGD("status:%{public}d", status);
     return Convert(static_cast<CenterCode>(status));
 }
@@ -1306,6 +1337,10 @@ int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Valu
             info.strategy |= static_cast<uint32_t>(*strategy);
         }
     }
+    NetworkSyncStrategy::StrategyInfo oldInfo;
+    MetaDataManager::GetInstance().LoadMeta(info.GetKey(), oldInfo, true);
+    ZLOGI("Strategy[user:%{public}d,bundleName:%{public}s] to [%{public}d] from [%{public}d]",
+          info.user, info.bundleName.c_str(), info.strategy, oldInfo.strategy);
     return MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true) ? SUCCESS : ERROR;
 }
 } // namespace OHOS::CloudData

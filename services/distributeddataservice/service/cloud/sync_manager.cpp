@@ -28,10 +28,13 @@
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
-
+#include "dfx/radar_reporter.h"
+#include "cloud_value_util.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
+using namespace DistributedDataDfx;
 using namespace DistributedKv;
+using namespace SharingUtil;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
@@ -484,7 +487,9 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
         auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
         std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, info, dbMeta, mustBind);
-        store->Bind(dbMeta, bindInfos);
+        RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::BIND, __FUNCTION__);
+        auto status = store->Bind(dbMeta, bindInfos);
+        radar = Convert(static_cast<GeneralError>(status));
     }
     return store;
 }
@@ -530,6 +535,7 @@ int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, Q
 
 void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
+    RadarReporter::Report(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::RECORD_SYNC_RESULT, BizState::BEGIN, __FUNCTION__);
     CloudSyncInfo info;
     info.startTime =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
@@ -541,6 +547,8 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
 
 void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code)
 {
+    RadarReporter::Report(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::RECORD_SYNC_RESULT, BizState::END, __FUNCTION__,
+        BizStage::GENERAL_STAGE, Convert(static_cast<GeneralError>(code)));
     auto it = lastSyncInfos_.find(queryKey);
     if (it == lastSyncInfos_.end()) {
         return;
