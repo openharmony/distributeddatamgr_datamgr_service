@@ -84,7 +84,7 @@ private:
         std::vector<std::string> keys_;
         LRUBucket<std::string, WaterVersionMetaData> versions_{ MAX_DEVICES };
     };
-    static bool InitMeta(WaterVersionMetaData &);
+    static bool InitMeta(WaterVersionMetaData &metaData);
     static WaterVersionMetaData Upgrade(const std::vector<std::string> &keys, const WaterVersionMetaData& meta);
     static std::string Merge(const std::string &bundleName, const std::string &storeName);
     static std::pair<std::string, std::string> Split(const std::string &key);
