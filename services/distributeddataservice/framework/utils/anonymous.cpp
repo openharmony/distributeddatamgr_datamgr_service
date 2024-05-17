@@ -19,6 +19,7 @@ namespace DistributedData {
 constexpr int32_t HEAD_SIZE = 3;
 constexpr int32_t END_SIZE = 3;
 constexpr int32_t MIN_SIZE = HEAD_SIZE + END_SIZE + 3;
+constexpr int32_t TAIL_SIZE = 6;
 constexpr const char *REPLACE_CHAIN = "***";
 constexpr const char *DEFAULT_ANONYMOUS = "******";
 std::string Anonymous::Change(const std::string &name, bool onlyTail)
