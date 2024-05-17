@@ -105,9 +105,9 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "memmgr:memmgrclient",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
