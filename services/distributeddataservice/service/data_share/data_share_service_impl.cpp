@@ -183,8 +183,8 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
         ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
-    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.", uri.c_str(),
-        subscriberId, tpltId.bundleName_.c_str());
+    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
+        DistributedData::Anonymous::Change(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
         return TemplateManager::GetInstance().Delete(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId);
@@ -666,7 +666,8 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
+        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(uri).c_str());
     }
     if (!providerInfo.readPermission.empty() &&
         !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
@@ -697,7 +698,8 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
+        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(uri).c_str());
     }
     if (!providerInfo.readPermission.empty() &&
         !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
