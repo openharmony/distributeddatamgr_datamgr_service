@@ -116,7 +116,7 @@ void AutoSyncMatrix::DelStore(const StoreMetaData &meta)
         metas_.erase(it);
         break;
     }
-    size_t pos = it - metas_.begin();
+    size_t pos = static_cast<size_t>(it - metas_.begin());
     if (pos == metas_.size()) {
         return;
     }
@@ -208,7 +208,7 @@ void AutoSyncMatrix::OnChanged(const StoreMetaData &metaData)
     if (it == metas_.end()) {
         return;
     }
-    size_t pos = it - metas_.begin();
+    size_t pos = static_cast<size_t>(it - metas_.begin());
     for (auto &[device, mask] : onlines_) {
         mask.Set(pos);
     }
@@ -224,7 +224,7 @@ void AutoSyncMatrix::OnExchanged(const std::string &device, const StoreMetaData 
     if (it == metas_.end()) {
         return;
     }
-    size_t pos = it - metas_.begin();
+    size_t pos = static_cast<size_t>(it - metas_.begin());
     auto iter = onlines_.find(device);
     if (iter != onlines_.end()) {
         iter->second.Reset(pos);
