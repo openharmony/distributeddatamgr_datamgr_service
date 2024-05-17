@@ -37,7 +37,7 @@
 #include "snapshot/bind_event.h"
 
 namespace OHOS::DistributedRdb {
-class API_EXPORT RdbServiceImpl : public RdbServiceStub {
+class RdbServiceImpl : public RdbServiceStub {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
@@ -154,7 +154,7 @@ private:
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
-    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details&& result);
+    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result);
 
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 

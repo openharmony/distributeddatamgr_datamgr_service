@@ -262,7 +262,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
-        UpdateStartSyncInfo(info, cloud, cloudSyncInfos);
+        UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
         if (code != E_OK) {
             for (const auto &[queryKey, syncId] : cloudSyncInfos) {
@@ -489,7 +489,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
     return store;
 }
 
-void SyncManager::GetCloudSyncInfo(SyncInfo &info, CloudInfo &cloud,
+void SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
     std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
@@ -528,14 +528,13 @@ int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, Q
     return SUCCESS;
 }
 
-void SyncManager::UpdateStartSyncInfo(SyncInfo &syncInfo, CloudInfo &cloud,
-    std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
+void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
     CloudSyncInfo info;
     info.startTime =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
             .count();
-    for (auto &[queryKey, syncId] : cloudSyncInfos) {
+    for (const auto &[queryKey, syncId] : cloudSyncInfos) {
         lastSyncInfos_[queryKey][syncId] = info;
     }
 }
@@ -627,10 +626,9 @@ std::vector<SchemaMeta> SyncManager::GetSchemaMeta(const CloudInfo &cloud, const
 
 void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo)
 {
-    auto &detail = details[SyncInfo::DEFAULT_ID];
     if (async) {
-        detail.code = E_ERROR;
-        async(std::move(details));
+        details[SyncInfo::DEFAULT_ID].code = E_ERROR;
+        async(details);
     }
     QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
     UpdateFinishSyncInfo(queryKey, storeInfo.syncId, E_ERROR);
