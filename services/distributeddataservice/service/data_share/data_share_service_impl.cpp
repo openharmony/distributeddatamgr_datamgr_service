@@ -82,7 +82,7 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
 
 bool DataShareServiceImpl::NotifyChange(const std::string &uri)
 {
-    RADAR_REPORT(RadarReporter::REGISTER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE, RadarReporter::SUCCESS,
+    RADAR_REPORT(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE, RadarReporter::SUCCESS,
         RadarReporter::BIZ_STATE, RadarReporter::START);
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
     if (obsMgrClient == nullptr) {
@@ -93,11 +93,12 @@ bool DataShareServiceImpl::NotifyChange(const std::string &uri)
     ErrCode ret = obsMgrClient->NotifyChange(Uri(uri));
     if (ret != ERR_OK) {
         ZLOGE("obsMgrClient->NotifyChange error return %{public}d", ret);
-        RADAR_REPORT(RadarReporter::REGISTER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE, RadarReporter::FAILED,
-            RadarReporter::BIZ_STATE, RadarReporter::FINISHED, RadarReporter::ERROR_CODE, RadarReporter::NOTIFY_ERROR);
+        RADAR_REPORT(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE,
+            RadarReporter::FAILED, RadarReporter::BIZ_STATE, RadarReporter::FINISHED,
+            RadarReporter::ERROR_CODE, RadarReporter::NOTIFY_ERROR);
         return false;
     }
-    RADAR_REPORT(RadarReporter::REGISTER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE, RadarReporter::SUCCESS,
+    RADAR_REPORT(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE, RadarReporter::SUCCESS,
         RadarReporter::BIZ_STATE, RadarReporter::FINISHED);
     return true;
 }
@@ -274,7 +275,6 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
                 Key(context->uri, id.subscriberId_, id.bundleName_), observer, context, binderInfo_.executors);
         }));
     }
-    RADAR_REPORT(RadarReporter::TEMPLATE_DATA_CHANGE, RadarReporter::SUBSCRIBE_RDB_DATA, RadarReporter::SUCCESS);
     return results;
 }
 
@@ -289,7 +289,6 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribeRdbData(
                 Key(context->uri, id.subscriberId_, id.bundleName_), context->callerTokenId);
         }));
     }
-    RADAR_REPORT(RadarReporter::TEMPLATE_DATA_CHANGE, RadarReporter::UNSUBSCRIBE_RDB_DATA, RadarReporter::SUCCESS);
     return results;
 }
 
@@ -358,7 +357,6 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
     if (!publishedKeys.empty()) {
         PublishedDataSubscriberManager::GetInstance().Emit(publishedKeys, userId, callerBundleName, observer);
     }
-    RADAR_REPORT(RadarReporter::TEMPLATE_DATA_CHANGE, RadarReporter::SUBSCRIBE_PUBLISHED_DATA, RadarReporter::SUCCESS);
     return results;
 }
 
@@ -388,8 +386,6 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
             return result;
         }));
     }
-    RADAR_REPORT(RadarReporter::TEMPLATE_DATA_CHANGE, RadarReporter::UNSUBSCRIBE_PUBLISHED_DATA,
-        RadarReporter::SUCCESS);
     return results;
 }
 
