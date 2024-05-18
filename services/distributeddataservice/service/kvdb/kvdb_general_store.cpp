@@ -397,11 +397,7 @@ void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
         if (DMAdapter::GetInstance().GetAuthType(devId) != authType) {
             continue;
         }
-        if (authType == IDENTICAL_ACCOUNT) {
-            devices.push_back(devId);
-        } else if (authType == NO_ACCOUNT) {
-            devices.push_back(devId);
-        }
+        devices.push_back(devId);
     }
 }
 

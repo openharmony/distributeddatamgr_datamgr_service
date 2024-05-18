@@ -97,11 +97,7 @@ void UpgradeManager::GetIdentifierParams(std::vector<std::string> &devices,
         if (DmAdapter::GetInstance().GetAuthType(devId) != authType) {
             continue;
         }
-        if (authType == IDENTICAL_ACCOUNT) {
-            devices.push_back(devId);
-        } else if (authType == NO_ACCOUNT) {
-            devices.push_back(devId);
-        }
+        devices.push_back(devId);
     }
 }
 
@@ -125,15 +121,15 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
     if (!sameAccountDevs.empty()) {
         auto syncIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(tuple.userId, tuple.appId, tuple.storeId);
-        ZLOGI("set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(), tuple.userId.c_str(),
+        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
+            Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(tuple.userId).c_str(),
             DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
         storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
         auto syncIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(DEFAULT_ACCOUNTID, tuple.appId, tuple.storeId);
-        ZLOGI("set compatible identifier, store:%{public}s,  device:%{public}.10s",
+        ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
             Anonymous::Change(tuple.storeId).c_str(),
             DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
         storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
