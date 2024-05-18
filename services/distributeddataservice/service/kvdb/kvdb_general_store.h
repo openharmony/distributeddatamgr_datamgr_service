@@ -86,7 +86,7 @@ private:
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
     DBStatus CloudSync(
-        const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait);
+        const Devices &devices, const DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait);
     void InitWaterVersion(const StoreMetaData &meta);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:

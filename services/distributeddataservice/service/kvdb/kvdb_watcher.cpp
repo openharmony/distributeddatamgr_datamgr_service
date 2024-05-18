@@ -38,13 +38,13 @@ int32_t KVDBWatcher::OnChange(const Origin &origin, const PRIFields &primaryFiel
             return E_NOT_INIT;
         }
         std::vector<std::string> keys[OP_BUTT]{};
-        keys[OP_INSERT] = ConvertToKeys(changeData->second[OP_INSERT]);
-        keys[OP_UPDATE] = ConvertToKeys(changeData->second[OP_UPDATE]);
-        keys[OP_DELETE] = ConvertToKeys(changeData->second[OP_DELETE]);
         DataOrigin dataOrigin;
         dataOrigin.id = origin.id;
         dataOrigin.store = origin.store;
         for (auto &observer : observers) {
+            keys[OP_INSERT] = ConvertToKeys(changeData->second[OP_INSERT]);
+            keys[OP_UPDATE] = ConvertToKeys(changeData->second[OP_UPDATE]);
+            keys[OP_DELETE] = ConvertToKeys(changeData->second[OP_DELETE]);
             observer->OnChange(dataOrigin, std::move(keys));
         }
     }

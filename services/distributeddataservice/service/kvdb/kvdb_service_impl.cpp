@@ -159,7 +159,7 @@ void KVDBServiceImpl::Init()
 {
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
-        auto &storeInfo = evt.GetStoreInfo();
+        const auto &storeInfo = evt.GetStoreInfo();
         StoreMetaData meta;
         meta.storeId = storeInfo.storeName;
         meta.bundleName = storeInfo.bundleName;
