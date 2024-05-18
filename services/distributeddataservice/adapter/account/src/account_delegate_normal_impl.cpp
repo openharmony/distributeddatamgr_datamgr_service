@@ -196,12 +196,12 @@ void AccountDelegateNormalImpl::BindExecutor(std::shared_ptr<ExecutorPool> execu
     executors_ = executors;
 }
 
-std::string AccountDelegateNormalImpl::GetHosAccountId(int32_t userId) const
+std::string AccountDelegateNormalImpl::GetUnencryptedAccountId(int32_t userId) const
 {
     AccountSA::OhosAccountInfo info;
     auto ret = AccountSA::OhosAccountKits::GetInstance().GetOhosAccountInfoByUserId(userId, info);
     if (ret != ERR_OK) {
-        ZLOGE("GetHosAccountId failed: %{public}d", ret);
+        ZLOGE("GetUnencryptedAccountId failed: %{public}d", ret);
         return "";
     }
     return Sha256AccountId(info.GetRawUid());

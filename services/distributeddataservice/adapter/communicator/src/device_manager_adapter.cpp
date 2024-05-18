@@ -489,7 +489,7 @@ bool DeviceManagerAdapter::IsOHOSType(const std::string &id)
     return dvInfo.osType == OH_OS_TYPE;
 }
 
-int32_t DeviceManagerAdapter::GetAccountType(const std::string &id)
+int32_t DeviceManagerAdapter::GetAuthType(const std::string &id)
 {
     DeviceInfo dvInfo;
     if (!deviceInfos_.Get(id, dvInfo)) {
@@ -572,7 +572,7 @@ DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
     ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d, osType:%{public}d",
         KvStoreUtils::ToBeAnonymous(uuid).c_str(), info.deviceName, info.deviceTypeId, deviceExtraInfo.OS_TYPE);
     return { std::move(uuid), std::move(udid), std::move(networkId), std::string(info.deviceName), info.deviceTypeId,
-        deviceExtraInfo.OS_TYPE };
+        deviceExtraInfo.OS_TYPE, static_cast<int32_t>(info.authForm) };
 }
 
 std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)

@@ -399,7 +399,7 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
         return false;
     }
 
-    auto accountId = AccountDelegate::GetInstance()->GetHosAccountId();
+    auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
     for (const auto &storeMeta : entries) {
         if ((!param.userId.empty() && (param.userId != storeMeta.user)) || (localDeviceId != storeMeta.deviceId) ||
             ((StoreMetaData::STORE_RELATIONAL_BEGIN <= storeMeta.storeType) &&

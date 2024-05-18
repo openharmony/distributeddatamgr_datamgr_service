@@ -87,53 +87,55 @@ bool UpgradeManager::InitLocalCapability()
     return status;
 }
 
+void UpgradeManager::GetIdentifierParams(std::vector<std::string> &devices,
+    const std::vector<std::string> &uuids, int32_t authType)
+{
+    for (const auto &devId : uuids) {
+        if (DMAdapter::GetInstance().IsOHOSType(devId)) {
+            continue;
+        }
+        if (DMAdapter::GetInstance().GetAuthType(devId) != authType) {
+            continue;
+        }
+        if (authType == IDENTICAL_ACCOUNT) {
+            devices.push_back(devId);
+        } else if (authType == NO_ACCOUNT) {
+            devices.push_back(devId);
+        }
+    }
+}
+
 void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegate *storeDelegate,
     const KvStoreTuple &tuple)
 {
-    static constexpr int32_t NO_ACCOUNT = 0;
-    static constexpr int32_t IDENTICAL_ACCOUNT = 1;
     if (storeDelegate == nullptr) {
         ZLOGE("null store delegate");
         return;
     }
-
-    auto devices = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices());
-    if (devices.empty()) {
+    auto uuids = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices());
+    if (uuids.empty()) {
         ZLOGI("no remote devs");
         return;
     }
 
-    std::vector<std::string> accDevs {};
-    std::vector<std::string> defaultAccDevs {};
-    std::string accDevsId = "";
-    std::string defaultDevsId = "";
-    for (const auto &devid : devices) {
-        if (DmAdapter::GetInstance().IsOHOSType(devid)) {
-            continue;
-        }
-        auto netType = DmAdapter::GetInstance().GetAccountType(devid);
-        if (netType == IDENTICAL_ACCOUNT) {
-            accDevsId = tuple.userId;
-            accDevs.push_back(devid);
-        } else if (netType == NO_ACCOUNT) {
-            defaultDevsId = "default";
-            defaultAccDevs.push_back(devid);
-        }
-    }
-    if (!accDevs.empty()) {
+    std::vector<std::string> sameAccountDevs {};
+    std::vector<std::string> defaultAccountDevs {};
+    GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
+    GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
+    if (!sameAccountDevs.empty()) {
         auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(accDevsId, tuple.appId, tuple.storeId);
-        ZLOGI("account set compatible identifier, store:%{public}s, user:%{public}s, device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(), accDevsId.c_str(),
-            DistributedData::Serializable::Marshall(accDevs).c_str());
-        storeDelegate->SetEqualIdentifier(syncIdentifier, accDevs);
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(tuple.userId, tuple.appId, tuple.storeId);
+        ZLOGI("set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
+            Anonymous::Change(tuple.storeId).c_str(), tuple.userId.c_str(),
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
+        storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
-    if (!defaultAccDevs.empty()) {
+    if (!defaultAccountDevs.empty()) {
         auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(defaultDevsId, tuple.appId, tuple.storeId);
-        ZLOGI("no account set compatible identifier, store:%{public}s, device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(), DistributedData::Serializable::Marshall(accDevs).c_str());
-        storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccDevs);
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(DEFAULT_ACCOUNTID, tuple.appId, tuple.storeId);
+        ZLOGI("set compatible identifier, store:%{public}s,  device:%{public}.10s",
+            Anonymous::Change(tuple.storeId).c_str(), DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
+        storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }
 } // namespace OHOS::DistributedData

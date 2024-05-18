@@ -35,6 +35,8 @@ public:
     static std::string GetIdentifierByType(int32_t groupType, bool &isSuccess);
     static void SetCompatibleIdentifyByType(
         KvStoreNbDelegate *storeDelegate, const KvStoreTuple &tuple);
+    static void GetIdentifierParams(std::vector<std::string> &devices,
+        const std::vector<std::string> &uuids, int32_t authType);
 
 private:
     static constexpr int RETRY_INTERVAL = 500; // milliseconds
@@ -42,6 +44,10 @@ private:
     ExecutorPool::Task GetTask();
     ConcurrentMap<std::string, CapMetaData> capabilities_ {};
     std::shared_ptr<ExecutorPool> executors_;
+
+    static constexpr int32_t NO_ACCOUNT = 0;
+    static constexpr int32_t IDENTICAL_ACCOUNT = 1;
+    constexpr const char *DEFAULT_ACCOUNTID = "default";
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H

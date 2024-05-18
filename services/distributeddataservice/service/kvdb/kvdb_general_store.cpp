@@ -371,32 +371,37 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
 
 void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId)
 {
-    std::vector<std::string> accDevs {};
-    std::vector<std::string> defaultAccDevs {};
-    std::string accDevsId = "";
-    std::string defaultDevsId = "";
+    std::vector<std::string> sameAccountDevs {};
+    std::vector<std::string> defaultAccountDevs {};
     auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
-    for (const auto &devid : uuids) {
-        if (DMAdapter::GetInstance().IsOHOSType(devid)) {
+    GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
+    GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
+    if (!sameAccountDevs.empty()) {
+        auto accounId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
+        auto syncIdentifier = KvManager::GetKvStoreIdentifier(accountId, appId, storeId);
+        delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
+    }
+    if (!defaultAccountDevs.empty()) {
+        auto syncIdentifier = KvManager::GetKvStoreIdentifier(DEFAULT_ACCOUNTID, appId, storeId);
+        delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
+    }
+}
+
+void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
+    const std::vector<std::string> &uuids, int32_t authType)
+{
+    for (const auto &devId : uuids) {
+        if (DMAdapter::GetInstance().IsOHOSType(devId)) {
             continue;
         }
-        auto type = DMAdapter::GetInstance().GetAccountType(devid);
-        if (type == IDENTICAL_ACCOUNT) {
-            accDevsId = AccountDelegate::GetInstance()->GetHosAccountId();
-            accDevs.push_back(devid);
+        if (DMAdapter::GetInstance().GetAuthType(devId) != authType) {
+            continue;
         }
-        if (type == NO_ACCOUNT) {
-            defaultDevsId = "default";
-            defaultAccDevs.push_back(devid);
+        if (authType == IDENTICAL_ACCOUNT) {
+            devices.push_back(devId);
+        } else if (authType == NO_ACCOUNT) {
+            devices.push_back(devId);
         }
-    }
-    if (!accDevs.empty()) {
-        auto syncIdentifier = KvManager::GetKvStoreIdentifier(accDevsId, appId, storeId);
-        delegate_->SetEqualIdentifier(syncIdentifier, accDevs);
-    }
-    if (!defaultAccDevs.empty()) {
-        auto syncIdentifier = KvManager::GetKvStoreIdentifier(defaultDevsId, appId, storeId);
-        delegate_->SetEqualIdentifier(syncIdentifier, defaultAccDevs);
     }
 }
 
@@ -659,7 +664,7 @@ void KVDBGeneralStore::SetDBPushDataInterceptor(int32_t storeType)
                 return errCode;
             }
             if (targetID.empty()) {
-                ZLOGW("targetID empty");
+                ZLOGE("targetID empty");
                 return static_cast<int>(DBStatus::DB_ERROR);
             }
             auto entries = data.GetEntries();
@@ -671,7 +676,7 @@ void KVDBGeneralStore::SetDBPushDataInterceptor(int32_t storeType)
                 auto newKey = GetNewKey(oriKey, sourceID);
                 errCode = data.ModifyKey(i, newKey);
                 if (errCode != DBStatus::OK) {
-                    ZLOGW("ModifyKey err: %{public}d", errCode);
+                    ZLOGE("ModifyKey err: %{public}d", errCode);
                     break;
                 }
             }
@@ -689,7 +694,7 @@ void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
                 return errCode;
             }
             if (sourceID.empty()) {
-                ZLOGW("targetID empty");
+                ZLOGE("targetID empty");
                 return static_cast<int>(DBStatus::DB_ERROR);
             }
             auto entries = data.GetEntries();
@@ -709,7 +714,7 @@ void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
                 auto newKey = GetNewKey(oriKey, encyptedUuid);
                 errCode = data.ModifyKey(i, newKey);
                 if (errCode != DBStatus::OK) {
-                    ZLOGW("ModifyKey err: %{public}d", errCode);
+                    ZLOGE("ModifyKey err: %{public}d", errCode);
                     break;
                 }
             }

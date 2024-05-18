@@ -92,6 +92,8 @@ private:
     DBStatus CloudSync(
         const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait);
     void InitWaterVersion(const StoreMetaData &meta);
+    void GetIdentifierParams(std::vector<std::string> &devices,
+        const std::vector<std::string> &uuids, int32_t authType);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;
@@ -127,6 +129,7 @@ private:
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
+    constexpr const char *DEFAULT_ACCOUNTID = "default";
     bool enableCloud_ = false;
 };
 } // namespace OHOS::DistributedKv
