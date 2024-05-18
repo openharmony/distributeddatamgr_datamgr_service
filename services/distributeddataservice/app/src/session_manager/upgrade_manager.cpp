@@ -91,10 +91,10 @@ void UpgradeManager::GetIdentifierParams(std::vector<std::string> &devices,
     const std::vector<std::string> &uuids, int32_t authType)
 {
     for (const auto &devId : uuids) {
-        if (DMAdapter::GetInstance().IsOHOSType(devId)) {
+        if (DmAdapter::GetInstance().IsOHOSType(devId)) {
             continue;
         }
-        if (DMAdapter::GetInstance().GetAuthType(devId) != authType) {
+        if (DmAdapter::GetInstance().GetAuthType(devId) != authType) {
             continue;
         }
         if (authType == IDENTICAL_ACCOUNT) {
@@ -134,7 +134,8 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         auto syncIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(DEFAULT_ACCOUNTID, tuple.appId, tuple.storeId);
         ZLOGI("set compatible identifier, store:%{public}s,  device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(), DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
+            Anonymous::Change(tuple.storeId).c_str(),
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
         storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }

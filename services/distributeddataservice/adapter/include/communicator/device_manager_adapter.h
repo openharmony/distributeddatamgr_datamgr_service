@@ -76,7 +76,7 @@ public:
     void NotifyReadyEvent(const std::string &uuid);
     bool IsNetworkAvailable();
     NetworkType GetNetworkType(bool retrieve = false);
-    int32_t GetauthType(const std::string& id);
+    int32_t GetAuthType(const std::string& id);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 

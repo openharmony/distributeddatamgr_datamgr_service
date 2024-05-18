@@ -47,7 +47,7 @@ private:
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
-    constexpr const char *DEFAULT_ACCOUNTID = "default";
+    static constexpr const char *DEFAULT_ACCOUNTID = "default";
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H
