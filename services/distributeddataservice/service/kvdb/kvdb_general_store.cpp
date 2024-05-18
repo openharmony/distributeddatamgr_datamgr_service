@@ -588,7 +588,7 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
         bool isFinished = false;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
-            isFinished |= process.process == FINISHED;
+            isFinished = process.process == FINISHED ? true : isFinished;
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
             for (auto [key, value] : process.tableProcess) {
