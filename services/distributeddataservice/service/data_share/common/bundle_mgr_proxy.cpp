@@ -65,16 +65,16 @@ bool BundleMgrProxy::GetBundleInfoFromBMS(
     }
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
-        RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS, RadarReporter::GET_BMS, RadarReporter::FAILED,
-            RadarReporter::ERROR_CODE, RadarReporter::GET_BMS_FAILED);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BMS_FAILED);
         ZLOGE("GetBundleMgrProxy is nullptr!");
         return false;
     }
     bool ret = bmsClient->GetBundleInfo(
         bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo, userId);
     if (!ret) {
-        RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS, RadarReporter::GET_BMS, RadarReporter::FAILED,
-            RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
         ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
         return false;
     }

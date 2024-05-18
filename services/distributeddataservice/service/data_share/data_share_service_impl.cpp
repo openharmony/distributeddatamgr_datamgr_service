@@ -82,24 +82,21 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
 
 bool DataShareServiceImpl::NotifyChange(const std::string &uri)
 {
-    RADAR_REPORT(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE, RadarReporter::SUCCESS,
-        RadarReporter::BIZ_STATE, RadarReporter::START);
+    RadarReporter::RadarReport report(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE,
+        RadarReporter::NOTIFY_DATA_CHANGE, __FUNCTION__);
     auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
     if (obsMgrClient == nullptr) {
         ZLOGE("obsMgrClient is nullptr");
+        report.SetError(RadarReporter::DATA_OBS_EMPTY_ERROR);
         return false;
     }
 
     ErrCode ret = obsMgrClient->NotifyChange(Uri(uri));
     if (ret != ERR_OK) {
         ZLOGE("obsMgrClient->NotifyChange error return %{public}d", ret);
-        RADAR_REPORT(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE,
-            RadarReporter::FAILED, RadarReporter::BIZ_STATE, RadarReporter::FINISHED,
-            RadarReporter::ERROR_CODE, RadarReporter::NOTIFY_ERROR);
+        report.SetError(RadarReporter::NOTIFY_ERROR);
         return false;
     }
-    RADAR_REPORT(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE, RadarReporter::NOTIFY_DATA_CHANGE, RadarReporter::SUCCESS,
-        RadarReporter::BIZ_STATE, RadarReporter::FINISHED);
     return true;
 }
 
@@ -733,17 +730,16 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
     if (errCode != E_OK) {
         ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
             errCode, URIUtils::Anonymous(provider.uri).c_str());
-        RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS,
-            RadarReporter::PROXY_GET_SUPPLIER, RadarReporter::FAILED,
-            RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
         return errCode;
     }
     std::string permission = isRead ? provider.readPermission : provider.writePermission;
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
             tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
-        RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS, RadarReporter::PROXY_PERMISSION, RadarReporter::FAILED,
-            RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
         return ERROR_PERMISSION_DENIED;
     }
     DataShareDbConfig dbConfig;

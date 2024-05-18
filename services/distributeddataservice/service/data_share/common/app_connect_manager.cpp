@@ -36,7 +36,7 @@ bool AppConnectManager::Wait(const std::string &bundleName,
     ZLOGI("start connect %{public}s", bundleName.c_str());
     result = connect();
     if (!result) {
-        RADAR_REPORT(RadarReporter::HANDLE_DATASHARE_OPERATIONS, RadarReporter::PROXY_CONNECT_EXT,
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CONNECT_EXT,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::CONNECT_EXTENSION_ERROR);
         ZLOGE("connect failed %{public}s", bundleName.c_str());
         blockCache_.Erase(bundleName);
