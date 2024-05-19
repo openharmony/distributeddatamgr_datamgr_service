@@ -666,7 +666,8 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
+        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(uri).c_str());
     }
     if (!providerInfo.readPermission.empty() &&
         !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
@@ -697,7 +698,8 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
+        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(uri).c_str());
     }
     if (!providerInfo.readPermission.empty() &&
         !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {

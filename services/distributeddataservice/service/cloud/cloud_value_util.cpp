@@ -136,5 +136,26 @@ Status Convert(CenterCode code)
     }
     return Status::SUCCESS;
 }
+
+Status Convert(GenErr code)
+{
+    switch (code) {
+        case GenErr::E_OK:
+            return Status::SUCCESS;
+        case GenErr::E_ERROR:
+            return Status::ERROR;
+        case GenErr::E_INVALID_ARGS:
+            return Status::INVALID_ARGUMENT;
+        case GenErr::E_BLOCKED_BY_NETWORK_STRATEGY:
+            return Status::STRATEGY_BLOCKING;
+        case GenErr::E_CLOUD_DISABLED:
+            return Status::CLOUD_DISABLE;
+        case GenErr::E_NETWORK_ERROR:
+            return Status::NETWORK_ERROR;
+        default:
+            break;
+    }
+    return Status::ERROR;
+}
 } // namespace::SharingUtil
 } // namespace OHOS::CloudData

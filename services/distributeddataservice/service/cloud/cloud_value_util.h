@@ -19,6 +19,7 @@
 #include "cloud_service.h"
 #include "cloud_types.h"
 #include "cloud/sharing_center.h"
+#include "error/general_error.h"
 
 namespace OHOS::CloudData {
 namespace SharingUtil {
@@ -29,6 +30,7 @@ using SharingRole = OHOS::DistributedData::SharingCenter::Role;
 using SharingResults = OHOS::DistributedData::SharingCenter::QueryResults;
 using CenterCode = OHOS::DistributedData::SharingCenter::SharingCode;
 using Status = CloudService::Status;
+using GenErr = DistributedData::GeneralError;
 
 template<typename T, typename O>
 std::vector<O> Convert(const std::vector<T> &data);
@@ -48,6 +50,7 @@ std::vector<SharingPtpant> Convert(const std::vector<Participant> &participants)
 std::vector<Participant> Convert(const std::vector<SharingPtpant> &input);
 
 Status Convert(CenterCode code);
+Status Convert(GenErr code);
 } // namespace SharingUtil
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_VALUE_UTIL_H

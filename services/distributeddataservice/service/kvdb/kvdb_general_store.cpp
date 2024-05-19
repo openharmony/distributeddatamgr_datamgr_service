@@ -16,6 +16,7 @@
 #include "kvdb_general_store.h"
 
 #include <endian.h>
+#include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
@@ -83,7 +84,11 @@ KVDBGeneralStore::DBSecurity KVDBGeneralStore::GetDBSecurity(int32_t secLevel)
 KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &data, const DBPassword &password)
 {
     DBOption dbOption;
-    dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
+    if (data.appId == Bootstrap::GetInstance().GetProcessLabel()) {
+        dbOption.compressionRate = META_COMPRESS_RATE;
+    } else {
+        dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
+    }
     dbOption.createIfNecessary = false;
     dbOption.isMemoryDb = false;
     dbOption.isEncryptedDb = data.isEncrypt;
@@ -106,12 +111,13 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
     return dbOption;
 }
 
-KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
+KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
+    : manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? "default" : meta.user,
+          meta.instanceId)
 {
     observer_.storeId_ = meta.storeId;
-
     DBStatus status = DBStatus::NOT_FOUND;
-    manager_.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(meta) });
+    manager_.SetKvStoreConfig({ meta.dataDir });
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     manager_.GetKvStore(
         meta.storeId, GetDBOption(meta, GetDBPassword(meta)), [&status, this](auto dbStatus, auto *tmpStore) {
@@ -627,7 +633,7 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
         bool isFinished = false;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
-            isFinished |= process.process == FINISHED;
+            isFinished = process.process == FINISHED ? true : isFinished;
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
             for (auto [key, value] : process.tableProcess) {

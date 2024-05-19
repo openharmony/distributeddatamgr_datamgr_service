@@ -21,20 +21,24 @@
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"
+#include "cloud_value_util.h"
 #include "device_manager_adapter.h"
+#include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
-
 namespace OHOS::CloudData {
 using namespace DistributedData;
+using namespace DistributedDataDfx;
 using namespace DistributedKv;
+using namespace SharingUtil;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
+const char *DEFAULT_ACCOUNT_UID = "ohosAnonymousUid";
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Store &store, const Tables &tables)
     : user_(user), bundleName_(bundleName)
@@ -262,7 +266,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
-        UpdateStartSyncInfo(info, cloud, cloudSyncInfos);
+        UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
         if (code != E_OK) {
             for (const auto &[queryKey, syncId] : cloudSyncInfos) {
@@ -353,8 +357,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetQuery(evt.GetQuery());
         syncInfo.SetCompensation(evt.IsCompensation());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
-        auto task = GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo));
-        task();
+        executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
     };
 }
 
@@ -484,17 +487,32 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
         auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
         std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, info, dbMeta, mustBind);
-        store->Bind(dbMeta, bindInfos);
+        RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::BIND, __FUNCTION__);
+        auto status = store->Bind(dbMeta, bindInfos);
+        radar = Convert(static_cast<GeneralError>(status));
     }
     return store;
 }
 
-void SyncManager::GetCloudSyncInfo(SyncInfo &info, CloudInfo &cloud,
+void SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
     std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-        ZLOGE("not exist cloud metadata, user: %{public}d.", cloud.user);
-        return;
+        ZLOGW("not exist local cloud metadata, user: %{public}d.", cloud.user);
+        auto instance = CloudServer::GetInstance();
+        if (instance == nullptr) {
+            return;
+        }
+        auto accountId = Account::GetInstance()->GetCurrentAccountId();
+        if (!DmAdapter::GetInstance().IsNetworkAvailable() || accountId.empty() || accountId == DEFAULT_ACCOUNT_UID) {
+            return;
+        }
+        cloud = instance->GetServerInfo(cloud.user);
+        if (!cloud.IsValid()) {
+            ZLOGE("cloud is empty, user%{public}d", cloud.user);
+            return;
+        }
+        MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
     }
     if (info.bundleName_.empty()) {
         for (const auto &it : cloud.apps) {
@@ -528,20 +546,22 @@ int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, Q
     return SUCCESS;
 }
 
-void SyncManager::UpdateStartSyncInfo(SyncInfo &syncInfo, CloudInfo &cloud,
-    std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
+void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
+    RadarReporter::Report(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::RECORD_SYNC_RESULT, BizState::BEGIN, __FUNCTION__);
     CloudSyncInfo info;
     info.startTime =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
             .count();
-    for (auto &[queryKey, syncId] : cloudSyncInfos) {
+    for (const auto &[queryKey, syncId] : cloudSyncInfos) {
         lastSyncInfos_[queryKey][syncId] = info;
     }
 }
 
 void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code)
 {
+    RadarReporter::Report(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::RECORD_SYNC_RESULT, BizState::END, __FUNCTION__,
+        BizStage::GENERAL_STAGE, Convert(static_cast<GeneralError>(code)));
     auto it = lastSyncInfos_.find(queryKey);
     if (it == lastSyncInfos_.end()) {
         return;
@@ -627,10 +647,9 @@ std::vector<SchemaMeta> SyncManager::GetSchemaMeta(const CloudInfo &cloud, const
 
 void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo)
 {
-    auto &detail = details[SyncInfo::DEFAULT_ID];
     if (async) {
-        detail.code = E_ERROR;
-        async(std::move(details));
+        details[SyncInfo::DEFAULT_ID].code = E_ERROR;
+        async(details);
     }
     QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
     UpdateFinishSyncInfo(queryKey, storeInfo.syncId, E_ERROR);

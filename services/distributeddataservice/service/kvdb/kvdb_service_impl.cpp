@@ -158,8 +158,8 @@ KVDBServiceImpl::~KVDBServiceImpl()
 void KVDBServiceImpl::Init()
 {
     auto process = [this](const Event &event) {
-        auto &evt = static_cast<const CloudEvent &>(event);
-        auto &storeInfo = evt.GetStoreInfo();
+        const auto &evt = static_cast<const CloudEvent &>(event);
+        const auto &storeInfo = evt.GetStoreInfo();
         StoreMetaData meta;
         meta.storeId = storeInfo.storeName;
         meta.bundleName = storeInfo.bundleName;
@@ -848,9 +848,16 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
 int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId)
 {
     ZLOGI("pid:%{public}d uid:%{public}d appId:%{public}s", pid, uid, appId.c_str());
-    syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) {
+    CheckerManager::StoreInfo info;
+    info.uid = uid;
+    info.tokenId = tokenId;
+    info.bundleName = appId;
+    syncAgents_.EraseIf([pid, &info](auto &key, SyncAgent &agent) {
         if (agent.pid_ != pid) {
             return false;
+        }
+        if (CheckerManager::GetInstance().IsSwitches(info)) {
+            MetaDataManager::GetInstance().Unsubscribe(SwitchesMetaData::GetPrefix({}));
         }
         if (agent.watcher_ != nullptr) {
             agent.watcher_->ClearObservers();
@@ -1181,6 +1188,11 @@ Status KVDBServiceImpl::DoSyncInOrder(
         if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta)
             || !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
             isAfterMeta = true;
+            break;
+        }
+        if (IsRemoteChange(metaData, uuid)) {
+            isAfterMeta = true;
+            break;
         }
     }
     if (!isOnline && isAfterMeta) {

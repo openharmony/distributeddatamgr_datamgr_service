@@ -23,7 +23,7 @@
 #include "object_data_listener.h"
 
 namespace OHOS::DistributedObject {
-class API_EXPORT ObjectServiceImpl : public ObjectServiceStub {
+class ObjectServiceImpl : public ObjectServiceStub {
 public:
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     ObjectServiceImpl();
