@@ -772,15 +772,14 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     StoreMetaDataLocal oldLocal;
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), oldLocal, true);
     if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-        old.area != meta.area || !options.persistent || old.dataType != meta.dataType ||
-        Constant::NotEqual(old.enableCloud, meta.enableCloud) ||
+        old.area != meta.area || !options.persistent || Constant::NotEqual(old.enableCloud, meta.enableCloud) ||
         Constant::NotEqual(oldLocal.isPublic, options.isPublic)) {
         ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d persistent:%{public}d dataType:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d persistent:%{public}d "
               "enableCloud:%{public}d->%{public}d isPublic:%{public}d->%{public}d",
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, old.dataType, options.dataType,
-            old.enableCloud, meta.enableCloud, oldLocal.isPublic, options.isPublic);
+            old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, old.enableCloud, meta.enableCloud,
+            oldLocal.isPublic, options.isPublic);
         return Status::STORE_META_CHANGED;
     }
     if (options.cloudConfig.enableCloud || executors_ != nullptr) {
