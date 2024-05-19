@@ -393,9 +393,8 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     }
     if (!defaultAccountDevs.empty()) {
         auto syncIdentifier = KvManager::GetKvStoreIdentifier(defaultAccountId, appId, storeId);
-        ZLOGI("no account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
-            Anonymous::Change(storeId).c_str(), Anonymous::Change(accountId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
+        ZLOGI("no account set compatible identifier store:%{public}s, user:%{public}s",
+            Anonymous::Change(storeId).c_str(), Anonymous::Change(accountId).c_str());
         delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }
