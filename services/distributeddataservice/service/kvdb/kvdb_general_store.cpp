@@ -112,7 +112,7 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
 }
 
 KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
-    : manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? "default" : meta.user,
+    : manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
           meta.instanceId)
 {
     observer_.storeId_ = meta.storeId;
@@ -385,10 +385,14 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     if (!sameAccountDevs.empty()) {
         auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
         auto syncIdentifier = KvManager::GetKvStoreIdentifier(accountId, appId, storeId);
+        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s",
+            Anonymous::Change(storeId).c_str(), Anonymous::Change(accountId).c_str());
         delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
         auto syncIdentifier = KvManager::GetKvStoreIdentifier(defaultAccountId, appId, storeId);
+        ZLOGI("no account set compatible identifier store:%{public}s, user:%{public}s",
+            Anonymous::Change(storeId).c_str(), Anonymous::Change(accountId).c_str());
         delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }
@@ -405,6 +409,7 @@ void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
         }
         devices.push_back(devId);
     }
+    ZLOGI("devices size: %{publ}zu", devices.szie());
 }
 
 std::shared_ptr<Cursor> KVDBGeneralStore::PreSharing(GenQuery &query)
