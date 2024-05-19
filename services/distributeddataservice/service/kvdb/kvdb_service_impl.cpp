@@ -848,9 +848,16 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
 int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId)
 {
     ZLOGI("pid:%{public}d uid:%{public}d appId:%{public}s", pid, uid, appId.c_str());
-    syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) {
+    CheckerManager::StoreInfo info;
+    info.uid = uid;
+    info.tokenId = tokenId;
+    info.bundleName = appId;
+    syncAgents_.EraseIf([pid, &info](auto &key, SyncAgent &agent) {
         if (agent.pid_ != pid) {
             return false;
+        }
+        if (CheckerManager::GetInstance().IsSwitches(info)) {
+            MetaDataManager::GetInstance().Unsubscribe(SwitchesMetaData::GetPrefix({}));
         }
         if (agent.watcher_ != nullptr) {
             agent.watcher_->ClearObservers();

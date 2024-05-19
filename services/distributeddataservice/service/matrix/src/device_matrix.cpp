@@ -474,10 +474,11 @@ void DeviceMatrix::OnExchanged(const std::string &device, uint16_t code, LevelTy
         return;
     }
     auto it = remotes_.find(device);
-    if (it != remotes_.end()) {
-        it->second.statics &= ~codes[LevelType::STATICS];
-        it->second.dynamic &= ~codes[LevelType::DYNAMIC];
+    if (it == remotes_.end()) {
+        return;
     }
+    it->second.statics &= ~codes[LevelType::STATICS];
+    it->second.dynamic &= ~codes[LevelType::DYNAMIC];
     UpdateConsistentMeta(device, it->second);
     if (observer_) {
         observer_(device, it->second.dynamic);
