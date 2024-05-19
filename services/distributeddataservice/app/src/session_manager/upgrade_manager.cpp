@@ -128,7 +128,7 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
     }
     if (!defaultAccountDevs.empty()) {
         auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(DEFAULT_ACCOUNTID, tuple.appId, tuple.storeId);
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(defaultAccountId, tuple.appId, tuple.storeId);
         ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
             Anonymous::Change(tuple.storeId).c_str(),
             DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());

@@ -382,7 +382,7 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
         delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
-        auto syncIdentifier = KvManager::GetKvStoreIdentifier(DEFAULT_ACCOUNTID, appId, storeId);
+        auto syncIdentifier = KvManager::GetKvStoreIdentifier(defaultAccountId, appId, storeId);
         delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }

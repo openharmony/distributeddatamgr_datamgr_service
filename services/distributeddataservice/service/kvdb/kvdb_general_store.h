@@ -129,7 +129,7 @@ private:
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
-    static constexpr const char *DEFAULT_ACCOUNTID = "default";
+    static constexpr const char *defaultAccountId = "default";
     bool enableCloud_ = false;
 };
 } // namespace OHOS::DistributedKv
