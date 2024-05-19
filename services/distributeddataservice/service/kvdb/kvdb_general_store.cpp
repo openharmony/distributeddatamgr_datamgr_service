@@ -37,6 +37,7 @@
 #include "utils/anonymous.h"
 #include "water_version_manager.h"
 #include "device_manager_adapter.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -409,7 +410,7 @@ void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
         }
         devices.push_back(devId);
     }
-    ZLOGI("devices size: %{publ}zu", devices.szie());
+    ZLOGI("devices size: %{publ}zu", devices.size());
 }
 
 std::shared_ptr<Cursor> KVDBGeneralStore::PreSharing(GenQuery &query)
