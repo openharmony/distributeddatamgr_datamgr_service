@@ -109,6 +109,7 @@ private:
         std::string storeId_;
     };
 
+    static constexpr uint8_t META_COMPRESS_RATE = 10;
     ObserverProxy observer_;
     KvManager manager_;
     KvDelegate *delegate_ = nullptr;

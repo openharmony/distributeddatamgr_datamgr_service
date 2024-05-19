@@ -57,12 +57,16 @@ DeviceMatrix::DeviceMatrix()
             return true;
         }, true);
     MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({}),
-        [this](const std::string &, const std::string &meta, int32_t action) {
+        [this](const std::string &key, const std::string &meta, int32_t action) {
             if (action != MetaDataManager::INSERT && action != MetaDataManager::UPDATE) {
                 return true;
             }
             MatrixMetaData metaData;
-            MatrixMetaData::Unmarshall(meta, metaData);
+            if (meta.empty()) {
+                MetaDataManager::GetInstance().LoadMeta(key, metaData);
+            } else {
+                MatrixMetaData::Unmarshall(meta, metaData);
+            }
             auto deviceId = std::move(metaData.deviceId);
             versions_.Set(deviceId, metaData);
             ZLOGI("Matrix ver:%{public}u device:%{public}s",

@@ -357,8 +357,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetQuery(evt.GetQuery());
         syncInfo.SetCompensation(evt.IsCompensation());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
-        auto task = GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo));
-        task();
+        executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
     };
 }
 

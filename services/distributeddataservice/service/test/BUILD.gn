@@ -42,6 +42,7 @@ config("module_private_config") {
     "${data_service_path}/service/object/",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb/",
+    "${data_service_path}/service/waterversion",
     "${dataobject_path}/interfaces/innerkits",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
@@ -495,6 +496,12 @@ ohos_unittest("MetaDataTest") {
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "meta_data_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   include_dirs = [
     "${data_service_path}/app/src",

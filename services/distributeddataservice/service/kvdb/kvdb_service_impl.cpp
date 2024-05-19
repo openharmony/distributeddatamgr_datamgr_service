@@ -1188,6 +1188,11 @@ Status KVDBServiceImpl::DoSyncInOrder(
         if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta)
             || !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
             isAfterMeta = true;
+            break;
+        }
+        if (IsRemoteChange(metaData, uuid)) {
+            isAfterMeta = true;
+            break;
         }
     }
     if (!isOnline && isAfterMeta) {
