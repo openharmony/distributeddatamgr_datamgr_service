@@ -87,58 +87,52 @@ bool UpgradeManager::InitLocalCapability()
     return status;
 }
 
+void UpgradeManager::GetIdentifierParams(std::vector<std::string> &devices,
+    const std::vector<std::string> &uuids, int32_t authType)
+{
+    for (const auto &devId : uuids) {
+        if (DmAdapter::GetInstance().IsOHOSType(devId)) {
+            continue;
+        }
+        if (DmAdapter::GetInstance().GetAuthType(devId) != authType) {
+            continue;
+        }
+        devices.push_back(devId);
+    }
+}
+
 void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegate *storeDelegate,
-    const KvStoreTuple &tuple, DistributedData::AUTH_GROUP_TYPE groupType)
+    const KvStoreTuple &tuple)
 {
     if (storeDelegate == nullptr) {
         ZLOGE("null store delegate");
         return;
     }
-    auto localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    auto devices =
-        AuthDelegate::GetInstance()->GetTrustedDevicesByType(groupType, std::stoi(tuple.userId), tuple.appId);
-    auto result = std::remove_if(devices.begin(), devices.end(), [&localDevice](const std::string &device) {
-        if (localDevice == device) {
-            return true;
-        }
-        bool flag = false;
-        auto capability = DistributedData::UpgradeManager::GetInstance().GetCapability(device, flag);
-        return !flag || capability.version >= DistributedData::CapMetaData::CURRENT_VERSION;
-    });
-    devices.erase(result, devices.end());
-
-    bool isSuccess = false;
-    auto compatibleUser = UpgradeManager::GetIdentifierByType(groupType, isSuccess);
-    if (!isSuccess) {
-        ZLOGW("get identifier by type failed");
+    auto uuids = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices());
+    if (uuids.empty()) {
+        ZLOGI("no remote devs");
         return;
     }
 
-    auto syncIdentifier =
-        DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(compatibleUser, tuple.appId, tuple.storeId);
-    ZLOGI("set compatible identifier, store:%{public}s, user:%{public}s, device:%{public}.10s",
-        Anonymous::Change(tuple.storeId).c_str(), compatibleUser.c_str(),
-        DistributedData::Serializable::Marshall(devices).c_str());
-    storeDelegate->SetEqualIdentifier(syncIdentifier, devices);
-}
-
-std::string UpgradeManager::GetIdentifierByType(int32_t groupType, bool &isSuccess)
-{
-    isSuccess = true;
-    if (groupType == PEER_TO_PEER_GROUP) {
-        return "default";
-    } else if (groupType == IDENTICAL_ACCOUNT_GROUP) {
-        auto accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
-        if (accountId.empty()) {
-            ZLOGE("failed to get current account id");
-            isSuccess = false;
-            return {};
-        }
-        return accountId;
-    } else {
-        ZLOGW("not supported group type:%{public}d", groupType);
-        isSuccess = false;
-        return {};
+    std::vector<std::string> sameAccountDevs {};
+    std::vector<std::string> defaultAccountDevs {};
+    GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
+    GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
+    if (!sameAccountDevs.empty()) {
+        auto syncIdentifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(tuple.userId, tuple.appId, tuple.storeId);
+        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
+            Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(tuple.userId).c_str(),
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
+        storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
+    }
+    if (!defaultAccountDevs.empty()) {
+        auto syncIdentifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(defaultAccountId, tuple.appId, tuple.storeId);
+        ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
+            Anonymous::Change(tuple.storeId).c_str(),
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
+        storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }
 } // namespace OHOS::DistributedData
