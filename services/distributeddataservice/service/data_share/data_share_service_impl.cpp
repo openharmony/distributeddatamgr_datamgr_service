@@ -184,8 +184,8 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
         ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
-    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.", uri.c_str(),
-        subscriberId, tpltId.bundleName_.c_str());
+    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
+        DistributedData::Anonymous::Change(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
         return TemplateManager::GetInstance().Delete(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId);

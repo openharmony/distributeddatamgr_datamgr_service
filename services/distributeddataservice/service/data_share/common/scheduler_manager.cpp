@@ -109,14 +109,15 @@ void SchedulerManager::SetTimer(
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         ZLOGD("has current taskId, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
-            key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         auto timerId = it->second;
         ResetTimerTask(timerId, reminderTime);
         return;
     }
     auto callback = [key, dbPath, version, userId, this]() {
         ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
-              "%{public}s", key.uri.c_str(), key.subscriberId, key.bundleName.c_str());
+            "%{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
+            key.subscriberId, key.bundleName.c_str());
         int64_t timerId = -1;
         {
             std::lock_guard<std::mutex> lock(mutex_);
