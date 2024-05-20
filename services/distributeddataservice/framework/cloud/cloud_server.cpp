@@ -88,4 +88,9 @@ void CloudServer::ReleaseUserInfo(int32_t userId)
 void CloudServer::Bind(std::shared_ptr<ExecutorPool> executor)
 {
 }
+
+bool CloudServer::IsSupportCloud(int32_t userId)
+{
+    return false;
+}
 } // namespace OHOS::DistributedData

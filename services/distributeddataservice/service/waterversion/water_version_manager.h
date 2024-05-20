@@ -43,7 +43,12 @@ public:
         bool IsValid();
         std::string ToAnonymousString() const;
         std::string GetKey() const;
-        uint64_t GetVersion();
+        uint64_t GetVersion() const;
+        uint16_t GetLevel() const
+        {
+            // low 4 bit is mask
+            return (waterVersion & 0xFFF) << 4;
+        }
         static std::string GetPrefix();
 
     private:

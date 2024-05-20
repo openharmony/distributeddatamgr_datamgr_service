@@ -1123,11 +1123,27 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
 Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
 {
     if (!meta.enableCloud) {
-        ZLOGE("appId:%{public}s storeId:%{public}s  instanceId:%{public}d not supports cloud sync",
-              meta.appId.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        ZLOGE("appId:%{public}s storeId:%{public}s instanceId:%{public}d not supports cloud sync", meta.appId.c_str(),
+            Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return Status::NOT_SUPPORT;
     }
-    if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+        return Status::CLOUD_DISABLED;
+    }
+    std::vector<int32_t> users;
+    if (meta.user != StoreMetaData::ROOT_USER) {
+        users.push_back(std::atoi(meta.user.c_str()));
+    } else if (!AccountDelegate::GetInstance()->QueryForegroundUsers(users)) {
+        ZLOGE("appId:%{public}s storeId:%{public}s instanceId:%{public}d. no foreground user!", meta.appId.c_str(),
+            Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        return Status::CLOUD_DISABLED;
+    }
+    bool res = false;
+    for (auto user : users) {
+        res = instance->IsSupportCloud(user) | res;
+    }
+    if (!res) {
         return Status::CLOUD_DISABLED;
     }
 
@@ -1136,8 +1152,7 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     storeInfo.user = atoi(meta.user.c_str());
     storeInfo.tokenId = meta.tokenId;
     storeInfo.storeName = meta.storeId;
-    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](
-                             const GenDetails &details) {
+    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](const GenDetails &details) {
         OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
     };
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,

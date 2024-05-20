@@ -42,6 +42,7 @@ public:
     virtual void Clean(int32_t userId);
     virtual void ReleaseUserInfo(int32_t userId);
     virtual void Bind(std::shared_ptr<ExecutorPool> executor);
+    virtual bool IsSupportCloud(int32_t userId);
 
 private:
     static CloudServer *instance_;

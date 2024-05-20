@@ -53,7 +53,7 @@ DeviceMatrix::DeviceMatrix()
             if (metaData.origin == MatrixMetaData::Origin::REMOTE_CONSISTENT) {
                 return true;
             }
-            matrixs_.Set(deviceId, metaData);
+            matrices_.Set(deviceId, metaData);
             return true;
         }, true);
     MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({}),
@@ -159,8 +159,8 @@ void DeviceMatrix::Online(const std::string &device, RefCount refCount)
 std::pair<bool, bool> DeviceMatrix::IsConsistent(const std::string &device)
 {
     std::pair<bool, bool> isConsistent = { false, false };
-    auto [dynamicSaved, dynamicRecvLevel] = GetRecvLevel(device);
-    auto [dynamicExist, dynamicConsLevel] = GetConsLevel(device);
+    auto [dynamicSaved, dynamicRecvLevel] = GetRecvLevel(device, LevelType::DYNAMIC);
+    auto [dynamicExist, dynamicConsLevel] = GetConsLevel(device, LevelType::DYNAMIC);
     isConsistent.first = (dynamicSaved && dynamicExist &&
         (dynamicRecvLevel <= dynamicConsLevel) && (dynamicRecvLevel != INVALID_MASK));
     auto [staticsSaved, staticsRecvLevel] = GetRecvLevel(device, LevelType::STATICS);
@@ -356,24 +356,24 @@ void DeviceMatrix::Broadcast(const DataLevel &dataLevel)
         .switchesLen = dataLevel.switchesLen,
     };
     std::lock_guard<decltype(taskMutex_)> lock(taskMutex_);
-    if (!lastest_.IsValid()) {
+    if (!lasts_.IsValid()) {
         EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_BROADCAST, "", matrix));
         return;
     }
-    matrix.dynamic |= Low(lastest_.dynamic);
-    matrix.statics |= Low(lastest_.statics);
-    if (High(matrix.dynamic) != INVALID_HIGH &&  High(lastest_.dynamic)!= INVALID_HIGH &&
-        High(matrix.dynamic) < High(lastest_.dynamic)) {
+    matrix.dynamic |= Low(lasts_.dynamic);
+    matrix.statics |= Low(lasts_.statics);
+    if (High(matrix.dynamic) != INVALID_HIGH &&  High(lasts_.dynamic)!= INVALID_HIGH &&
+        High(matrix.dynamic) < High(lasts_.dynamic)) {
             matrix.dynamic &= 0x000F;
             matrix.dynamic |= High(matrix.dynamic);
     }
-    if (High(matrix.statics) != INVALID_HIGH &&  High(lastest_.statics)!= INVALID_HIGH &&
-        High(matrix.statics) < High(lastest_.statics)) {
+    if (High(matrix.statics) != INVALID_HIGH &&  High(lasts_.statics)!= INVALID_HIGH &&
+        High(matrix.statics) < High(lasts_.statics)) {
             matrix.statics &= 0x000F;
             matrix.statics |= High(matrix.statics);
     }
     EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_BROADCAST, "", matrix));
-    lastest_ = matrix;
+    lasts_ = matrix;
     auto executor = executors_;
     if (executor != nullptr && task_ != ExecutorPool::INVALID_TASK_ID) {
         task_ = executor->Reset(task_, std::chrono::minutes(RESET_MASK_DELAY));
@@ -386,7 +386,7 @@ void DeviceMatrix::OnChanged(uint16_t code, LevelType type)
         return;
     }
     uint16_t low = Low(code);
-    uint16_t codes[LevelType::BUTT] = { 0 };
+    uint16_t codes[LevelType::BUTT] = { 0, 0 };
     codes[type] |= low;
     EventCenter::Defer defer;
     {
@@ -419,7 +419,7 @@ void DeviceMatrix::OnChanged(uint16_t code, LevelType type)
     }
     EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_BROADCAST, "", matrixData));
     std::lock_guard<decltype(taskMutex_)> lock(taskMutex_);
-    lastest_ = matrixData;
+    lasts_ = matrixData;
     auto executor = executors_;
     if (executor != nullptr) {
         if (task_ != ExecutorPool::INVALID_TASK_ID) {
@@ -455,14 +455,16 @@ void DeviceMatrix::OnChanged(const StoreMetaData &metaData)
 
 void DeviceMatrix::OnExchanged(const std::string &device, uint16_t code, LevelType type, ChangeType changeType)
 {
-    if (type < LevelType::STATICS || type > LevelType::DYNAMIC) {
+    if (device.empty() || type < LevelType::STATICS || type > LevelType::DYNAMIC) {
+        ZLOGE("Invalid args.device:%{public}s, code:%{public}d, type:%{public}d", Anonymous::Change(device).c_str(),
+            code, type);
         return;
     }
     uint16_t low = Low(code);
     uint16_t codes[LevelType::BUTT] = { 0 };
     codes[type] |= low;
     std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-    if (changeType == ChangeType::CHANGE_LOCAL || changeType == ChangeType::CHANGE_ALL) {
+    if ((changeType & CHANGE_LOCAL) == CHANGE_LOCAL) {
         auto it = onLines_.find(device);
         if (it != onLines_.end()) {
             it->second.statics &= ~codes[LevelType::STATICS];
@@ -474,18 +476,17 @@ void DeviceMatrix::OnExchanged(const std::string &device, uint16_t code, LevelTy
             it->second.dynamic &= ~codes[LevelType::DYNAMIC];
         }
     }
-    if (changeType == ChangeType::CHANGE_LOCAL) {
-        return;
-    }
-    auto it = remotes_.find(device);
-    if (it == remotes_.end()) {
-        return;
-    }
-    it->second.statics &= ~codes[LevelType::STATICS];
-    it->second.dynamic &= ~codes[LevelType::DYNAMIC];
-    UpdateConsistentMeta(device, it->second);
-    if (observer_) {
-        observer_(device, it->second.dynamic);
+    if ((changeType & CHANGE_REMOTE) == CHANGE_REMOTE) {
+        auto it = remotes_.find(device);
+        if (it == remotes_.end()) {
+            return;
+        }
+        it->second.statics &= ~codes[LevelType::STATICS];
+        it->second.dynamic &= ~codes[LevelType::DYNAMIC];
+        UpdateConsistentMeta(device, it->second);
+        if (observer_) {
+            observer_(device, it->second.dynamic);
+        }
     }
 }
 
@@ -637,8 +638,8 @@ std::pair<bool, uint16_t> DeviceMatrix::GetConsLevel(const std::string &device, 
 
 void DeviceMatrix::Clear()
 {
-    matrixs_.ResetCapacity(0);
-    matrixs_.ResetCapacity(MAX_DEVICES);
+    matrices_.ResetCapacity(0);
+    matrices_.ResetCapacity(MAX_DEVICES);
     versions_.ResetCapacity(0);
     versions_.ResetCapacity(MAX_DEVICES);
     std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
@@ -647,33 +648,53 @@ void DeviceMatrix::Clear()
     remotes_.clear();
 }
 
-std::pair<bool, MatrixMetaData> DeviceMatrix::GetMatrixMeta(const std::string &device, bool IsConsistent)
+std::pair<bool, MatrixMetaData> DeviceMatrix::GetMatrixMeta(const std::string &device, bool isConsistent)
 {
     MatrixMetaData meta;
-    if (!IsConsistent && matrixs_.Get(device, meta)) {
+    if (!isConsistent && matrices_.Get(device, meta)) {
         return { true, meta };
     }
     meta.deviceId = device;
     std::string key;
-    if (IsConsistent) {
+    if (isConsistent) {
         key = meta.GetConsistentKey();
     } else {
         key = meta.GetKey();
     }
     auto success = MetaDataManager::GetInstance().LoadMeta(key, meta, true);
-    if (success && !IsConsistent) {
+    if (success && !isConsistent) {
         meta.deviceId = "";
-        matrixs_.Set(device, meta);
+        matrices_.Set(device, meta);
     }
     return { success, meta };
 }
 
-void DeviceMatrix::SetMatrixMeta(const MatrixMetaData &meta, bool IsConsistent)
+void DeviceMatrix::UpdateLevel(const std::string &device, uint16_t level, DeviceMatrix::LevelType type,
+    bool isConsistent)
 {
-    if (!IsConsistent) {
-        matrixs_.Set(meta.deviceId, meta);
+    if (device.empty() || type < 0 || type >= LevelType::BUTT) {
+        ZLOGE("Invalid args.device:%{public}s, level:%{public}d, type:%{public}d", Anonymous::Change(device).c_str(),
+            level, type);
+        return;
     }
-    MetaDataManager::GetInstance().SaveMeta(IsConsistent ? meta.GetConsistentKey() : meta.GetKey(), meta, true);
+    auto [exist, meta] = GetMatrixMeta(device, isConsistent);
+    if (!exist) {
+        if (device == DMAdapter::GetInstance().GetLocalDevice().uuid) {
+            meta.origin = Origin::LOCAL;
+        } else {
+            meta.origin = isConsistent ? Origin::REMOTE_CONSISTENT : Origin::REMOTE_RECEIVED;
+        }
+        meta.dynamicInfo = dynamicApps_;
+        meta.staticsInfo = staticsApps_;
+    }
+    meta.deviceId = device;
+    meta.dynamic = type == DYNAMIC ? Merge(level, meta.dynamic) : meta.dynamic;
+    meta.statics = type == STATICS ? Merge(level, meta.statics) : meta.statics;
+    MetaDataManager::GetInstance().SaveMeta(isConsistent ? meta.GetConsistentKey() : meta.GetKey(), meta, true);
+    if (!isConsistent) {
+        meta.deviceId = "";
+        matrices_.Set(device, meta);
+    }
 }
 
 MatrixMetaData DeviceMatrix::GetMatrixInfo(const std::string &device)
@@ -729,7 +750,7 @@ DeviceMatrix::Task DeviceMatrix::GenResetTask()
         MatrixEvent::MatrixData matrixData;
         {
             std::lock_guard<decltype(taskMutex_)> lock(taskMutex_);
-            matrixData = lastest_;
+            matrixData = lasts_;
             task_ = ExecutorPool::INVALID_TASK_ID;
         }
         matrixData.dynamic = ResetMask(matrixData.dynamic);

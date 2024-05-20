@@ -303,21 +303,9 @@ WaterVersionMetaData WaterVersionManager::Upgrade(const std::vector<std::string>
 
 void WaterVersionManager::SaveMatrix(const WaterVersionMetaData &metaData)
 {
-    MatrixMetaData matrixMetaData;
-    matrixMetaData.deviceId = metaData.deviceId;
     auto localUuid = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    auto key = matrixMetaData.deviceId == localUuid ? matrixMetaData.GetKey()
-                                                    : matrixMetaData.GetConsistentKey();
-    MetaDataManager::GetInstance().LoadMeta(key, matrixMetaData);
-    uint16_t version = (metaData.waterVersion & 0xFFF) << 4;
-    if (metaData.type == STATIC && version > (matrixMetaData.statics & 0xFFF0)) {
-        matrixMetaData.statics = version | (matrixMetaData.statics & 0xF);
-    } else if (metaData.type == DYNAMIC && version > (matrixMetaData.dynamic & 0xFFF0)) {
-        matrixMetaData.dynamic = version | (matrixMetaData.dynamic & 0xF);
-    } else {
-        return;
-    }
-    DeviceMatrix::GetInstance().SetMatrixMeta(matrixMetaData, matrixMetaData.deviceId != localUuid);
+    DeviceMatrix::GetInstance().UpdateLevel(metaData.deviceId, metaData.GetLevel(),
+        metaData.type == STATIC ? DeviceMatrix::STATICS : DeviceMatrix::DYNAMIC, metaData.deviceId != localUuid);
 }
 
 bool WaterVersionMetaData::Marshal(Serializable::json &node) const
@@ -360,7 +348,7 @@ std::string WaterVersionMetaData::GetKey() const
     return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, { deviceId, std::to_string(type) });
 }
 
-uint64_t WaterVersionMetaData::GetVersion()
+uint64_t WaterVersionMetaData::GetVersion() const
 {
     return waterVersion;
 }
@@ -434,7 +422,7 @@ std::pair<bool, WaterVersionMetaData> WaterVersionManager::WaterVersion::Generat
         }
         ZLOGI("generate meta:%{public}s", metaData.ToAnonymousString().c_str());
         if (MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true) &&
-            versions_.Set(DMAdapter::GetInstance().GetLocalDevice().uuid, metaData)) {
+            versions_.Set(metaData.deviceId, metaData)) {
             SaveMatrix(metaData);
             return { true, metaData };
         }
