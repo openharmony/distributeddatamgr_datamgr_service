@@ -23,7 +23,7 @@
 namespace OHOS::DistributedData {
 struct API_EXPORT StoreMetaData final : public Serializable {
     // record meta version for compatible, should update when modify store meta data structure.
-    static constexpr uint32_t CURRENT_VERSION = 0x03000005;
+    static constexpr uint32_t CURRENT_VERSION = 0x03000006;
     // UID -> uid, deviceAccountId -> userId, userId -> user
     static constexpr uint32_t FIELD_CHANGED_TAG = 0x03000003;
     static constexpr uint32_t UUID_CHANGED_TAG = 0x03000004;

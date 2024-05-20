@@ -57,6 +57,7 @@ using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using CommContext = OHOS::DistributedData::CommunicatorContext;
+static constexpr const char *DEFAULT_USER_ID = "0";
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
@@ -771,15 +772,17 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     }
     StoreMetaDataLocal oldLocal;
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), oldLocal, true);
+    // when user is 0, old store no "isPublic" attr, as well as new store's "isPublic" is true, do not intercept.
     if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-        old.area != meta.area || !options.persistent || Constant::NotEqual(old.enableCloud, meta.enableCloud) ||
-        Constant::NotEqual(oldLocal.isPublic, options.isPublic)) {
-        ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d persistent:%{public}d "
-              "enableCloud:%{public}d->%{public}d isPublic:%{public}d->%{public}d",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, old.enableCloud, meta.enableCloud,
-            oldLocal.isPublic, options.isPublic);
+        old.area != meta.area || !options.persistent ||
+        (Constant::NotEqual(oldLocal.isPublic, options.isPublic) &&
+            (old.user != DEFAULT_USER_ID || !options.isPublic))) {
+        ZLOGE("meta appId:%{public}s storeId:%{public}s user:%{public}s type:%{public}d->%{public}d "
+              "encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d persistent:%{public}d isPublic:%{public}d->%{public}d",
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.user.c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, oldLocal.isPublic,
+            options.isPublic);
         return Status::STORE_META_CHANGED;
     }
     if (options.cloudConfig.enableCloud || executors_ != nullptr) {
