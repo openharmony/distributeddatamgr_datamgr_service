@@ -40,6 +40,7 @@
 #include "rdb_helper.h"
 #include "scheduler_manager.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
+#include "sys_event_subscriber.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 
@@ -481,6 +482,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    InitSubEvent();
     SubscribeTimeChanged();
     return E_OK;
 }
@@ -767,5 +769,17 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
         return E_METADATA_NOT_EXISTS;
     }
     return E_OK;
+}
+
+void DataShareServiceImpl::InitSubEvent()
+{
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
+    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo);
+    if (!EventFwk::CommonEventManager::SubscribeCommonEvent(sysEventSubscriber)) {
+        ZLOGE("Subscribe sys event failed.");
+    }
 }
 } // namespace OHOS::DataShare
