@@ -279,8 +279,11 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         auto schemas = GetSchemaMeta(cloud, info.bundleName_);
         if (schemas.empty()) {
             UpdateSchema(info);
-            retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
-            return;
+            schemas = GetSchemaMeta(cloud, info.bundleName_);
+            if (schemas.empty()) {
+                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
+                return;
+            }
         }
 
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
