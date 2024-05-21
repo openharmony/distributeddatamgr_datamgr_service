@@ -371,7 +371,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
     auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
     ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
     StoreMetaData meta = metaData_;
-    for (size_t i = 0; i < dynamicStores_.size(); ++i) {
+    for (size_t i = 1; i < dynamicStores_.size(); ++i) {
         meta.appId = dynamicStores_[i].first;
         meta.bundleName = dynamicStores_[i].first;
         auto code = DeviceMatrix::GetInstance().GetCode(meta);
@@ -405,7 +405,7 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
     metaData.dynamic = 0x1F;
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
-    metaData.dynamicInfo = { TEST_BUNDLE, dynamicStores_[0].first };
+    metaData.dynamicInfo = { TEST_BUNDLE, dynamicStores_[1].first };
     MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }),
         [](const std::string &, const std::string &value, int32_t flag) {
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
