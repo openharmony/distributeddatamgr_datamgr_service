@@ -754,6 +754,11 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
 {
     DataProviderConfig calledConfig(uri, tokenId);
     auto [errCode, calledInfo] = calledConfig.GetProviderInfo();
+    if (errCode == E_URI_NOT_EXIST) {
+        ZLOGE("Create helper invalid uri, token:0x%{public}x, uri:%{public}s", tokenId,
+            URIUtils::Anonymous(calledInfo.uri).c_str());
+        return E_OK;
+    }
     if (errCode != E_OK) {
         ZLOGE("CalledInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
             errCode, URIUtils::Anonymous(calledInfo.uri).c_str());
