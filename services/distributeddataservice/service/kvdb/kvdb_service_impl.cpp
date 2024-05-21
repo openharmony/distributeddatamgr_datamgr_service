@@ -363,8 +363,8 @@ void KVDBServiceImpl::TryToSync(const StoreMetaData &metaData, bool force)
             !DMAdapter::GetInstance().IsDeviceReady(device))) {
             continue;
         }
-        ZLOGI("[TryToSync] appId:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-            Anonymous::Change(meta.storeId).c_str());
+        ZLOGI("[TryToSync] appId:%{public}s, storeId:%{public}s", metaData.bundleName.c_str(),
+            Anonymous::Change(metaData.storeId).c_str());
         syncInfo.devices = { device };
         KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
             std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
