@@ -55,7 +55,8 @@ protected:
 
     static inline std::vector<std::pair<std::string, std::string>> staticStores_ = { { "bundle0", "store0" },
         { "bundle1", "store0" }, { "bundle2", "store0" } };
-    static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = { { "bundle0", "store1" },
+    static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = {
+        { "distributeddata", "service_meta" }, { "bundle0", "store1" },
         { "bundle3", "store0" }, { "bundle4", "store0" } };
     static BlockData<Result> isFinished_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
@@ -282,7 +283,7 @@ HWTEST_F(DeviceMatrixTest, GetAllCode, TestSize.Level0)
     for (size_t i = 0; i < dynamicStores_.size(); ++i) {
         meta.appId = dynamicStores_[i].first;
         meta.bundleName = dynamicStores_[i].first;
-        ASSERT_EQ(DeviceMatrix::GetInstance().GetCode(meta), 0x1 << (i + 1));
+        ASSERT_EQ(DeviceMatrix::GetInstance().GetCode(meta), 0x1 << i);
     }
 }
 
@@ -329,7 +330,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastFirst, TestSize.Level0)
     meta.appId = dynamicStores_[0].first;
     meta.bundleName = dynamicStores_[0].first;
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
-    ASSERT_EQ(code, 0x2);
+    ASSERT_EQ(code, 0x1);
     DeviceMatrix::DataLevel level = {
         .dynamic = code,
     };
@@ -376,7 +377,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
         auto code = DeviceMatrix::GetInstance().GetCode(meta);
         level.dynamic = code;
         mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
-        ASSERT_EQ(mask.first, (0x1 << (i + 1)) + 1);
+        ASSERT_EQ(mask.first, (0x1 << i) + 1);
         DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, code);
     }
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
