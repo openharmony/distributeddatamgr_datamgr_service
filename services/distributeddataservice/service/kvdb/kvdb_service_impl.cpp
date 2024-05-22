@@ -1439,16 +1439,17 @@ std::vector<std::string> KVDBServiceImpl::ConvertDevices(const std::vector<std::
 
 AutoCache::Watchers KVDBServiceImpl::GetWatchers(uint32_t tokenId, const std::string &storeId)
 {
-    auto [success, agent] = syncAgents_.Find(tokenId);
-    auto iter = agent.watchers_.find(storeId);
-    if (iter != agent.watchers_.end()) {
-        AutoCache::Watchers watchers{};
-        for (auto &watcher : iter->second) {
-            watchers.insert(watcher);
+    AutoCache::Watchers watchers{};
+    syncAgents_.ComputeIfPresent(tokenId, [&storeId, &watchers](auto &, SyncAgent &agent) {
+        auto iter = agent.watchers_.find(storeId);
+        if (iter != agent.watchers_.end()) {
+            for (const auto &watcher : iter->second) {
+                watchers.insert(watcher);
+            }
         }
-        return watchers;
-    }
-    return {};
+        return true;
+    });
+    return watchers;
 }
 
 void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
