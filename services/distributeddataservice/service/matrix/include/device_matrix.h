@@ -91,7 +91,6 @@ public:
 private:
     static constexpr uint32_t RESET_MASK_DELAY = 10; // min
     static constexpr uint32_t CURRENT_VERSION = 3;
-    static constexpr uint16_t OLD_MASK = 0x000E;
     static constexpr uint16_t CURRENT_DYNAMIC_MASK = 0x0006;
     static constexpr uint16_t CURRENT_STATICS_MASK = 0x0003;
     static constexpr size_t MAX_DEVICES = 64;
@@ -123,7 +122,7 @@ private:
         return data &= 0xFFF0;
     }
     struct Mask {
-        uint16_t dynamic = META_STORE_MASK | OLD_MASK; // META_STORE_MASK | CURRENT_DYNAMIC_MASK
+        uint16_t dynamic = META_STORE_MASK | CURRENT_DYNAMIC_MASK;
         uint16_t statics = CURRENT_STATICS_MASK;
         void SetDynamicMask(uint16_t mask);
         void SetStaticsMask(uint16_t mask);

@@ -57,7 +57,7 @@ protected:
         { "bundle1", "store0" }, { "bundle2", "store0" } };
     static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = {
         { "distributeddata", "service_meta" }, { "bundle0", "store1" },
-        { "bundle3", "store0" }, { "bundle4", "store0" } };
+        { "bundle3", "store0" } };
     static BlockData<Result> isFinished_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static uint32_t selfToken_;
@@ -141,8 +141,8 @@ void DeviceMatrixTest::TearDown()
 void DeviceMatrixTest::InitRemoteMatrixMeta()
 {
     MatrixMetaData metaData;
-    metaData.version = 1;
-    metaData.dynamic = 0xF;
+    metaData.version = 3;
+    metaData.dynamic = 0x7;
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
     metaData.dynamicInfo.clear();
@@ -183,7 +183,7 @@ HWTEST_F(DeviceMatrixTest, FirstOnline, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
 }
 
 /**
@@ -198,13 +198,13 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainNoData, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xE);
+    ASSERT_EQ(result.mask_, 0x6);
 }
 
 /**
@@ -219,14 +219,14 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainWithData, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
 }
 
 /**
@@ -241,14 +241,14 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainWithLocal, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta_, true);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xE);
+    ASSERT_EQ(result.mask_, 0x6);
 }
 
 /**
