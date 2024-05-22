@@ -15,6 +15,8 @@
 #define LOG_TAG "KVDBGeneralStore"
 #include "kvdb_general_store.h"
 
+#include <endian.h>
+#include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
@@ -34,6 +36,8 @@
 #include "user_delegate.h"
 #include "utils/anonymous.h"
 #include "water_version_manager.h"
+#include "device_manager_adapter.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -42,6 +46,9 @@ using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
+using DMAdapter = DistributedData::DeviceManagerAdapter;
+using DBInterceptedData = DistributedDB::InterceptedData;
+constexpr int UUID_WIDTH = 4;
 
 KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
 {
@@ -78,7 +85,11 @@ KVDBGeneralStore::DBSecurity KVDBGeneralStore::GetDBSecurity(int32_t secLevel)
 KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &data, const DBPassword &password)
 {
     DBOption dbOption;
-    dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
+    if (data.appId == Bootstrap::GetInstance().GetProcessLabel()) {
+        dbOption.compressionRate = META_COMPRESS_RATE;
+    } else {
+        dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
+    }
     dbOption.createIfNecessary = false;
     dbOption.isMemoryDb = false;
     dbOption.isEncryptedDb = data.isEncrypt;
@@ -101,12 +112,13 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
     return dbOption;
 }
 
-KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
+KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
+    : manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
+          meta.instanceId)
 {
     observer_.storeId_ = meta.storeId;
-
     DBStatus status = DBStatus::NOT_FOUND;
-    manager_.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(meta) });
+    manager_.SetKvStoreConfig({ meta.dataDir });
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     manager_.GetKvStore(
         meta.storeId, GetDBOption(meta, GetDBPassword(meta)), [&status, this](auto dbStatus, auto *tmpStore) {
@@ -118,6 +130,8 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta) : manager_(meta.ap
         manager_.CloseKvStore(delegate_);
         return;
     }
+    SetDBPushDataInterceptor(meta.storeType);
+    SetDBReceiveDataInterceptor(meta.storeType);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
     InitWaterVersion(meta);
@@ -362,6 +376,45 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
     return ConvertStatus(dbStatus);
 }
 
+void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId)
+{
+    std::vector<std::string> sameAccountDevs {};
+    std::vector<std::string> defaultAccountDevs {};
+    auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
+    GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
+    GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
+    if (!sameAccountDevs.empty()) {
+        auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
+        auto syncIdentifier = KvManager::GetKvStoreIdentifier(accountId, appId, storeId);
+        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
+            Anonymous::Change(storeId).c_str(), Anonymous::Change(accountId).c_str(),
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
+        delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
+    }
+    if (!defaultAccountDevs.empty()) {
+        auto syncIdentifier = KvManager::GetKvStoreIdentifier(defaultAccountId, appId, storeId);
+        ZLOGI("no account set compatible identifier store:%{public}s, device:%{public}.10s",
+            Anonymous::Change(storeId).c_str(),
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
+        delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
+    }
+}
+
+void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
+    const std::vector<std::string> &uuids, int32_t authType)
+{
+    for (const auto &devId : uuids) {
+        if (DMAdapter::GetInstance().IsOHOSType(devId)) {
+            continue;
+        }
+        if (DMAdapter::GetInstance().GetAuthType(devId) != authType) {
+            continue;
+        }
+        devices.push_back(devId);
+    }
+    ZLOGI("devices size: %{publ}zu", devices.size());
+}
+
 std::shared_ptr<Cursor> KVDBGeneralStore::PreSharing(GenQuery &query)
 {
     return nullptr;
@@ -588,7 +641,7 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
         bool isFinished = false;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
-            isFinished |= process.process == FINISHED;
+            isFinished = process.process == FINISHED ? true : isFinished;
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
             for (auto [key, value] : process.tableProcess) {
@@ -610,5 +663,89 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
             callback();
         }
     };
+}
+
+void KVDBGeneralStore::SetDBPushDataInterceptor(int32_t storeType)
+{
+    delegate_->SetPushDataInterceptor(
+        [this, storeType](DBInterceptedData &data, const std::string &sourceID, const std::string &targetID) {
+            int errCode = DBStatus::OK;
+            if (storeType != KvStoreType::DEVICE_COLLABORATION || DMAdapter::GetInstance().IsOHOSType(targetID)) {
+                return errCode;
+            }
+            if (targetID.empty()) {
+                ZLOGE("targetID empty");
+                return static_cast<int>(DBStatus::DB_ERROR);
+            }
+            auto entries = data.GetEntries();
+            for (size_t i = 0; i < entries.size(); i++) {
+                if (entries[i].key.empty()) {
+                    continue;
+                }
+                auto oriKey = entries[i].key;
+                auto newKey = GetNewKey(oriKey, sourceID);
+                errCode = data.ModifyKey(i, newKey);
+                if (errCode != DBStatus::OK) {
+                    ZLOGE("ModifyKey err: %{public}d", errCode);
+                    break;
+                }
+            }
+            return errCode;
+        }
+    );
+}
+
+void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
+{
+    delegate_->SetReceiveDataInterceptor(
+        [this, storeType](DBInterceptedData &data, const std::string &sourceID, const std::string &targetID) {
+            int errCode = DBStatus::OK;
+            if (storeType != KvStoreType::DEVICE_COLLABORATION || DMAdapter::GetInstance().IsOHOSType(sourceID)) {
+                return errCode;
+            }
+            if (sourceID.empty()) {
+                ZLOGE("targetID empty");
+                return static_cast<int>(DBStatus::DB_ERROR);
+            }
+            auto entries = data.GetEntries();
+            for (size_t i = 0; i < entries.size(); i++) {
+                if (entries[i].key.empty()) {
+                    continue;
+                }
+
+                auto networkId = DMAdapter::GetInstance().ToNetworkID(sourceID);
+                auto encyptedUuid = DMAdapter::GetInstance().GetEncryptedUuidByNetworkId(networkId);
+                if (encyptedUuid.empty()) {
+                    ZLOGE("get encyptedUuid failed");
+                    continue;
+                }
+
+                auto oriKey = entries[i].key;
+                auto newKey = GetNewKey(oriKey, encyptedUuid);
+                errCode = data.ModifyKey(i, newKey);
+                if (errCode != DBStatus::OK) {
+                    ZLOGE("ModifyKey err: %{public}d", errCode);
+                    break;
+                }
+            }
+            return errCode;
+        }
+    );
+}
+
+std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, const std::string &uuid)
+{
+    uint32_t remoteLen = *(reinterpret_cast<uint32_t *>(&(*(key.end() - sizeof(uint32_t)))));
+    remoteLen = le32toh(remoteLen);
+    uint32_t uuidLen = uuid.size();
+
+    std::vector<uint8_t> out;
+    std::vector<uint8_t> oriKey(key.begin() + remoteLen, key.end() - UUID_WIDTH);
+    out.insert(out.end(), uuid.begin(), uuid.end());
+    out.insert(out.end(), oriKey.begin(), oriKey.end());
+    uuidLen = htole32(uuidLen);
+    uint8_t *buf = reinterpret_cast<uint8_t *>(&uuidLen);
+    out.insert(out.end(), buf, buf + sizeof(uuidLen));
+    return out;
 }
 } // namespace OHOS::DistributedKv

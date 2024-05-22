@@ -254,12 +254,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         return;
     }
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
-    if (dvInfo.osType != OH_OS_TYPE) {
-        ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d is not oh device",
-              KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
-        NotifyReadyEvent(dvInfo.uuid);
-        return;
-    }
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
@@ -363,11 +357,6 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
-    if (dvInfo.osType != OH_OS_TYPE) {
-        ZLOGW("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d is not oh device",
-              KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
-        return;
-    }
     readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
@@ -395,7 +384,8 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
         return false;
     }
     if (uuid == CLOUD_DEVICE_UUID) {
-        dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, OH_OS_TYPE };
+        dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, OH_OS_TYPE,
+            static_cast<int32_t>(dmInfo.authForm)};
         return true;
     }
     DeviceExtraInfo deviceExtraInfo;
@@ -403,7 +393,8 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
         ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
         return false;
     }
-    dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE };
+    dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE,
+        static_cast<int32_t>(dmInfo.authForm)};
     return true;
 }
 
@@ -463,11 +454,9 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
             ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
             continue;
         }
-        if (deviceExtraInfo.OS_TYPE != OH_OS_TYPE) {
-            continue;
-        }
         DeviceInfo dvInfo = { std::move(uuid), std::move(udid), std::move(networkId),
-                              std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE };
+                              std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE,
+                              static_cast<int32_t>(dmInfo.authForm) };
         dvInfos.emplace_back(std::move(dvInfo));
     }
     return dvInfos;
@@ -490,14 +479,24 @@ bool DeviceManagerAdapter::IsDeviceReady(const std::string& id)
     return (it.first && it.second.first == DeviceState::DEVICE_ONREADY);
 }
 
-bool DeviceManagerAdapter::IsOHOsType(const std::string& id)
+bool DeviceManagerAdapter::IsOHOSType(const std::string &id)
 {
     DeviceInfo dvInfo;
     if (!deviceInfos_.Get(id, dvInfo)) {
         InitDeviceInfo();
-        return deviceInfos_.Get(id, dvInfo);
+        deviceInfos_.Get(id, dvInfo);
     }
-    return true;
+    return dvInfo.osType == OH_OS_TYPE;
+}
+
+int32_t DeviceManagerAdapter::GetAuthType(const std::string &id)
+{
+    DeviceInfo dvInfo;
+    if (!deviceInfos_.Get(id, dvInfo)) {
+        InitDeviceInfo();
+        deviceInfos_.Get(id, dvInfo);
+    }
+    return static_cast<int32_t>(dvInfo.authForm);
 }
 
 size_t DeviceManagerAdapter::GetOnlineSize()
@@ -573,7 +572,7 @@ DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
     ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d, osType:%{public}d",
         KvStoreUtils::ToBeAnonymous(uuid).c_str(), info.deviceName, info.deviceTypeId, deviceExtraInfo.OS_TYPE);
     return { std::move(uuid), std::move(udid), std::move(networkId), std::string(info.deviceName), info.deviceTypeId,
-        deviceExtraInfo.OS_TYPE };
+        deviceExtraInfo.OS_TYPE, static_cast<int32_t>(info.authForm) };
 }
 
 std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
@@ -736,5 +735,20 @@ DeviceManagerAdapter::NetworkType DeviceManagerAdapter::RefreshNet()
         return SetNet(NONE);
     }
     return SetNet(Convert(*capabilities.bearerTypes_.begin()));
+}
+
+std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string &networkId)
+{
+    if (networkId.empty()) {
+        ZLOGE("failed! networkId empty");
+        return "";
+    }
+    std::string encryptedUuid;
+    auto ret = DeviceManager::GetInstance().GetEncryptedUuidByNetworkId(PKG_NAME, networkId, encryptedUuid);
+    if (ret != DM_OK) {
+        ZLOGE("failed, result:%{public}d", ret);
+        return "";
+    }
+    return encryptedUuid;
 }
 } // namespace OHOS::DistributedData

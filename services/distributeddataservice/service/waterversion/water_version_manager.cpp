@@ -278,7 +278,7 @@ WaterVersionMetaData WaterVersionManager::Upgrade(const std::vector<std::string>
     newMeta.waterVersion = meta.waterVersion;
     newMeta.type = meta.type;
     newMeta.infos = { keys.size(), std::vector<uint64_t>(keys.size(), 0) };
-    std::map<int, int> mp;
+    std::map<size_t, size_t> mp;
     for (size_t i = 0; i < keys.size(); ++i) {
         for (size_t j = 0; j < meta.keys.size(); ++j) {
             if (meta.keys[j] == keys[i]) {

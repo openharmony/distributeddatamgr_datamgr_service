@@ -89,6 +89,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/service/data_share/strategies/template_strategy.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
+    "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "datashareservicestub_fuzzer.cpp",

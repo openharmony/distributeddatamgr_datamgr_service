@@ -22,6 +22,7 @@
 
 #include "account_delegate.h"
 #include "bootstrap.h"
+#include "cloud/change_event.h"
 #include "communication_provider.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
@@ -32,13 +33,17 @@
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data_local.h"
 #include "metadata/version_meta_data.h"
 #include "runtime_config.h"
+#include "store/general_store.h"
+#include "store/store_info.h"
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "utils/ref_count.h"
 #include "utils/converter.h"
+#include "water_version_manager.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -87,15 +92,7 @@ void KvStoreMetaManager::InitMetaListener()
         ZLOGW("register metaMgr failed: %{public}d.", status);
         return;
     }
-    status = DmAdapter::GetInstance().StartWatchDeviceChange(&dbInfoListener_, { "notifyDbInfos" });
-    if (status != AppDistributedKv::Status::SUCCESS) {
-        ZLOGW("register notifyDbInfos failed: %{public}d.", status);
-        return;
-    }
-    ZLOGI("register metaMgr and notifyDbInfos device change success.");
-
     SubscribeMetaKvStore();
-    SyncMeta();
     InitBroadcast();
     InitDeviceOnline();
     NotifyAllAutoSyncDBInfo();
@@ -185,6 +182,7 @@ void KvStoreMetaManager::InitMetaData()
     data.isAutoSync = false;
     data.isBackup = false;
     data.isEncrypt = false;
+    data.isNeedCompress = true;
     data.storeType = KvStoreType::SINGLE_VERSION;
     data.dataType = DataType::TYPE_DYNAMICAL;
     data.schema = "";
@@ -195,12 +193,20 @@ void KvStoreMetaManager::InitMetaData()
     data.securityLevel = SecurityLevel::S1;
     data.area = EL1;
     data.tokenId = tokenId;
+    StoreMetaDataLocal localData;
+    localData.isAutoSync = false;
+    localData.isBackup = false;
+    localData.isEncrypt = false;
+    localData.dataDir = metaDBDirectory_;
+    localData.schema = "";
+    localData.isPublic = true;
     if (!(MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data) &&
-        MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true))) {
+        MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true) &&
+        MetaDataManager::GetInstance().SaveMeta(data.GetKeyLocal(), localData, true))) {
         ZLOGE("save meta fail");
     }
     UpdateMetaData();
-    SetSyncer();
+    SetCloudSyncer();
     ZLOGI("end.");
 }
 
@@ -321,6 +327,25 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     return NbDelegate(delegate, release);
 }
 
+void KvStoreMetaManager::SetCloudSyncer()
+{
+    auto cloudSyncer = []() {
+        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
+        auto bundleName = Bootstrap::GetInstance().GetProcessLabel();
+        auto storeName = Bootstrap::GetInstance().GetMetaDBName();
+        WaterVersionManager::GetInstance().GenerateWaterVersion(bundleName, storeName);
+        DistributedData::StoreInfo storeInfo;
+        storeInfo.bundleName = bundleName;
+        storeInfo.storeName = storeName;
+        auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
+            GeneralStore::AUTO_SYNC_MODE));
+        auto info = ChangeEvent::EventInfo(mixMode, 0, true, nullptr, nullptr);
+        auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+    };
+    MetaDataManager::GetInstance().SetCloudSyncer(cloudSyncer);
+}
+
 void KvStoreMetaManager::SetSyncer()
 {
     auto syncer = [this](const auto &store, int32_t status) {
@@ -370,33 +395,6 @@ std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int3
             ZLOGW("meta data sync error %{public}d.", status);
         }
     };
-}
-
-void KvStoreMetaManager::SyncMeta()
-{
-    std::vector<std::string> devs;
-    auto deviceList = DmAdapter::GetInstance().GetRemoteDevices();
-    for (auto const &dev : deviceList) {
-        devs.push_back(dev.uuid);
-    }
-
-    if (devs.empty()) {
-        ZLOGW("meta db sync fail, devices is empty.");
-        return;
-    }
-
-    auto metaDelegate = GetMetaKvStore();
-    if (metaDelegate == nullptr) {
-        ZLOGW("meta db sync failed.");
-        return;
-    }
-    auto onComplete = [this](const std::map<std::string, DistributedDB::DBStatus> &) {
-        ZLOGD("meta db sync complete end.");
-    };
-    auto dbStatus = metaDelegate->Sync(devs, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
-    if (dbStatus != DistributedDB::OK) {
-        ZLOGW("meta db sync failed, error is %{public}d.", dbStatus);
-    }
 }
 
 void KvStoreMetaManager::SubscribeMetaKvStore()
@@ -569,7 +567,6 @@ void KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::OnDeviceChanged(const A
         ZLOGD("Network change, ignore");
         return;
     }
-    KvStoreMetaManager::GetInstance().SyncMeta();
     KvStoreMetaManager::GetInstance().OnDeviceChange(info.uuid);
 }
 

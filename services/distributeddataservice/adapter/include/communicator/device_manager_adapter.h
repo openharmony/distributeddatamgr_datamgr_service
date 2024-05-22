@@ -61,7 +61,8 @@ public:
     std::vector<DeviceInfo> GetRemoteDevices();
     std::vector<DeviceInfo> GetOnlineDevices();
     bool IsDeviceReady(const std::string &id);
-    bool IsOHOsType(const std::string &id);
+    bool IsOHOSType(const std::string &id);
+    std::string GetEncryptedUuidByNetworkId(const std::string &networkId);
     size_t GetOnlineSize();
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
@@ -75,6 +76,7 @@ public:
     void NotifyReadyEvent(const std::string &uuid);
     bool IsNetworkAvailable();
     NetworkType GetNetworkType(bool retrieve = false);
+    int32_t GetAuthType(const std::string& id);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 

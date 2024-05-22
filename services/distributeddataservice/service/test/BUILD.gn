@@ -26,6 +26,7 @@ config("module_private_config") {
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/bootstrap/include/",
+    "${data_service_path}/service/backup/include/",
     "${data_service_path}/service/cloud/",
     "${data_service_path}/service/config/include/",
     "${data_service_path}/service/common/",
@@ -41,8 +42,11 @@ config("module_private_config") {
     "${data_service_path}/service/object/",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb/",
+    "${data_service_path}/service/waterversion",
     "${dataobject_path}/interfaces/innerkits",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
+    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
 
   defines = [
@@ -52,8 +56,17 @@ config("module_private_config") {
 }
 
 ohos_unittest("CloudDataTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/checker/bundle_checker.cpp",
+    "${data_service_path}/app/src/checker/system_checker.cpp",
+    "${data_service_path}/service/backup/src/backup_manager.cpp",
+    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
@@ -62,7 +75,30 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/backup_config.cpp",
+    "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
+    "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/directory_config.cpp",
+    "${data_service_path}/service/config/src/model/global_config.cpp",
+    "${data_service_path}/service/config/src/model/network_config.cpp",
+    "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/crypto/src/crypto_manager.cpp",
+    "${data_service_path}/service/rdb/cache_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud.cpp",
     "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
+    "${data_service_path}/service/rdb/rdb_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_general_store.cpp",
+    "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_service_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_service_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_watcher.cpp",
+    "${data_service_path}/service/waterversion/water_version_manager.cpp",
     "cloud_data_test.cpp",
   ]
 
@@ -72,9 +108,11 @@ ohos_unittest("CloudDataTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
     "hilog:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
@@ -459,6 +497,12 @@ ohos_unittest("MetaDataTest") {
     "meta_data_test.cpp",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   include_dirs = [
     "${data_service_path}/app/src",
     "${data_service_path}/service/kvdb",
@@ -663,6 +707,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/strategies/template_strategy.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
+    "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "data_share_profile_config_test.cpp",

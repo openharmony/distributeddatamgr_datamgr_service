@@ -69,7 +69,7 @@ void PermitDelegate::Init()
 bool PermitDelegate::SyncActivate(const ActiveParam &param)
 {
     ZLOGD("user:%{public}s, app:%{public}s, store:%{public}s, instanceId:%{public}d",
-        param.userId.c_str(), param.appId.c_str(), param.storeId.c_str(), param.instanceId);
+        param.userId.c_str(), param.appId.c_str(), Anonymous::Change(param.storeId).c_str(), param.instanceId);
     if (param.instanceId != 0) {
         return false;
     }

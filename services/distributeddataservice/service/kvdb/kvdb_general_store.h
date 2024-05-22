@@ -71,6 +71,7 @@ public:
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
+    void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
 
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
@@ -83,11 +84,16 @@ private:
     using DBSyncCallback = std::function<void(const std::map<std::string, DBStatus> &status)>;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DBStatus status);
+    void SetDBPushDataInterceptor(int32_t storeType);
+    void SetDBReceiveDataInterceptor(int32_t storeType);
+    std::vector<uint8_t> GetNewKey(std::vector<uint8_t> &key, const std::string &uuid);
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
     DBStatus CloudSync(
         const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait);
     void InitWaterVersion(const StoreMetaData &meta);
+    void GetIdentifierParams(std::vector<std::string> &devices,
+        const std::vector<std::string> &uuids, int32_t authType);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;
@@ -109,6 +115,7 @@ private:
         std::string storeId_;
     };
 
+    static constexpr uint8_t META_COMPRESS_RATE = 10;
     ObserverProxy observer_;
     KvManager manager_;
     KvDelegate *delegate_ = nullptr;
@@ -120,6 +127,10 @@ private:
     mutable std::shared_mutex rwMutex_;
     StoreInfo storeInfo_;
     std::function<void()> callback_;
+
+    static constexpr int32_t NO_ACCOUNT = 0;
+    static constexpr int32_t IDENTICAL_ACCOUNT = 1;
+    static constexpr const char *defaultAccountId = "default";
     bool enableCloud_ = false;
 };
 } // namespace OHOS::DistributedKv

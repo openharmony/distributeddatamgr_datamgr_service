@@ -27,6 +27,7 @@
 #include "object_asset_loader.h"
 #include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
+#include "utils/anonymous.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -257,7 +258,8 @@ static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBi
     if (value.index() == TYPE_INDEX<DistributedData::Asset>) {
         auto* asset = Traits::get_if<DistributedData::Asset>(&value);
         if (asset->name != newAsset.name) {
-            ZLOGD("Asset not same, old uri: %{public}s, new uri: %{public}s", asset->uri.c_str(), newAsset.uri.c_str());
+            ZLOGD("Asset not same, old uri: %{public}s, new uri: %{public}s",
+                Anonymous::Change(asset->uri, true).c_str(), Anonymous::Change(newAsset.uri, true).c_str());
             return;
         }
     }

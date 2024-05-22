@@ -27,6 +27,7 @@ struct API_EXPORT DeviceInfo {
     std::string deviceName;
     uint32_t deviceType;
     int32_t osType;
+    int32_t authForm;
 };
 
 enum RouteType : int32_t {

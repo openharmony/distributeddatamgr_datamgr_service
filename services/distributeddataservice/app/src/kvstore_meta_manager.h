@@ -65,6 +65,8 @@ private:
 
     void SetSyncer();
 
+    void SetCloudSyncer();
+
     KvStoreMetaManager();
 
     void InitMetaData();
@@ -72,8 +74,6 @@ private:
     void UpdateMetaData();
 
     void SubscribeMetaKvStore();
-
-    void SyncMeta();
 
     void NotifyAllAutoSyncDBInfo();
 

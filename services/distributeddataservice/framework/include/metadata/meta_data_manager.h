@@ -47,12 +47,14 @@ public:
     using MetaStore = DistributedDB::KvStoreNbDelegate;
     using Observer = std::function<bool(const std::string &, const std::string &, int32_t)>;
     using Syncer = std::function<void(const std::shared_ptr<MetaStore> &, int32_t)>;
+    using CloudSyncer = std::function<void()>;
     using Backup = std::function<int32_t(const std::shared_ptr<MetaStore> &)>;
     using Bytes = std::vector<uint8_t>;
     using OnComplete = std::function<void(const std::map<std::string, int32_t> &)>;
     API_EXPORT static MetaDataManager &GetInstance();
     API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup);
     API_EXPORT void SetSyncer(const Syncer &syncer);
+    API_EXPORT void SetCloudSyncer(const CloudSyncer &cloudSyncer);
     API_EXPORT bool SaveMeta(const std::string &key, const Serializable &value, bool isLocal = false);
     API_EXPORT bool LoadMeta(const std::string &key, Serializable &value, bool isLocal = false);
     template<class T>
@@ -90,6 +92,7 @@ private:
     ConcurrentMap<std::string, std::shared_ptr<MetaObserver>> metaObservers_;
     Backup backup_;
     Syncer syncer_;
+    CloudSyncer cloudSyncer_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_META_DATA_MANAGER_H

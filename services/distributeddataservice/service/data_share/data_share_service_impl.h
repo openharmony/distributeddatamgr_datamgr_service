@@ -114,6 +114,7 @@ private:
     bool GetCallerBundleName(std::string &bundleName);
     int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
+    void InitSubEvent();
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
