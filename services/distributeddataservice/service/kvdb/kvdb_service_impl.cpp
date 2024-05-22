@@ -716,12 +716,10 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, sp
         if (agent.pid_ != IPCSkeleton::GetCallingPid()) {
             agent.ReInit(IPCSkeleton::GetCallingPid(), appId);
         }
-        if (agent.watcher_ == nullptr) {
-            isCreate = true;
-            agent.SetWatcher(std::make_shared<KVDBWatcher>());
-        }
-        agent.SetObserver(iface_cast<KvStoreObserverProxy>(observer->AsObject()));
-        agent.count_++;
+        isCreate = true;
+        auto watcher = std::make_shared<KVDBWatcher>();
+        watcher->SetObserver(observer);
+        agent.watchers_[storeId.storeId].insert(watcher);
         return true;
     });
     if (isCreate) {
@@ -737,12 +735,19 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
         Anonymous::Change(storeId.storeId).c_str(), tokenId);
     bool destroyed = false;
     syncAgents_.ComputeIfPresent(tokenId, [&appId, &storeId, &observer, &destroyed](auto &key, SyncAgent &agent) {
-        if (agent.count_ > 0) {
-            agent.count_--;
+        auto iter = agent.watchers_.find(storeId.storeId);
+        if (iter == agent.watchers_.end()) {
+            return true;
         }
-        if (agent.count_ == 0) {
-            destroyed = true;
-            agent.SetWatcher(nullptr);
+        for (auto watcher : iter->second) {
+            if (watcher->GetObserver() == observer) {
+                destroyed = true;
+                iter->second.erase(watcher);
+                break;
+            }
+        }
+        if (iter->second.size() == 0) {
+            agent.watchers_.erase(storeId.storeId);
         }
         return true;
     });
@@ -861,10 +866,7 @@ int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
         if (CheckerManager::GetInstance().IsSwitches(info)) {
             MetaDataManager::GetInstance().Unsubscribe(SwitchesMetaData::GetPrefix({}));
         }
-        if (agent.watcher_ != nullptr) {
-            agent.watcher_->ClearObservers();
-            agent.ClearObservers();
-        }
+        agent.watchers_.clear();
         auto stores = AutoCache::GetInstance().GetStoresIfPresent(key);
         for (auto store : stores) {
             if (store != nullptr) {
@@ -1440,50 +1442,28 @@ std::vector<std::string> KVDBServiceImpl::ConvertDevices(const std::vector<std::
 
 AutoCache::Watchers KVDBServiceImpl::GetWatchers(uint32_t tokenId, const std::string &storeId)
 {
-    auto [success, agent] = syncAgents_.Find(tokenId);
-    if (agent.watcher_ == nullptr) {
-        return {};
-    }
-    return { agent.watcher_ };
+    AutoCache::Watchers watchers{};
+    syncAgents_.ComputeIfPresent(tokenId, [&storeId, &watchers](auto &, SyncAgent &agent) {
+        auto iter = agent.watchers_.find(storeId);
+        if (iter != agent.watchers_.end()) {
+            for (const auto &watcher : iter->second) {
+                watchers.insert(watcher);
+            }
+        }
+        return true;
+    });
+    return watchers;
 }
 
 void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
 {
-    ZLOGW("pid:%{public}d->%{public}d appId:%{public}s notifier:%{public}d observer:%{public}zu", pid, pid_,
-        appId_.appId.c_str(), notifier_ == nullptr, observers_.size());
+    ZLOGW("pid:%{public}d->%{public}d appId:%{public}s notifier:%{public}d", pid, pid_,
+        appId_.appId.c_str(), notifier_ == nullptr);
     pid_ = pid;
     appId_ = appId;
     notifier_ = nullptr;
     delayTimes_.clear();
-    count_ = 0;
-    watcher_ = nullptr;
-    observers_.clear();
-}
-
-void KVDBServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<KVDBWatcher> watcher)
-{
-    if (watcher_ != watcher) {
-        watcher_ = watcher;
-        if (watcher_ != nullptr) {
-            watcher_->SetObservers(observers_);
-        }
-    }
-}
-
-void KVDBServiceImpl::SyncAgent::SetObserver(sptr<KvStoreObserverProxy> observer)
-{
-    observers_.insert(observer);
-    if (watcher_ != nullptr) {
-        watcher_->SetObservers(observers_);
-    }
-}
-
-void KVDBServiceImpl::SyncAgent::ClearObservers()
-{
-    observers_.clear();
-    if (watcher_ != nullptr) {
-        watcher_->ClearObservers();
-    }
+    watchers_.clear();
 }
 
 int32_t KVDBServiceImpl::OnBind(const BindInfo &bindInfo)
