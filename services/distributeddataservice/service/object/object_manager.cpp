@@ -12,29 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #define LOG_TAG "ObjectStoreManager"
-#include <set>
 
 #include "object_manager.h"
 
-#include "ipc_skeleton.h"
+#include <regex>
+#include <set>
+#include <utils/anonymous.h>
+
 #include "accesstoken_kit.h"
-#include "ipc_skeleton.h"
-#include "bootstrap.h"
-#include "block_data.h"
-#include "checker/checker_manager.h"
-#include "datetime_ex.h"
-#include "kvstore_utils.h"
-#include "log_print.h"
-#include "object_data_listener.h"
-#include "object_asset_loader.h"
-#include "metadata/meta_data_manager.h"
-#include "metadata/store_meta_data.h"
 #include "account/account_delegate.h"
+#include "block_data.h"
+#include "bootstrap.h"
+#include "checker/checker_manager.h"
 #include "common/bytes.h"
 #include "common/string_utils.h"
-#include <utils/anonymous.h>
+#include "datetime_ex.h"
+#include "ipc_skeleton.h"
+#include "kvstore_utils.h"
+#include "log_print.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
+#include "object_asset_loader.h"
+#include "object_data_listener.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -333,8 +333,12 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     SaveUserToMeta();
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     for (const auto &item : changedData) {
-        std::string prefix = GetBundleName(item.first) + GetSessionId(item.first);
-        std::string propertyName = GetPropertyName(item.first);
+        std::vector<std::string> splitKeys = SplitEntryKey(item.first);
+        if (splitKeys.empty()) {
+            continue;
+        }
+        std::string prefix = splitKeys[BUNDLE_NAME_INDEX] + splitKeys[SESSION_ID_INDEX];
+        std::string propertyName = splitKeys[PROPERTY_NAME_INDEX];
         data[prefix].insert_or_assign(propertyName, item.second);
     }
     std::function<void(bool success)> callback = [this, data](bool success) {
@@ -380,12 +384,14 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
             std::string key(entry.key.begin(), entry.key.end());
             result[GetPropertyName(key)] = entry.value;
         });
-        if (!isAssetComplete(result, GetPropertyName(keyPrefix))) {
+        std::vector<std::string> splitKeys = SplitEntryKey(keyPrefix);
+        if (splitKeys.empty() || !isAssetComplete(result, splitKeys[PROPERTY_NAME_INDEX])) {
             continue;
         }
-        std::string networkId = GetNetworkId(keyPrefix);
-        for (const auto& [key, value] : result) {
-            results[GetBundleName(keyPrefix)][networkId][key] = value;
+        std::string bundleName = splitKeys[BUNDLE_NAME_INDEX];
+        std::string networkId = DmAdaper::GetInstance().ToNetworkID(splitKeys[SOURCE_DEVICE_UDID_INDEX]);
+        for (const auto &[key, value] : result) {
+            results[bundleName][networkId][key] = value;
         }
     }
     std::map<std::string, std::map<std::string, Assets>> changedAssets{};
@@ -561,9 +567,14 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
     std::string deleteKey;
     for (auto &item : entries) {
         std::string key(item.key.begin(), item.key.end());
-        std::string id = GetSessionId(key);
+        std::vector<std::string> splitKeys = SplitEntryKey(key);
+        if (splitKeys.empty()) {
+            continue;
+        }
+        std::string id = splitKeys[SESSION_ID_INDEX];
         if (sessionIds.count(id) == 0) {
-            sessionIds[id] = GetTime(key);
+            char *end = nullptr;
+            sessionIds[id] = strtol(splitKeys[TIME_INDEX].c_str(), &end, DECIMAL_BASE);
         }
         if (oldestTime == 0 || oldestTime > sessionIds[id]) {
             oldestTime = sessionIds[id];
@@ -697,19 +708,59 @@ int32_t ObjectStoreManager::RetrieveFromStore(
     return OBJECT_SUCCESS;
 }
 
-void ObjectStoreManager::ProcessKeyByIndex(std::string &key, uint8_t index)
+std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &key)
 {
-    std::size_t pos;
-    uint8_t i = 0;
-    do {
-        pos = key.find(SEPERATOR);
-        if (pos == std::string::npos) {
-            return;
-        }
-        key.erase(0, pos + 1);
-        i++;
-    } while (i < index);
+    std::smatch match;
+    std::regex timeRegex(TIME_REGEX);
+    if (!std::regex_search(key, match, timeRegex)) {
+        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        return {};
+    }
+    size_t timePos = match.position();
+    std::string fromTime = key.substr(timePos + 1);
+    std::string beforeTime = key.substr(0, timePos);
+
+    size_t targetDevicePos = beforeTime.find_last_of(SEPERATOR);
+    if (targetDevicePos == std::string::npos) {
+        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        return {};
+    }
+    std::string targetDevice = beforeTime.substr(targetDevicePos + 1);
+    std::string beforeTargetDevice = beforeTime.substr(0, targetDevicePos);
+
+    size_t sourceDeviceUdidPos = beforeTargetDevice.find_last_of(SEPERATOR);
+    if (sourceDeviceUdidPos == std::string::npos) {
+        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        return {};
+    }
+    std::string sourceDeviceUdid = beforeTargetDevice.substr(sourceDeviceUdidPos + 1);
+    std::string beforeSourceDeviceUdid = beforeTargetDevice.substr(0, sourceDeviceUdidPos);
+
+    size_t sessionIdPos = beforeSourceDeviceUdid.find_last_of(SEPERATOR);
+    if (sessionIdPos == std::string::npos) {
+        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        return {};
+    }
+    std::string sessionId = beforeSourceDeviceUdid.substr(sessionIdPos + 1);
+    std::string bundleName = beforeSourceDeviceUdid.substr(0, sessionIdPos);
+
+    size_t propertyNamePos = fromTime.find_first_of(SEPERATOR);
+    if (propertyNamePos == std::string::npos) {
+        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        return {};
+    }
+    std::string propertyName = fromTime.substr(propertyNamePos + 1);
+    std::string time = fromTime.substr(0, propertyNamePos);
+
+    return { bundleName, sessionId, sourceDeviceUdid, targetDevice, time, propertyName };
 }
+
+std::string ObjectStoreManager::GetPropertyName(const std::string &key)
+{
+    std::vector<std::string> splitKeys = SplitEntryKey(key);
+    return splitKeys.empty() ? "" : splitKeys[PROPERTY_NAME_INDEX];
+}
+
 std::string ObjectStoreManager::GetCurrentUser()
 {
     std::vector<int> users;
@@ -739,67 +790,9 @@ void ObjectStoreManager::SaveUserToMeta()
     }
 }
 
-std::string ObjectStoreManager::GetPropertyName(const std::string &key)
-{
-    std::string result = key;
-    ProcessKeyByIndex(result, 5); // property name is after 5 '_'
-    return result;
-}
-
-std::string ObjectStoreManager::GetSessionId(const std::string &key)
-{
-    std::string result = key;
-    ProcessKeyByIndex(result, 1); // sessionId is after 1 '_'
-    auto pos = result.find(SEPERATOR);
-    if (pos == std::string::npos) {
-        return result;
-    }
-    result.erase(pos);
-    return result;
-}
-
-int64_t ObjectStoreManager::GetTime(const std::string &key)
-{
-    std::string result = key;
-    std::size_t pos;
-    int8_t i = 0;
-    do {
-        pos = result.find(SEPERATOR);
-        result.erase(0, pos + 1);
-        i++;
-    } while (pos != std::string::npos && i < 4); // time is after 4 '_'
-    pos = result.find(SEPERATOR);
-    result.erase(pos);
-    char *end = nullptr;
-    return std::strtol(result.c_str(), &end, DECIMAL_BASE);
-}
-
 void ObjectStoreManager::CloseAfterMinute()
 {
     executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&ObjectStoreManager::Close, this));
-}
-
-std::string ObjectStoreManager::GetBundleName(const std::string &key)
-{
-    std::size_t pos = key.find(SEPERATOR);
-    if (pos == std::string::npos) {
-        return std::string();
-    }
-    std::string result = key;
-    result.erase(pos);
-    return result;
-}
-
-std::string ObjectStoreManager::GetNetworkId(const std::string& key)
-{
-    std::stringstream keyStream(key);
-    std::string sourceDeviceUdId;
-    for (int i = 0; getline(keyStream, sourceDeviceUdId, *SEPERATOR); i++) {
-        if (i == SOURCE_DEVICE_ID_INDEX) {
-            return DmAdaper::GetInstance().ToNetworkID(sourceDeviceUdId);
-        }
-    }
-    return {};
 }
 
 void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
