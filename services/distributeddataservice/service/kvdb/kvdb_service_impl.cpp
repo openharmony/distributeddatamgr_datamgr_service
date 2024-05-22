@@ -743,8 +743,11 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
             if (watcher->GetObserver() == observer) {
                 destroyed = true;
                 iter->second.erase(watcher);
-                return true;
+                break;
             }
+        }
+        if (iter->second.size() == 0) {
+            agent.watchers_.erase(storeId.storeId);
         }
         return true;
     });
