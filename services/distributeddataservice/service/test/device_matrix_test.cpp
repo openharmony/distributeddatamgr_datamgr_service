@@ -64,6 +64,7 @@ protected:
     StoreMetaData metaData_;
     StoreMetaDataLocal localMeta_;
     static CheckerMock instance_;
+    static constexpr uint32_t CURRENT_VERSION = 3;
 };
 BlockData<DeviceMatrixTest::Result> DeviceMatrixTest::isFinished_(1, Result());
 std::shared_ptr<DBStoreMock> DeviceMatrixTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
@@ -141,7 +142,7 @@ void DeviceMatrixTest::TearDown()
 void DeviceMatrixTest::InitRemoteMatrixMeta()
 {
     MatrixMetaData metaData;
-    metaData.version = 3;
+    metaData.version = CURRENT_VERSION;
     metaData.dynamic = 0x7;
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
