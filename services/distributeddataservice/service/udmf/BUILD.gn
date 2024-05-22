@@ -27,8 +27,6 @@ config("module_public_config") {
     "${data_service_path}/service/udmf/utd",
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/bootstrap/include",
-    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
-    "${file_service_path}/interfaces/innerkits/native/remote_file_share/include",
     "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "${kv_store_path}/framework/libs/distributeddb/interfaces/include",
     "${kv_store_common_path}",

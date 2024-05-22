@@ -21,8 +21,6 @@ config("module_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
-    "//third_party/json/single_include",
-    "//third_party/openssl/include/",
     "${data_service_path}/adapter/include",
     "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "${kv_store_common_path}",
@@ -35,7 +33,6 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
-    "//third_party/json/single_include",
     "${kv_store_common_path}",
   ]
 }
@@ -104,12 +101,12 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   public_configs = [ ":module_public_config" ]
 
-  deps = [ "//third_party/openssl:libcrypto_shared" ]
-
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"
 

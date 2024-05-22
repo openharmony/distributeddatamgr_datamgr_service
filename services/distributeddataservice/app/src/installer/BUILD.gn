@@ -32,19 +32,17 @@ ohos_static_library("distributeddata_installer_static") {
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/kvdb",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/permission/include",
-    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
-    "//third_party/json/single_include",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/permission/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
   ]
 
   external_deps = [
