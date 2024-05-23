@@ -418,10 +418,18 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_general_store.cpp",
+    "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
     "cache_cursor_test.cpp",
     "rdb_asset_loader_test.cpp",
+    "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",
+    "rdb_query_test.cpp",
   ]
 
   include_dirs = [
@@ -455,6 +463,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${kv_store_distributeddb_path}:distributeddb",
+    "${relational_store_inner_api_path}:native_rdb_static",
     "//third_party/googletest:gtest_main",
   ]
 }
