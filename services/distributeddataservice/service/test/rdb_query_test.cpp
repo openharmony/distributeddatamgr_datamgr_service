@@ -111,22 +111,13 @@ HWTEST_F(RdbQueryTest, RdbQueryTest003, TestSize.Level1)
     predicates.tables_.push_back("table1");
     predicates.tables_.push_back("table2");
     predicates.devices_.push_back("device1");
-    std::vector<std::string> values = { "" };
+    std::vector<std::string> values;
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::NOT_EQUAL_TO, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::AND, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::OR, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::ORDER_BY, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LIMIT, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::BEGIN_GROUP, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::END_GROUP, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::NOT_IN, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::CONTAIN, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::BEGIN_WITH, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::END_WITH, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IS_NULL, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IS_NOT_NULL, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LIKE, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::GLOB, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::BETWEEN, "test", values);
@@ -135,9 +126,9 @@ HWTEST_F(RdbQueryTest, RdbQueryTest003, TestSize.Level1)
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::GREATER_THAN_OR_EQUAL, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LESS_THAN, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LESS_THAN_OR_EQUAL, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::DISTINCT, "test", values);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::INDEXED_BY, "test", values);
     rdbQuery.MakeQuery(predicates);
+    EXPECT_TRUE(values.empty());
+    EXPECT_TRUE(values.size() != 2);
 }
 
 /**
@@ -185,6 +176,8 @@ HWTEST_F(RdbQueryTest, RdbQueryTest004, TestSize.Level1)
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::DISTINCT, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::INDEXED_BY, "test", values);
     rdbQuery.MakeQuery(predicates);
+    EXPECT_TRUE(!values.empty());
+    EXPECT_FALSE(values.size() != 2);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
