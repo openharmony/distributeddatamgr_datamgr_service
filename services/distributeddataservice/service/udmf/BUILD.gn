@@ -83,7 +83,7 @@ ohos_shared_library("udmf_server") {
     "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
-
+  cflags_cc = [ "-fvisibility=hidden" ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"

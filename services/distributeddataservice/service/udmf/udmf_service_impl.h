@@ -26,13 +26,13 @@
 #include "udmf_service_stub.h"
 #include "unified_data.h"
 #include "unified_types.h"
-
+#include "visibility.h"
 namespace OHOS {
 namespace UDMF {
 /*
  * UDMF server implementation
  */
-class UdmfServiceImpl final : public UdmfServiceStub {
+class API_EXPORT UdmfServiceImpl final : public UdmfServiceStub {
 public:
     UdmfServiceImpl();
     ~UdmfServiceImpl() = default;
