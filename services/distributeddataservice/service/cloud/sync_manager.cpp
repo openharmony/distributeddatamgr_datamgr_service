@@ -263,6 +263,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         std::vector<std::tuple<QueryKey, uint64_t>> cloudSyncInfos;
         GetCloudSyncInfo(info, cloud, cloudSyncInfos);
         if (cloudSyncInfos.empty()) {
+            ZLOGD("get cloud info failed, user: %{public}d.", cloud.user);
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
@@ -512,10 +513,12 @@ void SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
         }
         cloud = instance->GetServerInfo(cloud.user);
         if (!cloud.IsValid()) {
-            ZLOGE("cloud is empty, user%{public}d", cloud.user);
+            ZLOGE("cloud is empty, user: %{public}d", cloud.user);
             return;
         }
-        MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+        if (!MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true)) {
+            ZLOGW("save cloud info fail, user: %{public}d", cloud.user);
+        }
     }
     if (info.bundleName_.empty()) {
         for (const auto &it : cloud.apps) {
