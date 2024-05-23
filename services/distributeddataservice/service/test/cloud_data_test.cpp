@@ -19,6 +19,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
+#include "checker_mock.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
@@ -83,6 +84,7 @@ public:
 
     static SchemaMeta schemaMeta_;
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
+
 protected:
     static void InitMetaData();
     static void InitSchemaMeta();
@@ -90,10 +92,8 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static CloudInfo cloudInfo_;
+    static DistributedData::CheckerMock checker_;
 };
-
-std::shared_ptr<CloudData::CloudServiceImpl> CloudDataTest::cloudServiceImpl_ =
-    std::make_shared<CloudData::CloudServiceImpl>();
 
 class CloudServerMock : public CloudServer {
 public:
@@ -132,6 +132,9 @@ std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBSt
 SchemaMeta CloudDataTest::schemaMeta_;
 StoreMetaData CloudDataTest::metaData_;
 CloudInfo CloudDataTest::cloudInfo_;
+std::shared_ptr<CloudData::CloudServiceImpl> CloudDataTest::cloudServiceImpl_ =
+    std::make_shared<CloudData::CloudServiceImpl>();
+DistributedData::CheckerMock CloudDataTest::checker_;
 
 void CloudDataTest::InitMetaData()
 {
@@ -199,8 +202,6 @@ void CloudDataTest::SetUpTestCase(void)
 
     auto cloudServerMock = new CloudServerMock();
     CloudServer::RegisterCloudInstance(cloudServerMock);
-    FeatureSystem::GetInstance().GetCreator("cloud")();
-    FeatureSystem::GetInstance().GetCreator("relational_store")();
 
     HapPolicyParams policy = { .apl = APL_SYSTEM_BASIC,
         .domain = "test.domain",
@@ -232,6 +233,13 @@ void CloudDataTest::SetUpTestCase(void)
     InitCloudInfo();
     InitMetaData();
     InitSchemaMeta();
+
+    size_t max = 12;
+    size_t min = 5;
+
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    cloudServiceImpl_->OnBind(
+        { "CloudDataTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     Bootstrap::GetInstance().LoadCheckers();
 }
@@ -459,7 +467,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
     DistributedRdb::PredicatesMemo memo;
     rdbServiceImpl->Sync(param, option, memo, nullptr);
 
-    ZLOGI("CloudDataTest QueryLastSyncInfo004 mid");
+    sleep(1);
+
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
@@ -494,6 +503,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
     option.isAsync = false;
     DistributedRdb::PredicatesMemo memo;
     rdbServiceImpl->Sync(param, option, memo, nullptr);
+
+    sleep(1);
 
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
