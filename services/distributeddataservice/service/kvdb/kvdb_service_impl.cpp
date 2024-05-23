@@ -99,10 +99,12 @@ KVDBServiceImpl::KVDBServiceImpl()
         uint16_t mask = matrixEvent.GetMatrixData().statics;
         for (const auto &data : metaData) {
             if (data.dataType != DataType::TYPE_STATICS) {
+                OldOnlineSync(data, deviceId, refCount, matrixEvent.GetMatrixData().dynamic);
                 continue;
             }
             auto code = DeviceMatrix::GetInstance().GetCode(data);
             if ((code == DeviceMatrix::INVALID_MASK) || (mask & code) != code) {
+                OldOnlineSync(data, deviceId, refCount, matrixEvent.GetMatrixData().dynamic);
                 continue;
             }
             SyncInfo syncInfo;
@@ -116,6 +118,36 @@ KVDBServiceImpl::KVDBServiceImpl()
                 std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, refCount, std::placeholders::_1));
         }
     });
+}
+
+void KVDBServiceImpl::OldOnlineSync(
+    const StoreMetaData &data, const std::string &deviceId, RefCount refCount, uint16_t mask)
+{
+    StoreMetaDataLocal localMetaData;
+    MetaDataManager::GetInstance().LoadMeta(data.GetKeyLocal(), localMetaData, true);
+    if (!localMetaData.HasPolicy(PolicyType::IMMEDIATE_SYNC_ON_ONLINE)) {
+        return;
+    }
+
+    auto code = DeviceMatrix::GetInstance().GetCode(data);
+    if ((mask & code) != code) {
+        return;
+    }
+
+    auto policy = localMetaData.GetPolicy(PolicyType::IMMEDIATE_SYNC_ON_ONLINE);
+    SyncInfo syncInfo;
+    syncInfo.mode = PUSH_PULL;
+    syncInfo.delay = 0;
+    syncInfo.devices = { deviceId };
+    if (policy.IsValueEffect()) {
+        syncInfo.delay = policy.valueUint;
+    }
+    ZLOGI("[online old] appId:%{public}s, storeId:%{public}s", data.bundleName.c_str(),
+        Anonymous::Change(data.storeId).c_str());
+    auto delay = GetSyncDelayTime(syncInfo.delay, { data.storeId });
+    KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(data.tokenId), delay,
+        std::bind(&KVDBServiceImpl::DoSync, this, data, syncInfo, std::placeholders::_1, ACTION_SYNC),
+        std::bind(&KVDBServiceImpl::DoComplete, this, data, syncInfo, refCount, std::placeholders::_1));
 }
 
 KVDBServiceImpl::~KVDBServiceImpl()
