@@ -1141,7 +1141,7 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     }
     bool res = false;
     for (auto user : users) {
-        res = instance->IsSupportCloud(user) | res;
+        res = instance->IsSupportCloud(user) || res;
     }
     if (!res) {
         return Status::CLOUD_DISABLED;
