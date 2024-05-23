@@ -227,7 +227,7 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainWithData, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xE);
+    ASSERT_EQ(result.mask_, 0xF);
 }
 
 /**
@@ -328,10 +328,10 @@ HWTEST_F(DeviceMatrixTest, BroadcastMeta, TestSize.Level0)
 HWTEST_F(DeviceMatrixTest, BroadcastFirst, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
-    meta.appId = dynamicStores_[0].first;
-    meta.bundleName = dynamicStores_[0].first;
+    meta.appId = dynamicStores_[1].first;
+    meta.bundleName = dynamicStores_[1].first;
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
-    ASSERT_EQ(code, 0x1);
+    ASSERT_EQ(code, 0x2);
     DeviceMatrix::DataLevel level = {
         .dynamic = code,
     };
