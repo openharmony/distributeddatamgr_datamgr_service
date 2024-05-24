@@ -302,6 +302,10 @@ HWTEST_F(RdbCursorTest, Convert, TestSize.Level1)
     dbColumnType = DistributedDB::ResultSet::ColumnType::INVALID_TYPE;
     result = rdbCursor->Convert(dbColumnType);
     EXPECT_EQ(result, TYPE_INDEX<std::monostate>);
+
+    dbColumnType = static_cast<DistributedDB::ResultSet::ColumnType>(MAX_DATA_NUM);
+    result = rdbCursor->Convert(dbColumnType);
+    EXPECT_EQ(result, TYPE_INDEX<std::monostate>);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
