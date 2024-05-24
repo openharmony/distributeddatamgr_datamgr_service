@@ -256,7 +256,7 @@ uint16_t DeviceMatrix::ConvertDynamic(const MatrixMetaData &meta, uint16_t mask)
         const auto &app = meta.dynamicInfo[index];
         for (size_t i = 0; i < dynamicApps_.size(); i++) {
             if (dynamicApps_[i] == app) {
-                result |= SetMask(i);
+                result |= SetMask(i + 1);
                 break;
             }
         }
@@ -548,7 +548,7 @@ uint16_t DeviceMatrix::GetCode(const StoreMetaData &metaData)
     if (metaData.dataType == LevelType::DYNAMIC) {
         for (size_t i = 0; i < dynamicApps_.size(); i++) {
             if (dynamicApps_[i] == metaData.appId) {
-                return SetMask(i);
+                return SetMask(i + 1);
             }
         }
     }
