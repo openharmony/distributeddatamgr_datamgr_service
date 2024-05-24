@@ -1244,7 +1244,6 @@ StoreMetaData KVDBServiceImpl::GetDistributedDataMeta(const std::string &deviceI
     return meta;
 }
 
-
 KVDBServiceImpl::SyncResult KVDBServiceImpl::ProcessResult(const std::map<std::string, int32_t> &results)
 {
     std::map<std::string, DBStatus> dbResults;
