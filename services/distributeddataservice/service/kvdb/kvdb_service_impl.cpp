@@ -22,6 +22,7 @@
 #include "account/account_delegate.h"
 #include "auto_sync_matrix.h"
 #include "backup_manager.h"
+#include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_server.h"
