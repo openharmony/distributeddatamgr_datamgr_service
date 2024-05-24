@@ -91,7 +91,7 @@ public:
 private:
     static constexpr uint32_t RESET_MASK_DELAY = 10; // min
     static constexpr uint32_t CURRENT_VERSION = 3;
-    static constexpr uint16_t CURRENT_DYNAMIC_MASK = 0x000E;
+    static constexpr uint16_t CURRENT_DYNAMIC_MASK = 0x0006;
     static constexpr uint16_t CURRENT_STATICS_MASK = 0x0003;
     static constexpr size_t MAX_DEVICES = 64;
 
