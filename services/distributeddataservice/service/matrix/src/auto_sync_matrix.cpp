@@ -19,12 +19,14 @@
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "device_matrix.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
 #include "utils/converter.h"
 
 namespace OHOS::DistributedData {
+using DMAdapter = DeviceManagerAdapter;
 AutoSyncMatrix &AutoSyncMatrix::GetInstance()
 {
     static AutoSyncMatrix instance;
@@ -33,7 +35,12 @@ AutoSyncMatrix &AutoSyncMatrix::GetInstance()
 
 AutoSyncMatrix::AutoSyncMatrix()
 {
-    MetaDataManager::GetInstance().Subscribe(StoreMetaData::GetPrefix({}),
+    auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    if (deviceId.empty()) {
+        ZLOGE("Local device empty");
+        return;
+    }
+    MetaDataManager::GetInstance().Subscribe(StoreMetaData::GetPrefix({ deviceId }),
         [this](const std::string &key, const std::string &meta, int32_t action) -> bool {
             StoreMetaData metaData;
             if (meta.empty()) {
@@ -70,8 +77,13 @@ AutoSyncMatrix::~AutoSyncMatrix()
 
 void AutoSyncMatrix::Initialize()
 {
+    auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    if (deviceId.empty()) {
+        ZLOGE("Local device empty");
+        return;
+    }
     std::vector<StoreMetaData> metas;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), metas)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metas)) {
         ZLOGE("load meta failed.");
         return;
     }
@@ -97,6 +109,10 @@ bool AutoSyncMatrix::IsAutoSync(const StoreMetaData &meta)
 void AutoSyncMatrix::AddStore(const StoreMetaData &meta)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
+    auto it = std::find(metas_.begin(), metas_.end(), meta);
+    if (it != metas_.end()) {
+        return;
+    }
     metas_.emplace_back(std::move(meta));
     size_t pos = metas_.size() - 1;
     for (auto &[device, mask] : onlines_) {
