@@ -42,6 +42,7 @@ config("module_private_config") {
     "${data_service_path}/service/object/",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb/",
+    "${data_service_path}/service/test/mock",
     "${data_service_path}/service/waterversion",
     "${dataobject_path}/interfaces/innerkits",
     "${dataobject_path}/frameworks/innerkitsimpl/include",
@@ -85,6 +86,8 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/config/src/model/network_config.cpp",
     "${data_service_path}/service/config/src/model/protocol_config.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
+    "${data_service_path}/service/matrix/src/device_matrix.cpp",
+    "${data_service_path}/service/matrix/src/matrix_event.cpp",
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
@@ -98,6 +101,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
+    "${data_service_path}/service/test/mock/checker_mock.cpp",
     "${data_service_path}/service/waterversion/water_version_manager.cpp",
     "cloud_data_test.cpp",
   ]
@@ -122,7 +126,6 @@ ohos_unittest("CloudDataTest") {
   deps = [
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
-    "../../service:distributeddatasvc",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
   ]
