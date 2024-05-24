@@ -36,6 +36,7 @@ ohos_shared_library("conn_adapter") {
 
   external_deps = [
     "ability_base:want",
+    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:extension_manager",
     "c_utils:utils",
     "hilog:libhilog",
