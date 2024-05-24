@@ -31,9 +31,10 @@
 #include "bootstrap.h"
 #include "directory/directory_manager.h"
 #include "utils/anonymous.h"
-
+#include "udmf_radar_reporter.h"
 namespace OHOS {
 namespace UDMF {
+using namespace RadarReporter;
 using namespace DistributedDB;
 using Anonymous = OHOS::DistributedData::Anonymous;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -221,11 +222,26 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices)
         return E_INVALID_PARAMETERS;
     }
     std::vector<std::string> syncDevices = DmAdapter::ToUUID(devices);
-    auto onComplete = [this](const std::map<std::string, DBStatus> &) {
-        ZLOGI("sync complete, %{public}s.", Anonymous::Change(storeId_).c_str());
+    auto onComplete = [this](const std::map<std::string, DBStatus> &devsSyncStatus) {
+        DBStatus dbStatus = DBStatus::OK;
+        for (const auto &[originDeviceId, status] : devsSyncStatus) {  // only one device.
+            if (status != DBStatus::OK) {
+                dbStatus = status;
+                break;
+            }
+        }
+        if (dbStatus != DBStatus::OK) {
+            RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, ERROR_CODE, dbStatus);
+        } else {
+            RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS,
+                         BIZ_STATE, BizState::DFX_NORMAL_END);
+        }
+
+        ZLOGI("sync complete, %{public}s, status:%{public}d.", Anonymous::Change(storeId_).c_str(), dbStatus);
     };
     DBStatus status = kvStore_->Sync(syncDevices, SyncMode::SYNC_MODE_PULL_ONLY, onComplete);
     if (status != DBStatus::OK) {
+        RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, ERROR_CODE, status);
         ZLOGE("Sync kvStore failed, status: %{public}d.", status);
         return E_DB_ERROR;
     }
