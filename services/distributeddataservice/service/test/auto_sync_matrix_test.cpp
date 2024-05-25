@@ -57,6 +57,7 @@ void AutoSyncMatrixTest::SetUpTestCase(void)
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
+    DMAdapter::GetInstance().Init(executors);
     DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
     DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
     DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();

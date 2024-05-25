@@ -36,10 +36,6 @@ AutoSyncMatrix &AutoSyncMatrix::GetInstance()
 AutoSyncMatrix::AutoSyncMatrix()
 {
     auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    if (deviceId.empty()) {
-        ZLOGE("Local device empty");
-        return;
-    }
     MetaDataManager::GetInstance().Subscribe(StoreMetaData::GetPrefix({ deviceId }),
         [this](const std::string &key, const std::string &meta, int32_t action) -> bool {
             StoreMetaData metaData;
@@ -78,10 +74,6 @@ AutoSyncMatrix::~AutoSyncMatrix()
 void AutoSyncMatrix::Initialize()
 {
     auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    if (deviceId.empty()) {
-        ZLOGE("Local device empty");
-        return;
-    }
     std::vector<StoreMetaData> metas;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ deviceId }), metas)) {
         ZLOGE("load meta failed.");
