@@ -471,6 +471,7 @@ ohos_unittest("ObjectAssetMachineTest") {
   ]
 
   include_dirs = [
+    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
     "${dataobject_path}/interfaces/innerkits",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
@@ -481,6 +482,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "c_utils:utils",
     "dfs_service:cloudsync_asset_kit_inner",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]

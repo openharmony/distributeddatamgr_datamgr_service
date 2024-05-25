@@ -20,6 +20,7 @@
 #include "log_print.h"
 #include "object_common.h"
 #include "utils/anonymous.h"
+#include "object_radar_reporter.h"
 
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
@@ -66,14 +67,14 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
 void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::string& bundleName,
     const std::string& deviceId, const std::vector<DistributedData::Asset>& assets, const TransferFunc& callback)
 {
+    RADAR_REPORT(ObjectStore::CREATE, ObjectStore::TRANSFER, ObjectStore::IDLE);
     if (executors_ == nullptr) {
         ZLOGE("executors is null, bundleName: %{public}s, deviceId: %{public}s, userId: %{public}d",
             bundleName.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), userId);
         callback(false);
         return;
     }
-    TransferTask task;
-    task.callback = callback;
+    TransferTask task = { .callback = callback };
     DistributedData::Assets downloadAssets;
     for (auto& asset : assets) {
         if (IsDownloaded(asset)) {
@@ -85,8 +86,7 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
     if (task.downloadAssets.empty()) {
         callback(true);
     }
-    taskSeq_++;
-    tasks_.ComputeIfAbsent(taskSeq_, [task](const uint32_t key) {
+    tasks_.ComputeIfAbsent(++taskSeq_, [task](const uint32_t key) {
         return task;
     });
     executors_->Execute([this, userId, bundleName, deviceId, downloadAssets]() {
@@ -124,6 +124,9 @@ void ObjectAssetLoader::FinishTask(const std::string& uri, bool result)
         if (task.downloadAssets.size() == 0 && task.callback != nullptr) {
             task.callback(result);
             finishedTasks.emplace_back(seq);
+            if (result) {
+                RADAR_REPORT(ObjectStore::CREATE, ObjectStore::TRANSFER, ObjectStore::RADAR_SUCCESS);
+            }
         }
         return false;
     });
