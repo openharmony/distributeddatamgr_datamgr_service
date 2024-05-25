@@ -285,6 +285,35 @@ ohos_unittest("ServiceMetaDataTest") {
 
   configs = [ ":module_private_config" ]
 
+  include_dirs = [
+    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
+    "../include/",
+    "../../service/bootstrap/include/",
+    "../../service/common/",
+    "../../service/rdb/",
+    "../../../../../relational_store/interfaces/inner_api/rdb/include",
+    "../../../../../relational_store/interfaces/inner_api/common_type/include",
+    "${kv_store_distributeddb_path}/interfaces/include",
+    "${kv_store_distributeddb_path}/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_common_path}",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/src",
+    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/app/src/security",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/waterversion",
+    "${data_service_path}/service/kvdb",
+    "//third_party/json/single_include",
+  ]
+
   external_deps = [
     "c_utils:utils",
     "dataclassification:data_transit_mgr",

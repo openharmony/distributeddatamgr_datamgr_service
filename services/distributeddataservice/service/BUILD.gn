@@ -149,6 +149,7 @@ ohos_shared_library("distributeddatasvc") {
     "device_manager:devicemanagersdk",
     "dfs_service:cloudsync_asset_kit_inner",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
