@@ -318,6 +318,7 @@ ohos_unittest("AutoSyncMatrixTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -524,6 +525,7 @@ ohos_unittest("MetaDataTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -567,6 +569,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "dataclassification:data_transit_mgr",
     "dsoftbus:softbus_client",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
@@ -794,6 +797,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]

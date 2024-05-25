@@ -48,8 +48,8 @@ public:
     Status Delete(const AppId &appId, const StoreId &storeId) override;
     Status Close(const AppId &appId, const StoreId &storeId) override;
     Status CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status Sync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status SyncExt(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
+    Status Sync(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo) override;
+    Status SyncExt(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo) override;
     Status RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifier> notifier) override;
     Status UnregServiceNotifier(const AppId &appId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
@@ -118,6 +118,7 @@ private:
     StoreMetaData GetDistributedDataMeta(const std::string &deviceId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
+    bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
     Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
@@ -150,6 +151,7 @@ private:
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
+    std::atomic_uint64_t syncId_ = 0;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_IMPL_H
