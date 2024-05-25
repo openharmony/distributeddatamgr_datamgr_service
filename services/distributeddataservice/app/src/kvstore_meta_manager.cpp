@@ -299,7 +299,8 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
         option.isNeedRmCorruptedDb = true;
         auto fullName = GetBackupPath();
         delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
-            [&delegate, &dbStatusTmp, &fullName](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *nbDelegate) {
+            [&delegate, &dbStatusTmp, &fullName](DistributedDB::DBStatus dbStatus,
+                DistributedDB::KvStoreNbDelegate *nbDelegate) {
                 delegate = nbDelegate;
                 dbStatusTmp = dbStatus;
                 if (dbStatusTmp == DistributedDB::DBStatus::OK && delegate != nullptr) {
