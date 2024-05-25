@@ -26,6 +26,7 @@
 #include "file.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "udmf_radar_reporter.h"
 #include "remote_file_share.h"
 #include "uri.h"
 #include "utils/crypto.h"
@@ -40,6 +41,7 @@ const char SPECIAL = '^';
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
+using namespace RadarReporter;
 
 int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &option)
 {
@@ -178,10 +180,14 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         if (!CheckUriAuthorization(uris, tokenId)) {
             ZLOGE("CheckUriAuthorization failed, bundleName:%{public}s, tokenId: %{public}d, uris size:%{public}zu.",
                   data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
+            RADAR_REPORT(BizScene::SET_DATA, SetDataStage::VERIFY_SHARE_PERMISSIONS, StageRes::FAILED,
+                         ERROR_CODE, E_NO_PERMISSION);
             return E_NO_PERMISSION;
         }
         int ret = GetDfsUrisFromLocal(uris, userId, data);
         if (ret != E_OK) {
+            RADAR_REPORT(BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::FAILED,
+                         ERROR_CODE, E_FS_ERROR);
             ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
                   ret, userId, uris.size());
             return E_FS_ERROR;

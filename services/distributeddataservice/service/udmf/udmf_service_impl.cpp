@@ -29,12 +29,14 @@
 #include "uri_permission_manager.h"
 #include "uri.h"
 #include "utd/custom_utd_installer.h"
+#include "udmf_radar_reporter.h"
 
 namespace OHOS {
 namespace UDMF {
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
+using namespace RadarReporter;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
@@ -192,6 +194,8 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         return E_DB_ERROR;
     }
     if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info) && !IsPermissionInCache(query)) {
+        RADAR_REPORT(BizScene::GET_DATA, GetDataStage::VERIFY_PRIVILEGE, StageRes::FAILED,
+                     ERROR_CODE, E_NO_PERMISSION);
         return E_NO_PERMISSION;
     }
 
@@ -280,6 +284,8 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         }
     }
     if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, bundleName, query.key) != E_OK) {
+        RADAR_REPORT(BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED,
+                     ERROR_CODE, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
               bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
@@ -477,6 +483,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
 {
     ZLOGD("start");
+    RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BIZ_STATE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
     if (!key.IsValid()) {
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
@@ -491,8 +498,11 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
 
     if (store->Sync(devices) != E_OK) {
         ZLOGE("Store sync failed, intention: %{public}s.", key.intention.c_str());
+        RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, ERROR_CODE, E_DB_ERROR,
+                     BIZ_STATE, BizState::DFX_ABNORMAL_END);
         return E_DB_ERROR;
     }
+    RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
     return E_OK;
 }
 
