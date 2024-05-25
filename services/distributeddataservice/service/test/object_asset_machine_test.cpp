@@ -64,12 +64,12 @@ void ObjectAssetMachineTest::SetUp()
         .assetName = "asset1.jpg",
     };
     AssetBindInfo_ = AssetBindInfo;
-    StoreInfo storeInfo{
+    StoreInfo storeInfo {
         .tokenId = 0,
-        .instanceId = 1,
-        .user = 100,
         .bundleName = "bundleName_test",
         .storeName = "store_test",
+        .instanceId = 1,
+        .user = 100,
     };
     storeInfo_ = storeInfo;
     ChangedAssetInfo changedAssetInfo(asset, AssetBindInfo, storeInfo);

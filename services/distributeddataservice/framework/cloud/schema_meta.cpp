@@ -49,6 +49,8 @@ bool Database::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(name)], name);
     SetValue(node[GET_NAME(alias)], alias);
     SetValue(node[GET_NAME(tables)], tables);
+    SetValue(node[GET_NAME(maxUploadBatchNumber)], maxUploadBatchNumber);
+    SetValue(node[GET_NAME(maxUploadBatchSize)], maxUploadBatchSize);
     return true;
 }
 
@@ -57,6 +59,12 @@ bool Database::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(name), name);
     GetValue(node, GET_NAME(alias), alias);
     GetValue(node, GET_NAME(tables), tables);
+    if (!GetValue(node, GET_NAME(maxUploadBatchNumber), maxUploadBatchNumber) || maxUploadBatchNumber == 0) {
+        maxUploadBatchNumber = DEFAULT_UPLOAD_BATCH_NUMBER;
+    }
+    if (!GetValue(node, GET_NAME(maxUploadBatchSize), maxUploadBatchSize) || maxUploadBatchSize == 0) {
+        maxUploadBatchSize = DEFAULT_UPLOAD_BATCH_SIZE;
+    }
     return true;
 }
 

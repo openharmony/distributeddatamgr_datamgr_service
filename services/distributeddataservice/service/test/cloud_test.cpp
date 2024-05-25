@@ -21,12 +21,15 @@
 #include "cloud/sync_event.h"
 #include "gtest/gtest.h"
 #include "ipc_skeleton.h"
+#include "metadata/meta_data_manager.h"
+#include "mock/db_store_mock.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
+using Database = SchemaMeta::Database;
 namespace OHOS::Test {
 class CloudTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
+    static void SetUpTestCase(void);
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
@@ -34,7 +37,14 @@ public:
 protected:
     static constexpr const char* testCloudBundle = "test_cloud_bundleName";
     static constexpr const char* testCloudStore = "test_cloud_database_name";
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
 };
+std::shared_ptr<DBStoreMock> CloudTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+
+void CloudTest::SetUpTestCase(void)
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+}
 
 /**
 * @tc.name: EventInfo
@@ -156,5 +166,33 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
     for (uint32_t i = 0; i < tableNames1.size(); ++i) {
         EXPECT_EQ(tableNames1[i], tableNames2[i]);
     }
+}
+
+/**
+ * @tc.name: Load old schema
+ * @tc.desc: upgrade when schema version not equal current version,
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: ht
+ */
+HWTEST_F(CloudTest, SchemaMetaUpgrade01, TestSize.Level0)
+{
+    SchemaMeta oldSchemaMeta;
+    oldSchemaMeta.version = 1;
+    oldSchemaMeta.bundleName = testCloudBundle;
+    Database database;
+    database.name = testCloudStore;
+    database.alias = testCloudStore;
+    oldSchemaMeta.databases.push_back(std::move(database));
+    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto key = CloudInfo::GetSchemaKey(user, oldSchemaMeta.bundleName);
+    EXPECT_NE(oldSchemaMeta.version, SchemaMeta::CURRENT_VERSION);
+    EXPECT_NE(oldSchemaMeta.databases.begin()->maxUploadBatchNumber, Database::DEFAULT_UPLOAD_BATCH_NUMBER);
+    EXPECT_NE(oldSchemaMeta.databases.begin()->maxUploadBatchSize, Database::DEFAULT_UPLOAD_BATCH_SIZE);
+    ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(key, oldSchemaMeta, true));
+    SchemaMeta newSchemaMeta;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(key, newSchemaMeta, true));
+    EXPECT_EQ(newSchemaMeta.databases.begin()->maxUploadBatchNumber, Database::DEFAULT_UPLOAD_BATCH_NUMBER);
+    EXPECT_EQ(newSchemaMeta.databases.begin()->maxUploadBatchSize, Database::DEFAULT_UPLOAD_BATCH_SIZE);
 }
 } // namespace OHOS::Test

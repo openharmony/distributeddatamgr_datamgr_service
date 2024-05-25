@@ -59,6 +59,27 @@ constexpr const LockAction LOCK_ACTION = static_cast<LockAction>(static_cast<uin
     static_cast<uint32_t>(LockAction::UPDATE) | static_cast<uint32_t>(LockAction::DELETE) |
     static_cast<uint32_t>(LockAction::DOWNLOAD));
 
+static DBSchema GetDBSchema(const Database &database)
+{
+    DBSchema schema;
+    schema.tables.resize(database.tables.size());
+    for (size_t i = 0; i < database.tables.size(); i++) {
+        const Table &table = database.tables[i];
+        DBTable &dbTable = schema.tables[i];
+        dbTable.name = table.name;
+        dbTable.sharedTableName = table.sharedTableName;
+        for (auto &field : table.fields) {
+            DBField dbField;
+            dbField.colName = field.colName;
+            dbField.type = field.type;
+            dbField.primary = field.primary;
+            dbField.nullable = field.nullable;
+            dbTable.fields.push_back(std::move(dbField));
+        }
+    }
+    return schema;
+}
+
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
     observer_.storeId_ = meta.storeId;
@@ -150,22 +171,11 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
     rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
 
-    DBSchema schema;
-    schema.tables.resize(database.tables.size());
-    for (size_t i = 0; i < database.tables.size(); i++) {
-        const Table &table = database.tables[i];
-        DBTable &dbTable = schema.tables[i];
-        dbTable.name = table.name;
-        dbTable.sharedTableName = table.sharedTableName;
-        for (auto &field : table.fields) {
-            DBField dbField;
-            dbField.colName = field.colName;
-            dbField.type = field.type;
-            dbField.primary = field.primary;
-            dbField.nullable = field.nullable;
-            dbTable.fields.push_back(std::move(dbField));
-        }
-    }
+    DistributedDB::CloudSyncConfig config;
+    config.maxUploadCount = database.maxUploadBatchNumber;
+    config.maxUploadSize = database.maxUploadBatchSize;
+    config.maxRetryConflictTimes = VERSION_CONFLICT_RETRY_TIMES;
+    DBSchema schema = GetDBSchema(database);
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("database:%{public}s already closed!", Anonymous::Change(database.name).c_str());
@@ -174,6 +184,7 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     delegate_->SetCloudDB(rdbCloud_);
     delegate_->SetIAssetLoader(rdbLoader_);
     delegate_->SetCloudDbSchema(std::move(schema));
+    delegate_->SetCloudSyncConfig(config);
     return GeneralError::E_OK;
 }
 

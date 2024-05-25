@@ -41,7 +41,7 @@ using Value = DistributedDB::Value;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 
-void GrantPermissionNative()
+static void GrantPermissionNative()
 {
     const char **perms = new const char *[2];
     perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";

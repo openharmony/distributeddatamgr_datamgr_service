@@ -18,6 +18,7 @@
 
 #include <string>
 #include <map>
+#include <mutex>
 #include <vector>
 
 #include "bundle_info.h"

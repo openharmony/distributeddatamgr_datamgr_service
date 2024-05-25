@@ -142,6 +142,9 @@ public:
     virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId) {};
+
+protected:
+    static constexpr uint32_t VERSION_CONFLICT_RETRY_TIMES = 3;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

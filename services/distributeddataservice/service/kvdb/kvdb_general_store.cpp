@@ -49,7 +49,26 @@ using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
 constexpr int UUID_WIDTH = 4;
-
+static DBSchema GetDBSchema(const Database &database)
+{
+    DBSchema schema;
+    schema.tables.resize(database.tables.size());
+    for (size_t i = 0; i < database.tables.size(); i++) {
+        const Table &table = database.tables[i];
+        DBTable &dbTable = schema.tables[i];
+        dbTable.name = table.name;
+        dbTable.sharedTableName = table.sharedTableName;
+        for (auto &field : table.fields) {
+            DBField dbField;
+            dbField.colName = field.colName;
+            dbField.type = field.type;
+            dbField.primary = field.primary;
+            dbField.nullable = field.nullable;
+            dbTable.fields.push_back(std::move(dbField));
+        }
+    }
+    return schema;
+}
 KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
 {
     DBPassword dbPassword;
@@ -183,7 +202,9 @@ int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, Bind
         ZLOGW("No cloudDB!");
         return GeneralError::E_OK;
     }
-    std::map<std::string, DataBaseSchema> schemas{};
+
+    std::map<std::string, DataBaseSchema> schemas;
+    auto dbSchema = GetDBSchema(database);
     for (auto &[userId, bindInfo] : bindInfos) {
         if (bindInfo.db_ == nullptr) {
             return GeneralError::E_INVALID_ARGS;
@@ -195,31 +216,19 @@ int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, Bind
 
         dbClouds_.insert({ std::to_string(userId), std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
         bindInfos_.insert(std::move(bindInfo));
-
-        DBSchema schema;
-        schema.tables.resize(database.tables.size());
-        for (size_t i = 0; i < database.tables.size(); i++) {
-            const Table &table = database.tables[i];
-            DBTable &dbTable = schema.tables[i];
-            dbTable.name = table.name;
-            dbTable.sharedTableName = table.sharedTableName;
-            for (auto &field : table.fields) {
-                DBField dbField;
-                dbField.colName = field.colName;
-                dbField.type = field.type;
-                dbField.primary = field.primary;
-                dbField.nullable = field.nullable;
-                dbTable.fields.push_back(std::move(dbField));
-            }
-        }
-        schemas.insert({ std::to_string(userId), schema });
+        schemas.insert({ std::to_string(userId), dbSchema });
     }
+    DistributedDB::CloudSyncConfig config;
+    config.maxUploadCount = database.maxUploadBatchNumber;
+    config.maxUploadSize = database.maxUploadBatchSize;
+    config.maxRetryConflictTimes = VERSION_CONFLICT_RETRY_TIMES;
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
     delegate_->SetCloudDB(dbClouds_);
     delegate_->SetCloudDbSchema(std::move(schemas));
+    delegate_->SetCloudSyncConfig(config);
     return GeneralError::E_OK;
 }
 

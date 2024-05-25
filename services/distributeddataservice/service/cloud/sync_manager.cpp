@@ -426,30 +426,30 @@ void SyncManager::UpdateSchema(const SyncManager::SyncInfo &syncInfo)
 }
 
 std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const StoreMetaData &meta,
-    const std::vector<int32_t> &users, CloudInfo &info, Database &schemaDatabase, bool mustBind)
+    const std::vector<int32_t> &users, const Database &schemaDatabase)
 {
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         ZLOGD("not support cloud sync");
         return {};
     }
-    std::map<uint32_t, GeneralStore::BindInfo> bindInfos = {};
+    std::map<uint32_t, GeneralStore::BindInfo> bindInfos;
     for (auto &activeUser : users) {
         if (activeUser == 0) {
             continue;
         }
         auto cloudDB = instance->ConnectCloudDB(meta.bundleName, activeUser, schemaDatabase);
-        auto assetLoader = instance->ConnectAssetLoader(meta.bundleName, activeUser, schemaDatabase);
-        if (mustBind && (cloudDB == nullptr || assetLoader == nullptr)) {
-            ZLOGE("failed, no cloud DB <0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
+        std::shared_ptr<AssetLoader> assetLoader = nullptr;
+        if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
+            meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
+            assetLoader = instance->ConnectAssetLoader(meta.bundleName, activeUser, schemaDatabase);
+        }
+        if (cloudDB == nullptr) {
+            ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
             return {};
         }
-        if (cloudDB != nullptr || assetLoader != nullptr) {
-            GeneralStore::BindInfo bindInfo((cloudDB != nullptr) ? std::move(cloudDB) : cloudDB,
-                (assetLoader != nullptr) ? std::move(assetLoader) : assetLoader);
-            bindInfos[activeUser] = bindInfo;
-        }
+        bindInfos.insert_or_assign(activeUser, GeneralStore::BindInfo{ std::move(cloudDB), std::move(assetLoader) });
     }
     return bindInfos;
 }
@@ -490,7 +490,10 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
             return nullptr;
         }
         auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
-        std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, info, dbMeta, mustBind);
+        std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, dbMeta);
+        if (mustBind && bindInfos.size() != users.size()) {
+            return nullptr;
+        }
         RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::BIND, __FUNCTION__);
         auto status = store->Bind(dbMeta, bindInfos);
         radar = Convert(static_cast<GeneralError>(status));

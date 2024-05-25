@@ -361,5 +361,17 @@ DBStatus DBStoreMock::SetReceiveDataInterceptor(const DataInterceptor &intercept
 {
     return NOT_SUPPORT;
 }
+
+DBStatus DBStoreMock::SetCloudSyncConfig(const CloudSyncConfig &config)
+{
+    return NOT_SUPPORT;
+}
+
+void DBStoreMock::Reset()
+{
+    entries_.Clear();
+    localEntries_.Clear();
+    observers_.Clear();
+}
 } // namespace DistributedData
 } // namespace OHOS
