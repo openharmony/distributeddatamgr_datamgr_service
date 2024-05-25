@@ -54,15 +54,16 @@ protected:
     void InitMetaData();
 
     static inline std::vector<std::pair<std::string, std::string>> staticStores_ = { { "bundle0", "store0" },
-        { "bundle1", "store0" }, { "bundle2", "store0" } };
-    static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = { { "bundle0", "store1" },
-        { "bundle3", "store0" }, { "bundle4", "store0" } };
+        { "bundle1", "store0" } };
+    static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = {
+        { "distributeddata", "service_meta" }, { "bundle0", "store1" }, { "bundle3", "store0" } };
     static BlockData<Result> isFinished_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static uint32_t selfToken_;
     StoreMetaData metaData_;
     StoreMetaDataLocal localMeta_;
     static CheckerMock instance_;
+    static constexpr uint32_t CURRENT_VERSION = 3;
 };
 BlockData<DeviceMatrixTest::Result> DeviceMatrixTest::isFinished_(1, Result());
 std::shared_ptr<DBStoreMock> DeviceMatrixTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
@@ -140,8 +141,8 @@ void DeviceMatrixTest::TearDown()
 void DeviceMatrixTest::InitRemoteMatrixMeta()
 {
     MatrixMetaData metaData;
-    metaData.version = 1;
-    metaData.dynamic = 0xF;
+    metaData.version = CURRENT_VERSION;
+    metaData.dynamic = 0x7;
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
     metaData.dynamicInfo.clear();
@@ -182,7 +183,7 @@ HWTEST_F(DeviceMatrixTest, FirstOnline, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
 }
 
 /**
@@ -197,13 +198,13 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainNoData, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xE);
+    ASSERT_EQ(result.mask_, 0x6);
 }
 
 /**
@@ -218,14 +219,14 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainWithData, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
 }
 
 /**
@@ -240,14 +241,14 @@ HWTEST_F(DeviceMatrixTest, OnlineAgainWithLocal, TestSize.Level0)
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     auto result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xF);
+    ASSERT_EQ(result.mask_, 0x7);
     isFinished_.Clear(Result());
     DeviceMatrix::GetInstance().Offline(TEST_DEVICE);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta_, true);
     DeviceMatrix::GetInstance().Online(TEST_DEVICE);
     result = isFinished_.GetValue();
     ASSERT_EQ(result.deviceId_, std::string(TEST_DEVICE));
-    ASSERT_EQ(result.mask_, 0xE);
+    ASSERT_EQ(result.mask_, 0x6);
 }
 
 /**
@@ -282,7 +283,7 @@ HWTEST_F(DeviceMatrixTest, GetAllCode, TestSize.Level0)
     for (size_t i = 0; i < dynamicStores_.size(); ++i) {
         meta.appId = dynamicStores_[i].first;
         meta.bundleName = dynamicStores_[i].first;
-        ASSERT_EQ(DeviceMatrix::GetInstance().GetCode(meta), 0x1 << (i + 1));
+        ASSERT_EQ(DeviceMatrix::GetInstance().GetCode(meta), 0x1 << i);
     }
 }
 
@@ -326,8 +327,8 @@ HWTEST_F(DeviceMatrixTest, BroadcastMeta, TestSize.Level0)
 HWTEST_F(DeviceMatrixTest, BroadcastFirst, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
-    meta.appId = dynamicStores_[0].first;
-    meta.bundleName = dynamicStores_[0].first;
+    meta.appId = dynamicStores_[1].first;
+    meta.bundleName = dynamicStores_[1].first;
     auto code = DeviceMatrix::GetInstance().GetCode(meta);
     ASSERT_EQ(code, 0x2);
     DeviceMatrix::DataLevel level = {
@@ -370,13 +371,13 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
     auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
     ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
     StoreMetaData meta = metaData_;
-    for (size_t i = 0; i < dynamicStores_.size(); ++i) {
+    for (size_t i = 1; i < dynamicStores_.size(); ++i) {
         meta.appId = dynamicStores_[i].first;
         meta.bundleName = dynamicStores_[i].first;
         auto code = DeviceMatrix::GetInstance().GetCode(meta);
         level.dynamic = code;
         mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
-        ASSERT_EQ(mask.first, (0x1 << (i + 1)) + 1);
+        ASSERT_EQ(mask.first, (0x1 << i) + 1);
         DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, code);
     }
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
@@ -404,7 +405,7 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
     metaData.dynamic = 0x1F;
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
-    metaData.dynamicInfo = { TEST_BUNDLE, dynamicStores_[0].first };
+    metaData.dynamicInfo = { TEST_BUNDLE, dynamicStores_[1].first };
     MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }),
         [](const std::string &, const std::string &value, int32_t flag) {
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {

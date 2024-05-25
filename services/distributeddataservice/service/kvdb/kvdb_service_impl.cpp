@@ -22,6 +22,7 @@
 #include "account/account_delegate.h"
 #include "auto_sync_matrix.h"
 #include "backup_manager.h"
+#include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_server.h"
@@ -1209,7 +1210,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
             isAfterMeta = true;
             break;
         }
-        if (IsRemoteChange(metaData, uuid)) {
+        if (IsRemoteChange(GetDistributedDataMeta(uuid), uuid)) {
             isAfterMeta = true;
             break;
         }
@@ -1229,6 +1230,19 @@ Status KVDBServiceImpl::DoSyncInOrder(
         return result ? Status::SUCCESS : Status::ERROR;
     }
     return DoSyncBegin(uuids, meta, info, complete, type);
+}
+
+StoreMetaData KVDBServiceImpl::GetDistributedDataMeta(const std::string &deviceId)
+{
+    StoreMetaData meta;
+    meta.deviceId = deviceId;
+    meta.bundleName = Bootstrap::GetInstance().GetProcessLabel();
+    meta.storeId = Bootstrap::GetInstance().GetMetaDBName();
+    meta.user = DEFAULT_USER_ID;
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+        ZLOGE("Load meta fail, device: %{public}s", Anonymous::Change(deviceId).c_str());
+    }
+    return meta;
 }
 
 KVDBServiceImpl::SyncResult KVDBServiceImpl::ProcessResult(const std::map<std::string, int32_t> &results)

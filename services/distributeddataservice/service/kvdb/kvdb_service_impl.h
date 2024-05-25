@@ -115,6 +115,7 @@ private:
     void Init();
     void AddOptions(const Options &options, StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
+    StoreMetaData GetDistributedDataMeta(const std::string &deviceId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
     Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
