@@ -370,6 +370,15 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
+    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
+        if (meta.cloudAutoSync) {
+            DoCloudSync(meta, {});
+        }
+        if (meta.isAutoSync) {
+            TryToSync(meta, true);
+        }
+        return SUCCESS;
+    }
     if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
         WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
@@ -382,7 +391,8 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
         DoCloudSync(meta, {});
     }
     if (meta.isAutoSync) {
-        TryToSync(meta, true);
+        AutoSyncMatrix::GetInstance().OnChanged(meta);
+        TryToSync(meta);
     }
     return SUCCESS;
 }
@@ -400,6 +410,8 @@ void KVDBServiceImpl::TryToSync(const StoreMetaData &metaData, bool force)
             !DMAdapter::GetInstance().IsDeviceReady(device))) {
             continue;
         }
+        ZLOGI("[TryToSync] appId:%{public}s, storeId:%{public}s", metaData.bundleName.c_str(),
+            Anonymous::Change(metaData.storeId).c_str());
         syncInfo.devices = { device };
         syncInfo.syncId = ++syncId_;
         RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
