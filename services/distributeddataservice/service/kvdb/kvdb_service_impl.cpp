@@ -974,7 +974,6 @@ int32_t KVDBServiceImpl::OnSessionReady(const std::string &device)
         return SUCCESS;
     }
 
-    SyncOnSessionReady(device);
     auto stores = AutoSyncMatrix::GetInstance().GetChangedStore(device);
     for (const auto &store : stores) {
         ZLOGI("[OnSessionReady] appId:%{public}s, storeId:%{public}s",
@@ -987,34 +986,6 @@ int32_t KVDBServiceImpl::OnSessionReady(const std::string &device)
             std::bind(&KVDBServiceImpl::DoComplete, this, store, syncInfo, RefCount(), std::placeholders::_1));
     }
     return SUCCESS;
-}
-
-void KVDBServiceImpl::SyncOnSessionReady(const std::string &device)
-{
-    auto local = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    std::vector<StoreMetaData> metas;
-    auto prefix = StoreMetaData::GetPrefix({ local });
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metas)) {
-        ZLOGE("load meta failed!");
-        return;
-    }
-    for (const auto &meta : metas) {
-        if (!DeviceMatrix::GetInstance().IsStatics(meta) && !DeviceMatrix::GetInstance().IsDynamic(meta)) {
-            continue;
-        }
-        if (!IsRemoteChange(meta, device)) {
-            continue;
-        }
-        SyncInfo syncInfo;
-        syncInfo.mode = PULL;
-        syncInfo.delay = 0;
-        syncInfo.devices = { device };
-        ZLOGI("[SyncOnSessionReady] appId:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-            Anonymous::Change(meta.storeId).c_str());
-        KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(meta.tokenId), syncInfo.delay,
-            std::bind(&KVDBServiceImpl::DoSyncInOrder, this, meta, syncInfo, std::placeholders::_1, ACTION_SYNC),
-            std::bind(&KVDBServiceImpl::DoComplete, this, meta, syncInfo, RefCount(), std::placeholders::_1));
-    }
 }
 
 bool KVDBServiceImpl::IsRemoteChange(const StoreMetaData &metaData, const std::string &device)

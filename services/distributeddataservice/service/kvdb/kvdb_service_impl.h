@@ -148,7 +148,6 @@ private:
     void RegisterMatrixChange();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     void TryToSync(const StoreMetaData &metaData, bool force = false);
-    void SyncOnSessionReady(const std::string &device);
     void OldOnlineSync(const StoreMetaData &data, const std::string &deviceId, RefCount refCount, uint16_t mask);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     static Factory factory_;
