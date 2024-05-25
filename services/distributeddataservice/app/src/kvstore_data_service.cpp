@@ -39,6 +39,8 @@
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "log_print.h"
+#include "mem_mgr_client.h"
+#include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
@@ -364,7 +366,9 @@ void KvStoreDataService::StartService()
         return status;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
-    ZLOGI("Publish ret: %{public}d", static_cast<int>(ret));
+    ZLOGI("Start distributedata Success, Publish ret: %{public}d", static_cast<int>(ret));
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 1,
+                                                            DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 void KvStoreDataService::OnStoreMetaChanged(
@@ -548,6 +552,8 @@ Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vec
 void KvStoreDataService::OnStop()
 {
     ZLOGI("begin.");
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 0,
+                                                            DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
