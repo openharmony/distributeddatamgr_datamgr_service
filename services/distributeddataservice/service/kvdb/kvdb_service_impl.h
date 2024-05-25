@@ -99,15 +99,10 @@ private:
         int32_t switchesObserverCount_ = 0;
         bool changed_ = false;
         AppId appId_;
-        int32_t count_ = 0;
         sptr<IKVDBNotifier> notifier_;
         std::map<std::string, uint32_t> delayTimes_;
-        std::shared_ptr<KVDBWatcher> watcher_;
-        std::set<sptr<KvStoreObserverProxy>> observers_;
+        std::map<std::string, std::set<std::shared_ptr<KVDBWatcher>>> watchers_;
         void ReInit(pid_t pid, const AppId &appId);
-        void SetObserver(sptr<KvStoreObserverProxy> observer);
-        void SetWatcher(std::shared_ptr<KVDBWatcher> watcher);
-        void ClearObservers();
     };
     class Factory {
     public:

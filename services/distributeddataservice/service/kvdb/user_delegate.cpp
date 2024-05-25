@@ -153,7 +153,11 @@ void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
     MetaDataManager::GetInstance().Subscribe(
         UserMetaRow::KEY_PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
             UserMetaData metaData;
-            UserMetaData::Unmarshall(value, metaData);
+            if (value.empty()) {
+                MetaDataManager::GetInstance().LoadMeta(key, metaData);
+            } else {
+                UserMetaData::Unmarshall(value, metaData);
+            }
             ZLOGD("flag:%{public}d, value:%{public}s", flag, Anonymous::Change(metaData.deviceId).c_str());
             if (metaData.deviceId == GetLocalDeviceId()) {
                 ZLOGD("ignore local device user meta change");

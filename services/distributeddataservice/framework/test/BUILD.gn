@@ -44,6 +44,7 @@ config("module_private_config") {
     "${data_service_path}/app/src/security",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/waterversion",
     "//third_party/json/single_include",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
@@ -275,6 +276,12 @@ ohos_unittest("ServiceMetaDataTest") {
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "meta_data_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   configs = [ ":module_private_config" ]
 

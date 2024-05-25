@@ -30,10 +30,12 @@
 #include "device_manager_adapter.h"
 #include "bootstrap.h"
 #include "directory/directory_manager.h"
+#include "utils/anonymous.h"
 
 namespace OHOS {
 namespace UDMF {
 using namespace DistributedDB;
+using Anonymous = OHOS::DistributedData::Anonymous;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 const std::string TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
@@ -42,12 +44,12 @@ static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
 RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
 {
     UpdateTime();
-    ZLOGD("Construct runtimeStore: %{public}s.", storeId_.c_str());
+    ZLOGD("Construct runtimeStore: %{public}s.", Anonymous::Change(storeId_).c_str());
 }
 
 RuntimeStore::~RuntimeStore()
 {
-    ZLOGD("Destruct runtimeStore: %{public}s.", storeId_.c_str());
+    ZLOGD("Destruct runtimeStore: %{public}s.", Anonymous::Change(storeId_).c_str());
 }
 
 Status RuntimeStore::Put(const UnifiedData &unifiedData)
@@ -149,7 +151,7 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
     }
     for (const auto &record : unifiedData.GetRecords()) {
         int64_t recordSize = record->GetSize();
-        auto udType = UD_TYPE_MAP.at(record->GetType());
+        auto udType = UtdUtils::GetUtdIdFromUtdEnum(record->GetType());
         auto it = summary.summary.find(udType);
         if (it == summary.summary.end()) {
             summary.summary[udType] = recordSize;
@@ -220,7 +222,7 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices)
     }
     std::vector<std::string> syncDevices = DmAdapter::ToUUID(devices);
     auto onComplete = [this](const std::map<std::string, DBStatus> &) {
-        ZLOGI("sync complete, %{public}s.", storeId_.c_str());
+        ZLOGI("sync complete, %{public}s.", Anonymous::Change(storeId_).c_str());
     };
     DBStatus status = kvStore_->Sync(syncDevices, SyncMode::SYNC_MODE_PULL_ONLY, onComplete);
     if (status != DBStatus::OK) {

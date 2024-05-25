@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_MANAGER_H
 #define DISTRIBUTEDDATAMGR_OBJECT_MANAGER_H
 
@@ -20,15 +19,15 @@
 
 #include "concurrent_map.h"
 #include "device_manager_adapter.h"
-#include "object_callback.h"
-#include "object_callback_proxy.h"
 #include "kv_store_delegate_manager.h"
 #include "kvstore_sync_callback.h"
+#include "object_callback.h"
+#include "object_callback_proxy.h"
 #include "object_common.h"
 #include "object_data_listener.h"
-#include "types.h"
 #include "object_snapshot.h"
 #include "object_types.h"
+#include "types.h"
 #include "value_proxy.h"
 
 namespace OHOS {
@@ -97,11 +96,16 @@ public:
     void DeleteSnapshot(const std::string &bundleName, const std::string &sessionId);
 private:
     constexpr static const char *SEPERATOR = "_";
+    constexpr static const char *TIME_REGEX = "_\\d{10}_p_";
+    constexpr static int BUNDLE_NAME_INDEX = 0;
+    constexpr static int SESSION_ID_INDEX = 1;
+    constexpr static int SOURCE_DEVICE_UDID_INDEX = 2;
+    constexpr static int TIME_INDEX = 4;
+    constexpr static int PROPERTY_NAME_INDEX = 5;
     constexpr static const char *LOCAL_DEVICE = "local";
     constexpr static const char *USERID = "USERID";
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
-    constexpr static int8_t SOURCE_DEVICE_ID_INDEX = 2;
     constexpr static int WAIT_TIME = 60;
     struct CallbackInfo {
         pid_t pid;
@@ -125,12 +129,8 @@ private:
     int32_t RetrieveFromStore(
         const std::string &appId, const std::string &sessionId, std::map<std::string, std::vector<uint8_t>> &results);
     void SyncCompleted(const std::map<std::string, DistributedDB::DBStatus> &results, uint64_t sequenceId);
-    void ProcessKeyByIndex(std::string &key, uint8_t index);
+    std::vector<std::string> SplitEntryKey(const std::string &key);
     std::string GetPropertyName(const std::string &key);
-    std::string GetSessionId(const std::string &key);
-    std::string GetBundleName(const std::string &key);
-    std::string GetNetworkId(const std::string& key);
-    int64_t GetTime(const std::string &key);
     void ProcessOldEntry(const std::string &appId);
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
         const std::string &sessionId, const std::string &deviceId);

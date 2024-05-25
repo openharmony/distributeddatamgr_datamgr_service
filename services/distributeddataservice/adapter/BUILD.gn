@@ -68,7 +68,7 @@ ohos_shared_library("distributeddata_adapter") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
   ]
-
+  public_external_deps = [ "device_manager:devicemanagersdk" ]
   public_configs = [ ":distributeddata_adapter_public_config" ]
 
   subsystem_name = "distributeddatamgr"

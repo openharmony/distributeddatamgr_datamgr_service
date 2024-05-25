@@ -19,9 +19,10 @@ namespace DistributedData {
 constexpr int32_t HEAD_SIZE = 3;
 constexpr int32_t END_SIZE = 3;
 constexpr int32_t MIN_SIZE = HEAD_SIZE + END_SIZE + 3;
+constexpr int32_t TAIL_SIZE = 6;
 constexpr const char *REPLACE_CHAIN = "***";
 constexpr const char *DEFAULT_ANONYMOUS = "******";
-std::string Anonymous::Change(const std::string &name)
+std::string Anonymous::Change(const std::string &name, bool end)
 {
     if (name.length() <= HEAD_SIZE) {
         return DEFAULT_ANONYMOUS;
@@ -31,7 +32,10 @@ std::string Anonymous::Change(const std::string &name)
         return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN);
     }
 
-    return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN + name.substr(name.length() - END_SIZE, END_SIZE));
+    if (!end) {
+        return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN + name.substr(name.length() - END_SIZE, END_SIZE));
+    }
+    return (REPLACE_CHAIN + name.substr(name.length() - TAIL_SIZE, TAIL_SIZE));
 }
 } // namespace DistributedData
 } // namespace OHOS

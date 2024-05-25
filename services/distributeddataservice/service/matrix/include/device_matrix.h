@@ -47,9 +47,9 @@ public:
         BUTT,
     };
     enum ChangeType : int32_t {
-        CHANGE_LOCAL = 0,
-        CHANGE_REMOTE,
-        CHANGE_ALL,
+        CHANGE_LOCAL = 0x1,
+        CHANGE_REMOTE = 0x2,
+        CHANGE_ALL = 0x3,
         CHANGE_BUTT
     };
     struct DataLevel {
@@ -72,17 +72,17 @@ public:
         LevelType type = LevelType::DYNAMIC, ChangeType changeType = ChangeType::CHANGE_ALL);
     void OnExchanged(const std::string &device,
         const StoreMetaData &metaData, ChangeType type = ChangeType::CHANGE_ALL);
+    void UpdateLevel(const std::string &device, uint16_t level, LevelType type, bool isConsistent = false);
     void Clear();
     void RegRemoteChange(std::function<void(const std::string &, uint16_t)> observer);
     void SetExecutor(std::shared_ptr<ExecutorPool> executors);
     uint16_t GetCode(const StoreMetaData &metaData);
     std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
     std::pair<bool, uint16_t> GetRemoteMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
-    std::pair<bool, uint16_t> GetRecvLevel(const std::string &device, LevelType type = LevelType::DYNAMIC);
-    std::pair<bool, uint16_t> GetConsLevel(const std::string &device, LevelType type = LevelType::DYNAMIC);
+    std::pair<bool, uint16_t> GetRecvLevel(const std::string &device, LevelType type);
+    std::pair<bool, uint16_t> GetConsLevel(const std::string &device, LevelType type);
     std::pair<bool, bool> IsConsistent(const std::string &device);
-    std::pair<bool, MatrixMetaData> GetMatrixMeta(const std::string &device, bool IsConsistent = false);
-    void SetMatrixMeta(const MatrixMetaData &meta, bool IsConsistent = false);
+    std::pair<bool, MatrixMetaData> GetMatrixMeta(const std::string &device, bool isConsistent = false);
     std::map<std::string, uint16_t> GetRemoteDynamicMask();
     bool IsDynamic(const StoreMetaData &metaData);
     bool IsStatics(const StoreMetaData &metaData);
@@ -142,7 +142,7 @@ private:
     MatrixMetaData GetMatrixInfo(const std::string &device);
     static inline uint16_t ConvertIndex(uint16_t code);
 
-    MatrixEvent::MatrixData lastest_;
+    MatrixEvent::MatrixData lasts_;
     std::mutex taskMutex_;
     std::shared_ptr<ExecutorPool> executors_;
     TaskId task_ = ExecutorPool::INVALID_TASK_ID;
@@ -157,7 +157,7 @@ private:
     std::vector<std::string> dynamicApps_;
     std::vector<std::string> staticsApps_;
     std::function<void(const std::string &, uint16_t)> observer_;
-    LRUBucket<std::string, MatrixMetaData> matrixs_{ MAX_DEVICES };
+    LRUBucket<std::string, MatrixMetaData> matrices_{ MAX_DEVICES };
     LRUBucket<std::string, MatrixMetaData> versions_{ MAX_DEVICES };
 };
 } // namespace OHOS::DistributedData

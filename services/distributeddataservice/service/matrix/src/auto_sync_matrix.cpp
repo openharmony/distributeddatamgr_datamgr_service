@@ -34,10 +34,12 @@ AutoSyncMatrix &AutoSyncMatrix::GetInstance()
 AutoSyncMatrix::AutoSyncMatrix()
 {
     MetaDataManager::GetInstance().Subscribe(StoreMetaData::GetPrefix({}),
-        [this](const std::string &, const std::string &meta, int32_t action) -> bool {
+        [this](const std::string &key, const std::string &meta, int32_t action) -> bool {
             StoreMetaData metaData;
-            if (!StoreMetaData::Unmarshall(meta, metaData)) {
-                return true;
+            if (meta.empty()) {
+                MetaDataManager::GetInstance().LoadMeta(key, metaData);
+            } else {
+                StoreMetaData::Unmarshall(meta, metaData);
             }
             if (!IsAutoSync(metaData)) {
                 return true;
@@ -116,7 +118,7 @@ void AutoSyncMatrix::DelStore(const StoreMetaData &meta)
         metas_.erase(it);
         break;
     }
-    size_t pos = it - metas_.begin();
+    size_t pos = static_cast<size_t>(it - metas_.begin());
     if (pos == metas_.size()) {
         return;
     }
@@ -184,7 +186,7 @@ void AutoSyncMatrix::Online(const std::string &device)
     }
     onlines_.insert_or_assign(device, mask);
 }
-    
+
 void AutoSyncMatrix::Offline(const std::string &device)
 {
     if (device.empty()) {
@@ -208,7 +210,7 @@ void AutoSyncMatrix::OnChanged(const StoreMetaData &metaData)
     if (it == metas_.end()) {
         return;
     }
-    size_t pos = it - metas_.begin();
+    size_t pos = static_cast<size_t>(it - metas_.begin());
     for (auto &[device, mask] : onlines_) {
         mask.Set(pos);
     }
@@ -216,7 +218,7 @@ void AutoSyncMatrix::OnChanged(const StoreMetaData &metaData)
         mask.Set(pos);
     }
 }
-    
+
 void AutoSyncMatrix::OnExchanged(const std::string &device, const StoreMetaData &metaData)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -224,7 +226,7 @@ void AutoSyncMatrix::OnExchanged(const std::string &device, const StoreMetaData 
     if (it == metas_.end()) {
         return;
     }
-    size_t pos = it - metas_.begin();
+    size_t pos = static_cast<size_t>(it - metas_.begin());
     auto iter = onlines_.find(device);
     if (iter != onlines_.end()) {
         iter->second.Reset(pos);

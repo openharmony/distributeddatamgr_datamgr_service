@@ -57,6 +57,7 @@ using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using CommContext = OHOS::DistributedData::CommunicatorContext;
+static constexpr const char *DEFAULT_USER_ID = "0";
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
@@ -158,7 +159,7 @@ KVDBServiceImpl::~KVDBServiceImpl()
 void KVDBServiceImpl::Init()
 {
     auto process = [this](const Event &event) {
-        auto &evt = static_cast<const CloudEvent &>(event);
+        const auto &evt = static_cast<const CloudEvent &>(event);
         const auto &storeInfo = evt.GetStoreInfo();
         StoreMetaData meta;
         meta.storeId = storeInfo.storeName;
@@ -715,12 +716,10 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, sp
         if (agent.pid_ != IPCSkeleton::GetCallingPid()) {
             agent.ReInit(IPCSkeleton::GetCallingPid(), appId);
         }
-        if (agent.watcher_ == nullptr) {
-            isCreate = true;
-            agent.SetWatcher(std::make_shared<KVDBWatcher>());
-        }
-        agent.SetObserver(iface_cast<KvStoreObserverProxy>(observer->AsObject()));
-        agent.count_++;
+        isCreate = true;
+        auto watcher = std::make_shared<KVDBWatcher>();
+        watcher->SetObserver(observer);
+        agent.watchers_[storeId.storeId].insert(watcher);
         return true;
     });
     if (isCreate) {
@@ -736,12 +735,19 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
         Anonymous::Change(storeId.storeId).c_str(), tokenId);
     bool destroyed = false;
     syncAgents_.ComputeIfPresent(tokenId, [&appId, &storeId, &observer, &destroyed](auto &key, SyncAgent &agent) {
-        if (agent.count_ > 0) {
-            agent.count_--;
+        auto iter = agent.watchers_.find(storeId.storeId);
+        if (iter == agent.watchers_.end()) {
+            return true;
         }
-        if (agent.count_ == 0) {
-            destroyed = true;
-            agent.SetWatcher(nullptr);
+        for (auto watcher : iter->second) {
+            if (watcher->GetObserver() == observer) {
+                destroyed = true;
+                iter->second.erase(watcher);
+                break;
+            }
+        }
+        if (iter->second.size() == 0) {
+            agent.watchers_.erase(storeId.storeId);
         }
         return true;
     });
@@ -771,16 +777,17 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     }
     StoreMetaDataLocal oldLocal;
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), oldLocal, true);
+    // when user is 0, old store no "isPublic" attr, as well as new store's "isPublic" is true, do not intercept.
     if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-        old.area != meta.area || !options.persistent || old.dataType != meta.dataType ||
-        Constant::NotEqual(old.enableCloud, meta.enableCloud) ||
-        Constant::NotEqual(oldLocal.isPublic, options.isPublic)) {
-        ZLOGE("meta appId:%{public}s storeId:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d persistent:%{public}d dataType:%{public}d->%{public}d "
-              "enableCloud:%{public}d->%{public}d isPublic:%{public}d->%{public}d",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, old.dataType, options.dataType,
-            old.enableCloud, meta.enableCloud, oldLocal.isPublic, options.isPublic);
+        old.area != meta.area || !options.persistent ||
+        (Constant::NotEqual(oldLocal.isPublic, options.isPublic) &&
+            (old.user != DEFAULT_USER_ID || !options.isPublic))) {
+        ZLOGE("meta appId:%{public}s storeId:%{public}s user:%{public}s type:%{public}d->%{public}d "
+              "encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d persistent:%{public}d isPublic:%{public}d->%{public}d",
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.user.c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, oldLocal.isPublic,
+            options.isPublic);
         return Status::STORE_META_CHANGED;
     }
     if (options.cloudConfig.enableCloud || executors_ != nullptr) {
@@ -848,14 +855,18 @@ Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, 
 int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId)
 {
     ZLOGI("pid:%{public}d uid:%{public}d appId:%{public}s", pid, uid, appId.c_str());
-    syncAgents_.EraseIf([pid](auto &key, SyncAgent &agent) {
+    CheckerManager::StoreInfo info;
+    info.uid = uid;
+    info.tokenId = tokenId;
+    info.bundleName = appId;
+    syncAgents_.EraseIf([pid, &info](auto &key, SyncAgent &agent) {
         if (agent.pid_ != pid) {
             return false;
         }
-        if (agent.watcher_ != nullptr) {
-            agent.watcher_->ClearObservers();
-            agent.ClearObservers();
+        if (CheckerManager::GetInstance().IsSwitches(info)) {
+            MetaDataManager::GetInstance().Unsubscribe(SwitchesMetaData::GetPrefix({}));
         }
+        agent.watchers_.clear();
         auto stores = AutoCache::GetInstance().GetStoresIfPresent(key);
         for (auto store : stores) {
             if (store != nullptr) {
@@ -1117,11 +1128,27 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
 Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
 {
     if (!meta.enableCloud) {
-        ZLOGE("appId:%{public}s storeId:%{public}s  instanceId:%{public}d not supports cloud sync",
-              meta.appId.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        ZLOGE("appId:%{public}s storeId:%{public}s instanceId:%{public}d not supports cloud sync", meta.appId.c_str(),
+            Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return Status::NOT_SUPPORT;
     }
-    if (CloudServer::GetInstance() == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+        return Status::CLOUD_DISABLED;
+    }
+    std::vector<int32_t> users;
+    if (meta.user != StoreMetaData::ROOT_USER) {
+        users.push_back(std::atoi(meta.user.c_str()));
+    } else if (!AccountDelegate::GetInstance()->QueryForegroundUsers(users)) {
+        ZLOGE("appId:%{public}s storeId:%{public}s instanceId:%{public}d. no foreground user!", meta.appId.c_str(),
+            Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        return Status::CLOUD_DISABLED;
+    }
+    bool res = false;
+    for (auto user : users) {
+        res = instance->IsSupportCloud(user) || res;
+    }
+    if (!res) {
         return Status::CLOUD_DISABLED;
     }
 
@@ -1130,8 +1157,7 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     storeInfo.user = atoi(meta.user.c_str());
     storeInfo.tokenId = meta.tokenId;
     storeInfo.storeName = meta.storeId;
-    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](
-                             const GenDetails &details) {
+    GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](const GenDetails &details) {
         OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
     };
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
@@ -1181,6 +1207,11 @@ Status KVDBServiceImpl::DoSyncInOrder(
         if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta)
             || !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
             isAfterMeta = true;
+            break;
+        }
+        if (IsRemoteChange(metaData, uuid)) {
+            isAfterMeta = true;
+            break;
         }
     }
     if (!isOnline && isAfterMeta) {
@@ -1235,6 +1266,10 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
         return Status::INVALID_ARGUMENT;
     }
     auto mode = ConvertGeneralSyncMode(SyncMode(info.mode), SyncAction(type));
+    if (GeneralStore::GetSyncMode(mode) < KVDBGeneralStore::NEARBY_END) {
+        store->SetEqualIdentifier(meta.appId, meta.storeId);
+    }
+
     SyncParam syncParam{};
     syncParam.mode = mode;
     auto ret = store->Sync(
@@ -1422,50 +1457,28 @@ std::vector<std::string> KVDBServiceImpl::ConvertDevices(const std::vector<std::
 
 AutoCache::Watchers KVDBServiceImpl::GetWatchers(uint32_t tokenId, const std::string &storeId)
 {
-    auto [success, agent] = syncAgents_.Find(tokenId);
-    if (agent.watcher_ == nullptr) {
-        return {};
-    }
-    return { agent.watcher_ };
+    AutoCache::Watchers watchers{};
+    syncAgents_.ComputeIfPresent(tokenId, [&storeId, &watchers](auto &, SyncAgent &agent) {
+        auto iter = agent.watchers_.find(storeId);
+        if (iter != agent.watchers_.end()) {
+            for (const auto &watcher : iter->second) {
+                watchers.insert(watcher);
+            }
+        }
+        return true;
+    });
+    return watchers;
 }
 
 void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
 {
-    ZLOGW("pid:%{public}d->%{public}d appId:%{public}s notifier:%{public}d observer:%{public}zu", pid, pid_,
-        appId_.appId.c_str(), notifier_ == nullptr, observers_.size());
+    ZLOGW("pid:%{public}d->%{public}d appId:%{public}s notifier:%{public}d", pid, pid_,
+        appId_.appId.c_str(), notifier_ == nullptr);
     pid_ = pid;
     appId_ = appId;
     notifier_ = nullptr;
     delayTimes_.clear();
-    count_ = 0;
-    watcher_ = nullptr;
-    observers_.clear();
-}
-
-void KVDBServiceImpl::SyncAgent::SetWatcher(std::shared_ptr<KVDBWatcher> watcher)
-{
-    if (watcher_ != watcher) {
-        watcher_ = watcher;
-        if (watcher_ != nullptr) {
-            watcher_->SetObservers(observers_);
-        }
-    }
-}
-
-void KVDBServiceImpl::SyncAgent::SetObserver(sptr<KvStoreObserverProxy> observer)
-{
-    observers_.insert(observer);
-    if (watcher_ != nullptr) {
-        watcher_->SetObservers(observers_);
-    }
-}
-
-void KVDBServiceImpl::SyncAgent::ClearObservers()
-{
-    observers_.clear();
-    if (watcher_ != nullptr) {
-        watcher_->ClearObservers();
-    }
+    watchers_.clear();
 }
 
 int32_t KVDBServiceImpl::OnBind(const BindInfo &bindInfo)

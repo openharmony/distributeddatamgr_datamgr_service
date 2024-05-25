@@ -37,20 +37,15 @@ config("module_public_config") {
     "permission/include",
     "rdb",
     "waterversion",
-    "//third_party/json/single_include",
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
-    "${datashare_path}/frameworks/native/common/include",
-    "${datashare_path}/interfaces/inner_api/common/include",
-    "${datashare_path}/interfaces/inner_api/consumer/include",
     "${kv_store_common_path}",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
     "${kv_store_distributeddb_path}/include/",
     "${kv_store_distributeddb_path}/interfaces/include/",
     "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${dataobject_path}/interfaces/innerkits",
   ]
 }
 
@@ -156,6 +151,7 @@ ohos_shared_library("distributeddatasvc") {
     "hilog:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",

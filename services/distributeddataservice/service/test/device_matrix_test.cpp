@@ -71,7 +71,7 @@ CheckerMock DeviceMatrixTest::instance_;
 void DeviceMatrixTest::SetUpTestCase(void)
 {
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
-    MetaDataManager::GetInstance().SetSyncer([](const auto &, auto) {
+    MetaDataManager::GetInstance().SetCloudSyncer([]() {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
     });
     selfToken_ = IPCSkeleton::GetCallingTokenID();

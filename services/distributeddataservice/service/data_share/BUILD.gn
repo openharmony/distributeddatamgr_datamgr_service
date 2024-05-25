@@ -20,7 +20,6 @@ config("module_public_config") {
     "strategies",
     "common",
     "data",
-    "//third_party/json/single_include",
     "../../adapter/include",
     "../../app/src",
     "../../framework/include",
@@ -82,6 +81,7 @@ ohos_shared_library("data_share_service") {
     "strategies/template_strategy.cpp",
     "subscriber_managers/published_data_subscriber_manager.cpp",
     "subscriber_managers/rdb_subscriber_manager.cpp",
+    "sys_event_subscriber.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 
@@ -112,6 +112,7 @@ ohos_shared_library("data_share_service") {
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",

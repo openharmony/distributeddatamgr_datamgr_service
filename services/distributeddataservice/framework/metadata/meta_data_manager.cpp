@@ -26,13 +26,18 @@ public:
     using Filter = MetaDataManager::Filter;
     using MetaStore = MetaDataManager::MetaStore;
     using Observer = MetaDataManager::Observer;
+    using DBOrigin = DistributedDB::Origin;
+    using DBChangeData = DistributedDB::ChangedData;
+    using Type = DistributedDB::Type;
     MetaObserver(std::shared_ptr<MetaStore> metaStore,
         std::shared_ptr<Filter> filter, Observer observer, bool isLocal = false);
     virtual ~MetaObserver();
 
     // Database change callback
     void OnChange(const DistributedDB::KvStoreChangedData &data) override;
+    void OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data) override;
 
+    void HandleChanges(int32_t flag, std::vector<std::vector<Type>> &priData);
 private:
     std::shared_ptr<MetaStore> metaStore_;
     std::shared_ptr<Filter> filter_;
@@ -47,6 +52,9 @@ MetaObserver::MetaObserver(std::shared_ptr<MetaStore> metaStore,
         int mode = isLocal ? DistributedDB::OBSERVER_CHANGES_LOCAL_ONLY
                            : (DistributedDB::OBSERVER_CHANGES_NATIVE | DistributedDB::OBSERVER_CHANGES_FOREIGN);
         auto status = metaStore_->RegisterObserver(filter_->GetKey(), mode, this);
+        if (!isLocal) {
+            status = metaStore_->RegisterObserver(filter_->GetKey(), DistributedDB::OBSERVER_CHANGES_CLOUD, this);
+        }
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("register meta observer failed :%{public}d.", status);
         }
@@ -94,6 +102,35 @@ void MetaObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
     }
 }
 
+void MetaObserver::OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data)
+{
+    (void)origin;
+    (void)originalId;
+    HandleChanges(MetaDataManager::INSERT, data.primaryData[MetaDataManager::INSERT]);
+    HandleChanges(MetaDataManager::UPDATE, data.primaryData[MetaDataManager::UPDATE]);
+    HandleChanges(MetaDataManager::DELETE, data.primaryData[MetaDataManager::DELETE]);
+}
+
+void MetaObserver::HandleChanges(int32_t flag, std::vector<std::vector<Type>> &priData)
+{
+    if (priData.empty()) {
+        return;
+    }
+    for (const auto &priKey : priData) {
+        if (priKey.empty()) {
+            continue;
+        }
+        auto strValue = std::get_if<std::string>(&priKey[0]);
+        if (strValue != nullptr) {
+            auto key = *strValue;
+            if (!(*filter_)(key)) {
+                continue;
+            }
+            observer_(key, "", flag);
+        }
+    }
+}
+
 MetaDataManager &MetaDataManager::GetInstance()
 {
     static MetaDataManager instance;
@@ -130,6 +167,14 @@ void MetaDataManager::SetSyncer(const Syncer &syncer)
     syncer_ = syncer;
 }
 
+void MetaDataManager::SetCloudSyncer(const CloudSyncer &cloudSyncer)
+{
+    if (metaStore_ == nullptr) {
+        return;
+    }
+    cloudSyncer_ = cloudSyncer;
+}
+
 bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value, bool isLocal)
 {
     if (!inited_) {
@@ -142,8 +187,8 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
     if (status == DistributedDB::DBStatus::OK && backup_) {
         backup_(metaStore_);
     }
-    if (!isLocal && syncer_) {
-        syncer_(metaStore_, status);
+    if (!isLocal && cloudSyncer_) {
+        cloudSyncer_();
     }
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("failed! status:%{public}d isLocal:%{public}d, key:%{public}s",
@@ -200,8 +245,8 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
     if (status == DistributedDB::DBStatus::OK && backup_) {
         backup_(metaStore_);
     }
-    if (!isLocal && syncer_) {
-        syncer_(metaStore_, status);
+    if (!isLocal && cloudSyncer_) {
+        cloudSyncer_();
     }
     return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
 }

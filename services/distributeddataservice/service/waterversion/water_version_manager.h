@@ -43,7 +43,12 @@ public:
         bool IsValid();
         std::string ToAnonymousString() const;
         std::string GetKey() const;
-        uint64_t GetVersion();
+        uint64_t GetVersion() const;
+        uint16_t GetLevel() const
+        {
+            // low 4 bit is mask
+            return (waterVersion & 0xFFF) << 4;
+        }
         static std::string GetPrefix();
 
     private:
@@ -51,7 +56,7 @@ public:
     };
     API_EXPORT static WaterVersionManager &GetInstance();
     API_EXPORT void Init();
-    std::string GenerateWaterVersion(const std::string &bundleName, const std::string &storeName);
+    API_EXPORT std::string GenerateWaterVersion(const std::string &bundleName, const std::string &storeName);
     std::string GetWaterVersion(const std::string &bundleName, const std::string &storeName);
     std::pair<bool, uint64_t> GetVersion(const std::string &deviceId, Type type);
     std::string GetWaterVersion(const std::string &deviceId, Type type);
@@ -84,7 +89,7 @@ private:
         std::vector<std::string> keys_;
         LRUBucket<std::string, WaterVersionMetaData> versions_{ MAX_DEVICES };
     };
-    static bool InitMeta(WaterVersionMetaData &);
+    static bool InitMeta(WaterVersionMetaData &metaData);
     static WaterVersionMetaData Upgrade(const std::vector<std::string> &keys, const WaterVersionMetaData& meta);
     static std::string Merge(const std::string &bundleName, const std::string &storeName);
     static std::pair<std::string, std::string> Split(const std::string &key);

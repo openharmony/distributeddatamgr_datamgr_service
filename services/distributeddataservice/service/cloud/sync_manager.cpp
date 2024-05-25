@@ -21,15 +21,15 @@
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"
+#include "cloud_value_util.h"
 #include "device_manager_adapter.h"
+#include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
-#include "dfx/radar_reporter.h"
-#include "cloud_value_util.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace DistributedDataDfx;
@@ -38,6 +38,7 @@ using namespace SharingUtil;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
+const char *DEFAULT_ACCOUNT_UID = "ohosAnonymousUid";
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Store &store, const Tables &tables)
     : user_(user), bundleName_(bundleName)
@@ -262,6 +263,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         std::vector<std::tuple<QueryKey, uint64_t>> cloudSyncInfos;
         GetCloudSyncInfo(info, cloud, cloudSyncInfos);
         if (cloudSyncInfos.empty()) {
+            ZLOGD("get cloud info failed, user: %{public}d.", cloud.user);
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
@@ -278,8 +280,11 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         auto schemas = GetSchemaMeta(cloud, info.bundleName_);
         if (schemas.empty()) {
             UpdateSchema(info);
-            retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
-            return;
+            schemas = GetSchemaMeta(cloud, info.bundleName_);
+            if (schemas.empty()) {
+                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
+                return;
+            }
         }
 
         Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
@@ -356,8 +361,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetQuery(evt.GetQuery());
         syncInfo.SetCompensation(evt.IsCompensation());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
-        auto task = GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo));
-        task();
+        executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
     };
 }
 
@@ -498,8 +502,23 @@ void SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
     std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-        ZLOGE("not exist cloud metadata, user: %{public}d.", cloud.user);
-        return;
+        ZLOGW("not exist local cloud metadata, user: %{public}d.", cloud.user);
+        auto instance = CloudServer::GetInstance();
+        if (instance == nullptr) {
+            return;
+        }
+        auto accountId = Account::GetInstance()->GetCurrentAccountId();
+        if (!DmAdapter::GetInstance().IsNetworkAvailable() || accountId.empty() || accountId == DEFAULT_ACCOUNT_UID) {
+            return;
+        }
+        cloud = instance->GetServerInfo(cloud.user);
+        if (!cloud.IsValid()) {
+            ZLOGE("cloud is empty, user: %{public}d", cloud.user);
+            return;
+        }
+        if (!MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true)) {
+            ZLOGW("save cloud info fail, user: %{public}d", cloud.user);
+        }
     }
     if (info.bundleName_.empty()) {
         for (const auto &it : cloud.apps) {

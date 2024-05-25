@@ -40,6 +40,7 @@
 #include "rdb_helper.h"
 #include "scheduler_manager.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
+#include "sys_event_subscriber.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 
@@ -183,8 +184,8 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
         ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return ERROR;
     }
-    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.", uri.c_str(),
-        subscriberId, tpltId.bundleName_.c_str());
+    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
+        DistributedData::Anonymous::Change(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
         return TemplateManager::GetInstance().Delete(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId);
@@ -481,6 +482,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    InitSubEvent();
     SubscribeTimeChanged();
     return E_OK;
 }
@@ -666,7 +668,8 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
+        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(uri).c_str());
     }
     if (!providerInfo.readPermission.empty() &&
         !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
@@ -697,7 +700,8 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s", callerTokenId, uri.c_str());
+        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(uri).c_str());
     }
     if (!providerInfo.readPermission.empty() &&
         !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
@@ -750,6 +754,11 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
 {
     DataProviderConfig calledConfig(uri, tokenId);
     auto [errCode, calledInfo] = calledConfig.GetProviderInfo();
+    if (errCode == E_URI_NOT_EXIST) {
+        ZLOGE("Create helper invalid uri, token:0x%{public}x, uri:%{public}s", tokenId,
+            URIUtils::Anonymous(calledInfo.uri).c_str());
+        return E_OK;
+    }
     if (errCode != E_OK) {
         ZLOGE("CalledInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
             errCode, URIUtils::Anonymous(calledInfo.uri).c_str());
@@ -765,5 +774,17 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
         return E_METADATA_NOT_EXISTS;
     }
     return E_OK;
+}
+
+void DataShareServiceImpl::InitSubEvent()
+{
+    EventFwk::MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED);
+    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
+    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo);
+    if (!EventFwk::CommonEventManager::SubscribeCommonEvent(sysEventSubscriber)) {
+        ZLOGE("Subscribe sys event failed.");
+    }
 }
 } // namespace OHOS::DataShare

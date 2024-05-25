@@ -18,10 +18,11 @@
 
 #include "store.h"
 #include "kv_store_delegate_manager.h"
+#include "visibility.h"
 
 namespace OHOS {
 namespace UDMF {
-class RuntimeStore final : public Store {
+class API_EXPORT RuntimeStore final : public Store {
 public:
     explicit RuntimeStore(const std::string &storeId);
     ~RuntimeStore();

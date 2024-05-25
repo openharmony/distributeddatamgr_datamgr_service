@@ -14,12 +14,18 @@
 */
 #define LOG_TAG "CloudDataTest"
 #include <gtest/gtest.h>
+#include <unistd.h>
 
+#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bootstrap.h"
+#include "checker_mock.h"
+#include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service_impl.h"
+#include "cloud_types.h"
 #include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
@@ -31,13 +37,35 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
+#include "rdb_query.h"
+#include "rdb_service.h"
+#include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "store/auto_cache.h"
 #include "store/store_info.h"
+#include "token_setproc.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using Querykey = OHOS::CloudData::QueryKey;
+using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
+
+uint64_t g_selfTokenID = 0;
+
+void AllocHapToken(const HapPolicyParams &policy)
+{
+    HapInfoParams info = {
+        .userID = 100,
+        .bundleName = "test_cloud_bundleName",
+        .instIndex = 0,
+        .appIDDesc = "test_cloud_bundleName",
+        .isSystemApp = true
+    };
+    auto token = AccessTokenKit::AllocHapToken(info, policy);
+    SetSelfTokenID(token.tokenIDEx);
+}
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
@@ -55,6 +83,7 @@ public:
     void TearDown();
 
     static SchemaMeta schemaMeta_;
+    static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
 
 protected:
     static void InitMetaData();
@@ -63,6 +92,7 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static CloudInfo cloudInfo_;
+    static DistributedData::CheckerMock checker_;
 };
 
 class CloudServerMock : public CloudServer {
@@ -102,6 +132,9 @@ std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBSt
 SchemaMeta CloudDataTest::schemaMeta_;
 StoreMetaData CloudDataTest::metaData_;
 CloudInfo CloudDataTest::cloudInfo_;
+std::shared_ptr<CloudData::CloudServiceImpl> CloudDataTest::cloudServiceImpl_ =
+    std::make_shared<CloudData::CloudServiceImpl>();
+DistributedData::CheckerMock CloudDataTest::checker_;
 
 void CloudDataTest::InitMetaData()
 {
@@ -169,24 +202,65 @@ void CloudDataTest::SetUpTestCase(void)
 
     auto cloudServerMock = new CloudServerMock();
     CloudServer::RegisterCloudInstance(cloudServerMock);
-    FeatureSystem::GetInstance().GetCreator("cloud")();
-    FeatureSystem::GetInstance().GetCreator("relational_store")();
+
+    HapPolicyParams policy = { .apl = APL_SYSTEM_BASIC,
+        .domain = "test.domain",
+        .permList = {
+            {
+                .permissionName = "ohos.permission.CLOUDDATA_CONFIG",
+                .bundleName = "test_cloud_bundleName",
+                .grantMode = 1,
+                .availableLevel = APL_SYSTEM_BASIC,
+                .label = "label",
+                .labelId = 1,
+                .description = "test_cloud_bundleName",
+                .descriptionId = 1
+            }
+        },
+        .permStateList = {
+            {
+                .permissionName = "ohos.permission.CLOUDDATA_CONFIG",
+                .isGeneral = true,
+                .resDeviceID = { "local" },
+                .grantStatus = { PermissionState::PERMISSION_GRANTED },
+                .grantFlags = { 1 }
+            }
+        }
+    };
+    g_selfTokenID = GetSelfTokenID();
+    AllocHapToken(policy);
 
     InitCloudInfo();
     InitMetaData();
     InitSchemaMeta();
+
+    size_t max = 12;
+    size_t min = 5;
+
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    cloudServiceImpl_->OnBind(
+        { "CloudDataTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
+    Bootstrap::GetInstance().LoadCheckers();
 }
 
 void CloudDataTest::TearDownTestCase()
 {
+    SetSelfTokenID(g_selfTokenID);
 }
 
 void CloudDataTest::SetUp()
 {
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
 }
 
 void CloudDataTest::TearDown()
 {
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
 }
 
 /**
@@ -223,8 +297,7 @@ HWTEST_F(CloudDataTest, QueryStatistics001, TestSize.Level0)
     // prepare MetaDta
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
 
-    auto cloudServiceImpl = std::make_shared<CloudData::CloudServiceImpl>();
-    auto [status, result] = cloudServiceImpl->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "");
+    auto [status, result] = cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "");
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
 }
@@ -242,17 +315,16 @@ HWTEST_F(CloudDataTest, QueryStatistics002, TestSize.Level0)
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
 
-    auto cloudServiceImpl = std::make_shared<CloudData::CloudServiceImpl>();
-    auto [status, result] = cloudServiceImpl->QueryStatistics("", "", "");
+    auto [status, result] = cloudServiceImpl_->QueryStatistics("", "", "");
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
-    std::tie(status, result) = cloudServiceImpl->QueryStatistics(TEST_CLOUD_ID, "", "");
+    std::tie(status, result) = cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, "", "");
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
-    std::tie(status, result) = cloudServiceImpl->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_STORE, "");
+    std::tie(status, result) = cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_STORE, "");
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
-    std::tie(status, result) = cloudServiceImpl->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "");
+    std::tie(status, result) = cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "");
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
 }
@@ -266,11 +338,6 @@ HWTEST_F(CloudDataTest, QueryStatistics002, TestSize.Level0)
 HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
 {
     ZLOGI("CloudDataTest QueryStatistics003 start");
-    // prepare MetaDta
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
-
     // Construct the statisticInfo data
     auto creator = [](const StoreMetaData &metaData) -> GeneralStore * {
         auto store = new (std::nothrow) GeneralStoreMock();
@@ -282,9 +349,8 @@ HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
     };
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
 
-    auto cloudServiceImpl = std::make_shared<CloudData::CloudServiceImpl>();
     auto [status, result] =
-        cloudServiceImpl->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+        cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     ASSERT_EQ(status, CloudData::CloudService::SUCCESS);
     ASSERT_EQ(result.size(), 1);
     for (const auto &it : result) {
@@ -308,10 +374,6 @@ HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
 HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
 {
     ZLOGI("CloudDataTest QueryStatistics004 start");
-    // prepare MetaDta
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
 
     // Construct the statisticInfo data
     auto creator = [](const StoreMetaData &metaData) -> GeneralStore * {
@@ -324,8 +386,7 @@ HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
     };
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
 
-    auto cloudServiceImpl = std::make_shared<CloudData::CloudServiceImpl>();
-    auto [status, result] = cloudServiceImpl->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "");
+    auto [status, result] = cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "");
     ASSERT_EQ(status, CloudData::CloudService::SUCCESS);
     ASSERT_EQ(result.size(), 2);
     for (const auto &it : result) {
@@ -337,6 +398,119 @@ HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
             EXPECT_EQ(info.normal, 3);
         }
     }
+}
+
+/**
+* @tc.name: QueryLastSyncInfo001
+* @tc.desc: The query last sync info interface failed because account is false.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo001, TestSize.Level0)
+{
+    ZLOGI("CloudDataTest QueryLastSyncInfo001 start");
+    auto [status, result] =
+        cloudServiceImpl_->QueryLastSyncInfo("accountId", TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+* @tc.name: QueryLastSyncInfo002
+* @tc.desc: The query last sync info interface failed because bundleName is false.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo002, TestSize.Level0)
+{
+    ZLOGI("CloudDataTest QueryLastSyncInfo002 start");
+    auto [status, result] =
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, "bundleName", TEST_CLOUD_DATABASE_ALIAS_1);
+    EXPECT_EQ(status, CloudData::CloudService::Status::INVALID_ARGUMENT);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+* @tc.name: QueryLastSyncInfo003
+* @tc.desc: The query last sync info interface failed because storeId is false.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo003, TestSize.Level0)
+{
+    ZLOGI("CloudDataTest QueryLastSyncInfo003 start");
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "storeId");
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+* @tc.name: QueryLastSyncInfo004
+* @tc.desc: The query last sync info interface failed when switch is close.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
+{
+    ZLOGI("CloudDataTest QueryLastSyncInfo004 start");
+    auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto rdbServiceImpl = std::make_shared<DistributedRdb::RdbServiceImpl>();
+    DistributedRdb::RdbSyncerParam param;
+    param.bundleName_ = TEST_CLOUD_BUNDLE;
+    param.storeName_ = TEST_CLOUD_DATABASE_ALIAS_1;
+    DistributedRdb::RdbService::Option option;
+    option.mode = DistributedRdb::SyncMode::CLOUD_FIRST;
+    option.isAutoSync = true;
+    option.isAsync = false;
+    DistributedRdb::PredicatesMemo memo;
+    rdbServiceImpl->Sync(param, option, memo, nullptr);
+
+    sleep(1);
+
+    auto [status, result] =
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(!result.empty());
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: QueryLastSyncInfo005
+* @tc.desc: The query last sync info interface failed when app cloud switch is close.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
+{
+    ZLOGI("CloudDataTest QueryLastSyncInfo005 start");
+    std::map<std::string, int32_t> switches;
+    switches.emplace(TEST_CLOUD_ID, true);
+    auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, false);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto rdbServiceImpl = std::make_shared<DistributedRdb::RdbServiceImpl>();
+    DistributedRdb::RdbSyncerParam param;
+    param.bundleName_ = TEST_CLOUD_BUNDLE;
+    param.storeName_ = TEST_CLOUD_DATABASE_ALIAS_1;
+    DistributedRdb::RdbService::Option option;
+    option.mode = DistributedRdb::SyncMode::CLOUD_FIRST;
+    option.isAutoSync = true;
+    option.isAsync = false;
+    DistributedRdb::PredicatesMemo memo;
+    rdbServiceImpl->Sync(param, option, memo, nullptr);
+
+    sleep(1);
+
+    auto [status, result] =
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(!result.empty());
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

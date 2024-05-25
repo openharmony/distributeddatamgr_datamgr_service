@@ -356,5 +356,10 @@ std::pair<DBStatus, std::map<std::string, std::string>> DBStoreMock::GetCloudVer
 {
     return { NOT_SUPPORT, {} };
 }
+
+DBStatus DBStoreMock::SetReceiveDataInterceptor(const DataInterceptor &interceptor)
+{
+    return NOT_SUPPORT;
+}
 } // namespace DistributedData
 } // namespace OHOS
