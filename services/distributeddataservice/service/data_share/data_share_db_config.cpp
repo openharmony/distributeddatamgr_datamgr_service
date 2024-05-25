@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "datashare_errno.h"
+#include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "extension_connect_adaptor.h"
 #include "log_print.h"
@@ -67,6 +68,8 @@ std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> Dat
     if (errCode != E_OK) {
         ZLOGE("DB not exist,bundleName:%{public}s,storeName:%{public}s,user:%{public}d,err:%{public}d,uri:%{public}s",
             bundleName.c_str(), storeName.c_str(), userId, errCode, URIUtils::Anonymous(uri).c_str());
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_MATEDATA_EXISTS,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::META_DATA_NOT_EXISTS);
         return std::make_tuple(errCode, metaData, nullptr);
     }
     auto dbDelegate = DBDelegate::Create(metaData);

@@ -748,6 +748,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddb",
