@@ -92,6 +92,8 @@ private:
 
     std::function<void()> SyncTask(const NbDelegate &store, int32_t status);
 
+    void InitDBOption(DistributedDB::KvStoreNbDelegate::Option &option);
+
     class KvStoreMetaObserver : public DistributedDB::KvStoreObserver {
     public:
         virtual ~KvStoreMetaObserver();
