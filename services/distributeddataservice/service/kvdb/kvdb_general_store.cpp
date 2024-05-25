@@ -311,7 +311,7 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
 }
 
 DBStatus KVDBGeneralStore::CloudSync(
-    const Devices &devices, const DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait)
+    const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait)
 {
     DistributedDB::CloudSyncOption syncOption;
     syncOption.devices = devices;
