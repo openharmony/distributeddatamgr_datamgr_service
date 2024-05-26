@@ -64,8 +64,6 @@ ohos_unittest("CloudDataTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/app/src/checker/bundle_checker.cpp",
-    "${data_service_path}/app/src/checker/system_checker.cpp",
     "${data_service_path}/service/backup/src/backup_manager.cpp",
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
