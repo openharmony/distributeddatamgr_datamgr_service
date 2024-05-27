@@ -28,7 +28,7 @@ public:
     ~KVDBNotifierProxy() = default;
     void SyncCompleted(const std::map<std::string, Status> &results, uint64_t sequenceId) override;
     void SyncCompleted(uint64_t seqNum, ProgressDetail &&detail) override;
-    void OnRemoteChange(const std::map<std::string, bool> &mask) override;
+    void OnRemoteChange(const std::map<std::string, bool> &mask, int32_t dataType) override;
     void OnSwitchChange(const SwitchNotification &notification) override;
 
 private:

@@ -74,7 +74,7 @@ public:
         const StoreMetaData &metaData, ChangeType type = ChangeType::CHANGE_ALL);
     void UpdateLevel(const std::string &device, uint16_t level, LevelType type, bool isConsistent = false);
     void Clear();
-    void RegRemoteChange(std::function<void(const std::string &, uint16_t)> observer);
+    void RegRemoteChange(std::function<void(const std::string &, std::pair<uint16_t, uint16_t>)> observer);
     void SetExecutor(std::shared_ptr<ExecutorPool> executors);
     uint16_t GetCode(const StoreMetaData &metaData);
     std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
@@ -155,7 +155,7 @@ private:
     std::map<std::string, Mask> remotes_;
     std::vector<std::string> dynamicApps_;
     std::vector<std::string> staticsApps_;
-    std::function<void(const std::string &, uint16_t)> observer_;
+    std::function<void(const std::string &, std::pair<uint16_t, uint16_t>)> observer_;
     LRUBucket<std::string, MatrixMetaData> matrices_{ MAX_DEVICES };
     LRUBucket<std::string, MatrixMetaData> versions_{ MAX_DEVICES };
 };

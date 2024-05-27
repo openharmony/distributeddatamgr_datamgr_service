@@ -481,33 +481,6 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
         value.notifier_ = notifier;
         return true;
     });
-    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
-        ZLOGD("not support matrix");
-        return Status::SUCCESS;
-    }
-    StoreMetaData meta;
-    meta.appId = appId.appId;
-    meta.tokenId = tokenId;
-    meta.uid = IPCSkeleton::GetCallingUid();
-    meta.bundleName = appId.appId;
-    meta.dataType = DataType::TYPE_DYNAMICAL;
-    uint16_t code = DeviceMatrix::GetInstance().GetCode(meta);
-    if (!DeviceMatrix::GetInstance().IsDynamic(meta) || code == DeviceMatrix::INVALID_MASK) {
-        return Status::SUCCESS;
-    }
-    std::map<std::string, bool> clientMask;
-    auto masks = DeviceMatrix::GetInstance().GetRemoteDynamicMask();
-    for (const auto &[device, mask] : masks) {
-        auto networkId = DMAdapter::GetInstance().ToNetworkID(device);
-        if (networkId.empty()) {
-            continue;
-        }
-        bool changed = ((mask & code) == code);
-        if (changed) {
-            clientMask.insert_or_assign(networkId, changed);
-        }
-    }
-    notifier->OnRemoteChange(std::move(clientMask));
     return Status::SUCCESS;
 }
 
@@ -517,33 +490,63 @@ void KVDBServiceImpl::RegisterMatrixChange()
         ZLOGD("not support matrix");
         return;
     }
-    DeviceMatrix::GetInstance().RegRemoteChange([this](const std::string &device, uint16_t mask) {
+    DeviceMatrix::GetInstance().RegRemoteChange([this](const std::string &device, std::pair<uint16_t, uint16_t> mask) {
         auto networkId = DMAdapter::GetInstance().ToNetworkID(device);
         if (networkId.empty()) {
             return;
         }
-        syncAgents_.ForEachCopies([networkId, mask](const auto &key, auto &value) {
-            StoreMetaData meta;
-            meta.appId = value.appId_;
-            meta.tokenId = key;
-            meta.bundleName = value.appId_;
-            meta.dataType = DataType::TYPE_DYNAMICAL;
-            if (!DeviceMatrix::GetInstance().IsDynamic(meta)) {
-                return false;
-            }
-            uint16_t code = DeviceMatrix::GetInstance().GetCode(meta);
-            std::map<std::string, bool> clientMask;
-            bool changed = ((mask & code) == code);
-            if ((value.changed_ && changed) || (!value.changed_ && !changed)) {
-                return false;
-            }
-            value.changed_ = changed;
-            clientMask.insert_or_assign(networkId, changed);
-            if (value.notifier_) {
-                value.notifier_->OnRemoteChange(std::move(clientMask));
-            }
+        StoreMetaData meta;
+        meta.appId = value.appId_;
+        meta.tokenId = key;
+        meta.bundleName = value.appId_;
+        meta.dataType = DataType::TYPE_DYNAMICAL;
+        OnDynamicChange(meta, networkId, mask);
+        meta.dataType = DataType::TYPE_STATICS;
+        OnStaticsChange(meta, networkId, mask);
+    });
+}
+
+void KVDBServiceImpl::OnStaticsChange(
+    const StoreMetaData &meta, const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
+{
+    syncAgents_.ForEachCopies([networkId, mask, meta](const auto &key, auto &value) {
+        if (!DeviceMatrix::GetInstance().IsStatics(meta)) {
             return false;
-        });
+        }
+        uint16_t code = DeviceMatrix::GetInstance().GetCode(meta);
+        std::map<std::string, bool> clientMask;
+        bool changed = ((mask.first & code) == code);
+        if ((value.staticsChanged_ && changed) || (!value.staticsChanged_ && !changed)) {
+            return false;
+        }
+        value.staticsChanged_ = changed;
+        clientMask.insert_or_assign(networkId, changed);
+        if (value.notifier_) {
+            value.notifier_->OnRemoteChange(std::move(clientMask), static_cast<int32_t>(DataType::TYPE_STATICS));
+        }
+        return false;
+    });
+}
+
+void KVDBServiceImpl::OnDynamicChange(
+    const StoreMetaData &meta, const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
+{
+    syncAgents_.ForEachCopies([networkId, mask, meta](const auto &key, auto &value) {
+        if (!DeviceMatrix::GetInstance().IsDynamic(meta)) {
+            return false;
+        }
+        uint16_t code = DeviceMatrix::GetInstance().GetCode(meta);
+        std::map<std::string, bool> clientMask;
+        bool changed = ((mask.second & code) == code);
+        if ((value.dynamicChanged_ && changed) || (!value.dynamicChanged_ && !changed)) {
+            return false;
+        }
+        value.dynamicChanged_ = changed;
+        clientMask.insert_or_assign(networkId, changed);
+        if (value.notifier_) {
+            value.notifier_->OnRemoteChange(std::move(clientMask), static_cast<int32_t>(DataType::TYPE_DYNAMICAL));
+        }
+        return false;
     });
 }
 
