@@ -123,7 +123,7 @@ public:
 
     DBStatus GetColumnIndex(const std::string &columnName, int &columnIndex) const override
     {
-        if (columnIndex < 0) {
+        if (columnName == "ERROR") {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -260,7 +260,8 @@ HWTEST_F(RdbCursorTest, RdbCursorTest002, TestSize.Level1)
     std::string col = "col";
     result = rdbCursor->Get(col, value);
     EXPECT_EQ(result, GeneralError::E_ERROR);
-
+    result = rdbCursor->Get("ERROR", value);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
     bool ret = rdbCursor->IsEnd();
     EXPECT_EQ(ret, true);
 
@@ -294,11 +295,15 @@ HWTEST_F(RdbCursorTest, Convert, TestSize.Level1)
     result = rdbCursor->Convert(dbColumnType);
     EXPECT_EQ(result, TYPE_INDEX<double>);
 
+    dbColumnType = DistributedDB::ResultSet::ColumnType::NULL_VALUE;
+    result = rdbCursor->Convert(dbColumnType);
+    EXPECT_EQ(result, TYPE_INDEX<std::monostate>);
+
     dbColumnType = DistributedDB::ResultSet::ColumnType::INVALID_TYPE;
     result = rdbCursor->Convert(dbColumnType);
     EXPECT_EQ(result, TYPE_INDEX<std::monostate>);
 
-    dbColumnType = DistributedDB::ResultSet::ColumnType::NULL_VALUE;
+    dbColumnType = static_cast<DistributedDB::ResultSet::ColumnType>(MAX_DATA_NUM);
     result = rdbCursor->Convert(dbColumnType);
     EXPECT_EQ(result, TYPE_INDEX<std::monostate>);
 }
