@@ -31,13 +31,14 @@ using namespace OHOS::Security::AccessToken;
 
 namespace OHOS {
 
-const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedData.DumpHelper";
-
-bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
+bool DumpFuzz(const uint8_t *data, size_t size)
 {
     int connId = static_cast<int>(*data);
-    std::string deviceId(data, data + size);
-    std::vector<std::string> args = { deviceId + "_1", deviceId + "_2" };
+    std::vector<std::string> args;
+    const std::string argstest1 ="OHOS.DistributedData.DumpHelper1";
+    const std::string argstest2 ="OHOS.DistributedData.DumpHelper2";
+    args.emplace_back(argstest1);
+    args.emplace_back(argstest2);
     DumpHelper::GetInstance().Dump(connId, args);
 
     return true;
@@ -51,7 +52,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         return 0;
     }
 
-    OHOS::OnRemoteRequestFuzz(data, size);
+    OHOS::DumpFuzz(data, size);
 
     return 0;
 }
