@@ -16,8 +16,10 @@
 
 #include "lifecycle_policy.h"
 
+#include "file.h"
 #include "log_print.h"
 #include "preprocess/preprocess_utils.h"
+#include "uri_permission_manager.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -89,9 +91,31 @@ Status LifeCyclePolicy::GetTimeoutKeys(
         if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
             || curTime < data.GetRuntime()->createTime) {
             timeoutKeys.push_back(data.GetRuntime()->key.key);
+            RevokeUriPermission(data);
         }
     }
     return E_OK;
+}
+
+void LifeCyclePolicy::RevokeUriPermission(const UnifiedData &unifiedData)
+{
+    std::string bundleName = unifiedData.GetRuntime()->key.bundleName;
+    auto records = unifiedData.GetRecords();
+    for (auto record : records) {
+        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+            auto file = static_cast<File *>(record.get());
+            if (file->GetUri().empty()) {
+                ZLOGW("Get uri is empty");
+                continue;
+            }
+            Uri uri(file->GetUri());
+            if (uri.GetAuthority().empty()) {
+                ZLOGW("Get authority is empty");
+                continue;
+            }
+            UriPermissionManager::GetInstance().RevokeUriPermission(uri, bundleName);
+        }
+    }
 }
 } // namespace UDMF
 } // namespace OHOS

@@ -47,5 +47,11 @@ Status UriPermissionManager::GrantUriPermission(
     ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
     return E_OK;
 }
+
+void UriPermissionManager::RevokeUriPermission(const Uri &uri, const std::string &bundleName)
+{
+    AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(uri, bundleName);
+}
+
 } // namespace UDMF
 } // namespace OHOS

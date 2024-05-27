@@ -29,6 +29,7 @@ public:
     static UriPermissionManager &GetInstance();
     Status GrantUriPermission(
         const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey);
+    void RevokeUriPermission(const Uri &uri, const std::string &bundleName);
 };
 } // namespace UDMF
 } // namespace OHOS
