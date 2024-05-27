@@ -203,7 +203,7 @@ int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, Bind
             DBTable &dbTable = schema.tables[i];
             dbTable.name = table.name;
             dbTable.sharedTableName = table.sharedTableName;
-            for (auto &field : table.fields) {
+            for (const auto &field : table.fields) {
                 DBField dbField;
                 dbField.colName = field.colName;
                 dbField.type = field.type;
@@ -311,7 +311,7 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
 }
 
 DBStatus KVDBGeneralStore::CloudSync(
-    const Devices &devices, DistributedDB::SyncMode &cloudSyncMode, DetailAsync async, int64_t wait)
+    const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait)
 {
     DistributedDB::CloudSyncOption syncOption;
     syncOption.devices = devices;
@@ -337,7 +337,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
             devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParm.mode);
         return GeneralError::E_ALREADY_CLOSED;
     }
-    auto dbStatus = DistributedDB::OK;
+    DBStatus dbStatus;
     auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         if (!enableCloud_) {
