@@ -26,8 +26,15 @@ using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
 using Type = DistributedDB::Type;
 const DistributedDB::Asset g_rdbAsset = {
-    .version = 1, .name = "Phone", .assetId = "0", .subpath = "/local/sync", .uri = "/local/sync",
-    .modifyTime = "123456", .createTime = "createTime", .size = "256", .hash = "ASE"
+    .version = 1,
+    .name = "Phone",
+    .assetId = "0",
+    .subpath = "/local/sync",
+    .uri = "file://rdbtest/local/sync",
+    .modifyTime = "123456",
+    .createTime = "createTime",
+    .size = "256",
+    .hash = "ASE"
 };
 namespace OHOS::Test {
 namespace DistributedRDBTest {
@@ -70,8 +77,7 @@ HWTEST_F(RdbAssetLoaderTest, Download, TestSize.Level0)
     std::string groupId = "testGroup";
     Type prefix;
     std::map<std::string, DistributedDB::Assets> assets;
-    DistributedDB::Asset asset1 = g_rdbAsset;
-    assets["asset1"].push_back(asset1);
+    assets["asset1"].push_back(g_rdbAsset);
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::OK);
 }
@@ -89,8 +95,7 @@ HWTEST_F(RdbAssetLoaderTest, RemoveLocalAssets, TestSize.Level0)
     std::shared_ptr<MockAssetLoader> cloudAssetLoader = std::make_shared<MockAssetLoader>();
     DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
     std::vector<DistributedDB::Asset> assets;
-    DistributedDB::Asset asset1 = g_rdbAsset;
-    assets.push_back(asset1);
+    assets.push_back(g_rdbAsset);
     auto result = rdbAssetLoader.RemoveLocalAssets(assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::OK);
 }
@@ -112,8 +117,7 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent, TestSize.Level0)
     std::string groupId = "testGroup";
     Type prefix;
     std::map<std::string, DistributedDB::Assets> assets;
-    DistributedDB::Asset asset1 = g_rdbAsset;
-    assets["asset1"].push_back(asset1);
+    assets["asset1"].push_back(g_rdbAsset);
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::CLOUD_ERROR);
 }

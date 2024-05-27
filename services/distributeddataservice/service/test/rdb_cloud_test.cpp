@@ -24,6 +24,16 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedRdb;
 using DBVBucket = DistributedDB::VBucket;
 using DBStatus = DistributedDB::DBStatus;
+std::vector<DBVBucket> g_DBVBucket = {
+    {
+        {"#gid", {"0000000"}},
+        {"#flag", {true}},
+        {"#value", {int64_t(100)}},
+        {"#float", {double(100)}},
+        {"#_type", {int64_t(1)}},
+        {"#_query", {Bytes({ 1, 2, 3, 4 })}}
+    }
+};
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 class RdbCloudTest : public testing::Test {
@@ -49,19 +59,11 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
     std::shared_ptr<CloudDB> cloudDB  = std::make_shared<CloudDB>();
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     std::string tableName = "testTable";
-    std::vector<DBVBucket> record = {
-        {{"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}}, {"#_query", {Bytes(bytes)}}}
-    };
-    std::vector<DBVBucket> extend = {
-        {{"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}}, {"#_query", {Bytes(bytes)}}}
-    };
-    auto result = rdbCloud.BatchInsert(tableName, std::move(record), extend);
+    auto result = rdbCloud.BatchInsert(tableName, std::move(g_DBVBucket), g_DBVBucket);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
-    result = rdbCloud.BatchUpdate(tableName, std::move(record), extend);
+    result = rdbCloud.BatchUpdate(tableName, std::move(g_DBVBucket), g_DBVBucket);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
-    result = rdbCloud.BatchDelete(tableName, extend);
+    result = rdbCloud.BatchDelete(tableName, g_DBVBucket);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
 }
 
@@ -75,34 +77,21 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
 HWTEST_F(RdbCloudTest, RdbCloudTest002, TestSize.Level1)
 {
     BindAssets bindAssets;
-    Bytes bytes;
     std::shared_ptr<CloudDB> cloudDB  = std::make_shared<CloudDB>();
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     std::string tableName = "testTable";
-    std::vector<DBVBucket> record = {
-        {{"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}}, {"#_query", {Bytes(bytes)}}}
-    };
-    std::vector<DBVBucket> extend = {
-        {{"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}}, {"#_query", {Bytes(bytes)}}}
-    };
     rdbCloud.Lock();
-    auto result = rdbCloud.BatchInsert(tableName, std::move(record), extend);
+    auto result = rdbCloud.BatchInsert(tableName, std::move(g_DBVBucket), g_DBVBucket);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
     DBVBucket extends = {
         {"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}}, {"#_query", {Bytes(bytes)}}
+        {"#_type", {int64_t(1)}}, {"#_query", {Bytes({ 1, 2, 3, 4 })}}
     };
-    std::vector<DBVBucket> data = {
-        {{"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}}, {"#_query", {Bytes(bytes)}}}
-    };
-    result = rdbCloud.Query(tableName, extends, data);
+    result = rdbCloud.Query(tableName, extends, g_DBVBucket);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
     std::vector<VBucket> vBuckets = {
         {{"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}}, {"#_query", {Bytes(bytes)}}}
+        {"#_type", {int64_t(1)}}, {"#_query", {Bytes({ 1, 2, 3, 4 })}}}
     };
     rdbCloud.PreSharing(tableName, vBuckets);
     result = rdbCloud.HeartBeat();
@@ -124,7 +113,6 @@ HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 {
     BindAssets bindAssets;
     bindAssets.bindAssets = nullptr;
-    Bytes bytes;
     std::shared_ptr<CloudDB> cloudDB  = std::make_shared<CloudDB>();
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     std::string tableName = "testTable";
@@ -140,7 +128,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 
     extends = {
         {"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}}, {"#float", {double(100)}},
-        {"#_query", {Bytes(bytes)}}
+        {"#_query", {Bytes({ 1, 2, 3, 4 })}}
     };
     result = rdbCloud.Query(tableName, extends, data);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
@@ -190,8 +178,14 @@ HWTEST_F(RdbCloudTest, BlobToAssets, TestSize.Level1)
 {
     RdbCloudDataTranslate rdbTranslate;
     DistributedDB::Asset asset = {
-        .name = "", .assetId = "", .subpath = "", .uri = "",
-        .modifyTime = "", .createTime = "", .size = "", .hash = ""
+        .name = "",
+        .assetId = "",
+        .subpath = "",
+        .uri = "",
+        .modifyTime = "",
+        .createTime = "",
+        .size = "",
+        .hash = ""
     };
     std::vector<uint8_t> blob;
     auto result = rdbTranslate.BlobToAsset(blob);
