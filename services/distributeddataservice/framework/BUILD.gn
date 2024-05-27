@@ -40,6 +40,8 @@ config("module_public_config") {
 ohos_shared_library("distributeddatasvcfwk") {
   branch_protector_ret = "pac_ret"
   sanitize = {
+    ubsan = true
+    boundary_sanitize = true
     cfi = true
     cfi_cross_dso = true
     debug = false
