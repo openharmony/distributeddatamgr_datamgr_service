@@ -338,7 +338,7 @@ HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries002, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
-    EXPECT_EQ(true, result);
+    EXPECT_TRUE(result);
 
     Key key;
     Value value;
@@ -383,7 +383,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Init, TestSize.Level1)
     dvInfo.uuid = EMPTY_DEVICE_ID;
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
-    EXPECT_EQ(true, result);
+    EXPECT_TRUE(result);
 }
 
 /**
@@ -396,7 +396,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Get001, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
-    EXPECT_EQ(true, result);
+    EXPECT_TRUE(result);
 
     Key key;
     Key keyInvalid;
@@ -428,7 +428,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
-    EXPECT_EQ(true, result);
+    EXPECT_TRUE(result);
 
     Key key;
     Value value;
@@ -458,7 +458,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
-    EXPECT_EQ(true, result);
+    EXPECT_TRUE(result);
 
     Key key;
     Value value;
@@ -481,7 +481,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level1)
     auto records = data1.GetRecords();
     EXPECT_EQ(records.size(), 0);
     status = store->GetDetailsFromUData(data1, details1);
-    EXPECT_EQ(false, status);
+    EXPECT_FALSE(status);
 }
 
 /**
@@ -494,7 +494,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
-    EXPECT_EQ(true, result);
+    EXPECT_TRUE(result);
 
     Key key;
     Value value;
@@ -523,7 +523,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
     ASSERT_EQ(inputRecords.size(), 512);
     ASSERT_EQ(0, outputRecords.size());
     status = store->GetDetailsFromUData(inputData, details1);
-    EXPECT_EQ(false, status);
+    EXPECT_FALSE(status);
 }
 
 /**
@@ -536,7 +536,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
-    EXPECT_EQ(true, result);
+    EXPECT_TRUE(result);
 
     UnifiedData data;
     UDDetails details;
