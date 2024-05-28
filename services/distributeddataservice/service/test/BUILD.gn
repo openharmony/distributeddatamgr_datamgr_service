@@ -64,8 +64,6 @@ ohos_unittest("CloudDataTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/app/src/checker/bundle_checker.cpp",
-    "${data_service_path}/app/src/checker/system_checker.cpp",
     "${data_service_path}/service/backup/src/backup_manager.cpp",
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
@@ -319,6 +317,7 @@ ohos_unittest("AutoSyncMatrixTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -422,10 +421,18 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_general_store.cpp",
+    "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
     "cache_cursor_test.cpp",
     "rdb_asset_loader_test.cpp",
+    "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",
+    "rdb_query_test.cpp",
   ]
 
   include_dirs = [
@@ -459,6 +466,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${kv_store_distributeddb_path}:distributeddb",
+    "${relational_store_inner_api_path}:native_rdb_static",
     "//third_party/googletest:gtest_main",
   ]
 }
@@ -472,6 +480,7 @@ ohos_unittest("ObjectAssetMachineTest") {
   ]
 
   include_dirs = [
+    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
     "${dataobject_path}/interfaces/innerkits",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
@@ -482,6 +491,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "c_utils:utils",
     "dfs_service:cloudsync_asset_kit_inner",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -525,6 +535,7 @@ ohos_unittest("MetaDataTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -568,6 +579,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "dataclassification:data_transit_mgr",
     "dsoftbus:softbus_client",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
@@ -749,6 +761,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddb",
@@ -795,6 +808,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]

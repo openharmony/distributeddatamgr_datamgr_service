@@ -38,7 +38,7 @@ struct API_EXPORT Table final : public Serializable {
 
 struct API_EXPORT Database final : public Serializable {
     static constexpr int32_t DEFAULT_UPLOAD_BATCH_NUMBER = 30;
-    static constexpr int32_t DEFAULT_UPLOAD_BATCH_SIZE = 1024 * 1024 * 3; // 3M
+    static constexpr int32_t DEFAULT_UPLOAD_BATCH_SIZE = 1024 * 512 * 3; // 1.5M
     std::string name = "";
     std::string alias;
     std::vector<Table> tables;

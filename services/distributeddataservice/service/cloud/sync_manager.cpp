@@ -443,6 +443,12 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
         if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
             meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
             assetLoader = instance->ConnectAssetLoader(meta.bundleName, activeUser, schemaDatabase);
+            if (assetLoader == nullptr) {
+                ZLOGE("failed, no assetLoader <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
+                    activeUser, Anonymous::Change(schemaDatabase.name).c_str(),
+                    Anonymous::Change(schemaDatabase.alias).c_str());
+                return {};
+            }
         }
         if (cloudDB == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,

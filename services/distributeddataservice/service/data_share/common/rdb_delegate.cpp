@@ -16,6 +16,7 @@
 #include "rdb_delegate.h"
 
 #include "crypto_manager.h"
+#include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
@@ -91,6 +92,8 @@ int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesB
     int ret = store_->Insert(rowId, tableName, bucket);
     if (ret != E_OK) {
         ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::INSERT_RDB_ERROR);
     }
     return rowId;
 }
@@ -107,6 +110,8 @@ int64_t RdbDelegate::Update(
     int ret = store_->Update(changeCount, bucket, predicates);
     if (ret != E_OK) {
         ZLOGE("Update failed  %{public}s %{public}d", tableName.c_str(), ret);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::UPDATE_RDB_ERROR);
     }
     return changeCount;
 }
@@ -121,6 +126,8 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
     int ret = store_->Delete(changeCount, predicates);
     if (ret != E_OK) {
         ZLOGE("Delete failed  %{public}s %{public}d", tableName.c_str(), ret);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::DELETE_RDB_ERROR);
     }
     return changeCount;
 }
@@ -142,6 +149,8 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     RdbPredicates rdbPredicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicates, tableName);
     std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(rdbPredicates, columns);
     if (resultSet == nullptr) {
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::QUERY_RDB_ERROR);
         ZLOGE("Query failed %{public}s", tableName.c_str());
         resultSetCount--;
         return std::make_pair(E_ERROR, nullptr);

@@ -35,6 +35,7 @@
 #include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
+#include "object_radar_reporter.h"
 
 namespace OHOS::DistributedObject {
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -63,6 +64,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
+    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::IDLE);
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
@@ -70,12 +72,16 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     }
     if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object save permission denied");
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, ObjectStore::NO_PERMISSION, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         return OBJECT_PERMISSION_DENIED;
     }
     status = ObjectStoreManager::GetInstance()->Save(bundleName, sessionId, data, deviceId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
+    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_SUCCESS, ObjectStore::BIZ_STATE,
+        ObjectStore::FINISHED);
     return status;
 }
 
@@ -200,11 +206,15 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     }
     if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
         ZLOGE("object retrieve permission denied");
+        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, ObjectStore::NO_PERMISSION, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         return OBJECT_PERMISSION_DENIED;
     }
     status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback, tokenId);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
+        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, status, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         return status;
     }
     return OBJECT_SUCCESS;

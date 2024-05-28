@@ -96,6 +96,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
+    "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -158,6 +159,7 @@ ohos_unittest("SessionManagerTest") {
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -199,6 +201,7 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -267,6 +270,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

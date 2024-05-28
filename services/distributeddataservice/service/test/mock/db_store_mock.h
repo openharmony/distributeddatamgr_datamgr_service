@@ -109,7 +109,6 @@ public:
     std::pair<DBStatus, std::map<std::string, std::string>> GetCloudVersion(const std::string &device) override;
     DBStatus SetReceiveDataInterceptor(const DataInterceptor &interceptor) override;
     DBStatus SetCloudSyncConfig(const CloudSyncConfig &config) override;
-    void Reset();
 private:
     static const uint32_t DEFAULT_SIZE = 0;
     DBStatus Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const;

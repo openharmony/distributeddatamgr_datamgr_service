@@ -30,6 +30,7 @@
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "kvstore_data_service.h"
+#include "kv_radar_reporter.h"
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
@@ -139,7 +140,10 @@ void KvStoreMetaManager::InitDeviceOnline()
                 finEvent->SetRefCount(std::move(refCount));
                 auto it = statuses.find(deviceId);
                 if (it != statuses.end() && it->second == DBStatus::OK) {
+                    RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_COMPLETE, RADAR_SUCCESS, BIZ_STATE, END);
                     DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
+                } else if (it != statuses.end() && it->second != DBStatus::OK) {
+                    RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_COMPLETE, RADAR_FAILED, BIZ_STATE, END);
                 }
                 ZLOGI("dynamic:0x%{public}08x statics:0x%{public}08x device:%{public}s status:%{public}d online",
                     data.dynamic, data.statics, Anonymous::Change(deviceId).c_str(),
@@ -149,10 +153,14 @@ void KvStoreMetaManager::InitDeviceOnline()
         auto store = GetMetaKvStore();
         uint16_t mask = data.dynamic & DEFAULT_MASK;
         if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
+            RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_SYNC, RADAR_START, BIZ_STATE, START,
+                OS_TYPE, DmAdapter::GetInstance().IsOHOSType(deviceId));
             auto status = store->Sync({ deviceId }, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
             if (status == OK) {
+                RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_SYNC, RADAR_SUCCESS);
                 return;
             }
+            RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_SYNC, RADAR_FAILED, BIZ_STATE, END);
             ZLOGW("meta online sync error 0x%{public}08x device:%{public}s %{public}d", mask,
                 Anonymous::Change(deviceId).c_str(), status);
         }
@@ -275,7 +283,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
         auto fullName = GetBackupPath();
         auto backup = [fullName](const auto &store) -> int32_t {
             DistributedDB::CipherPassword password;
-            return store->Export(fullName, password);
+            return store->Export(fullName, password, true);
         };
         MetaDataManager::GetInstance().Initialize(metaDelegate_, backup);
     }
@@ -286,21 +294,30 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
 {
     DistributedDB::DBStatus dbStatusTmp = DistributedDB::DBStatus::NOT_SUPPORT;
     DistributedDB::KvStoreNbDelegate::Option option;
-    option.createIfNecessary = true;
-    option.isMemoryDb = false;
-    option.createDirByStoreIdOnly = true;
-    option.isEncryptedDb = false;
-    option.isNeedIntegrityCheck = true;
-    option.isNeedRmCorruptedDb = true;
-    option.isNeedCompressOnSync = true;
-    option.compressionRate = COMPRESS_RATE;
-    option.secOption = { DistributedDB::S1, DistributedDB::ECE };
+    InitDBOption(option);
     DistributedDB::KvStoreNbDelegate *delegate = nullptr;
     delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
         [&delegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *nbDelegate) {
             delegate = nbDelegate;
             dbStatusTmp = dbStatus;
         });
+
+    if (dbStatusTmp == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("meta data corrupted!");
+        option.isNeedRmCorruptedDb = true;
+        auto fullName = GetBackupPath();
+        delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
+            [&delegate, &dbStatusTmp, &fullName](DistributedDB::DBStatus dbStatus,
+                DistributedDB::KvStoreNbDelegate *nbDelegate) {
+                delegate = nbDelegate;
+                dbStatusTmp = dbStatus;
+                if (dbStatusTmp == DistributedDB::DBStatus::OK && delegate != nullptr) {
+                    ZLOGI("start to recover meta data");
+                    DistributedDB::CipherPassword password;
+                    delegate->Import(fullName, password);
+                }
+            });
+    }
 
     if (dbStatusTmp != DistributedDB::DBStatus::OK || delegate == nullptr) {
         ZLOGE("GetKvStore return error status: %{public}d or delegate is nullptr", static_cast<int>(dbStatusTmp));
@@ -325,6 +342,19 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
         }
     };
     return NbDelegate(delegate, release);
+}
+
+void KvStoreMetaManager::InitDBOption(DistributedDB::KvStoreNbDelegate::Option &option)
+{
+    option.createIfNecessary = true;
+    option.isMemoryDb = false;
+    option.createDirByStoreIdOnly = true;
+    option.isEncryptedDb = false;
+    option.isNeedIntegrityCheck = true;
+    option.isNeedRmCorruptedDb = false;
+    option.isNeedCompressOnSync = true;
+    option.compressionRate = COMPRESS_RATE;
+    option.secOption = { DistributedDB::S1, DistributedDB::ECE };
 }
 
 void KvStoreMetaManager::SetCloudSyncer()

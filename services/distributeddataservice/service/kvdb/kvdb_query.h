@@ -25,10 +25,8 @@ namespace OHOS::DistributedKv {
 class KVDBQuery : public DistributedData::GenQuery {
 public:
     static constexpr uint64_t TYPE_ID = 0x20000002;
-
-    explicit KVDBQuery(const std::string &query)
+    explicit KVDBQuery(const std::string &query) : query_(query)
     {
-        query_ = query;
         dbQuery_ = QueryHelper::StringToDbQuery(query, isSuccess_);
     }
     ~KVDBQuery() = default;

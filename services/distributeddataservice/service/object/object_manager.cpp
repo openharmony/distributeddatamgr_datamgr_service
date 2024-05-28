@@ -35,6 +35,7 @@
 #include "metadata/store_meta_data.h"
 #include "object_asset_loader.h"
 #include "object_data_listener.h"
+#include "object_radar_reporter.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -112,6 +113,8 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
         proxy->Completed(std::map<std::string, int32_t>());
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, ObjectStore::GETKV_FAILED, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         return STORE_NOT_OPEN;
     }
 
@@ -134,6 +137,8 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     if (result != OBJECT_SUCCESS) {
         ZLOGE("sync failed, errCode = %{public}d", result);
         proxy->Completed(std::map<std::string, int32_t>());
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, result, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
     }
     Close();
     return result;
@@ -187,7 +192,7 @@ int32_t ObjectStoreManager::Retrieve(
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
         proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
-        return STORE_NOT_OPEN;
+        return ObjectStore::GETKV_FAILED;
     }
 
     std::map<std::string, std::vector<uint8_t>> results{};
@@ -210,6 +215,8 @@ int32_t ObjectStoreManager::Retrieve(
     Assets assets = GetAssetsFromDBRecords(results);
     if (assets.empty() || results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == results.end()) {
         proxy->Completed(results);
+        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_SUCCESS,
+            ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         return status;
     }
     int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
@@ -218,6 +225,8 @@ int32_t ObjectStoreManager::Retrieve(
         results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)->second, deviceId);
     ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assets, [=](bool success) {
         proxy->Completed(results);
+        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_SUCCESS,
+            ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
     });
     return status;
 }
@@ -609,6 +618,8 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     auto status = delegate_->PutBatch(entries);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("putBatch fail %{public}d", status);
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, status, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
     }
     return status;
 }

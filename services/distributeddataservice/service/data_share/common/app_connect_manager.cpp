@@ -16,6 +16,7 @@
 
 #include "app_connect_manager.h"
 
+#include "datashare_radar_reporter.h"
 #include "extension_ability_manager.h"
 #include "log_print.h"
 
@@ -35,6 +36,8 @@ bool AppConnectManager::Wait(const std::string &bundleName,
     ZLOGI("start connect %{public}s", bundleName.c_str());
     result = connect();
     if (!result) {
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CONNECT_EXT,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::CONNECT_EXTENSION_ERROR);
         ZLOGE("connect failed %{public}s", bundleName.c_str());
         blockCache_.Erase(bundleName);
         return false;
