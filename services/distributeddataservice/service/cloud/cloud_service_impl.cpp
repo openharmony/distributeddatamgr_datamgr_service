@@ -269,14 +269,19 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
     return SUCCESS;
 }
 
-std::pair<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromExtraData(const ExtraData &extraData,
-    const SchemaMeta &schemaMeta)
+std::map<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromExtraData(
+    const ExtraData &extraData, const SchemaMeta &schemaMeta)
 {
+    std::map<std::string, std::vector<std::string>> dbInfos;
     for (auto &db : schemaMeta.databases) {
         if (db.alias != extraData.info.containerName) {
             continue;
         }
         std::vector<std::string> tables;
+        if (extraData.info.tables.size() == 0) {
+            dbInfos.emplace(db.name, std::move(tables));
+            continue;
+        }
         for (auto &table : db.tables) {
             const auto &tbs = extraData.info.tables;
             if (std::find(tbs.begin(), tbs.end(), table.alias) == tbs.end()) {
@@ -291,9 +296,20 @@ std::pair<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFrom
                 tables.emplace_back(table.sharedTableName);
             }
         }
-        return { db.name, std::move(tables) };
+        if (!tables.empty()) {
+            dbInfos.emplace(db.name, std::move(tables));
+        }
     }
-    return { "", {} };
+    if (dbInfos.empty()) {
+        for (auto &db : schemaMeta.databases) {
+            if (db.alias != extraData.info.containerName) {
+                continue;
+            }
+            std::vector<std::string> tables;
+            dbInfos.emplace(db.name, std::move(tables));
+        }
+    }
+    return dbInfos;
 }
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
@@ -337,13 +353,15 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             ZLOGE("no exist meta, user:%{public}d", user);
             return INVALID_ARGUMENT;
         }
-        auto [storeId, tables] = GetDbInfoFromExtraData(exData, schemaMeta);
-        if (storeId.empty()) {
-            ZLOGE("invalid data, storeId:%{public}s, tables size:%{public}zu", Anonymous::Change(storeId).c_str(),
-                tables.size());
+        auto dbInfos = GetDbInfoFromExtraData(exData, schemaMeta);
+        if (dbInfos.empty()) {
+            ZLOGE("GetDbInfoFromExtraData failed, empty database info.");
             return INVALID_ARGUMENT;
         }
-        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, storeId, tables));
+        for (auto &dbInfo : dbInfos) {
+            syncManager_.DoCloudSync(
+                SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second));
+        }
     }
     return SUCCESS;
 }
