@@ -339,7 +339,6 @@ HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries002, TestSize.Level1)
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
     EXPECT_TRUE(result);
-
     Key key;
     Value value;
     GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
