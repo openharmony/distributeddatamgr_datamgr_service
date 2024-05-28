@@ -35,8 +35,8 @@ bool DumpFuzz(const uint8_t *data, size_t size)
 {
     int connId = static_cast<int>(*data);
     std::vector<std::string> args;
-    const std::string argstest1 ="OHOS.DistributedData.DumpHelper1";
-    const std::string argstest2 ="OHOS.DistributedData.DumpHelper2";
+    const std::string argstest1 = "OHOS.DistributedData.DumpHelper1";
+    const std::string argstest2 = "OHOS.DistributedData.DumpHelper2";
     args.emplace_back(argstest1);
     args.emplace_back(argstest2);
     DumpHelper::GetInstance().Dump(connId, args);
