@@ -322,7 +322,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         AccountDelegate::GetInstance()->SubscribeAccountEvent();
         Installer::GetInstance().Init(this, executors_);
     } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
-        Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 1,
+        Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1,
                                                                 DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     }
     return;
@@ -554,8 +554,7 @@ Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vec
 void KvStoreDataService::OnStop()
 {
     ZLOGI("begin.");
-    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 0,
-                                                            DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 0, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
