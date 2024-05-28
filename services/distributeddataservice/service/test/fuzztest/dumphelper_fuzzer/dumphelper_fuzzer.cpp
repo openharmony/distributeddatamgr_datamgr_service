@@ -25,7 +25,6 @@
 #include "securec.h"
 #include "token_setproc.h"
 #include <vector>
-
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 
