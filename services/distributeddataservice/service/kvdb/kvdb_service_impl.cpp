@@ -346,14 +346,14 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, Sync
             Anonymous::Change(syncInfo.devices[0]).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    if (DeviceMatrix::GetInstance().IsSupportMatrix()
-            && ((!DeviceMatrix::GetInstance().IsStatics(metaData) && !DeviceMatrix::GetInstance().IsDynamic(metaData))
-            || !IsRemoteChange(metaData, device))) {
-        ZLOGD("no change, do not need sync, appId:%{public}s storeId:%{public}s",
-            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
-        DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
-        DoComplete(metaData, syncInfo, RefCount(), std::move(dbResult));
-        return SUCCESS;
+    if (DeviceMatrix::GetInstance().IsSupportMatrix() &&
+        ((!DeviceMatrix::GetInstance().IsStatics(metaData) && !DeviceMatrix::GetInstance().IsDynamic(metaData)) ||
+        !IsRemoteChange(metaData, device))) {
+            ZLOGD("no change, do not need sync, appId:%{public}s storeId:%{public}s",
+                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
+            DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
+            DoComplete(metaData, syncInfo, RefCount(), std::move(dbResult));
+            return SUCCESS;
     }
     syncInfo.syncId = ++syncId_;
     RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
@@ -531,11 +531,11 @@ void KVDBServiceImpl::OnStaticsChange(const std::string &networkId, std::pair<ui
 void KVDBServiceImpl::OnDynamicChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
 {
     syncAgents_.ForEachCopies([networkId, mask](const auto &key, auto &value) {
-      StoreMetaData meta;
-      meta.appId = value.appId_;
-      meta.tokenId = key;
-      meta.bundleName = value.appId_;
-      meta.dataType = DataType::TYPE_DYNAMICAL;
+        StoreMetaData meta;
+        meta.appId = value.appId_;
+        meta.tokenId = key;
+        meta.bundleName = value.appId_;
+        meta.dataType = DataType::TYPE_DYNAMICAL;
         if (!DeviceMatrix::GetInstance().IsDynamic(meta)) {
             return false;
         }
