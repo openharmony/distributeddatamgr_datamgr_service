@@ -46,7 +46,7 @@ public:
         DYNAMIC,
         BUTT,
     };
-    enum ChangeType : int32_t {
+    enum ChangeType : uint32_t {
         CHANGE_LOCAL = 0x1,
         CHANGE_REMOTE = 0x2,
         CHANGE_ALL = 0x3,
@@ -59,7 +59,7 @@ public:
         uint16_t switchesLen = INVALID_LENGTH;
         bool IsValid() const;
     };
-    
+
     static DeviceMatrix &GetInstance();
     bool Initialize(uint32_t token, std::string storeId);
     void Online(const std::string &device, RefCount refCount = {});
