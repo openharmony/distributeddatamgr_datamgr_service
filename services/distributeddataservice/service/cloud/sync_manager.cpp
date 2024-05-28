@@ -38,7 +38,6 @@ using namespace SharingUtil;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
-const char *DEFAULT_ACCOUNT_UID = "ohosAnonymousUid";
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Store &store, const Tables &tables)
     : user_(user), bundleName_(bundleName)
@@ -508,7 +507,7 @@ void SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
             return;
         }
         auto accountId = Account::GetInstance()->GetCurrentAccountId();
-        if (!DmAdapter::GetInstance().IsNetworkAvailable() || accountId.empty() || accountId == DEFAULT_ACCOUNT_UID) {
+        if (!DmAdapter::GetInstance().IsNetworkAvailable() || !Account::GetInstance()->IsLoginAccount()) {
             return;
         }
         cloud = instance->GetServerInfo(cloud.user);
