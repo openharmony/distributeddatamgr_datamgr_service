@@ -347,7 +347,7 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, Sync
         return Status::INVALID_ARGUMENT;
     }
     if (DeviceMatrix::GetInstance().IsSupportMatrix()
-            && ((!DeviceMatrix::GetInstance().IsStatics(meta) && !DeviceMatrix::GetInstance().IsDynamic(meta))
+            && ((!DeviceMatrix::GetInstance().IsStatics(metaData) && !DeviceMatrix::GetInstance().IsDynamic(metaData))
             || !IsRemoteChange(metaData, device))) {
         ZLOGD("no change, do not need sync, appId:%{public}s storeId:%{public}s",
             metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
