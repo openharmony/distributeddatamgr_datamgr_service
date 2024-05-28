@@ -495,21 +495,20 @@ void KVDBServiceImpl::RegisterMatrixChange()
         if (networkId.empty()) {
             return;
         }
-        StoreMetaData meta;
-        meta.appId = value.appId_;
-        meta.tokenId = key;
-        meta.bundleName = value.appId_;
-        meta.dataType = DataType::TYPE_DYNAMICAL;
+
         OnDynamicChange(meta, networkId, mask);
-        meta.dataType = DataType::TYPE_STATICS;
         OnStaticsChange(meta, networkId, mask);
     });
 }
 
-void KVDBServiceImpl::OnStaticsChange(
-    const StoreMetaData &meta, const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
+void KVDBServiceImpl::OnStaticsChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
 {
-    syncAgents_.ForEachCopies([networkId, mask, meta](const auto &key, auto &value) {
+    syncAgents_.ForEachCopies([networkId, mask](const auto &key, auto &value) {
+        StoreMetaData meta;
+        meta.appId = value.appId_;
+        meta.tokenId = key;
+        meta.bundleName = value.appId_;
+        meta.dataType = DataType::TYPE_STATICS;
         if (!DeviceMatrix::GetInstance().IsStatics(meta)) {
             return false;
         }
@@ -528,10 +527,14 @@ void KVDBServiceImpl::OnStaticsChange(
     });
 }
 
-void KVDBServiceImpl::OnDynamicChange(
-    const StoreMetaData &meta, const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
+void KVDBServiceImpl::OnDynamicChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
 {
-    syncAgents_.ForEachCopies([networkId, mask, meta](const auto &key, auto &value) {
+    syncAgents_.ForEachCopies([networkId, mask](const auto &key, auto &value) {
+      StoreMetaData meta;
+      meta.appId = value.appId_;
+      meta.tokenId = key;
+      meta.bundleName = value.appId_;
+      meta.dataType = DataType::TYPE_DYNAMICAL;
         if (!DeviceMatrix::GetInstance().IsDynamic(meta)) {
             return false;
         }

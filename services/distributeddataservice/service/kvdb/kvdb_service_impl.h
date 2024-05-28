@@ -148,8 +148,8 @@ private:
     void TryToSync(const StoreMetaData &metaData, bool force = false);
     void SyncOnSessionReady(const std::string &device);
     void OldOnlineSync(const StoreMetaData &data, const std::string &deviceId, RefCount refCount, uint16_t mask);
-    void OnStaticsChange(const StoreMetaData &meta, const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
-    void OnDynamicChange(const StoreMetaData &meta, const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
+    void OnStaticsChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
+    void OnDynamicChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
