@@ -298,6 +298,7 @@ void KvStoreDataService::OnStart()
         }
     }
     AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
+    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
     RegisterStoreInfo();
     Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
         std::placeholders::_2);
@@ -317,11 +318,14 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
 {
     ZLOGI("add system abilityid:%{public}d", systemAbilityId);
     (void)deviceId;
-    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
-        return;
+    if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
+        AccountDelegate::GetInstance()->SubscribeAccountEvent();
+        Installer::GetInstance().Init(this, executors_);
+    } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
+        Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1,
+                                                                DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     }
-    AccountDelegate::GetInstance()->SubscribeAccountEvent();
-    Installer::GetInstance().Init(this, executors_);
+    return;
 }
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -367,8 +371,6 @@ void KvStoreDataService::StartService()
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
     ZLOGI("Start distributedata Success, Publish ret: %{public}d", static_cast<int>(ret));
-    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 1,
-                                                            DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 void KvStoreDataService::OnStoreMetaChanged(
@@ -552,8 +554,7 @@ Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vec
 void KvStoreDataService::OnStop()
 {
     ZLOGI("begin.");
-    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(IPCSkeleton::GetCallingPid(), 1, 0,
-                                                            DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 0, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
