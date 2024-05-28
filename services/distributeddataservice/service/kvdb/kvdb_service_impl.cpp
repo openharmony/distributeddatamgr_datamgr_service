@@ -496,8 +496,8 @@ void KVDBServiceImpl::RegisterMatrixChange()
             return;
         }
 
-        OnDynamicChange(meta, networkId, mask);
-        OnStaticsChange(meta, networkId, mask);
+        OnDynamicChange(networkId, mask);
+        OnStaticsChange(networkId, mask);
     });
 }
 
