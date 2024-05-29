@@ -25,10 +25,12 @@
 #include "kvstore_meta_manager.h"
 #include "metadata/meta_data_manager.h"
 #include "nativetoken_kit.h"
+#include "text.h"
 #include "token_setproc.h"
 #define private public
 #include "store/runtime_store.h"
 #undef private
+
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
@@ -37,7 +39,8 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Entry = DistributedDB::Entry;
 using Key = DistributedDB::Key;
 using Value = DistributedDB::Value;
-
+using UnifiedData = OHOS::UDMF::UnifiedData;
+using Summary =  OHOS::UDMF::Summary;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 
@@ -88,6 +91,8 @@ public:
     const uint32_t MAX_VALUE_SIZE = 4 * 1024 * 1024;
     const std::string STORE_ID = "drag";
     const std::string KEY_PREFIX = "TEST_";
+    const std::string EMPTY_DEVICE_ID = "";
+    static constexpr size_t tempUdataRecordSize = 1;
 };
 
 void UdmfRunTimeStoreTest::GetRandomKey(std::vector<uint8_t>& key, uint32_t defaultSize)
@@ -321,6 +326,228 @@ HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries001, TestSize.Level1)
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
     EXPECT_EQ(0, entries.size());
+}
+
+/**
+* @tc.name: DeleteEntries002
+* @tc.desc: check for illegal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries002, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    Key key;
+    Value value;
+    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
+    GetRandomValue(value, MAX_VALUE_SIZE);            // 4M
+    vector<Entry> entrysRand(127, { key, value });
+    vector<Key> keys(3970);
+    Value emptyValue;
+    for (int i = 0; i < 3970; ++i) {
+        GetRandomKey(keys[i], 3970);
+        entrysRand.push_back({ keys[i], emptyValue });
+    }
+
+    int32_t status = store->PutEntries(entrysRand);
+    EXPECT_EQ(E_DB_ERROR, status);
+
+    vector<Entry> entries;
+    status = store->GetEntries(KEY_PREFIX, entries);
+    EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(0, entries.size());
+
+    status = store->DeleteEntries(keys);
+    EXPECT_EQ(E_DB_ERROR, status);
+
+    entries.clear();
+    status = store->GetEntries(KEY_PREFIX, entries);
+    EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(0, entries.size());
+}
+
+/**
+* @tc.name: Init
+* @tc.desc: check for illegal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Init, TestSize.Level1)
+{
+    auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
+    auto uuid = DeviceManagerAdapter::GetInstance().GetUuidByNetworkId(EMPTY_DEVICE_ID);
+    EXPECT_TRUE(uuid.empty());
+    dvInfo.uuid = EMPTY_DEVICE_ID;
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name: Get001
+* @tc.desc: check for illegal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Get001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Key key;
+    Key keyInvalid;
+    Value value;
+    Value valueInvalid;
+    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
+    GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1);       // 1K + 1
+    GetRandomValue(value, MAX_VALUE_SIZE);            // 4M
+    GetRandomValue(valueInvalid, MAX_VALUE_SIZE + 1); // 4M + 1
+    vector<Entry> entrysMix1(1, { keyInvalid, value });
+    vector<Entry> entrysMix2(1, { key, valueInvalid });
+    UnifiedData unifiedData;
+    int32_t status = store->PutEntries(entrysMix1);
+    EXPECT_EQ(E_DB_ERROR, status);
+    status = store->GetEntries(KEY_PREFIX, entrysMix1);
+    EXPECT_EQ(E_OK, status);
+
+    status = store->Get(KEY_PREFIX, unifiedData);
+    EXPECT_EQ(E_NOT_FOUND, status);
+}
+
+/**
+* @tc.name: Get002
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Key key;
+    Value value;
+    GetRandomKey(key, MAX_KEY_SIZE);       // 1K
+    GetRandomValue(value, MAX_VALUE_SIZE); // 4M
+    vector<Entry> entrysRand(127, { key, value });
+    Value emptyValue;
+    for (int i = 0; i < 3970; i++) {
+        entrysRand.push_back({ key, emptyValue });
+    }
+    auto status = store->PutEntries(entrysRand);
+    EXPECT_EQ(E_DB_ERROR, status);
+    status = store->GetEntries(EMPTY_DEVICE_ID, entrysRand);
+    EXPECT_EQ(E_OK, status);
+    UnifiedData data1;
+    status = store->Get(EMPTY_DEVICE_ID, data1);
+    EXPECT_EQ(E_NOT_FOUND, status);
+}
+
+/**
+* @tc.name: GetDetailsFromUData
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Key key;
+    Value value;
+    GetRandomValue(value, MAX_KEY_SIZE); // 1K
+    vector<Entry> entrysRand;
+    for (int i = 0; i < 129; ++i) {
+        GetRandomKey(key, MAX_KEY_SIZE); // 1K
+        entrysRand.push_back({ key, value });
+    }
+
+    int32_t status = store->PutEntries(entrysRand);
+    EXPECT_EQ(E_OK, status);
+    vector<Entry> entries;
+    status = store->GetEntries(KEY_PREFIX, entries);
+    EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(129, entries.size());
+    UnifiedData data1;
+    UDDetails details1;
+    details1.insert({ "udmf_key", "udmf_value" });
+    auto records = data1.GetRecords();
+    EXPECT_EQ(records.size(), 0);
+    status = store->GetDetailsFromUData(data1, details1);
+    EXPECT_FALSE(status);
+}
+
+/**
+* @tc.name: GetDetailsFromUData01
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Key key;
+    Value value;
+    GetRandomValue(value, MAX_KEY_SIZE); // 1K
+    vector<Entry> entrysRand;
+    for (int i = 0; i < 129; ++i) {
+        GetRandomKey(key, MAX_KEY_SIZE); // 1K
+        entrysRand.push_back({ key, value });
+    }
+
+    int32_t status = store->PutEntries(entrysRand);
+    EXPECT_EQ(E_OK, status);
+    vector<Entry> entries;
+    status = store->GetEntries(KEY_PREFIX, entries);
+    EXPECT_EQ(E_OK, status);
+    UDDetails details1;
+    details1.insert({ "udmf_key", "udmf_value" });
+    UnifiedData inputData;
+    std::vector<std::shared_ptr<UnifiedRecord>> inputRecords;
+    for (int32_t i = 0; i < 512; ++i) {
+        inputRecords.emplace_back(std::make_shared<Text>());
+    }
+    inputData.SetRecords(inputRecords);
+    UnifiedData outputData;
+    auto outputRecords = outputData.GetRecords();
+    ASSERT_EQ(inputRecords.size(), 512);
+    ASSERT_EQ(0, outputRecords.size());
+    status = store->GetDetailsFromUData(inputData, details1);
+    EXPECT_FALSE(status);
+}
+
+/**
+* @tc.name: GetSummary
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    UnifiedData data;
+    UDDetails details;
+    details.insert({ "udmf_key", "udmf_value" });
+    Text text;
+    text.SetDetails(details);
+    std::shared_ptr<UnifiedRecord> record1 = std::make_shared<Text>(text);
+    data.AddRecord(record1);
+
+    Summary summary;
+    auto status = store->GetSummary(KEY_PREFIX, summary);
+    ASSERT_EQ(status, E_DB_ERROR);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
