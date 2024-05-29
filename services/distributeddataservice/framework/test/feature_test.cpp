@@ -18,12 +18,11 @@
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
 namespace DistributedDB {
 struct AutoLaunchParam {
 };
 }
-
+namespace OHOS::Test {
 class FeatureSystemTest : public testing::Test {
 };
 
@@ -234,7 +233,7 @@ HWTEST_F(FeatureSystemTest, OnUserChangeTest, TestSize.Level1)
 
 /**
 * @tc.name: FeatureTest002
-* @tc.desc: online and offline and onReady
+* @tc.desc: online and offline and onReady and onSessionReady
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: MengYao
@@ -254,4 +253,8 @@ HWTEST_F(FeatureSystemTest, FeatureTest002, TestSize.Level1)
 
     ret = mockFeature.OnReady(device);
     EXPECT_EQ(ret, E_OK);
+
+    ret = mockFeature.OnSessionReady(device);
+    EXPECT_EQ(ret, E_OK);
 }
+} // namespace OHOS::Test

@@ -120,7 +120,7 @@ ohos_unittest("SerializableTest") {
   ]
 }
 
-ohos_unittest("UtilsTest") {
+ohos_unittest("ServiceUtilsTest") {
   module_out_path = module_output_path
 
   sources = [ "utils_test.cpp" ]
@@ -369,7 +369,7 @@ group("unittest") {
     ":StoreMetaDataLocalTest",
     ":StoreTest",
     ":SubscriptionTest",
-    ":UtilsTest",
+    ":ServiceUtilsTest",
   ]
 }
 ###############################################################################

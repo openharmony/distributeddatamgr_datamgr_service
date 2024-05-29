@@ -19,7 +19,7 @@
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
+namespace OHOS::Test {
 class GeneralStoreTest : public testing::Test {};
 
 /**
@@ -85,5 +85,12 @@ HWTEST_F(GeneralStoreTest, BindInfo, TestSize.Level1)
     GeneralStore::BindInfo bindInfo(db, loader);
     ASSERT_EQ(bindInfo.db_, db);
     ASSERT_EQ(bindInfo.loader_, loader);
-}
 
+    std::shared_ptr<CloudDB> dbs = db;
+    std::shared_ptr<AssetLoader> loaders = loader;
+    GeneralStore::BindInfo bindInfos(dbs, loaders);
+    ASSERT_EQ(bindInfos.db_, dbs);
+    ASSERT_EQ(bindInfos.loader_, loaders);
+    EXPECT_FALSE(bindInfo < bindInfos);
+}
+} // namespace OHOS::Test
