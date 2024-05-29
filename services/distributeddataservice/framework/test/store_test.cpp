@@ -110,6 +110,7 @@ HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
 HWTEST_F(AutoCacheTest, OnChange001, TestSize.Level2)
 {
     GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     int32_t user = 0;
     AutoCache::Delegate delegate(store, watchers, user);
@@ -131,6 +132,7 @@ HWTEST_F(AutoCacheTest, OnChange001, TestSize.Level2)
 HWTEST_F(AutoCacheTest, OnChange002, TestSize.Level2)
 {
     GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     int32_t user = 0;
     AutoCache::Delegate delegate(store, watchers, user);
@@ -152,6 +154,7 @@ HWTEST_F(AutoCacheTest, OnChange002, TestSize.Level2)
 HWTEST_F(AutoCacheTest, operatorStore, TestSize.Level2)
 {
     GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     int32_t user = 0;
     AutoCache::Delegate delegate(store, watchers, user);

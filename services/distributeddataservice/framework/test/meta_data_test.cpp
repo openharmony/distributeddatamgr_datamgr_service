@@ -765,6 +765,7 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
     MatrixMetaData matrixMetaData2;
     matrixMetaData2.version = 0;
     matrixMetaData2.deviceId = "PEER_DEVICE_ID";
+
     MatrixMetaData matrixMetaData3;
     matrixMetaData3.version = 1;
     matrixMetaData3.deviceId = "DEVICE_ID";
