@@ -83,7 +83,7 @@ void OnDataLevelChanged(const char* networkId, const DataLevel dataLevel)
 }
 
 IDataLevelCb g_callback = {
-    .OnDataLevelChanged = OnDataLevelChanged,
+    .onDataLevelChanged = OnDataLevelChanged,
 };
 } // namespace
 SoftBusAdapter::SoftBusAdapter()
