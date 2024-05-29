@@ -439,18 +439,18 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
             continue;
         }
         auto cloudDB = instance->ConnectCloudDB(meta.bundleName, activeUser, schemaDatabase);
-        std::shared_ptr<AssetLoader> assetLoader = nullptr;
-        if (meta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
-            meta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
-            assetLoader = instance->ConnectAssetLoader(meta.bundleName, activeUser, schemaDatabase);
-            if (assetLoader == nullptr) {
-                ZLOGE("failed, no assetLoader <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId,
-                    activeUser, Anonymous::Change(schemaDatabase.name).c_str(),
-                    Anonymous::Change(schemaDatabase.alias).c_str());
-                return {};
-            }
-        }
         if (cloudDB == nullptr) {
+            ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
+                Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
+            return {};
+        }
+        if (meta.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN &&
+            meta.storeType <= StoreMetaData::StoreType::STORE_KV_END) {
+            bindInfos.insert_or_assign(activeUser, GeneralStore::BindInfo{ std::move(cloudDB), nullptr });
+            continue;
+        }
+        auto assetLoader = instance->ConnectAssetLoader(meta.bundleName, activeUser, schemaDatabase);
+        if (assetLoader == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
             return {};

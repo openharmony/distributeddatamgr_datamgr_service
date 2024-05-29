@@ -800,7 +800,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
     }
     std::string schemaKey = cloudInfo.GetSchemaKey(bundleName, instanceId);
     if (MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) &&
-        schemaMeta.version == SchemaMeta::CURRENT_VERSION) {
+        schemaMeta.metaVersion == SchemaMeta::CURRENT_VERSION) {
         return { SUCCESS, schemaMeta };
     }
     if (!Account::GetInstance()->IsVerified(userId)) {

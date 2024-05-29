@@ -67,7 +67,8 @@ public:
     static constexpr const char *SHARING_RESOURCE = "#_sharing_resource";
     static constexpr const char *HASH_KEY = "#_hash_key";
 
-    static constexpr int32_t CURRENT_VERSION = 0x10;
+    static constexpr int32_t CURRENT_VERSION = 1;
+    int32_t metaVersion = CURRENT_VERSION;
     int32_t version = CURRENT_VERSION;
     std::string bundleName;
     std::vector<Database> databases;
