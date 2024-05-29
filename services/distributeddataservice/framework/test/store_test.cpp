@@ -16,14 +16,18 @@
 
 #include "access_token.h"
 #include "gtest/gtest.h"
+#include "general_store_mock.h"
 #include "log_print.h"
 #include "rdb_query.h"
 #include "rdb_types.h"
+#include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
+#include "store/general_watcher.h"
+
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
+namespace OHOS::Test {
 class GeneralValueTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
@@ -31,7 +35,16 @@ public:
     void SetUp(){};
     void TearDown(){};
 };
+
 class GeneralStoreTest : public testing::Test {
+public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
+};
+
+class AutoCacheTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
@@ -86,3 +99,68 @@ HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
     auto highMode = GeneralStore::GetHighMode(mixMode);
     EXPECT_EQ(highMode, GeneralStore::AUTO_SYNC_MODE);
 }
+
+/**
+* @tc.name: OnChange001
+* @tc.desc: AutoCache Delegate OnChange
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(AutoCacheTest, OnChange001, TestSize.Level2)
+{
+    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    AutoCache::Watchers watchers;
+    int32_t user = 0;
+    AutoCache::Delegate delegate(store, watchers, user);
+    delegate.SetObservers(watchers);
+    GeneralWatcher::Origin origin;
+    GeneralWatcher::PRIFields primaryFields;
+    GeneralWatcher::ChangeInfo values;
+    auto ret = delegate.OnChange(origin, primaryFields, std::move(values));
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: OnChange002
+* @tc.desc: AutoCache Delegate OnChange
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(AutoCacheTest, OnChange002, TestSize.Level2)
+{
+    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    AutoCache::Watchers watchers;
+    int32_t user = 0;
+    AutoCache::Delegate delegate(store, watchers, user);
+    delegate.SetObservers(watchers);
+    GeneralWatcher::Origin origin;
+    GeneralWatcher::Fields fields;
+    GeneralWatcher::ChangeData datas;
+    auto ret = delegate.OnChange(origin, fields, std::move(datas));
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: operatorStore
+* @tc.desc: AutoCache Delegate operator Store()
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(AutoCacheTest, operatorStore, TestSize.Level2)
+{
+    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    AutoCache::Watchers watchers;
+    int32_t user = 0;
+    AutoCache::Delegate delegate(store, watchers, user);
+    AutoCache::Store result = static_cast<AutoCache::Store>(delegate);
+    EXPECT_NE(result, nullptr);
+    GeneralWatcher::Origin origin;
+    GeneralWatcher::Fields fields;
+    GeneralWatcher::ChangeData datas;
+    auto ret = delegate.OnChange(origin, fields, std::move(datas));
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+} // namespace OHOS::Test
