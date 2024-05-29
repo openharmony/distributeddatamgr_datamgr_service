@@ -759,16 +759,15 @@ HWTEST_F(ServiceMetaDataTest, CapabilityRange, TestSize.Level1)
 HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
 {
     MatrixMetaData matrixMetaData1;
-    matrixMetaData1.version = 1;
+    matrixMetaData1.version = 0;
     matrixMetaData1.deviceId = "PEER_DEVICE_ID";
 
     MatrixMetaData matrixMetaData2;
-    matrixMetaData2.version = 1;
+    matrixMetaData2.version = 0;
     matrixMetaData2.deviceId = "PEER_DEVICE_ID";
     MatrixMetaData matrixMetaData3;
-    matrixMetaData3.version = 3;
+    matrixMetaData3.version = 1;
     matrixMetaData3.deviceId = "DEVICE_ID";
-    matrixMetaData3.dynamic = 0x2;
     EXPECT_TRUE(matrixMetaData1 != matrixMetaData3);
     EXPECT_FALSE(matrixMetaData1 != matrixMetaData2);
 }
