@@ -144,13 +144,11 @@ ohos_unittest("ServiceUtilsTest") {
 ohos_unittest("StoreTest") {
   module_out_path = module_output_path
 
-  include_dirs = [
-    "${data_service_path}/service/test/mock",
-  ]
+  include_dirs = [ "${data_service_path}/service/test/mock" ]
 
   sources = [
-    "${data_service_path}/service/rdb/rdb_query.cpp",
     "${data_service_path}/framework/store/auto_cache.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
     "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "store_test.cpp",
   ]
@@ -377,10 +375,10 @@ group("unittest") {
     ":MetaDataManagerTest",
     ":SerializableTest",
     ":ServiceMetaDataTest",
+    ":ServiceUtilsTest",
     ":StoreMetaDataLocalTest",
     ":StoreTest",
     ":SubscriptionTest",
-    ":ServiceUtilsTest",
   ]
 }
 ###############################################################################
