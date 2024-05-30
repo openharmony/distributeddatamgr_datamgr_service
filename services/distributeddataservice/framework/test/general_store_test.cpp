@@ -86,11 +86,11 @@ HWTEST_F(GeneralStoreTest, BindInfo, TestSize.Level1)
     ASSERT_EQ(bindInfo.db_, db);
     ASSERT_EQ(bindInfo.loader_, loader);
 
-    std::shared_ptr<CloudDB> dbs = db;
-    std::shared_ptr<AssetLoader> loaders = loader;
-    GeneralStore::BindInfo bindInfos(dbs, loaders);
-    ASSERT_EQ(bindInfos.db_, dbs);
-    ASSERT_EQ(bindInfos.loader_, loaders);
-    EXPECT_FALSE(bindInfo < bindInfos);
+    std::shared_ptr<CloudDB> db1 = db;
+    std::shared_ptr<AssetLoader> loader1 = loader;
+    GeneralStore::BindInfo bindInfo1(db1, loader1);
+    ASSERT_EQ(bindInfo1.db_, db1);
+    ASSERT_EQ(bindInfo1.loader_, loader1);
+    EXPECT_FALSE(bindInfo < bindInfo1);
 }
 } // namespace OHOS::Test
