@@ -36,6 +36,9 @@ public:
     Status GetBatchData(const std::string &dataPrefix, std::vector<UnifiedData> &unifiedDataSet) override;
     void Close() override;
     bool Init() override;
+    Status PutLocal(const std::string &key, const std::string &value) override;
+    Status GetLocal(const std::string &key, std::string &value) override;
+    Status DeleteLocal(const std::string &key) override;
 
 private:
     static constexpr const char *DATA_PREFIX = "udmf://";
