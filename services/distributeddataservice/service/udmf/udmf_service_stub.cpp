@@ -216,5 +216,53 @@ int32_t UdmfServiceStub::OnIsRemoteData(MessageParcel &data, MessageParcel &repl
     }
     return E_OK;
 }
+
+int32_t UdmfServiceStub::OnSetAppShareOption(MessageParcel &data, MessageParcel &reply)
+{
+    std::string intention;
+    std::string shareOption;
+    if (!ITypesUtil::Unmarshal(data, intention, shareOption)) {
+        ZLOGE("Unmarshal query failed");
+        return E_READ_PARCEL_ERROR;
+    }
+    int32_t status = SetAppShareOption(intention, shareOption);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal OnSetAppShareOption status failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceStub::OnGetAppShareOption(MessageParcel &data, MessageParcel &reply)
+{
+    std::string intention;
+    std::string shareOption;
+    if (!ITypesUtil::Unmarshal(data, intention)) {
+        ZLOGE("Unmarshal query failed");
+        return E_READ_PARCEL_ERROR;
+    }
+    int32_t status = GetAppShareOption(intention, shareOption);
+    if (!ITypesUtil::Marshal(reply, status, shareOption)) {
+        ZLOGE("Marshal OnGetAppShareOption status failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceStub::OnRemoveAppShareOption(MessageParcel &data, MessageParcel &reply)
+{
+    std::string intention;
+    std::string shareOption;
+    if (!ITypesUtil::Unmarshal(data, intention)) {
+        ZLOGE("Unmarshal query failed");
+        return E_READ_PARCEL_ERROR;
+    }
+    int32_t status = RemoveAppShareOption(intention);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal OnRemoveAppShareOption status failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
 } // namespace UDMF
 } // namespace OHOS

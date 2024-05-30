@@ -53,6 +53,50 @@ RuntimeStore::~RuntimeStore()
     ZLOGD("Destruct runtimeStore: %{public}s.", Anonymous::Change(storeId_).c_str());
 }
 
+Status RuntimeStore::PutLocal(const std::string &key, const std::string &value)
+{
+    UpdateTime();
+    std::vector<uint8_t> keyBytes = {key.begin(), key.end()};
+    std::vector<uint8_t> valueBytes = {value.begin(), value.end()};
+    auto status = kvStore_->PutLocal(keyBytes, valueBytes);
+    if (status != DBStatus::OK) {
+        ZLOGE("KvStore PutLocal failed, status: %{public}d.", status);
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+Status RuntimeStore::GetLocal(const std::string &key, std::string &value)
+{
+    UpdateTime();
+    std::vector<uint8_t> valueBytes;
+    std::vector<uint8_t> keyBytes = {key.begin(), key.end()};
+    DBStatus status = kvStore_->GetLocal(keyBytes, valueBytes);
+    if (status != DBStatus::OK  && status != DBStatus::NOT_FOUND) {
+        ZLOGE("GetLocal entry failed, key: %{public}s.", key.c_str());
+        return E_DB_ERROR;
+    }
+    if (valueBytes.empty()) {
+        ZLOGW("GetLocal entry is empty, key: %{public}s", key.c_str());
+        return E_NOT_FOUND;
+    }
+    value = {valueBytes.begin(), valueBytes.end()};
+    return E_OK;
+}
+
+Status RuntimeStore::DeleteLocal(const std::string &key)
+{
+    UpdateTime();
+    std::vector<uint8_t> valueBytes;
+    std::vector<uint8_t> keyBytes = {key.begin(), key.end()};
+    DBStatus status = kvStore_->DeleteLocal(keyBytes);
+    if (status != DBStatus::OK  && status != DBStatus::NOT_FOUND) {
+        ZLOGE("DeleteLocal failed, key: %{public}s.", key.c_str());
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
 Status RuntimeStore::Put(const UnifiedData &unifiedData)
 {
     UpdateTime();

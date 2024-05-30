@@ -41,6 +41,9 @@ public:
     virtual bool Init() = 0;
     virtual void Close() = 0;
     virtual Status GetBatchData(const std::string &dataPrefix, std::vector<UnifiedData> &unifiedDataSet) = 0;
+    virtual Status PutLocal(const std::string &key, const std::string &value) = 0;
+    virtual Status GetLocal(const std::string &key, std::string &value) = 0;
+    virtual Status DeleteLocal(const std::string &key) = 0;
 
     bool operator<(const Time &time) const
     {

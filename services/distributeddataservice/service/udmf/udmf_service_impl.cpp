@@ -17,6 +17,8 @@
 #include "udmf_service_impl.h"
 
 #include "iservice_registry.h"
+#include "ipc_skeleton.h"
+#include "tokenid_kit.h"
 
 #include "checker_manager.h"
 #include "dfx_types.h"
@@ -33,6 +35,7 @@
 
 namespace OHOS {
 namespace UDMF {
+using namespace Security::AccessToken;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
@@ -534,6 +537,85 @@ int32_t UdmfServiceImpl::IsRemoteData(const QueryOption &query, bool &result)
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
     if (localDeviceId != runtime->deviceId) {
         result = true;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, const std::string &shareOption)
+{
+    if (intention.empty() || shareOption.empty()) {
+        ZLOGE("SetAppShareOption : para is invalid, intention: %{public}s, shareOption:%{public}s.",
+              intention.c_str(), shareOption.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+
+    uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
+    if (!isSystemApp) {
+        ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
+        return E_NO_SYSTEM_PERMISSION;
+    }
+    auto store = StoreCache::GetInstance().GetStore(intention);
+    if (store == nullptr) {
+        ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
+        return E_DB_ERROR;
+    }
+
+    std::string shareOptionTmp;
+    if (store->GetLocal(std::to_string(accessTokenIDEx), shareOptionTmp) == E_OK) {
+        ZLOGE("SetAppShareOption failed, shareOption has already been set, %{public}s.", shareOptionTmp.c_str());
+        return E_REPEAT_SETTINGS;
+    }
+
+    if (store->PutLocal(std::to_string(accessTokenIDEx), shareOption) != E_OK) {
+        ZLOGE("Store get unifiedData failed, intention: %{public}s.", shareOption.c_str());
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, std::string &shareOption)
+{
+    if (intention.empty()) {
+        ZLOGE("GetAppShareOption : para is invalid, %{public}s is invalid.", intention.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
+    auto store = StoreCache::GetInstance().GetStore(intention);
+    if (store == nullptr) {
+        ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
+        return E_DB_ERROR;
+    }
+    int32_t ret = store->GetLocal(std::to_string(accessTokenIDEx), shareOption);
+    if (ret != E_OK) {
+        ZLOGE("GetAppShareOption empty, intention: %{public}s.", intention.c_str());
+        return ret;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
+{
+    if (intention.empty()) {
+        ZLOGE("intention: %{public}s is invalid.", intention.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
+    if (!isSystemApp) {
+        ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
+        return E_NO_SYSTEM_PERMISSION;
+    }
+    auto store = StoreCache::GetInstance().GetStore(intention);
+    if (store == nullptr) {
+        ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
+        return E_DB_ERROR;
+    }
+
+    UnifiedData unifiedData;
+    if (store->DeleteLocal(std::to_string(accessTokenIDEx)) != E_OK) {
+        ZLOGE("Store DeleteLocal failed, intention: %{public}s.", intention.c_str());
+        return E_DB_ERROR;
     }
     return E_OK;
 }
