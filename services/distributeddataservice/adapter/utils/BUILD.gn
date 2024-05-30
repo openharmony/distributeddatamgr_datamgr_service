@@ -19,6 +19,8 @@ ohos_static_library("distributeddata_utils_static") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    boundary_sanitize = true
+    ubsan = true
   }
   sources = [ "src/kvstore_utils.cpp" ]
 

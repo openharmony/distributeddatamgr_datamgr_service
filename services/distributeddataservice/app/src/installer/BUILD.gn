@@ -20,6 +20,8 @@ ohos_static_library("distributeddata_installer_static") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    boundary_sanitize = true
+    ubsan = true
   }
   sources = [
     "installer.cpp",
