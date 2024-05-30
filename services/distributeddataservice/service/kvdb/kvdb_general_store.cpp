@@ -38,9 +38,11 @@
 #include "water_version_manager.h"
 #include "device_manager_adapter.h"
 #include "utils/anonymous.h"
+#include "radar_reporter.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
+using namespace DistributedDataDfx;
 using namespace DistributedDB;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
@@ -313,6 +315,7 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
 DBStatus KVDBGeneralStore::CloudSync(
     const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait)
 {
+    RadarReporter::Report({ storeInfo_.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__);
     DistributedDB::CloudSyncOption syncOption;
     syncOption.devices = devices;
     syncOption.mode = cloudSyncMode;
@@ -633,7 +636,8 @@ void KVDBGeneralStore::ObserverProxy::ConvertChangeData(const std::list<DBEntry>
 
 KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async)
 {
-    return [async, callback = callback_](const std::map<std::string, SyncProcess> &processes) {
+    return [async, callback = callback_, bundleName = storeInfo_.bundleName](
+               const std::map<std::string, SyncProcess> &processes) {
         if (!async && !callback) {
             return;
         }
@@ -642,6 +646,11 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
             isFinished = process.process == FINISHED ? true : isFinished;
+            if (isFinished) {
+                int res = (process.errCode != OK) ? RES_FAILED : RES_SUCCESS;
+                RadarReporter::Report({ bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, res, process.errCode },
+                    "KVDBGeneralStore::GetDBProcessCB", END);
+            }
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
             for (auto [key, value] : process.tableProcess) {

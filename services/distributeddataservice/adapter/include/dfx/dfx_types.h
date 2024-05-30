@@ -198,46 +198,6 @@ enum class ReportStatus {
     SUCCESS = 0,
     ERROR = 1,
 };
-
-enum BizScene {
-    // cloud sync
-    META_DATA_SYNC = 1,
-    CLOUD_SYNC_SWITCH = 2,
-    CLOUD_DATA_CHANGE = 3,
-    BIND = 4,
-    SUBSCRIBE_DATA_CHANGE = 5,
-    RECORD_SYNC_RESULT = 6,
-
-    // cloud share
-    SHARE = 1,
-    UNSHARE = 2,
-    CONFIRM_INVITATION = 3,
-    CHANGE_CONFIRMATION = 4,
-    CHANGE_PRIVILEGE = 5,
-    EXIT_SHARING = 6,
-};
-
-enum BizStage {
-    GENERAL_STAGE = 1,
-};
-
-enum BizState {
-    BEGIN = 1,
-    END = 2,
-};
-
-enum StageRes {
-    RES_IDLE = 0,
-    RES_SUCCESS = 1,
-    RES_FAILED = 2,
-    RES_CANCELLED  = 3,
-    RES_UNKNOWN = 4,
-};
-
-struct EventName {
-    static constexpr const char *CLOUD_SYNC_BEHAVIOR = "DISTRIBUTED_CLOUD_SYNC_BEHAVIOR";
-    static constexpr const char *CLOUD_SHARING_BEHAVIOR = "DISTRIBUTED_CLOUD_SHARE_BEHAVIOR";
-};
 }  // namespace DistributedDataDfx
 }  // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_DFX_TYPES_H

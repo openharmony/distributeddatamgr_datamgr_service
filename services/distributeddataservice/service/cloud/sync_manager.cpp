@@ -248,15 +248,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
     times++;
     return [this, times, retry, keep = std::move(ref), info = std::move(syncInfo)]() mutable {
         activeInfos_.Erase(info.syncId_);
-        bool createdByDefaultUser = false;
-        if (info.user_ == 0) {
-            std::vector<int32_t> users;
-            AccountDelegate::GetInstance()->QueryUsers(users);
-            if (!users.empty()) {
-                info.user_ = users[0];
-            }
-            createdByDefaultUser = true;
-        }
+        bool createdByDefaultUser = InitDefaultUser(info.user_);
         CloudInfo cloud;
         cloud.user = info.user_;
 
@@ -265,6 +257,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         if (cloudSyncInfos.empty()) {
             ZLOGD("get cloud info failed, user: %{public}d.", cloud.user);
             info.SetError(E_CLOUD_DISABLED);
+            RadarReporter radar({ info.bundleName_.c_str(), CLOUD_SYNC, CHECK_SYNC_CONDITION}, "GetSyncTask");
+            radar = Convert(static_cast<GeneralError>(E_CLOUD_DISABLED));
             return;
         }
         UpdateStartSyncInfo(cloudSyncInfos);
@@ -273,9 +267,12 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             for (const auto &[queryKey, syncId] : cloudSyncInfos) {
                 UpdateFinishSyncInfo(queryKey, syncId, code);
             }
+            RadarReporter radar({ info.bundleName_.c_str(), CLOUD_SYNC, CHECK_SYNC_CONDITION}, "GetSyncTask");
+            radar = Convert(static_cast<GeneralError>(E_CLOUD_DISABLED));
             return;
         }
-
+        RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, CHECK_SYNC_CONDITION, RES_SUCCESS},
+            "GetSyncTask");
         auto retryer = GetRetryer(times, info);
         auto schemas = GetSchemaMeta(cloud, info.bundleName_);
         if (schemas.empty()) {
@@ -491,9 +488,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
         auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
         std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, info, dbMeta, mustBind);
-        RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::BIND, __FUNCTION__);
-        auto status = store->Bind(dbMeta, bindInfos);
-        radar = Convert(static_cast<GeneralError>(status));
+        store->Bind(dbMeta, bindInfos);
     }
     return store;
 }
@@ -554,7 +549,6 @@ int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, Q
 
 void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
-    RadarReporter::Report(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::RECORD_SYNC_RESULT, BizState::BEGIN, __FUNCTION__);
     CloudSyncInfo info;
     info.startTime =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
@@ -566,8 +560,6 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
 
 void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code)
 {
-    RadarReporter::Report(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::RECORD_SYNC_RESULT, BizState::END, __FUNCTION__,
-        BizStage::GENERAL_STAGE, Convert(static_cast<GeneralError>(code)));
     auto it = lastSyncInfos_.find(queryKey);
     if (it == lastSyncInfos_.end()) {
         return;
@@ -659,5 +651,18 @@ void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &detai
     }
     QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
     UpdateFinishSyncInfo(queryKey, storeInfo.syncId, E_ERROR);
+}
+
+bool SyncManager::InitDefaultUser(int32_t &user)
+{
+    if (user != 0) {
+        return false;
+    }
+    std::vector<int32_t> users;
+    AccountDelegate::GetInstance()->QueryUsers(users);
+    if (!users.empty()) {
+        user = users[0];
+    }
+    return true;
 }
 } // namespace OHOS::CloudData

@@ -44,12 +44,14 @@
 #include "cloud/schema_meta.h"
 #include "rdb_general_store.h"
 #include "rdb_result_set_impl.h"
+#include "radar_reporter.h"
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
 using OHOS::DistributedData::StoreMetaData;
 using OHOS::DistributedData::Anonymous;
 using namespace OHOS::DistributedData;
+using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::Security::AccessToken;
 using DistributedDB::RelationalStoreManager;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -457,6 +459,7 @@ void RdbServiceImpl::DoCompensateSync(const BindEvent& event)
 void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::Option &option,
     const PredicatesMemo &predicates, const AsyncDetail &async)
 {
+    RadarReporter::Report({ param.bundleName_.c_str(), CLOUD_SYNC, DATA_CHANGE, RES_SUCCESS }, __FUNCTION__, BEGIN);
     StoreInfo storeInfo;
     storeInfo.bundleName = param.bundleName_;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();

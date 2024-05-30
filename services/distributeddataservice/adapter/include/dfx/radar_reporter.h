@@ -17,24 +17,76 @@
 #define DISTRIBUTEDDATAMGR_RADAR_REPORTER_H
 #include <stdint.h>
 #include <string>
-#include "dfx_types.h"
+
+#include "visibility.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
+
+enum BizScene {
+    // cloud sync
+    CLOUD_SYNC = 1,
+
+    // cloud share
+    SHARE = 1,
+    UNSHARE = 2,
+    CONFIRM_INVITATION = 3,
+    CHANGE_CONFIRMATION = 4,
+    CHANGE_PRIVILEGE = 5,
+    EXIT_SHARING = 6,
+};
+
+enum BizStage {
+    // cloud share
+    GENERAL_STAGE = 1,
+
+    // cloud sync
+    DATA_CHANGE = 1,
+    CHECK_SYNC_CONDITION = 2,
+    TRIGGER_SYNC = 3,
+};
+
+enum BizState {
+    BEGIN = 1,
+    END = 2,
+};
+
+enum StageRes {
+    RES_IDLE = 0,
+    RES_SUCCESS = 1,
+    RES_FAILED = 2,
+    RES_CANCELLED = 3,
+    RES_UNKNOWN = 4,
+};
+
+struct EventName {
+    static constexpr const char *CLOUD_SYNC_BEHAVIOR = "DISTRIBUTED_CLOUD_SYNC_BEHAVIOR";
+    static constexpr const char *CLOUD_SHARING_BEHAVIOR = "DISTRIBUTED_CLOUD_SHARE_BEHAVIOR";
+};
+
+struct RadarParam {
+    const char *bundleName_ = "";
+    int scene_ = CLOUD_SYNC;
+    int stage_ = GENERAL_STAGE;
+    int res_ = RES_IDLE;
+    int errCode_ = 0;
+};
+
 class RadarReporter {
 public:
-    KVSTORE_API RadarReporter(const char *eventName, BizScene scene, const char *funcName);
+    KVSTORE_API RadarReporter(const char *eventName, int scene, const char *bundleName, const char *funcName);
+    KVSTORE_API RadarReporter(const RadarParam &param, const char *funcName, int state = 0);
     KVSTORE_API ~RadarReporter();
     KVSTORE_API RadarReporter &operator=(int errCode);
-    KVSTORE_API static void Report(
-        const char *eventName, int scene, int state, const char *funcName, int stage = 1, int errorCode = 0);
+    KVSTORE_API static void Report(const RadarParam &param, const char *funcName, int state = 0,
+        const char *eventName = EventName::CLOUD_SYNC_BEHAVIOR);
 
 private:
     static std::string AnonymousUuid(const std::string &uuid);
-    int errCode_{ 0 };
-    BizScene scene_;
-    const char *eventName_;
+    RadarParam radarParam_;
+    const char *eventName_ = EventName::CLOUD_SYNC_BEHAVIOR;
     const char *funcName_;
+    int state_ = 0;
 
     static constexpr const char *ORG_PKG_LABEL = "ORG_PKG";
     static constexpr const char *ORG_PKG = "distributddata";
@@ -45,6 +97,7 @@ private:
     static constexpr const char *STAGE_RES_LABEL = "STAGE_RES";
     static constexpr const char *ERROR_CODE_LABEL = "ERROR_CODE";
     static constexpr const char *LOCAL_UUID_LABEL = "LOCAL_UUID";
+    static constexpr const char *HOST_PKG = "HOST_PKG";
     static constexpr const char *UNKNOW = "UNKNOW";
     static constexpr const char *REPLACE_CHAIN = "**";
     static constexpr const char *DEFAULT_ANONYMOUS = "************";

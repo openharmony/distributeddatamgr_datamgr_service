@@ -20,46 +20,57 @@
 namespace OHOS {
 namespace DistributedDataDfx {
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-RadarReporter::RadarReporter(const char *eventName, BizScene scene, const char *funcName)
-    : scene_(scene), eventName_(eventName), funcName_(funcName)
+RadarReporter::RadarReporter(const char *eventName, int scene, const char *bundleName, const char *funcName)
+    : eventName_(eventName), funcName_(funcName)
+{
+    radarParam_.scene_ = scene;
+    radarParam_.bundleName_ = bundleName;
+    Report(radarParam_, funcName_, BEGIN, eventName_);
+}
+
+RadarReporter::RadarReporter(const RadarParam &param, const char *funcName, int state)
+    : radarParam_(param), funcName_(funcName)
 {
     if (funcName_ == nullptr) {
         funcName_ = UNKNOW;
     }
-    if (eventName_ == nullptr) {
-        eventName_ = EventName::CLOUD_SYNC_BEHAVIOR;
-    }
-    Report(eventName_, scene_, BizState::BEGIN, funcName_, BizStage::GENERAL_STAGE);
+    Report(radarParam_, funcName_, state);
 }
 
 RadarReporter::~RadarReporter()
 {
-    Report(eventName_, scene_, BizState::END, funcName_, BizStage::GENERAL_STAGE, errCode_);
+    radarParam_.res_ = radarParam_.errCode_ != NO_ERROR ? RES_FAILED : RES_SUCCESS;
+    if (eventName_ == EventName::CLOUD_SYNC_BEHAVIOR) {
+        Report(radarParam_, funcName_, state_);
+    } else {
+        Report(radarParam_, funcName_, END, eventName_);
+    }
 }
 
 RadarReporter &RadarReporter::operator=(int errCode)
 {
-    errCode_ = errCode;
+    radarParam_.errCode_ = errCode;
+    if (errCode != NO_ERROR) {
+        state_ = END;
+    }
     return *this;
 }
 
-void RadarReporter::Report(const char *eventName, int scene, int state, const char *funcName, int stage, int errorCode)
+void RadarReporter::Report(const RadarParam &param, const char *funcName, int state, const char *eventName)
 {
-    int stageRes = static_cast<int>(StageRes::RES_SUCCESS);
-    if (errorCode != NO_ERROR) {
-        stageRes = static_cast<int>(StageRes::RES_FAILED);
+    if (state != 0) {
+        HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::DISTRIBUTED_DATAMGR, eventName,
+            OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR, ORG_PKG_LABEL, ORG_PKG, FUNC_LABEL, funcName,
+            BIZ_SCENE_LABEL, param.scene_, BIZ_STAGE_LABEL, param.stage_, BIZ_STATE_LABEL, state, STAGE_RES_LABEL,
+            param.res_, ERROR_CODE_LABEL, param.errCode_, HOST_PKG, param.bundleName_, LOCAL_UUID_LABEL,
+            AnonymousUuid(DmAdapter::GetInstance().GetLocalDevice().uuid));
+    } else {
+        HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::DISTRIBUTED_DATAMGR, eventName,
+            OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR, ORG_PKG_LABEL, ORG_PKG, FUNC_LABEL, funcName,
+            BIZ_SCENE_LABEL, param.scene_, BIZ_STAGE_LABEL, param.stage_, STAGE_RES_LABEL, param.res_,
+            ERROR_CODE_LABEL, param.errCode_, HOST_PKG, param.bundleName_, LOCAL_UUID_LABEL,
+            AnonymousUuid(DmAdapter::GetInstance().GetLocalDevice().uuid));
     }
-    HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::DISTRIBUTED_DATAMGR,
-        eventName,
-        OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
-        ORG_PKG_LABEL, ORG_PKG,
-        FUNC_LABEL, funcName,
-        BIZ_SCENE_LABEL, scene,
-        BIZ_STAGE_LABEL, stage,
-        BIZ_STATE_LABEL, state,
-        STAGE_RES_LABEL, stageRes,
-        ERROR_CODE_LABEL, errorCode,
-        LOCAL_UUID_LABEL, AnonymousUuid(DmAdapter::GetInstance().GetLocalDevice().uuid));
     return;
 }
 

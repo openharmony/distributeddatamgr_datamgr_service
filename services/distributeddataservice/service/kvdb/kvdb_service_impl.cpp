@@ -50,9 +50,11 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "water_version_manager.h"
+#include "radar_reporter.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
+using namespace OHOS::DistributedDataDfx;
 using namespace OHOS::AppDistributedKv;
 using namespace OHOS::Security::AccessToken;
 using system_clock = std::chrono::system_clock;
@@ -297,7 +299,10 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    return DoCloudSync(metaData, syncInfo);
+    RadarReporter radar({ metaData.bundleName.c_str(), CLOUD_SYNC, DATA_CHANGE }, __FUNCTION__, BEGIN);
+    auto status = DoCloudSync(metaData, syncInfo);
+    radar = status;
+    return status;
 }
 
 void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail)
@@ -372,7 +377,8 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
     }
     if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
         if (meta.cloudAutoSync) {
-            DoCloudSync(meta, {});
+            RadarReporter radar({ meta.bundleName.c_str(), CLOUD_SYNC, DATA_CHANGE }, __FUNCTION__, BEGIN);
+            radar = DoCloudSync(meta, {});
         }
         if (meta.isAutoSync) {
             TryToSync(meta, true);
@@ -383,12 +389,14 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
         WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
         if (meta.cloudAutoSync) {
-            DoCloudSync(meta, {});
+            RadarReporter radar({ meta.bundleName.c_str(), CLOUD_SYNC, DATA_CHANGE }, __FUNCTION__, BEGIN);
+            radar = DoCloudSync(meta, {});
         }
         return SUCCESS;
     }
     if (meta.cloudAutoSync) {
-        DoCloudSync(meta, {});
+        RadarReporter radar({ meta.bundleName.c_str(), CLOUD_SYNC, DATA_CHANGE }, __FUNCTION__, BEGIN);
+        radar = DoCloudSync(meta, {});
     }
     if (meta.isAutoSync) {
         AutoSyncMatrix::GetInstance().OnChanged(meta);
