@@ -36,6 +36,8 @@ public:
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
     std::string GetUnencryptedAccountId(int32_t userId = 0) const override;
+    bool QueryForegroundUserId(int &foregroundUserId) override;
+
 private:
     ~AccountDelegateNormalImpl();
     std::string Sha256AccountId(const std::string &plainText) const;
