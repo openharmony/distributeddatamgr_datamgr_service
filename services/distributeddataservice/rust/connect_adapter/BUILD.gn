@@ -23,6 +23,8 @@ config("export_connect") {
 ohos_shared_library("conn_adapter") {
   branch_protector_ret = "pac_ret"
   sanitize = {
+    ubsan = true
+    boundary_sanitize = true
     cfi = true
     cfi_cross_dso = true
     debug = false
