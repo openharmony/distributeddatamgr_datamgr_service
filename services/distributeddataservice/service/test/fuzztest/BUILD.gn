@@ -20,12 +20,13 @@ group("fuzztest") {
 
   deps = [
     "cloudservicestub_fuzzer:fuzztest",
+    "customutdinstaller_fuzzer:fuzztest",
     "datashareservicestub_fuzzer:fuzztest",
-    "dumphelper_fuzzer:fuzztest",
     "kvdbservicestub_fuzzer:fuzztest",
     "objectservicestub_fuzzer:fuzztest",
     "rdbresultsetstub_fuzzer:fuzztest",
     "rdbservicestub_fuzzer:fuzztest",
+    "dumphelper_fuzzer:fuzztest",
   ]
   if (datamgr_service_udmf) {
     deps += [ "udmfservice_fuzzer:fuzztest" ]
