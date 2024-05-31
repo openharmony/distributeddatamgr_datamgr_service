@@ -26,16 +26,22 @@
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "data_ability_observer_interface.h"
+#include "data_share_profile_config.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
+#include "device_manager_adapter.h"
 #include "datashare_template.h"
 #include "directory/directory_manager.h"
+#include "eventcenter/event_center.h"
+#include "extension_connect_adaptor.h"
 #include "dump/dump_manager.h"
 #include "extension_ability_manager.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "metadata/auto_launch_meta_data.h"
+#include "metadata/meta_data_manager.h"
 #include "matching_skills.h"
 #include "permit_delegate.h"
 #include "rdb_helper.h"
@@ -489,7 +495,86 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     InitSubEvent();
     SubscribeTimeChanged();
+    SubChangeEvent();
     return E_OK;
+}
+
+void DataShareServiceImpl::SubChangeEvent()
+{
+    EventCenter::GetInstance().Subscribe(GenChangeEvent::META_SAVE, [this](const Event &event) {
+        auto &evt = static_cast<const GenChangeEvent &>(event);
+        auto dataInfo = evt.GetDataInfo();
+        SaveLaunchInfo(dataInfo.bundleName, dataInfo.userId, dataInfo.deviceId);
+    });
+    EventCenter::GetInstance().Subscribe(GenChangeEvent::DATA_CHANGE, [this](const Event &event) {
+        AutoLaunch(event);
+    });
+}
+
+void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const std::string &userId,
+    const std::string &deviceId)
+{
+    std::map<std::string, ProfileInfo> profileInfos;
+    if (!DataShareProfileConfig::GetProfileInfo(bundleName, std::stoi(userId), profileInfos)) {
+        ZLOGE("Get profileInfo failed.");
+        return;
+    }
+    if (profileInfos.empty()) {
+        return;
+    }
+    std::map<std::string, AutoLaunchMetaData> maps;
+    for (auto &[uri, value] : profileInfos) {
+        if (uri.find(EXT_URI_SCHEMA) == std::string::npos) {
+            continue;
+        }
+        std::string extUri = uri;
+        extUri.insert(strlen(EXT_URI_SCHEMA), "/");
+        for (const auto &launchInfo : value.launchInfos) {
+            AutoLaunchMetaData &autoLaunchMetaData = maps[launchInfo.storeId];
+            autoLaunchMetaData.datas.emplace(extUri, launchInfo.tableNames);
+        }
+    }
+    StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
+    for (const auto &[storeId, value] : maps) {
+        meta.storeId = storeId;
+        MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), value, true);
+    }
+}
+
+void DataShareServiceImpl::AutoLaunch(const Event &event)
+{
+    auto &evt = static_cast<const GenChangeEvent &>(event);
+    auto dataInfo = evt.GetDataInfo();
+    StoreMetaData meta = MakeMetaData(dataInfo.bundleName, dataInfo.userId, dataInfo.deviceId, dataInfo.storeId);
+    AutoLaunchMetaData autoLaunchMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
+        return;
+    }
+    if (autoLaunchMetaData.datas.empty()) {
+        return;
+    }
+    std::vector<std::string> uris;
+    for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
+        for (const auto &table : dataInfo.tables)
+        if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
+            uris.emplace_back(uri);
+            break;
+        }
+    }
+    for (const auto &uri : uris) {
+        ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+    }
+}
+
+StoreMetaData DataShareServiceImpl::MakeMetaData(const std::string &bundleName, const std::string &userId,
+    const std::string &deviceId, const std::string storeId)
+{
+    StoreMetaData meta;
+    meta.user = userId;
+    meta.storeId = storeId;
+    meta.deviceId = deviceId;
+    meta.bundleName = bundleName;
+    return meta;
 }
 
 void DataShareServiceImpl::OnConnectDone()
@@ -519,6 +604,22 @@ int32_t DataShareServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, 
         uid, pid, tokenId, bundleName.c_str());
     RdbSubscriberManager::GetInstance().Delete(tokenId);
     PublishedDataSubscriberManager::GetInstance().Delete(tokenId);
+    return E_OK;
+}
+
+int32_t DataShareServiceImpl::DataShareStatic::OnAppUpdate(const std::string &bundleName, int32_t user,
+    int32_t index)
+{
+    ZLOGI("%{public}s updated", bundleName.c_str());
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
+    std::vector<StoreMetaData> storeMetaData;
+    if (MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true)) {
+        for (auto &meta : storeMetaData) {
+            MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
+        }
+    }
+    SaveLaunchInfo(bundleName, std::to_string(user), DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid);
     return E_OK;
 }
 

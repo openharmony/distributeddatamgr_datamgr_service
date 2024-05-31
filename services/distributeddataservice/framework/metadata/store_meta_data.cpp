@@ -15,6 +15,7 @@
 
 #include "metadata/store_meta_data.h"
 
+#include "metadata/auto_launch_meta_data.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
@@ -178,6 +179,11 @@ std::string StoreMetaData::GetBackupSecretKey() const
         return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId });
     }
     return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaData::GetAutoLaunchKey() const
+{
+    return AutoLaunchMetaData::GetPrefix({ deviceId, user, "default", bundleName, storeId });
 }
 
 std::string StoreMetaData::GetStoreAlias() const

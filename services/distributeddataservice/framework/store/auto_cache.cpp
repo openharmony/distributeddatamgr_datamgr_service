@@ -14,6 +14,8 @@
  */
 #define LOG_TAG "AutoCache"
 #include <cinttypes>
+#include "changeevent/gen_change_event.h"
+#include "eventcenter/event_center.h"
 #include "utils/anonymous.h"
 #include "store/auto_cache.h"
 
@@ -78,7 +80,7 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
                 return !stores.empty();
             }
             auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(meta.storeId),
-                std::forward_as_tuple(dbStore, watchers, atoi(meta.user.c_str())));
+                std::forward_as_tuple(dbStore, watchers, atoi(meta.user.c_str()), meta));
             store = result.first->second;
             StartTimer();
             return !stores.empty();
@@ -209,8 +211,9 @@ void AutoCache::Disable(uint32_t tokenId, const std::string& storeId)
     CloseStore(tokenId, storeId);
 }
 
-AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user)
-    : store_(delegate), watchers_(watchers), user_(user)
+AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user,
+    const StoreMetaData &meta)
+    : store_(delegate), watchers_(watchers), user_(user), meta_(meta)
 {
     time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
     if (store_ != nullptr) {
@@ -269,6 +272,11 @@ int32_t AutoCache::Delegate::GetUser() const
 
 int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {
+    std::vector<std::string> tables;
+    for (const auto &[table, value] : values) {
+        tables.emplace_back(table);
+    }
+    PostDataChange(meta_, tables);
     Watchers watchers;
     {
         std::unique_lock<decltype(mutex_)> lock(mutex_);
@@ -287,6 +295,11 @@ int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &pri
 
 int32_t AutoCache::Delegate::OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas)
 {
+    std::vector<std::string> tables;
+    for (const auto &[table, value] : datas) {
+        tables.emplace_back(table);
+    }
+    PostDataChange(meta_, tables);
     Watchers watchers;
     {
         std::unique_lock<decltype(mutex_)> lock(mutex_);
@@ -301,5 +314,17 @@ int32_t AutoCache::Delegate::OnChange(const Origin &origin, const Fields &fields
         watcher->OnChange(origin, fields, (remain != 0) ? ChangeData(datas) : std::move(datas));
     }
     return Error::E_OK;
+}
+
+void AutoCache::Delegate::PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables)
+{
+    GenChangeEvent::DataInfo info;
+    info.userId = meta.user;
+    info.storeId = meta.storeId;
+    info.deviceId = meta.deviceId;
+    info.bundleName = meta.bundleName;
+    info.tables = tables;
+    auto evt = std::make_unique<GenChangeEvent>(GenChangeEvent::DATA_CHANGE, std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 } // namespace OHOS::DistributedData

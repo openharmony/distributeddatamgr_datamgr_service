@@ -23,6 +23,7 @@
 #include "bundle_mgr_proxy.h"
 #include "common_event_subscribe_info.h"
 #include "common_event_subscriber.h"
+#include "changeevent/gen_change_event.h"
 #include "data_proxy_observer.h"
 #include "data_provider_config.h"
 #include "data_share_db_config.h"
@@ -30,6 +31,7 @@
 #include "data_share_silent_config.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
+#include "eventcenter/event.h"
 #include "feature/static_acts.h"
 #include "get_data_strategy.h"
 #include "publish_strategy.h"
@@ -92,6 +94,7 @@ private:
     public:
         ~DataShareStatic() override {};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
     };
     class Factory {
     public:
@@ -115,10 +118,17 @@ private:
     int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     void InitSubEvent();
+    void AutoLaunch(const DistributedData::Event &event);
+    void SubChangeEvent();
+    static void SaveLaunchInfo(const std::string &bundleName, const std::string &userId,
+        const std::string &deviceId);
+    static DistributedData::StoreMetaData MakeMetaData(const std::string &bundleName, const std::string &userId,
+        const std::string &deviceId, const std::string storeId = "");
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
+    static constexpr const char *EXT_URI_SCHEMA = "datashare://";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
