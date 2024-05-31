@@ -751,4 +751,14 @@ std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string 
     }
     return encryptedUuid;
 }
+
+std::string DeviceManagerAdapter::IsDeviceCarType(const std::string &id)
+{
+    DeviceInfo dvInfo;
+    if (!deviceInfos_.Get(id, dvInfo)) {
+        InitDeviceInfo();
+        deviceInfos_.Get(id, dvInfo);
+    }
+    return dvInfo.deviceType == static_cast<uint32_t>(DmDeviceType::DEVICE_TYPE_CAR);
+}
 } // namespace OHOS::DistributedData
