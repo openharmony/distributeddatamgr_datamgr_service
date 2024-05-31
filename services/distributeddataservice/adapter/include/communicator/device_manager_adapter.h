@@ -77,7 +77,7 @@ public:
     bool IsNetworkAvailable();
     NetworkType GetNetworkType(bool retrieve = false);
     int32_t GetAuthType(const std::string& id);
-    std::string IsDeviceCarType(const std::string &id);
+    bool IsDeviceCarType(const std::string &id);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 

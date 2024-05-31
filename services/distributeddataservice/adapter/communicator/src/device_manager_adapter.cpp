@@ -752,7 +752,7 @@ std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string 
     return encryptedUuid;
 }
 
-std::string DeviceManagerAdapter::IsDeviceCarType(const std::string &id)
+bool DeviceManagerAdapter::IsDeviceCarType(const std::string &id)
 {
     DeviceInfo dvInfo;
     if (!deviceInfos_.Get(id, dvInfo)) {
