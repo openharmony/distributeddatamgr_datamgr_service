@@ -70,12 +70,19 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 {
     ZLOGD("begin");
     headSize = 0;
+    static constexpr int32_t OH_OS_TYPE = 10;
     if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
     bool flag = false;
     auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
+    auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
+    if (devInfo.osType != OH_OS_TYPE && devInfo.deviceType == static_cast<uint32_t>(DmDeviceType::DEVICE_TYPE_CAR)) {
+        ZLOGI("type car set version");
+        flag = true;
+        peerCap.version = CapMetaData::CURRENT_VERSION;
+    }
     if (!flag) {
         ZLOGI("get peer cap failed");
         return DistributedDB::DB_ERROR;

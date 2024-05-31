@@ -68,12 +68,6 @@ CapMetaData UpgradeManager::GetCapability(const std::string &deviceId, bool &sta
     if (status) {
         capabilities_.Insert(deviceId, capMetaData);
     }
-    if (!status && !deviceId.empty() && DmAdapter::GetInstance().IsDeviceCarType(deviceId)) {
-        capMetaData.version = 1;
-        capabilities_.Insert(deviceId, capMetaData);
-        status = true;
-        ZLOGI("type car set version");
-    }
     ZLOGI("device:%{public}s, version:%{public}d, insert:%{public}d", Anonymous::Change(deviceId).c_str(),
         capMetaData.version, status);
     return capMetaData;
