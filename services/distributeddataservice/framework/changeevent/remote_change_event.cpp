@@ -13,15 +13,15 @@
 * limitations under the License.
 */
 
-#include "changeevent/gen_change_event.h"
+#include "changeevent/remote_change_event.h"
 
 namespace OHOS::DistributedData {
-GenChangeEvent::GenChangeEvent(int32_t evtId, DataInfo&& info)
+RemoteChangeEvent::RemoteChangeEvent(int32_t evtId, DataInfo&& info)
     : Event(evtId), info_(std::move(info))
 {
 }
 
-const GenChangeEvent::DataInfo& GenChangeEvent::GetDataInfo() const
+const RemoteChangeEvent::DataInfo& RemoteChangeEvent::GetDataInfo() const
 {
     return info_;
 }

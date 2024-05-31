@@ -46,7 +46,7 @@ ohos_shared_library("distributeddatasvcfwk") {
   }
   sources = [
     "backuprule/backup_rule_manager.cpp",
-    "changeevent/gen_change_event.cpp",
+    "changeevent/remote_change_event.cpp",
     "checker/checker_manager.cpp",
     "cloud/asset_loader.cpp",
     "cloud/cloud_config_manager.cpp",

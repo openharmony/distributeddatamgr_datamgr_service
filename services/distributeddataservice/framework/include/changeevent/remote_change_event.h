@@ -12,8 +12,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_GEN_CHANGE_EVENT_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_GEN_CHANGE_EVENT_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_REMOTE_CHANGE_EVENT_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_REMOTE_CHANGE_EVENT_H
 
 #include <cstdint>
 #include <string>
@@ -21,10 +21,10 @@
 #include "eventcenter/event.h"
 
 namespace OHOS::DistributedData {
-class API_EXPORT GenChangeEvent : public Event {
+class API_EXPORT RemoteChangeEvent : public Event {
 public:
     enum : int32_t {
-        META_SAVE = EVT_CHANGE,
+        RDB_META_SAVE = EVT_CHANGE,
         DATA_CHANGE,
     };
 
@@ -36,9 +36,9 @@ public:
         std::vector<std::string> tables;
     };
 
-    GenChangeEvent(int32_t evtId, DataInfo&& launchInfo);
+    RemoteChangeEvent(int32_t evtId, DataInfo&& info);
 
-    ~GenChangeEvent() = default;
+    ~RemoteChangeEvent() = default;
 
     const DataInfo& GetDataInfo() const;
 
@@ -46,4 +46,4 @@ private:
     DataInfo info_;
 };
 } // namespace OHOS::DistributedData
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_Gen_CHANGE_EVENT_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_REMOTE_CHANGE_EVENT_H

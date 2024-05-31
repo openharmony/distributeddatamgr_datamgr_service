@@ -23,7 +23,7 @@
 #include "bundle_mgr_proxy.h"
 #include "common_event_subscribe_info.h"
 #include "common_event_subscriber.h"
-#include "changeevent/gen_change_event.h"
+#include "changeevent/remote_change_event.h"
 #include "data_proxy_observer.h"
 #include "data_provider_config.h"
 #include "data_share_db_config.h"
@@ -119,7 +119,7 @@ private:
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     void InitSubEvent();
     void AutoLaunch(const DistributedData::Event &event);
-    void SubChangeEvent();
+    void SubscribeChange();
     static void SaveLaunchInfo(const std::string &bundleName, const std::string &userId,
         const std::string &deviceId);
     static DistributedData::StoreMetaData MakeMetaData(const std::string &bundleName, const std::string &userId,

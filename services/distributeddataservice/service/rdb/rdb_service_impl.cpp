@@ -18,7 +18,7 @@
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "abs_rdb_predicates.h"
-#include "changeevent/gen_change_event.h"
+#include "changeevent/remote_change_event.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
@@ -705,11 +705,11 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
-            GenChangeEvent::DataInfo info;
+            RemoteChangeEvent::DataInfo info;
             info.bundleName = meta.bundleName;
             info.deviceId = meta.deviceId;
             info.userId = meta.user;
-            auto evt = std::make_unique<GenChangeEvent>(GenChangeEvent::META_SAVE, std::move(info));
+            auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::RDB_META_SAVE, std::move(info));
             EventCenter::GetInstance().PostEvent(std::move(evt));
         }
     }

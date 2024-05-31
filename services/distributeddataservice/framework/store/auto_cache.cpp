@@ -14,7 +14,7 @@
  */
 #define LOG_TAG "AutoCache"
 #include <cinttypes>
-#include "changeevent/gen_change_event.h"
+#include "changeevent/remote_change_event.h"
 #include "eventcenter/event_center.h"
 #include "utils/anonymous.h"
 #include "store/auto_cache.h"
@@ -318,13 +318,13 @@ int32_t AutoCache::Delegate::OnChange(const Origin &origin, const Fields &fields
 
 void AutoCache::Delegate::PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables)
 {
-    GenChangeEvent::DataInfo info;
+    RemoteChangeEvent::DataInfo info;
     info.userId = meta.user;
     info.storeId = meta.storeId;
     info.deviceId = meta.deviceId;
     info.bundleName = meta.bundleName;
     info.tables = tables;
-    auto evt = std::make_unique<GenChangeEvent>(GenChangeEvent::DATA_CHANGE, std::move(info));
+    auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 } // namespace OHOS::DistributedData

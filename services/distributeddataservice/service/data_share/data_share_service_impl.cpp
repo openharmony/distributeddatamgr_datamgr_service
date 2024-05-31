@@ -495,18 +495,18 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     InitSubEvent();
     SubscribeTimeChanged();
-    SubChangeEvent();
+    SubscribeChange();
     return E_OK;
 }
 
-void DataShareServiceImpl::SubChangeEvent()
+void DataShareServiceImpl::SubscribeChange()
 {
-    EventCenter::GetInstance().Subscribe(GenChangeEvent::META_SAVE, [this](const Event &event) {
-        auto &evt = static_cast<const GenChangeEvent &>(event);
+    EventCenter::GetInstance().Subscribe(RemoteChangeEvent::RDB_META_SAVE, [this](const Event &event) {
+        auto &evt = static_cast<const RemoteChangeEvent &>(event);
         auto dataInfo = evt.GetDataInfo();
         SaveLaunchInfo(dataInfo.bundleName, dataInfo.userId, dataInfo.deviceId);
     });
-    EventCenter::GetInstance().Subscribe(GenChangeEvent::DATA_CHANGE, [this](const Event &event) {
+    EventCenter::GetInstance().Subscribe(RemoteChangeEvent::DATA_CHANGE, [this](const Event &event) {
         AutoLaunch(event);
     });
 }
@@ -543,7 +543,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
 
 void DataShareServiceImpl::AutoLaunch(const Event &event)
 {
-    auto &evt = static_cast<const GenChangeEvent &>(event);
+    auto &evt = static_cast<const RemoteChangeEvent &>(event);
     auto dataInfo = evt.GetDataInfo();
     StoreMetaData meta = MakeMetaData(dataInfo.bundleName, dataInfo.userId, dataInfo.deviceId, dataInfo.storeId);
     AutoLaunchMetaData autoLaunchMetaData;
@@ -595,6 +595,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string 
     PublishedData::ClearAging();
     TemplateData::Delete(bundleName, user);
     NativeRdb::RdbHelper::ClearCache();
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
     return E_OK;
 }
 
@@ -611,13 +612,13 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUpdate(const std::string &bu
     int32_t index)
 {
     ZLOGI("%{public}s updated", bundleName.c_str());
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
-    if (MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true)) {
-        for (auto &meta : storeMetaData) {
-            MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
-        }
+    MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
+    for (auto &meta : storeMetaData) {
+        MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
     }
     SaveLaunchInfo(bundleName, std::to_string(user), DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid);
     return E_OK;
