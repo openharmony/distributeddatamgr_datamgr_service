@@ -18,6 +18,7 @@
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "abs_rdb_predicates.h"
+#include "changeevent/remote_change_event.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
@@ -30,6 +31,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
+#include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_watcher.h"
@@ -701,6 +703,15 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
             meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
             old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+        AutoLaunchMetaData launchData;
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
+            RemoteChangeEvent::DataInfo info;
+            info.bundleName = meta.bundleName;
+            info.deviceId = meta.deviceId;
+            info.userId = meta.user;
+            auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::RDB_META_SAVE, std::move(info));
+            EventCenter::GetInstance().PostEvent(std::move(evt));
+        }
     }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
@@ -720,7 +731,6 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
             return RDB_ERROR;
         }
     }
-
     GetCloudSchema(param);
     return RDB_OK;
 }

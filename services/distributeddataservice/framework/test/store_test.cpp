@@ -18,6 +18,7 @@
 #include "gtest/gtest.h"
 #include "general_store_mock.h"
 #include "log_print.h"
+#include "metadata/store_meta_data.h"
 #include "rdb_query.h"
 #include "rdb_types.h"
 #include "store/auto_cache.h"
@@ -113,7 +114,8 @@ HWTEST_F(AutoCacheTest, OnChange001, TestSize.Level2)
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     int32_t user = 0;
-    AutoCache::Delegate delegate(store, watchers, user);
+    StoreMetaData meta;
+    AutoCache::Delegate delegate(store, watchers, user, meta);
     delegate.SetObservers(watchers);
     GeneralWatcher::Origin origin;
     GeneralWatcher::PRIFields primaryFields;
@@ -135,7 +137,8 @@ HWTEST_F(AutoCacheTest, OnChange002, TestSize.Level2)
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     int32_t user = 0;
-    AutoCache::Delegate delegate(store, watchers, user);
+    StoreMetaData meta;
+    AutoCache::Delegate delegate(store, watchers, user, meta);
     delegate.SetObservers(watchers);
     GeneralWatcher::Origin origin;
     GeneralWatcher::Fields fields;
@@ -157,7 +160,8 @@ HWTEST_F(AutoCacheTest, operatorStore, TestSize.Level2)
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     int32_t user = 0;
-    AutoCache::Delegate delegate(store, watchers, user);
+    StoreMetaData meta;
+    AutoCache::Delegate delegate(store, watchers, user, meta);
     AutoCache::Store result = static_cast<AutoCache::Store>(delegate);
     EXPECT_NE(result, nullptr);
     GeneralWatcher::Origin origin;

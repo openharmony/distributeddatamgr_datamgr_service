@@ -68,7 +68,7 @@ private:
     void GarbageCollect(bool isForce);
     void StartTimer();
     struct Delegate : public GeneralWatcher {
-        Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user);
+        Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta);
         ~Delegate();
         operator Store();
         bool operator<(const Time &time) const;
@@ -77,12 +77,14 @@ private:
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
         int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
+        void PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables);
 
     private:
         mutable Time time_;
         GeneralStore *store_ = nullptr;
         Watchers watchers_;
         int32_t user_;
+        StoreMetaData meta_;
         std::shared_mutex mutex_;
     };
 

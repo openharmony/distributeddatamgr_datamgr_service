@@ -35,6 +35,13 @@ struct Config final : public DistributedData::Serializable {
     bool Unmarshal(const json &node) override;
 };
 
+struct LaunchInfo final : public DistributedData::Serializable {
+    std::string storeId = "";
+    std::vector<std::string> tableNames;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
 struct ProfileInfo : public DistributedData::Serializable {
     std::vector<Config> tableConfig;
     bool isSilentProxyEnable = true;
@@ -42,6 +49,7 @@ struct ProfileInfo : public DistributedData::Serializable {
     std::string tableName;
     std::string scope = "module";
     std::string type = "rdb";
+    std::vector<LaunchInfo> launchInfos;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

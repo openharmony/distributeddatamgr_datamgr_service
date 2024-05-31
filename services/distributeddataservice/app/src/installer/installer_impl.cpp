@@ -85,6 +85,7 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
             MetaDataManager::GetInstance().DelMeta(meta.appId, true);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
             PermitDelegate::GetInstance().DelCache(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
         }
     }
 }

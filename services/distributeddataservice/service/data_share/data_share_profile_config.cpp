@@ -52,6 +52,20 @@ bool Config::Unmarshal(const json &node)
     return ret;
 }
 
+bool LaunchInfo::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(storeId)], storeId);
+    SetValue(node[GET_NAME(tableNames)], tableNames);
+    return true;
+}
+
+bool LaunchInfo::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(storeId), storeId);
+    GetValue(node, GET_NAME(tableNames), tableNames);
+    return true;
+}
+
 bool ProfileInfo::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(tableConfig)], tableConfig);
@@ -59,6 +73,7 @@ bool ProfileInfo::Marshal(json &node) const
     SetValue(node[GET_NAME(path)], storeName + SEPARATOR + tableName);
     SetValue(node[GET_NAME(scope)], scope);
     SetValue(node[GET_NAME(type)], type);
+    SetValue(node[GET_NAME(launchInfos)], launchInfos);
     return true;
 }
 
@@ -68,6 +83,7 @@ bool ProfileInfo::Unmarshal(const json &node)
     GetValue(node, GET_NAME(isSilentProxyEnable), isSilentProxyEnable);
     GetValue(node, GET_NAME(scope), scope);
     GetValue(node, GET_NAME(type), type);
+    GetValue(node, GET_NAME(launchInfos), launchInfos);
     std::string path;
     auto ret = GetValue(node, GET_NAME(path), path);
     if (ret) {
