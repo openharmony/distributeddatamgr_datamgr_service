@@ -31,6 +31,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedHardware;
 using namespace std::chrono;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
 constexpr const int ALIGN_WIDTH = 8;
