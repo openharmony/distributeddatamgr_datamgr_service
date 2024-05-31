@@ -140,6 +140,10 @@ void AutoSyncMatrix::DelStore(const StoreMetaData &meta)
 
 void AutoSyncMatrix::Mask::Delete(size_t pos)
 {
+    if (pos >= MAX_SIZE) {
+        ZLOGE("pos:%{public}zu exceeds maximum value:%{public}d", pos, MAX_SIZE);
+        return;
+    }
     std::bitset<MAX_SIZE> tmp;
     for (size_t i = 0; i < pos; i++) {
         tmp.set(i);
@@ -152,11 +156,19 @@ void AutoSyncMatrix::Mask::Delete(size_t pos)
 
 void AutoSyncMatrix::Mask::Set(size_t pos)
 {
+    if (pos >= MAX_SIZE) {
+        ZLOGE("pos:%{public}zu exceeds maximum value:%{public}d", pos, MAX_SIZE);
+        return;
+    }
     data.set(pos);
 }
 
 void AutoSyncMatrix::Mask::Init(size_t size)
 {
+    if (size >= MAX_SIZE) {
+        ZLOGE("pos:%{public}zu exceeds maximum value:%{public}d", size, MAX_SIZE);
+        return;
+    }
     for (size_t i = 0; i < size; i++) {
         data.set(i);
     }
@@ -164,6 +176,10 @@ void AutoSyncMatrix::Mask::Init(size_t size)
 
 void AutoSyncMatrix::Mask::Reset(size_t pos)
 {
+    if (pos >= MAX_SIZE) {
+        ZLOGE("pos:%{public}zu exceeds maximum value:%{public}d", pos, MAX_SIZE);
+        return;
+    }
     data.reset(pos);
 }
 
