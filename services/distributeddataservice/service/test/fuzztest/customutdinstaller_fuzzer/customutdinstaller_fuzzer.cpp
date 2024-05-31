@@ -26,7 +26,6 @@
 using namespace OHOS::UDMF;
 
 namespace OHOS {
-//const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
 
 bool InstallUtdFuzz(const uint8_t* data, size_t size)
 {
