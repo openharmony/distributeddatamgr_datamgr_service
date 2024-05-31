@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <vector>
 #include<unistd.h>
+#include <sys/stat.h>
 
 #include "log_print.h"
 #include "ipc_skeleton.h"
@@ -330,7 +331,7 @@ bool RuntimeStore::Init()
     return true;
 }
 
-bool RuntimeStore::SaveMetaData()
+bool RuntimeStore::BuildMetaDataParam(DistributedData::StoreMetaData &metaData)
 {
     auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (localDeviceId.empty()) {
@@ -340,26 +341,43 @@ bool RuntimeStore::SaveMetaData()
 
     uint32_t token = IPCSkeleton::GetSelfTokenID();
     const std::string userId = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token));
-    DistributedData::StoreMetaData saveMeta;
-    saveMeta.appType = "harmony";
-    saveMeta.deviceId = localDeviceId;
-    saveMeta.storeId = storeId_;
-    saveMeta.isAutoSync = false;
-    saveMeta.isBackup = false;
-    saveMeta.isEncrypt = false;
-    saveMeta.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.user =  userId;
-    saveMeta.account = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    saveMeta.tokenId = token;
-    saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-    saveMeta.area = DistributedKv::Area::EL1;
-    saveMeta.uid = static_cast<int32_t>(getuid());
-    saveMeta.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
-    saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
-    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
+    metaData.appType = "harmony";
+    metaData.deviceId = localDeviceId;
+    metaData.storeId = storeId_;
+    metaData.isAutoSync = false;
+    metaData.isBackup = false;
+    metaData.isEncrypt = false;
+    metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    metaData.user = userId;
+    metaData.account = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    metaData.tokenId = token;
+    metaData.securityLevel = DistributedKv::SecurityLevel::S1;
+    metaData.area = DistributedKv::Area::EL1;
+    metaData.uid = static_cast<int32_t>(getuid());
+    metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
+    metaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
+    metaData.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(metaData);
 
-    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, userId);
+    return true;
+}
+
+bool RuntimeStore::SaveMetaData()
+{
+    DistributedData::StoreMetaData saveMeta;
+    if (!BuildMetaDataParam(saveMeta)) {
+        return false;
+    }
+
+    int foregroundUserId = 0;
+    DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    saveMeta.dataDir.append("/").append(std::to_string(foregroundUserId));
+    if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
+        ZLOGE("Create directory error");
+        return false;
+    }
+
+    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, saveMeta.user, std::to_string(foregroundUserId));
 
     DistributedData::StoreMetaData loadLocal;
     DistributedData::StoreMetaData syncMeta;
@@ -386,9 +404,10 @@ bool RuntimeStore::SaveMetaData()
     return true;
 }
 
-void RuntimeStore::SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId)
+void RuntimeStore::SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId,
+    const std::string &subUser)
 {
-    delegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>(appId, userId);
+    delegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>(appId, userId, subUser);
     DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
     delegateManager_->SetKvStoreConfig(kvStoreConfig);
 }
