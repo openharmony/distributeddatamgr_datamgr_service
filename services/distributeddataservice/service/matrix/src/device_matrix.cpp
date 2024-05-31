@@ -229,7 +229,7 @@ std::pair<uint16_t, uint16_t> DeviceMatrix::OnBroadcast(const std::string &devic
         remotes_.insert_or_assign(device, mask);
     }
     if (observer_) {
-        observer_(device, mask.dynamic);
+        observer_(device, { mask.statics, mask.dynamic });
     }
     return { mask.dynamic, mask.statics };
 }
@@ -485,7 +485,7 @@ void DeviceMatrix::OnExchanged(const std::string &device, uint16_t code, LevelTy
         it->second.dynamic &= ~codes[LevelType::DYNAMIC];
         UpdateConsistentMeta(device, it->second);
         if (observer_) {
-            observer_(device, it->second.dynamic);
+            observer_(device, { it->second.statics, it->second.dynamic });
         }
     }
 }
@@ -711,7 +711,7 @@ MatrixMetaData DeviceMatrix::GetMatrixInfo(const std::string &device)
     return meta;
 }
 
-void DeviceMatrix::RegRemoteChange(std::function<void(const std::string &, uint16_t)> observer)
+void DeviceMatrix::RegRemoteChange(std::function<void(const std::string &, std::pair<uint16_t, uint16_t>)> observer)
 {
     if (observer_) {
         ZLOGD("duplicate register");
