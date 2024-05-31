@@ -211,5 +211,10 @@ std::string AccountDelegateNormalImpl::GetUnencryptedAccountId(int32_t userId) c
     }
     return Sha256AccountId(info.GetRawUid());
 }
+
+bool AccountDelegateNormalImpl::QueryForegroundUserId(int &foregroundUserId)
+{
+    return AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(foregroundUserId);
+}
 }  // namespace DistributedKv
 }  // namespace OHOS

@@ -93,7 +93,7 @@ CloudServiceImpl::CloudServiceImpl()
             }
             Subscription sub;
             Subscription::Unmarshall(value, sub);
-            InitSubTask(sub);
+            InitSubTask(sub, SUBSCRIPTION_INTERVAL);
             return true;
         }, true);
 }
@@ -124,6 +124,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         return status;
@@ -145,6 +146,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         return status;
@@ -1313,7 +1315,7 @@ ExecutorPool::Task CloudServiceImpl::GenSubTask(Task task, int32_t user)
     };
 }
 
-void CloudServiceImpl::InitSubTask(const Subscription &sub)
+void CloudServiceImpl::InitSubTask(const Subscription &sub, uint64_t minInterval)
 {
     auto expire = sub.GetMinExpireTime();
     if (expire == INVALID_SUB_TIME) {
@@ -1326,7 +1328,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
     ZLOGI("Subscription Info, subTask:%{public}" PRIu64", user:%{public}d", subTask_, sub.userId);
     expire = expire - TIME_BEFORE_SUB; // before 12 hours
     auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
-    Duration delay = expire > now ? milliseconds(expire - now) : milliseconds(0);
+    Duration delay = milliseconds(std::max(expire > now ? expire - now : 0, minInterval));
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (subTask_ != ExecutorPool::INVALID_TASK_ID) {
         if (expire < expireTime_) {

@@ -39,6 +39,7 @@ public:
     API_EXPORT std::string GetMetaBackupPath(uint32_t version = INVALID_VERSION);
     API_EXPORT std::vector<uint32_t> GetVersions();
     API_EXPORT void Initialize(const std::vector<Strategy> &strategies);
+    API_EXPORT bool CreateDirectory(const std::string &path) const;
 
 private:
     using Action = std::string (DirectoryManager::*)(const StoreMetaData &) const;
@@ -62,7 +63,6 @@ private:
     std::vector<std::string> Split(const std::string &source, const std::string &pattern) const;
     int32_t GetVersionIndex(uint32_t version) const;
     std::string GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath = "") const;
-    bool CreateDirectory(const std::string &path) const;
     const std::map<std::string, Action> actions_;
     std::vector<StrategyImpl> strategies_;
 };

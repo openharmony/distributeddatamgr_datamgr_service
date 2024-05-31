@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 #define LOG_TAG "StoreCache"
-
 #include "store_cache.h"
 #include <chrono>
+#include <string>
 
 #include "log_print.h"
 #include "runtime_store.h"
 #include "unified_meta.h"
+#include "account/account_delegate.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -32,7 +33,12 @@ StoreCache &StoreCache::GetInstance()
 std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
 {
     std::shared_ptr<Store> store;
-    stores_.Compute(intention, [&store](const auto &intention, std::shared_ptr<Store> &storePtr) -> bool {
+    int foregroundUserId = 0;
+    DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    std::string key = intention;
+    key.append(std::to_string(foregroundUserId));
+
+    stores_.Compute(key, [&store, intention](const auto &key, std::shared_ptr<Store> &storePtr) -> bool {
         if (storePtr != nullptr) {
             store = storePtr;
             return true;

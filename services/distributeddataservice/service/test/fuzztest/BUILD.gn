@@ -21,6 +21,7 @@ group("fuzztest") {
   deps = [
     "cloudservicestub_fuzzer:fuzztest",
     "datashareservicestub_fuzzer:fuzztest",
+    "dumphelper_fuzzer:fuzztest",
     "kvdbservicestub_fuzzer:fuzztest",
     "objectservicestub_fuzzer:fuzztest",
     "rdbresultsetstub_fuzzer:fuzztest",

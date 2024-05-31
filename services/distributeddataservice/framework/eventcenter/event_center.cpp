@@ -152,4 +152,3 @@ void EventCenter::AsyncQueue::AddHandler(int32_t evtId, std::function<void(const
 }
 } // namespace DistributedData
 } // namespace OHOS
-
