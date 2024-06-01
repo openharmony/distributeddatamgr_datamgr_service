@@ -79,6 +79,8 @@ ohos_shared_library("distributeddataservice") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    boundary_sanitize = true
+    ubsan = true
   }
   sources = [
     "src/db_info_handle_impl.cpp",
