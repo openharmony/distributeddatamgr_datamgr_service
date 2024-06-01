@@ -14,7 +14,6 @@
  */
 
 #include "customutdinstaller_fuzzer.h"
-
 #include <cstddef>
 #include <cstdint>
 
