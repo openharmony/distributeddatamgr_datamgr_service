@@ -17,6 +17,7 @@
 namespace OHOS::DistributedData {
 bool SchemaMeta::Marshal(Serializable::json &node) const
 {
+    SetValue(node[GET_NAME(metaVersion)], metaVersion);
     SetValue(node[GET_NAME(version)], version);
     SetValue(node[GET_NAME(bundleName)], bundleName);
     SetValue(node[GET_NAME(databases)], databases);
@@ -25,6 +26,9 @@ bool SchemaMeta::Marshal(Serializable::json &node) const
 
 bool SchemaMeta::Unmarshal(const Serializable::json &node)
 {
+    if (!GetValue(node, GET_NAME(metaVersion), metaVersion)) {
+        metaVersion = 0;
+    }
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(databases), databases);
