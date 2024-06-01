@@ -199,7 +199,7 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
 int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data)
 {
     std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
-    int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, dfsUris, data.GetRuntime()->key.bundleName);
+    int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, dfsUris);
     if (ret != 0 || dfsUris.empty()) {
         ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
               ret, userId, uris.size());

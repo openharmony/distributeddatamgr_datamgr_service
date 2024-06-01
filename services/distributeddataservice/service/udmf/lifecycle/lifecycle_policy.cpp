@@ -60,11 +60,16 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
     }
-    std::vector<std::string> timeoutKeys;
-    auto status = GetTimeoutKeys(store, INTERVAL, timeoutKeys);
+    std::vector<UnifiedData> timeoutData;
+    auto status = GetTimeoutData(store, INTERVAL, timeoutData);
     if (status != E_OK) {
-        ZLOGE("Get timeout keys failed.");
+        ZLOGE("Get timeout data failed.");
         return E_DB_ERROR;
+    }
+    std::vector<std::string> timeoutKeys;
+    for (auto &data : timeoutData) {
+        RevokeUriPermission(data);
+        timeoutKeys.push_back(data.GetRuntime()->key.key);
     }
     if (store->DeleteBatch(timeoutKeys) != E_OK) {
         ZLOGE("Remove data failed, intention: %{public}s.", intention.c_str());
@@ -73,8 +78,8 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
     return E_OK;
 }
 
-Status LifeCyclePolicy::GetTimeoutKeys(
-    const std::shared_ptr<Store> &store, Duration interval, std::vector<std::string> &timeoutKeys)
+Status LifeCyclePolicy::GetTimeoutData(
+    const std::shared_ptr<Store> &store, Duration interval, std::vector<UnifiedData> &timeoutData)
 {
     std::vector<UnifiedData> datas;
     auto status = store->GetBatchData(DATA_PREFIX, datas);
@@ -90,8 +95,7 @@ Status LifeCyclePolicy::GetTimeoutKeys(
     for (const auto &data : datas) {
         if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
             || curTime < data.GetRuntime()->createTime) {
-            timeoutKeys.push_back(data.GetRuntime()->key.key);
-            RevokeUriPermission(data);
+            timeoutData.push_back(data);
         }
     }
     return E_OK;
@@ -101,9 +105,9 @@ void LifeCyclePolicy::RevokeUriPermission(const UnifiedData &unifiedData)
 {
     std::string bundleName = unifiedData.GetRuntime()->key.bundleName;
     auto records = unifiedData.GetRecords();
-    for (auto record : records) {
+    for (auto &record : records) {
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
+            auto file = std::static_pointer_cast<File>(record);
             if (file->GetUri().empty()) {
                 ZLOGW("Get uri is empty");
                 continue;
