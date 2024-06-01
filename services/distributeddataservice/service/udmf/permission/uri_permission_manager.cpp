@@ -48,9 +48,14 @@ Status UriPermissionManager::GrantUriPermission(
     return E_OK;
 }
 
-void UriPermissionManager::RevokeUriPermission(const Uri &uri, const std::string &bundleName)
+Status UriPermissionManager::RevokeUriPermission(const Uri &uri, const std::string &bundleName)
 {
-    AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(uri, bundleName);
+    auto status = AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(uri, bundleName);
+    ZLOGI("RevokeUriPermission end, permissionCode is %{public}d", status);
+    if (status == E_OK) {
+        return E_OK;
+    }
+    return E_NO_PERMISSION;
 }
 
 } // namespace UDMF
