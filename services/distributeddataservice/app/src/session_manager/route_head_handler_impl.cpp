@@ -80,7 +80,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
     auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
     if (devInfo.osType != OH_OS_TYPE && devInfo.deviceType == static_cast<uint32_t>(DmDeviceType::DEVICE_TYPE_CAR)) {
-        ZLOGI("type car set version");
+        ZLOGI("type car set version. devicdId:%{public}s", Anonymous::Change(session_.targetDeviceId).c_str());
         flag = true;
         peerCap.version = CapMetaData::CURRENT_VERSION;
     }
