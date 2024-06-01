@@ -31,7 +31,6 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
-using namespace OHOS::DistributedHardware;
 using namespace std::chrono;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
 constexpr const int ALIGN_WIDTH = 8;
@@ -71,7 +70,6 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 {
     ZLOGD("begin");
     headSize = 0;
-    static constexpr int32_t OH_OS_TYPE = 10;
     if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
@@ -79,7 +77,8 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     bool flag = false;
     auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
     auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
-    if (devInfo.osType != OH_OS_TYPE && devInfo.deviceType == static_cast<uint32_t>(DmDeviceType::DEVICE_TYPE_CAR)) {
+    if (devInfo.osType != OH_OS_TYPE && devInfo.deviceType ==
+        static_cast<uint32_t>(DistributedHardware::DmDeviceType::DEVICE_TYPE_CAR)) {
         ZLOGI("type car set version. devicdId:%{public}s", Anonymous::Change(session_.targetDeviceId).c_str());
         flag = true;
         peerCap.version = CapMetaData::CURRENT_VERSION;
