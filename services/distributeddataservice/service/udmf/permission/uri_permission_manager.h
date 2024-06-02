@@ -19,16 +19,35 @@
 #include <memory>
 #include <string>
 
+#include "concurrent_map.h"
 #include "error_code.h"
+#include "executor_pool.h"
 #include "uri.h"
 
 namespace OHOS {
 namespace UDMF {
 class UriPermissionManager {
 public:
+    using Time = std::chrono::steady_clock::time_point;
     static UriPermissionManager &GetInstance();
     Status GrantUriPermission(
         const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey);
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
+private:
+    UriPermissionManager() {}
+    ~UriPermissionManager() {}
+    UriPermissionManager(const UriPermissionManager &mgr) = delete;
+    UriPermissionManager &operator=(const UriPermissionManager &mgr) = delete;
+
+    void RevokeUriPermission();
+
+    ConcurrentMap<std::string, Time> uriTimeout_;
+    static constexpr int64_t INTERVAL = 60;  // 60 min
+    const std::string delimiter_ = "||";
+    ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
+    std::mutex taskMutex_;
+    std::shared_ptr<ExecutorPool> executorPool_;
 };
 } // namespace UDMF
 } // namespace OHOS
