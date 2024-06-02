@@ -38,7 +38,6 @@ using namespace SharingUtil;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
-const char *DEFAULT_ACCOUNT_UID = "ohosAnonymousUid";
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Store &store, const Tables &tables)
     : user_(user), bundleName_(bundleName)
@@ -260,8 +259,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         CloudInfo cloud;
         cloud.user = info.user_;
 
-        std::vector<std::tuple<QueryKey, uint64_t>> cloudSyncInfos;
-        GetCloudSyncInfo(info, cloud, cloudSyncInfos);
+        auto cloudSyncInfos = GetCloudSyncInfo(info, cloud);
         if (cloudSyncInfos.empty()) {
             ZLOGD("get cloud info failed, user: %{public}d.", cloud.user);
             info.SetError(E_CLOUD_DISABLED);
@@ -498,28 +496,31 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
     return store;
 }
 
-void SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
-    std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
+bool SyncManager::NeedGetCloudInfo(CloudInfo &cloud)
 {
-    if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-        ZLOGW("not exist local cloud metadata, user: %{public}d.", cloud.user);
+    return (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) || !cloud.enableCloud) &&
+           DmAdapter::GetInstance().IsNetworkAvailable() && Account::GetInstance()->IsLoginAccount();
+}
+
+std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud)
+{
+    std::vector<std::tuple<QueryKey, uint64_t>> cloudSyncInfos;
+    if (NeedGetCloudInfo(cloud)) {
+        ZLOGI("get cloud info from server, user: %{public}d.", cloud.user);
         auto instance = CloudServer::GetInstance();
         if (instance == nullptr) {
-            return;
-        }
-        auto accountId = Account::GetInstance()->GetCurrentAccountId();
-        if (!DmAdapter::GetInstance().IsNetworkAvailable() || accountId.empty() || accountId == DEFAULT_ACCOUNT_UID) {
-            return;
+            return cloudSyncInfos;
         }
         cloud = instance->GetServerInfo(cloud.user);
         if (!cloud.IsValid()) {
             ZLOGE("cloud is empty, user: %{public}d", cloud.user);
-            return;
+            return cloudSyncInfos;
         }
         if (!MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true)) {
             ZLOGW("save cloud info fail, user: %{public}d", cloud.user);
         }
     }
+
     if (info.bundleName_.empty()) {
         for (const auto &it : cloud.apps) {
             QueryKey queryKey{ .accountId = cloud.id, .bundleName = it.first, .storeId = "" };
@@ -529,6 +530,7 @@ void SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
         QueryKey queryKey{ .accountId = cloud.id, .bundleName = info.bundleName_, .storeId = "" };
         cloudSyncInfos.emplace_back(std::make_tuple(queryKey, info.syncId_));
     }
+    return cloudSyncInfos;
 }
 
 int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)

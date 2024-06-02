@@ -163,6 +163,7 @@ private:
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
     std::mutex mutex_;
+    std::mutex rwMetaMutex_;
     TaskId subTask_ = ExecutorPool::INVALID_TASK_ID;
     uint64_t expireTime_ = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count());

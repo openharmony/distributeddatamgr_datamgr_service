@@ -70,7 +70,7 @@ int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
     }
     return tokenInfo.userID;
 }
-    
+
 bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)
 {
     users = {0}; // default user
@@ -87,6 +87,11 @@ bool AccountDelegateNormalImpl::QueryForegroundUsers(std::vector<int> &users)
         users.push_back(account.localId);
     }
     return true;
+}
+
+bool AccountDelegateNormalImpl::IsLoginAccount()
+{
+    return GetCurrentAccountId() != AccountSA::DEFAULT_OHOS_ACCOUNT_UID;
 }
 
 bool AccountDelegateNormalImpl::IsVerified(int userId)

@@ -124,6 +124,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         return status;
@@ -145,6 +146,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         return status;
