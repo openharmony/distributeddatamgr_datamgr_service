@@ -16,10 +16,8 @@
 
 #include "lifecycle_policy.h"
 
-#include "file.h"
 #include "log_print.h"
 #include "preprocess/preprocess_utils.h"
-#include "uri_permission_manager.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -60,16 +58,11 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
     }
-    std::vector<UnifiedData> timeoutData;
-    auto status = GetTimeoutData(store, INTERVAL, timeoutData);
-    if (status != E_OK) {
-        ZLOGE("Get timeout data failed.");
-        return E_DB_ERROR;
-    }
     std::vector<std::string> timeoutKeys;
-    for (auto &data : timeoutData) {
-        RevokeUriPermission(data);
-        timeoutKeys.push_back(data.GetRuntime()->key.key);
+    auto status = GetTimeoutKeys(store, INTERVAL, timeoutKeys);
+    if (status != E_OK) {
+        ZLOGE("Get timeout keys failed.");
+        return E_DB_ERROR;
     }
     if (store->DeleteBatch(timeoutKeys) != E_OK) {
         ZLOGE("Remove data failed, intention: %{public}s.", intention.c_str());
@@ -78,8 +71,8 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
     return E_OK;
 }
 
-Status LifeCyclePolicy::GetTimeoutData(
-    const std::shared_ptr<Store> &store, Duration interval, std::vector<UnifiedData> &timeoutData)
+Status LifeCyclePolicy::GetTimeoutKeys(
+    const std::shared_ptr<Store> &store, Duration interval, std::vector<std::string> &timeoutKeys)
 {
     std::vector<UnifiedData> datas;
     auto status = store->GetBatchData(DATA_PREFIX, datas);
@@ -95,31 +88,10 @@ Status LifeCyclePolicy::GetTimeoutData(
     for (const auto &data : datas) {
         if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
             || curTime < data.GetRuntime()->createTime) {
-            timeoutData.push_back(data);
+            timeoutKeys.push_back(data.GetRuntime()->key.key);
         }
     }
     return E_OK;
-}
-
-void LifeCyclePolicy::RevokeUriPermission(const UnifiedData &unifiedData)
-{
-    std::string bundleName = unifiedData.GetRuntime()->key.bundleName;
-    auto records = unifiedData.GetRecords();
-    for (auto &record : records) {
-        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-            auto file = std::static_pointer_cast<File>(record);
-            if (file->GetUri().empty()) {
-                ZLOGW("Get uri is empty");
-                continue;
-            }
-            Uri uri(file->GetUri());
-            if (uri.GetAuthority().empty()) {
-                ZLOGW("Get authority is empty");
-                continue;
-            }
-            UriPermissionManager::GetInstance().RevokeUriPermission(uri, bundleName);
-        }
-    }
 }
 } // namespace UDMF
 } // namespace OHOS

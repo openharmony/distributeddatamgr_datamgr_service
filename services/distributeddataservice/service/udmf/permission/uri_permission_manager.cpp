@@ -45,17 +45,52 @@ Status UriPermissionManager::GrantUriPermission(
         }
     }
     ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
+
+    auto time = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+    std::for_each(allUri.begin(), allUri.end(), [&](const Uri &uri){
+        stores_[uri.ToString() + delimiter_ + bundleName] = time;
+    });
+
+    std::unique_lock<std::mutex> lock(taskMutex_);
+    if (taskId_ == ExecutorPool::INVALID_TASK_ID && executorPool_ != nullptr) {
+        taskId_ = executorPool_->Schedule(
+            std::chrono::minutes(INTERVAL), std::bind(&UriPermissionManager::RevokeUriPermission, this));
+    }
     return E_OK;
 }
 
-Status UriPermissionManager::RevokeUriPermission(const Uri &uri, const std::string &bundleName)
+void UriPermissionManager::RevokeUriPermission()
 {
-    auto status = AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(uri, bundleName);
-    ZLOGI("RevokeUriPermission end, permissionCode is %{public}d", status);
-    if (status == E_OK) {
-        return E_OK;
+    auto current = std::chrono::steady_clock::now();
+    stores_.EraseIf([&](auto &key, Time &time) {
+        if (time >= current) {
+            return false;
+        }
+        size_t pos = key.find(delimiter_);
+        if (pos != std::string::npos) {
+            Uri uri(key.substr(0, pos));
+            std::string bundleName = key.substr(pos + delimiter_.length());
+            int status = AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(uri, bundleName);
+            ZLOGI("RevokeUriPermission end, permissionCode is %{public}d, bundleName is %{public}s",
+                status, bundleName.c_str());
+        } else {
+            ZLOGE("delimiter not found.");
+        }
+        return true;
+    });
+
+    std::unique_lock<std::mutex> lock(taskMutex_);
+    if (!stores_.Empty() && executorPool_ != nullptr) {
+        ZLOGD("RevokeUriPermission, stores size:%{public}zu", stores_.Size());
+        taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&UriPermissionManager::RevokeUriPermission, this));
+    } else {
+        taskId_ = ExecutorPool::INVALID_TASK_ID;
     }
-    return E_NO_PERMISSION;
+}
+
+void UriPermissionManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executorPool_ = executors;
 }
 
 } // namespace UDMF

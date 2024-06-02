@@ -32,9 +32,8 @@ public:
     virtual Status OnGot(const UnifiedKey &key);
     virtual Status OnStart(const std::string &intention);
     virtual Status OnTimeout(const std::string &intention);
-    virtual Status GetTimeoutData(
-        const std::shared_ptr<Store> &store, Duration interval, std::vector<UnifiedData> &timeoutData);
-    void RevokeUriPermission(const UnifiedData &unifiedData);
+    virtual Status GetTimeoutKeys(
+        const std::shared_ptr<Store> &store, Duration interval, std::vector<std::string> &timeoutKeys);
 
 private:
     static constexpr const char *DATA_PREFIX = "udmf://";
