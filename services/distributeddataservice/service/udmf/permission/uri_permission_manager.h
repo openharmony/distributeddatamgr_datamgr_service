@@ -42,7 +42,7 @@ private:
 
     void RevokeUriPermission();
 
-    ConcurrentMap<std::string, Time> stores_;
+    ConcurrentMap<std::string, Time> uriTimeout_;
     static constexpr int64_t INTERVAL = 60;  // 60 min
     const std::string delimiter_ = "||";
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
