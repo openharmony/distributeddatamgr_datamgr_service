@@ -82,7 +82,8 @@ void UriPermissionManager::RevokeUriPermission()
     std::unique_lock<std::mutex> lock(taskMutex_);
     if (!stores_.Empty() && executorPool_ != nullptr) {
         ZLOGD("RevokeUriPermission, stores size:%{public}zu", stores_.Size());
-        taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&UriPermissionManager::RevokeUriPermission, this));
+        taskId_ = executorPool_->Schedule(
+            std::chrono::minutes(INTERVAL), std::bind(&UriPermissionManager::RevokeUriPermission, this));
     } else {
         taskId_ = ExecutorPool::INVALID_TASK_ID;
     }
