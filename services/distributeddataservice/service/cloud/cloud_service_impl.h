@@ -132,6 +132,7 @@ private:
 
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
+    void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(const std::string &storeId, const CloudInfo &cloudInfo,
         const SchemaMeta &schemaMeta);
     StatisticInfos QueryStatistics(const StoreMetaData &storeMetaData, const DistributedData::Database &database);
@@ -146,7 +147,8 @@ private:
     void InitSubTask(const Subscription &sub, uint64_t minInterval = 0);
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
-    int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
+    int32_t DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
+    void DoClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action);
     std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(const StoreInfo& storeInfo,
         DistributedData::GenQuery& query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;

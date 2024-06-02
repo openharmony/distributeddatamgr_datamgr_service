@@ -103,7 +103,7 @@ bool CloudInfo::IsValid() const
     return !id.empty();
 }
 
-bool CloudInfo::Exist(const std::string &bundleName, int32_t instanceId)
+bool CloudInfo::Exist(const std::string &bundleName, int32_t instanceId) const
 {
     if (bundleName.empty()) {
         return false;
@@ -112,7 +112,7 @@ bool CloudInfo::Exist(const std::string &bundleName, int32_t instanceId)
     return it != apps.end() && it->second.bundleName == bundleName && it->second.instanceId == instanceId;
 }
 
-bool CloudInfo::IsOn(const std::string &bundleName, int32_t instanceId)
+bool CloudInfo::IsOn(const std::string &bundleName, int32_t instanceId) const
 {
     if (bundleName.empty()) {
         return false;
