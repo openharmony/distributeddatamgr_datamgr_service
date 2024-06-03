@@ -29,25 +29,17 @@ namespace OHOS {
 bool InstallUtdFuzz(const uint8_t* data, size_t size)
 {
     int32_t user = static_cast<int32_t>(*data);
-    const std::string bundleName = "com.example.myapplication";
-    auto ret = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
-    if (ret != E_OK) {
-        return false;
-    } else {
-        return true;
-    }
+    std::string bundleName(reinterpret_cast<const char *>(data), size);
+    CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
+    return true;
 }
 
 bool UninstallUtdFuzz(const uint8_t* data, size_t size)
 {
-    bool result = false;
     int32_t user = static_cast<int32_t>(*data);
-    std::string bundleName = "com.example.myapplication";
-    auto ret = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
-    if (!ret) {
-        result = true;
-    }
-    return result;
+    std::string bundleName(reinterpret_cast<const char *>(data), size);
+    CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
+    return true;
 }
 }
 
