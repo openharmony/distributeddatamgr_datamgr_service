@@ -48,6 +48,7 @@ int32_t ExtensionAbilityManager::ConnectExtension(const std::string &uri, const 
     if (ret != E_OK) {
         ZLOGE("Connect ability failed, ret:%{public}d, uri:%{public}s, bundleName:%{public}s",
             ret, URIUtils::Anonymous(uri).c_str(), bundleName.c_str());
+        connectCallbackCache_.Erase(bundleName);
         return E_ERROR;
     }
     return E_OK;
