@@ -648,6 +648,16 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
     return { SUCCESS, cloudInfo };
 }
 
+int32_t CloudServiceImpl::UpdateCloudInfoFromServer(int32_t user)
+{
+    auto [status, cloudInfo] = GetCloudInfoFromServer(user);
+    if (status != SUCCESS || !cloudInfo.IsValid()) {
+        ZLOGE("userId:%{public}d, status:%{public}d", user, status);
+        return E_ERROR;
+    }
+    return MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true) ? E_OK : E_ERROR;
+}
+
 bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
@@ -816,6 +826,11 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
     MetaDataManager::GetInstance().DelMeta(NetworkSyncStrategy::GetKey(user, bundleName), true);
     return E_OK;
+}
+
+int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleName, int32_t user, int32_t index)
+{
+    return UpdateCloudInfoFromServer(user);
 }
 
 void CloudServiceImpl::GetSchema(const Event &event)
