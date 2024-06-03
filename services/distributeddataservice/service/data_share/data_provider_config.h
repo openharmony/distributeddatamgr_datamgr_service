@@ -44,6 +44,7 @@ public:
         bool singleton = false;
         bool hasExtension = false;
         bool allowEmptyPermission = false;
+        bool storeMetaDataFromUri = false;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
     };
 
@@ -54,6 +55,7 @@ private:
     int GetFromExtension();
     int GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
     int GetFromExtensionProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
+    void GetMetaDataFromUri();
     std::pair<int, BundleInfo> GetBundleInfo();
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
