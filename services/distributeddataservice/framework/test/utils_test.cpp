@@ -12,21 +12,29 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#define LOG_TAG "UtilsTest"
+#define LOG_TAG "ServiceUtilsTest"
 #include <chrono>
 
 #include "access_token.h"
+#include <endian.h>
 #include "gtest/gtest.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "utils/block_integer.h"
 #include "utils/converter.h"
 #include "utils/ref_count.h"
+#include "utils/endian_converter.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
-class UtilsTest : public testing::Test {
+namespace OHOS::Test {
+class ServiceUtilsTest : public testing::Test {
 public:
+    static constexpr uint16_t HOST_VALUE16 = 0x1234;
+    static constexpr uint16_t NET_VALUE16 = 0x3412;
+    static constexpr uint32_t HOST_VALUE32 = 0x12345678;
+    static constexpr uint32_t NET_VALUE32 = 0x78563412;
+    static constexpr uint64_t HOST_VALUE64 = 0x1234567890ABCDEF;
+    static constexpr uint64_t NET_VALUE64 = 0xEFCDAB8967452301;
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
@@ -61,9 +69,9 @@ public:
  * @tc.desc: Storemeta data convert to storeinfo.
  * @tc.type: FUNC
  */
-HWTEST_F(UtilsTest, StoreMetaDataConvertToStoreInfo, TestSize.Level2)
+HWTEST_F(ServiceUtilsTest, StoreMetaDataConvertToStoreInfo, TestSize.Level2)
 {
-    ZLOGI("UtilsTest StoreMetaDataConvertToStoreInfo begin.");
+    ZLOGI("ServiceUtilsTest StoreMetaDataConvertToStoreInfo begin.");
     StoreMetaData metaData;
     metaData.bundleName = "ohos.test.demo1";
     metaData.storeId = "test_storeId";
@@ -106,6 +114,8 @@ HWTEST_F(BlockIntegerTest, SymbolOverloadingTest, TestSize.Level2)
     ASSERT_EQ(blockInteger, 12);
     ASSERT_TRUE(now2 - now1 >= interval);
     ASSERT_TRUE(blockInteger < 20);
+    int result = static_cast<int>(blockInteger);
+    EXPECT_EQ(result, 12);
 }
 
 /**
@@ -136,6 +146,36 @@ HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
         RefCount refCount4 = std::move(refCount2);
         ASSERT_TRUE(refCount4);
         ASSERT_EQ(num, 0);
+        EXPECT_TRUE(static_cast<bool>(refCount4));
     }
     ASSERT_EQ(num, 10);
 }
+
+/**
+* @tc.name: HostToNet
+* @tc.desc: test endian_converter HostToNet function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceUtilsTest, HostToNet, TestSize.Level1)
+{
+    uint16_t netValue16 = HostToNet(HOST_VALUE16);
+    EXPECT_EQ(netValue16, htole16(HOST_VALUE16));
+
+    uint16_t hostValue16 = NetToHost(NET_VALUE16);
+    EXPECT_EQ(hostValue16, le16toh(NET_VALUE16));
+
+    uint32_t netValue32 = HostToNet(HOST_VALUE32);
+    EXPECT_EQ(netValue32, htole32(HOST_VALUE32));
+
+    uint32_t hostValue32 = NetToHost(NET_VALUE32);
+    EXPECT_EQ(hostValue32, le32toh(NET_VALUE32));
+
+    uint64_t netValue64 = HostToNet(HOST_VALUE64);
+    EXPECT_EQ(netValue64, htole64(HOST_VALUE64));
+
+    uint64_t hostValue64 = NetToHost(NET_VALUE64);
+    EXPECT_EQ(hostValue64, le64toh(NET_VALUE64));
+}
+} // namespace OHOS::Test

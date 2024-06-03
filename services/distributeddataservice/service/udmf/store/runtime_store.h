@@ -18,6 +18,7 @@
 
 #include "store.h"
 #include "kv_store_delegate_manager.h"
+#include "metadata/store_meta_data.h"
 #include "visibility.h"
 
 namespace OHOS {
@@ -45,7 +46,8 @@ private:
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> delegateManager_ = nullptr;
     std::shared_ptr<DistributedDB::KvStoreNbDelegate> kvStore_;
     std::string storeId_;
-    void SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId);
+    void SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId,
+        const std::string &subUser);
     bool SaveMetaData();
     Status GetEntries(const std::string &dataPrefix, std::vector<DistributedDB::Entry> &entries);
     Status PutEntries(const std::vector<DistributedDB::Entry> &entries);
@@ -54,6 +56,7 @@ private:
         const std::string &key, std::vector<DistributedDB::Entry> &entries, UnifiedData &unifiedData);
     bool GetDetailsFromUData(UnifiedData &data, UDDetails &details);
     Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
+    bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
 };
 } // namespace UDMF
 } // namespace OHOS

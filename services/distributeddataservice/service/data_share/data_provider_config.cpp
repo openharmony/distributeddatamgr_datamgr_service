@@ -113,6 +113,7 @@ int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
     providerInfo_.storeName = profileInfo.storeName;
     providerInfo_.tableName = profileInfo.tableName;
     providerInfo_.type = profileInfo.type;
+    providerInfo_.storeMetaDataFromUri = profileInfo.storeMetaDataFromUri;
     if (profileInfo.tableConfig.empty()) {
         return E_OK;
     }
@@ -140,7 +141,7 @@ int DataProviderConfig::GetFromExtensionProperties(const ProfileInfo &profileInf
 int DataProviderConfig::GetFromExtension()
 {
     if (!GetFromUriPath()) {
-        ZLOGE("Uri Path failed! uri:%{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
+        ZLOGE("Uri path failed! uri:%{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
         return E_URI_NOT_EXIST;
     }
     BundleInfo bundleInfo;
@@ -190,10 +191,22 @@ bool DataProviderConfig::GetFromUriPath()
     return true;
 }
 
+void DataProviderConfig::GetMetaDataFromUri()
+{
+    if (!providerInfo_.storeMetaDataFromUri) {
+        return;
+    }
+    if (!GetFromUriPath()) {
+        ZLOGE("Uri path failed, not change metaData from uri! uri:%{public}s",
+            URIUtils::Anonymous(providerInfo_.uri).c_str());
+    }
+}
+
 std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProviderInfo()
 {
     auto ret = GetFromProxyData();
     if (ret == E_OK) {
+        GetMetaDataFromUri();
         return std::make_pair(ret, providerInfo_);
     }
     ret = GetFromExtension();

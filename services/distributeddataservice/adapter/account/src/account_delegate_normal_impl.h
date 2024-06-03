@@ -31,11 +31,14 @@ public:
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
     bool QueryForegroundUsers(std::vector<int> &users) override;
+    bool IsLoginAccount() override;
     bool IsVerified(int userId) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
     std::string GetUnencryptedAccountId(int32_t userId = 0) const override;
+    bool QueryForegroundUserId(int &foregroundUserId) override;
+
 private:
     ~AccountDelegateNormalImpl();
     std::string Sha256AccountId(const std::string &plainText) const;

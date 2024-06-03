@@ -44,8 +44,8 @@ public:
     static std::string GetSchemaKey(int32_t user, const std::string &bundleName, int32_t instanceId = 0);
     static std::string GetSchemaKey(const StoreMetaData &meta);
     bool IsValid() const;
-    bool Exist(const std::string &bundleName, int32_t instanceId = 0);
-    bool IsOn(const std::string &bundleName, int32_t instanceId = 0);
+    bool Exist(const std::string &bundleName, int32_t instanceId = 0) const;
+    bool IsOn(const std::string &bundleName, int32_t instanceId = 0) const;
     bool IsAllSwitchOff() const;
     static std::string GetPrefix(const std::initializer_list<std::string> &field);
 

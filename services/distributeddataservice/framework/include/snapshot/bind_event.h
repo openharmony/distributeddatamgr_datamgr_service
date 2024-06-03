@@ -25,7 +25,7 @@ namespace OHOS::DistributedData {
 class API_EXPORT BindEvent : public Event {
 public:
     enum : int32_t {
-        BIND_SNAPSHOT,
+        BIND_SNAPSHOT = EVT_BIND,
         COMPENSATE_SYNC,
         RECOVER_SYNC,
     };

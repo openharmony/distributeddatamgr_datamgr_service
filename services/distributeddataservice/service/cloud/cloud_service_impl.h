@@ -116,6 +116,7 @@ private:
     static constexpr int32_t WAIT_TIME = 30; // 30 seconds
     static constexpr int32_t DEFAULT_USER = 0;
     static constexpr int32_t TIME_BEFORE_SUB = 12 * 60 * 60 * 1000; // 12hours, ms
+    static constexpr int32_t SUBSCRIPTION_INTERVAL = 60 * 60 * 1000; // 1hours
 
     bool UpdateCloudInfo(int32_t user);
     bool UpdateSchema(int32_t user);
@@ -131,6 +132,7 @@ private:
 
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
+    void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(const std::string &storeId, const CloudInfo &cloudInfo,
         const SchemaMeta &schemaMeta);
     StatisticInfos QueryStatistics(const StoreMetaData &storeMetaData, const DistributedData::Database &database);
@@ -142,10 +144,11 @@ private:
 
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
-    void InitSubTask(const Subscription &sub);
+    void InitSubTask(const Subscription &sub, uint64_t minInterval = 0);
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
-    int32_t DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
+    int32_t DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
+    void DoClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action);
     std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(const StoreInfo& storeInfo,
         DistributedData::GenQuery& query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
@@ -162,6 +165,7 @@ private:
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
     std::mutex mutex_;
+    std::mutex rwMetaMutex_;
     TaskId subTask_ = ExecutorPool::INVALID_TASK_ID;
     uint64_t expireTime_ = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count());

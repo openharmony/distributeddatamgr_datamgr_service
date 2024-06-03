@@ -29,7 +29,7 @@
 #include "metadata/strategy_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/user_meta_data.h"
-
+#include "metadata/matrix_meta_data.h"
 using namespace testing::ext;
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
@@ -747,5 +747,29 @@ HWTEST_F(ServiceMetaDataTest, CapabilityRange, TestSize.Level1)
     capRange.Unmarshal(node1);
     EXPECT_EQ(capRange.localLabel, local);
     EXPECT_EQ(capRange.remoteLabel, remote);
+}
+
+/**
+* @tc.name: MatrixMetaData
+* @tc.desc: test MatrixMetaData operator!= function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
+{
+    MatrixMetaData matrixMetaData1;
+    matrixMetaData1.version = 0;
+    matrixMetaData1.deviceId = "PEER_DEVICE_ID";
+
+    MatrixMetaData matrixMetaData2;
+    matrixMetaData2.version = 0;
+    matrixMetaData2.deviceId = "PEER_DEVICE_ID";
+
+    MatrixMetaData matrixMetaData3;
+    matrixMetaData3.version = 1;
+    matrixMetaData3.deviceId = "DEVICE_ID";
+    EXPECT_TRUE(matrixMetaData1 != matrixMetaData3);
+    EXPECT_FALSE(matrixMetaData1 != matrixMetaData2);
 }
 } // namespace OHOS::Test

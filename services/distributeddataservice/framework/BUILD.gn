@@ -40,12 +40,15 @@ config("module_public_config") {
 ohos_shared_library("distributeddatasvcfwk") {
   branch_protector_ret = "pac_ret"
   sanitize = {
+    ubsan = true
+    boundary_sanitize = true
     cfi = true
     cfi_cross_dso = true
     debug = false
   }
   sources = [
     "backuprule/backup_rule_manager.cpp",
+    "changeevent/remote_change_event.cpp",
     "checker/checker_manager.cpp",
     "cloud/asset_loader.cpp",
     "cloud/cloud_config_manager.cpp",
@@ -69,6 +72,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "feature/feature_system.cpp",
     "feature/static_acts.cpp",
     "metadata/appid_meta_data.cpp",
+    "metadata/auto_launch_meta_data.cpp",
     "metadata/capability_meta_data.cpp",
     "metadata/capability_range.cpp",
     "metadata/corrupted_meta_data.cpp",

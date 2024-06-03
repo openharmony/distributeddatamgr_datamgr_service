@@ -120,7 +120,7 @@ ohos_unittest("SerializableTest") {
   ]
 }
 
-ohos_unittest("UtilsTest") {
+ohos_unittest("ServiceUtilsTest") {
   module_out_path = module_output_path
 
   sources = [ "utils_test.cpp" ]
@@ -144,12 +144,22 @@ ohos_unittest("UtilsTest") {
 ohos_unittest("StoreTest") {
   module_out_path = module_output_path
 
+  include_dirs = [ "${data_service_path}/service/test/mock" ]
+
   sources = [
-    "../../service/rdb/rdb_query.cpp",
+    "${data_service_path}/framework/metadata/store_meta_data.cpp",
+    "${data_service_path}/framework/store/auto_cache.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "store_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -366,10 +376,10 @@ group("unittest") {
     ":MetaDataManagerTest",
     ":SerializableTest",
     ":ServiceMetaDataTest",
+    ":ServiceUtilsTest",
     ":StoreMetaDataLocalTest",
     ":StoreTest",
     ":SubscriptionTest",
-    ":UtilsTest",
   ]
 }
 ###############################################################################

@@ -104,11 +104,6 @@ KVDBGeneralStore::DBSecurity KVDBGeneralStore::GetDBSecurity(int32_t secLevel)
 KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &data, const DBPassword &password)
 {
     DBOption dbOption;
-    if (data.appId == Bootstrap::GetInstance().GetProcessLabel()) {
-        dbOption.compressionRate = META_COMPRESS_RATE;
-    } else {
-        dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
-    }
     dbOption.createIfNecessary = false;
     dbOption.isMemoryDb = false;
     dbOption.isEncryptedDb = data.isEncrypt;
@@ -124,7 +119,12 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
     } else if (data.storeType == KvStoreType::SINGLE_VERSION) {
         dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
     }
-
+    if (data.appId == Bootstrap::GetInstance().GetProcessLabel()) {
+        dbOption.compressionRate = META_COMPRESS_RATE;
+        dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
+    } else {
+        dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
+    }
     dbOption.schema = data.schema;
     dbOption.createDirByStoreIdOnly = true;
     dbOption.secOption = GetDBSecurity(data.securityLevel);

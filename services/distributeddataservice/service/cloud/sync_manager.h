@@ -107,9 +107,9 @@ private:
     static std::map<uint32_t, GenStore::BindInfo> GetBindInfos(const StoreMetaData &meta,
         const std::vector<int32_t> &users, const DistributedData::Database &schemaDatabase);
     static std::string GetAccountId(int32_t user);
-    static void GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud,
-        std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
+    static std::vector<std::tuple<QueryKey, uint64_t>> GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud);
     static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
+    static bool NeedGetCloudInfo(CloudInfo &cloud);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);

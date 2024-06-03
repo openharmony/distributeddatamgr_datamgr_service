@@ -97,7 +97,8 @@ private:
     struct SyncAgent {
         pid_t pid_ = 0;
         int32_t switchesObserverCount_ = 0;
-        bool changed_ = false;
+        bool staticsChanged_ = false;
+        bool dynamicChanged_ = false;
         AppId appId_;
         sptr<IKVDBNotifier> notifier_;
         std::map<std::string, uint32_t> delayTimes_;
@@ -147,6 +148,8 @@ private:
     void TryToSync(const StoreMetaData &metaData, bool force = false);
     void SyncOnSessionReady(const std::string &device);
     void OldOnlineSync(const StoreMetaData &data, const std::string &deviceId, RefCount refCount, uint16_t mask);
+    void OnStaticsChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
+    void OnDynamicChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;

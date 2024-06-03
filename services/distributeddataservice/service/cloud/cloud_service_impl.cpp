@@ -93,7 +93,7 @@ CloudServiceImpl::CloudServiceImpl()
             }
             Subscription sub;
             Subscription::Unmarshall(value, sub);
-            InitSubTask(sub);
+            InitSubTask(sub, SUBSCRIPTION_INTERVAL);
             return true;
         }, true);
 }
@@ -116,7 +116,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+    Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     return SUCCESS;
 }
 
@@ -124,6 +124,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         return status;
@@ -145,6 +146,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         return status;
@@ -165,45 +167,48 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     return SUCCESS;
 }
 
-int32_t CloudServiceImpl::DoClean(CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions)
+int32_t CloudServiceImpl::DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions)
 {
     syncManager_.StopCloudSync(cloudInfo.user);
-    auto keys = cloudInfo.GetSchemaKey();
     for (const auto &[bundle, action] : actions) {
         if (!cloudInfo.Exist(bundle)) {
             continue;
         }
         SchemaMeta schemaMeta;
-        if (!MetaDataManager::GetInstance().LoadMeta(keys[bundle], schemaMeta, true)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(bundle), schemaMeta, true)) {
             ZLOGE("failed, no schema meta:bundleName:%{public}s", bundle.c_str());
-            return ERROR;
+            continue;
         }
-        StoreMetaData meta;
-        meta.bundleName = schemaMeta.bundleName;
-        meta.user = std::to_string(cloudInfo.user);
-        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        meta.instanceId = cloudInfo.apps[bundle].instanceId;
-        for (const auto &database : schemaMeta.databases) {
-            // action
-            meta.storeId = database.name;
-            if (!GetStoreMetaData(meta)) {
-                continue;
-            }
-            AutoCache::Store store = SyncManager::GetStore(meta, cloudInfo.user, false);
-            if (store == nullptr) {
-                ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
-                return ERROR;
-            }
-            auto status = store->Clean({}, action, "");
-            if (status != E_OK) {
-                ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
-                      "storeId:%{public}s",
-                    status, static_cast<int>(cloudInfo.user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-                continue;
-            }
-        }
+        DoClean(cloudInfo.user, schemaMeta, action);
     }
     return SUCCESS;
+}
+
+void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action)
+{
+    StoreMetaData meta;
+    meta.bundleName = schemaMeta.bundleName;
+    meta.user = std::to_string(user);
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.instanceId = 0;
+    for (const auto &database : schemaMeta.databases) {
+        // action
+        meta.storeId = database.name;
+        if (!GetStoreMetaData(meta)) {
+            continue;
+        }
+        auto store = AutoCache::GetInstance().GetStore(meta, {});
+        if (store == nullptr) {
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            continue;
+        }
+        auto status = store->Clean({}, action, "");
+        if (status != E_OK) {
+            ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
+                  "storeId:%{public}s",
+                status, static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        }
+    }
 }
 
 bool CloudServiceImpl::GetStoreMetaData(StoreMetaData &meta)
@@ -554,7 +559,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
 int32_t CloudServiceImpl::OnInitialize()
 {
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
-    Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+    Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     std::vector<int> users;
     Account::GetInstance()->QueryUsers(users);
     for (auto user : users) {
@@ -593,13 +598,13 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
           Anonymous::Change(account).c_str());
     switch (code) {
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED):
-            Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+            Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
             Execute(GenTask(0, userId, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
-            Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+            Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
             break;
         default:
             break;
@@ -618,7 +623,7 @@ int32_t CloudServiceImpl::OnReady(const std::string& device)
         return SUCCESS;
     }
     for (auto user : users) {
-        Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB, WORK_DO_CLOUD_SYNC }));
+        Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     }
     return SUCCESS;
 }
@@ -699,8 +704,10 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
         ReleaseUserInfo(user);
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(oldInfo.id).c_str());
+        MetaDataManager::GetInstance().DelMeta(Subscription::GetKey(user), true);
         std::map<std::string, int32_t> actions;
         for (auto &[bundle, app] : cloudInfo.apps) {
+            MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundle), true);
             actions[bundle] = GeneralStore::CleanMode::CLOUD_INFO;
         }
         DoClean(oldInfo, actions);
@@ -725,6 +732,10 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
             radar = status;
             continue;
         }
+        SchemaMeta oldMeta;
+        if (MetaDataManager::GetInstance().LoadMeta(key, oldMeta, true)) {
+            UpgradeSchemaMeta(user, oldMeta);
+        }
         MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
     }
     return true;
@@ -746,6 +757,19 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t 
         return { SCHEMA_INVALID, schemaMeta };
     }
     return { SUCCESS, schemaMeta };
+}
+
+void CloudServiceImpl::UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta)
+{
+    if (schemaMeta.metaVersion == SchemaMeta::CURRENT_VERSION) {
+        return;
+    }
+    // A major schema upgrade requires flag cleaning
+    if (SchemaMeta::GetHighVersion(schemaMeta.metaVersion) != SchemaMeta::GetHighVersion()) {
+        ZLOGI("start clean. user:%{public}d, bundleName:%{public}s, metaVersion:%{public}d", user,
+            schemaMeta.bundleName.c_str(), schemaMeta.metaVersion);
+        DoClean(user, schemaMeta, GeneralStore::CleanMode::CLOUD_INFO);
+    }
 }
 
 ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handles handles)
@@ -803,6 +827,8 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
         schemaMeta.metaVersion == SchemaMeta::CURRENT_VERSION) {
         return { SUCCESS, schemaMeta };
     }
+    UpgradeSchemaMeta(userId, schemaMeta);
+
     if (!Account::GetInstance()->IsVerified(userId)) {
         ZLOGE("user:%{public}d is locked!", userId);
         return { ERROR, schemaMeta };
@@ -1314,7 +1340,7 @@ ExecutorPool::Task CloudServiceImpl::GenSubTask(Task task, int32_t user)
     };
 }
 
-void CloudServiceImpl::InitSubTask(const Subscription &sub)
+void CloudServiceImpl::InitSubTask(const Subscription &sub, uint64_t minInterval)
 {
     auto expire = sub.GetMinExpireTime();
     if (expire == INVALID_SUB_TIME) {
@@ -1327,7 +1353,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub)
     ZLOGI("Subscription Info, subTask:%{public}" PRIu64", user:%{public}d", subTask_, sub.userId);
     expire = expire - TIME_BEFORE_SUB; // before 12 hours
     auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
-    Duration delay = expire > now ? milliseconds(expire - now) : milliseconds(0);
+    Duration delay = milliseconds(std::max(expire > now ? expire - now : 0, minInterval));
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (subTask_ != ExecutorPool::INVALID_TASK_ID) {
         if (expire < expireTime_) {

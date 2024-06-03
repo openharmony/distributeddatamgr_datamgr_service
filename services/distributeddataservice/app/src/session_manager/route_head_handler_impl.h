@@ -78,6 +78,8 @@ private:
     std::string deviceId_;
     Session session_;
     uint32_t headSize_;
+
+    static constexpr int32_t OH_OS_TYPE = 10;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_ROUTE_HEAD_HANDLER_H
