@@ -20,16 +20,9 @@
 #include "log_print.h"
 #include "rdb_delegate.h"
 namespace OHOS::DataShare {
-std::shared_ptr<DBDelegate> DBDelegate::Create(const std::string &dir, int version, bool registerFunction,
-    bool isEncrypt, const std::string &secretMetaKey)
-{
-    return std::make_shared<RdbDelegate>(dir, version, registerFunction, isEncrypt, secretMetaKey);
-}
-
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData)
 {
-    return std::make_shared<RdbDelegate>(metaData.dataDir, NO_CHANGE_VERSION, true,
-        metaData.isEncrypt, metaData.isEncrypt ? metaData.GetSecretKey() : "");
+    return std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true);
 }
 
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
