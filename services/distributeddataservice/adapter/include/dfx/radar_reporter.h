@@ -41,9 +41,10 @@ enum BizStage {
     GENERAL_STAGE = 1,
 
     // cloud sync
-    DATA_CHANGE = 1,
+    TRIGGER_SYNC = 1,
     CHECK_SYNC_CONDITION = 2,
-    TRIGGER_SYNC = 3,
+    START_SYNC = 3,
+    FINISH_SYNC = 4,
 };
 
 enum BizState {
@@ -66,19 +67,18 @@ struct EventName {
 
 struct RadarParam {
     const char *bundleName_ = "";
-    int scene_ = CLOUD_SYNC;
-    int stage_ = GENERAL_STAGE;
-    int res_ = RES_IDLE;
-    int errCode_ = 0;
+    int32_t scene_ = CLOUD_SYNC;
+    int32_t stage_ = GENERAL_STAGE;
+    int32_t errCode_ = 0;
+    int32_t res_ = RES_SUCCESS;
 };
 
 class RadarReporter {
 public:
-    KVSTORE_API RadarReporter(const char *eventName, int scene, const char *bundleName, const char *funcName);
-    KVSTORE_API RadarReporter(const RadarParam &param, const char *funcName, int state = 0);
+    KVSTORE_API RadarReporter(const char *eventName, int32_t scene, const char *bundleName, const char *funcName);
     KVSTORE_API ~RadarReporter();
-    KVSTORE_API RadarReporter &operator=(int errCode);
-    KVSTORE_API static void Report(const RadarParam &param, const char *funcName, int state = 0,
+    KVSTORE_API RadarReporter &operator=(int32_t errCode);
+    KVSTORE_API static void Report(const RadarParam &param, const char *funcName, int32_t state = 0,
         const char *eventName = EventName::CLOUD_SYNC_BEHAVIOR);
 
 private:
@@ -86,7 +86,6 @@ private:
     RadarParam radarParam_;
     const char *eventName_ = EventName::CLOUD_SYNC_BEHAVIOR;
     const char *funcName_;
-    int state_ = 0;
 
     static constexpr const char *ORG_PKG_LABEL = "ORG_PKG";
     static constexpr const char *ORG_PKG = "distributddata";

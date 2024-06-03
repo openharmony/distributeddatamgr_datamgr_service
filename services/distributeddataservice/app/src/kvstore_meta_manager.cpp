@@ -45,7 +45,6 @@
 #include "utils/ref_count.h"
 #include "utils/converter.h"
 #include "water_version_manager.h"
-#include "radar_reporter.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -53,7 +52,6 @@ using Commu = AppDistributedKv::CommunicationProvider;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
-using namespace OHOS::DistributedDataDfx;
 using namespace DistributedDB;
 using namespace OHOS::AppDistributedKv;
 
@@ -366,7 +364,6 @@ void KvStoreMetaManager::SetCloudSyncer()
         auto bundleName = Bootstrap::GetInstance().GetProcessLabel();
         auto storeName = Bootstrap::GetInstance().GetMetaDBName();
         WaterVersionManager::GetInstance().GenerateWaterVersion(bundleName, storeName);
-        RadarReporter::Report({ bundleName.c_str(), CLOUD_SYNC, DATA_CHANGE, RES_SUCCESS }, "SetCloudSyncer", BEGIN);
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = bundleName;
         storeInfo.storeName = storeName;

@@ -126,6 +126,8 @@ private:
         bool retry);
     void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo);
     bool InitDefaultUser(int32_t &user);
+    std::function<void(const DistributedData::GenDetails &result)> RetryCallback(
+        const StoreInfo &storeInfo, Retryer retryer);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;

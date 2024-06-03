@@ -39,10 +39,8 @@
 #include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
-#include "radar_reporter.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
-using namespace DistributedDataDfx;
 using namespace DistributedDB;
 using namespace NativeRdb;
 using namespace CloudData;
@@ -465,9 +463,6 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
-    if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
-        RadarReporter::Report({ storeInfo_.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__);
-    }
     auto status = (syncMode < NEARBY_END)
                       ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0)
                   : (syncMode > NEARBY_END && syncMode < CLOUD_END) ? delegate_->Sync(
@@ -645,18 +640,12 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
         return [](auto &) {};
     }
 
-    return [async, autoAsync = async_, highMode, bundleName = storeInfo_.bundleName](
-               const std::map<std::string, SyncProcess> &processes) {
+    return [async, autoAsync = async_, highMode](const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
-            if (process.process == FINISHED) {
-                int res = (process.errCode != OK) ? RES_FAILED : RES_SUCCESS;
-                RadarReporter::Report({ bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, res, process.errCode },
-                    "RdbGeneralStore::GetDBProcessCB", END);
-            }
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];
                 table.upload.total = value.upLoadInfo.total;

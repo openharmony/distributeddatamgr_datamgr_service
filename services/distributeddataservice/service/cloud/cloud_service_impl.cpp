@@ -160,7 +160,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        RadarReporter::Report({ bundleName.c_str(), CLOUD_SYNC, DATA_CHANGE, RES_SUCCESS }, __FUNCTION__, BEGIN);
+        RadarReporter::Report({ bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__, BEGIN);
         syncManager_.DoCloudSync({ cloudInfo.user, bundleName });
     }
     return SUCCESS;
@@ -343,27 +343,24 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         if (user == DEFAULT_USER) {
             continue;
         }
-        RadarReporter radar({ exData.info.bundleName.c_str(), CLOUD_SYNC, DATA_CHANGE }, __FUNCTION__, BEGIN);
         auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
         if (CheckNotifyConditions(exData.info.accountId, exData.info.bundleName, cloudInfo) != E_OK) {
             ZLOGD("invalid user:%{public}d", user);
-            radar = INVALID_ARGUMENT;
             return INVALID_ARGUMENT;
         }
         auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
         SchemaMeta schemaMeta;
         if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
             ZLOGE("no exist meta, user:%{public}d", user);
-            radar = INVALID_ARGUMENT;
             return INVALID_ARGUMENT;
         }
         auto dbInfos = GetDbInfoFromExtraData(exData, schemaMeta);
         if (dbInfos.empty()) {
             ZLOGE("GetDbInfoFromExtraData failed, empty database info.");
-            radar = INVALID_ARGUMENT;
             return INVALID_ARGUMENT;
         }
         for (auto &dbInfo : dbInfos) {
+            RadarReporter::Report({ exData.info.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__, BEGIN);
             syncManager_.DoCloudSync(
                 SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second));
         }
@@ -929,7 +926,7 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
 
 bool CloudServiceImpl::DoCloudSync(int32_t user)
 {
-    RadarReporter::Report({ "", CLOUD_SYNC, DATA_CHANGE, RES_SUCCESS }, __FUNCTION__, BEGIN);
+    RadarReporter::Report({ "", CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__, BEGIN);
     syncManager_.DoCloudSync(user);
     return true;
 }
