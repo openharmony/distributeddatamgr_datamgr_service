@@ -53,7 +53,6 @@ public:
     void InitMetaParameter();
     void InitMetaListener();
     void InitBroadcast();
-    void InitDeviceOnline();
     void SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer);
     void BindExecutor(std::shared_ptr<ExecutorPool> executors);
 private:

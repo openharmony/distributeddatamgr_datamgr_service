@@ -124,36 +124,15 @@ bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
 void DeviceMatrix::Online(const std::string &device, RefCount refCount)
 {
     Mask mask;
-    EventCenter::Defer defer;
-    {
-        std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
-        auto it = offLines_.find(device);
-        if (it != offLines_.end()) {
-            mask = it->second;
-            offLines_.erase(it);
-        } else {
-            UpdateMask(mask);
-        }
-        onLines_.insert_or_assign(device, mask);
+    std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
+    auto it = offLines_.find(device);
+    if (it != offLines_.end()) {
+        mask = it->second;
+        offLines_.erase(it);
+    } else {
+        UpdateMask(mask);
     }
-    auto [dynamic, statics] = IsConsistent(device);
-    if ((dynamic && statics) || (Low(mask.statics) == 0 && Low(mask.dynamic) == 0)) {
-        ZLOGI("dynamic:%{public}d statics:%{public}d dynamic mask:0x%{public}08x statics mask:0x%{public}08x",
-            dynamic, statics, Low(mask.dynamic), Low(mask.statics));
-        return;
-    }
-    if (dynamic) {
-        mask.dynamic = ResetMask(mask.dynamic);
-    }
-    if (statics) {
-        mask.statics = ResetMask(mask.statics);
-    }
-    MatrixEvent::MatrixData matrixData;
-    matrixData.statics = mask.statics;
-    matrixData.dynamic = mask.dynamic;
-    auto evt = std::make_unique<MatrixEvent>(MATRIX_ONLINE, device, matrixData);
-    evt->SetRefCount(std::move(refCount));
-    EventCenter::GetInstance().PostEvent(std::move(evt));
+    onLines_.insert_or_assign(device, mask);
 }
 
 std::pair<bool, bool> DeviceMatrix::IsConsistent(const std::string &device)
@@ -318,10 +297,25 @@ void DeviceMatrix::UpdateRemoteMeta(const std::string &device, Mask &mask)
         if (High(newMeta.dynamic) < High(oldMeta.dynamic)) {
             newMeta.dynamic &= 0x000F;
             newMeta.dynamic |= High(oldMeta.dynamic);
+        } else if ((High(newMeta.dynamic) - High(oldMeta.dynamic)) > 1) {
+            newMeta.dynamic |= 0x000F;
+            mask.dynamic |= 0x000F;
         }
         if (High(newMeta.statics) < High(oldMeta.statics)) {
             newMeta.statics &= 0x000F;
             newMeta.statics |= High(oldMeta.statics);
+        } else if ((High(newMeta.statics) - High(oldMeta.statics)) > 1) {
+            newMeta.statics |= 0x000F;
+            mask.statics |= 0x000F;
+        }
+    } else {
+        if (High(newMeta.dynamic) != 0x0010) {
+            newMeta.dynamic |= 0x000F;
+            mask.dynamic |= 0x000F;
+        }
+        if (High(newMeta.statics) != 0x0010) {
+            newMeta.statics |= 0x000F;
+            mask.statics |= 0x000F;
         }
     }
     MetaDataManager::GetInstance().SaveMeta(newMeta.GetKey(), newMeta, true);

@@ -95,7 +95,6 @@ void KvStoreMetaManager::InitMetaListener()
     }
     SubscribeMetaKvStore();
     InitBroadcast();
-    InitDeviceOnline();
     NotifyAllAutoSyncDBInfo();
 }
 
@@ -124,48 +123,6 @@ void KvStoreMetaManager::InitBroadcast()
     });
 
     ZLOGI("observer matrix broadcast %{public}d.", result);
-}
-
-void KvStoreMetaManager::InitDeviceOnline()
-{
-    ZLOGI("observer matrix online event.");
-    using DBStatuses = std::map<std::string, DBStatus>;
-    EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_ONLINE, [this](const Event &event) {
-        auto &matrixEvent = static_cast<const MatrixEvent &>(event);
-        auto data = matrixEvent.GetMatrixData();
-        auto deviceId = matrixEvent.GetDeviceId();
-        auto onComplete =
-            [deviceId, data, refCount = matrixEvent.StealRefCount()](const DBStatuses &statuses) mutable {
-                auto finEvent = std::make_unique<MatrixEvent>(DeviceMatrix::MATRIX_META_FINISHED, deviceId, data);
-                finEvent->SetRefCount(std::move(refCount));
-                auto it = statuses.find(deviceId);
-                if (it != statuses.end() && it->second == DBStatus::OK) {
-                    RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_COMPLETE, RADAR_SUCCESS, BIZ_STATE, END);
-                    DeviceMatrix::GetInstance().OnExchanged(deviceId, DeviceMatrix::META_STORE_MASK);
-                } else if (it != statuses.end() && it->second != DBStatus::OK) {
-                    RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_COMPLETE, RADAR_FAILED, BIZ_STATE, END);
-                }
-                ZLOGI("dynamic:0x%{public}08x statics:0x%{public}08x device:%{public}s status:%{public}d online",
-                    data.dynamic, data.statics, Anonymous::Change(deviceId).c_str(),
-                    it == statuses.end() ? DBStatus::OK : it->second);
-                EventCenter::GetInstance().PostEvent(std::move(finEvent));
-            };
-        auto store = GetMetaKvStore();
-        uint16_t mask = data.dynamic & DEFAULT_MASK;
-        if (((mask & DeviceMatrix::META_STORE_MASK) != 0) && store != nullptr) {
-            RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_SYNC, RADAR_START, BIZ_STATE, START,
-                OS_TYPE, DmAdapter::GetInstance().IsOHOSType(deviceId));
-            auto status = store->Sync({ deviceId }, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, onComplete);
-            if (status == OK) {
-                RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_SYNC, RADAR_SUCCESS);
-                return;
-            }
-            RADAR_REPORT(ONLINE_DEVICE_SYNC, ONLINE_META_SYNC, RADAR_FAILED, BIZ_STATE, END);
-            ZLOGW("meta online sync error 0x%{public}08x device:%{public}s %{public}d", mask,
-                Anonymous::Change(deviceId).c_str(), status);
-        }
-        onComplete({ });
-    });
 }
 
 void KvStoreMetaManager::InitMetaData()
@@ -361,10 +318,10 @@ void KvStoreMetaManager::InitDBOption(DistributedDB::KvStoreNbDelegate::Option &
 void KvStoreMetaManager::SetCloudSyncer()
 {
     auto cloudSyncer = []() {
-        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
         auto bundleName = Bootstrap::GetInstance().GetProcessLabel();
         auto storeName = Bootstrap::GetInstance().GetMetaDBName();
         WaterVersionManager::GetInstance().GenerateWaterVersion(bundleName, storeName);
+        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = bundleName;
         storeInfo.storeName = storeName;
@@ -479,7 +436,6 @@ void KvStoreMetaManager::MetaDeviceChangeListenerImpl::OnDeviceChanged(const App
     if (info.uuid == DmAdapter::CLOUD_DEVICE_UUID) {
         return;
     }
-    EventCenter::Defer defer;
     switch (type) {
         case AppDistributedKv::DeviceChangeType::DEVICE_OFFLINE:
             DeviceMatrix::GetInstance().Offline(info.uuid);
