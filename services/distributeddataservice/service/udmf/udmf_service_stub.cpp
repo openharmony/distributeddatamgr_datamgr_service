@@ -220,7 +220,7 @@ int32_t UdmfServiceStub::OnIsRemoteData(MessageParcel &data, MessageParcel &repl
 int32_t UdmfServiceStub::OnSetAppShareOption(MessageParcel &data, MessageParcel &reply)
 {
     std::string intention;
-    std::string shareOption;
+    int32_t shareOption;
     if (!ITypesUtil::Unmarshal(data, intention, shareOption)) {
         ZLOGE("Unmarshal query failed");
         return E_READ_PARCEL_ERROR;
@@ -236,7 +236,7 @@ int32_t UdmfServiceStub::OnSetAppShareOption(MessageParcel &data, MessageParcel 
 int32_t UdmfServiceStub::OnGetAppShareOption(MessageParcel &data, MessageParcel &reply)
 {
     std::string intention;
-    std::string shareOption;
+    int32_t shareOption = SHARE_OPTIONS_BUTT;
     if (!ITypesUtil::Unmarshal(data, intention)) {
         ZLOGE("Unmarshal query failed");
         return E_READ_PARCEL_ERROR;
@@ -252,7 +252,6 @@ int32_t UdmfServiceStub::OnGetAppShareOption(MessageParcel &data, MessageParcel 
 int32_t UdmfServiceStub::OnRemoveAppShareOption(MessageParcel &data, MessageParcel &reply)
 {
     std::string intention;
-    std::string shareOption;
     if (!ITypesUtil::Unmarshal(data, intention)) {
         ZLOGE("Unmarshal query failed");
         return E_READ_PARCEL_ERROR;
