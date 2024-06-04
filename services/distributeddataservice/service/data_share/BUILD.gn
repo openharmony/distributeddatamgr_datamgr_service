@@ -101,6 +101,7 @@ ohos_shared_library("data_share_service") {
   external_deps = [
     "ability_base:want",
     "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
