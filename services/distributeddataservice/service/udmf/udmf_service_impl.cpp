@@ -531,11 +531,11 @@ int32_t UdmfServiceImpl::IsRemoteData(const QueryOption &query, bool &result)
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, const std::string &shareOption)
+int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, int32_t shareOption)
 {
-    if (intention.empty() || shareOption.empty()) {
-        ZLOGE("SetAppShareOption : para is invalid, intention: %{public}s, shareOption:%{public}s.",
-              intention.c_str(), shareOption.c_str());
+    if (intention.empty() || shareOption >= SHARE_OPTIONS_BUTT || shareOption < IN_APP) {
+        ZLOGE("SetAppShareOption : para is invalid, intention: %{public}s, shareOption:%{public}d.",
+              intention.c_str(), shareOption);
         return E_INVALID_PARAMETERS;
     }
 
@@ -543,7 +543,7 @@ int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, const s
     bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
     if (!isSystemApp) {
         ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
-        return E_NO_SYSTEM_PERMISSION;
+        return E_NO_PERMISSION;
     }
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
@@ -554,17 +554,17 @@ int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, const s
     std::string shareOptionTmp;
     if (store->GetLocal(std::to_string(accessTokenIDEx), shareOptionTmp) == E_OK) {
         ZLOGE("SetAppShareOption failed, shareOption has already been set, %{public}s.", shareOptionTmp.c_str());
-        return E_REPEAT_SETTINGS;
+        return E_SETTINGS_EXISTED;
     }
 
-    if (store->PutLocal(std::to_string(accessTokenIDEx), shareOption) != E_OK) {
-        ZLOGE("Store get unifiedData failed, intention: %{public}s.", shareOption.c_str());
+    if (store->PutLocal(std::to_string(accessTokenIDEx), ShareOptionsUtil::GetEnumStr(shareOption)) != E_OK) {
+        ZLOGE("Store get unifiedData failed, intention: %{public}d.", shareOption);
         return E_DB_ERROR;
     }
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, std::string &shareOption)
+int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, int32_t &shareOption)
 {
     if (intention.empty()) {
         ZLOGE("GetAppShareOption : para is invalid, %{public}s is invalid.", intention.c_str());
@@ -576,11 +576,15 @@ int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, std::st
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
     }
-    int32_t ret = store->GetLocal(std::to_string(accessTokenIDEx), shareOption);
+    std::string appShareOption;
+    int32_t ret = store->GetLocal(std::to_string(accessTokenIDEx), appShareOption);
     if (ret != E_OK) {
         ZLOGE("GetAppShareOption empty, intention: %{public}s.", intention.c_str());
         return ret;
     }
+    ZLOGI("GetAppShareOption, intention: %{public}s, appShareOption:%{public}s.",
+          intention.c_str(), appShareOption.c_str());
+    shareOption = ShareOptionsUtil::GetEnumNum(appShareOption);
     return E_OK;
 }
 
@@ -594,7 +598,7 @@ int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
     bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
     if (!isSystemApp) {
         ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
-        return E_NO_SYSTEM_PERMISSION;
+        return E_NO_PERMISSION;
     }
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
