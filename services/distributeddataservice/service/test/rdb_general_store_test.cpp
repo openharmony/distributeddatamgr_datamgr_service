@@ -52,9 +52,6 @@ RdbGeneralStore::VBucket g_RdbVBucket = {
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 static constexpr uint32_t PRINT_ERROR_CNT = 150;
-// constexpr const char *INSERT = "INSERT INTO ";
-constexpr const char *REPLACE = "REPLACE INTO ";
-constexpr const char *VALUES = " VALUES ";
 bool testResult = false;
 class RdbGeneralStoreTest : public testing::Test {
 public:
@@ -223,28 +220,6 @@ public:
     DBStatus SetCloudSyncConfig(const CloudSyncConfig &config) override
     {
         return DBStatus::OK;
-    }
-
-    std::string Sql(RdbGeneralStore::VBucket &&value)
-    {
-        std::string table = "test";
-        std::string strColumnSql;
-        std::string strRowValueSql;
-        strColumnSql += " (";
-        strRowValueSql += " (";
-        auto columnSize = value.size();
-        for (auto column = value.begin(); column != value.end(); ++column) {
-            strRowValueSql += " ?,";
-            strColumnSql += " " + column->first + ",";
-        }
-        if (columnSize != 0) {
-            strColumnSql.pop_back();
-            strColumnSql += ")";
-            strRowValueSql.pop_back();
-            strRowValueSql += ")";
-        }
-        std::string sql = REPLACE + table + strColumnSql + VALUES + strRowValueSql;
-        return sql;
     }
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
