@@ -431,6 +431,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_asset_loader_test.cpp",
     "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",
+    "rdb_general_store_test.cpp",
     "rdb_query_test.cpp",
   ]
 
