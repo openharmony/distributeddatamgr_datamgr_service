@@ -49,7 +49,7 @@ RdbGeneralStore::VBucket g_RdbVBucket = {
     {"#value", {int64_t(100)}},
     {"#float", {double(100)}}
 };
-bool RdbGeneralStoreTestResult = false;
+bool g_testResult = false;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 static constexpr uint32_t PRINT_ERROR_CNT = 150;
@@ -64,7 +64,7 @@ public:
     };
     void TearDown()
     {
-        RdbGeneralStoreTestResult = false;
+        g_testResult = false;
     };
 protected:
     static constexpr const char *bundleName = "test_rdb_general_store";
@@ -193,7 +193,7 @@ public:
 
     DBStatus SetReference(const std::vector<TableReferenceProperty> &tableReferenceProperty) override
     {
-        if (RdbGeneralStoreTestResult) {
+        if (g_testResult) {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -222,7 +222,7 @@ public:
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
     {
-        if (RdbGeneralStoreTestResult) {
+        if (g_testResult) {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -811,7 +811,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
     result = store->Clean(devices1, GeneralStore::NEARBY_DATA, tableName);
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    RdbGeneralStoreTestResult = true;
+    g_testResult = true;
     result = store->Clean(devices, GeneralStore::CLOUD_INFO, tableName);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     result = store->Clean(devices, GeneralStore::CLOUD_DATA, tableName);
@@ -925,7 +925,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
     std::vector<std::string> test = {"test"};
     result = store->SetDistributedTables(test, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
-    RdbGeneralStoreTestResult = true;
+    g_testResult = true;
     result = store->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
