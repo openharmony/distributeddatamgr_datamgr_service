@@ -49,20 +49,22 @@ RdbGeneralStore::VBucket g_RdbVBucket = {
     {"#value", {int64_t(100)}},
     {"#float", {double(100)}}
 };
+bool g_TestResult = false;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 static constexpr uint32_t PRINT_ERROR_CNT = 150;
-bool testResult = false;
 class RdbGeneralStoreTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
-    void SetUp(){
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp()
+    {
         Bootstrap::GetInstance().LoadDirectory();
         InitMetaData();
     };
-    void TearDown(){
-        testResult = false;
+    void TearDown()
+    {
+        g_TestResult = false;
     };
 protected:
     static constexpr const char *bundleName = "test_rdb_general_store";
@@ -98,7 +100,7 @@ public:
     int32_t GetCloudSyncTaskCount() override
     {
         static int32_t count = 0;
-        count = (count + 1) % 2;
+        count = (count + 1) % 2; // count + 1 的结果对 2 取余数
         return count;
     }
 
@@ -110,8 +112,7 @@ public:
     DBStatus RemoteQuery(const std::string &device, const RemoteCondition &condition,
         uint64_t timeout, std::shared_ptr<ResultSet> &result) override
     {
-        if (device == "test")
-        {
+        if (device == "test") {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -166,12 +167,10 @@ public:
 
     DBStatus SetTrackerTable(const TrackerSchema &schema) override
     {
-        if (schema.tableName == "WITH_INVENTORY_DATA")
-        {
+        if (schema.tableName == "WITH_INVENTORY_DATA") {
             return DBStatus::WITH_INVENTORY_DATA;
         }
-        if (schema.tableName == "test")
-        {
+        if (schema.tableName == "test") {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -186,8 +185,7 @@ public:
         std::string sqls = "INSERT INTO test ( #flag, #float, #gid, #value) VALUES  ( ?, ?, ?, ?)";
         std::string sqlIn = " UPDATE test SET setSql WHERE whereSql";
         std::string sql = "REPLACE INTO test ( #flag, #float, #gid, #value) VALUES  ( ?, ?, ?, ?)";
-        if (condition.sql == sqls || condition.sql == sqlIn || condition.sql == sql)
-        {
+        if (condition.sql == sqls || condition.sql == sqlIn || condition.sql == sql) {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -195,7 +193,7 @@ public:
 
     DBStatus SetReference(const std::vector<TableReferenceProperty> &tableReferenceProperty) override
     {
-        if (testResult) {
+        if (g_TestResult) {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -224,7 +222,7 @@ public:
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
     {
-        if (testResult) {
+        if (g_TestResult) {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -813,7 +811,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
     result = store->Clean(devices1, GeneralStore::NEARBY_DATA, tableName);
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    testResult = true;
+    g_TestResult = true;
     result = store->Clean(devices, GeneralStore::CLOUD_INFO, tableName);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     result = store->Clean(devices, GeneralStore::CLOUD_DATA, tableName);
@@ -927,7 +925,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
     std::vector<std::string> test = {"test"};
     result = store->SetDistributedTables(test, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
-    testResult = true;
+    g_TestResult = true;
     result = store->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
