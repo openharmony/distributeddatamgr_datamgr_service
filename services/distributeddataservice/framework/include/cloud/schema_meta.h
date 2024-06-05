@@ -67,7 +67,7 @@ public:
     static constexpr const char *SHARING_RESOURCE = "#_sharing_resource";
     static constexpr const char *HASH_KEY = "#_hash_key";
 
-    static constexpr uint32_t CURRENT_VERSION = 0x10000;
+    static constexpr uint32_t CURRENT_VERSION = 0x10001;
     static inline uint32_t GetLowVersion(uint32_t metaVersion = CURRENT_VERSION)
     {
         return metaVersion & 0xFFFF;
