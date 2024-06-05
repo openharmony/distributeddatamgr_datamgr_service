@@ -100,7 +100,7 @@ public:
     int32_t GetCloudSyncTaskCount() override
     {
         static int32_t count = 0;
-        count = (count + 1) % 2; // count + 1 的结果对 2 取余数
+        count = (count + 1) % 2; // The result of count + 1 is the remainder of 2.
         return count;
     }
 
