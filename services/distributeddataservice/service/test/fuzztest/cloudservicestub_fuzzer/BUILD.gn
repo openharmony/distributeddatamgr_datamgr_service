@@ -67,6 +67,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_sync_report.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
     "${data_service_path}/service/cloud/cloud_value_util.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",

@@ -32,6 +32,7 @@ public:
         CLOUD_SHARE,
         MAKE_QUERY,
         CLOUD_SYNC_FINISHED,
+        CLOUD_SYNC_STATUS,
         CLOUD_BUTT
     };
 
