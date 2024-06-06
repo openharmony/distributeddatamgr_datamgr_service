@@ -158,6 +158,7 @@
                 }
             ],
             "test": [
+                "//foundation/distributeddatamgr/datamgr_service:fuzztest",
                 "//foundation/distributeddatamgr/datamgr_service:build_native_test",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/rust/ylong_cloud_extension:rust_ylong_cloud_ext_unit_test"
             ]
