@@ -20,6 +20,7 @@ group("fuzztest") {
 
   deps = [
     "cloudservicestub_fuzzer:fuzztest",
+    "customutdinstaller_fuzzer:fuzztest",
     "datashareservicestub_fuzzer:fuzztest",
     "dumphelper_fuzzer:fuzztest",
     "kvdbservicestub_fuzzer:fuzztest",
