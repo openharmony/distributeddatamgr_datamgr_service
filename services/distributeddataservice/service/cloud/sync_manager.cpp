@@ -479,12 +479,11 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         CloudInfo info;
         if (user == 0) {
             AccountDelegate::GetInstance()->QueryForegroundUsers(users);
-            if (!users.empty()) {
-                info.user = users[0];
-            }
         } else {
-            info.user = user;
             users.push_back(user);
+        }
+        if (!users.empty()) {
+            info.user = users[0];
         }
         SchemaMeta schemaMeta;
         std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
@@ -498,8 +497,15 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         if (mustBind && bindInfos.size() != users.size()) {
             return nullptr;
         }
+        MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true);
+        GeneralStore::CloudConfig config;
+        auto it = info.apps.find(meta.bundleName);
+        if (it != info.apps.end()) {
+            config.maxUploadBatchNumber = it->second.maxUploadBatchNumber;
+            config.maxUploadBatchSize = it->second.maxUploadBatchSize;
+        }
         RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::BIND, __FUNCTION__);
-        auto status = store->Bind(dbMeta, bindInfos);
+        auto status = store->Bind(dbMeta, bindInfos, config);
         radar = Convert(static_cast<GeneralError>(status));
     }
     return store;

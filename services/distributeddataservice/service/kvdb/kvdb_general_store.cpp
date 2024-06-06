@@ -196,7 +196,8 @@ int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, st
     return GenErr::E_NOT_SUPPORT;
 }
 
-int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos)
+int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+    const CloudConfig &config)
 {
     if (bindInfos.empty()) {
         ZLOGW("No cloudDB!");
@@ -218,17 +219,17 @@ int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, Bind
         bindInfos_.insert(std::move(bindInfo));
         schemas.insert({ std::to_string(userId), dbSchema });
     }
-    DistributedDB::CloudSyncConfig config;
-    config.maxUploadCount = database.maxUploadBatchNumber;
-    config.maxUploadSize = database.maxUploadBatchSize;
-    config.maxRetryConflictTimes = VERSION_CONFLICT_RETRY_TIMES;
+    DistributedDB::CloudSyncConfig dbConfig;
+    dbConfig.maxUploadCount = config.maxUploadBatchNumber;
+    dbConfig.maxUploadSize = config.maxUploadBatchSize;
+    dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
     delegate_->SetCloudDB(dbClouds_);
     delegate_->SetCloudDbSchema(std::move(schemas));
-    delegate_->SetCloudSyncConfig(config);
+    delegate_->SetCloudSyncConfig(dbConfig);
     return GeneralError::E_OK;
 }
 

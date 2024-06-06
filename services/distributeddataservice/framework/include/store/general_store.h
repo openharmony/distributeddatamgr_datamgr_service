@@ -88,9 +88,17 @@ public:
         std::shared_ptr<CloudDB> db_;
         std::shared_ptr<AssetLoader> loader_;
     };
+
+    struct CloudConfig {
+        int32_t maxUploadBatchNumber = 30;
+        int32_t maxUploadBatchSize = 1024 * 512 * 3; // 1.5M
+        int32_t maxRetryConflictTimes = 3;     // default max retry 3 times when version conflict
+    };
+
     virtual ~GeneralStore() = default;
 
-    virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) = 0;
+    virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+        const CloudConfig &config) = 0;
 
     virtual bool IsBound() = 0;
 
@@ -142,9 +150,6 @@ public:
     virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId) {};
-
-protected:
-    static constexpr uint32_t VERSION_CONFLICT_RETRY_TIMES = 3;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

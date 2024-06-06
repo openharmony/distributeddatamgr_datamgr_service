@@ -46,6 +46,8 @@ bool CloudInfo::AppInfo::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(version)], version);
     SetValue(node[GET_NAME(instanceId)], instanceId);
     SetValue(node[GET_NAME(cloudSwitch)], cloudSwitch);
+    SetValue(node[GET_NAME(maxUploadBatchNumber)], maxUploadBatchNumber);
+    SetValue(node[GET_NAME(maxUploadBatchSize)], maxUploadBatchSize);
     return true;
 }
 
@@ -56,6 +58,12 @@ bool CloudInfo::AppInfo::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(instanceId), instanceId);
     GetValue(node, GET_NAME(cloudSwitch), cloudSwitch);
+    if (!GetValue(node, GET_NAME(maxUploadBatchNumber), maxUploadBatchNumber) || maxUploadBatchNumber == 0) {
+        maxUploadBatchNumber = DEFAULT_UPLOAD_BATCH_NUMBER;
+    }
+    if (!GetValue(node, GET_NAME(maxUploadBatchSize), maxUploadBatchSize) || maxUploadBatchSize == 0) {
+        maxUploadBatchSize = DEFAULT_UPLOAD_BATCH_SIZE;
+    }
     return true;
 }
 

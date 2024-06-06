@@ -144,7 +144,8 @@ int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std
     return GenErr::E_OK;
 }
 
-int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos)
+int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+    const CloudConfig &config)
 {
     if (bindInfos.empty()) {
         return GeneralError::E_OK;
@@ -171,10 +172,10 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
     rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
 
-    DistributedDB::CloudSyncConfig config;
-    config.maxUploadCount = database.maxUploadBatchNumber;
-    config.maxUploadSize = database.maxUploadBatchSize;
-    config.maxRetryConflictTimes = VERSION_CONFLICT_RETRY_TIMES;
+    DistributedDB::CloudSyncConfig dbConfig;
+    dbConfig.maxUploadCount = config.maxUploadBatchNumber;
+    dbConfig.maxUploadSize = config.maxUploadBatchSize;
+    dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
     DBSchema schema = GetDBSchema(database);
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -184,7 +185,7 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     delegate_->SetCloudDB(rdbCloud_);
     delegate_->SetIAssetLoader(rdbLoader_);
     delegate_->SetCloudDbSchema(std::move(schema));
-    delegate_->SetCloudSyncConfig(config);
+    delegate_->SetCloudSyncConfig(dbConfig);
     return GeneralError::E_OK;
 }
 

@@ -169,30 +169,26 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
 }
 
 /**
- * @tc.name: Load old schema
- * @tc.desc: upgrade when schema version not equal current version,
+ * @tc.name: Load old cloudInfo
+ * @tc.desc: The obtained maxUploadBatchNumber and maxUploadBatchSize are not equal to 0
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: ht
  */
 HWTEST_F(CloudTest, SchemaMetaUpgrade01, TestSize.Level0)
 {
-    SchemaMeta oldSchemaMeta;
-    oldSchemaMeta.version = 1;
-    oldSchemaMeta.bundleName = testCloudBundle;
-    Database database;
-    database.name = testCloudStore;
-    database.alias = testCloudStore;
-    oldSchemaMeta.databases.push_back(std::move(database));
+    CloudInfo oldInfo;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = testCloudBundle;
     auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    auto key = CloudInfo::GetSchemaKey(user, oldSchemaMeta.bundleName);
-    EXPECT_NE(oldSchemaMeta.version, SchemaMeta::CURRENT_VERSION);
-    EXPECT_NE(oldSchemaMeta.databases.begin()->maxUploadBatchNumber, Database::DEFAULT_UPLOAD_BATCH_NUMBER);
-    EXPECT_NE(oldSchemaMeta.databases.begin()->maxUploadBatchSize, Database::DEFAULT_UPLOAD_BATCH_SIZE);
-    ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(key, oldSchemaMeta, true));
-    SchemaMeta newSchemaMeta;
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(key, newSchemaMeta, true));
-    EXPECT_EQ(newSchemaMeta.databases.begin()->maxUploadBatchNumber, Database::DEFAULT_UPLOAD_BATCH_NUMBER);
-    EXPECT_EQ(newSchemaMeta.databases.begin()->maxUploadBatchSize, Database::DEFAULT_UPLOAD_BATCH_SIZE);
+    oldInfo.user = user;
+    oldInfo.apps.insert_or_assign(testCloudBundle, appInfo);
+    EXPECT_NE(oldInfo.apps[testCloudBundle].maxUploadBatchNumber, CloudInfo::AppInfo::DEFAULT_UPLOAD_BATCH_NUMBER);
+    EXPECT_NE(oldInfo.apps[testCloudBundle].maxUploadBatchSize, CloudInfo::AppInfo::DEFAULT_UPLOAD_BATCH_SIZE);
+    ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(oldInfo.GetKey(), oldInfo, true));
+    CloudInfo newInfo;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(oldInfo.GetKey(), newInfo, true));
+    EXPECT_EQ(newInfo.apps[testCloudBundle].maxUploadBatchNumber, CloudInfo::AppInfo::DEFAULT_UPLOAD_BATCH_NUMBER);
+    EXPECT_EQ(newInfo.apps[testCloudBundle].maxUploadBatchSize, CloudInfo::AppInfo::DEFAULT_UPLOAD_BATCH_SIZE);
 }
 } // namespace OHOS::Test
