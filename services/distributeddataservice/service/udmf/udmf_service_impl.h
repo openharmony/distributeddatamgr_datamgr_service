@@ -46,6 +46,9 @@ public:
     int32_t AddPrivilege(const QueryOption &query, Privilege &privilege) override;
     int32_t Sync(const QueryOption &query, const std::vector<std::string> &devices) override;
     int32_t IsRemoteData(const QueryOption &query, bool &result) override;
+    int32_t SetAppShareOption(const std::string &intention, int32_t shareOption) override;
+    int32_t GetAppShareOption(const std::string &intention, int32_t &shareOption) override;
+    int32_t RemoveAppShareOption(const std::string &intention) override;
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &bindInfo) override;
 
