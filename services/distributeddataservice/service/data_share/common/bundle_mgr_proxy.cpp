@@ -29,13 +29,7 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
     if (proxy_ != nullptr) {
         return iface_cast<AppExecFwk::BundleMgrProxy>(proxy_);
     }
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemAbilityManager == nullptr) {
-        ZLOGE("Failed to get system ability mgr.");
-        return nullptr;
-    }
-    proxy_ = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    proxy_ = CheckBMS();
     if (proxy_ == nullptr) {
         ZLOGE("BMS service not ready to complete.");
         return nullptr;
@@ -52,6 +46,17 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
         return nullptr;
     }
     return iface_cast<AppExecFwk::BundleMgrProxy>(proxy_);
+}
+
+sptr<IRemoteObject> BundleMgrProxy::CheckBMS()
+{
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        ZLOGE("Failed to get system ability mgr.");
+        return nullptr;
+    }
+    return systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
 }
 
 bool BundleMgrProxy::GetBundleInfoFromBMS(
