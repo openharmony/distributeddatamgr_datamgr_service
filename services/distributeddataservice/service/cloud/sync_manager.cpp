@@ -497,12 +497,10 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         if (mustBind && bindInfos.size() != users.size()) {
             return nullptr;
         }
-        MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true);
         GeneralStore::CloudConfig config;
-        auto it = info.apps.find(meta.bundleName);
-        if (it != info.apps.end()) {
-            config.maxUploadBatchNumber = it->second.maxUploadBatchNumber;
-            config.maxUploadBatchSize = it->second.maxUploadBatchSize;
+        if (MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true)) {
+            config.maxUploadBatchNumber = info.maxUploadBatchNumber;
+            config.maxUploadBatchSize = info.maxUploadBatchSize;
         }
         store->Bind(dbMeta, bindInfos, config);
     }
