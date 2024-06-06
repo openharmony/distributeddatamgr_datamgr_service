@@ -504,9 +504,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
             config.maxUploadBatchNumber = it->second.maxUploadBatchNumber;
             config.maxUploadBatchSize = it->second.maxUploadBatchSize;
         }
-        RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::BIND, __FUNCTION__);
-        auto status = store->Bind(dbMeta, bindInfos, config);
-        radar = Convert(static_cast<GeneralError>(status));
+        store->Bind(dbMeta, bindInfos, config);
     }
     return store;
 }

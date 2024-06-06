@@ -246,6 +246,8 @@ HWTEST_F(CloudInfoTest, AppInfoTest, TestSize.Level0)
     cloudInfoAppInfo1.version = 0;
     cloudInfoAppInfo1.instanceId = 0;
     cloudInfoAppInfo1.cloudSwitch = false;
+    cloudInfoAppInfo1.maxUploadBatchNumber = CloudInfo::AppInfo::DEFAULT_UPLOAD_BATCH_NUMBER;
+    cloudInfoAppInfo1.maxUploadBatchSize = CloudInfo::AppInfo::DEFAULT_UPLOAD_BATCH_SIZE;
 
     Serializable::json node1;
     cloudInfoAppInfo1.Marshal(node1);
