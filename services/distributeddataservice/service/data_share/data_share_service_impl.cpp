@@ -897,5 +897,8 @@ void DataShareServiceImpl::InitSubEvent()
     if (!EventFwk::CommonEventManager::SubscribeCommonEvent(sysEventSubscriber)) {
         ZLOGE("Subscribe sys event failed.");
     }
+    if (BundleMgrProxy::GetInstance()->CheckBMS() != nullptr) {
+        sysEventSubscriber->OnBMSReady();
+    }
 }
 } // namespace OHOS::DataShare
