@@ -162,6 +162,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
+        RadarReporter::Report({ bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__, BEGIN);
         syncManager_.DoCloudSync({ cloudInfo.user, bundleName });
     }
     return SUCCESS;
@@ -365,6 +366,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             return INVALID_ARGUMENT;
         }
         for (auto &dbInfo : dbInfos) {
+            RadarReporter::Report({ exData.info.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__, BEGIN);
             syncManager_.DoCloudSync(
                 SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second));
         }
@@ -718,11 +720,9 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
 
 bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
-    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::META_DATA_SYNC, __FUNCTION__);
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
-        radar = status;
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -730,7 +730,6 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
         SchemaMeta schemaMeta;
         std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
         if (status != SUCCESS) {
-            radar = status;
             continue;
         }
         SchemaMeta oldMeta;
@@ -955,6 +954,7 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
 
 bool CloudServiceImpl::DoCloudSync(int32_t user)
 {
+    RadarReporter::Report({ "", CLOUD_SYNC, TRIGGER_SYNC }, __FUNCTION__, BEGIN);
     syncManager_.DoCloudSync(user);
     return true;
 }
@@ -1016,8 +1016,7 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         sub.userId, subDbs.size(), unsubDbs.size());
     ZLOGD("Subscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(subDbs).c_str());
     ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
-    RadarReporter radar(EventName::CLOUD_SYNC_BEHAVIOR, BizScene::SUBSCRIBE_DATA_CHANGE, __FUNCTION__);
-    radar = Convert(static_cast<GeneralError>(CloudServer::GetInstance()->Subscribe(sub.userId, subDbs)));
+    CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
     CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
     return subDbs.empty() && unsubDbs.empty();
 }
@@ -1150,13 +1149,12 @@ CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 
 int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::SHARE, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
-        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::SHARE, hapInfo.bundleName.c_str(), __FUNCTION__);
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
@@ -1171,13 +1169,12 @@ int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participant
 
 int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::UNSHARE, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
-        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
+    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::UNSHARE, hapInfo.bundleName.c_str(), __FUNCTION__);
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
@@ -1192,13 +1189,13 @@ int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participa
 
 int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result)
 {
-    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::EXIT_SHARING, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
-        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
+    RadarReporter radar(
+        EventName::CLOUD_SHARING_BEHAVIOR, BizScene::EXIT_SHARING, hapInfo.bundleName.c_str(), __FUNCTION__);
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
@@ -1214,13 +1211,13 @@ int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t,
 int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const Participants &participants,
     Results &results)
 {
-    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CHANGE_PRIVILEGE, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
-        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
+    RadarReporter radar(
+        EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CHANGE_PRIVILEGE, hapInfo.bundleName.c_str(), __FUNCTION__);
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
@@ -1272,14 +1269,14 @@ int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, Query
 int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32_t confirmation,
     std::tuple<int32_t, std::string, std::string> &result)
 {
-    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CONFIRM_INVITATION, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, invitation:%{public}s, confirmation:%{public}d",
             Anonymous::Change(invitation).c_str(), confirmation);
-        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
+    RadarReporter radar(
+        EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CONFIRM_INVITATION, hapInfo.bundleName.c_str(), __FUNCTION__);
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
@@ -1295,13 +1292,13 @@ int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32
 int32_t CloudServiceImpl::ChangeConfirmation(const std::string &sharingRes, int32_t confirmation,
     std::pair<int32_t, std::string> &result)
 {
-    RadarReporter radar(EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CHANGE_CONFIRMATION, __FUNCTION__);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
-        radar = CenterCode::INNER_ERROR + SharingCenter::SHARING_ERR_OFFSET;
         return E_ERROR;
     }
+    RadarReporter radar(
+        EventName::CLOUD_SHARING_BEHAVIOR, BizScene::CHANGE_CONFIRMATION, hapInfo.bundleName.c_str(), __FUNCTION__);
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
         radar = CenterCode::NOT_SUPPORT + SharingCenter::SHARING_ERR_OFFSET;
