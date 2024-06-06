@@ -53,6 +53,8 @@ bool g_testResult = false;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 static constexpr uint32_t PRINT_ERROR_CNT = 150;
+static constexpr const char *BUNDLE_NAME = "test_rdb_general_store";
+static constexpr const char *STORE_NAME = "test_service_rdb";
 class RdbGeneralStoreTest : public testing::Test {
 public:
     static void SetUpTestCase(void) {};
@@ -67,8 +69,6 @@ public:
         g_testResult = false;
     };
 protected:
-    static constexpr const char *BUNDLE_NAME = "test_rdb_general_store";
-    static constexpr const char *STORE_NAME = "test_service_rdb";
     void InitMetaData();
     StoreMetaData metaData_;
 };
