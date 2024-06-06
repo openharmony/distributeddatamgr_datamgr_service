@@ -67,23 +67,23 @@ public:
         g_testResult = false;
     };
 protected:
-    static constexpr const char *bundleName = "test_rdb_general_store";
-    static constexpr const char *storeName = "test_service_rdb";
+    static constexpr const char *BUNDLE_NAME = "test_rdb_general_store";
+    static constexpr const char *STORE_NAME = "test_service_rdb";
     void InitMetaData();
     StoreMetaData metaData_;
 };
 
 void RdbGeneralStoreTest::InitMetaData()
 {
-    metaData_.bundleName = bundleName;
-    metaData_.appId = bundleName;
+    metaData_.bundleName = BUNDLE_NAME;
+    metaData_.appId = BUNDLE_NAME;
     metaData_.user = "0";
     metaData_.area = DistributedKv::Area::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
     metaData_.storeType = 1;
-    metaData_.storeId = storeName;
-    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(bundleName) + "/rdb";
+    metaData_.storeId = STORE_NAME;
+    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/rdb";
     metaData_.securityLevel = DistributedKv::SecurityLevel::S2;
 }
 
@@ -100,7 +100,7 @@ public:
     int32_t GetCloudSyncTaskCount() override
     {
         static int32_t count = 0;
-        count = (count + 1) % 2; // The result of count + 1 is the remainder of 2.
+        count = (count + 1) % 2; // count + 1 的结果对 2 取余数
         return count;
     }
 
