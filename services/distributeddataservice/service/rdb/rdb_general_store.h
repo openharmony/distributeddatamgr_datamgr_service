@@ -22,7 +22,6 @@
 #include "metadata/store_meta_data.h"
 #include "rdb_asset_loader.h"
 #include "rdb_cloud.h"
-#include "rdb_data_sync_reporter.h"
 #include "rdb_store.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
@@ -48,6 +47,8 @@ public:
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
+    static void OnSyncStart(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, int status);
+    static void OnSyncFinish(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode);
     int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) override;
     bool IsBound() override;
     bool IsValid();
@@ -140,8 +141,7 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
-
-    std::shared_ptr<RdbDataSyncReporter> dataSyncReporter_;
+    uint32_t syncNotifyFlag_ = 0;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

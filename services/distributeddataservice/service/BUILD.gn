@@ -118,7 +118,6 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_cloud.cpp",
     "rdb/rdb_cloud_data_translate.cpp",
     "rdb/rdb_cursor.cpp",
-    "rdb/rdb_data_sync_reporter.cpp",
     "rdb/rdb_general_store.cpp",
     "rdb/rdb_notifier_proxy.cpp",
     "rdb/rdb_query.cpp",

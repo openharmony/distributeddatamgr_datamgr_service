@@ -25,6 +25,7 @@
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service.h"
+#include "commonevent/data_sync_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
@@ -59,6 +60,8 @@ constexpr const char *VALUES = " VALUES ";
 constexpr const LockAction LOCK_ACTION = static_cast<LockAction>(static_cast<uint32_t>(LockAction::INSERT) |
     static_cast<uint32_t>(LockAction::UPDATE) | static_cast<uint32_t>(LockAction::DELETE) |
     static_cast<uint32_t>(LockAction::DOWNLOAD));
+constexpr uint32_t CLOUD_SYNC_FLAG = 1;
+constexpr uint32_t SEARCHABLE_FLAG = 2;
 
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
@@ -96,7 +99,9 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
     storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    dataSyncReporter_ = std::make_shared<RdbDataSyncReporter>(storeInfo_);
+    if (meta.isSearchable) {
+        syncNotifyFlag_ |= SEARCHABLE_FLAG;
+    }
 
     if (delegate_ != nullptr && meta.isManualClean) {
         PragmaData data =
@@ -177,6 +182,9 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     delegate_->SetCloudDB(rdbCloud_);
     delegate_->SetIAssetLoader(rdbLoader_);
     delegate_->SetCloudDbSchema(std::move(schema));
+
+    syncNotifyFlag_ |= CLOUD_SYNC_FLAG;
+
     return GeneralError::E_OK;
 }
 
@@ -473,9 +481,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
             syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
             GetDBProcessCB(std::move(async), syncMode, highMode))
         : DistributedDB::INVALID_ARGS;
-    if (dataSyncReporter_ != nullptr) {
-        dataSyncReporter_->OnSyncStart(syncMode, status);
-    }
+    OnSyncStart(storeInfo_, syncNotifyFlag_, syncMode, status);
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
@@ -622,17 +628,18 @@ int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
 RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async, uint32_t syncMode)
 {
     if (!async) {
-        return [](auto &) {};
+        return [storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode](auto &) {
+            RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode);
+        };
     }
-    if (dataSyncReporter_ != nullptr) {
-        dataSyncReporter_->OnSyncFinish(syncMode);
-    }
-    return [async = std::move(async)](const std::map<std::string, std::vector<TableStatus>> &result) {
+    return [async = std::move(async), storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode](
+        const std::map<std::string, std::vector<TableStatus>> &result) {
         DistributedData::GenDetails details;
         for (auto &[key, tables] : result) {
             auto &value = details[key];
             value.progress = FINISHED;
             value.code = GeneralError::E_OK;
+            RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode);
             for (auto &table : tables) {
                 if (table.status != DBStatus::OK) {
                     value.code = GeneralError::E_ERROR;
@@ -646,18 +653,20 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async, uint
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t highMode)
 {
     if (!async && (highMode == MANUAL_SYNC_MODE || !async_)) {
-        return [](auto &) {};
+        return [storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode](auto &) {
+            RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode);
+        };
     }
 
-    return [async, autoAsync = async_, highMode, syncMode, reporter = dataSyncReporter_](
+    return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode](
         const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
-            if (process.process == FINISHED && reporter != nullptr) {
-                reporter->OnSyncFinish(syncMode);
+            if (process.process == FINISHED) {
+                RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode);
             }
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];
@@ -830,6 +839,31 @@ VBuckets RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
 std::vector<std::string> RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
 {
     return {};
+}
+
+void RdbGeneralStore::OnSyncStart(const StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, int status)
+{
+    uint32_t requiredFlag = (CLOUD_SYNC_FLAG | SEARCHABLE_FLAG);
+    if (requiredFlag != (requiredFlag & flag)) {
+        return;
+    }
+    if (status != GeneralError::E_OK) {
+        return;
+    }
+    StoreInfo info = storeInfo;
+    auto evt = std::make_unique<DataSyncEvent>(std::move(info), syncMode, DataSyncEvent::DataSyncStatus::START);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+}
+
+void RdbGeneralStore::OnSyncFinish(const StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode)
+{
+    uint32_t requiredFlag = (CLOUD_SYNC_FLAG | SEARCHABLE_FLAG);
+    if (requiredFlag != (requiredFlag & flag)) {
+        return;
+    }
+    StoreInfo info = storeInfo;
+    auto evt = std::make_unique<DataSyncEvent>(std::move(info), syncMode, DataSyncEvent::DataSyncStatus::FINISH);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
