@@ -22,6 +22,7 @@
 #include "metadata/store_meta_data.h"
 #include "rdb_asset_loader.h"
 #include "rdb_cloud.h"
+#include "rdb_data_sync_reporter.h"
 #include "rdb_store.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
@@ -110,8 +111,8 @@ private:
         Watcher *watcher_ = nullptr;
         std::string storeId_;
     };
-    DBBriefCB GetDBBriefCB(DetailAsync async);
-    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t highMode = AUTO_SYNC_MODE);
+    DBBriefCB GetDBBriefCB(DetailAsync async, uint32_t syncMode);
+    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t highMode = AUTO_SYNC_MODE);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
     std::string BuildSql(const std::string& table, const std::string& statement,
@@ -139,6 +140,8 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
+
+    std::shared_ptr<RdbDataSyncReporter> dataSyncReporter_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

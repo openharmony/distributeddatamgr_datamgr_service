@@ -13,22 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SYNC_REPORT_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SYNC_REPORT_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_DATA_SYNC_REPORTER_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_DATA_SYNC_REPORTER_H
+
 #include "concurrent_map.h"
 #include "store/store_info.h"
 
-namespace OHOS::CloudData {
-class CloudSyncReport {
+namespace OHOS::DistributedRdb {
+class RdbDataSyncReporter {
 public:
-    using StoreInfo = DistributedData::StoreInfo;
-    static CloudSyncReport &GetInstance();
-    void CloudSyncStart(const StoreInfo &storeInfo);
-    void CloudSyncFinish(const StoreInfo &storeInfo);
+    explicit RdbDataSyncReporter(const DistributedData::StoreInfo &storeInfo);
+    ~RdbDataSyncReporter();
+    void OnSyncStart(uint32_t syncMode, int status);
+    void OnSyncFinish(uint32_t syncMode);
 
 private:
-    // bundle, <dbName, count>
-    ConcurrentMap<std::string, std::map<std::string, int32_t>> syncDbInfo_;
+    DistributedData::StoreInfo storeInfo_;
+    // syncMode, count
+    ConcurrentMap<uint32_t, int32_t> syncModeInfo_;
 };
-} // namespace OHOS::CloudData
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SYNC_REPORT_H
+} // namespace OHOS::DistributedRdb
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_DATA_SYNC_REPORTER_H

@@ -25,6 +25,7 @@
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service.h"
+#include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -94,6 +95,8 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
+    storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    dataSyncReporter_ = std::make_shared<RdbDataSyncReporter>(storeInfo_);
 
     if (delegate_ != nullptr && meta.isManualClean) {
         PragmaData data =
@@ -464,12 +467,15 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
     }
     auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
     auto status = (syncMode < NEARBY_END)
-                      ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0)
-                  : (syncMode > NEARBY_END && syncMode < CLOUD_END) ? delegate_->Sync(
-                      { devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
-                          syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
-                      GetDBProcessCB(std::move(async), highMode))
-                                                                  : DistributedDB::INVALID_ARGS;
+        ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async), syncMode), syncParam.wait != 0)
+        : (syncMode > NEARBY_END && syncMode < CLOUD_END)
+        ? delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
+            syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
+            GetDBProcessCB(std::move(async), syncMode, highMode))
+        : DistributedDB::INVALID_ARGS;
+    if (dataSyncReporter_ != nullptr) {
+        dataSyncReporter_->OnSyncStart(syncMode, status);
+    }
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
@@ -613,10 +619,13 @@ int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
     return GeneralError::E_OK;
 }
 
-RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
+RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async, uint32_t syncMode)
 {
     if (!async) {
         return [](auto &) {};
+    }
+    if (dataSyncReporter_ != nullptr) {
+        dataSyncReporter_->OnSyncFinish(syncMode);
     }
     return [async = std::move(async)](const std::map<std::string, std::vector<TableStatus>> &result) {
         DistributedData::GenDetails details;
@@ -634,18 +643,22 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
     };
 }
 
-RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t highMode)
+RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t highMode)
 {
     if (!async && (highMode == MANUAL_SYNC_MODE || !async_)) {
         return [](auto &) {};
     }
 
-    return [async, autoAsync = async_, highMode](const std::map<std::string, SyncProcess> &processes) {
+    return [async, autoAsync = async_, highMode, syncMode, reporter = dataSyncReporter_](
+        const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
+            if (process.process == FINISHED && reporter != nullptr) {
+                reporter->OnSyncFinish(syncMode);
+            }
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];
                 table.upload.total = value.upLoadInfo.total;

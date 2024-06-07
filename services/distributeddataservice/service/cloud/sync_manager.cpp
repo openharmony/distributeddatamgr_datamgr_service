@@ -21,7 +21,6 @@
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"
-#include "cloud_sync_report.h"
 #include "cloud_value_util.h"
 #include "device_manager_adapter.h"
 #include "dfx/radar_reporter.h"
@@ -339,8 +338,6 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 detail.code = status;
                 async(std::move(details));
             }
-        } else {
-            CloudSyncReport::GetInstance().CloudSyncStart(storeInfo);
         }
     };
 }
@@ -604,7 +601,6 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
         if (result.begin()->second.progress != GenProgress::SYNC_FINISH) {
             return;
         }
-        CloudSyncReport::GetInstance().CloudSyncFinish(storeInfo);
 
         auto id = GetAccountId(storeInfo.user);
         if (id.empty()) {
@@ -695,7 +691,6 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
             if (code == E_OK || code == E_SYNC_TASK_MERGED) {
                 RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC }, "RetryCallback", END);
             }
-            CloudSyncReport::GetInstance().CloudSyncFinish(storeInfo);
         }
         retryer(GetInterval(code), code);
     };
