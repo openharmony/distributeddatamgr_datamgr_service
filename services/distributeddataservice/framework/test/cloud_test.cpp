@@ -488,4 +488,22 @@ HWTEST_F(ServicesCloudDBTest, CloudDB, TestSize.Level0)
     std::pair<int32_t, std::string> cursor = { GeneralError::E_NOT_SUPPORT, "" };
     EXPECT_EQ(result4, cursor);
 }
+
+/**
+* @tc.name: SchemaMeta
+* @tc.desc: test SchemaMeta GetLowVersion and GetHighVersion function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(CloudInfoTest, SchemaMeta, TestSize.Level0)
+{
+    SchemaMeta schemaMeta;
+    auto metaVersion = SchemaMeta::CURRENT_VERSION & 0xFFFF;
+    auto result1 = schemaMeta.GetLowVersion();
+    EXPECT_EQ(result1, metaVersion);
+    metaVersion = SchemaMeta::CURRENT_VERSION & ~0xFFFF;
+    auto result2 = schemaMeta.GetHighVersion();
+    EXPECT_EQ(result2, metaVersion);
+}
 } // namespace OHOS::Test

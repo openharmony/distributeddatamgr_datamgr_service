@@ -53,6 +53,8 @@ bool g_testResult = false;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 static constexpr uint32_t PRINT_ERROR_CNT = 150;
+static constexpr const char *BUNDLE_NAME = "test_rdb_general_store";
+static constexpr const char *STORE_NAME = "test_service_rdb";
 class RdbGeneralStoreTest : public testing::Test {
 public:
     static void SetUpTestCase(void) {};
@@ -67,23 +69,21 @@ public:
         g_testResult = false;
     };
 protected:
-    static constexpr const char *bundleName = "test_rdb_general_store";
-    static constexpr const char *storeName = "test_service_rdb";
     void InitMetaData();
     StoreMetaData metaData_;
 };
 
 void RdbGeneralStoreTest::InitMetaData()
 {
-    metaData_.bundleName = bundleName;
-    metaData_.appId = bundleName;
+    metaData_.bundleName = BUNDLE_NAME;
+    metaData_.appId = BUNDLE_NAME;
     metaData_.user = "0";
     metaData_.area = DistributedKv::Area::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
     metaData_.storeType = 1;
-    metaData_.storeId = storeName;
-    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(bundleName) + "/rdb";
+    metaData_.storeId = STORE_NAME;
+    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/rdb";
     metaData_.securityLevel = DistributedKv::SecurityLevel::S2;
 }
 
