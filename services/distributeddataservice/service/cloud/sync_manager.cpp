@@ -499,8 +499,8 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
         GeneralStore::CloudConfig config;
         if (MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true)) {
-            config.maxUploadBatchNumber = info.maxUploadBatchNumber;
-            config.maxUploadBatchSize = info.maxUploadBatchSize;
+            config.maxNumber = info.maxNumber;
+            config.maxSize = info.maxSize;
         }
         store->Bind(dbMeta, bindInfos, config);
     }

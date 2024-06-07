@@ -175,17 +175,17 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
  * @tc.require:
  * @tc.author: ht
  */
-HWTEST_F(CloudTest, SchemaMetaUpgrade01, TestSize.Level0)
+HWTEST_F(CloudTest, CloudInfoUpgrade, TestSize.Level0)
 {
     CloudInfo oldInfo;
     auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     oldInfo.user = user;
-    EXPECT_NE(oldInfo.maxUploadBatchNumber, CloudInfo::DEFAULT_UPLOAD_BATCH_NUMBER);
-    EXPECT_NE(oldInfo.maxUploadBatchSize, CloudInfo::DEFAULT_UPLOAD_BATCH_SIZE);
+    EXPECT_NE(oldInfo.maxNumber, CloudInfo::DEFAULT_BATCH_NUMBER);
+    EXPECT_NE(oldInfo.maxSize, CloudInfo::DEFAULT_BATCH_SIZE);
     ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(oldInfo.GetKey(), oldInfo, true));
     CloudInfo newInfo;
     ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(oldInfo.GetKey(), newInfo, true));
-    EXPECT_EQ(newInfo.maxUploadBatchNumber, CloudInfo::DEFAULT_UPLOAD_BATCH_NUMBER);
-    EXPECT_EQ(newInfo.maxUploadBatchSize, CloudInfo::DEFAULT_UPLOAD_BATCH_SIZE);
+    EXPECT_EQ(newInfo.maxNumber, CloudInfo::DEFAULT_BATCH_NUMBER);
+    EXPECT_EQ(newInfo.maxSize, CloudInfo::DEFAULT_BATCH_SIZE);
 }
 } // namespace OHOS::Test

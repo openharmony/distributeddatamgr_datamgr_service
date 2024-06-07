@@ -20,8 +20,8 @@
 namespace OHOS::DistributedData {
 class API_EXPORT CloudInfo final : public Serializable {
 public:
-    static constexpr int32_t DEFAULT_UPLOAD_BATCH_NUMBER = 100;
-    static constexpr int32_t DEFAULT_UPLOAD_BATCH_SIZE = 1024 * 512 * 3; // 1.5M
+    static constexpr int32_t DEFAULT_BATCH_NUMBER = 30;
+    static constexpr int32_t DEFAULT_BATCH_SIZE = 1024 * 512 * 3; // 1.5M
     struct API_EXPORT AppInfo final : public Serializable {
         std::string bundleName = "";
         std::string appId = "";
@@ -36,8 +36,8 @@ public:
     std::string id = "";
     uint64_t totalSpace = 0;
     uint64_t remainSpace = 0;
-    int32_t maxUploadBatchNumber = 0;
-    int32_t maxUploadBatchSize = 0;
+    int32_t maxNumber = 0;
+    int32_t maxSize = 0;
     bool enableCloud = false;
     std::map<std::string, AppInfo> apps;
 

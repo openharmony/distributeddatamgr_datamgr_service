@@ -173,8 +173,8 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
 
     DistributedDB::CloudSyncConfig dbConfig;
-    dbConfig.maxUploadCount = config.maxUploadBatchNumber;
-    dbConfig.maxUploadSize = config.maxUploadBatchSize;
+    dbConfig.maxUploadCount = config.maxNumber;
+    dbConfig.maxUploadSize = config.maxSize;
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
     DBSchema schema = GetDBSchema(database);
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
