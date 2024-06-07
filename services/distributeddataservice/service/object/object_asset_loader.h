@@ -21,14 +21,22 @@
 #include "store/general_value.h"
 #include "concurrent_map.h"
 #include <unordered_set>
+#include "asset/asset_send_callback_stub.h"
 namespace OHOS {
 namespace DistributedObject {
-
+using AssetObj = Storage::DistributedFile::AssetObj;
 using TransferFunc = std::function<void(bool success)>;
 struct TransferTask {
     TransferTask() = default;
     std::unordered_set<std::string> downloadAssets;
     TransferFunc callback;
+};
+
+class ObjectAssetsSendListener : public Storage::DistributedFile::AssetSendCallbackStub {
+public:
+    ObjectAssetsSendListener() =default;
+    ~ObjectAssetsSendListener() = default;
+    int32_t OnSendResult(const sptr<AssetObj> &assetObj, int32_t result) override;
 };
 
 class ObjectAssetLoader {
@@ -39,6 +47,8 @@ public:
         const DistributedData::Asset& asset);
     void TransferAssetsAsync(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
                              const std::vector<DistributedData::Asset>& assets, const TransferFunc& callback);
+    int32_t PushAsset(int32_t userId, const sptr<AssetObj> &assetObj,
+        const sptr<ObjectAssetsSendListener> &sendCallback);
 private:
     ObjectAssetLoader() = default;
     ~ObjectAssetLoader() = default;

@@ -20,7 +20,6 @@
 #include "object_manager.h"
 #include "object_service_stub.h"
 #include "visibility.h"
-#include "object_data_listener.h"
 
 namespace OHOS::DistributedObject {
 class ObjectServiceImpl : public ObjectServiceStub {

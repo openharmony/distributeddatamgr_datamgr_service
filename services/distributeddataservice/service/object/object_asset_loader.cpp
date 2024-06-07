@@ -21,7 +21,7 @@
 #include "object_common.h"
 #include "utils/anonymous.h"
 #include "object_radar_reporter.h"
-
+#include "distributed_file_daemon_manager.h"
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
 ObjectAssetLoader *ObjectAssetLoader::GetInstance()
@@ -166,5 +166,34 @@ bool ObjectAssetLoader::IsDownloaded(const DistributedData::Asset& asset)
         return true;
     }
     return false;
+}
+
+int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &assetObj,
+    const sptr<ObjectAssetsSendListener> &sendCallback)
+{
+    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::IDLE);
+    ZLOGI("PushAsset start, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
+        assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), assetObj->sessionId_.c_str());
+    auto status = Storage::DistributedFile::DistributedFileDaemonManager::GetInstance().PushAsset(userId, assetObj,
+        sendCallback);
+    if (status != OBJECT_SUCCESS) {
+        ZLOGE("PushAsset err status: %{public}d, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
+            status, assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), assetObj->sessionId_.c_str());
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, status);
+    }
+    return status;
+}
+
+int32_t ObjectAssetsSendListener::OnSendResult(const sptr<AssetObj> &assetObj, int32_t result)
+{
+    ZLOGI("OnSendResult, status:%{public}d, asset size:%{public}zu", result, assetObj->uris_.size());
+    if (result == OBJECT_SUCCESS) {
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_SUCCESS);
+    } else {
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, result);
+    }
+    return result;
 }
 } // namespace OHOS::DistributedObject

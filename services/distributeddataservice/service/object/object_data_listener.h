@@ -17,15 +17,27 @@
 #define DISTRIBUTEDDATAMGR_OBJECT_DATA_LISTENER_H
 
 #include "kv_store_observer.h"
-
+#include "asset/asset_recv_callback_stub.h"
 namespace OHOS {
 namespace DistributedObject {
+using AssetObj = Storage::DistributedFile::AssetObj;
 class ObjectDataListener : public DistributedDB::KvStoreObserver {
 public:
     ObjectDataListener();
     ~ObjectDataListener();
     // Database change callback
     void OnChange(const DistributedDB::KvStoreChangedData &data) override;
+};
+
+class ObjectAssetsRecvListener : public Storage::DistributedFile::AssetRecvCallbackStub {
+public:
+    ObjectAssetsRecvListener() =default;
+    ~ObjectAssetsRecvListener() =default;
+    int32_t OnStart(const std::string &srcNetworkId,
+                  const std::string &dstNetworkId, const std::string &sessionId,
+                  const std::string &dstBundleName) override;
+    int32_t OnFinished(const std::string &srcNetworkId,
+                     const sptr<AssetObj> &assetObj, int32_t result) override;
 };
 }  // namespace DistributedObject
 }  // namespace OHOS
