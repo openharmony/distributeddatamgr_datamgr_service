@@ -32,12 +32,16 @@ SchedulerManager &SchedulerManager::GetInstance()
     return instance;
 }
 
-void SchedulerManager::Execute(const std::string &uri, const int32_t userId, const std::string &rdbDir, int version)
+void SchedulerManager::Execute(const std::string &uri, const int32_t userId, const std::string &rdbDir, int version,
+    const std::string &bundleName)
 {
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
     }
-    auto delegate = DBDelegate::Create(rdbDir, version, true);
+    DistributedData::StoreMetaData meta;
+    meta.dataDir = rdbDir;
+    meta.bundleName = bundleName;
+    auto delegate = DBDelegate::Create(meta);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return;
@@ -50,7 +54,10 @@ void SchedulerManager::Execute(const std::string &uri, const int32_t userId, con
 
 void SchedulerManager::Execute(const Key &key, const int32_t userId, const std::string &rdbDir, int version)
 {
-    auto delegate = DBDelegate::Create(rdbDir, version, true);
+    DistributedData::StoreMetaData meta;
+    meta.dataDir = rdbDir;
+    meta.bundleName = key.bundleName;
+    auto delegate = DBDelegate::Create(meta);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
         return;

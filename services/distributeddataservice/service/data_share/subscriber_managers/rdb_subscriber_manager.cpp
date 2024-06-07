@@ -239,7 +239,7 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
         return false;
     });
     SchedulerManager::GetInstance().Execute(
-        uri, context->currentUserId, context->calledSourceDir, context->version);
+        uri, context->currentUserId, context->calledSourceDir, context->version, context->calledBundleName);
 }
 
 void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
@@ -257,7 +257,7 @@ void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
         return false;
     });
     SchedulerManager::GetInstance().Execute(
-        uri, userId, metaData.dataDir, metaData.version);
+        uri, userId, metaData.dataDir, metaData.version, metaData.bundleName);
 }
 
 void RdbSubscriberManager::SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes)
@@ -318,7 +318,10 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
             DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return E_TEMPLATE_NOT_EXIST;
     }
-    auto delegate = DBDelegate::Create(rdbDir, rdbVersion, true);
+    DistributedData::StoreMetaData meta;
+    meta.dataDir = rdbDir;
+    meta.bundleName = key.bundleName;
+    auto delegate = DBDelegate::Create(meta);
     if (delegate == nullptr) {
         ZLOGE("Create fail %{public}s %{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
             key.bundleName.c_str());
@@ -368,7 +371,7 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId, st
         return false;
     });
     SchedulerManager::GetInstance().Execute(
-        uri, context->currentUserId, context->calledSourceDir, context->version);
+        uri, context->currentUserId, context->calledSourceDir, context->version, context->calledBundleName);
 }
 RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer,
     uint32_t firstCallerTokenId, uint32_t callerTokenId)
