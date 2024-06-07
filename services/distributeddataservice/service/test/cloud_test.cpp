@@ -180,7 +180,6 @@ HWTEST_F(CloudTest, SchemaMetaUpgrade01, TestSize.Level0)
     CloudInfo oldInfo;
     auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     oldInfo.user = user;
-    oldInfo.apps.insert_or_assign(testCloudBundle, appInfo);
     EXPECT_NE(oldInfo.maxUploadBatchNumber, CloudInfo::DEFAULT_UPLOAD_BATCH_NUMBER);
     EXPECT_NE(oldInfo.maxUploadBatchSize, CloudInfo::DEFAULT_UPLOAD_BATCH_SIZE);
     ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(oldInfo.GetKey(), oldInfo, true));
