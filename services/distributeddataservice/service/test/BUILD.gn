@@ -142,13 +142,14 @@ ohos_unittest("CloudTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
-    "${kv_store_distributeddb_path}:distributeddb",
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
+    "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
   ]
 }

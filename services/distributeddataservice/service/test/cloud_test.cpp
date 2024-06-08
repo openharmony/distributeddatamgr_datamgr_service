@@ -21,12 +21,15 @@
 #include "cloud/sync_event.h"
 #include "gtest/gtest.h"
 #include "ipc_skeleton.h"
+#include "metadata/meta_data_manager.h"
+#include "mock/db_store_mock.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
+using Database = SchemaMeta::Database;
 namespace OHOS::Test {
 class CloudTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
+    static void SetUpTestCase(void);
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
@@ -34,7 +37,14 @@ public:
 protected:
     static constexpr const char* testCloudBundle = "test_cloud_bundleName";
     static constexpr const char* testCloudStore = "test_cloud_database_name";
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
 };
+std::shared_ptr<DBStoreMock> CloudTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+
+void CloudTest::SetUpTestCase(void)
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+}
 
 /**
 * @tc.name: EventInfo
@@ -156,5 +166,26 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
     for (uint32_t i = 0; i < tableNames1.size(); ++i) {
         EXPECT_EQ(tableNames1[i], tableNames2[i]);
     }
+}
+
+/**
+ * @tc.name: Load old cloudInfo
+ * @tc.desc: The obtained maxUploadBatchNumber and maxUploadBatchSize are not equal to 0
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: ht
+ */
+HWTEST_F(CloudTest, CloudInfoUpgrade, TestSize.Level0)
+{
+    CloudInfo oldInfo;
+    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    oldInfo.user = user;
+    EXPECT_NE(oldInfo.maxNumber, CloudInfo::DEFAULT_BATCH_NUMBER);
+    EXPECT_NE(oldInfo.maxSize, CloudInfo::DEFAULT_BATCH_SIZE);
+    ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(oldInfo.GetKey(), oldInfo, true));
+    CloudInfo newInfo;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(oldInfo.GetKey(), newInfo, true));
+    EXPECT_EQ(newInfo.maxNumber, CloudInfo::DEFAULT_BATCH_NUMBER);
+    EXPECT_EQ(newInfo.maxSize, CloudInfo::DEFAULT_BATCH_SIZE);
 }
 } // namespace OHOS::Test

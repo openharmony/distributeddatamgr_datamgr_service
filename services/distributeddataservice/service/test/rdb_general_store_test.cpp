@@ -1,20 +1,22 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright (c) 2024 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 #define LOG_TAG "RdbGeneralStoreTest"
 
 #include "rdb_general_store.h"
+
+#include <random>
 
 #include "bootstrap.h"
 #include "cloud/schema_meta.h"
@@ -24,7 +26,6 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
-#include <random>
 #include "rdb_query.h"
 #include "store/general_store.h"
 #include "types.h"
@@ -35,20 +36,10 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedRdb;
 using DBStatus = DistributedDB::DBStatus;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
-RdbGeneralStore::Values g_RdbValues = {
-    {"0000000"},
-    {true},
-    {int64_t(100)},
-    {double(100)},
-    {int64_t(1)},
-    {Bytes({ 1, 2, 3, 4 })}
-};
-RdbGeneralStore::VBucket g_RdbVBucket = {
-    {"#gid", {"0000000"}},
-    {"#flag", {true}},
-    {"#value", {int64_t(100)}},
-    {"#float", {double(100)}}
-};
+RdbGeneralStore::Values g_RdbValues = { { "0000000" }, { true }, { int64_t(100) }, { double(100) }, { int64_t(1) },
+    { Bytes({ 1, 2, 3, 4 }) } };
+RdbGeneralStore::VBucket g_RdbVBucket = { { "#gid", { "0000000" } }, { "#flag", { true } },
+    { "#value", { int64_t(100) } }, { "#float", { double(100) } } };
 bool g_testResult = false;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
@@ -57,8 +48,8 @@ static constexpr const char *BUNDLE_NAME = "test_rdb_general_store";
 static constexpr const char *STORE_NAME = "test_service_rdb";
 class RdbGeneralStoreTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {};
-    static void TearDownTestCase(void) {};
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
     void SetUp()
     {
         Bootstrap::GetInstance().LoadDirectory();
@@ -68,6 +59,7 @@ public:
     {
         g_testResult = false;
     };
+
 protected:
     void InitMetaData();
     StoreMetaData metaData_;
@@ -91,8 +83,8 @@ class MockRelationalStoreDelegate : public DistributedDB::RelationalStoreDelegat
 public:
     ~MockRelationalStoreDelegate() = default;
 
-    DBStatus Sync(const std::vector<std::string> &devices, DistributedDB::SyncMode mode,
-        const Query &query, const SyncStatusCallback &onComplete, bool wait) override
+    DBStatus Sync(const std::vector<std::string> &devices, DistributedDB::SyncMode mode, const Query &query,
+        const SyncStatusCallback &onComplete, bool wait) override
     {
         return DBStatus::OK;
     }
@@ -109,8 +101,8 @@ public:
         return DBStatus::OK;
     }
 
-    DBStatus RemoteQuery(const std::string &device, const RemoteCondition &condition,
-        uint64_t timeout, std::shared_ptr<ResultSet> &result) override
+    DBStatus RemoteQuery(const std::string &device, const RemoteCondition &condition, uint64_t timeout,
+        std::shared_ptr<ResultSet> &result) override
     {
         if (device == "test") {
             return DBStatus::DB_ERROR;
@@ -123,9 +115,8 @@ public:
         return DBStatus::OK;
     }
 
-    DBStatus Sync(const std::vector<std::string> &devices, DistributedDB::SyncMode mode,
-         const Query &query, const SyncProcessCallback &onProcess,
-         int64_t waitTime) override
+    DBStatus Sync(const std::vector<std::string> &devices, DistributedDB::SyncMode mode, const Query &query,
+        const SyncProcessCallback &onProcess, int64_t waitTime) override
     {
         return DBStatus::OK;
     }
@@ -219,6 +210,7 @@ public:
     {
         return DBStatus::OK;
     }
+
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
     {
@@ -256,8 +248,7 @@ public:
 
 class MockGeneralWatcher : public DistributedData::GeneralWatcher {
 public:
-    int32_t OnChange(const Origin &origin, const PRIFields &primaryFields,
-        ChangeInfo &&values) override
+    int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override
     {
         return GeneralError::E_OK;
     }
@@ -328,8 +319,9 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     DistributedData::Database database;
+    GeneralStore::CloudConfig config;
     std::map<uint32_t, DistributedData::GeneralStore::BindInfo> bindInfos;
-    auto result = store->Bind(database, bindInfos);
+    auto result = store->Bind(database, bindInfos, config);
     EXPECT_TRUE(bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_OK);
 
@@ -340,7 +332,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
     EXPECT_EQ(bindInfo.loader_, nullptr);
     uint32_t key = 1;
     bindInfos[key] = bindInfo;
-    result = store->Bind(database, bindInfos);
+    result = store->Bind(database, bindInfos, config);
     EXPECT_TRUE(!bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
@@ -349,14 +341,14 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
     GeneralStore::BindInfo bindInfo1(dbs, loader);
     EXPECT_NE(bindInfo1.db_, nullptr);
     bindInfos[key] = bindInfo1;
-    result = store->Bind(database, bindInfos);
+    result = store->Bind(database, bindInfos, config);
     EXPECT_TRUE(!bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
     GeneralStore::BindInfo bindInfo2(db, loaders);
     EXPECT_NE(bindInfo2.loader_, nullptr);
     bindInfos[key] = bindInfo2;
-    result = store->Bind(database, bindInfos);
+    result = store->Bind(database, bindInfos, config);
     EXPECT_TRUE(!bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
@@ -380,12 +372,13 @@ HWTEST_F(RdbGeneralStoreTest, Bind002, TestSize.Level1)
     GeneralStore::BindInfo bindInfo(db, loader);
     uint32_t key = 1;
     bindInfos[key] = bindInfo;
-    auto result = store->Bind(database, bindInfos);
+    GeneralStore::CloudConfig config;
+    auto result = store->Bind(database, bindInfos, config);
     EXPECT_EQ(store->delegate_, nullptr);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
     store->isBound_ = true;
-    result = store->Bind(database, bindInfos);
+    result = store->Bind(database, bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -410,7 +403,8 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
     bindInfos[key] = bindInfo;
     MockRelationalStoreDelegate mockDelegate;
     store->delegate_ = &mockDelegate;
-    auto result = store->Bind(database, bindInfos);
+    GeneralStore::CloudConfig config;
+    auto result = store->Bind(database, bindInfos, config);
     EXPECT_NE(store->delegate_, nullptr);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
@@ -510,10 +504,9 @@ HWTEST_F(RdbGeneralStoreTest, Insert001, TestSize.Level1)
     result = store->Insert(table, std::move(values));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    DistributedData::VBuckets extends = {
-        {{"#gid", {"0000000"}}, {"#flag", {true }}, {"#value", {int64_t(100)}}, {"#float", {double(100)}}},
-        {{"#gid", {"0000001"}}}
-    };
+    DistributedData::VBuckets extends = { { { "#gid", { "0000000" } }, { "#flag", { true } },
+                                              { "#value", { int64_t(100) } }, { "#float", { double(100) } } },
+        { { "#gid", { "0000001" } } } };
     result = store->Insert("", std::move(extends));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
@@ -538,7 +531,7 @@ HWTEST_F(RdbGeneralStoreTest, Insert002, TestSize.Level1)
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     std::string table = "table";
-    DistributedData::VBuckets extends = {{g_RdbVBucket}};
+    DistributedData::VBuckets extends = { { g_RdbVBucket } };
     auto result = store->Insert(table, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_ERROR);
 
@@ -554,8 +547,7 @@ HWTEST_F(RdbGeneralStoreTest, Insert002, TestSize.Level1)
     result = store->Insert(test, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_ERROR);
 
-    for (size_t i = 0; i < PRINT_ERROR_CNT + 1; i++)
-    {
+    for (size_t i = 0; i < PRINT_ERROR_CNT + 1; i++) {
         result = store->Insert(test, std::move(extends));
         EXPECT_EQ(result, GeneralError::E_ERROR);
     }
@@ -708,7 +700,7 @@ HWTEST_F(RdbGeneralStoreTest, MergeMigratedData, TestSize.Level1)
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     std::string tableName = "tableName";
-    DistributedData::VBuckets extends = {{g_RdbVBucket}};
+    DistributedData::VBuckets extends = { { g_RdbVBucket } };
     auto result = store->MergeMigratedData(tableName, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_ERROR);
 
@@ -769,11 +761,9 @@ HWTEST_F(RdbGeneralStoreTest, ExtractExtend, TestSize.Level1)
 {
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
-    RdbGeneralStore::VBucket extend = {
-        {"#gid", {"0000000"}}, {"#flag", {true}}, {"#value", {int64_t(100)}},
-        {"#float", {double(100)}}, {"#cloud_gid", {"cloud_gid"}}
-    };
-    DistributedData::VBuckets extends = {{extend}};
+    RdbGeneralStore::VBucket extend = { { "#gid", { "0000000" } }, { "#flag", { true } },
+        { "#value", { int64_t(100) } }, { "#float", { double(100) } }, { "#cloud_gid", { "cloud_gid" } } };
+    DistributedData::VBuckets extends = { { extend } };
     auto result = store->ExtractExtend(extends);
     EXPECT_EQ(result.size(), extends.size());
     DistributedData::VBuckets values;
@@ -793,10 +783,10 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     std::string tableName = "tableName";
-    std::vector<std::string> devices = {"device1", "device2"};
+    std::vector<std::string> devices = { "device1", "device2" };
     auto result = store->Clean(devices, -1, tableName);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
-    result = store->Clean(devices, GeneralStore::CLEAN_MODE_BUTT +1, tableName);
+    result = store->Clean(devices, GeneralStore::CLEAN_MODE_BUTT + 1, tableName);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
     result = store->Clean(devices, GeneralStore::CLOUD_INFO, tableName);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
@@ -911,7 +901,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
 {
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
-    std::vector<std::string> tables = {"table1", "table2"};
+    std::vector<std::string> tables = { "table1", "table2" };
     int32_t type = 0;
     std::vector<DistributedData::Reference> references;
     auto result = store->SetDistributedTables(tables, type, references);
@@ -922,7 +912,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
     result = store->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    std::vector<std::string> test = {"test"};
+    std::vector<std::string> test = { "test" };
     result = store->SetDistributedTables(test, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     g_testResult = true;
@@ -942,7 +932,7 @@ HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     std::string tableName = "tableName";
-    std::set<std::string> trackerColNames = {"col1", "col2"};
+    std::set<std::string> trackerColNames = { "col1", "col2" };
     std::string extendColName = "extendColName";
     auto result = store->SetTrackerTable(tableName, trackerColNames, extendColName);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);

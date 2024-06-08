@@ -17,6 +17,7 @@
 #define DATASHARESERVICE_URI_UTILS_H
 
 #include <map>
+#include <vector>
 #include <string>
 namespace OHOS::DataShare {
 struct UriInfo {
