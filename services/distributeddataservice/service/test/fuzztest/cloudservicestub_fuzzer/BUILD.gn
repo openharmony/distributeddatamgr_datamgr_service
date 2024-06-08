@@ -104,6 +104,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
     "${kv_store_distributeddb_path}:distributeddb",
   ]
 

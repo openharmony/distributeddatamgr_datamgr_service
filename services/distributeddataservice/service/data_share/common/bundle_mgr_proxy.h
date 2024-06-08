@@ -29,6 +29,7 @@ public:
     static std::shared_ptr<BundleMgrProxy> GetInstance();
     bool GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo);
     void Delete(const std::string &bundleName, int32_t userId);
+    sptr<IRemoteObject> CheckBMS();
 
 private:
     BundleMgrProxy() = default;

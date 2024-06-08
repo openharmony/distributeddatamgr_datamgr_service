@@ -26,9 +26,9 @@ public:
     explicit SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info);
     ~SysEventSubscriber() {}
     void OnReceiveEvent(const EventFwk::CommonEventData& event) override;
+    void OnBMSReady();
 
 private:
-    void OnBMSReady();
     void NotifyDataShareReady();
     std::map<std::string, SysEventCallback> callbacks_;
 };

@@ -47,9 +47,11 @@ public:
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
+
     static void OnSyncStart(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, int status);
     static void OnSyncFinish(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode);
-    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) override;
+    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+        const CloudConfig &config) override;
     bool IsBound() override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;

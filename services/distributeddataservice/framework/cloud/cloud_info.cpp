@@ -25,6 +25,8 @@ bool CloudInfo::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(remainSpace)], remainSpace);
     SetValue(node[GET_NAME(enableCloud)], enableCloud);
     SetValue(node[GET_NAME(apps)], apps);
+    SetValue(node[GET_NAME(maxNumber)], maxNumber);
+    SetValue(node[GET_NAME(maxSize)], maxSize);
     return true;
 }
 
@@ -36,6 +38,12 @@ bool CloudInfo::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(remainSpace), remainSpace);
     GetValue(node, GET_NAME(enableCloud), enableCloud);
     GetValue(node, GET_NAME(apps), apps);
+    if (!GetValue(node, GET_NAME(maxNumber), maxNumber) || maxNumber == 0) {
+        maxNumber = DEFAULT_BATCH_NUMBER;
+    }
+    if (!GetValue(node, GET_NAME(maxSize), maxSize) || maxSize == 0) {
+        maxSize = DEFAULT_BATCH_SIZE;
+    }
     return true;
 }
 

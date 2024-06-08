@@ -105,7 +105,7 @@ private:
     static uint64_t GenerateId(int32_t user);
     static ExecutorPool::Duration GetInterval(int32_t code);
     static std::map<uint32_t, GenStore::BindInfo> GetBindInfos(const StoreMetaData &meta,
-        const std::vector<int32_t> &users, CloudInfo &info, DistributedData::Database &schemaDatabase, bool mustBind);
+        const std::vector<int32_t> &users, const DistributedData::Database &schemaDatabase);
     static std::string GetAccountId(int32_t user);
     static std::vector<std::tuple<QueryKey, uint64_t>> GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud);
     static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);

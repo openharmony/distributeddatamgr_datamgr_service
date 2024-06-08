@@ -57,14 +57,14 @@ std::string RemindTimerFunc(const std::vector<std::string> &args)
     return args[ARG_TIME];
 }
 
-RdbDelegate::RdbDelegate(const std::string &dir, int version, bool registerFunction,
-    bool isEncrypt, const std::string &secretMetaKey)
+RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction)
 {
-    RdbStoreConfig config(dir);
+    RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);
-    if (isEncrypt) {
+    config.SetBundleName(meta.bundleName);
+    if (meta.isEncrypt) {
         DistributedData::SecretKeyMetaData secretKeyMeta;
-        DistributedData::MetaDataManager::GetInstance().LoadMeta(secretMetaKey, secretKeyMeta, true);
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKeyMeta, true);
         std::vector<uint8_t> decryptKey;
         DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
         config.SetEncryptKey(decryptKey);
@@ -73,11 +73,17 @@ RdbDelegate::RdbDelegate(const std::string &dir, int version, bool registerFunct
     if (registerFunction) {
         config.SetScalarFunction("remindTimer", ARGS_SIZE, RemindTimerFunc);
     }
+    return config;
+}
+
+RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version, bool registerFunction)
+{
+    RdbStoreConfig config = GetConfig(meta, registerFunction);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
-            DistributedData::Anonymous::Change(dir).c_str());
+            DistributedData::Anonymous::Change(meta.dataDir).c_str());
     }
 }
 

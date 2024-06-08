@@ -88,9 +88,17 @@ public:
         std::shared_ptr<CloudDB> db_;
         std::shared_ptr<AssetLoader> loader_;
     };
+
+    struct CloudConfig {
+        int32_t maxNumber = 30;
+        int32_t maxSize = 1024 * 512 * 3; // 1.5M
+        int32_t maxRetryConflictTimes = 3;     // default max retry 3 times when version conflict
+    };
+
     virtual ~GeneralStore() = default;
 
-    virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos) = 0;
+    virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+        const CloudConfig &config) = 0;
 
     virtual bool IsBound() = 0;
 

@@ -208,7 +208,6 @@ void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32
             ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
                   "storeId:%{public}s",
                 status, static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-            continue;
         }
     }
 }
