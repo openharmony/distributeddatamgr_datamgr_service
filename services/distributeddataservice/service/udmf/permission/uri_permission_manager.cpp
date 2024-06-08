@@ -30,7 +30,7 @@ UriPermissionManager &UriPermissionManager::GetInstance()
 }
 
 Status UriPermissionManager::GrantUriPermission(
-    const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey)
+    const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey, int32_t instIndex)
 {
     //  GrantUriPermission is time-consuming, need recording the begin,end time in log.
     ZLOGI("GrantUriPermission begin, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
@@ -38,7 +38,7 @@ Status UriPermissionManager::GrantUriPermission(
         std::vector<Uri> uriLst(
             allUri.begin() + index, allUri.begin() + std::min(index + GRANT_URI_PERMISSION_MAX_SIZE, allUri.size()));
         auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermissionPrivileged(
-            uriLst, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName);
+            uriLst, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName, instIndex);
         if (status != ERR_OK) {
             ZLOGE("GrantUriPermission failed, status:%{public}d, queryKey:%{public}s", status, queryKey.c_str());
             return E_NO_PERMISSION;

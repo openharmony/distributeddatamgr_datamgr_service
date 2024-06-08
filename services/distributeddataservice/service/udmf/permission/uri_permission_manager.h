@@ -31,7 +31,7 @@ public:
     using Time = std::chrono::steady_clock::time_point;
     static UriPermissionManager &GetInstance();
     Status GrantUriPermission(
-        const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey);
+        const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey, int32_t instIndex);
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 
 private:
