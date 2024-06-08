@@ -366,5 +366,10 @@ DBStatus DBStoreMock::SetCloudSyncConfig(const CloudSyncConfig &config)
 {
     return NOT_SUPPORT;
 }
+
+DBStatus DBStoreMock::GetDeviceEntries(const std::string &device, std::vector<Entry> &entries) const
+{
+    return NOT_SUPPORT;
+}
 } // namespace DistributedData
 } // namespace OHOS
