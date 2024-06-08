@@ -47,6 +47,9 @@ public:
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
+
+    static void OnSyncStart(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, int status);
+    static void OnSyncFinish(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode);
     int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) override;
     bool IsBound() override;
@@ -111,8 +114,8 @@ private:
         Watcher *watcher_ = nullptr;
         std::string storeId_;
     };
-    DBBriefCB GetDBBriefCB(DetailAsync async);
-    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t highMode = AUTO_SYNC_MODE);
+    DBBriefCB GetDBBriefCB(DetailAsync async, uint32_t syncMode);
+    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t highMode = AUTO_SYNC_MODE);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
     std::string BuildSql(const std::string& table, const std::string& statement,
@@ -140,6 +143,7 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
+    uint32_t syncNotifyFlag_ = 0;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
