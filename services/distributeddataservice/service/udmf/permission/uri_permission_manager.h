@@ -30,8 +30,7 @@ class UriPermissionManager {
 public:
     using Time = std::chrono::steady_clock::time_point;
     static UriPermissionManager &GetInstance();
-    Status GrantUriPermission(
-        const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey, int32_t instIndex);
+    Status GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey);
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 
 private:
@@ -42,9 +41,8 @@ private:
 
     void RevokeUriPermission();
 
-    ConcurrentMap<std::string, Time> uriTimeout_;
+    ConcurrentMap<std::pair<std::string, uint32_t>, Time> uriTimeout_;
     static constexpr int64_t INTERVAL = 60;  // 60 min
-    const std::string delimiter_ = "||";
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     std::mutex taskMutex_;
     std::shared_ptr<ExecutorPool> executorPool_;

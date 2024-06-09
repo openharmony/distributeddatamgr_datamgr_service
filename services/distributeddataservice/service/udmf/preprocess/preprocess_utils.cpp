@@ -231,5 +231,20 @@ bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string>& uris
     }
     return true;
 }
+
+bool PreProcessUtils::GetInstIndex(uint32_t tokenId, int32_t &instIndex) {
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        instIndex = 0;
+        return true;
+    }
+    HapTokenInfo tokenInfo;
+    int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (errCode != RET_SUCCESS) {
+        ZLOGE("Get Hap TokenInfo error:%{public}d, tokenId:0x%{public}x", errCode, tokenId);
+        return false;
+    }
+    instIndex = tokenInfo.instIndex;
+    return true;
+}
 } // namespace UDMF
 } // namespace OHOS

@@ -284,12 +284,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
             allUri.push_back(uri);
         }
     }
-    int32_t instIndex = -1;
-    if (!GetInstIndex(query.tokenId, instIndex)) {
-        ZLOGE("GetHapTokenInfo error, tokenId:0x%{public}x, bundleName:%{public}s", query.tokenId, bundleName.c_str());
-        return E_INVALID_PARAMETERS;
-    }
-    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, bundleName, query.key, instIndex) != E_OK) {
+    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
         RADAR_REPORT(BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED,
                      ERROR_CODE, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
@@ -297,21 +292,6 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         return E_NO_PERMISSION;
     }
     return E_OK;
-}
-
-bool UdmfServiceImpl::GetInstIndex(uint32_t tokenId, int32_t &instIndex) {
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        instIndex = 0;
-        return true;
-    }
-    HapTokenInfo tokenInfo;
-    int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (errCode != RET_SUCCESS) {
-        ZLOGE("GetHapTokenInfo error:%{public}d, tokenId:0x%{public}x", errCode, tokenId);
-        return false;
-    }
-    instIndex = tokenInfo.instIndex;
-    return true;
 }
 
 void UdmfServiceImpl::SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records)

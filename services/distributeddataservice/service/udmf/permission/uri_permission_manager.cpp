@@ -16,10 +16,11 @@
 
 #include "uri_permission_manager.h"
 
-#include "want.h"
-#include "uri_permission_manager_client.h"
-
 #include "log_print.h"
+#include "preprocess_utils.h"
+#include "uri_permission_manager_client.h"
+#include "want.h"
+
 namespace OHOS {
 namespace UDMF {
 constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 500;
@@ -30,22 +31,35 @@ UriPermissionManager &UriPermissionManager::GetInstance()
 }
 
 Status UriPermissionManager::GrantUriPermission(
-    const std::vector<Uri> &allUri, const std::string &bundleName, const std::string &queryKey, int32_t instIndex)
+    const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey)
 {
+    std::string bundleName;
+    if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
+        ZLOGE("Get BundleName fail, key:%{public}s, tokenId:%{public}u.", queryKey.c_str(), tokenId);
+        return E_ERROR;
+    }
+    int32_t instIndex = -1;
+    if (!PreProcessUtils::GetInstIndex(tokenId, instIndex)) {
+        ZLOGE("Get InstIndex fail, key:%{public}s, tokenId:%{public}u.", queryKey.c_str(), tokenId);
+        return E_ERROR;
+    }
+
     //  GrantUriPermission is time-consuming, need recording the begin,end time in log.
-    ZLOGI("GrantUriPermission begin, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
+    ZLOGI("GrantUriPermission begin, url size:%{public}zu, queryKey:%{public}s, instIndex:%{public}d.",
+        allUri.size(), queryKey.c_str(), instIndex);
     for (size_t index = 0; index < allUri.size(); index += GRANT_URI_PERMISSION_MAX_SIZE) {
         std::vector<Uri> uriLst(
             allUri.begin() + index, allUri.begin() + std::min(index + GRANT_URI_PERMISSION_MAX_SIZE, allUri.size()));
         auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermissionPrivileged(
             uriLst, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, bundleName, instIndex);
         if (status != ERR_OK) {
-            ZLOGE("GrantUriPermission failed, status:%{public}d, queryKey:%{public}s", status, queryKey.c_str());
+            ZLOGE("GrantUriPermission failed, status:%{public}d, queryKey:%{public}s, instIndex:%{public}d.",
+                status, queryKey.c_str(), instIndex);
             return E_NO_PERMISSION;
         }
         auto time = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
         std::for_each(uriLst.begin(), uriLst.end(), [&](const Uri &uri) {
-            uriTimeout_[uri.ToString() + delimiter_ + bundleName] = time;
+            uriTimeout_[std::make_pair(uri.ToString(), tokenId)] = time;
         });
     }
     ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
@@ -65,17 +79,23 @@ void UriPermissionManager::RevokeUriPermission()
         if (time > current) {
             return false;
         }
-        size_t pos = key.find(delimiter_);
-        if (pos != std::string::npos) {
-            Uri uri(key.substr(0, pos));
-            std::string bundleName = key.substr(pos + delimiter_.length());
-            int status = AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(uri, bundleName);
-            if (status != E_OK) {
-                ZLOGE("RevokeUriPermission error, permissionCode is %{public}d, bundleName is %{public}s",
-                    status, bundleName.c_str());
-            }
-        } else {
-            ZLOGE("delimiter not found.");
+        Uri uri(key.first);
+        uint32_t tokenId = key.second;
+        std::string bundleName;
+        if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
+            ZLOGE("Get BundleName fail, tokenId:%{public}u.", tokenId);
+            return true;
+        }
+        int32_t instIndex = -1;
+        if (!PreProcessUtils::GetInstIndex(tokenId, instIndex)) {
+            ZLOGE("Get InstIndex fail, tokenId:%{public}u.", tokenId);
+            return true;
+        }
+        int status = AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(
+            uri, bundleName, instIndex);
+        if (status != E_OK) {
+            ZLOGE("RevokeUriPermission error, permissionCode:%{public}d, bundleName:%{public}s, instIndex:%{public}d",
+                status, bundleName.c_str(), instIndex);
         }
         return true;
     });
