@@ -31,7 +31,6 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "object_asset_loader.h"
-#include "permission/permission_validator.h"
 #include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
@@ -69,12 +68,6 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
-    }
-    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
-        ZLOGE("object save permission denied");
-        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, ObjectStore::NO_PERMISSION, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
-        return OBJECT_PERMISSION_DENIED;
     }
     status = ObjectStoreManager::GetInstance()->Save(bundleName, sessionId, data, deviceId, callback);
     if (status != OBJECT_SUCCESS) {
@@ -183,10 +176,6 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
-        ZLOGE("object revoke save permission denied");
-        return OBJECT_PERMISSION_DENIED;
-    }
     status = ObjectStoreManager::GetInstance()->RevokeSave(bundleName, sessionId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("revoke save fail %{public}d", status);
@@ -203,12 +192,6 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
         return status;
-    }
-    if (!DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(tokenId)) {
-        ZLOGE("object retrieve permission denied");
-        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, ObjectStore::NO_PERMISSION, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
-        return OBJECT_PERMISSION_DENIED;
     }
     status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback, tokenId);
     if (status != OBJECT_SUCCESS) {
