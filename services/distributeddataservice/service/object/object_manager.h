@@ -155,8 +155,8 @@ private:
     void DoNotifyAssetsReady(uint32_t tokenId, const CallbackInfo& value, const std::string& objectKey, bool allReady);
     std::map<std::string, std::map<std::string, Assets>> GetAssetsFromStore(
         const std::map<std::string, std::vector<uint8_t>>& changedData);
-    static bool isAssetKey(const std::string& key);
-    static bool isAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
+    static bool IsAssetKey(const std::string& key);
+    static bool IsAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
         const std::string& assetPrefix);
     Assets GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result);
     bool RegisterAssetsLister();
