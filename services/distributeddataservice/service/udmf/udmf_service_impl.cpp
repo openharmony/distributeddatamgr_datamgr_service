@@ -20,6 +20,7 @@
 #include "ipc_skeleton.h"
 #include "tokenid_kit.h"
 
+#include "accesstoken_kit.h"
 #include "checker_manager.h"
 #include "dfx_types.h"
 #include "distributed_kv_data_manager.h"
@@ -258,18 +259,15 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     if (localDeviceId != sourceDeviceId) {
         SetRemoteUri(query, records);
     }
-
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         ZLOGE("GetHapBundleNameByToken fail, key=%{public}s, tokenId=%{private}d.", query.key.c_str(), query.tokenId);
         return E_ERROR;
     }
-
-    if (localDeviceId == sourceDeviceId && bundleName == unifiedData.GetRuntime()->sourcePackage) {
+    if (localDeviceId == sourceDeviceId && query.tokenId == unifiedData.GetRuntime()->tokenId) {
         ZLOGW("No need to grant uri permissions, queryKey=%{public}s.", query.key.c_str());
         return E_OK;
     }
-
     std::vector<Uri> allUri;
     for (auto record : records) {
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
@@ -286,7 +284,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
             allUri.push_back(uri);
         }
     }
-    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, bundleName, query.key) != E_OK) {
+    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
         RADAR_REPORT(BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED,
                      ERROR_CODE, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",

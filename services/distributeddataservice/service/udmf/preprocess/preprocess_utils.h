@@ -37,6 +37,7 @@ public:
     static void SetRemoteData(UnifiedData &data);
     static bool IsFileType(UDType udType);
     static int32_t SetRemoteUri(uint32_t tokenId, UnifiedData &data);
+    static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);
 private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);
     static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);
