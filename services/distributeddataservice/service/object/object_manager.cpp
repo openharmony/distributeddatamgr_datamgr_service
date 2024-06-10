@@ -489,7 +489,7 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
 {
     std::set<std::string> assetKeyPrefix;
     for (const auto& item : changedData) {
-        if (isAssetKey(GetPropertyName(item.first))) {
+        if (IsAssetKey(GetPropertyName(item.first))) {
             assetKeyPrefix.insert(item.first.substr(0, item.first.find_last_of(ObjectStore::ASSET_DOT)));
         }
     }
@@ -507,7 +507,7 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
             result[GetPropertyName(key)] = entry.value;
         });
         std::vector<std::string> splitKeys = SplitEntryKey(keyPrefix);
-        if (splitKeys.empty() || !isAssetComplete(result, splitKeys[PROPERTY_NAME_INDEX])) {
+        if (splitKeys.empty() || !IsAssetComplete(result, splitKeys[PROPERTY_NAME_INDEX])) {
             continue;
         }
         std::string bundleName = splitKeys[BUNDLE_NAME_INDEX];
@@ -528,12 +528,12 @@ std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAsse
     return changedAssets;
 }
 
-bool ObjectStoreManager::isAssetKey(const std::string& key)
+bool ObjectStoreManager::IsAssetKey(const std::string& key)
 {
     return key.find(ObjectStore::ASSET_DOT) != std::string::npos;
 }
 
-bool ObjectStoreManager::isAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
+bool ObjectStoreManager::IsAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
     const std::string& assetPrefix)
 {
     if (result.find(assetPrefix + ObjectStore::NAME_SUFFIX) == result.end() ||
@@ -553,7 +553,7 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const std::map<std::string, st
     std::set<std::string> assetKey;
     for (const auto& [key, value] : result) {
         std::string assetPrefix = key.substr(0, key.find(ObjectStore::ASSET_DOT));
-        if (!isAssetKey(key) || assetKey.find(assetPrefix) != assetKey.end() ||
+        if (!IsAssetKey(key) || assetKey.find(assetPrefix) != assetKey.end() ||
             result.find(assetPrefix + ObjectStore::NAME_SUFFIX) == result.end() ||
             result.find(assetPrefix + ObjectStore::URI_SUFFIX) == result.end()) {
             continue;
