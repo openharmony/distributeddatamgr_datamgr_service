@@ -21,6 +21,7 @@
 #include "device_manager_adapter.h"
 #include "kv_store_delegate_manager.h"
 #include "kvstore_sync_callback.h"
+#include "object_asset_loader.h"
 #include "object_callback.h"
 #include "object_callback_proxy.h"
 #include "object_common.h"
@@ -29,7 +30,6 @@
 #include "object_types.h"
 #include "types.h"
 #include "value_proxy.h"
-
 namespace OHOS {
 namespace DistributedObject {
 using SyncCallBack = std::function<void(const std::map<std::string, int32_t> &results)>;
@@ -63,7 +63,17 @@ class ObjectStoreManager {
 public:
     using DmAdaper = OHOS::DistributedData::DeviceManagerAdapter;
     using UriToSnapshot = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
+
+    enum RestoreStatus : int32_t {
+        NONE = 0,
+        DATA_READY,
+        ASSETS_READY,
+        ALL_READY,
+        STATUS_BUTT
+    };
+
     ObjectStoreManager();
+    ~ObjectStoreManager();
     static ObjectStoreManager *GetInstance()
     {
         static ObjectStoreManager *manager = new ObjectStoreManager();
@@ -85,6 +95,8 @@ public:
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
     void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
+    void NotifyAssetsReady(const std::string& objectKey, const std::string& srcNetworkId = "");
+    void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");
     void CloseAfterMinute();
     int32_t Open();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
@@ -107,6 +119,8 @@ private:
     constexpr static int8_t MAX_OBJECT_SIZE_PER_APP = 16;
     constexpr static int8_t DECIMAL_BASE = 10;
     constexpr static int WAIT_TIME = 60;
+    static constexpr size_t TIME_TASK_NUM = 1;
+    static constexpr int64_t INTERVAL = 1;
     struct CallbackInfo {
         pid_t pid;
         std::map<std::string, sptr<ObjectChangeCallbackProxy>> observers_;
@@ -137,13 +151,19 @@ private:
     void SaveUserToMeta();
     std::string GetCurrentUser();
     void DoNotify(uint32_t tokenId, const CallbackInfo& value,
-        const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
+        const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data, bool allReady);
+    void DoNotifyAssetsReady(uint32_t tokenId, const CallbackInfo& value, const std::string& objectKey, bool allReady);
     std::map<std::string, std::map<std::string, Assets>> GetAssetsFromStore(
         const std::map<std::string, std::vector<uint8_t>>& changedData);
     static bool isAssetKey(const std::string& key);
     static bool isAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
         const std::string& assetPrefix);
     Assets GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result);
+    bool RegisterAssetsLister();
+    void NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
+    int32_t PushAssets(int32_t userId, const std::string &appId, const std::string &sessionId,
+        const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId);
+    int32_t WaitAssets(const std::string& objectKey);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
@@ -168,17 +188,19 @@ private:
     DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
     ObjectDataListener *objectDataListener_ = nullptr;
+    sptr<ObjectAssetsRecvListener> objectAssetsRecvListener_ = nullptr;
+    sptr<ObjectAssetsSendListener> objectAssetsSendListener_ = nullptr;
     uint32_t syncCount_ = 0;
     std::string userId_;
     std::atomic<bool> isSyncing_ = false;
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
-    static constexpr size_t TIME_TASK_NUM = 1;
-    static constexpr int64_t INTERVAL = 1;
     std::shared_ptr<ExecutorPool> executors_;
     DistributedData::AssetBindInfo ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo);
     VBucket ConvertVBucket(ObjectStore::ValuesBucket &vBucket);
     ConcurrentMap<std::string, std::shared_ptr<Snapshot>> snapshots_; // key:bundleName_sessionId
     ConcurrentMap<std::string, UriToSnapshot> bindSnapshots_; // key:bundleName_storeName
+    ConcurrentMap<std::string, RestoreStatus> restoreStatus_; // key:bundleName+sessionId
+    ConcurrentMap<std::string, ExecutorPool::TaskId> objectTimer_; // key:bundleName+sessionId
 };
 } // namespace DistributedObject
 } // namespace OHOS

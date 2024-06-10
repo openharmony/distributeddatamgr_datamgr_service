@@ -18,7 +18,6 @@
 #include "object_data_listener.h"
 #include "log_print.h"
 #include "object_manager.h"
-
 namespace OHOS {
 namespace DistributedObject {
 ObjectDataListener::ObjectDataListener()
@@ -31,7 +30,6 @@ ObjectDataListener::~ObjectDataListener()
 
 void ObjectDataListener::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
-    ZLOGD("ObjectDataListener::OnChange start");
     const auto &insertedDatas = data.GetEntriesInserted();
     const auto &updatedDatas = data.GetEntriesUpdated();
     std::map<std::string, std::vector<uint8_t>> changedData {};
@@ -44,6 +42,25 @@ void ObjectDataListener::OnChange(const DistributedDB::KvStoreChangedData &data)
         changedData.insert_or_assign(std::move(key), entry.value);
     }
     DistributedObject::ObjectStoreManager::GetInstance()->NotifyChange(changedData);
+}
+
+int32_t ObjectAssetsRecvListener::OnStart(const std::string &srcNetworkId, const std::string &dstNetworkId,
+    const std::string &sessionId, const std::string &dstBundleName)
+{
+    auto objectKey = dstBundleName + sessionId;
+    ZLOGI("OnStart, objectKey:%{public}s", objectKey.c_str());
+    ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, srcNetworkId);
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, const sptr<AssetObj> &assetObj,
+    int32_t result)
+{
+    auto objectKey = assetObj->dstBundleName_+assetObj->sessionId_;
+    ZLOGI("OnFinished, status:%{public}d objectKey:%{public}s, asset size:%{public}zu", result, objectKey.c_str(),
+        assetObj->uris_.size());
+    ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, srcNetworkId);
+    return OBJECT_SUCCESS;
 }
 }  // namespace DistributedObject
 }  // namespace OHOS

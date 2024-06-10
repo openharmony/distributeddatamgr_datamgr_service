@@ -60,7 +60,7 @@ class ObjectRetrieveCallbackProxy : public IRemoteProxy<ObjectRetrieveCallbackPr
 public:
     explicit ObjectRetrieveCallbackProxy(const sptr<IRemoteObject> &impl);
     ~ObjectRetrieveCallbackProxy() = default;
-    void Completed(const std::map<std::string, std::vector<uint8_t>> &results) override;
+    void Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady) override;
 
 private:
     static inline BrokerDelegator<ObjectRetrieveCallbackProxy> delegator_;
@@ -75,7 +75,7 @@ class ObjectChangeCallbackProxy : public IRemoteProxy<ObjectChangeCallbackProxyB
 public:
     explicit ObjectChangeCallbackProxy(const sptr<IRemoteObject> &impl);
     ~ObjectChangeCallbackProxy() = default;
-    void Completed(const std::map<std::string, std::vector<uint8_t>> &results) override;
+    void Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady) override;
 
 private:
     static inline BrokerDelegator<ObjectChangeCallbackProxy> delegator_;

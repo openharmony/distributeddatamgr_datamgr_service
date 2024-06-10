@@ -80,7 +80,7 @@ void ObjectRevokeSaveCallbackProxy::Completed(int32_t status)
     }
 }
 
-void ObjectRetrieveCallbackProxy::Completed(const std::map<std::string, std::vector<uint8_t>> &results)
+void ObjectRetrieveCallbackProxy::Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -88,7 +88,7 @@ void ObjectRetrieveCallbackProxy::Completed(const std::map<std::string, std::vec
         ZLOGE("write descriptor failed");
         return;
     }
-    if (!ITypesUtil::Marshal(data, results)) {
+    if (!ITypesUtil::Marshal(data, results, allReady)) {
         ZLOGE("write descriptor failed");
         return;
     }
@@ -99,7 +99,7 @@ void ObjectRetrieveCallbackProxy::Completed(const std::map<std::string, std::vec
     }
 }
 
-void ObjectChangeCallbackProxy::Completed(const std::map<std::string, std::vector<uint8_t>> &results)
+void ObjectChangeCallbackProxy::Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -107,7 +107,7 @@ void ObjectChangeCallbackProxy::Completed(const std::map<std::string, std::vecto
         ZLOGE("write descriptor failed");
         return;
     }
-    if (!ITypesUtil::Marshal(data, results)) {
+    if (!ITypesUtil::Marshal(data, results, allReady)) {
         ZLOGE("write descriptor failed");
         return;
     }

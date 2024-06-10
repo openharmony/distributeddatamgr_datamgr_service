@@ -28,13 +28,12 @@
 #include "common/bytes.h"
 #include "common/string_utils.h"
 #include "datetime_ex.h"
+#include "distributed_file_daemon_manager.h"
 #include "ipc_skeleton.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
-#include "object_asset_loader.h"
-#include "object_data_listener.h"
 #include "object_radar_reporter.h"
 
 namespace OHOS {
@@ -47,7 +46,29 @@ using OHOS::DistributedKv::AccountDelegate;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 using ValueProxy = OHOS::DistributedData::ValueProxy;
-ObjectStoreManager::ObjectStoreManager() {}
+using DistributedFileDaemonManager = Storage::DistributedFile::DistributedFileDaemonManager;
+ObjectStoreManager::ObjectStoreManager()
+{
+    ZLOGI("ObjectStoreManager construct");
+    RegisterAssetsLister();
+}
+
+ObjectStoreManager::~ObjectStoreManager()
+{
+    ZLOGI("ObjectStoreManager destroy");
+    if (objectAssetsSendListener_ != nullptr) {
+        delete objectAssetsSendListener_;
+        objectAssetsSendListener_ = nullptr;
+    }
+    if (objectAssetsRecvListener_ != nullptr) {
+        auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("UnRegister assetsRecvListener err %{public}d", status);
+        }
+        delete objectAssetsRecvListener_;
+        objectAssetsRecvListener_ = nullptr;
+    }
+}
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
 {
@@ -77,6 +98,22 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
             }
         });
     return store;
+}
+
+bool ObjectStoreManager::RegisterAssetsLister()
+{
+    if (objectAssetsSendListener_ == nullptr) {
+        objectAssetsSendListener_ = new ObjectAssetsSendListener();
+    }
+    if (objectAssetsRecvListener_ == nullptr) {
+        objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
+    }
+    auto status = DistributedFileDaemonManager::GetInstance().RegisterAssetCallback(objectAssetsRecvListener_);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("Register assetsRecvListener err %{public}d", status);
+        return false;
+    }
+    return true;
 }
 
 void ObjectStoreManager::ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
@@ -140,8 +177,31 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
         RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
             ObjectStore::ERROR_CODE, result, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
     }
+    result = PushAssets(std::stoi(GetCurrentUser()), appId, sessionId, data, deviceId);
     Close();
     return result;
+}
+
+int32_t ObjectStoreManager::PushAssets(int32_t userId, const std::string &appId, const std::string &sessionId,
+    const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId)
+{
+    Assets assets = GetAssetsFromDBRecords(data);
+    if (assets.empty() || data.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == data.end()) {
+        return OBJECT_SUCCESS;
+    }
+    sptr<AssetObj> assetObj = new AssetObj();
+    assetObj->dstBundleName_ = appId;
+    assetObj->srcBundleName_ = appId;
+    assetObj->dstNetworkId_ = deviceId;
+    assetObj->sessionId_ = sessionId;
+    for (const auto& asset : assets) {
+        assetObj->uris_.push_back(asset.uri);
+    }
+    if (objectAssetsSendListener_ == nullptr) {
+        objectAssetsSendListener_ = new ObjectAssetsSendListener();
+    }
+    auto status =  ObjectAssetLoader::GetInstance()->PushAsset(userId, assetObj, objectAssetsSendListener_);
+    return status;
 }
 
 int32_t ObjectStoreManager::RevokeSave(
@@ -191,43 +251,43 @@ int32_t ObjectStoreManager::Retrieve(
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
-        proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
+        proxy->Completed(std::map<std::string, std::vector<uint8_t>>(), false);
         return ObjectStore::GETKV_FAILED;
     }
-
     std::map<std::string, std::vector<uint8_t>> results{};
     int32_t status = RetrieveFromStore(bundleName, sessionId, results);
     if (status != OBJECT_SUCCESS) {
-        ZLOGE("Retrieve failed, status = %{public}d", status);
+        ZLOGI("Retrieve failed, status = %{public}d", status);
         Close();
-        proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
+        proxy->Completed(std::map<std::string, std::vector<uint8_t>>(), false);
         return status;
+    }
+    bool allReady = false;
+    Assets assets = GetAssetsFromDBRecords(results);
+    if (assets.empty() || results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == results.end()) {
+        allReady = true;
+    } else {
+        auto objectKey = bundleName + sessionId;
+        restoreStatus_.ComputeIfAbsent(
+            objectKey, [](const std::string& key) -> auto {
+            return RestoreStatus::NONE;
+        });
+        if (restoreStatus_[objectKey] == RestoreStatus::ALL_READY) {
+            allReady = true;
+        }
     }
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
     if (status != OBJECT_SUCCESS) {
         ZLOGE("revoke save failed, status = %{public}d", status);
         Close();
-        proxy->Completed(std::map<std::string, std::vector<uint8_t>>());
+        proxy->Completed(std::map<std::string, std::vector<uint8_t>>(), false);
         return status;
     }
     Close();
-    Assets assets = GetAssetsFromDBRecords(results);
-    if (assets.empty() || results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == results.end()) {
-        proxy->Completed(results);
-        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_SUCCESS,
-            ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
-        return status;
-    }
-    int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    std::string deviceId;
-    ObjectStore::StringUtils::BytesToStrWithType(
-        results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY)->second, deviceId);
-    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assets, [=](bool success) {
-        proxy->Completed(results);
-        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_SUCCESS,
-            ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
-    });
+    proxy->Completed(results, allReady);
+    RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_SUCCESS, ObjectStore::BIZ_STATE,
+        ObjectStore::FINISHED);
     return status;
 }
 
@@ -338,8 +398,8 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
 
 void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData)
 {
-    ZLOGD("ObjectStoreManager::NotifyChange start");
-    SaveUserToMeta();
+    ZLOGI("OnChange start, size:%{public}zu", changedData.size());
+    std::map<std::string, std::map<std::string, Assets>> changedAssets = GetAssetsFromStore(changedData);
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     for (const auto &item : changedData) {
         std::vector<std::string> splitKeys = SplitEntryKey(item.first);
@@ -350,25 +410,78 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
         std::string propertyName = splitKeys[PROPERTY_NAME_INDEX];
         data[prefix].insert_or_assign(propertyName, item.second);
     }
-    std::function<void(bool success)> callback = [this, data](bool success) {
+    if (changedAssets.empty()) {
         callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
-            DoNotify(tokenId, value, data);
+            DoNotify(tokenId, value, data, true); // no asset, data ready means all ready
             return false;
         });
-    };
-    std::map<std::string, std::map<std::string, Assets>> changedAssets = GetAssetsFromStore(changedData);
-    if (changedAssets.empty()) {
-        callback(true);
+        return;
     }
-    const int32_t userId = std::stoi(GetCurrentUser());
-    for (const auto& assetsOfBundle : changedAssets) {
-        std::string bundleName = assetsOfBundle.first;
-        for (const auto& assetsOfDevice : assetsOfBundle.second) {
-            std::string deviceId = assetsOfDevice.first;
-            Assets assets = assetsOfDevice.second;
-            ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, bundleName, deviceId, assets, callback);
+    NotifyDataChanged(data);
+    SaveUserToMeta();
+}
+
+void ObjectStoreManager::NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
+{
+    for (auto const& [objectKey, results] : data) {
+        restoreStatus_.ComputeIfAbsent(
+            objectKey, [](const std::string& key) -> auto {
+            return RestoreStatus::NONE;
+        });
+        if (restoreStatus_[objectKey] == RestoreStatus::ASSETS_READY) {
+            restoreStatus_[objectKey] = RestoreStatus::ALL_READY;
+            callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
+                DoNotify(tokenId, value, data, true);
+                return false;
+            });
+        } else {
+            restoreStatus_[objectKey] = RestoreStatus::DATA_READY;
+            callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
+                DoNotify(tokenId, value, data, false);
+                return false;
+            });
+            WaitAssets(objectKey);
         }
     }
+}
+
+int32_t ObjectStoreManager::WaitAssets(const std::string& objectKey)
+{
+    auto taskId = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this, objectKey]() {
+        ZLOGE("wait assets finisehd timeout, objectKey:%{public}s", objectKey.c_str());
+        NotifyAssetsReady(objectKey);
+    });
+
+    objectTimer_.ComputeIfAbsent(
+        objectKey, [taskId](const std::string& key) -> auto {
+            return taskId;
+    });
+    return  OBJECT_SUCCESS;
+}
+
+void ObjectStoreManager::NotifyAssetsReady(const std::string& objectKey, const std::string& srcNetworkId)
+{
+    restoreStatus_.ComputeIfAbsent(
+        objectKey, [](const std::string& key) -> auto {
+        return RestoreStatus::NONE;
+    });
+    if (restoreStatus_[objectKey] == RestoreStatus::DATA_READY) {
+        restoreStatus_[objectKey] = RestoreStatus::ALL_READY;
+        callbacks_.ForEach([this, objectKey](uint32_t tokenId, const CallbackInfo& value) {
+            DoNotifyAssetsReady(tokenId, value,  objectKey, true);
+            return false;
+        });
+    } else {
+        restoreStatus_[objectKey] = RestoreStatus::ASSETS_READY;
+    }
+}
+
+void ObjectStoreManager::NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId)
+{
+    restoreStatus_.ComputeIfAbsent(
+        objectKey, [](const std::string& key) -> auto {
+        return RestoreStatus::NONE;
+    });
 }
 
 std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAssetsFromStore(
@@ -474,14 +587,32 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const std::map<std::string, st
 }
 
 void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
-    const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
+    const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data, bool allReady)
 {
     for (const auto& observer : value.observers_) {
         auto it = data.find(observer.first);
         if (it == data.end()) {
             continue;
         }
-        observer.second->Completed((*it).second);
+        observer.second->Completed((*it).second, allReady);
+        restoreStatus_.Erase((*it).first);
+    }
+}
+
+void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInfo& value,
+    const std::string& objectKey, bool allReady)
+{
+    for (const auto& observer : value.observers_) {
+        if (objectKey != observer.first) {
+            continue;
+        }
+        observer.second->Completed(std::map<std::string, std::vector<uint8_t>>(), allReady);
+        restoreStatus_.Erase(objectKey);
+        auto [has, taskId] = objectTimer_.Find(objectKey);
+        if (has) {
+            executors_->Remove(taskId);
+        }
+        objectTimer_.Erase(objectKey);
     }
 }
 
@@ -707,6 +838,10 @@ int32_t ObjectStoreManager::RetrieveFromStore(
     std::vector<DistributedDB::Entry> entries;
     std::string prefix = GetPrefixWithoutDeviceId(appId, sessionId);
     auto status = delegate_->GetEntries(std::vector<uint8_t>(prefix.begin(), prefix.end()), entries);
+    if (status == DistributedDB::DBStatus::NOT_FOUND) {
+        ZLOGW("key not found, status = %{public}d", status);
+        return KEY_NOT_FOUND;
+    }
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("GetEntries failed, status = %{public}d", status);
         return DB_ERROR;
