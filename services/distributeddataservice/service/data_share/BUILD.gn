@@ -56,7 +56,6 @@ ohos_shared_library("data_share_service") {
     "common/scheduler_manager.cpp",
     "common/seq_strategy.cpp",
     "common/uri_utils.cpp",
-    "common/xcollie.cpp",
     "data/published_data.cpp",
     "data/resultset_json_formatter.cpp",
     "data/template_data.cpp",
