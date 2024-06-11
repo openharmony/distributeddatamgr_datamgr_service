@@ -57,6 +57,7 @@ sptr<AppExecFwk::IBundleMgr> CustomUtdInstaller::GetBundleManager()
     auto bmsProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (bmsProxy == nullptr) {
         ZLOGE("failed to get bms from samgrProxy.");
+        return nullptr;
     }
     return iface_cast<AppExecFwk::IBundleMgr>(bmsProxy);
 }
@@ -139,6 +140,10 @@ int32_t CustomUtdInstaller::UninstallUtd(const std::string &bundleName, int32_t 
 std::vector<std::string> CustomUtdInstaller::GetHapModules(const std::string &bundleName, int32_t user)
 {
     auto bundlemgr = GetBundleManager();
+    if (bundlemgr == nullptr) {
+        ZLOGE("Get bms service failed, bundleName: %{public}s.", bundleName.c_str());
+        return {};
+    }
     AppExecFwk::BundleInfo bundleInfo;
     if (!bundlemgr->GetBundleInfo(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT, bundleInfo, user)) {
         ZLOGE("Get local bundle info failed, bundleName: %{public}s.", bundleName.c_str());
@@ -152,6 +157,10 @@ CustomUtdCfgs CustomUtdInstaller::GetModuleCustomUtdTypes(const std::string &bun
     auto bundlemgr = GetBundleManager();
     std::string jsonStr;
     CustomUtdCfgs typeCfgs;
+    if (bundlemgr == nullptr) {
+        ZLOGE("Get bms service failed, bundleName: %{public}s.", bundleName.c_str());
+        return typeCfgs;
+    }
     auto status = bundlemgr->GetJsonProfile(AppExecFwk::ProfileType::UTD_SDT_PROFILE, bundleName, moduleName, jsonStr,
         user);
     if (status != NO_ERROR) {
