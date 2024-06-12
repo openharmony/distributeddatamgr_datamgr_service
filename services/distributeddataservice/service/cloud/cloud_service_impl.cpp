@@ -329,14 +329,31 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
     syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName));
     auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+    bool found = false;
     for (auto &dynamicStore: dynamicStores) {
-        if (dynamicStore.bundleName != bundleName) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, dynamicStore.bundleName));
+        if (dynamicStore.bundleName == bundleName) {
+            found = true;
+            break;
         }
     }
-    for (auto &staticStore: staticStores) {
-        if (dynamicStore.bundleName != bundleName) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, staticStore.bundleName));
+    if (!found) {
+        for (auto &staticStore: staticStores) {
+            if (staticStore.bundleName == bundleName) {
+                found = true;
+                break;
+            }
+        }
+    }
+    if (found) {
+        for (auto &dynamicStore: dynamicStores) {
+            if (dynamicStore.bundleName != bundleName) {
+                syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, dynamicStore.bundleName));
+            }
+        }
+        for (auto &staticStore: staticStores) {
+            if (staticStore.bundleName != bundleName) {
+                syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, staticStore.bundleName));
+            }
         }
     }
     return SUCCESS;
