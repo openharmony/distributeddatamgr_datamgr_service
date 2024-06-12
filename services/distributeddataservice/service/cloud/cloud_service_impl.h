@@ -157,6 +157,7 @@ private:
         const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta);
     std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo& hapInfo);
     bool GetStoreMetaData(StoreMetaData &meta);
+    bool DoKvCloudSync(int32_t userId, const std::string &bundleName);
 
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];

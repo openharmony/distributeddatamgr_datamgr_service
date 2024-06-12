@@ -121,6 +121,7 @@ private:
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
     bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
     Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
+    void DoCloudSync(const std::string &device, std::pair<uint16_t, uint16_t> mask);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,

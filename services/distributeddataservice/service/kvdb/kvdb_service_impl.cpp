@@ -422,47 +422,16 @@ void KVDBServiceImpl::RegisterMatrixChange()
         ZLOGD("not support matrix");
         return;
     }
-    // todo 获取当前设备的水位
-    MatrixMetaData matrixMeta{};
-    matrixMeta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    bool loaded = MetaDataManager::GetInstance().LoadMeta(matrixMeta.GetKey(), matrixMeta, true);
-    if (!loaded) {
-        ZLOGW("load local matrix meta failed!");
-    }
+    DeviceMatrix::GetInstance().RegRemoteChange([this](const std::string &device, std::pair<uint16_t, uint16_t> mask) {
+        auto networkId = DMAdapter::GetInstance().ToNetworkID(device);
+        if (networkId.empty()) {
+            return;
+        }
 
-    DeviceMatrix::GetInstance().RegRemoteChange(
-        [loaded, &matrixMeta, this](const std::string &device, std::pair<uint16_t, uint16_t> mask) {
-            auto networkId = DMAdapter::GetInstance().ToNetworkID(device);
-            if (networkId.empty()) {
-                return;
-            }
-            if (loaded) {
-                auto staticVersion = High(mask.first);
-                auto dynamicVersion = High(mask.second);
-                if (matrixMeta.statics != staticVersion || matrixMeta.dynamic != dynamicVersion) {
-                    // todo 对端水位发生变化时，进行端云同步
-                    auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
-                    auto staticStores = CheckerManager::GetInstance().GetStaticStores();
-                    for (auto &dynamicStore: dynamicStores) {
-                        auto status = CloudSync(dynamicStore.bundleName, dynamicStore.storeId, {});
-                        if (status != SUCCESS) {
-                            ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s",
-                                  dynamicStore.bundleName.c_str(), Anonymous::Change(dynamicStore.storeId).c_str());
-                        }
-                    }
-                    for (auto &staticStore: staticStores) {
-                        auto status = CloudSync(staticStore.bundleName, staticStore.storeId, {});
-                        if (status != SUCCESS) {
-                            ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s",
-                                  dynamicStore.bundleName.c_str(), Anonymous::Change(dynamicStore.storeId).c_str());
-                        }
-                    }
-                }
-            }
-
-            OnDynamicChange(networkId, mask);
-            OnStaticsChange(networkId, mask);
-        });
+        OnDynamicChange(networkId, mask);
+        OnStaticsChange(networkId, mask);
+        DoCloudSync(device, mask);
+    });
 }
 
 void KVDBServiceImpl::OnStaticsChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
@@ -1065,6 +1034,35 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
         dbResults[id] = DBStatus(detail.code);
     }
     return dbResults;
+}
+
+void KVDBServiceImpl::DoCloudSync(const std::string &device, std::pair<uint16_t, uint16_t> mask)
+{
+    auto [dynamic, statics] = DeviceMatrix::GetInstance().IsConsistent(device);
+    if (!dynamic) {
+        auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
+        for (auto &dynamicStore : dynamicStores) {
+            AppId appId = { dynamicStore.bundleName };
+            StoreId storeId = { dynamicStore.storeId };
+            auto status = CloudSync(appId, storeId, {});
+            if (status != SUCCESS) {
+                ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s", dynamicStore.bundleName.c_str(),
+                      Anonymous::Change(dynamicStore.storeId).c_str());
+            }
+        }
+    }
+    if (!statics) {
+        auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+        for (auto &staticStore : staticStores) {
+            AppId appId = { staticStore.bundleName };
+            StoreId storeId = { staticStore.storeId };
+            auto status = CloudSync(appId, storeId, {});
+            if (status != SUCCESS) {
+                ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s", staticStore.bundleName.c_str(),
+                    Anonymous::Change(staticStore.storeId).c_str());
+            }
+        }
+    }
 }
 
 Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
