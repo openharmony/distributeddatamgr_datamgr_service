@@ -763,6 +763,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "huks:libhukssdk",

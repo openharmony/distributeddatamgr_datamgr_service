@@ -50,6 +50,7 @@
 #include "sys_event_subscriber.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
+#include "xcollie.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -71,6 +72,8 @@ DataShareServiceImpl::Factory::~Factory() {}
 int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Insert enter.");
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD,
+        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
@@ -111,6 +114,8 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
     const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Update enter.");
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD,
+        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
@@ -129,6 +134,8 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
 
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
 {
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD,
+        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
@@ -149,6 +156,8 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
     ZLOGD("Query enter.");
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD,
+        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return nullptr;
@@ -737,6 +746,8 @@ int32_t DataShareServiceImpl::EnableSilentProxy(const std::string &uri, bool ena
 
 int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool isCreateHelper)
 {
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD,
+        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     uint32_t callerTokenId = IPCSkeleton::GetCallingTokenID();
     if (isCreateHelper) {
         auto errCode = GetBMSAndMetaDataStatus(uri, callerTokenId);
@@ -767,6 +778,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
 int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
     const sptr<OHOS::IRemoteObject> &remoteObj)
 {
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD, HiviewDFX::XCOLLIE_FLAG_LOG);
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
@@ -799,6 +811,7 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
 int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     const sptr<OHOS::IRemoteObject> &remoteObj)
 {
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD, HiviewDFX::XCOLLIE_FLAG_LOG);
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();

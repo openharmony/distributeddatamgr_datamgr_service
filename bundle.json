@@ -64,6 +64,7 @@
                 "device_manager",
                 "dfs_service",
                 "dsoftbus",
+                "hicollie",
                 "hilog",
                 "hisysevent",
                 "hitrace",
