@@ -778,6 +778,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
 int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
     const sptr<OHOS::IRemoteObject> &remoteObj)
 {
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD, HiviewDFX::XCOLLIE_FLAG_LOG);
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
@@ -810,6 +811,7 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
 int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     const sptr<OHOS::IRemoteObject> &remoteObj)
 {
+    XCollie xcollie(__FUNCTION__, RESTART_TIME_THRESHOLD, HiviewDFX::XCOLLIE_FLAG_LOG);
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     DataProviderConfig providerConfig(uri, callerTokenId);
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
