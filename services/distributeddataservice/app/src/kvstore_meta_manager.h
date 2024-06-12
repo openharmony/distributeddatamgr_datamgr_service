@@ -15,14 +15,17 @@
 #ifndef KVSTORE_META_MANAGER_H
 #define KVSTORE_META_MANAGER_H
 
+#include <memory>
 #include <mutex>
 
 #include "app_device_change_listener.h"
 #include "executor_pool.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
+#include "safe_block_queue.h"
 #include "system_ability.h"
 #include "types.h"
+#include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 
 namespace OHOS {
@@ -58,6 +61,8 @@ public:
 private:
     using NbDelegate = std::shared_ptr<DistributedDB::KvStoreNbDelegate>;
     using TaskId = ExecutorPool::TaskId;
+    using Backup = DistributedData::MetaDataManager::Backup;
+    using TaskQueue = std::shared_ptr<SafeBlockQueue<Backup>>;
     NbDelegate GetMetaKvStore();
 
     NbDelegate CreateMetaKvStore();
@@ -93,6 +98,9 @@ private:
 
     void InitDBOption(DistributedDB::KvStoreNbDelegate::Option &option);
 
+    static ExecutorPool::Task GetBackupTask(
+        TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);
+
     class KvStoreMetaObserver : public DistributedDB::KvStoreObserver {
     public:
         virtual ~KvStoreMetaObserver();
@@ -126,6 +134,7 @@ private:
     std::shared_ptr<ExecutorPool> executors_;
     TaskId delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
     static constexpr int32_t META_VERSION = 3;
+    static constexpr int32_t MAX_TASK_COUNT = 1;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS
