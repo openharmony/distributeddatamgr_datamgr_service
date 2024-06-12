@@ -34,6 +34,9 @@ public:
     Status Sync(const std::vector<std::string> &devices) override;
     Status Clear() override;
     Status GetBatchData(const std::string &dataPrefix, std::vector<UnifiedData> &unifiedDataSet) override;
+    Status PutLocal(const std::string &key, const std::string &value) override;
+    Status GetLocal(const std::string &key, std::string &value) override;
+    Status DeleteLocal(const std::string &key) override;
     void Close() override;
     bool Init() override;
 
