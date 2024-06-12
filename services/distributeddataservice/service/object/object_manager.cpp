@@ -595,7 +595,9 @@ void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
             continue;
         }
         observer.second->Completed((*it).second, allReady);
-        restoreStatus_.Erase((*it).first);
+        if (allReady) {
+            restoreStatus_.Erase(observer.first);
+        }
     }
 }
 
@@ -607,12 +609,14 @@ void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInf
             continue;
         }
         observer.second->Completed(std::map<std::string, std::vector<uint8_t>>(), allReady);
-        restoreStatus_.Erase(objectKey);
+        if (allReady) {
+            restoreStatus_.Erase(objectKey);
+        }
         auto [has, taskId] = objectTimer_.Find(objectKey);
         if (has) {
             executors_->Remove(taskId);
+            objectTimer_.Erase(objectKey);
         }
-        objectTimer_.Erase(objectKey);
     }
 }
 
