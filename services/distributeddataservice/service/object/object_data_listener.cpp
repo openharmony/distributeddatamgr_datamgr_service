@@ -49,7 +49,7 @@ int32_t ObjectAssetsRecvListener::OnStart(const std::string &srcNetworkId, const
 {
     auto objectKey = dstBundleName + sessionId;
     ZLOGI("OnStart, objectKey:%{public}s", objectKey.c_str());
-    ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, srcNetworkId);
+    ObjectStoreManager::GetInstance()->NotifyAssetsStart(objectKey, srcNetworkId);
     return OBJECT_SUCCESS;
 }
 
