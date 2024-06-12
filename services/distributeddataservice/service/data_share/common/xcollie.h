@@ -24,7 +24,7 @@
 namespace OHOS::DataShare {
 class XCollie {
 public:
-    XCollie(const std::string &tag, uint32_t timeoutSeconds = 10, uint32_t flag = HiviewDFX::XCOLLIE_FLAG_DEFAULT,
+    XCollie(const std::string &tag, uint32_t timeoutSeconds, uint32_t flag = HiviewDFX::XCOLLIE_FLAG_DEFAULT,
         std::function<void(void *)> func = nullptr, void *arg = nullptr)
     {
         id_ = HiviewDFX::XCollie::GetInstance().SetTimer(tag, timeoutSeconds, func, arg, flag);
