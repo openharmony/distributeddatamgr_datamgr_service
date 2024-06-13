@@ -330,9 +330,18 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
             break;
         }
     }
-    if (found) {
+    if (!found) {
+        return found;
+    }
+    std::vector<int32_t> users;
+    if (userId != INVALID_USER_ID) {
+        users.emplace_back(userId);
+    } else {
+        Account::GetInstance()->QueryForegroundUsers(users);
+    }
+    for (auto user : users) {
         for (auto &store : stores) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(userId, store.bundleName, store.storeId));
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId));
         }
     }
     return found;

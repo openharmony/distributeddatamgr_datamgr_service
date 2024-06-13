@@ -153,6 +153,7 @@ Status InstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared_p
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED);
     matchingSkills.AddEvent(OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_ADDED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
     CommonEventSubscribeInfo info(matchingSkills);
 
     auto subscriber = std::make_shared<InstallEventSubscriber>(info, kvStoreDataService);
