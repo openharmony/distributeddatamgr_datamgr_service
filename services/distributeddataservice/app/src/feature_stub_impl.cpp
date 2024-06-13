@@ -124,4 +124,12 @@ int32_t FeatureStubImpl::OnSessionReady(const std::string &device)
     }
     return featureImpl_->OnSessionReady(device);
 }
+
+int32_t FeatureStubImpl::OnScreenUnlocked(int32_t user)
+{
+    if (featureImpl_ == nullptr) {
+        return -1;
+    }
+    return featureImpl_->OnScreenUnlocked(user);
+}
 }

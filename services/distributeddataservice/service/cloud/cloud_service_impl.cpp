@@ -320,29 +320,19 @@ std::map<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromE
 
 bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName)
 {
-    auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
+    auto stores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+    stores.insert(stores.end(), staticStores.begin(), staticStores.end());
     bool found = false;
-    for (auto &dynamicStore : dynamicStores) {
-        if (dynamicStore.bundleName == bundleName) {
+    for (auto &store : stores) {
+        if (store.bundleName == bundleName || bundleName.empty()) {
             found = true;
             break;
         }
     }
-    if (!found) {
-        for (auto &staticStore : staticStores) {
-            if (staticStore.bundleName == bundleName) {
-                found = true;
-                break;
-            }
-        }
-    }
     if (found) {
-        for (auto &dynamicStore : dynamicStores) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(userId, dynamicStore.bundleName));
-        }
-        for (auto &staticStore : staticStores) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(userId, staticStore.bundleName));
+        for (auto &store : stores) {
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(userId, store.bundleName, store.storeId));
         }
     }
     return found;
@@ -644,6 +634,12 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
         default:
             break;
     }
+    return E_OK;
+}
+
+int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
+{
+    DoKvCloudSync(user);
     return E_OK;
 }
 

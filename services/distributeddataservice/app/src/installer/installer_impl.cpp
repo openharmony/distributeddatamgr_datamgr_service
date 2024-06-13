@@ -60,6 +60,10 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         int32_t appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
         ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d", bundleName.c_str(), userId, appIndex);
         (this->*(it->second))(bundleName, userId, appIndex);
+    } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+        int32_t userId = want.GetIntParam(USER_ID, -1);
+        ZLOGI("user:%{public}d ScreenUnlocked", userId);
+        OnScreenUnlocked(userId);
     }
 }
 
@@ -113,6 +117,11 @@ void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t use
 void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
     kvStoreDataService_->OnInstall(bundleName, userId, appIndex);
+}
+
+void InstallEventSubscriber::OnScreenUnlocked(int32_t userId)
+{
+    kvStoreDataService_->OnScreenUnlocked(userId);
 }
 
 InstallerImpl::~InstallerImpl()

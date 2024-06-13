@@ -796,6 +796,15 @@ int32_t KvStoreDataService::OnInstall(const std::string &bundleName, int32_t use
     return SUCCESS;
 }
 
+int32_t KvStoreDataService::OnScreenUnlocked(int32_t user)
+{
+    features_.ForEachCopies([user](const auto &key, sptr<DistributedData::FeatureStubImpl> &value) {
+        value->OnScreenUnlocked(user);
+        return false;
+    });
+    return SUCCESS;
+}
+
 int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
     int32_t tokenId)
 {
