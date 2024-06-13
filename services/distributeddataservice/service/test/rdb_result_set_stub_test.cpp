@@ -53,7 +53,8 @@ HWTEST_F(RdbResultSetStubTest, OnRemoteRequest001, TestSize.Level1)
     MessageParcel reply1;
     MessageOption option1;
     std::shared_ptr<RdbResultSetStub> rdbResultSetStub1 = std::make_shared<RdbResultSetStub>(result);
-    auto ret = rdbResultSetStub1->OnRemoteRequest(RdbResultSetStub::Code::CMD_GET_ALL_COLUMN_NAMES, request1, reply1, option1);
+    auto ret = rdbResultSetStub1->OnRemoteRequest(RdbResultSetStub::Code::CMD_GET_ALL_COLUMN_NAMES,
+        request1, reply1, option1);
     EXPECT_EQ(ret, -1);
 
     result = nullptr;
@@ -67,14 +68,16 @@ HWTEST_F(RdbResultSetStubTest, OnRemoteRequest001, TestSize.Level1)
     MessageParcel reply2;
     MessageOption option2;
     std::shared_ptr<RdbResultSetStub> rdbResultSetStub2 = std::make_shared<RdbResultSetStub>(result);
-    ret = rdbResultSetStub2->OnRemoteRequest(RdbResultSetStub::Code::CMD_GET_ALL_COLUMN_NAMES, request2, reply2, option2);
+    ret = rdbResultSetStub2->OnRemoteRequest(RdbResultSetStub::Code::CMD_GET_ALL_COLUMN_NAMES,
+        request2, reply2, option2);
     EXPECT_EQ(ret, -1);
 
     MessageParcel request3;
     MessageParcel reply3;
     MessageOption option3;
     std::shared_ptr<RdbResultSetStub> rdbResultSetStub3 = std::make_shared<RdbResultSetStub>(result);
-    ret = rdbResultSetStub3->OnRemoteRequest(RdbResultSetStub::Code::CMD_GET_ALL_COLUMN_NAMES, request3, reply3, option3);
+    ret = rdbResultSetStub3->OnRemoteRequest(RdbResultSetStub::Code::CMD_GET_ALL_COLUMN_NAMES,
+        request3, reply3, option3);
     EXPECT_EQ(ret, -1);
 }
 
