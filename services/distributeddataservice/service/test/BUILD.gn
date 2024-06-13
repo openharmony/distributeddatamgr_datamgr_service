@@ -394,6 +394,13 @@ ohos_unittest("RdbResultSetImplTest") {
 
   configs = [ ":module_private_config" ]
 
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+  ]
+
   external_deps = [
     "ability_base:base",
     "ability_base:want",
@@ -434,6 +441,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_cursor_test.cpp",
     "rdb_general_store_test.cpp",
     "rdb_query_test.cpp",
+    "rdb_result_set_stub_test.cpp",
   ]
 
   include_dirs = [
@@ -447,6 +455,8 @@ ohos_unittest("RdbServiceTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
   ]
 
   external_deps = [
@@ -763,7 +773,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
-    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "huks:libhukssdk",

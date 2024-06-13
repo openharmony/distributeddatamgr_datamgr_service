@@ -209,5 +209,97 @@ HWTEST_F(RdbResultSetImplTest, RdbResultSetImplGet, TestSize.Level0)
         resultSet->IsEnded(result);
     }
 }
+
+/**
+* @tc.name: RdbResultSetImpl001
+* @tc.desc: RdbResultSetImpl function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbResultSetImplTest, RdbResultSetImpl001, TestSize.Level0)
+{
+    std::vector<std::string> names;
+    EXPECT_EQ(resultSet->GetAllColumnNames(names), NativeRdb::E_OK);
+    int count = 0;
+    EXPECT_EQ(resultSet->GetColumnCount(count), NativeRdb::E_OK);
+    std::string columnName = "columnName";
+    int columnIndex = 0;
+    EXPECT_EQ(resultSet->GetColumnIndex(columnName, columnIndex), NativeRdb::E_ERROR);
+    EXPECT_EQ(resultSet->GetColumnIndex(names[1], columnIndex), NativeRdb::E_OK);
+    columnIndex = 10; // 10 > colNames_.size()
+    EXPECT_EQ(resultSet->GetColumnName(columnIndex, columnName), NativeRdb::E_ERROR);
+    EXPECT_EQ(resultSet->GetColumnName(-1, columnName), NativeRdb::E_ERROR);
+    bool result = false;
+    EXPECT_EQ(resultSet->IsAtFirstRow(result), NativeRdb::E_OK);
+    EXPECT_EQ(resultSet->IsAtLastRow(result), NativeRdb::E_OK);
+    int value = 1;
+    EXPECT_EQ(resultSet->GetInt(value, value), NativeRdb::E_OK);
+    EXPECT_EQ(resultSet->IsColumnNull(value, result), NativeRdb::E_OK);
+    int32_t col = 1;
+    NativeRdb::ValueObject::Asset asset;
+    NativeRdb::ValueObject::Assets assets;
+    EXPECT_EQ(resultSet->GetAsset(col, asset), NativeRdb::E_OK);
+    EXPECT_EQ(resultSet->GetAssets(col, assets), NativeRdb::E_OK);
+    NativeRdb::ValueObject::FloatVector vecs;
+    size_t size = 0;
+    EXPECT_EQ(resultSet->GetFloat32Array(col, vecs), NativeRdb::E_NOT_SUPPORT);
+    EXPECT_EQ(resultSet->GetSize(col, size), NativeRdb::E_OK);
+    EXPECT_FALSE(resultSet->IsClosed());
+    EXPECT_EQ(resultSet->Close(), NativeRdb::E_OK);
+}
+
+/**
+* @tc.name: RdbResultSetImpl002
+* @tc.desc: RdbResultSetImpl function error test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbResultSetImplTest, RdbResultSetImpl002, TestSize.Level0)
+{
+    auto cursorMock = std::make_shared<CursorMock>(cursor);
+    cursorMock = nullptr;
+    std::shared_ptr<RdbResultSetImpl> result = std::make_shared<RdbResultSetImpl>(cursorMock);
+    std::vector<std::string> columnNames;
+    int columnIndex = 0;
+    RdbResultSetImpl::ColumnType columnType;
+    std::string columnName = "columnName";
+    bool ret = false;
+    std::vector<uint8_t> value;
+    int64_t value1 = 0;
+    double value2 = 0.0;
+    int32_t col = 0;
+    NativeRdb::ValueObject::Asset asset;
+    NativeRdb::ValueObject::Assets assets;
+    NativeRdb::ValueObject::FloatVector vecs;
+    NativeRdb::ValueObject valueObject;
+    size_t size = 0;
+    EXPECT_EQ(result->GetAllColumnNames(columnNames), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetColumnCount(columnIndex), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetColumnType(columnIndex, columnType), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetColumnIndex(columnName, columnIndex), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetColumnName(columnIndex, columnName), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetRowCount(columnIndex), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetRowIndex(columnIndex), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GoToFirstRow(), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GoToNextRow(), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GoToPreviousRow(), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->IsEnded(ret), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->IsStarted(ret), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->IsAtFirstRow(ret), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->IsAtLastRow(ret), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetBlob(columnIndex, value), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetString(columnIndex, columnName), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetLong(columnIndex, value1), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetDouble(columnIndex, value2), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->IsColumnNull(columnIndex, ret), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->Close(), NativeRdb::E_OK);
+    EXPECT_EQ(result->GetAsset(col, asset), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetAssets(col, assets), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetFloat32Array(col, vecs), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->Get(col, valueObject), NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(result->GetSize(col, size), NativeRdb::E_ALREADY_CLOSED);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
