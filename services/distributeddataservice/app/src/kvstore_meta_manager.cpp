@@ -317,7 +317,24 @@ void KvStoreMetaManager::InitDBOption(DistributedDB::KvStoreNbDelegate::Option &
 
 void KvStoreMetaManager::SetCloudSyncer()
 {
-    auto cloudSyncer = []() {
+    auto cloudSyncer = [this]() {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (delaySyncTaskId_ == Executor::INVALID_TASK_ID) {
+            delaySyncTaskId_ = executors_->Schedule(std::chrono::milliseconds(DELAY_SYNC), CloudSyncTask());
+        } else {
+            delaySyncTaskId_ = executors_->Reset(delaySyncTaskId_, std::chrono::milliseconds(DELAY_SYNC));
+        }
+    };
+    MetaDataManager::GetInstance().SetCloudSyncer(cloudSyncer);
+}
+
+std::function<void()> KvStoreMetaManager::CloudSyncTask()
+{
+    return [this]() {
+        {
+            std::lock_guard<decltype(mutex_)> lock(mutex_);
+            delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
+        }
         auto bundleName = Bootstrap::GetInstance().GetProcessLabel();
         auto storeName = Bootstrap::GetInstance().GetMetaDBName();
         WaterVersionManager::GetInstance().GenerateWaterVersion(bundleName, storeName);
@@ -330,58 +347,6 @@ void KvStoreMetaManager::SetCloudSyncer()
         auto info = ChangeEvent::EventInfo(mixMode, 0, true, nullptr, nullptr);
         auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
         EventCenter::GetInstance().PostEvent(std::move(evt));
-    };
-    MetaDataManager::GetInstance().SetCloudSyncer(cloudSyncer);
-}
-
-void KvStoreMetaManager::SetSyncer()
-{
-    auto syncer = [this](const auto &store, int32_t status) {
-        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
-        auto size = DmAdapter::GetInstance().GetOnlineSize();
-        ZLOGI("syncer status: %{public}d online device:%{public}zu", status, size);
-        if (size == 0) {
-            return;
-        }
-        std::lock_guard<decltype(mutex_)> lock(mutex_);
-        if (delaySyncTaskId_ == Executor::INVALID_TASK_ID) {
-            delaySyncTaskId_ =
-                executors_->Schedule(std::chrono::milliseconds(DELAY_SYNC), SyncTask(store, status));
-        } else {
-            delaySyncTaskId_ =
-                executors_->Reset(delaySyncTaskId_, std::chrono::milliseconds(DELAY_SYNC));
-        }
-    };
-    MetaDataManager::GetInstance().SetSyncer(syncer);
-}
-
-std::function<void()> KvStoreMetaManager::SyncTask(const NbDelegate &store, int32_t status)
-{
-    return [this, store, status]() mutable {
-        {
-            std::lock_guard<decltype(mutex_)> lock(mutex_);
-            delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
-        }
-        std::vector<std::string> devs;
-        auto devices = DmAdapter::GetInstance().GetOnlineDevices();
-        for (auto const &dev : devices) {
-            devs.push_back(dev.uuid);
-        }
-        if (devs.empty()) {
-            return;
-        }
-        status = store->Sync(devs, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, [](auto &results) {
-            for (auto &[uuid, status] : results) {
-                if (status != DistributedDB::OK) {
-                    continue;
-                }
-                DeviceMatrix::GetInstance().OnExchanged(uuid, DeviceMatrix::META_STORE_MASK);
-                ZLOGI("uuid is: %{public}s, and status is: %{public}d", Anonymous::Change(uuid).c_str(), status);
-            }
-        });
-        if (status != DistributedDB::OK) {
-            ZLOGW("meta data sync error %{public}d.", status);
-        }
     };
 }
 

@@ -62,9 +62,9 @@ private:
 
     NbDelegate CreateMetaKvStore();
 
-    void SetSyncer();
-
     void SetCloudSyncer();
+
+    std::function<void()> CloudSyncTask();
 
     KvStoreMetaManager();
 
@@ -88,8 +88,6 @@ private:
     std::string GetBackupPath() const;
 
     ExecutorPool::Task GetTask(uint32_t retry);
-
-    std::function<void()> SyncTask(const NbDelegate &store, int32_t status);
 
     void InitDBOption(DistributedDB::KvStoreNbDelegate::Option &option);
 

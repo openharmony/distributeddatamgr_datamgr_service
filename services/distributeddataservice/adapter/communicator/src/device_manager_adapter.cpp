@@ -253,7 +253,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
-    syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
@@ -268,7 +267,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
-    for (const auto &item : observers) { // sync meta, get device security level
+    for (const auto &item : observers) { // judge water version, get device security level
         if (item == nullptr) {
             continue;
         }
@@ -276,11 +275,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
             item->OnDeviceChanged(dvInfo, DeviceChangeType::DEVICE_ONLINE);
         }
     }
-
-    executors_->Schedule(std::chrono::milliseconds(SYNC_TIMEOUT), [this, dvInfo]() {
-        NotifyReadyEvent(dvInfo.uuid);
-    });
-
     for (const auto &item : observers) { // set compatible identify, sync service meta
         if (item == nullptr) {
             continue;
