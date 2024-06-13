@@ -30,7 +30,7 @@ bool CloudServer::RegisterCloudInstance(CloudServer *instance)
     return true;
 }
 
-CloudInfo CloudServer::GetServerInfo(int32_t userId)
+CloudInfo CloudServer::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     return CloudInfo();
 }

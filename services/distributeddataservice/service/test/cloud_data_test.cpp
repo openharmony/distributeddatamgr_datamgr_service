@@ -97,14 +97,14 @@ protected:
 
 class CloudServerMock : public CloudServer {
 public:
-    CloudInfo GetServerInfo(int32_t userId) override;
+    CloudInfo GetServerInfo(int32_t userId, bool needSpaceInfo) override;
     SchemaMeta GetAppSchema(int32_t userId, const std::string &bundleName) override;
     virtual ~CloudServerMock() = default;
     static constexpr uint64_t REMAINSPACE = 1000;
     static constexpr uint64_t TATALSPACE = 2000;
 };
 
-CloudInfo CloudServerMock::GetServerInfo(int32_t userId)
+CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
@@ -275,7 +275,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     ZLOGI("CloudDataTest start");
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    auto cloudInfo = cloudServerMock->GetServerInfo(user);
+    auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));
     SchemaMeta schemaMeta;
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));

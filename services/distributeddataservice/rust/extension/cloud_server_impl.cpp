@@ -33,7 +33,7 @@ __attribute__((used)) static bool g_isInit =
 using namespace Security::AccessToken;
 using DBMetaMgr = DistributedData::MetaDataManager;
 using Anonymous = DistributedData::Anonymous;
-DBCloudInfo CloudServerImpl::GetServerInfo(int32_t userId)
+DBCloudInfo CloudServerImpl::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     DBCloudInfo result;
     OhCloudExtCloudSync *server = OhCloudExtCloudSyncNew(userId);
@@ -61,12 +61,14 @@ DBCloudInfo CloudServerImpl::GetServerInfo(int32_t userId)
         return result;
     }
     result.id = std::string(reinterpret_cast<char *>(id), idLen);
-    unsigned long long totalSpace = 0;
-    OhCloudExtCloudInfoGetTotalSpace(pInfo.get(), &totalSpace);
-    result.totalSpace = totalSpace;
-    unsigned long long remainSpace = 0;
-    OhCloudExtCloudInfoGetRemainSpace(pInfo.get(), &remainSpace);
-    result.remainSpace = remainSpace;
+    if (needSpaceInfo) {
+        unsigned long long totalSpace = 0;
+        OhCloudExtCloudInfoGetTotalSpace(pInfo.get(), &totalSpace);
+        result.totalSpace = totalSpace;
+        unsigned long long remainSpace = 0;
+        OhCloudExtCloudInfoGetRemainSpace(pInfo.get(), &remainSpace);
+        result.remainSpace = remainSpace;
+    }
     OhCloudExtCloudInfoEnabled(pInfo.get(), &result.enableCloud);
     OhCloudExtHashMap *briefInfo = nullptr;
     status = OhCloudExtCloudInfoGetAppInfo(pInfo.get(), &briefInfo);
