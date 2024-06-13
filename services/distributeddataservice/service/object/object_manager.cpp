@@ -401,6 +401,7 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     ZLOGI("OnChange start, size:%{public}zu", changedData.size());
     std::map<std::string, std::map<std::string, Assets>> changedAssets = GetAssetsFromStore(changedData);
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
+    bool hasAsset = false;
     for (const auto &item : changedData) {
         std::vector<std::string> splitKeys = SplitEntryKey(item.first);
         if (splitKeys.empty()) {
@@ -409,8 +410,11 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
         std::string prefix = splitKeys[BUNDLE_NAME_INDEX] + splitKeys[SESSION_ID_INDEX];
         std::string propertyName = splitKeys[PROPERTY_NAME_INDEX];
         data[prefix].insert_or_assign(propertyName, item.second);
+        if (IsAssetKey(propertyName)) {
+            hasAsset = true;
+        }
     }
-    if (changedAssets.empty()) {
+    if (!hasAsset) {
         callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
             DoNotify(tokenId, value, data, true); // no asset, data ready means all ready
             return false;
