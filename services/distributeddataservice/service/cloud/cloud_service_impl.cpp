@@ -318,6 +318,36 @@ std::map<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromE
     return dbInfos;
 }
 
+bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName)
+{
+    auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
+    auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+    bool found = false;
+    for (auto &dynamicStore : dynamicStores) {
+        if (dynamicStore.bundleName == bundleName) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        for (auto &staticStore : staticStores) {
+            if (staticStore.bundleName == bundleName) {
+                found = true;
+                break;
+            }
+        }
+    }
+    if (found) {
+        for (auto &dynamicStore : dynamicStores) {
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(userId, dynamicStore.bundleName));
+        }
+        for (auto &staticStore : staticStores) {
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(userId, staticStore.bundleName));
+        }
+    }
+    return found;
+}
+
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -352,6 +382,9 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         if (CheckNotifyConditions(exData.info.accountId, exData.info.bundleName, cloudInfo) != E_OK) {
             ZLOGD("invalid user:%{public}d", user);
             return INVALID_ARGUMENT;
+        }
+        if (DoKvCloudSync(cloudInfo.user, exData.info.bundleName)) {
+            continue;
         }
         auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
         SchemaMeta schemaMeta;

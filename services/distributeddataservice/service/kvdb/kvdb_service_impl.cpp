@@ -430,6 +430,7 @@ void KVDBServiceImpl::RegisterMatrixChange()
 
         OnDynamicChange(networkId, mask);
         OnStaticsChange(networkId, mask);
+        DoCloudSync(device, mask);
     });
 }
 
@@ -1033,6 +1034,35 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
         dbResults[id] = DBStatus(detail.code);
     }
     return dbResults;
+}
+
+void KVDBServiceImpl::DoCloudSync(const std::string &device, std::pair<uint16_t, uint16_t> mask)
+{
+    auto [dynamic, statics] = DeviceMatrix::GetInstance().IsConsistent(device);
+    if (!dynamic) {
+        auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
+        for (auto &dynamicStore : dynamicStores) {
+            AppId appId = { dynamicStore.bundleName };
+            StoreId storeId = { dynamicStore.storeId };
+            auto status = CloudSync(appId, storeId, {});
+            if (status != SUCCESS) {
+                ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s", dynamicStore.bundleName.c_str(),
+                      Anonymous::Change(dynamicStore.storeId).c_str());
+            }
+        }
+    }
+    if (!statics) {
+        auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+        for (auto &staticStore : staticStores) {
+            AppId appId = { staticStore.bundleName };
+            StoreId storeId = { staticStore.storeId };
+            auto status = CloudSync(appId, storeId, {});
+            if (status != SUCCESS) {
+                ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s", staticStore.bundleName.c_str(),
+                    Anonymous::Change(staticStore.storeId).c_str());
+            }
+        }
+    }
 }
 
 Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
