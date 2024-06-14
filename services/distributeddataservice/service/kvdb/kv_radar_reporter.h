@@ -55,6 +55,13 @@ enum BizState {
     END = 2,
 };
 
+enum SyncType {
+    SYNC = 1,
+    SYNCEXT,
+    AUTOSYNC,
+    TRYSYNC,
+};
+
 constexpr char DOMAIN[] = "DISTDATAMGR";
 constexpr const char* EVENT_NAME = "DISTRIBUTED_KV_STORE_BEHAVIOR";
 constexpr HiviewDFX::HiSysEvent::EventType TYPE = HiviewDFX::HiSysEvent::EventType::BEHAVIOR;
