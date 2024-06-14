@@ -61,10 +61,14 @@ constexpr HiviewDFX::HiSysEvent::EventType TYPE = HiviewDFX::HiSysEvent::EventTy
 constexpr const char* ORG_PKG = "distributeddata";
 constexpr const char* ERROR_CODE = "ERROR_CODE";
 constexpr const char* BIZ_STATE = "BIZ_STATE";
-constexpr const char* SYNC_ID = "SYNC_ID";
+constexpr const char* CONCURRENT_ID = "CONCURRENT_ID";
 constexpr const char* SYNC_STORE_ID = "SYNC_STORE_ID";
 constexpr const char* SYNC_APP_ID = "SYNC_APP_ID";
 constexpr const char* OS_TYPE = "OS_TYPE";
+constexpr const char* SYNC_TYPE = "SYNC_TYPE";
+constexpr const char* DATA_TYPE = "DATA_TYPE";
+constexpr const char* WATER_VERSION = "WATER_VERSION";
+constexpr const char* SCREEN_STATUS = "SCREEN_STATUS";
 
 #define RADAR_REPORT(bizScene, bizStage, stageRes, ...)                                            \
 ({                                                                                                 \
