@@ -21,14 +21,17 @@
 #include "message_parcel.h"
 #include "types.h"
 #include "log_print.h"
+#include "xcollie.h"
 
 namespace OHOS {
 namespace DistributedKv {
+using namespace OHOS::DistributedData;
 constexpr KvStoreDataServiceStub::RequestHandler
     KvStoreDataServiceStub::HANDLERS[static_cast<uint32_t>(KvStoreDataServiceInterfaceCode::SERVICE_CMD_LAST)];
 
 int32_t KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote(MessageParcel &data, MessageParcel &reply)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     AppId appId = { data.ReadString() };
     sptr<IRemoteObject> kvStoreClientDeathObserverProxy = data.ReadRemoteObject();
     if (kvStoreClientDeathObserverProxy == nullptr) {
@@ -43,6 +46,7 @@ int32_t KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote(MessageParce
 
 int32_t KvStoreDataServiceStub::GetFeatureInterfaceOnRemote(MessageParcel &data, MessageParcel &reply)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     std::string name;
     if (!ITypesUtil::Unmarshal(data, name)) {
         return -1;

@@ -23,6 +23,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/common",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/data_share/data",
@@ -48,6 +49,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/base64_utils.cpp",

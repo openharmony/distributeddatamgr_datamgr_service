@@ -46,6 +46,7 @@
 #include "cloud/schema_meta.h"
 #include "rdb_general_store.h"
 #include "rdb_result_set_impl.h"
+#include "xcollie.h"
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -227,6 +228,7 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device
 
 int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (!CheckAccess(param.bundleName_, "")) {
         ZLOGE("bundleName:%{public}s. Permission error", param.bundleName_.c_str());
         return RDB_ERROR;
@@ -602,6 +604,7 @@ int32_t RdbServiceImpl::UnregisterAutoSyncCallback(const RdbSyncerParam& param,
 
 int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_));
     RdbSyncerParam tmpParam = param;
@@ -663,6 +666,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(StoreI
 
 int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     auto meta = GetStoreMetaData(param);
     auto isCreated =
         MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
@@ -688,6 +692,7 @@ void RdbServiceImpl::SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &par
 
 int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -987,6 +992,7 @@ RdbServiceImpl::~RdbServiceImpl()
 
 int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());

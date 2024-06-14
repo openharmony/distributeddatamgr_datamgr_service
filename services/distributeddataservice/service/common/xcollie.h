@@ -13,28 +13,22 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_XCOLLIE_H
-#define DATASHARESERVICE_XCOLLIE_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_XCOLLIE_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_XCOLLIE_H
 
 #include <string>
-
 #include "xcollie/xcollie.h"
-#include "xcollie/xcollie_define.h"
 
-namespace OHOS::DataShare {
+namespace OHOS::DistributedData {
 class XCollie {
 public:
-    XCollie(const std::string &tag, uint32_t timeoutSeconds, uint32_t flag = HiviewDFX::XCOLLIE_FLAG_DEFAULT,
-        std::function<void(void *)> func = nullptr, void *arg = nullptr)
-    {
-        id_ = HiviewDFX::XCollie::GetInstance().SetTimer(tag, timeoutSeconds, func, arg, flag);
-    }
-    ~XCollie()
-    {
-        HiviewDFX::XCollie::GetInstance().CancelTimer(id_);
-    }
+    XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds = RESTART_TIME_THRESHOLD,
+        std::function<void(void *)> func = nullptr, void *arg = nullptr);
+    ~XCollie();
+
 private:
-    int32_t id_;
+    int32_t id_ = -1;
+    static constexpr int32_t RESTART_TIME_THRESHOLD = 30;
 };
-} // namespace OHOS::DataShare
-#endif // DATASHARESERVICE_XCOLLIE_H
+} // namespace OHOS::DistributedData
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_XCOLLIE_H
