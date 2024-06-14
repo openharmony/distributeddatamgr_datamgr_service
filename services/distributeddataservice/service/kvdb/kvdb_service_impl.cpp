@@ -288,7 +288,8 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, Sync
             return SUCCESS;
     }
     syncInfo.syncId = ++syncId_;
-    auto recv = DeviceMatrix::GetInstance().GetRecvLevel(device, static_cast<DeviceMatrix::LevelType>(metaData.dataType));
+    auto recv = DeviceMatrix::GetInstance().GetRecvLevel(device,
+        static_cast<DeviceMatrix::LevelType>(metaData.dataType));
     RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
         SYNC_STORE_ID, Anonymous::Change(storeId.storeId), SYNC_APP_ID, appId.appId, CONCURRENT_ID,
         std::string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, SYNCEXT, WATER_VERSION, recv.second);
@@ -1138,7 +1139,8 @@ Status KVDBServiceImpl::DoSyncInOrder(
         return Status::ERROR;
     }
     if (IsNeedMetaSync(meta, uuids)) {
-        auto recv = DeviceMatrix::GetInstance().GetRecvLevel(uuids[0], static_cast<DeviceMatrix::LevelType>(DataType::TYPE_DYNAMICAL));
+        auto recv = DeviceMatrix::GetInstance().GetRecvLevel(uuids[0],
+            static_cast<DeviceMatrix::LevelType>(DataType::TYPE_DYNAMICAL));
         RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_START,
             SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
             std::string(info.syncId), DATA_TYPE, meta.dataType, WATER_VERSION, recv.second);

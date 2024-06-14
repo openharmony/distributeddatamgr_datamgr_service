@@ -422,7 +422,7 @@ void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
         }
         devices.push_back(devId);
     }
-    ZLOGI("devices size: %{publ}zu", devices.size());
+    ZLOGI("devices size: %{public}zu", devices.size());
 }
 
 std::shared_ptr<Cursor> KVDBGeneralStore::PreSharing(GenQuery &query)
