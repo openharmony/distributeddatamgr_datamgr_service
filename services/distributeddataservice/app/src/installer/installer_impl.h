@@ -36,6 +36,7 @@ private:
     void OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
     void OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex);
     void OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
+    void OnScreenUnlocked(int32_t userId);
     std::map<std::string, InstallEventCallback> callbacks_;
     KvStoreDataService *kvStoreDataService_;
 };

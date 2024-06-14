@@ -118,6 +118,8 @@ public:
 
     int32_t OnInstall(const std::string &bundleName, int32_t user, int32_t index);
 
+    int32_t OnScreenUnlocked(int32_t user);
+
 private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
     class KvStoreClientDeathObserverImpl {

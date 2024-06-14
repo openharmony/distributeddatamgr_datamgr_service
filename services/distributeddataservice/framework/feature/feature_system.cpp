@@ -125,5 +125,10 @@ int32_t FeatureSystem::Feature::OnBind(const FeatureSystem::Feature::BindInfo &b
 {
     return E_OK;
 }
+
+int32_t FeatureSystem::Feature::OnScreenUnlocked(int32_t user)
+{
+    return E_OK;
+}
 } // namespace DistributedData
 } // namespace OHOS

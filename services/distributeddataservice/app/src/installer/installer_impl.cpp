@@ -60,6 +60,10 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         int32_t appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
         ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d", bundleName.c_str(), userId, appIndex);
         (this->*(it->second))(bundleName, userId, appIndex);
+    } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+        int32_t userId = want.GetIntParam(USER_ID, -1);
+        ZLOGI("user:%{public}d ScreenUnlocked", userId);
+        OnScreenUnlocked(userId);
     }
 }
 
@@ -115,6 +119,11 @@ void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t us
     kvStoreDataService_->OnInstall(bundleName, userId, appIndex);
 }
 
+void InstallEventSubscriber::OnScreenUnlocked(int32_t userId)
+{
+    kvStoreDataService_->OnScreenUnlocked(userId);
+}
+
 InstallerImpl::~InstallerImpl()
 {
     ZLOGD("destruct");
@@ -144,6 +153,7 @@ Status InstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared_p
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED);
     matchingSkills.AddEvent(OHOS::AppExecFwk::COMMON_EVENT_SANDBOX_PACKAGE_ADDED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
     CommonEventSubscribeInfo info(matchingSkills);
 
     auto subscriber = std::make_shared<InstallEventSubscriber>(info, kvStoreDataService);

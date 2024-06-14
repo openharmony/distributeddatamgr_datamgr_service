@@ -67,6 +67,7 @@ public:
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &info) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    int32_t OnScreenUnlocked(int32_t user) override;
     int32_t OnReady(const std::string &device) override;
     int32_t Offline(const std::string &device) override;
 
@@ -157,7 +158,7 @@ private:
         const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta);
     std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo& hapInfo);
     bool GetStoreMetaData(StoreMetaData &meta);
-    bool DoKvCloudSync(int32_t userId, const std::string &bundleName);
+    bool DoKvCloudSync(int32_t userId, const std::string &bundleName = "");
 
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];

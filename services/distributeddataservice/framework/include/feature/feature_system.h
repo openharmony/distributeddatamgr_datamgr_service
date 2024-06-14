@@ -56,6 +56,7 @@ public:
         virtual int32_t Offline(const std::string &device);
         virtual int32_t OnReady(const std::string &device);
         virtual int32_t OnSessionReady(const std::string &device);
+        virtual int32_t OnScreenUnlocked(int32_t user);
     };
     using Creator = std::function<std::shared_ptr<Feature>()>;
     static FeatureSystem &GetInstance();

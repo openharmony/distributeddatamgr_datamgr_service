@@ -41,6 +41,7 @@ public:
     int32_t Offline(const std::string &device);
     int32_t OnReady(const std::string &device);
     int32_t OnSessionReady(const std::string &device);
+    int32_t OnScreenUnlocked(int32_t user);
 
 private:
     std::shared_ptr<FeatureSystem::Feature> featureImpl_;
