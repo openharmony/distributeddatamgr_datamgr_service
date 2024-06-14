@@ -38,6 +38,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src/installer",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/common",
     "${data_service_path}/service/dumper/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/waterversion",
@@ -76,6 +77,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src/session_manager/session_manager.cpp",
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
+    "${data_service_path}/service/common/xcollie.cpp",
     "dataservicestub_fuzzer.cpp",
   ]
 
@@ -100,6 +102,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "file_api:securitylabel",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",

@@ -26,6 +26,7 @@ config("module_public_config") {
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
+    "../common",
     "../crypto/include",
     "../permission/include",
   ]
@@ -43,6 +44,7 @@ ohos_shared_library("data_share_service") {
     debug = false
   }
   sources = [
+    "${data_service_path}/service/common/xcollie.cpp",
     "common/app_connect_manager.cpp",
     "common/base64_utils.cpp",
     "common/bundle_mgr_proxy.cpp",

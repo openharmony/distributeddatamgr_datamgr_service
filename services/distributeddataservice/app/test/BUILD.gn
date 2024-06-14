@@ -33,6 +33,7 @@ config("module_private_config") {
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/common",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/directory/include",
@@ -67,6 +68,7 @@ config("module_private_config") {
 ohos_unittest("KvStoreDataServiceTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/service/common/xcollie.cpp",
     "../src/db_info_handle_impl.cpp",
     "../src/feature_stub_impl.cpp",
     "../src/kvstore_account_observer.cpp",
@@ -91,6 +93,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -242,6 +245,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "${data_service_path}/app/src/session_manager/session_manager.cpp",
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
+    "${data_service_path}/service/common/xcollie.cpp",
     "unittest/kvstore_data_service_clear_test.cpp",
   ]
 
@@ -262,6 +266,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",

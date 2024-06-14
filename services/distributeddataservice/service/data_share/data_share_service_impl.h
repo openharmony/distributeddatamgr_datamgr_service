@@ -129,7 +129,6 @@ private:
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     static constexpr const char *EXT_URI_SCHEMA = "datashare://";
-    static constexpr int32_t RESTART_TIME_THRESHOLD = 30;
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;

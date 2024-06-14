@@ -74,6 +74,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/config/src/config_factory.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
@@ -113,6 +114,7 @@ ohos_unittest("CloudDataTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "hicollie:libhicollie",
     "hilog:libhilog",
     "huks:libhukssdk",
     "ipc:ipc_core",
@@ -685,6 +687,7 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/base64_utils.cpp",
