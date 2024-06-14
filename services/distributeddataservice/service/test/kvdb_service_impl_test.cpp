@@ -535,7 +535,7 @@ HWTEST_F(KvdbServiceImplTest, OnReadyTest001, TestSize.Level0)
     std::string device = "OH_device_test";
     auto status = kvdbServiceImpl_->OnReady(device);
     ZLOGI("OnReadyTest001 status = :%{public}d", status);
-    ASSERT_NE(status, Status::SUCCESS);
+    ASSERT_EQ(status, Status::SUCCESS);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
