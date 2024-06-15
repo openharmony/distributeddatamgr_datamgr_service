@@ -172,6 +172,12 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest1, TestSize.Level0)
     auto [success, version] = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::STATIC);
     EXPECT_TRUE(success && version == 1)
         << "success:" << success << " version:" << version << " meta: " << meta.ToAnonymousString();
+
+    // update to matrixMeta
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = TEST_DEVICE;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(matrixMetaData.GetConsistentKey(), matrixMetaData, true));
+    EXPECT_EQ(matrixMetaData.statics, version << 4);
 }
 
 /**
@@ -202,6 +208,12 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest2, TestSize.Level0)
         Serializable::Marshall(meta)));
     std::tie(_, version) = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::STATIC);
     EXPECT_EQ(version, 2);
+
+    // update to matrixMeta
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = TEST_DEVICE;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(matrixMetaData.GetConsistentKey(), matrixMetaData, true));
+    EXPECT_EQ(matrixMetaData.statics, version << 4);
 }
 
 /**
@@ -236,6 +248,12 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest3, TestSize.Level0)
     res = WvManager::GetInstance().GetVersion(TEST_DEVICE, WvManager::DYNAMIC);
     EXPECT_TRUE(res.first && res.second == 2)
         << "success:" << res.first << " version:" << res.second << " meta: " << meta.ToAnonymousString();
+
+    // update to matrixMeta
+    MatrixMetaData matrixMetaData;
+    matrixMetaData.deviceId = TEST_DEVICE;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(matrixMetaData.GetConsistentKey(), matrixMetaData, true));
+    EXPECT_EQ(matrixMetaData.dynamic, res.second << 4);
 }
 
 /**
