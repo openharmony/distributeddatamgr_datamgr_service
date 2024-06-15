@@ -140,12 +140,18 @@ std::pair<bool, bool> DeviceMatrix::IsConsistent(const std::string &device)
     std::pair<bool, bool> isConsistent = { false, false };
     auto [dynamicSaved, dynamicRecvLevel] = GetRecvLevel(device, LevelType::DYNAMIC);
     auto [dynamicExist, dynamicConsLevel] = GetConsLevel(device, LevelType::DYNAMIC);
-    isConsistent.first = (dynamicSaved && dynamicExist &&
-        (dynamicRecvLevel <= dynamicConsLevel) && (dynamicRecvLevel != INVALID_MASK));
+    ZLOGI("device:%{public}s, dynamicSaved:%{public}d, dynamicRecvLevel:%{public}d, dynamicExist:%{public}d, "
+          "dynamicConsLevel:%{public}d",
+        Anonymous::Change(device).c_str(), dynamicSaved, dynamicRecvLevel, dynamicExist, dynamicConsLevel);
+    isConsistent.first =
+        (dynamicSaved && dynamicExist && (dynamicRecvLevel <= dynamicConsLevel) && (dynamicRecvLevel != INVALID_MASK));
     auto [staticsSaved, staticsRecvLevel] = GetRecvLevel(device, LevelType::STATICS);
     auto [staticsExist, staticsConsLevel] = GetConsLevel(device, LevelType::STATICS);
-    isConsistent.second = (staticsSaved && staticsExist &&
-        (staticsRecvLevel <= staticsConsLevel) && (staticsRecvLevel != INVALID_MASK));
+    ZLOGI("device:%{public}s, staticsSaved:%{public}d, staticsRecvLevel:%{public}d, staticsExist:%{public}d, "
+          "staticsConsLevel:%{public}d",
+        Anonymous::Change(device).c_str(), staticsSaved, staticsRecvLevel, staticsExist, staticsConsLevel);
+    isConsistent.second =
+        (staticsSaved && staticsExist && (staticsRecvLevel <= staticsConsLevel) && (staticsRecvLevel != INVALID_MASK));
     return isConsistent;
 }
 
