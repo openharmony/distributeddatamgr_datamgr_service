@@ -1172,7 +1172,8 @@ bool KVDBServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
             isAfterMeta = true;
             break;
         }
-        if (IsRemoteChange(GetDistributedDataMeta(uuid), uuid)) {
+        auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
+        if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
             isAfterMeta = true;
             break;
         }

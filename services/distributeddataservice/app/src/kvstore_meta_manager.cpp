@@ -337,7 +337,6 @@ std::function<void()> KvStoreMetaManager::CloudSyncTask()
         }
         auto bundleName = Bootstrap::GetInstance().GetProcessLabel();
         auto storeName = Bootstrap::GetInstance().GetMetaDBName();
-        WaterVersionManager::GetInstance().GenerateWaterVersion(bundleName, storeName);
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = bundleName;
