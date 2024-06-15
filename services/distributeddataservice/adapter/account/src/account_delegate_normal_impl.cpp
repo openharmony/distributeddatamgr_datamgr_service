@@ -110,17 +110,19 @@ bool AccountDelegateNormalImpl::IsVerified(int userId)
 void AccountDelegateNormalImpl::SubscribeAccountEvent()
 {
     ZLOGI("Subscribe account event listener start.");
-    MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
-    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
-    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
-    CommonEventSubscribeInfo info(matchingSkills);
-    eventSubscriber_ = std::make_shared<EventSubscriber>(info);
-    eventSubscriber_->SetEventCallback([this](AccountEventInfo& account) {
-        UpdateUserStatus(account);
-        account.harmonyAccountId = GetCurrentAccountId();
-        NotifyAccountChanged(account);
-    });
+    if (eventSubscriber_ == nullptr) {
+        MatchingSkills matchingSkills;
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
+        CommonEventSubscribeInfo info(matchingSkills);
+        eventSubscriber_ = std::make_shared<EventSubscriber>(info);
+        eventSubscriber_->SetEventCallback([this](AccountEventInfo& account) {
+            UpdateUserStatus(account);
+            account.harmonyAccountId = GetCurrentAccountId();
+            NotifyAccountChanged(account);
+        });
+    }
     executors_->Execute(GetTask(0));
 }
 
