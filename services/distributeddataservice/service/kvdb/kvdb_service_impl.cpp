@@ -1226,7 +1226,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     }
     auto watcher = GetWatchers(meta.tokenId, meta.storeId);
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
-        SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId);
     auto store = AutoCache::GetInstance().GetStore(meta, watcher);
     if (store == nullptr) {
         ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", meta.bundleName.c_str(),
