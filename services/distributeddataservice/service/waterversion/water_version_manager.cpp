@@ -459,26 +459,29 @@ bool WaterVersionManager::WaterVersion::SetWaterVersion(const std::string &key,
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (!versions_.Get(metaData.deviceId, oldMeta) &&
         !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta, true)) {
-        ZLOGI("save meta:%{public}s", metaData.ToAnonymousString().c_str());
-        oldMeta = metaData;
-        UpdateWaterVersion(oldMeta);
-        return MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true) &&
-               versions_.Set(metaData.deviceId, oldMeta);
+        ZLOGI("no meta. deviceId:%{public}s", Anonymous::Change(metaData.deviceId).c_str());
+        oldMeta.version = WaterVersionMetaData::DEFAULT_VERSION;
+        oldMeta.deviceId = metaData.deviceId;
+        oldMeta.keys = keys_;
+        oldMeta.type = metaData.type;
+        oldMeta.waterVersion = 0;
+        oldMeta.infos = { keys_.size(), std::vector<uint64_t>(keys_.size(), 0) };
     }
-    if (oldMeta.keys.size() != metaData.keys.size() || oldMeta.version != metaData.version) {
-        ZLOGI("upgrade meta. old:%{public}s, new:%{public}s", oldMeta.ToAnonymousString().c_str(),
-            metaData.ToAnonymousString().c_str());
-        oldMeta = metaData;
-        for (size_t i = 0; i < metaData.keys.size(); ++i) {
-            // Set all unSync items to 0
-            if (metaData.keys[i] != key) {
-                oldMeta.infos[i] = std::vector<uint64_t>(metaData.keys.size(), 0);
-            }
-        }
-    } else {
+
+    if (keys_ == metaData.keys) {
         for (size_t i = 0; i < oldMeta.keys.size(); ++i) {
             if (oldMeta.keys[i] == key) {
                 oldMeta.infos[i] = metaData.infos[i];
+                break;
+            }
+        }
+    } else {
+        auto upgradeMeta = Upgrade(keys_, metaData);
+        ZLOGI("upgrade meta. before:%{public}s, after:%{public}s", metaData.ToAnonymousString().c_str(),
+            upgradeMeta.ToAnonymousString().c_str());
+        for (size_t i = 0; i < oldMeta.keys.size(); ++i) {
+            if (oldMeta.keys[i] == key) {
+                oldMeta.infos[i] = upgradeMeta.infos[i];
                 break;
             }
         }
