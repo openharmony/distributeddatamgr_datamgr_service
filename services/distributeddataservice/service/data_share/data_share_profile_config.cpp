@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include "bundle_mgr_proxy.h"
+#include "datashare_errno.h"
 #include "log_print.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
@@ -243,8 +244,9 @@ std::string DataShareProfileConfig::ReadProfile(const std::string &resPath)
 bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName, int32_t currentUserId,
     std::map<std::string, ProfileInfo> &profileInfos)
 {
-    AppExecFwk::BundleInfo bundleInfo;
-    if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(calledBundleName, currentUserId, bundleInfo)) {
+    BundleConfig bundleInfo;
+    if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(calledBundleName,
+        currentUserId, bundleInfo) != E_OK) {
         ZLOGE("data share GetBundleInfoFromBMS failed! bundleName: %{public}s, currentUserId = %{public}d",
               calledBundleName.c_str(), currentUserId);
         return false;

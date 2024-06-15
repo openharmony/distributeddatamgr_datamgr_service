@@ -41,9 +41,9 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
     uriConfig_ = URIUtils::GetUriConfig(providerInfo_.uri);
 }
 
-std::pair<int, BundleInfo> DataProviderConfig::GetBundleInfo()
+std::pair<int, BundleConfig> DataProviderConfig::GetBundleInfo()
 {
-    BundleInfo bundleInfo;
+    BundleConfig bundleInfo;
     providerInfo_.bundleName = uriConfig_.authority;
     if (providerInfo_.bundleName.empty()) {
         if (uriConfig_.pathSegments.empty()) {
@@ -51,9 +51,10 @@ std::pair<int, BundleInfo> DataProviderConfig::GetBundleInfo()
         }
         providerInfo_.bundleName = uriConfig_.pathSegments[0];
     }
-    if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo)) {
-        return std::make_pair(E_BUNDLE_NAME_NOT_EXIST, bundleInfo);
+    auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo);
+    if (ret != E_OK) {
+        return std::make_pair(ret, bundleInfo);
     }
     return std::make_pair(E_OK, bundleInfo);
 }
@@ -144,11 +145,12 @@ int DataProviderConfig::GetFromExtension()
         ZLOGE("Uri path failed! uri:%{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
         return E_URI_NOT_EXIST;
     }
-    BundleInfo bundleInfo;
-    if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo)) {
+    BundleConfig bundleInfo;
+    auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo);
+    if (ret != E_OK) {
         ZLOGE("BundleInfo failed! bundleName: %{public}s", providerInfo_.bundleName.c_str());
-        return E_BUNDLE_NAME_NOT_EXIST;
+        return ret;
     }
     providerInfo_.singleton = bundleInfo.singleton;
     providerInfo_.allowEmptyPermission = true;

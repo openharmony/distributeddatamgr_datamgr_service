@@ -18,6 +18,7 @@
 
 #include "bundle_mgr_proxy.h"
 #include "data_share_profile_config.h"
+#include "datashare_errno.h"
 #include "log_print.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
@@ -79,8 +80,8 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
         ZLOGE("LoadConfigFromUri failed! bundleName: %{public}s", context->calledBundleName.c_str());
         return false;
     }
-    if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        context->calledBundleName, context->currentUserId, context->bundleInfo)) {
+    if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+        context->calledBundleName, context->currentUserId, context->bundleInfo) != E_OK) {
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
         return false;
     }

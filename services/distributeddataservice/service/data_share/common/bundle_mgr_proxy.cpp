@@ -16,6 +16,7 @@
 #include "bundle_mgr_proxy.h"
 
 #include "account/account_delegate.h"
+#include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
@@ -59,32 +60,37 @@ sptr<IRemoteObject> BundleMgrProxy::CheckBMS()
     return systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
 }
 
-bool BundleMgrProxy::GetBundleInfoFromBMS(
-    const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo)
+int BundleMgrProxy::GetBundleInfoFromBMS(
+    const std::string &bundleName, int32_t userId, BundleConfig &bundleConfig)
 {
     auto bundleKey = bundleName + std::to_string(userId);
     auto it = bundleCache_.Find(bundleKey);
     if (it.first) {
-        bundleInfo = it.second;
-        return true;
+        bundleConfig = it.second;
+        return E_OK;
     }
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BMS_FAILED);
         ZLOGE("GetBundleMgrProxy is nullptr!");
-        return false;
+        return E_BMS_NOT_READY;
     }
+    AppExecFwk::BundleInfo bundleInfo;
     bool ret = bmsClient->GetBundleInfo(
         bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo, userId);
     if (!ret) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
         ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
-        return false;
+        return E_BUNDLE_NAME_NOT_EXIST;
     }
-    bundleCache_.Insert(bundleKey, bundleInfo);
-    return true;
+    bundleConfig.name = std::move(bundleInfo.name);
+    bundleConfig.singleton = std::move(bundleInfo.singleton);
+    bundleConfig.extensionInfos = std::move(bundleInfo.extensionInfos);
+    bundleConfig.hapModuleInfos = std::move(bundleInfo.hapModuleInfos);
+    bundleCache_.Insert(bundleKey, bundleConfig);
+    return E_OK;
 }
 
 void BundleMgrProxy::OnProxyDied()
