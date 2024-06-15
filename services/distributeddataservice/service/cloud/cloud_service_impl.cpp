@@ -663,6 +663,7 @@ int32_t CloudServiceImpl::OnReady(const std::string& device)
         return SUCCESS;
     }
     for (auto user : users) {
+        DoKvCloudSync(user);
         Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     }
     return SUCCESS;

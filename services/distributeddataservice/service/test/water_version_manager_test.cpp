@@ -177,7 +177,7 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest1, TestSize.Level0)
     MatrixMetaData matrixMetaData;
     matrixMetaData.deviceId = TEST_DEVICE;
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(matrixMetaData.GetConsistentKey(), matrixMetaData, true));
-    EXPECT_EQ(matrixMetaData.dynamic, version << 4);
+    EXPECT_EQ(matrixMetaData.statics, version << 4);
 }
 
 /**
@@ -213,7 +213,7 @@ HWTEST_F(WaterVersionManagerTest, SetWaterVersionTest2, TestSize.Level0)
     MatrixMetaData matrixMetaData;
     matrixMetaData.deviceId = TEST_DEVICE;
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(matrixMetaData.GetConsistentKey(), matrixMetaData, true));
-    EXPECT_EQ(matrixMetaData.dynamic, version << 4);
+    EXPECT_EQ(matrixMetaData.statics, version << 4);
 }
 
 /**
