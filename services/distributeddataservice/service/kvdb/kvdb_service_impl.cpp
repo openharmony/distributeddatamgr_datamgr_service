@@ -736,6 +736,46 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
+Status KVDBServiceImpl::SetOptions(const AppId &appId, const StoreId &storeId, const Options &options)
+{
+    if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
+        ZLOGE("failed please check type:%{public}d appId:%{public}s storeId:%{public}s dataType:%{public}d",
+            options.kvStoreType, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), options.dataType);
+        return INVALID_ARGUMENT;
+    }
+
+    StoreMetaData meta = GetStoreMetaData(appId, storeId);
+    AddOptions(options, meta);
+
+    StoreMetaData old;
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
+    if (!isCreated) {
+        return SUCCESS;
+    }
+    StoreMetaDataLocal oldLocal;
+    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), oldLocal, true);
+    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
+        old.area != meta.area || !options.persistent ||
+        (Constant::NotEqual(oldLocal.isPublic, options.isPublic) &&
+            (old.user != DEFAULT_USER_ID || !options.isPublic))) {
+        ZLOGE("meta appId:%{public}s storeId:%{public}s user:%{public}s type:%{public}d->%{public}d "
+              "encrypt:%{public}d->%{public}d "
+              "area:%{public}d->%{public}d persistent:%{public}d isPublic:%{public}d->%{public}d",
+            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.user.c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, oldLocal.isPublic,
+            options.isPublic);
+        return Status::STORE_META_CHANGED;
+    }
+    if (!MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true)) {
+        return Status::ERROR;
+    }
+    SaveLocalMetaData(options, meta);
+    ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
+          "isCreated:%{public}d dataType:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
+        meta.instanceId, meta.storeType, meta.dataDir.c_str(), isCreated, meta.dataType);
+    return Status::SUCCESS;
+}
+
 Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options)
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(),
@@ -763,7 +803,8 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
             options.isPublic);
         return Status::STORE_META_CHANGED;
     }
-    if (options.cloudConfig.enableCloud || executors_ != nullptr) {
+
+    if (options.cloudConfig.enableCloud && (!isCreated || !meta.enableCloud) && executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);

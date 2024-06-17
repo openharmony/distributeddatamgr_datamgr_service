@@ -170,6 +170,17 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
     enableCloud_ = meta.enableCloud;
+    MetaDataManager::GetInstance().Subscribe(
+        meta.GetKey(), [this](const std::string &key,
+                                             const std::string &value, int32_t flag) -> auto {
+            if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
+                return true;
+            }
+            StoreMetaData meta;
+            StoreMetaData::Unmarshall(value, meta);
+            enableCloud_ = meta.enableCloud;
+            return true;
+        }, true);
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -189,6 +200,9 @@ KVDBGeneralStore::~KVDBGeneralStore()
     }
     bindInfos_.clear();
     dbClouds_.clear();
+    StoreMetaData meta(storeInfo_);
+    meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    MetaDataManager::GetInstance().Unsubscribe(meta.GetKey());
 }
 
 int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
@@ -648,10 +662,9 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
             return;
         }
         DistributedData::GenDetails details;
-        bool isFinished = false;
+        bool downloadFinished = false;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
-            isFinished = process.process == FINISHED ? true : isFinished;
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
             for (auto [key, value] : process.tableProcess) {
@@ -664,12 +677,14 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
                 table.download.success = value.downLoadInfo.successCount;
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
+                downloadFinished = downloadFinished ||
+                                   (process.process == FINISHED && value.downLoadInfo.successCount > 0);
             }
         }
         if (async) {
             async(details);
         }
-        if (isFinished && callback) {
+        if (downloadFinished && callback) {
             callback();
         }
     };
