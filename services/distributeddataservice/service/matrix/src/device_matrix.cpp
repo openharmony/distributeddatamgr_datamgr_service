@@ -84,6 +84,8 @@ bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
 {
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     dynamicApps_.clear();
+    auto metaName = Bootstrap::GetInstance().GetProcessLabel();
+    dynamicApps_.push_back(std::move(metaName));
     for (auto &store : stores) {
         dynamicApps_.push_back(std::move(store.bundleName));
     }
@@ -92,7 +94,7 @@ bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
     for (auto &store : stores) {
         staticsApps_.push_back(std::move(store.bundleName));
     }
-    auto pipe = Bootstrap::GetInstance().GetProcessLabel() + "-" + "default";
+    auto pipe = metaName + "-" + "default";
     auto status = Commu::GetInstance().Broadcast(
         { pipe }, { INVALID_LEVEL, INVALID_LEVEL, INVALID_VALUE, INVALID_LENGTH });
     isSupportBroadcast_ = (status != DistributedKv::Status::NOT_SUPPORT_BROADCAST);

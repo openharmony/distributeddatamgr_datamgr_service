@@ -121,7 +121,7 @@ private:
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
     bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
     Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
-    void DoCloudSync(const std::string &device, std::pair<uint16_t, uint16_t> mask);
+    void DoCloudSync(bool isStatic);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,
@@ -147,8 +147,8 @@ private:
     void RegisterMatrixChange();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     void TryToSync(const StoreMetaData &metaData, bool force = false);
-    void OnStaticsChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
-    void OnDynamicChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask);
+    void OnStaticsChange(std::pair<uint16_t, uint16_t> mask);
+    void OnDynamicChange(std::pair<uint16_t, uint16_t> mask);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;

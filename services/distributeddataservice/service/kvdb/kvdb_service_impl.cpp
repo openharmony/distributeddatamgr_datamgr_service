@@ -428,15 +428,15 @@ void KVDBServiceImpl::RegisterMatrixChange()
             return;
         }
 
-        OnDynamicChange(networkId, mask);
-        OnStaticsChange(networkId, mask);
-        DoCloudSync(device, mask);
+        OnDynamicChange(mask);
+        OnStaticsChange(mask);
     });
 }
 
-void KVDBServiceImpl::OnStaticsChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
+void KVDBServiceImpl::OnStaticsChange(std::pair<uint16_t, uint16_t> mask)
 {
-    syncAgents_.ForEach([networkId, mask](const auto &key, auto &value) {
+    bool isChanged = false;
+    syncAgents_.ForEach([mask, &isChanged](const auto &key, auto &value) {
         StoreMetaData meta;
         meta.appId = value.appId_;
         meta.tokenId = key;
@@ -452,17 +452,18 @@ void KVDBServiceImpl::OnStaticsChange(const std::string &networkId, std::pair<ui
             return false;
         }
         value.staticsChanged_ = changed;
-        clientMask.insert_or_assign(networkId, changed);
-        if (value.notifier_) {
-            value.notifier_->OnRemoteChange(std::move(clientMask), static_cast<int32_t>(DataType::TYPE_STATICS));
-        }
+        isChanged = true;
         return false;
     });
+    if (isChanged) {
+        DoCloudSync(true);
+    }
 }
 
-void KVDBServiceImpl::OnDynamicChange(const std::string &networkId, std::pair<uint16_t, uint16_t> mask)
+void KVDBServiceImpl::OnDynamicChange(std::pair<uint16_t, uint16_t> mask)
 {
-    syncAgents_.ForEach([networkId, mask](const auto &key, auto &value) {
+    bool isChanged = false;
+    syncAgents_.ForEach([mask, &isChanged](const auto &key, auto &value) {
         StoreMetaData meta;
         meta.appId = value.appId_;
         meta.tokenId = key;
@@ -478,12 +479,12 @@ void KVDBServiceImpl::OnDynamicChange(const std::string &networkId, std::pair<ui
             return false;
         }
         value.dynamicChanged_ = changed;
-        clientMask.insert_or_assign(networkId, changed);
-        if (value.notifier_) {
-            value.notifier_->OnRemoteChange(std::move(clientMask), static_cast<int32_t>(DataType::TYPE_DYNAMICAL));
-        }
+        isChanged = true;
         return false;
     });
+    if (isChanged) {
+        DoCloudSync(false);
+    }
 }
 
 Status KVDBServiceImpl::UnregServiceNotifier(const AppId &appId)
@@ -1036,31 +1037,29 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
     return dbResults;
 }
 
-void KVDBServiceImpl::DoCloudSync(const std::string &device, std::pair<uint16_t, uint16_t> mask)
+void KVDBServiceImpl::DoCloudSync(bool isStatic)
 {
-    auto [dynamic, statics] = DeviceMatrix::GetInstance().IsConsistent(device);
-    if (!dynamic) {
-        auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
-        for (auto &dynamicStore : dynamicStores) {
-            AppId appId = { dynamicStore.bundleName };
-            StoreId storeId = { dynamicStore.storeId };
-            auto status = CloudSync(appId, storeId, {});
-            if (status != SUCCESS) {
-                ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s", dynamicStore.bundleName.c_str(),
-                      Anonymous::Change(dynamicStore.storeId).c_str());
-            }
-        }
-    }
-    if (!statics) {
+    if (isStatic) {
         auto staticStores = CheckerManager::GetInstance().GetStaticStores();
         for (auto &staticStore : staticStores) {
             AppId appId = { staticStore.bundleName };
             StoreId storeId = { staticStore.storeId };
             auto status = CloudSync(appId, storeId, {});
             if (status != SUCCESS) {
-                ZLOGW("cloud sync failed, appId:%{public}s storeId:%{public}s", staticStore.bundleName.c_str(),
-                    Anonymous::Change(staticStore.storeId).c_str());
+                ZLOGW("cloud sync failed:%{public}d, appId:%{public}s storeId:%{public}s", status,
+                    staticStore.bundleName.c_str(), Anonymous::Change(staticStore.storeId).c_str());
             }
+        }
+        return;
+    }
+    auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
+    for (auto &dynamicStore : dynamicStores) {
+        AppId appId = { dynamicStore.bundleName };
+        StoreId storeId = { dynamicStore.storeId };
+        auto status = CloudSync(appId, storeId, {});
+        if (status != SUCCESS) {
+            ZLOGW("cloud sync failed:%{public}d, appId:%{public}s storeId:%{public}s", status,
+                dynamicStore.bundleName.c_str(), Anonymous::Change(dynamicStore.storeId).c_str());
         }
     }
 }
