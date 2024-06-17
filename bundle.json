@@ -88,8 +88,6 @@
                 "json"
             ],
             "third_party": [
-                "cJSON",
-                "jsoncpp",
                 "libuv",
                 "sqlite",
                 "zlib"
