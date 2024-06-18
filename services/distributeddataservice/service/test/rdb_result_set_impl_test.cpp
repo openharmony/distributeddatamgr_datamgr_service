@@ -227,6 +227,7 @@ HWTEST_F(RdbResultSetImplTest, RdbResultSetImpl001, TestSize.Level0)
     int columnIndex = 0;
     EXPECT_EQ(resultSet->GetColumnIndex(columnName, columnIndex), NativeRdb::E_ERROR);
     EXPECT_EQ(resultSet->GetColumnIndex(names[1], columnIndex), NativeRdb::E_OK);
+    EXPECT_EQ(resultSet->GetColumnName(columnIndex, columnName), NativeRdb::E_OK);
     columnIndex = 10; // 10 > colNames_.size()
     EXPECT_EQ(resultSet->GetColumnName(columnIndex, columnName), NativeRdb::E_ERROR);
     EXPECT_EQ(resultSet->GetColumnName(-1, columnName), NativeRdb::E_ERROR);

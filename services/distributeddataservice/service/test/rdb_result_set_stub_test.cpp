@@ -104,7 +104,7 @@ HWTEST_F(RdbResultSetStubTest, OnRemoteRequest002, TestSize.Level1)
     MessageOption option1;
     uint32_t code = -1;
     auto ret = rdbResultSetStub->OnRemoteRequest(code, request1, reply1, option1);
-    EXPECT_TRUE(ret > 0);
+    EXPECT_GT(ret, 0);
 
     code = 20; // invalid code > Code::CMD_MAX
     MessageParcel request2;
@@ -114,7 +114,7 @@ HWTEST_F(RdbResultSetStubTest, OnRemoteRequest002, TestSize.Level1)
     MessageParcel reply2;
     MessageOption option2;
     ret = rdbResultSetStub->OnRemoteRequest(code, request2, reply2, option2);
-    EXPECT_TRUE(ret > 0);
+    EXPECT_GT(ret, 0);
 }
 
 /**
