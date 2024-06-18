@@ -736,43 +736,32 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
-Status KVDBServiceImpl::SetOptions(const AppId &appId, const StoreId &storeId, const Options &options)
+Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig)
 {
-    if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
-        ZLOGE("failed please check type:%{public}d appId:%{public}s storeId:%{public}s dataType:%{public}d",
-            options.kvStoreType, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), options.dataType);
-        return INVALID_ARGUMENT;
-    }
-
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
-    AddOptions(options, meta);
-
-    StoreMetaData old;
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
     if (!isCreated) {
         return SUCCESS;
     }
-    StoreMetaDataLocal oldLocal;
-    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), oldLocal, true);
-    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-        old.area != meta.area || !options.persistent ||
-        (Constant::NotEqual(oldLocal.isPublic, options.isPublic) &&
-            (old.user != DEFAULT_USER_ID || !options.isPublic))) {
-        ZLOGE("meta appId:%{public}s storeId:%{public}s user:%{public}s type:%{public}d->%{public}d "
-              "encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d persistent:%{public}d isPublic:%{public}d->%{public}d",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.user.c_str(), old.storeType,
-            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, oldLocal.isPublic,
-            options.isPublic);
-        return Status::STORE_META_CHANGED;
-    }
+    meta.enableCloud = storeConfig.cloudConfig.enableCloud;
+    meta.cloudAutoSync = storeConfig.cloudConfig.autoSync;
     if (!MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true)) {
         return Status::ERROR;
     }
-    SaveLocalMetaData(options, meta);
-    ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
-          "isCreated:%{public}d dataType:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
-        meta.instanceId, meta.storeType, meta.dataDir.c_str(), isCreated, meta.dataType);
+    StoreMetaData syncMeta;
+    if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta)) {
+        syncMeta.enableCloud = storeConfig.cloudConfig.enableCloud;
+        syncMeta.cloudAutoSync = storeConfig.cloudConfig.autoSync;
+        if (!MetaDataManager::GetInstance().SaveMeta(syncMeta.GetKey(), syncMeta)) {
+            return Status::ERROR;
+        }
+    }
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, storeId);
+    for (auto store : stores) {
+        store->SetConfig({ storeConfig.cloudConfig.enableCloud });
+    }
+    ZLOGI("appId:%{public}s storeId:%{public}s enable:%{public}d", appId.appId.c_str(),
+        Anonymous::Change(storeId.storeId).c_str(), storeConfig.cloudConfig.enableCloud);
     return Status::SUCCESS;
 }
 

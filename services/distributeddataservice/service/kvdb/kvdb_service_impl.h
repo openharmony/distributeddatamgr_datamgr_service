@@ -68,7 +68,7 @@ public:
     Status GetSwitch(const AppId &appId, const std::string &networkId, SwitchData &data) override;
     Status SubscribeSwitchData(const AppId &appId) override;
     Status UnsubscribeSwitchData(const AppId &appId) override;
-    Status SetOptions(const AppId &appId, const StoreId &storeId, const Options &options) override;
+    Status SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig) override;
     int32_t OnBind(const BindInfo &bindInfo) override;
     int32_t OnInitialize() override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;

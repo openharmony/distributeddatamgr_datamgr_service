@@ -170,17 +170,6 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::stoi(meta.user);
     enableCloud_ = meta.enableCloud;
-    MetaDataManager::GetInstance().Subscribe(
-        meta.GetKey(), [this](const std::string &key,
-                                             const std::string &value, int32_t flag) -> auto {
-            if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
-                return true;
-            }
-            StoreMetaData meta;
-            StoreMetaData::Unmarshall(value, meta);
-            enableCloud_ = meta.enableCloud;
-            return true;
-        }, true);
 }
 
 KVDBGeneralStore::~KVDBGeneralStore()
@@ -200,9 +189,6 @@ KVDBGeneralStore::~KVDBGeneralStore()
     }
     bindInfos_.clear();
     dbClouds_.clear();
-    StoreMetaData meta(storeInfo_);
-    meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    MetaDataManager::GetInstance().Unsubscribe(meta.GetKey());
 }
 
 int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
@@ -772,5 +758,10 @@ std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, cons
     uint8_t *buf = reinterpret_cast<uint8_t *>(&uuidLen);
     out.insert(out.end(), buf, buf + sizeof(uuidLen));
     return out;
+}
+
+void KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
+{
+    enableCloud_ = storeConfig.enableCloud_;
 }
 } // namespace OHOS::DistributedKv

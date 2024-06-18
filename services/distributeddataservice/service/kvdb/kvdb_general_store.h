@@ -73,6 +73,7 @@ public:
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
+    void SetConfig(const StoreConfig &storeConfig) override;
 
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
