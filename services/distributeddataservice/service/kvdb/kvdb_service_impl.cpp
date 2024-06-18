@@ -347,7 +347,8 @@ void KVDBServiceImpl::TryToSync(const StoreMetaData &metaData, bool force)
         syncInfo.syncId = ++syncId_;
         RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
             SYNC_STORE_ID, Anonymous::Change(metaData.storeId), SYNC_APP_ID, metaData.bundleName,
-            CONCURRENT_ID, std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, REUSE_SOCKET_AUTO_SYNC);
+            CONCURRENT_ID, std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType,
+            SYNC_TYPE, REUSE_SOCKET_AUTO_SYNC);
         KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
             std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
             std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
