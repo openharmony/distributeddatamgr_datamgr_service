@@ -737,6 +737,35 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
 }
 
+Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig)
+{
+    StoreMetaData meta = GetStoreMetaData(appId, storeId);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+    if (!isCreated) {
+        return SUCCESS;
+    }
+    meta.enableCloud = storeConfig.cloudConfig.enableCloud;
+    meta.cloudAutoSync = storeConfig.cloudConfig.autoSync;
+    if (!MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true)) {
+        return Status::ERROR;
+    }
+    StoreMetaData syncMeta;
+    if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta)) {
+        syncMeta.enableCloud = storeConfig.cloudConfig.enableCloud;
+        syncMeta.cloudAutoSync = storeConfig.cloudConfig.autoSync;
+        if (!MetaDataManager::GetInstance().SaveMeta(syncMeta.GetKey(), syncMeta)) {
+            return Status::ERROR;
+        }
+    }
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, storeId);
+    for (auto store : stores) {
+        store->SetConfig({ storeConfig.cloudConfig.enableCloud });
+    }
+    ZLOGI("appId:%{public}s storeId:%{public}s enable:%{public}d", appId.appId.c_str(),
+        Anonymous::Change(storeId.storeId).c_str(), storeConfig.cloudConfig.enableCloud);
+    return Status::SUCCESS;
+}
+
 Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options)
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(),
@@ -764,7 +793,8 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
             options.isPublic);
         return Status::STORE_META_CHANGED;
     }
-    if (options.cloudConfig.enableCloud || executors_ != nullptr) {
+
+    if (options.cloudConfig.enableCloud && (!isCreated || !meta.enableCloud) && executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);

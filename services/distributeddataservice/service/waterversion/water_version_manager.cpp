@@ -504,11 +504,9 @@ bool WaterVersionManager::WaterVersion::InitWaterVersion(const WaterVersionMetaD
 {
     if (keys_ != metaData.keys || metaData.version != WaterVersionMetaData::DEFAULT_VERSION) {
         auto meta = Upgrade(keys_, metaData);
-        SaveMatrix(meta);
         return MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true) &&
                versions_.Set(meta.deviceId, meta);
     }
-    SaveMatrix(metaData);
     return versions_.Set(metaData.deviceId, metaData);
 }
 } // namespace OHOS::DistributedData

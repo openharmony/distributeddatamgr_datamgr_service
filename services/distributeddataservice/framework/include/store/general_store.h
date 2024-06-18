@@ -95,6 +95,10 @@ public:
         int32_t maxRetryConflictTimes = 3;     // default max retry 3 times when version conflict
     };
 
+    struct StoreConfig {
+        bool enableCloud_ = false;
+    };
+
     virtual ~GeneralStore() = default;
 
     virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
@@ -150,6 +154,8 @@ public:
     virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId) {};
+
+    virtual void SetConfig(const StoreConfig &storeConfig) {};
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

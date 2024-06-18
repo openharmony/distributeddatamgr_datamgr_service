@@ -44,6 +44,7 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnSyncExt,
     &KVDBServiceStub::OnCloudSync,
     &KVDBServiceStub::OnNotifyDataChange,
+    &KVDBServiceStub::OnSetConfig,
     &KVDBServiceStub::OnPutSwitch,
     &KVDBServiceStub::OnGetSwitch,
     &KVDBServiceStub::OnSubscribeSwitchData,
@@ -495,6 +496,23 @@ int32_t KVDBServiceStub::OnUnsubscribeSwitchData(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
     int32_t status = UnsubscribeSwitchData(appId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnSetConfig(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+    MessageParcel &reply)
+{
+    StoreConfig storeConfig;
+    if (!ITypesUtil::Unmarshal(data, storeConfig)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = SetConfig(appId, storeId, storeConfig);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;

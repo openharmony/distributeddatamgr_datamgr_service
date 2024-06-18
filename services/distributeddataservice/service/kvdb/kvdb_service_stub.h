@@ -54,10 +54,11 @@ private:
     int32_t OnNotifyDataChange(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnPutSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnSubscribeSwitchData(
-        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnUnsubscribeSwitchData(
-        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnSubscribeSwitchData(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+        MessageParcel &reply);
+    int32_t OnUnsubscribeSwitchData(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+        MessageParcel &reply);
+    int32_t OnSetConfig(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)];
 
     bool CheckPermission(uint32_t code, const StoreInfo &storeInfo);

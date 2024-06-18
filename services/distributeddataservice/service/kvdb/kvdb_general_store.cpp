@@ -648,10 +648,9 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
             return;
         }
         DistributedData::GenDetails details;
-        bool isFinished = false;
+        bool downloadFinished = false;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
-            isFinished = process.process == FINISHED ? true : isFinished;
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
             for (auto [key, value] : process.tableProcess) {
@@ -664,12 +663,14 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
                 table.download.success = value.downLoadInfo.successCount;
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
+                downloadFinished = downloadFinished ||
+                                   (process.process == FINISHED && value.downLoadInfo.successCount > 0);
             }
         }
         if (async) {
             async(details);
         }
-        if (isFinished && callback) {
+        if (downloadFinished && callback) {
             callback();
         }
     };
@@ -757,5 +758,10 @@ std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, cons
     uint8_t *buf = reinterpret_cast<uint8_t *>(&uuidLen);
     out.insert(out.end(), buf, buf + sizeof(uuidLen));
     return out;
+}
+
+void KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
+{
+    enableCloud_ = storeConfig.enableCloud_;
 }
 } // namespace OHOS::DistributedKv
