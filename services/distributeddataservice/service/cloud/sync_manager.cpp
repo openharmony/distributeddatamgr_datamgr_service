@@ -522,7 +522,7 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
         if (instance == nullptr) {
             return cloudSyncInfos;
         }
-        cloud = instance->GetServerInfo(cloud.user);
+        cloud = instance->GetServerInfo(cloud.user, false);
         if (!cloud.IsValid()) {
             ZLOGE("cloud is empty, user: %{public}d", cloud.user);
             return cloudSyncInfos;

@@ -36,7 +36,7 @@ using DBRelation = DBSub::Relation;
 using DBErr = DistributedData::GeneralError;
 class CloudServerImpl : public DistributedData::CloudServer {
 public:
-    DBCloudInfo GetServerInfo(int32_t userId) override;
+    DBCloudInfo GetServerInfo(int32_t userId, bool needSpaceInfo) override;
     DBSchemaMeta GetAppSchema(int32_t userId, const std::string &bundleName) override;
     int32_t Subscribe(int32_t userId, const std::map<std::string, std::vector<DBMeta>> &dbs) override;
     int32_t Unsubscribe(int32_t userId, const std::map<std::string, std::vector<DBMeta>> &dbs) override;
