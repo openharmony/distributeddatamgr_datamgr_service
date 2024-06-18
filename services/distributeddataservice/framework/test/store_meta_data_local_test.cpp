@@ -18,8 +18,13 @@
 
 using namespace testing::ext;
 using OHOS::DistributedData::StoreMetaDataLocal;
-
+namespace OHOS::Test {
 class StoreMetaDataLocalTest : public testing::Test {
+public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
 };
 
 /**
@@ -67,3 +72,28 @@ HWTEST_F(StoreMetaDataLocalTest, GetPrefixTest, TestSize.Level1)
 
     ASSERT_EQ(prefix, expectedPrefix);
 }
+
+/**
+* @tc.name: GetPolicy
+* @tc.desc: test GetPolicy function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(StoreMetaDataLocalTest, GetPolicy, TestSize.Level1)
+{
+    StoreMetaDataLocal metaData;
+    uint32_t type = UINT32_MAX;
+    auto policy = metaData.GetPolicy(type);
+    EXPECT_EQ(policy.type, type);
+    metaData.policies.push_back(policy);
+    EXPECT_TRUE(metaData.HasPolicy(type));
+    EXPECT_FALSE(policy.IsValueEffect());
+    type = 1;
+    policy = metaData.GetPolicy(type);
+    EXPECT_NE(policy.type, type);
+    policy.index = 1;
+    EXPECT_FALSE(metaData.HasPolicy(type));
+    EXPECT_TRUE(policy.IsValueEffect());
+}
+} // namespace OHOS::Test

@@ -127,6 +127,9 @@ HWTEST_F(BlockIntegerTest, SymbolOverloadingTest, TestSize.Level2)
 */
 HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
 {
+    std::function<void()> action = []() { };
+    RefCount refCountWithAction(action);
+    EXPECT_TRUE(refCountWithAction);
     int num = 0;
     {
         RefCount refCount([&num]() {
@@ -147,6 +150,14 @@ HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
         ASSERT_TRUE(refCount4);
         ASSERT_EQ(num, 0);
         EXPECT_TRUE(static_cast<bool>(refCount4));
+
+        RefCount refCount5 = refCount1;
+        refCount5 = refCount3;
+        ASSERT_TRUE(refCount5);
+
+        RefCount refCount6 = std::move(refCount2);
+        refCount6 = std::move(refCount4);
+        ASSERT_TRUE(refCount6);
     }
     ASSERT_EQ(num, 10);
 }

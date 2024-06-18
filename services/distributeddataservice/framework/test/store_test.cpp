@@ -169,5 +169,6 @@ HWTEST_F(AutoCacheTest, operatorStore, TestSize.Level2)
     GeneralWatcher::ChangeData datas;
     auto ret = delegate.OnChange(origin, fields, std::move(datas));
     EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_EQ(delegate.GetUser(), user);
 }
 } // namespace OHOS::Test
