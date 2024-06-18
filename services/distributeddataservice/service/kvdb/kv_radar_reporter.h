@@ -57,9 +57,8 @@ enum BizState {
 
 enum SyncType {
     SYNC = 1,
-    SYNCEXT,
     AUTOSYNC,
-    TRYSYNC,
+    REUSE_SOCKET_AUTO_SYNC
 };
 
 constexpr char DOMAIN[] = "DISTDATAMGR";

@@ -288,11 +288,6 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, Sync
             return SUCCESS;
     }
     syncInfo.syncId = ++syncId_;
-    auto recv = DeviceMatrix::GetInstance().GetRecvLevel(device,
-        static_cast<DeviceMatrix::LevelType>(metaData.dataType));
-    RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
-        SYNC_STORE_ID, Anonymous::Change(storeId.storeId), SYNC_APP_ID, appId.appId, CONCURRENT_ID,
-        std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, SYNCEXT, WATER_VERSION, recv.second);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
@@ -352,7 +347,7 @@ void KVDBServiceImpl::TryToSync(const StoreMetaData &metaData, bool force)
         syncInfo.syncId = ++syncId_;
         RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
             SYNC_STORE_ID, Anonymous::Change(metaData.storeId), SYNC_APP_ID, metaData.bundleName,
-            CONCURRENT_ID, std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, TRYSYNC);
+            CONCURRENT_ID, std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, REUSE_SOCKET_AUTO_SYNC);
         KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
             std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
             std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
@@ -1226,7 +1221,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     }
     auto watcher = GetWatchers(meta.tokenId, meta.storeId);
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
-        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId);
+        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId, DATA_TYPE, meta.dataType);
     auto store = AutoCache::GetInstance().GetStore(meta, watcher);
     if (store == nullptr) {
         ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", meta.bundleName.c_str(),
