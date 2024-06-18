@@ -158,7 +158,6 @@ void KvStoreMetaManager::InitMetaData()
     data.securityLevel = SecurityLevel::S1;
     data.area = EL1;
     data.tokenId = tokenId;
-    data.enableCloud = true;
     StoreMetaDataLocal localData;
     localData.isAutoSync = false;
     localData.isBackup = false;
