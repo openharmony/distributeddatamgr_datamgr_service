@@ -257,7 +257,8 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, SyncInf
     }
     syncInfo.syncId = ++syncId_;
     RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
-        SYNC_STORE_ID, Anonymous::Change(storeId.storeId), SYNC_APP_ID, appId.appId, SYNC_ID, syncInfo.syncId);
+        SYNC_STORE_ID, Anonymous::Change(storeId.storeId), SYNC_APP_ID, appId.appId, CONCURRENT_ID,
+        std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, SYNC);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
@@ -287,8 +288,6 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, Sync
             return SUCCESS;
     }
     syncInfo.syncId = ++syncId_;
-    RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
-        SYNC_STORE_ID, Anonymous::Change(storeId.storeId), SYNC_APP_ID, appId.appId, SYNC_ID, syncInfo.syncId);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
@@ -348,7 +347,8 @@ void KVDBServiceImpl::TryToSync(const StoreMetaData &metaData, bool force)
         syncInfo.syncId = ++syncId_;
         RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
             SYNC_STORE_ID, Anonymous::Change(metaData.storeId), SYNC_APP_ID, metaData.bundleName,
-            SYNC_ID, syncInfo.syncId);
+            CONCURRENT_ID, std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType,
+            SYNC_TYPE, REUSE_SOCKET_AUTO_SYNC);
         KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
             std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
             std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
@@ -913,7 +913,8 @@ int32_t KVDBServiceImpl::OnSessionReady(const std::string &device)
         syncInfo.devices = { device };
         syncInfo.syncId = ++syncId_;
         RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
-            SYNC_STORE_ID, Anonymous::Change(store.storeId), SYNC_APP_ID, store.bundleName, SYNC_ID, syncInfo.syncId);
+            SYNC_STORE_ID, Anonymous::Change(store.storeId), SYNC_APP_ID, store.bundleName,
+            CONCURRENT_ID, std::to_string(syncInfo.syncId), SYNC_TYPE, AUTOSYNC);
         KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(store.tokenId), 0,
             std::bind(&KVDBServiceImpl::DoSyncInOrder, this, store, syncInfo, std::placeholders::_1, ACTION_SYNC),
             std::bind(&KVDBServiceImpl::DoComplete, this, store, syncInfo, RefCount(), std::placeholders::_1));
@@ -1134,12 +1135,16 @@ Status KVDBServiceImpl::DoSyncInOrder(
         return Status::ERROR;
     }
     if (IsNeedMetaSync(meta, uuids)) {
+        auto recv = DeviceMatrix::GetInstance().GetRecvLevel(uuids[0],
+            static_cast<DeviceMatrix::LevelType>(DataType::TYPE_DYNAMICAL));
         RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_START,
-            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+            std::to_string(info.syncId), DATA_TYPE, meta.dataType, WATER_VERSION, recv.second);
         auto result = MetaDataManager::GetInstance().Sync(
             uuids, [this, meta, info, complete, type](const auto &results) {
             RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_SUCCESS,
-                SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+                SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+                std::to_string(info.syncId), DATA_TYPE, meta.dataType);
             auto ret = ProcessResult(results);
             if (ret.first.empty()) {
                 DoComplete(meta, info, RefCount(), ret.second);
@@ -1152,7 +1157,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
         if (!result) {
             RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_FAILED, ERROR_CODE, Status::ERROR,
                 BIZ_STATE, END, SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName,
-                SYNC_ID, info.syncId);
+                CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
         }
         return result ? Status::SUCCESS : Status::ERROR;
     }
@@ -1218,17 +1223,18 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     }
     auto watcher = GetWatchers(meta.tokenId, meta.storeId);
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
-        SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId, DATA_TYPE, meta.dataType);
     auto store = AutoCache::GetInstance().GetStore(meta, watcher);
     if (store == nullptr) {
         ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", meta.bundleName.c_str(),
             Anonymous::Change(meta.storeId).c_str(), meta.dataDir.c_str());
         RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_FAILED, ERROR_CODE, Status::ERROR, BIZ_STATE, END,
-            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+            std::to_string(info.syncId), DATA_TYPE, meta.dataType);
         return Status::ERROR;
     }
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_SUCCESS, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
-        SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     KVDBQuery query(info.query);
     if (!query.IsValidQuery()) {
         ZLOGE("failed DBQuery:%{public}s", Anonymous::Change(info.query).c_str());
@@ -1241,7 +1247,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     SyncParam syncParam{};
     syncParam.mode = mode;
     RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
-        SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     auto ret = store->Sync(
         devices, query,
         [this, complete](const GenDetails &result) mutable {
@@ -1252,10 +1258,11 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     auto status = Status(ret);
     if (status != Status::SUCCESS) {
         RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_FAILED, ERROR_CODE, status, BIZ_STATE, END,
-            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+            std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     } else {
         RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_SUCCESS, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
-            SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+            SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     }
     return status;
 }
@@ -1266,7 +1273,8 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
     ZLOGD("seqId:0x%{public}" PRIx64 " tokenId:0x%{public}x remote:%{public}zu", info.seqId, meta.tokenId,
         dbResult.size());
     RADAR_REPORT(STANDARD_DEVICE_SYNC, FINISH_SYNC, RADAR_SUCCESS, BIZ_STATE, END,
-        SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, SYNC_ID, info.syncId);
+        SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+        std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     std::map<std::string, Status> result;
     for (auto &[key, status] : dbResult) {
         result[key] = ConvertDbStatus(status);
