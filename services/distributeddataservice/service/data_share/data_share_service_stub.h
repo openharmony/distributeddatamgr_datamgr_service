@@ -24,6 +24,7 @@ namespace DataShare {
 class DataShareServiceStub : public IDataShareService, public DistributedData::FeatureSystem::Feature {
 public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply) override;
+    void SetServiceReady();
 
 private:
     static constexpr std::chrono::milliseconds TIME_THRESHOLD = std::chrono::milliseconds(500);
@@ -74,6 +75,9 @@ private:
         &DataShareServiceStub::OnGetSilentProxyStatus,
         &DataShareServiceStub::OnRegisterObserver,
         &DataShareServiceStub::OnUnregisterObserver};
+    static constexpr int SLEEP_TIME = 300;
+    static constexpr int TRY_TIMES = 5;
+    std::atomic<bool> isReady_ = false;
 };
 } // namespace DataShare
 } // namespace OHOS
