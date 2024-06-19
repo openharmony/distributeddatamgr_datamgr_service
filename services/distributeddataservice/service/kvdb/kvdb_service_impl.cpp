@@ -223,7 +223,7 @@ Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId)
 Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
@@ -1103,8 +1103,11 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
         return Status::NOT_SUPPORT;
     }
     auto instance = CloudServer::GetInstance();
-    if (instance == nullptr || !DMAdapter::GetInstance().IsNetworkAvailable()) {
+    if (instance == nullptr) {
         return Status::CLOUD_DISABLED;
+    }
+    if (!DMAdapter::GetInstance().IsNetworkAvailable()) {
+        return Status::NETWORK_ERROR;
     }
     std::vector<int32_t> users;
     if (meta.user != StoreMetaData::ROOT_USER) {

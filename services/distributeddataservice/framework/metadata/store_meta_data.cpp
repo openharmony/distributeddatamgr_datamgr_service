@@ -167,7 +167,7 @@ std::string StoreMetaData::GetKeyLocal() const
 
 std::string StoreMetaData::GetSecretKey() const
 {
-    if (version < CURRENT_VERSION) {
+    if (version < UUID_CHANGED_TAG) {
         return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId });
     }
     return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
@@ -175,7 +175,7 @@ std::string StoreMetaData::GetSecretKey() const
 
 std::string StoreMetaData::GetBackupSecretKey() const
 {
-    if (version < CURRENT_VERSION) {
+    if (version < UUID_CHANGED_TAG) {
         return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId });
     }
     return SecretKeyMetaData::GetBackupKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });

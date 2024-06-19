@@ -123,7 +123,7 @@ private:
     std::mutex mutex_;
     std::shared_ptr<ExecutorPool> executors_;
     TaskId delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
-    static constexpr int32_t META_VERSION = 3;
+    static constexpr int32_t META_VERSION = 4;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS
