@@ -162,9 +162,17 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     auto callingPid = IPCSkeleton::GetCallingPid();
     auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid](ProviderInfo &providerInfo,
             DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+        auto start = std::chrono::steady_clock::now();
         auto [err, result] = dbDelegate->Query(providerInfo.tableName,
             predicates, columns, callingPid);
         resultSet = std::move(result);
+        auto finish = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+        if (duration >= TIME_THRESHOLD) {
+            int64_t milliseconds = duration.count();
+            ZLOGW("query time over, callingPid:%{public}d, cost:%{public}" PRIi64 "ms, uri: %{public}s",
+                callingPid, milliseconds, URIUtils::Anonymous(uri).c_str());
+        }
         return err;
     };
     errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);

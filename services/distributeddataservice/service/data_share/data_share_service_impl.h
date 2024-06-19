@@ -42,7 +42,7 @@
 #include "visibility.h"
 
 namespace OHOS::DataShare {
-class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
+class DataShareServiceImpl : public DataShareServiceStub {
 public:
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using ExecuteCallback = std::function<int32_t(DataProviderConfig::ProviderInfo &,
@@ -129,6 +129,7 @@ private:
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     static constexpr const char *EXT_URI_SCHEMA = "datashare://";
+    static constexpr std::chrono::milliseconds TIME_THRESHOLD = std::chrono::milliseconds(500);
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
