@@ -37,6 +37,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "metadata/version_meta_data.h"
 #include "runtime_config.h"
+#include "safe_block_queue.h"
 #include "store/general_store.h"
 #include "store/store_info.h"
 #include "utils/anonymous.h"
@@ -233,18 +234,40 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
     if (metaDelegate_ != nullptr) {
         return metaDelegate_;
     }
-
     std::lock_guard<decltype(mutex_)> lock(mutex_);
-    if (metaDelegate_ == nullptr) {
-        metaDelegate_ = CreateMetaKvStore();
-        auto fullName = GetBackupPath();
-        auto backup = [fullName](const auto &store) -> int32_t {
-            DistributedDB::CipherPassword password;
-            return store->Export(fullName, password, true);
-        };
-        MetaDataManager::GetInstance().Initialize(metaDelegate_, backup);
+    if (metaDelegate_ != nullptr) {
+        return metaDelegate_;
     }
+
+    metaDelegate_ = CreateMetaKvStore();
+    auto fullName = GetBackupPath();
+    auto backup = [executors = executors_, queue = std::make_shared<SafeBlockQueue<Backup>>(MAX_TASK_COUNT), fullName](
+                      const auto &store) -> int32_t {
+        auto result = queue->PushNoWait([fullName](const auto &store) -> int32_t {
+            return store->Export(fullName, {}, true);
+        });
+        if (!result) {
+            return OK;
+        }
+        executors->Schedule(std::chrono::hours(RETRY_INTERVAL), GetBackupTask(queue, executors, store));
+        return OK;
+    };
+    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup);
     return metaDelegate_;
+}
+
+ExecutorPool::Task KvStoreMetaManager::GetBackupTask(
+    TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store)
+{
+    return [queue, executors, store]() {
+        Backup backupTask;
+        if (!queue->PopNotWait(backupTask)) {
+            return;
+        }
+        if (backupTask(store) != OK && queue->PushNoWait(backupTask)) {
+            executors->Schedule(std::chrono::hours(RETRY_INTERVAL), GetBackupTask(queue, executors, store));
+        }
+    };
 }
 
 KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
