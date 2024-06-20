@@ -45,7 +45,6 @@ private:
     int32_t OnIsAtLastRow(MessageParcel &data, MessageParcel &reply);
     int32_t OnGet(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetSize(MessageParcel &data, MessageParcel &reply);
-    int32_t OnIsClosed(MessageParcel &data, MessageParcel &reply);
     int32_t OnClose(MessageParcel &data, MessageParcel &reply);
 
     static bool CheckInterfaceToken(MessageParcel &data);

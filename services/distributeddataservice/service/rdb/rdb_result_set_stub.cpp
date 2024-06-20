@@ -241,16 +241,6 @@ int32_t RdbResultSetStub::OnGetSize(MessageParcel &data, MessageParcel &reply)
     return 0;
 }
 
-int32_t RdbResultSetStub::OnIsClosed(MessageParcel &data, MessageParcel &reply)
-{
-    bool isClosed = resultSet_->IsClosed();
-    if (!ITypesUtil::Marshal(reply, isClosed)) {
-        ZLOGE("Write isClosed failed, isClosed:%{public}d.", isClosed);
-        return -1;
-    }
-    return 0;
-}
-
 int32_t RdbResultSetStub::OnClose(MessageParcel &data, MessageParcel &reply)
 {
     int status = resultSet_->Close();
