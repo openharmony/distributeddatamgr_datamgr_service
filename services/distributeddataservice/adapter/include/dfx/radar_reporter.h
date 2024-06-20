@@ -69,6 +69,7 @@ struct RadarParam {
     const char *bundleName_ = "";
     int32_t scene_ = CLOUD_SYNC;
     int32_t stage_ = GENERAL_STAGE;
+    uint64_t syncId_ = 0;
     int32_t errCode_ = 0;
     int32_t res_ = RES_SUCCESS;
 };
@@ -100,6 +101,7 @@ private:
     static constexpr const char *UNKNOW = "UNKNOW";
     static constexpr const char *REPLACE_CHAIN = "**";
     static constexpr const char *DEFAULT_ANONYMOUS = "************";
+    static constexpr const char *CONCURRENT_ID = "CONCURRENT_ID";
     static constexpr const int32_t NO_ERROR = 0;
     static constexpr const int32_t HEAD_SIZE = 5;
     static constexpr const int32_t END_SIZE = 5;
