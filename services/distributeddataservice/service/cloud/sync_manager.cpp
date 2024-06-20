@@ -545,19 +545,26 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
     return cloudSyncInfos;
 }
 
+void SyncManager::GetLastResults(
+    const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results)
+{
+    for (auto &[key, info] : infos) {
+        if (info.code != -1) {
+            results.insert(std::pair<std::string, CloudSyncInfo>(storeId, info));
+        }
+    }
+}
+
 int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)
 {
     for (auto &queryKey : queryKeys) {
         std::string storeId = queryKey.storeId;
         QueryKey key{ .accountId = queryKey.accountId, .bundleName = queryKey.bundleName, .storeId = "" };
-        lastSyncInfos_.ComputeIfPresent(key, [&storeId, &results](auto &key, std::map<SyncId, CloudSyncInfo> &vals) {
-            for (auto &[key, info] : vals) {
-                if (info.code != -1) {
-                    results.insert(std::pair<std::string, CloudSyncInfo>(storeId, info));
-                }
-            }
-            return !vals.empty();
-        });
+        lastSyncInfos_.ComputeIfPresent(
+            key, [&storeId, &results](auto &key, std::map<SyncId, CloudSyncInfo> &vals) {
+                GetLastResults(storeId, vals, results);
+                return !vals.empty();
+            });
     }
     return SUCCESS;
 }
@@ -567,7 +574,7 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
     int64_t startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     for (const auto &[queryKey, syncId] : cloudSyncInfos) {
         lastSyncInfos_.Compute(queryKey, [id = syncId, startTime](auto &, std::map<SyncId, CloudSyncInfo> &val) {
-            val[id].startTime = startTime;
+            val[id] = { .startTime = startTime };
             return !val.empty();
         });
     }
@@ -576,12 +583,15 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
 void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code)
 {
     lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key, std::map<SyncId, CloudSyncInfo> &val) {
-        auto it = val.find(syncId);
-        if (it != val.end()) {
-            return !val.empty();
+        for (auto iter = val.begin(); iter != val.end();) {
+            if (iter->first != syncId && iter->second.code != -1) {
+                iter = val.erase(iter);
+            } else {
+                iter->second.finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+                iter->second.code = code;
+                iter++;
+            }
         }
-        it->second.finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-        it->second.code = code;
         return true;
     });
 }

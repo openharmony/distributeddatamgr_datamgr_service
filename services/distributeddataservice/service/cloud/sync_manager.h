@@ -89,7 +89,6 @@ private:
     using StoreInfo = DistributedData::StoreInfo;
     using SyncStrategy = DistributedData::SyncStrategy;
     using SyncId = uint64_t;
-    using SyncIdCloudInfos = ConcurrentMap<SyncId, CloudSyncInfo>;
     using GeneralError = DistributedData::GeneralError;
     using GenProgress = DistributedData::GenProgress;
     using GenDetails = DistributedData::GenDetails;
@@ -128,6 +127,8 @@ private:
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(
         const StoreInfo &storeInfo, Retryer retryer);
+    static void GetLastResults(
+        const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
