@@ -134,8 +134,7 @@ private:
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
-    std::map<QueryKey, SyncIdCloudInfos> lastSyncInfos_;
-    std::mutex mutex_;
+    ConcurrentMap<QueryKey, std::map<SyncId, CloudSyncInfo>> lastSyncInfos_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

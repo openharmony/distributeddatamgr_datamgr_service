@@ -35,6 +35,7 @@ using namespace DistributedData;
 using namespace DistributedDataDfx;
 using namespace DistributedKv;
 using namespace SharingUtil;
+using namespace std::chrono;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
@@ -549,17 +550,13 @@ int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, Q
     for (auto &queryKey : queryKeys) {
         std::string storeId = queryKey.storeId;
         QueryKey key{ .accountId = queryKey.accountId, .bundleName = queryKey.bundleName, .storeId = "" };
-        auto it = lastSyncInfos_.find(key);
-        if (it == lastSyncInfos_.end()) {
-            return SUCCESS;
-        }
-        std::lock_guard<decltype(mutex_)> lock(mutex_);
-        it->second.ForEach([&storeId, &results](uint64_t syncId, CloudSyncInfo &info) {
-            // -1 means sync not finish
-            if (info.code != -1) {
-                results.insert(std::pair<std::string, CloudSyncInfo>(storeId, info));
+        lastSyncInfos_.ComputeIfPresent(key, [&storeId, &results](auto &key, std::map<SyncId, CloudSyncInfo> &vals) {
+            for (auto &[key, info] : vals) {
+                if (info.code != -1) {
+                    results.insert(std::pair<std::string, CloudSyncInfo>(storeId, info));
+                }
             }
-            return SUCCESS;
+            return !vals.empty();
         });
     }
     return SUCCESS;
@@ -567,35 +564,26 @@ int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, Q
 
 void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
-    CloudSyncInfo info;
-    info.startTime =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
-            .count();
+    int64_t startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     for (const auto &[queryKey, syncId] : cloudSyncInfos) {
-        lastSyncInfos_[queryKey][syncId] = info;
+        lastSyncInfos_.Compute(queryKey, [id = syncId, startTime](auto &, std::map<SyncId, CloudSyncInfo> &val) {
+            val[id].startTime = startTime;
+            return !val.empty();
+        });
     }
 }
 
 void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code)
 {
-    auto it = lastSyncInfos_.find(queryKey);
-    if (it == lastSyncInfos_.end()) {
-        return;
-    }
-    auto [isExist, info] = it->second.Find(syncId);
-    if (!isExist) {
-        return;
-    }
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    it->second.EraseIf([syncId](uint64_t id, CloudSyncInfo &info) {
-        // -1 means sync not finish
-        return syncId != id && info.code != -1;
+    lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key, std::map<SyncId, CloudSyncInfo> &val) {
+        auto it = val.find(syncId);
+        if (it != val.end()) {
+            return !val.empty();
+        }
+        it->second.finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+        it->second.code = code;
+        return true;
     });
-    info.finishTime =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
-            .count();
-    info.code = code;
-    lastSyncInfos_[queryKey][syncId] = info;
 }
 
 std::function<void(const GenDetails &result)> SyncManager::GetCallback(const GenAsync &async,
