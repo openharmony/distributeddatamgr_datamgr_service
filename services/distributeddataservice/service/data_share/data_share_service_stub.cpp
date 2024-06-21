@@ -321,8 +321,15 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
 
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
+    int tryTimes = TRY_TIMES;
+    while (!isReady_.load() && tryTimes > 0) {
+        tryTimes--;
+        std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
+    }
     auto callingPid = IPCSkeleton::GetCallingPid();
-    ZLOGD("code:%{public}u, callingPid:%{public}d", code, callingPid);
+    if (code != DATA_SHARE_SERVICE_CMD_QUERY) {
+        ZLOGI("code:%{public}u, callingPid:%{public}d", code, callingPid);
+    }
     if (!CheckInterfaceToken(data)) {
         return DATA_SHARE_ERROR;
     }
@@ -415,6 +422,11 @@ int32_t DataShareServiceStub::OnUnregisterObserver(MessageParcel &data, MessageP
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return E_OK;
+}
+
+void DataShareServiceStub::SetServiceReady()
+{
+    isReady_.store(true);
 }
 } // namespace DataShare
 } // namespace OHOS

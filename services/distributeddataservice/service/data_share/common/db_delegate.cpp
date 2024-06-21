@@ -31,7 +31,7 @@ std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
     static std::shared_ptr<KvDBDelegate> delegate = nullptr;
     static std::mutex mutex;
     std::lock_guard<decltype(mutex)> lock(mutex);
-    if (delegate == nullptr || reInit) {
+    if ((delegate == nullptr || reInit) && executors != nullptr) {
         delegate = std::make_shared<KvDelegate>(dir, executors);
     }
     return delegate;

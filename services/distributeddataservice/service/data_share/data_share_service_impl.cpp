@@ -501,6 +501,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     InitSubEvent();
     SubscribeTimeChanged();
     SubscribeChange();
+    ZLOGI("end");
     return E_OK;
 }
 
@@ -721,6 +722,8 @@ int32_t DataShareServiceImpl::OnInitialize()
 {
     RegisterDataShareServiceInfo();
     RegisterHandler();
+    SetServiceReady();
+    ZLOGI("Init dataShare service end");
     return 0;
 }
 
