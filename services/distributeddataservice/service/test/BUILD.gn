@@ -156,7 +156,7 @@ ohos_unittest("CloudTest") {
   ]
 }
 
-ohos_unittest("ValueProxyTest") {
+ohos_unittest("ValueProxyServiceTest") {
   module_out_path = module_output_path
   sources = [
     "../common/value_proxy.cpp",
@@ -169,6 +169,13 @@ ohos_unittest("ValueProxyTest") {
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+  ]
 
   external_deps = [
     "ability_base:base",
@@ -865,7 +872,7 @@ group("unittest") {
     ":RdbResultSetImplTest",
     ":RdbServiceTest",
     ":UdmfRunTimeStoreTest",
-    ":ValueProxyTest",
+    ":ValueProxyServiceTest",
     ":WaterVersionManagerTest",
   ]
 }
