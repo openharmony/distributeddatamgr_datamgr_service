@@ -26,6 +26,7 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "${data_service_path}/adapter/include/autils",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/communicator/src",
+    "${data_service_path}/framework/include",
     "${dsoftbus_core_path}",
     "${kv_store_common_path}",
     "${kv_store_distributeddb_path}/interfaces/include",
