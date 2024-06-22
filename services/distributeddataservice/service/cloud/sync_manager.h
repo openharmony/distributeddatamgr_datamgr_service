@@ -89,7 +89,6 @@ private:
     using StoreInfo = DistributedData::StoreInfo;
     using SyncStrategy = DistributedData::SyncStrategy;
     using SyncId = uint64_t;
-    using SyncIdCloudInfos = ConcurrentMap<SyncId, CloudSyncInfo>;
     using GeneralError = DistributedData::GeneralError;
     using GenProgress = DistributedData::GenProgress;
     using GenDetails = DistributedData::GenDetails;
@@ -128,14 +127,15 @@ private:
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(
         const StoreInfo &storeInfo, Retryer retryer);
+    static void GetLastResults(
+        const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
-    std::map<QueryKey, SyncIdCloudInfos> lastSyncInfos_;
-    std::mutex mutex_;
+    ConcurrentMap<QueryKey, std::map<SyncId, CloudSyncInfo>> lastSyncInfos_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
