@@ -17,8 +17,11 @@
 #include "gtest/gtest.h"
 #include "log_print.h"
 #include "rdb_asset_loader.h"
+#include "rdb_notifier_proxy.h"
+#include "rdb_watcher.h"
 #include "store/cursor.h"
-
+#include "store/general_value.h"
+#include "store/general_watcher.h"
 using namespace OHOS;
 using namespace testing;
 using namespace testing::ext;
@@ -59,6 +62,14 @@ public:
     {
         return GeneralError::E_OK;
     }
+};
+
+class RdbWatcherTest : public testing::Test {
+public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
 };
 
 /**
@@ -120,6 +131,26 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent, TestSize.Level0)
     assets["asset1"].push_back(g_rdbAsset);
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::CLOUD_ERROR);
+}
+
+/**
+* @tc.name: RdbWatcher
+* @tc.desc: RdbWatcher function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbWatcherTest, RdbWatcher, TestSize.Level0)
+{
+    GeneralWatcher::Origin origin;
+    GeneralWatcher::PRIFields primaryFields = {{"primaryFields1", "primaryFields2"}};
+    GeneralWatcher::ChangeInfo values;
+    std::shared_ptr<RdbWatcher> watcher = std::make_shared<RdbWatcher>();
+    sptr<RdbNotifierProxy> notifier;
+    watcher->SetNotifier(notifier);
+    EXPECT_EQ(watcher->notifier_, nullptr);
+    auto result = watcher->OnChange(origin, primaryFields, std::move(values));
+    EXPECT_EQ(result, GeneralError::E_NOT_INIT);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
