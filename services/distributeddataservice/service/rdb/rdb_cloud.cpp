@@ -157,6 +157,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::CLOUD_FULL_RECORDS;
         case GeneralError::E_NO_SPACE_FOR_ASSET:
             return DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT;
+        case GeneralError::E_VERSION_CONFLICT:
+            return DBStatus::CLOUD_VERSION_CONFLICT;
         case GeneralError::E_RECORD_EXIST_CONFLICT:
             return DBStatus::CLOUD_RECORD_EXIST_CONFLICT;
         default:
