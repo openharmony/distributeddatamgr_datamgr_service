@@ -46,6 +46,7 @@ struct GenTableDetail {
 struct GenProgressDetail {
     int32_t progress;
     int32_t code;
+    int32_t dbCode;
     std::map<std::string, GenTableDetail> details;
 };
 

@@ -661,6 +661,7 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
+            detail.dbCode = DB_ERR_OFFSET + process.errCode;
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];
                 table.upload.total = value.upLoadInfo.total;

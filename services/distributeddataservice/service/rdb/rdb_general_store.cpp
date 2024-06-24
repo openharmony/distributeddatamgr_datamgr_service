@@ -493,7 +493,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
             GetDBProcessCB(std::move(async), syncMode, highMode))
         : DistributedDB::INVALID_ARGS;
     OnSyncStart(storeInfo_, syncNotifyFlag_, syncMode, status);
-    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+    return status;
 }
 
 std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery &query)
@@ -676,6 +676,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
+            detail.dbCode = DB_ERR_OFFSET + process.errCode;
             if (process.process == FINISHED) {
                 RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode);
             }

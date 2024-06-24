@@ -84,7 +84,7 @@ private:
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
-    using Retryer = std::function<bool(Duration interval, int32_t status)>;
+    using Retryer = std::function<bool(Duration interval, int32_t status, int32_t dbCode)>;
     using CloudInfo = DistributedData::CloudInfo;
     using StoreInfo = DistributedData::StoreInfo;
     using SyncStrategy = DistributedData::SyncStrategy;
