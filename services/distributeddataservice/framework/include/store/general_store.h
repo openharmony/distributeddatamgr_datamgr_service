@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
+#include <errors.h>
 #include <functional>
 #include <memory>
 #include <set>
@@ -98,6 +99,11 @@ public:
     struct StoreConfig {
         bool enableCloud_ = false;
     };
+
+    enum DistributedDb {
+        DB_MODE_ID = 1,
+    };
+    static const int32_t DB_ERR_OFFSET = ErrCodeOffset(SUBSYS_DISTRIBUTEDDATAMNG, DB_MODE_ID);
 
     virtual ~GeneralStore() = default;
 

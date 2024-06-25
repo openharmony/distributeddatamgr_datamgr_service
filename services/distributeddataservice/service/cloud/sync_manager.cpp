@@ -273,7 +273,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             UpdateSchema(info);
             schemas = GetSchemaMeta(cloud, info.bundleName_);
             if (schemas.empty()) {
-                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT);
+                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, Status::SCHEMA_INVALID);
                 return;
             }
         }
@@ -324,7 +324,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             evt.AutoRetry() ? RetryCallback(storeInfo, retryer) : GetCallback(evt.GetAsyncDetail(), storeInfo),
             syncParam);
         if (status != E_OK) {
-            int32_t errCode = Convert(static_cast<GeneralError>(status));
+            int32_t errCode = status + GenStore::DB_ERR_OFFSET;
             RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, errCode },
                 "GetSyncHandler", END);
             if (async) {
@@ -354,26 +354,24 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
 SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &syncInfo)
 {
     if (times >= RETRY_TIMES) {
-        return [info = SyncInfo(syncInfo)](Duration, int32_t code) mutable {
+        return [info = SyncInfo(syncInfo)](Duration, int32_t code, int32_t dbCode) mutable {
             if (code == E_OK || code == E_SYNC_TASK_MERGED) {
                 return true;
             }
             info.SetError(code);
-            int32_t errCode = Convert(static_cast<GeneralError>(code));
             RadarReporter::Report(
-                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, errCode }, "GetRetryer", END);
+                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, dbCode }, "GetRetryer", END);
             return true;
         };
     }
-    return [this, times, info = SyncInfo(syncInfo)](Duration interval, int32_t code) mutable {
+    return [this, times, info = SyncInfo(syncInfo)](Duration interval, int32_t code, int32_t dbCode) mutable {
         if (code == E_OK || code == E_SYNC_TASK_MERGED) {
             return true;
         }
         if (code == E_NO_SPACE_FOR_ASSET || code == E_RECODE_LIMIT_EXCEEDED) {
             info.SetError(code);
-            int32_t errCode = Convert(static_cast<GeneralError>(code));
             RadarReporter::Report(
-                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, errCode }, "GetRetryer", END);
+                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, dbCode }, "GetRetryer", END);
             return true;
         }
 
@@ -617,10 +615,10 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
         };
 
         int32_t code = result.begin()->second.code;
+        int32_t dbCode = (result.begin()->second.dbCode == GenStore::DB_ERR_OFFSET) ? 0 : result.begin()->second.dbCode;
         UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
-        int32_t errCode = Convert(static_cast<GeneralError>(code));
         RadarReporter::Report(
-            { storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, errCode }, "GetCallback", END);
+            { storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, dbCode }, "GetCallback", END);
     };
 }
 
@@ -687,6 +685,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
             return;
         }
         int32_t code = details.begin()->second.code;
+        int32_t dbCode = details.begin()->second.dbCode;
         if (details.begin()->second.progress == GenProgress::SYNC_FINISH) {
             QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
             UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
@@ -695,7 +694,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
                     { storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId }, "RetryCallback", END);
             }
         }
-        retryer(GetInterval(code), code);
+        retryer(GetInterval(code), code, dbCode);
     };
 }
 } // namespace OHOS::CloudData
