@@ -161,7 +161,6 @@ int32_t SyncManager::DoCloudSync(SyncInfo syncInfo)
         return E_NOT_INIT;
     }
     auto syncId = GenerateId(syncInfo.user_);
-    RadarReporter::Report({ syncInfo.bundleName_.c_str(), CLOUD_SYNC, TRIGGER_SYNC, syncId }, __FUNCTION__, BEGIN);
     auto ref = GenSyncRef(syncId);
     actives_.Compute(syncId, [this, &ref, &syncInfo](const uint64_t &key, TaskId &taskId) mutable {
         taskId = executor_->Execute(GetSyncTask(0, true, ref, std::move(syncInfo)));
@@ -232,10 +231,6 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     QueryKey queryKey{ cloud.id, schema.bundleName, "" };
                     UpdateFinishSyncInfo(queryKey, info.syncId_, E_BLOCKED_BY_NETWORK_STRATEGY);
                     info.SetError(status);
-                    int32_t errCode = Convert(static_cast<GeneralError>(status));
-                    RadarReporter::Report(
-                        { info.bundleName_.c_str(), CLOUD_SYNC, CHECK_SYNC_CONDITION, info.syncId_, errCode },
-                        "GetPostEventTask", END);
                     continue;
                 }
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
@@ -261,9 +256,6 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         if (cloudSyncInfos.empty()) {
             ZLOGD("get cloud info failed, user: %{public}d.", cloud.user);
             info.SetError(E_CLOUD_DISABLED);
-            int32_t errCode = Convert(static_cast<GeneralError>(E_CLOUD_DISABLED));
-            RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, CHECK_SYNC_CONDITION, info.syncId_, errCode },
-                "GetSyncTask", END);
             return;
         }
         UpdateStartSyncInfo(cloudSyncInfos);
@@ -272,9 +264,6 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             for (const auto &[queryKey, syncId] : cloudSyncInfos) {
                 UpdateFinishSyncInfo(queryKey, syncId, code);
             }
-            int32_t errCode = Convert(static_cast<GeneralError>(code));
-            RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, CHECK_SYNC_CONDITION, info.syncId_, errCode },
-                "GetSyncTask", END);
             return;
         }
 
@@ -328,8 +317,8 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         }
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
-        RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, START_SYNC, storeInfo.syncId },
-            "GetSyncHandler");
+        RadarReporter::Report(
+            { storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId }, "GetSyncHandler", BEGIN);
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation() };
         auto status = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
             evt.AutoRetry() ? RetryCallback(storeInfo, retryer) : GetCallback(evt.GetAsyncDetail(), storeInfo),
@@ -357,8 +346,6 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetAsyncDetail(evt.GetAsyncDetail());
         syncInfo.SetQuery(evt.GetQuery());
         syncInfo.SetCompensation(evt.IsCompensation());
-        RadarReporter::Report(
-            { store.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, syncInfo.syncId_ }, __FUNCTION__, BEGIN);
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
     };
@@ -676,9 +663,6 @@ void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &detai
     }
     QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
     UpdateFinishSyncInfo(queryKey, storeInfo.syncId, E_ERROR);
-    int32_t errCode = Convert(static_cast<GeneralError>(E_ERROR));
-    RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, CHECK_SYNC_CONDITION, storeInfo.syncId, errCode },
-        __FUNCTION__, END);
 }
 
 bool SyncManager::InitDefaultUser(int32_t &user)
@@ -706,7 +690,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
         if (details.begin()->second.progress == GenProgress::SYNC_FINISH) {
             QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
             UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
-            if (code == E_OK || code == E_SYNC_TASK_MERGED) {
+            if (code == E_OK) {
                 RadarReporter::Report(
                     { storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId }, "RetryCallback", END);
             }
