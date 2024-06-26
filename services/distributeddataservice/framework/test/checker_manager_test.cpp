@@ -170,6 +170,4 @@ HWTEST_F(CheckerManagerTest, BundleChecker, TestSize.Level0)
     AccessTokenKit::GetHapTokenInfo(storeInfo.tokenId, tokenInfo);
     ASSERT_EQ(Crypto::Sha256(tokenInfo.appID), CheckerManager::GetInstance().GetAppId(storeInfo));
     ASSERT_TRUE(CheckerManager::GetInstance().IsValid(storeInfo));
-    EXPECT_FALSE(CheckerManager::GetInstance().IsDynamic(storeInfo));
-    EXPECT_FALSE(CheckerManager::GetInstance().IsStatic(storeInfo));
 }

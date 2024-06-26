@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Huawei Device Co., Ltd.
+* Copyright (c) 2024 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -16,32 +16,41 @@
 #include <gtest/gtest.h>
 #include "log_print.h"
 #include "accesstoken_kit.h"
-#include "nativetoken_kit.h"
-
-#include "kvdb_service_stub.h"
+#include "bootstrap.h"
 #include "checker/checker_manager.h"
+#include "distributed_kv_data_manager.h"
+#include "device_manager_adapter.h"
+#include "nativetoken_kit.h"
+#include "kvdb_service_impl.h"
+#include "kvdb_service_stub.h"
+#include "kvstore_death_recipient.h"
+#include "kvstore_meta_manager.h"
 #include "utils/constant.h"
 #include "utils/anonymous.h"
-#include "distributed_kv_data_manager.h"
-
-#include <vector>
-#include "kvstore_death_recipient.h"
+#include "token_setproc.h"
 #include "types.h"
-#include "kvdb_service_impl.h"
+#include <vector>
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 
-using Status = OHOS::DistributedKv::Status;
-using Options = OHOS::DistributedKv::Options;
-using SingleKvStore = OHOS::DistributedKv::SingleKvStore;
-using DistributedKvDataManager = OHOS::DistributedKv::DistributedKvDataManager;
-using UserId = OHOS::DistributedKv::UserId;
 
-using StoreId = OHOS::DistributedKv::StoreId;
+using Action = OHOS::DistributedData::MetaDataManager::Action;
 using AppId = OHOS::DistributedKv::AppId;
+using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
+using DistributedKvDataManager = OHOS::DistributedKv::DistributedKvDataManager;
+using DBStatus = DistributedDB::DBStatus;
+using DBMode = DistributedDB::SyncMode;
+using Options = OHOS::DistributedKv::Options;
+using Status = OHOS::DistributedKv::Status;
+using SingleKvStore = OHOS::DistributedKv::SingleKvStore;
+using StoreId = OHOS::DistributedKv::StoreId;
 using SyncInfo = OHOS::DistributedKv::KVDBService::SyncInfo;
+using SyncMode = OHOS::DistributedKv::SyncMode;
+using SyncAction = OHOS::DistributedKv::KVDBServiceImpl::SyncAction;
+using SwitchState = OHOS::DistributedKv::SwitchState;
+using UserId = OHOS::DistributedKv::UserId;
 static OHOS::DistributedKv::StoreId storeId = { "kvdb_test_storeid" };
 static OHOS::DistributedKv::AppId appId = { "ohos.test.kvdb" };
 
@@ -69,6 +78,7 @@ public:
 
     KvdbServiceImplTest();
 protected:
+    // static void GrantPermissionNative();
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
 };
 
@@ -88,9 +98,9 @@ void KvdbServiceImplTest::RemoveAllStore(DistributedKvDataManager &manager)
 
 void KvdbServiceImplTest::SetUpTestCase(void)
 {
+    // GrantPermissionNative();
     auto executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     manager.SetExecutors(executors);
-
     userId.userId = "kvdbserviceimpltest1";
     appId.appId = "ohos.kvdbserviceimpl.test";
     create.createIfMissing = true;
@@ -127,6 +137,72 @@ void KvdbServiceImplTest::TearDown(void)
 
 KvdbServiceImplTest::KvdbServiceImplTest(void)
 {}
+
+// void KvdbServiceImplTest::GrantPermissionNative()
+// {
+//     const char **perms = new const char *[2];
+//     perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
+//     perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
+//     TokenInfoParams infoInstance = {
+//         .dcapsNum = 0,
+//         .permsNum = 2,
+//         .aclsNum = 0,
+//         .dcaps = nullptr,
+//         .perms = perms,
+//         .acls = nullptr,
+//         .processName = "distributed_data_test",
+//         .aplStr = "system_basic",
+//     };
+//     uint64_t tokenId = GetAccessTokenId(&infoInstance);
+//     SetSelfTokenID(tokenId);
+//     AccessTokenKit::ReloadNativeTokenInfo();
+//     delete []perms;
+// }
+
+/**
+* @tc.name: KvdbServiceImpl001
+* @tc.desc: GetStoreIds
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, KvdbServiceImpl001, TestSize.Level0)
+{
+    std::string device = "OH_device_test";
+    StoreId id1;
+    id1.storeId = "id1";
+    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
+    EXPECT_NE(kvStore, nullptr);
+    EXPECT_EQ(status, Status::SUCCESS);
+    int32_t result = kvdbServiceImpl_->OnInitialize();
+    EXPECT_EQ(result, Status::SUCCESS);
+    FeatureSystem::Feature::BindInfo bindInfo;
+    result = kvdbServiceImpl_->OnBind(bindInfo);
+    EXPECT_EQ(result, Status::SUCCESS);
+    result = kvdbServiceImpl_->Online(device);
+    EXPECT_EQ(result, Status::SUCCESS);
+    status = kvdbServiceImpl_->SubscribeSwitchData(appId);
+    EXPECT_EQ(status, Status::SUCCESS);
+    SyncInfo syncInfo;
+    status = kvdbServiceImpl_->CloudSync(appId, id1, syncInfo);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    status = kvdbServiceImpl_->SyncExt(appId, id1, syncInfo);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    syncInfo.devices = {"device1", "device2"};
+    syncInfo.query = "query";
+    status = kvdbServiceImpl_->SyncExt(appId, id1, syncInfo);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+
+    DistributedKv::StoreConfig storeConfig;
+    status = kvdbServiceImpl_->SetConfig(appId, id1, storeConfig);
+    EXPECT_EQ(status, Status::SUCCESS);
+    status = kvdbServiceImpl_->NotifyDataChange(appId, id1);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+
+    status = kvdbServiceImpl_->UnsubscribeSwitchData(appId);
+    EXPECT_EQ(status, Status::SUCCESS);
+    status = kvdbServiceImpl_->Close(appId, id1);
+    EXPECT_EQ(status, Status::SUCCESS);
+}
 
 /**
 * @tc.name: GetStoreIdsTest001
@@ -536,6 +612,222 @@ HWTEST_F(KvdbServiceImplTest, OnReadyTest001, TestSize.Level0)
     auto status = kvdbServiceImpl_->OnReady(device);
     ZLOGI("OnReadyTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
+    status = kvdbServiceImpl_->OnSessionReady(device);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: ResolveAutoLaunch
+* @tc.desc: GetStoreIds
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch, TestSize.Level0)
+{
+    StoreId id1;
+    id1.storeId = "id1";
+    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
+    EXPECT_NE(kvStore, nullptr);
+    EXPECT_EQ(status, Status::SUCCESS);
+    std::string identifier = "identifier";
+    DistributedKv::KVDBServiceImpl::DBLaunchParam launchParam;
+    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::STORE_NOT_FOUND);
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+    result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::SUCCESS);
+}
+
+/**
+* @tc.name: PutSwitch
+* @tc.desc: GetStoreIds
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, PutSwitch, TestSize.Level0)
+{
+    StoreId id1;
+    id1.storeId = "id1";
+    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+    DistributedKv::SwitchData switchData;
+    status = kvdbServiceImpl_->PutSwitch(appId, switchData);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    switchData.value = DeviceMatrix::INVALID_VALUE;
+    switchData.length = DeviceMatrix::INVALID_LEVEL;
+    status = kvdbServiceImpl_->PutSwitch(appId, switchData);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    switchData.value = DeviceMatrix::INVALID_MASK;
+    switchData.length = DeviceMatrix::INVALID_LENGTH;
+    status = kvdbServiceImpl_->PutSwitch(appId, switchData);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    switchData.value = DeviceMatrix::INVALID_VALUE;
+    switchData.length = DeviceMatrix::INVALID_LENGTH;
+    status = kvdbServiceImpl_->PutSwitch(appId, switchData);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    switchData.value = DeviceMatrix::INVALID_MASK;
+    switchData.length = DeviceMatrix::INVALID_LEVEL;
+    status = kvdbServiceImpl_->PutSwitch(appId, switchData);
+    EXPECT_EQ(status, Status::SUCCESS);
+    std::string networkId = "networkId";
+    status = kvdbServiceImpl_->GetSwitch(appId, networkId, switchData);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: DoCloudSync
+* @tc.desc: DoCloudSync error function test.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, DoCloudSync, TestSize.Level0)
+{
+    StoreId id1;
+    id1.storeId = "id1";
+    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+    StoreMetaData metaData;
+    SyncInfo syncInfo;
+    status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, Status::NOT_SUPPORT);
+    kvdbServiceImpl_->DoCloudSync(true);
+    syncInfo.devices = {"device1", "device2"};
+    syncInfo.query = "query";
+    metaData.enableCloud = true;
+    kvdbServiceImpl_->DoCloudSync(false);
+    status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: ConvertDbStatus
+* @tc.desc: ConvertDbStatus Test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, ConvertDbStatus, TestSize.Level0)
+{
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::BUSY), Status::DB_ERROR);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::DB_ERROR), Status::DB_ERROR);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::OK), Status::SUCCESS);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_ARGS), Status::INVALID_ARGUMENT);
+
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::NOT_FOUND), Status::KEY_NOT_FOUND);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_VALUE_FIELDS), Status::INVALID_VALUE_FIELDS);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_FIELD_TYPE), Status::INVALID_FIELD_TYPE);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::CONSTRAIN_VIOLATION), Status::CONSTRAIN_VIOLATION);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_FORMAT), Status::INVALID_FORMAT);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_QUERY_FORMAT), Status::INVALID_QUERY_FORMAT);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_QUERY_FIELD), Status::INVALID_QUERY_FIELD);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::NOT_SUPPORT), Status::NOT_SUPPORT);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::TIME_OUT), Status::TIME_OUT);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::OVER_MAX_LIMITS), Status::OVER_MAX_LIMITS);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::EKEYREVOKED_ERROR), Status::SECURITY_LEVEL_ERROR);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::SECURITY_OPTION_CHECK_ERROR), Status::SECURITY_LEVEL_ERROR);
+    EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::SCHEMA_VIOLATE_VALUE), Status::ERROR);
+}
+
+/**
+* @tc.name: ConvertDBMode
+* @tc.desc: ConvertDBMode  Test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, ConvertDBMode, TestSize.Level0)
+{
+    auto status = kvdbServiceImpl_->ConvertDBMode(SyncMode::PUSH);
+    EXPECT_EQ(status, DBMode::SYNC_MODE_PUSH_ONLY);
+    status = kvdbServiceImpl_->ConvertDBMode(SyncMode::PULL);
+    EXPECT_EQ(status, DBMode::SYNC_MODE_PULL_ONLY);
+    status = kvdbServiceImpl_->ConvertDBMode(SyncMode::PUSH_PULL);
+    EXPECT_EQ(status, DBMode::SYNC_MODE_PUSH_PULL);
+}
+
+/**
+* @tc.name: ConvertGeneralSyncMode
+* @tc.desc: ConvertGeneralSyncMode  Test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, ConvertGeneralSyncMode, TestSize.Level0)
+{
+    auto status = kvdbServiceImpl_->ConvertGeneralSyncMode(SyncMode::PUSH, SyncAction::ACTION_SUBSCRIBE);
+    EXPECT_EQ(status, GeneralStore::SyncMode::NEARBY_SUBSCRIBE_REMOTE);
+    status = kvdbServiceImpl_->ConvertGeneralSyncMode(SyncMode::PUSH, SyncAction::ACTION_UNSUBSCRIBE);
+    EXPECT_EQ(status, GeneralStore::SyncMode::NEARBY_UNSUBSCRIBE_REMOTE);
+    status = kvdbServiceImpl_->ConvertGeneralSyncMode(SyncMode::PUSH, SyncAction::ACTION_SYNC);
+    EXPECT_EQ(status, GeneralStore::SyncMode::NEARBY_PUSH);
+    status = kvdbServiceImpl_->ConvertGeneralSyncMode(SyncMode::PULL, SyncAction::ACTION_SYNC);
+    EXPECT_EQ(status, GeneralStore::SyncMode::NEARBY_PULL);
+    status = kvdbServiceImpl_->ConvertGeneralSyncMode(SyncMode::PUSH_PULL, SyncAction::ACTION_SYNC);
+    EXPECT_EQ(status, GeneralStore::SyncMode::NEARBY_PULL_PUSH);
+    auto action = static_cast<SyncAction>(SyncAction::ACTION_UNSUBSCRIBE + 1);
+    status = kvdbServiceImpl_->ConvertGeneralSyncMode(SyncMode::PUSH, action);
+    EXPECT_EQ(status, GeneralStore::SyncMode::NEARBY_END);
+}
+
+/**
+* @tc.name: ConvertType
+* @tc.desc: ConvertType  Test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, ConvertType, TestSize.Level0)
+{
+    auto status = kvdbServiceImpl_->ConvertType(SyncMode::PUSH);
+    EXPECT_EQ(status, ChangeType::CHANGE_LOCAL);
+    status = kvdbServiceImpl_->ConvertType(SyncMode::PULL);
+    EXPECT_EQ(status, ChangeType::CHANGE_REMOTE);
+    status = kvdbServiceImpl_->ConvertType(SyncMode::PUSH_PULL);
+    EXPECT_EQ(status, ChangeType::CHANGE_ALL);
+    auto action = static_cast<SyncMode>(SyncMode::PUSH_PULL + 1);
+    status = kvdbServiceImpl_->ConvertType(action);
+    EXPECT_EQ(status, ChangeType::CHANGE_ALL);
+}
+
+/**
+* @tc.name: ConvertAction
+* @tc.desc: ConvertAction  Test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, ConvertAction, TestSize.Level0)
+{
+    auto status = kvdbServiceImpl_->ConvertAction(Action::INSERT);
+    EXPECT_EQ(status, SwitchState::INSERT);
+    status = kvdbServiceImpl_->ConvertAction(Action::UPDATE);
+    EXPECT_EQ(status, SwitchState::UPDATE);
+    status = kvdbServiceImpl_->ConvertAction(Action::DELETE);
+    EXPECT_EQ(status, SwitchState::DELETE);
+    auto action = static_cast<Action>(Action::DELETE + 1);
+    status = kvdbServiceImpl_->ConvertAction(action);
+    EXPECT_EQ(status, SwitchState::INSERT);
+}
+
+/**
+* @tc.name: GetSyncMode
+* @tc.desc: GetSyncMode  Test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(KvdbServiceImplTest, GetSyncMode, TestSize.Level0)
+{
+    auto status = kvdbServiceImpl_->GetSyncMode(true, true);
+    EXPECT_EQ(status, SyncMode::PUSH_PULL);
+    status = kvdbServiceImpl_->GetSyncMode(true, false);
+    EXPECT_EQ(status, SyncMode::PUSH);
+    status = kvdbServiceImpl_->GetSyncMode(false, true);
+    EXPECT_EQ(status, SyncMode::PULL);
+    status = kvdbServiceImpl_->GetSyncMode(false, false);
+    EXPECT_EQ(status, SyncMode::PUSH_PULL);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
