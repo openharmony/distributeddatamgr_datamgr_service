@@ -151,6 +151,9 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     if (status != SUCCESS) {
         return status;
     }
+    if (!cloudInfo.enableCloud) {
+        return SUCCESS;
+    }
     if (cloudInfo.id != id || !cloudInfo.Exist(bundleName)) {
         ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
             Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
