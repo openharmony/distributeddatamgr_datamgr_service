@@ -332,14 +332,16 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                             : GetCallback(evt.GetAsyncDetail(), storeInfo, evt.GetTriggerMode()),
             syncParam);
         if (status != E_OK) {
-            int32_t errCode = status + GenStore::DB_ERR_OFFSET;
-            RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                      evt.GetTriggerMode(), false, errCode },
-                "GetSyncHandler", END);
             if (async) {
                 detail.code = status;
                 async(std::move(details));
             }
+            if (status == GeneralError::E_NOT_SUPPORT) {
+                return;
+            }
+            int32_t errCode = status + GenStore::DB_ERR_OFFSET;
+            RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
+                                      evt.GetTriggerMode(), false, errCode }, "GetSyncHandler", END);
         }
     };
 }
