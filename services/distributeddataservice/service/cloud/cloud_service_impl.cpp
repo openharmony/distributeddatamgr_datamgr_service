@@ -317,7 +317,7 @@ std::map<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromE
     return dbInfos;
 }
 
-bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName)
+bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName, int32_t triggerMode)
 {
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
@@ -340,7 +340,7 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
     }
     for (auto user : users) {
         for (auto &store : stores) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId));
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId, {}, triggerMode));
         }
     }
     return found;
@@ -381,7 +381,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             ZLOGD("invalid user:%{public}d", user);
             return INVALID_ARGUMENT;
         }
-        if (DoKvCloudSync(cloudInfo.user, exData.info.bundleName)) {
+        if (DoKvCloudSync(cloudInfo.user, exData.info.bundleName, MODE_PUSH)) {
             continue;
         }
         auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
@@ -397,7 +397,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         }
         for (auto &dbInfo : dbInfos) {
             syncManager_.DoCloudSync(
-                SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second));
+                SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second, MODE_PUSH));
         }
     }
     return SUCCESS;
@@ -646,7 +646,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
 
 int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
 {
-    DoKvCloudSync(user);
+    DoKvCloudSync(user, "", MODE_UNLOCK);
     return E_OK;
 }
 
@@ -661,7 +661,7 @@ int32_t CloudServiceImpl::OnReady(const std::string& device)
         return SUCCESS;
     }
     for (auto user : users) {
-        DoKvCloudSync(user);
+        DoKvCloudSync(user, "", MODE_ONLINE);
         Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     }
     return SUCCESS;

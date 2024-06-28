@@ -674,6 +674,11 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
                 downloadFinished = downloadFinished ||
                                    (process.process == FINISHED && value.downLoadInfo.successCount > 0);
+                if (process.process == FINISHED
+                    && (value.downLoadInfo.insertCount > 0 || value.downLoadInfo.updateCount > 0
+                        || value.downLoadInfo.deleteCount > 0)) {
+                    detail.dataChange = true;
+                }
             }
         }
         if (async) {
