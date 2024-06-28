@@ -756,7 +756,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
 
 bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
-    auto [status, cloudInfo] = GetCloudInfoFromServer(user);
+    auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
@@ -765,6 +765,11 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
     for (const auto &[bundle, key] : keys) {
         SchemaMeta schemaMeta;
         std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
+        if (status == NOT_SUPPORT) {
+            ZLOGW("app not support, del cloudInfo! user:%{public}d, bundleName:%{public}s", user, bundle.c_str());
+            MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey());
+            return false;
+        }
         if (status != SUCCESS) {
             continue;
         }
@@ -787,10 +792,12 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t 
     if (instance == nullptr) {
         return { SERVER_UNAVAILABLE, schemaMeta };
     }
-    schemaMeta = instance->GetAppSchema(user, bundleName);
-    if (!schemaMeta.IsValid()) {
-        ZLOGE("schema is InValid, user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
-        return { SCHEMA_INVALID, schemaMeta };
+    int32_t status = E_OK;
+    std::tie(status, schemaMeta) = instance->GetAppSchema(user, bundleName);
+    if (status != E_OK || !schemaMeta.IsValid()) {
+        ZLOGE("schema is InValid, user:%{public}d, bundleName:%{public}s, status:%{public}d", user, bundleName.c_str(),
+            status);
+        return { status == E_NOT_SUPPORT ? NOT_SUPPORT : SCHEMA_INVALID, schemaMeta };
     }
     return { SUCCESS, schemaMeta };
 }

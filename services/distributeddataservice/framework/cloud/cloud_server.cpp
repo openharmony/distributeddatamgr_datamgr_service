@@ -35,9 +35,9 @@ CloudInfo CloudServer::GetServerInfo(int32_t userId, bool needSpaceInfo)
     return CloudInfo();
 }
 
-SchemaMeta CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)
+std::pair<int32_t, SchemaMeta> CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)
 {
-    return SchemaMeta();
+    return { 0, SchemaMeta() };
 }
 
 int32_t CloudServer::Subscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs)
