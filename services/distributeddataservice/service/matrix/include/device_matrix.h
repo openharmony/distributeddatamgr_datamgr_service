@@ -74,7 +74,7 @@ public:
         const StoreMetaData &metaData, ChangeType type = ChangeType::CHANGE_ALL);
     void UpdateLevel(const std::string &device, uint16_t level, LevelType type, bool isConsistent = false);
     void Clear();
-    void RegRemoteChange(std::function<void(const std::string &, std::pair<uint16_t, uint16_t>)> observer);
+    void RegRemoteChange(std::function<void(bool, bool)> observer);
     void SetExecutor(std::shared_ptr<ExecutorPool> executors);
     uint16_t GetCode(const StoreMetaData &metaData);
     std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
@@ -133,12 +133,14 @@ private:
     void UpdateMask(Mask &mask);
     void UpdateConsistentMeta(const std::string &device, const Mask &remote);
     void SaveSwitches(const std::string &device, const DataLevel &dataLevel);
-    void UpdateRemoteMeta(const std::string &device, Mask &mask);
+    void UpdateRemoteMeta(const std::string &device, Mask &mask, MatrixMetaData &newMeta);
     Task GenResetTask();
     std::pair<uint16_t, uint16_t> ConvertMask(const std::string &device, const DataLevel &dataLevel);
     uint16_t ConvertDynamic(const MatrixMetaData &meta, uint16_t mask);
     uint16_t ConvertStatics(const MatrixMetaData &meta, uint16_t mask);
     MatrixMetaData GetMatrixInfo(const std::string &device);
+    MatrixMetaData GetMatrixMetaData(const std::string &device, const Mask &mask);
+    std::pair<bool, bool> NeedCloudSync(const std::string &device, const MatrixMetaData &newMeta);
     static inline uint16_t ConvertIndex(uint16_t code);
 
     MatrixEvent::MatrixData lasts_;
@@ -155,7 +157,7 @@ private:
     std::map<std::string, Mask> remotes_;
     std::vector<std::string> dynamicApps_;
     std::vector<std::string> staticsApps_;
-    std::function<void(const std::string &, std::pair<uint16_t, uint16_t>)> observer_;
+    std::function<void(bool, bool)> observer_;
     LRUBucket<std::string, MatrixMetaData> matrices_{ MAX_DEVICES };
     LRUBucket<std::string, MatrixMetaData> versions_{ MAX_DEVICES };
 };
