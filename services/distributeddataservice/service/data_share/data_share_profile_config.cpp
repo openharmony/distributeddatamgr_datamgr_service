@@ -255,12 +255,11 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
         if (item.type != AppExecFwk::ExtensionAbilityType::DATASHARE) {
             continue;
         }
-        auto [ret, profileInfo] = GetDataProperties(item.metadata, item.resourcePath,
-            item.hapPath, DATA_SHARE_EXTENSION_META);
-        if (ret == ERROR || ret == NOT_FOUND) {
+        auto profileInfo = item.profileInfo;
+        if (profileInfo.resultCode == ERROR || profileInfo.resultCode == NOT_FOUND) {
             continue;
         }
-        profileInfos[item.uri] = profileInfo;
+        profileInfos[item.uri] = profileInfo.profile;
     }
     return true;
 }

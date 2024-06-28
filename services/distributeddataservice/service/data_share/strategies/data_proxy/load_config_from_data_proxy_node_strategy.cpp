@@ -30,8 +30,8 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         return false;
     }
     context->type = PUBLISHED_DATA_TYPE;
-    if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        context->calledBundleName, context->currentUserId, context->bundleInfo) != E_OK) {
+    if (!BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+        context->calledBundleName, context->currentUserId, context->bundleInfo)) {
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
         context->errCode = E_BUNDLE_NAME_NOT_EXIST;
         return false;
@@ -51,13 +51,11 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
             if (context->permission.empty()) {
                 context->permission = "reject";
             }
-            auto [ret, properties] = DataShareProfileConfig::GetDataProperties(
-                std::vector<AppExecFwk::Metadata>{proxyData.metadata}, hapModuleInfo.resourcePath,
-                hapModuleInfo.hapPath, DATA_SHARE_PROPERTIES_META);
-            if (ret == ERROR || ret == NOT_FOUND) {
+            auto properties = proxyData.profileInfo;
+            if (properties.resultCode == ERROR || properties.resultCode == NOT_FOUND) {
                 return true;
             }
-            GetContextInfoFromDataProperties(properties, hapModuleInfo.moduleName, context);
+            GetContextInfoFromDataProperties(properties.profile, hapModuleInfo.moduleName, context);
             return true;
         }
     }
