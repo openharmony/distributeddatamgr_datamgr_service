@@ -49,6 +49,8 @@ public:
     static SessionManager &GetInstance();
     Session GetSession(const SessionPoint &from, const std::string &targetDeviceId) const;
     bool CheckSession(const SessionPoint &from, const SessionPoint &to) const;
+private:
+    bool GetParams(const SessionPoint &from, std::string &bundleName, int32_t &auth);
 };
 } // namespace OHOS::DistributedData
 

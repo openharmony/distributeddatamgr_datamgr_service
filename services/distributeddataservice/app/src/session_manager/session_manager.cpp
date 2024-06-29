@@ -27,7 +27,7 @@
 #include "user_delegate.h"
 #include "utils/anonymous.h"
 #include "utils/converter.h"
-
+#include "types.h"
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
 SessionManager &SessionManager::GetInstance()
@@ -57,9 +57,16 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
             session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
         }
     }
+    
+    std::string bundleName = "";
+    int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
+    if(!GetParams(from, bundleName, authType)) {
+        ZLOGE("GetParams failed");
+        return false;
+    }
 
     for (const auto &user : users) {
-        bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from, user.id, targetDeviceId);
+        bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id, targetDeviceId, bundleName, authType);
         ZLOGD("access to peer user %{public}d is %{public}d", user.id, isPermitted);
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
@@ -72,9 +79,36 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     return session;
 }
 
+bool SessionManager::GetParams(const SessionPoint &from, std::string &bundleName, int32_t &auth)
+{
+    std::vector<StoreMetaData> metaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
+        ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(from.deviceId).c_str());
+        return false;
+    }
+    for (const auto &storeMeta : metaData) {
+        if (storeMeta.appId == from.appId) {
+            bundleName = storeMeta.bundleName;
+            auth = storeMeta.authType;
+            break;
+        }
+    }
+    if (bundleName.empty()) {
+        ZLOGE("not find bundleName");
+        return false;
+    }
+    return true;
+}
+
 bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &to) const
 {
-    return AuthDelegate::GetInstance()->CheckAccess(from, to.userId, to.deviceId, false);
+    std::string bundleName = "";
+    int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
+    if(!GetParams(from, bundleName, authType)) {
+        ZLOGE("GetParams failed");
+        return false;
+    }
+    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, bundleName, authType, false);
 }
 
 bool Session::Marshal(json &node) const

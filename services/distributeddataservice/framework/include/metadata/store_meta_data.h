@@ -57,7 +57,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     std::string storeId = "";
     std::string user = "";
     std::string account = "";
-    int32_t authTypes = 0;
+    int32_t authType = 0;
 
     enum StoreType {
         STORE_KV_BEGIN = 0,
