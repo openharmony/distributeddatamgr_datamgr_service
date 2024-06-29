@@ -98,7 +98,7 @@ protected:
 class CloudServerMock : public CloudServer {
 public:
     CloudInfo GetServerInfo(int32_t userId, bool needSpaceInfo) override;
-    SchemaMeta GetAppSchema(int32_t userId, const std::string &bundleName) override;
+    std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundleName) override;
     virtual ~CloudServerMock() = default;
     static constexpr uint64_t REMAINSPACE = 1000;
     static constexpr uint64_t TATALSPACE = 2000;
@@ -123,9 +123,9 @@ CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
     return cloudInfo;
 }
 
-SchemaMeta CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundleName)
+std::pair<int32_t, SchemaMeta> CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundleName)
 {
-    return CloudDataTest::schemaMeta_;
+    return { E_OK, CloudDataTest::schemaMeta_ };
 }
 
 std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
