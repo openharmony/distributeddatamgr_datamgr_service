@@ -670,7 +670,7 @@ HWTEST_F(KVDBGeneralStoreTest, Delete, TestSize.Level0)
     DistributedData::Values args;
     store->SetDBPushDataInterceptor(DistributedKv::KvStoreType::SINGLE_VERSION);
     store->SetDBReceiveDataInterceptor(DistributedKv::KvStoreType::SINGLE_VERSION);
-    ret = store->Delete("table" , "sql", std::move(args));
+    ret = store->Delete("table", "sql", std::move(args));
     EXPECT_EQ(ret, GeneralError::E_NOT_SUPPORT);
     delete store;
 }

@@ -292,16 +292,14 @@ void KvStoreNbDelegateMock::SetGenCloudVersionCallback(const GenerateCloudVersio
     auto callback_ = callback;
 }
 
-std::pair<DBStatus, std::map<std::string, std::string>> KvStoreNbDelegateMock::GetCloudVersion( const std::string &device)
+std::pair<DBStatus, std::map<std::string, std::string>> KvStoreNbDelegateMock::GetCloudVersion(
+    const std::string &device)
 {
-    if (device.empty())
-    {
+    if (device.empty()) {
         return { DBStatus::OK, {} };
-    } else if (device == "test")
-    {
+    } else if (device == "test") {
         return { DBStatus::DB_ERROR, {} };
-    } else if (device == "device")
-    {
+    } else if (device == "device") {
         return { DBStatus::DB_ERROR, {{device, device}} };
     } else {
         return { DBStatus::OK, {{device, device}} };
