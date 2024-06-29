@@ -935,6 +935,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.dataType = options.dataType;
     metaData.enableCloud = options.cloudConfig.enableCloud;
     metaData.cloudAutoSync = options.cloudConfig.autoSync;
+    metaData.authTypes = static_cast<int32_t>options.authTypes;
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)

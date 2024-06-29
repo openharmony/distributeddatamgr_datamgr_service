@@ -747,4 +747,14 @@ std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string 
     }
     return encryptedUuid;
 }
+
+std::string DeviceManagerAdapter::IsSameAccount(const std::string &id)
+{
+    if (id.empty()) {
+        ZLOGE("params id is empty");
+        return false;
+    }
+    auto networkId = DeviceManagerAdapter::GetInstance().ToNetworkID(id);
+    return DeviceManager::GetInstance().IsSameAccount(networkId);
+}
 } // namespace OHOS::DistributedData

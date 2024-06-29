@@ -59,7 +59,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     }
 
     for (const auto &user : users) {
-        bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id, targetDeviceId, from.appId);
+        bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from, user.id, targetDeviceId);
         ZLOGD("access to peer user %{public}d is %{public}d", user.id, isPermitted);
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
@@ -74,7 +74,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
 
 bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &to) const
 {
-    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, from.appId);
+    return AuthDelegate::GetInstance()->CheckAccess(from, to.userId, to.deviceId, false);
 }
 
 bool Session::Marshal(json &node) const

@@ -77,6 +77,7 @@ public:
     bool IsNetworkAvailable();
     NetworkType GetNetworkType(bool retrieve = false);
     int32_t GetAuthType(const std::string& id);
+    bool IsSameAccount(const std::string &id);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 

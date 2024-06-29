@@ -20,6 +20,7 @@
 
 #include "metadata/user_meta_data.h"
 #include "serializable/serializable.h"
+#include "session_manager.h"
 namespace OHOS::DistributedData {
 enum AUTH_GROUP_TYPE {
     ALL_GROUP = 0,
@@ -32,7 +33,7 @@ enum AUTH_GROUP_TYPE {
 class AuthHandler {
 public:
     virtual bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId);
+        const SessionPoint &from, int peerUserId, const std::string &peerDeviceId, bool isSend = true);
     virtual int32_t GetGroupType(
         int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId);
     virtual std::vector<std::string> GetTrustedDevicesByType(

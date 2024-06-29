@@ -23,37 +23,24 @@
 #include "log_print.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
-
+#include "metadata/store_meta_data.h"
+#include "metadata/meta_data_manager.h"
 namespace OHOS::DistributedData {
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 class AuthHandlerStub : public AuthHandler {
 public:
     // override for mock auth in current version, need remove in the future
     bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId) override;
-
+        const SessionPoint &from, int peerUserId, const std::string &peerDeviceId, bool isSend = true) override;
 private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
+    bool GetParams(const SessionPoint &from, const std::string &peerDeviceId, std::string &bundleName, int32_t &auth);
+    bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
     static constexpr pid_t UID_CAPACITY = 10000;
     static constexpr int SYSTEM_USER = 0;
+    static constexpr int32_t DEFAULT = 0;
+    static constexpr int32_t IDENTICAL_ACCOUNT = 1
 };
-
-bool AuthHandler::CheckAccess(
-    int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId)
-{
-    auto group = GetGroupInfo(localUserId, appId, peerDeviceId);
-    if (group.groupType < GroupType::ALL_GROUP) {
-        ZLOGE("failed to parse group %{public}s)", group.groupId.c_str());
-        return false;
-    }
-    auto groupManager = GetGmInstance();
-    if (groupManager == nullptr || groupManager->checkAccessToGroup == nullptr) {
-        ZLOGE("failed to get group manager");
-        return false;
-    }
-    auto ret = groupManager->checkAccessToGroup(localUserId, appId.c_str(), group.groupId.c_str());
-    ZLOGD("check access to group ret:%{public}d", ret);
-    return ret == HC_SUCCESS;
-}
 
 int32_t AuthHandler::GetGroupType(
     int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId)
@@ -147,8 +134,28 @@ std::vector<std::string> AuthHandler::GetTrustedDevicesByType(
     return trustedDevices;
 }
 
-bool AuthHandlerStub::CheckAccess(
-    int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId)
+bool AuthHandlerStub::GetParams(const SessionPoint &from, const std::string &peerDeviceId, std::string &bundleName, int32_t &auth)
+{
+    std::vector<StoreMetaData> metaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
+        ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(from.deviceId).c_str());
+        return false;
+    }
+    for (const auto &storeMeta : metaDate) {
+        if (storeMeta.appId == from.appId) {
+            bundleName = storeMeta.bundleName;
+            auth = storeMeta.authTypes;
+            break;
+        }
+    }
+    if (bundleName.empty()) {
+        ZLOGE("not find bundleName");
+        return false;
+    }
+    return true;
+}
+
+bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId)
 {
     if (localUserId == SYSTEM_USER) {
         return peerUserId == SYSTEM_USER;
@@ -157,6 +164,25 @@ bool AuthHandlerStub::CheckAccess(
     auto localUsers = UserDelegate::GetInstance().GetLocalUserStatus();
     auto peerUsers = UserDelegate::GetInstance().GetRemoteUserStatus(peerDeviceId);
     return peerUserId != SYSTEM_USER && IsUserActive(localUsers, localUserId) && IsUserActive(peerUsers, peerUserId);
+}
+
+bool AuthHandlerStub::CheckAccess(
+        const SessionPoint &from, int peerUserId, const std::string &peerDeviceId, bool isSend)
+{
+    std::string bundleName = "";
+    int32_t authType = DEFAULT;
+    if (!GetParams(from, peerDeviceId, bundleName, authType)) {
+        ZLOGE("getParams failed");
+        return false;
+    }
+    if (authType == DEFAULT) {
+        return CheckUsers(from.userId, peerUserId, peerDeviceId);
+    }
+    if (authType == IDENTICAL_ACCOUNT && DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
+        return CheckUsers(rom.userId, peerUserId, peerDeviceId);
+    }
+    ZLOGE("CheckAccess failed. authType:%{public}d, bundleName:%{public}s", authType, bundleName.c_str());
+    return false; 
 }
 
 bool AuthHandlerStub::IsUserActive(const std::vector<UserStatus> &users, int32_t userId)
