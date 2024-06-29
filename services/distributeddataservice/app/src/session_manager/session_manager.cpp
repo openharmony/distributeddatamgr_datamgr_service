@@ -62,7 +62,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
     if (!GetParams(from, bundleName, authType)) {
         ZLOGE("GetParams failed");
-        return false;
+        return session;
     }
 
     for (const auto &user : users) {
@@ -80,7 +80,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     return session;
 }
 
-bool SessionManager::GetParams(const SessionPoint &from, std::string &bundleName, int32_t &auth)
+bool SessionManager::GetParams(const SessionPoint &from, std::string &bundleName, int32_t &auth) const
 {
     std::vector<StoreMetaData> metaData;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
