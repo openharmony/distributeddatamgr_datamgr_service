@@ -20,6 +20,7 @@
 #include "checker/checker_manager.h"
 #include "distributed_kv_data_manager.h"
 #include "device_manager_adapter.h"
+#include "ipc_skeleton.h"
 #include "nativetoken_kit.h"
 #include "kvdb_service_impl.h"
 #include "kvdb_service_stub.h"
@@ -34,8 +35,6 @@
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
-
-
 using Action = OHOS::DistributedData::MetaDataManager::Action;
 using AppId = OHOS::DistributedKv::AppId;
 using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
@@ -78,7 +77,6 @@ public:
 
     KvdbServiceImplTest();
 protected:
-    // static void GrantPermissionNative();
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
 };
 
@@ -98,7 +96,6 @@ void KvdbServiceImplTest::RemoveAllStore(DistributedKvDataManager &manager)
 
 void KvdbServiceImplTest::SetUpTestCase(void)
 {
-    // GrantPermissionNative();
     auto executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     manager.SetExecutors(executors);
     userId.userId = "kvdbserviceimpltest1";
@@ -138,30 +135,9 @@ void KvdbServiceImplTest::TearDown(void)
 KvdbServiceImplTest::KvdbServiceImplTest(void)
 {}
 
-// void KvdbServiceImplTest::GrantPermissionNative()
-// {
-//     const char **perms = new const char *[2];
-//     perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
-//     perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
-//     TokenInfoParams infoInstance = {
-//         .dcapsNum = 0,
-//         .permsNum = 2,
-//         .aclsNum = 0,
-//         .dcaps = nullptr,
-//         .perms = perms,
-//         .acls = nullptr,
-//         .processName = "distributed_data_test",
-//         .aplStr = "system_basic",
-//     };
-//     uint64_t tokenId = GetAccessTokenId(&infoInstance);
-//     SetSelfTokenID(tokenId);
-//     AccessTokenKit::ReloadNativeTokenInfo();
-//     delete []perms;
-// }
-
 /**
 * @tc.name: KvdbServiceImpl001
-* @tc.desc: GetStoreIds
+* @tc.desc: KvdbServiceImplTest function test.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -618,7 +594,7 @@ HWTEST_F(KvdbServiceImplTest, OnReadyTest001, TestSize.Level0)
 
 /**
 * @tc.name: ResolveAutoLaunch
-* @tc.desc: GetStoreIds
+* @tc.desc: ResolveAutoLaunch function test.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -646,7 +622,7 @@ HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch, TestSize.Level0)
 
 /**
 * @tc.name: PutSwitch
-* @tc.desc: GetStoreIds
+* @tc.desc: PutSwitch function test.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -709,7 +685,7 @@ HWTEST_F(KvdbServiceImplTest, DoCloudSync, TestSize.Level0)
 
 /**
 * @tc.name: ConvertDbStatus
-* @tc.desc: ConvertDbStatus Test the return result of input with different values.
+* @tc.desc: ConvertDbStatus test the return result of input with different values.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -719,7 +695,6 @@ HWTEST_F(KvdbServiceImplTest, ConvertDbStatus, TestSize.Level0)
     EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::DB_ERROR), Status::DB_ERROR);
     EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::OK), Status::SUCCESS);
     EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_ARGS), Status::INVALID_ARGUMENT);
-
     EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::NOT_FOUND), Status::KEY_NOT_FOUND);
     EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_VALUE_FIELDS), Status::INVALID_VALUE_FIELDS);
     EXPECT_EQ(kvdbServiceImpl_->ConvertDbStatus(DBStatus::INVALID_FIELD_TYPE), Status::INVALID_FIELD_TYPE);
@@ -737,7 +712,7 @@ HWTEST_F(KvdbServiceImplTest, ConvertDbStatus, TestSize.Level0)
 
 /**
 * @tc.name: ConvertDBMode
-* @tc.desc: ConvertDBMode  Test the return result of input with different values.
+* @tc.desc: ConvertDBMode test the return result of input with different values.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -753,7 +728,7 @@ HWTEST_F(KvdbServiceImplTest, ConvertDBMode, TestSize.Level0)
 
 /**
 * @tc.name: ConvertGeneralSyncMode
-* @tc.desc: ConvertGeneralSyncMode  Test the return result of input with different values.
+* @tc.desc: ConvertGeneralSyncMode test the return result of input with different values.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -776,7 +751,7 @@ HWTEST_F(KvdbServiceImplTest, ConvertGeneralSyncMode, TestSize.Level0)
 
 /**
 * @tc.name: ConvertType
-* @tc.desc: ConvertType  Test the return result of input with different values.
+* @tc.desc: ConvertType test the return result of input with different values.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -795,7 +770,7 @@ HWTEST_F(KvdbServiceImplTest, ConvertType, TestSize.Level0)
 
 /**
 * @tc.name: ConvertAction
-* @tc.desc: ConvertAction  Test the return result of input with different values.
+* @tc.desc: ConvertAction test the return result of input with different values.
 * @tc.type: FUNC
 * @tc.author: SQL
 */
@@ -814,7 +789,7 @@ HWTEST_F(KvdbServiceImplTest, ConvertAction, TestSize.Level0)
 
 /**
 * @tc.name: GetSyncMode
-* @tc.desc: GetSyncMode  Test the return result of input with different values.
+* @tc.desc: GetSyncMode test the return result of input with different values.
 * @tc.type: FUNC
 * @tc.author: SQL
 */

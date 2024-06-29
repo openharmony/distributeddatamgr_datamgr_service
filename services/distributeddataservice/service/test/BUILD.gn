@@ -351,6 +351,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "mock/kv_store_nb_delegate_mock.cpp",
   ]
 
   include_dirs = [
@@ -363,6 +364,11 @@ ohos_unittest("KVDBGeneralStoreTest") {
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
 
   external_deps = [
     "ability_base:base",

@@ -771,5 +771,8 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
     matrixMetaData3.deviceId = "DEVICE_ID";
     EXPECT_TRUE(matrixMetaData1 != matrixMetaData3);
     EXPECT_FALSE(matrixMetaData1 != matrixMetaData2);
+
+    std::string key = matrixMetaData3.GetConsistentKey();
+    EXPECT_EQ(key, "MatrixMeta###DEVICE_ID###Consistent");
 }
 } // namespace OHOS::Test

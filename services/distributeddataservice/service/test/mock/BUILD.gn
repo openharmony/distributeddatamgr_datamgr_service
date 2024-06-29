@@ -37,6 +37,7 @@ ohos_static_library("distributeddata_mock_static") {
     "db_change_data_mock.cpp",
     "db_store_mock.cpp",
     "general_store_mock.cpp",
+    "kv_store_nb_delegate_mock.cpp",
   ]
 
   external_deps = [
