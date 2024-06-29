@@ -55,14 +55,11 @@ bool AuthHandlerStub::CheckAccess(
         int localUserId, int peerUserId, const std::string &loaclDeviceId, const std::string &peerDeviceId,
         const std::string &bundleName, int32_t authType, bool isSend)
 {
-    if (authType == static_cast<int32_t>(AuthType::DEFAULT)) {
-        return CheckUsers(localUserId, peerUserId, peerDeviceId);
+    if (authType == static_cast<int32_t>(AuthType::IDENTICAL_ACCOUNT) && !DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
+        ZLOGE("CheckAccess failed. authType:%{public}d, bundleName:%{public}s", authType, bundleName.c_str());
+        return false;
     }
-    if (authType == static_cast<int32_t>(AuthType::IDENTICAL_ACCOUNT) && DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
-        return CheckUsers(localUserId, peerUserId, peerDeviceId);
-    }
-    ZLOGE("CheckAccess failed. authType:%{public}d, bundleName:%{public}s", authType, bundleName.c_str());
-    return false; 
+    return CheckUsers(localUserId, peerUserId, peerDeviceId); 
 }
 
 bool AuthHandlerStub::IsUserActive(const std::vector<UserStatus> &users, int32_t userId)

@@ -748,7 +748,7 @@ std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string 
     return encryptedUuid;
 }
 
-std::string DeviceManagerAdapter::IsSameAccount(const std::string &id)
+bool DeviceManagerAdapter::IsSameAccount(const std::string &id)
 {
     if (id.empty()) {
         ZLOGE("params id is empty");
