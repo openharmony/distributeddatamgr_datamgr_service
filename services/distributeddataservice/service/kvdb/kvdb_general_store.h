@@ -91,7 +91,7 @@ private:
     std::vector<uint8_t> GetNewKey(std::vector<uint8_t> &key, const std::string &uuid);
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
-    DBStatus CloudSync(const Devices &devices, int32_t mode, DetailAsync async, int64_t wait);
+    DBStatus CloudSync(const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait);
     void InitWaterVersion(const StoreMetaData &meta);
     void GetIdentifierParams(std::vector<std::string> &devices,
         const std::vector<std::string> &uuids, int32_t authType);

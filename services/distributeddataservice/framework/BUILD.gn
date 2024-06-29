@@ -65,6 +65,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/subscription.cpp",
     "cloud/sync_event.cpp",
     "cloud/sync_strategy.cpp",
+    "communication/connect_manager.cpp",
     "directory/directory_manager.cpp",
     "dump/dump_manager.cpp",
     "eventcenter/event.cpp",

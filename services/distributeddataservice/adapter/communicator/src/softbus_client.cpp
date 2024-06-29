@@ -17,6 +17,7 @@
 #include "softbus_client.h"
 
 #include "communicator_context.h"
+#include "communication/connect_manager.h"
 #include "device_manager_adapter.h"
 #include "inner_socket.h"
 #include "kvstore_utils.h"
@@ -64,7 +65,7 @@ uint32_t SoftBusClient::GetTimeout() const
 Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *listener)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto result = OpenConnect(listener);
+    auto result = CheckStatus();
     if (result != Status::SUCCESS) {
         return result;
     }
@@ -81,14 +82,13 @@ Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *
 
 Status SoftBusClient::OpenConnect(const ISocketListener *listener)
 {
-    if (bindState_ == 0) {
-        return Status ::SUCCESS;
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto status = CheckStatus();
+    if (status == Status::SUCCESS || status == Status::RATE_LIMIT) {
+        return status;
     }
     if (isOpening_.exchange(true)) {
         return Status::RATE_LIMIT;
-    }
-    if (bindState_ == 0) {
-        return Status ::SUCCESS;
     }
     SocketInfo socketInfo;
     std::string peerName = pipe_.pipeId;
@@ -122,6 +122,20 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     return Status::RATE_LIMIT;
 }
 
+Status SoftBusClient::CheckStatus()
+{
+    if (bindState_ == 0) {
+        return Status::SUCCESS;
+    }
+    if (isOpening_.load()) {
+        return Status::RATE_LIMIT;
+    }
+    if (bindState_ == 0) {
+        return Status::SUCCESS;
+    }
+    return Status::ERROR;
+}
+
 Status SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListener *listener)
 {
     int32_t status = ::Bind(socket, qos, QOS_COUNT, listener);
@@ -149,6 +163,7 @@ Status SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListe
     }
     ZLOGI("open %{public}s, session:%{public}s success, socket:%{public}d",
         KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket_);
+    ConnectManager::GetInstance()->OnSessionOpen(DmAdapter::GetInstance().GetDeviceInfo(device_.deviceId).networkId);
     return Status::SUCCESS;
 }
 

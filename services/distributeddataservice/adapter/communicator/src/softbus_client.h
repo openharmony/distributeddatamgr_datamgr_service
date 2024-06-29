@@ -37,6 +37,8 @@ public:
 
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
+    Status CheckStatus();
+    Status OpenConnect(const ISocketListener *listener);
     Status SendData(const DataInfo &dataInfo, const ISocketListener *listener);
     bool operator==(int32_t socket) const;
     bool operator==(const std::string &deviceId) const;
@@ -48,7 +50,6 @@ public:
     void UpdateExpireTime();
 
 private:
-    Status OpenConnect(const ISocketListener *listener);
     Status Open(int32_t socket, const QosTV qos[], const ISocketListener *listener);
     std::pair<int32_t, uint32_t> GetMtu(int32_t socket);
     Time CalcExpireTime() const;

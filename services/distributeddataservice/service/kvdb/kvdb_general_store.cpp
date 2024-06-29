@@ -320,20 +320,14 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
     };
 }
 
-DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, int32_t mode, DetailAsync async, int64_t wait)
+DBStatus KVDBGeneralStore::CloudSync(
+    const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait)
 {
-    auto syncMode = GeneralStore::GetSyncMode(static_cast<uint32_t>(mode));
-    if (syncMode < CLOUD_BEGIN || syncMode >= CLOUD_END) {
-        ZLOGE("Do not need to cloud sync! devices count:%{public}zu, the 1st:%{public}s, syncMode:%{public}d",
-            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncMode);
-        return DBStatus::DB_ERROR;
-    }
     DistributedDB::CloudSyncOption syncOption;
     syncOption.devices = devices;
-    syncOption.mode = DistributedDB::SyncMode(syncMode);
+    syncOption.mode = cloudSyncMode;
     syncOption.waitTime = wait;
     syncOption.lockAction = DistributedDB::LockAction::NONE;
-    syncOption.merge = GeneralStore::GetHighMode(static_cast<uint32_t>(mode)) == HighMode::AUTO_SYNC_MODE;
     if (storeInfo_.user == 0) {
         std::vector<int32_t> users;
         AccountDelegate::GetInstance()->QueryUsers(users);
@@ -346,6 +340,7 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, int32_t mode, Detai
 
 int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
 {
+    auto syncMode = GeneralStore::GetSyncMode(syncParm.mode);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d", devices.size(),
@@ -353,12 +348,12 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
         return GeneralError::E_ALREADY_CLOSED;
     }
     DBStatus dbStatus;
-    auto syncMode = GeneralStore::GetSyncMode(syncParm.mode);
+    auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         if (!enableCloud_) {
             return GeneralError::E_NOT_SUPPORT;
         }
-        dbStatus = CloudSync(devices, syncParm.mode, async, syncParm.wait);
+        dbStatus = CloudSync(devices, dbMode, async, syncParm.wait);
     } else {
         if (devices.empty()) {
             ZLOGE("Devices is empty! mode:%{public}d", syncParm.mode);
@@ -378,7 +373,6 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
             dbStatus =
                 delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
         } else if (syncMode < NEARBY_END) {
-            auto dbMode = DistributedDB::SyncMode(syncMode);
             if (kvQuery->IsEmpty()) {
                 dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), false);
             } else {
