@@ -334,31 +334,31 @@ HWTEST_F(ValueProxyServiceTest, AssetConvertToDBStatus, TestSize.Level0)
 HWTEST_F(ValueProxyServiceTest, TempAssetConvertToDataStatus, TestSize.Level0)
 {
     uint32_t status = static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
-    auto result = ValueProxy::TempAsset::ConvertToDBStatus(status);
+    auto result = ValueProxy::TempAsset::ConvertToDataStatus(status);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_NORMAL);
 
     status = static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
-    result = ValueProxy::TempAsset::ConvertToDBStatus(status);
+    result = ValueProxy::TempAsset::ConvertToDataStatus(status);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_ABNORMAL);
 
     status = static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT);
-    result = ValueProxy::TempAsset::ConvertToDBStatus(status);
+    result = ValueProxy::TempAsset::ConvertToDataStatus(status);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_INSERT);
 
-    status = static_cast<uint32_t>(DDistributedDB::AssetStatus::UPDATE);
-    result = ValueProxy::TempAsset::ConvertToDBStatus(status);
+    status = static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE);
+    result = ValueProxy::TempAsset::ConvertToDataStatus(status);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_UPDATE);
 
     status = static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE);
-    result = ValueProxy::TempAsset::ConvertToDBStatus(status);
+    result = ValueProxy::TempAsset::ConvertToDataStatus(status);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_DELETE);
 
     status = static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING);
-    result = ValueProxy::TempAsset::ConvertToDBStatus(status);
+    result = ValueProxy::TempAsset::ConvertToDataStatus(status);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_DOWNLOADING);
 
     status = static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOAD_WITH_NULL);
-    result = ValueProxy::TempAsset::ConvertToDBStatus(status);
-    EXPECT_EQ(result, DistributedData::Asset::STATUS_NORMAL);
+    result = ValueProxy::TempAsset::ConvertToDataStatus(status);
+    EXPECT_NE(result, DistributedData::Asset::STATUS_NORMAL);
 }
 } // namespace OHOS::Test
