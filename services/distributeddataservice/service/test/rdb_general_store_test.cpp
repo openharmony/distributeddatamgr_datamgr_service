@@ -285,6 +285,7 @@ HWTEST_F(RdbGeneralStoreTest, BindSnapshots001, TestSize.Level1)
     BindAssets bindAssets;
     auto result = store->BindSnapshots(bindAssets.bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -305,6 +306,7 @@ HWTEST_F(RdbGeneralStoreTest, BindSnapshots002, TestSize.Level1)
     BindAssets bindAssets;
     auto result = store->BindSnapshots(bindAssets.bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -351,6 +353,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
     result = store->Bind(database, bindInfos, config);
     EXPECT_TRUE(!bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
+    delete store;
 }
 
 /**
@@ -380,6 +383,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind002, TestSize.Level1)
     store->isBound_ = true;
     result = store->Bind(database, bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -407,6 +411,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
     auto result = store->Bind(database, bindInfos, config);
     EXPECT_NE(store->delegate_, nullptr);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -430,6 +435,7 @@ HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
     store->delegate_ = &mockDelegate;
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_BUSY);
+    delete store;
 }
 
 /**
@@ -457,6 +463,7 @@ HWTEST_F(RdbGeneralStoreTest, Execute, TestSize.Level1)
     std::string null = "";
     result = store->Execute(table, null);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -483,6 +490,7 @@ HWTEST_F(RdbGeneralStoreTest, SqlConcatenate, TestSize.Level1)
     columnSize = values.size();
     EXPECT_NE(columnSize, 0);
     EXPECT_EQ(result, columnSize);
+    delete store;
 }
 
 /**
@@ -517,6 +525,7 @@ HWTEST_F(RdbGeneralStoreTest, Insert001, TestSize.Level1)
 
     result = store->Insert(table, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
+    delete store;
 }
 
 /**
@@ -551,6 +560,7 @@ HWTEST_F(RdbGeneralStoreTest, Insert002, TestSize.Level1)
         result = store->Insert(test, std::move(extends));
         EXPECT_EQ(result, GeneralError::E_ERROR);
     }
+    delete store;
 }
 
 /**
@@ -594,6 +604,7 @@ HWTEST_F(RdbGeneralStoreTest, Update, TestSize.Level1)
 
     result = store->Update("test", setSql, std::move(g_RdbValues), whereSql, std::move(g_RdbValues));
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -625,6 +636,7 @@ HWTEST_F(RdbGeneralStoreTest, Replace, TestSize.Level1)
 
     result = store->Replace("test", std::move(g_RdbVBucket));
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -642,6 +654,7 @@ HWTEST_F(RdbGeneralStoreTest, Delete, TestSize.Level1)
     std::string sql = "sql";
     auto result = store->Delete(table, sql, std::move(g_RdbValues));
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -664,6 +677,7 @@ HWTEST_F(RdbGeneralStoreTest, Query001, TestSize.Level1)
     store->delegate_ = &mockDelegate;
     result = store->Query(table, sql, std::move(g_RdbValues));
     EXPECT_NE(result, nullptr);
+    delete store;
 }
 
 /**
@@ -686,6 +700,7 @@ HWTEST_F(RdbGeneralStoreTest, Query002, TestSize.Level1)
     query.lastResult = true;
     result = store->Query(table, query);
     EXPECT_EQ(result, nullptr);
+    delete store;
 }
 
 /**
@@ -708,6 +723,7 @@ HWTEST_F(RdbGeneralStoreTest, MergeMigratedData, TestSize.Level1)
     store->delegate_ = &mockDelegate;
     result = store->MergeMigratedData(tableName, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -732,6 +748,7 @@ HWTEST_F(RdbGeneralStoreTest, Sync, TestSize.Level1)
     store->delegate_ = &mockDelegate;
     result = store->Sync(devices, query, async, syncParam);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -748,6 +765,7 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing, TestSize.Level1)
     MockQuery query;
     auto result = store->PreSharing(query);
     EXPECT_EQ(result, nullptr);
+    delete store;
 }
 
 /**
@@ -769,6 +787,7 @@ HWTEST_F(RdbGeneralStoreTest, ExtractExtend, TestSize.Level1)
     DistributedData::VBuckets values;
     result = store->ExtractExtend(values);
     EXPECT_EQ(result.size(), values.size());
+    delete store;
 }
 
 /**
@@ -810,6 +829,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_ERROR);
     result = store->Clean(devices, GeneralStore::NEARBY_DATA, tableName);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -838,6 +858,7 @@ HWTEST_F(RdbGeneralStoreTest, Watch, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_OK);
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
+    delete store;
 }
 
 /**
@@ -862,6 +883,7 @@ HWTEST_F(RdbGeneralStoreTest, OnChange, TestSize.Level1)
     store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -888,6 +910,7 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
     store->ref_ = 0;
     result = store->AddRef();
     EXPECT_EQ(result, 0);
+    delete store;
 }
 
 /**
@@ -918,6 +941,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
     g_testResult = true;
     result = store->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -945,6 +969,7 @@ HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_WITH_INVENTORY_DATA);
     result = store->SetTrackerTable("test", trackerColNames, extendColName);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -966,6 +991,7 @@ HWTEST_F(RdbGeneralStoreTest, RemoteQuery, TestSize.Level1)
     EXPECT_EQ(result, nullptr);
     result = store->RemoteQuery(device, remoteCondition);
     EXPECT_NE(result, nullptr);
+    delete store;
 }
 
 /**
@@ -993,6 +1019,7 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_BUSY);
     result = store->ConvertStatus(DBStatus::DB_ERROR);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -1012,6 +1039,7 @@ HWTEST_F(RdbGeneralStoreTest, QuerySql, TestSize.Level1)
     EXPECT_TRUE(result.empty());
     result = store->QuerySql("sql", std::move(g_RdbValues));
     EXPECT_TRUE(result.empty());
+    delete store;
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

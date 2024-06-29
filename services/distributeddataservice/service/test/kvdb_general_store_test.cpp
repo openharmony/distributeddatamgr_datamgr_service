@@ -277,6 +277,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloseTest, TestSize.Level0)
     EXPECT_NE(store->delegate_, nullptr);
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_BUSY);
+    delete store;
 }
 
 /**
@@ -305,6 +306,7 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
     EXPECT_NE(ret, GeneralError::E_OK);
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -351,6 +353,7 @@ HWTEST_F(KVDBGeneralStoreTest, BindTest, TestSize.Level0)
     EXPECT_EQ(store->IsBound(), true);
     ret = store->Bind(database, bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -372,6 +375,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSyncCompleteCB, TestSize.Level0)
     EXPECT_NE(!asyncs, true);
     ret = store->GetDBSyncCompleteCB(asyncs);
     EXPECT_NE(ret, nullptr);
+    delete store;
 }
 
 /**
@@ -403,6 +407,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync, TestSize.Level0)
     store->storeInfo_.user = 1;
     ret = store->CloudSync(devices, 5, asyncs, 0);
     EXPECT_EQ(ret, DBStatus::OK);
+    delete store;
 }
 
 /**
@@ -463,6 +468,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync, TestSize.Level0)
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -500,6 +506,7 @@ HWTEST_F(KVDBGeneralStoreTest, Clean, TestSize.Level0)
 
     ret = store->Clean(devices, GeneralStore::CleanMode::LOCAL_DATA, tableName);
     EXPECT_EQ(ret, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -528,6 +535,7 @@ HWTEST_F(KVDBGeneralStoreTest, Watch, TestSize.Level0)
     EXPECT_EQ(ret, GeneralError::E_OK);
     ret = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
+    delete store;
 }
 
 /**
@@ -554,6 +562,7 @@ HWTEST_F(KVDBGeneralStoreTest, Release, TestSize.Level0)
     store->ref_ = 0;
     ret = store->AddRef();
     EXPECT_EQ(ret, 0);
+    delete store;
 }
 
 /**
@@ -581,6 +590,7 @@ HWTEST_F(KVDBGeneralStoreTest, ConvertStatus, TestSize.Level0)
     EXPECT_EQ(ret, GeneralError::E_SYNC_TASK_MERGED);
     ret = store->ConvertStatus(DBStatus::DB_ERROR);
     EXPECT_EQ(ret, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -610,6 +620,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetWaterVersion, TestSize.Level0)
     res = {"deviceId"};
     ret = store->GetWaterVersion(deviceId);
     EXPECT_EQ(ret, res);
+    delete store;
 }
 
 /**
@@ -634,6 +645,7 @@ HWTEST_F(KVDBGeneralStoreTest, OnChange, TestSize.Level0)
     store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -660,6 +672,7 @@ HWTEST_F(KVDBGeneralStoreTest, Delete, TestSize.Level0)
     store->SetDBReceiveDataInterceptor(DistributedKv::KvStoreType::SINGLE_VERSION);
     ret = store->Delete("table" , "sql", std::move(args));
     EXPECT_EQ(ret, GeneralError::E_NOT_SUPPORT);
+    delete store;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
