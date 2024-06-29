@@ -46,8 +46,8 @@ public:
         using Stores = std::vector<Store>;
         using Tables = std::vector<std::string>;
         using MutliStoreTables = std::map<Store, Tables>;
-        SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "", const Tables &tables = {},
-            int32_t triggerMode = 0);
+        explicit SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "",
+            const Tables &tables = {}, int32_t triggerMode = 0);
         SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores);
         SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables);
         void SetMode(int32_t mode);

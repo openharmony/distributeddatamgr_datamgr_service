@@ -165,7 +165,8 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        syncManager_.DoCloudSync({ cloudInfo.user, bundleName });
+        SyncManager::SyncInfo info(cloudInfo.user, bundleName);
+        syncManager_.DoCloudSync(info);
     }
     return SUCCESS;
 }
@@ -1000,7 +1001,8 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
 
 bool CloudServiceImpl::DoCloudSync(int32_t user)
 {
-    syncManager_.DoCloudSync(user);
+    SyncManager::SyncInfo info(user);
+    syncManager_.DoCloudSync(info);
     return true;
 }
 

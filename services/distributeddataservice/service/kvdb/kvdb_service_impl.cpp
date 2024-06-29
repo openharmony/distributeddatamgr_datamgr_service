@@ -1020,7 +1020,7 @@ void KVDBServiceImpl::DoCloudSync(bool statics, bool dynamic)
         stores.insert(stores.end(), dynamicStores.begin(), dynamicStores.end());
     }
     for (const auto &store : stores) {
-        auto status = CloudSync({ store.bundleName }, { store.storeId }, {.triggerMode = MODE_BROADCASTER});
+        auto status = CloudSync({ store.bundleName }, { store.storeId }, { .triggerMode = MODE_BROADCASTER });
         if (status != SUCCESS) {
             ZLOGW("cloud sync failed:%{public}d, appId:%{public}s storeId:%{public}s", status,
                   store.bundleName.c_str(), Anonymous::Change(store.storeId).c_str());

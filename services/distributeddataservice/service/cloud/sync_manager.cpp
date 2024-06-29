@@ -240,7 +240,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     continue;
                 }
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
-                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_ , info.triggerMode_ };
+                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_ };
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
@@ -341,7 +341,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             }
             int32_t errCode = status + GenStore::DB_ERR_OFFSET;
             RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                      evt.GetTriggerMode(), false, errCode }, "GetSyncHandler", END);
+                                  evt.GetTriggerMode(), false, errCode }, "GetSyncHandler", END);
         }
     };
 }
