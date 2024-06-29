@@ -56,7 +56,7 @@ bool AuthHandlerStub::CheckAccess(
 {
     if (authType == static_cast<int32_t>(AuthType::IDENTICAL_ACCOUNT) &&
         !DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
-        ZLOGE("CheckAccess failed. authType:%{public}d, bundleName:%{public}s", authType, bundleName.c_str());
+        ZLOGE("CheckAccess failed.");
         return false;
     }
     return CheckUsers(localUserId, peerUserId, peerDeviceId);
