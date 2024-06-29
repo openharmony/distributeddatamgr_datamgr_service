@@ -258,7 +258,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, SyncInf
     syncInfo.syncId = ++syncId_;
     RADAR_REPORT(STANDARD_DEVICE_SYNC, ADD_SYNC_TASK, RADAR_SUCCESS, BIZ_STATE, START,
         SYNC_STORE_ID, Anonymous::Change(storeId.storeId), SYNC_APP_ID, appId.appId, CONCURRENT_ID,
-        std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, SYNC, OS_TYPE, HasOHOSType(syncInfo.devices));
+        std::to_string(syncInfo.syncId), DATA_TYPE, metaData.dataType, SYNC_TYPE, SYNC, OS_TYPE, IsOHOSType(syncInfo.devices));
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
@@ -1518,19 +1518,19 @@ int32_t KVDBServiceImpl::OnInitialize()
     return SUCCESS;
 }
 
-bool KVDBServiceImpl::HasOHOSType(const std::vector<std::string> &ids)
+bool KVDBServiceImpl::IsOHOSType(const std::vector<std::string> &ids)
 {
     if (ids.empty()) {
         ZLOGI("ids is empty");
         return true;
     }
-    bool hasOHOSType = false;
+    bool isOHOSType = true;
     for (auto &id : ids) {
-        if (DMAdapter::GetInstance().IsOHOSType(id)) {
-            hasOHOSType = true;
+        if (!DMAdapter::GetInstance().IsOHOSType(id)) {
+            isOHOSType = false;
             break;
         }
     }
-    return hasOHOSType;
+    return isOHOSType;
 }
 } // namespace OHOS::DistributedKv

@@ -151,7 +151,7 @@ private:
     void OnStaticsChange(std::pair<uint16_t, uint16_t> mask);
     void OnDynamicChange(std::pair<uint16_t, uint16_t> mask);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
-    bool HasOHOSType(const std::vector<std::string> &ids);
+    bool IsOHOSType(const std::vector<std::string> &ids);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
