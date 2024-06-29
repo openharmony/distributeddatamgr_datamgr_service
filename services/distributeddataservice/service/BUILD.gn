@@ -65,7 +65,7 @@ ohos_shared_library("distributeddatasvc") {
     "../../../../relational_store/interfaces/inner_api/cloud_data/include",
     "../../../../relational_store/interfaces/inner_api/common_type/include",
     "../../../../relational_store/interfaces/inner_api/rdb/include",
-    "${kv_store_distributeddb_path}"
+    "${kv_store_distributeddb_path}",
   ]
   sources = [
     "backup/src/backup_manager.cpp",

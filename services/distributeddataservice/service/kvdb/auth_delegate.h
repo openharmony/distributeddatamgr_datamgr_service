@@ -20,7 +20,6 @@
 
 #include "metadata/user_meta_data.h"
 #include "serializable/serializable.h"
-#include "session_manager.h"
 namespace OHOS::DistributedData {
 enum AUTH_GROUP_TYPE {
     ALL_GROUP = 0,
