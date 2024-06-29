@@ -30,11 +30,12 @@ enum AUTH_GROUP_TYPE {
     ACROSS_ACCOUNT_AUTHORIZE_GROUP = 1282
 };
 
+
+
 class AuthHandler {
 public:
     virtual bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &loaclDeviceId, const std::string &peerDeviceId,
-        const std::string &bundleName, int32_t authType, bool isSend = true);
+        int localUserId, int peerUserId, const std::string &peerDeviceId, int32_t authType, bool isSend = true);
 };
 
 class AuthDelegate {

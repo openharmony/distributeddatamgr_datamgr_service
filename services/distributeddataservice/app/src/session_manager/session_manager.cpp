@@ -60,13 +60,14 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     
     std::string bundleName = "";
     int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if(!GetParams(from, bundleName, authType)) {
+    if (!GetParams(from, bundleName, authType)) {
         ZLOGE("GetParams failed");
         return false;
     }
 
     for (const auto &user : users) {
-        bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id, targetDeviceId, bundleName, authType);
+        bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id,
+            targetDeviceId, authType);
         ZLOGD("access to peer user %{public}d is %{public}d", user.id, isPermitted);
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
@@ -104,11 +105,11 @@ bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &
 {
     std::string bundleName = "";
     int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if(!GetParams(from, bundleName, authType)) {
+    if (!GetParams(from, bundleName, authType)) {
         ZLOGE("GetParams failed");
         return false;
     }
-    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, bundleName, authType, false);
+    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, authType, false);
 }
 
 bool Session::Marshal(json &node) const
