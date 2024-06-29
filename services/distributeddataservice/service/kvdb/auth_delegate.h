@@ -30,8 +30,6 @@ enum AUTH_GROUP_TYPE {
     ACROSS_ACCOUNT_AUTHORIZE_GROUP = 1282
 };
 
-
-
 class AuthHandler {
 public:
     virtual bool CheckAccess(

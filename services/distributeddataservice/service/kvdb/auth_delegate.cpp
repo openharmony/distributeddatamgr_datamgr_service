@@ -31,8 +31,8 @@ class AuthHandlerStub : public AuthHandler {
 public:
     // override for mock auth in current version, need remove in the future
     bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &loaclDeviceId, const std::string &peerDeviceId,
-        const std::string &bundleName, int32_t authType, bool isSend = true) override;
+        int localUserId, int peerUserId, const std::string &peerDeviceId,
+        int32_t authType, bool isSend = true) override;
 private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
