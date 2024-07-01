@@ -95,7 +95,6 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(dataType), dataType);
     GetValue(node, GET_NAME(enableCloud), enableCloud);
     GetValue(node, GET_NAME(cloudAutoSync), cloudAutoSync);
-    GetValue(node, GET_NAME(authType), authType);
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
         GetValue(node, GET_NAME(kvStoreType), storeType);
@@ -104,6 +103,7 @@ bool StoreMetaData::Unmarshal(const json &node)
         GetValue(node, GET_NAME(userId), account);
     }
     GetValue(node, GET_NAME(customDir), customDir);
+    GetValue(node, GET_NAME(authType), authType);
     return true;
 }
 
