@@ -32,57 +32,7 @@ enum AUTH_GROUP_TYPE {
 class AuthHandler {
 public:
     virtual bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId);
-    virtual int32_t GetGroupType(
-        int localUserId, int peerUserId, const std::string &peerDeviceId, const std::string &appId);
-    virtual std::vector<std::string> GetTrustedDevicesByType(
-        AUTH_GROUP_TYPE type, int32_t localUserId, const std::string &appId);
-
-private:
-    struct RelatedGroup final : public Serializable {
-        int32_t groupType = -1;
-        std::string groupId;
-        RelatedGroup()
-        {
-        }
-        ~RelatedGroup()
-        {
-        }
-        RelatedGroup(const RelatedGroup &) = default;
-        RelatedGroup &operator=(const RelatedGroup &) = default;
-        bool Marshal(json &node) const override
-        {
-            SetValue(node[GET_NAME(groupType)], groupType);
-            SetValue(node[GET_NAME(groupId)], groupId);
-            return true;
-        }
-
-        bool Unmarshal(const json &node) override
-        {
-            GetValue(node, GET_NAME(groupType), groupType);
-            GetValue(node, GET_NAME(groupId), groupId);
-            return true;
-        }
-    };
-
-    struct TrustDevice final : public Serializable {
-        std::string authId; // udid
-        TrustDevice() = default;
-        TrustDevice(const TrustDevice &) = default;
-        TrustDevice &operator=(const TrustDevice &) = default;
-        bool Marshal(json &node) const override
-        {
-            SetValue(node[GET_NAME(authId)], authId);
-            return true;
-        }
-
-        bool Unmarshal(const json &node) override
-        {
-            GetValue(node, GET_NAME(authId), authId);
-            return true;
-        }
-    };
-    static RelatedGroup GetGroupInfo(int32_t localUserId, const std::string &appId, const std::string &peerDeviceId);
+        int localUserId, int peerUserId, const std::string &peerDeviceId, int32_t authType, bool isSend = true);
 };
 
 class AuthDelegate {
