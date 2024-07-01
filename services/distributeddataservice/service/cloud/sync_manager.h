@@ -46,7 +46,8 @@ public:
         using Stores = std::vector<Store>;
         using Tables = std::vector<std::string>;
         using MutliStoreTables = std::map<Store, Tables>;
-        SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "", const Tables &tables = {});
+        explicit SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "",
+            const Tables &tables = {}, int32_t triggerMode = 0);
         SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores);
         SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables);
         void SetMode(int32_t mode);
@@ -55,6 +56,7 @@ public:
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
         void SetCompensation(bool isCompensation);
+        void SetTriggerMode(int32_t triggerMode);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string &storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
@@ -71,6 +73,7 @@ public:
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
         bool isCompensation_ = false;
+        int32_t triggerMode_ = 0;
     };
     SyncManager();
     ~SyncManager();
@@ -120,13 +123,13 @@ private:
     void UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
-        const StoreInfo &storeInfo);
+        const StoreInfo &storeInfo, int32_t triggerMode);
     std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry);
     void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo);
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(
-        const StoreInfo &storeInfo, Retryer retryer);
+        const StoreInfo &storeInfo, Retryer retryer, int32_t triggerMode);
     static void GetLastResults(
         const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
 

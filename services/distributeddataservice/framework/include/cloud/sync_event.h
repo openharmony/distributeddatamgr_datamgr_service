@@ -37,6 +37,7 @@ public:
         std::shared_ptr<GenQuery> query_;
         GenAsync asyncDetail_;
         bool isCompensation_ = false;
+        int32_t triggerMode_ = MODE_DEFAULT;
     };
     SyncEvent(StoreInfo storeInfo, EventInfo info);
     ~SyncEvent() override = default;
@@ -46,7 +47,7 @@ public:
     std::shared_ptr<GenQuery> GetQuery() const;
     GenAsync GetAsyncDetail() const;
     bool IsCompensation() const;
-
+    int32_t GetTriggerMode() const;
 protected:
     SyncEvent(int32_t evtId, StoreInfo storeInfo, EventInfo info);
 

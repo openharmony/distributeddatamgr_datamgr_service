@@ -1021,7 +1021,7 @@ void KVDBServiceImpl::DoCloudSync(bool statics, bool dynamic)
         stores.insert(stores.end(), dynamicStores.begin(), dynamicStores.end());
     }
     for (const auto &store : stores) {
-        auto status = CloudSync({ store.bundleName }, { store.storeId }, {});
+        auto status = CloudSync({ store.bundleName }, { store.storeId }, { .triggerMode = MODE_BROADCASTER });
         if (status != SUCCESS) {
             ZLOGW("cloud sync failed:%{public}d, appId:%{public}s storeId:%{public}s", status,
                   store.bundleName.c_str(), Anonymous::Change(store.storeId).c_str());
@@ -1069,7 +1069,7 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     };
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
         meta.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
-    auto info = ChangeEvent::EventInfo(mixMode, 0, false, nullptr, syncCallback);
+    auto info = ChangeEvent::EventInfo({ mixMode, 0, false, syncInfo.triggerMode }, false, nullptr, syncCallback);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return SUCCESS;

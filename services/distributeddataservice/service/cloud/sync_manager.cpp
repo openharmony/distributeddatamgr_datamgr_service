@@ -40,8 +40,9 @@ using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
-SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Store &store, const Tables &tables)
-    : user_(user), bundleName_(bundleName)
+SyncManager::SyncInfo::SyncInfo(
+    int32_t user, const std::string &bundleName, const Store &store, const Tables &tables, int32_t triggerMode)
+    : user_(user), bundleName_(bundleName), triggerMode_(triggerMode)
 {
     if (!store.empty()) {
         tables_[store] = tables;
@@ -88,6 +89,11 @@ void SyncManager::SyncInfo::SetQuery(std::shared_ptr<GenQuery> query)
 void SyncManager::SyncInfo::SetCompensation(bool isCompensation)
 {
     isCompensation_ = isCompensation;
+}
+
+void SyncManager::SyncInfo::SetTriggerMode(int32_t triggerMode)
+{
+    triggerMode_ = triggerMode;
 }
 
 void SyncManager::SyncInfo::SetError(int32_t code) const
@@ -234,7 +240,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     continue;
                 }
                 auto query = info.GenerateQuery(database.name, database.GetTableNames());
-                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_ };
+                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_ };
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
@@ -318,10 +324,12 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         RadarReporter::Report(
-            { storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId }, "GetSyncHandler", BEGIN);
+            { storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId, evt.GetTriggerMode() },
+            "GetSyncHandler", BEGIN);
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation() };
         auto status = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
-            evt.AutoRetry() ? RetryCallback(storeInfo, retryer) : GetCallback(evt.GetAsyncDetail(), storeInfo),
+            evt.AutoRetry() ? RetryCallback(storeInfo, retryer, evt.GetTriggerMode())
+                            : GetCallback(evt.GetAsyncDetail(), storeInfo, evt.GetTriggerMode()),
             syncParam);
         if (status != E_OK) {
             if (async) {
@@ -332,8 +340,8 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 return;
             }
             int32_t errCode = status + GenStore::DB_ERR_OFFSET;
-            RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, errCode },
-                "GetSyncHandler", END);
+            RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
+                                  evt.GetTriggerMode(), false, errCode }, "GetSyncHandler", END);
         }
     };
 }
@@ -349,6 +357,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetAsyncDetail(evt.GetAsyncDetail());
         syncInfo.SetQuery(evt.GetQuery());
         syncInfo.SetCompensation(evt.IsCompensation());
+        syncInfo.SetTriggerMode(evt.GetTriggerMode());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
     };
@@ -363,7 +372,8 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             }
             info.SetError(code);
             RadarReporter::Report(
-                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, dbCode }, "GetRetryer", END);
+                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_, false, dbCode },
+                "GetRetryer", END);
             return true;
         };
     }
@@ -374,7 +384,8 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
         if (code == E_NO_SPACE_FOR_ASSET || code == E_RECODE_LIMIT_EXCEEDED) {
             info.SetError(code);
             RadarReporter::Report(
-                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, dbCode }, "GetRetryer", END);
+                { info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_, false, dbCode },
+                "GetRetryer", END);
             return true;
         }
 
@@ -591,9 +602,9 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
 }
 
 std::function<void(const GenDetails &result)> SyncManager::GetCallback(const GenAsync &async,
-    const StoreInfo &storeInfo)
+    const StoreInfo &storeInfo, int32_t triggerMode)
 {
-    return [this, async, storeInfo](const GenDetails &result) {
+    return [this, async, storeInfo, triggerMode](const GenDetails &result) {
         if (async != nullptr) {
             async(result);
         }
@@ -620,8 +631,9 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
         int32_t code = result.begin()->second.code;
         int32_t dbCode = (result.begin()->second.dbCode == GenStore::DB_ERR_OFFSET) ? 0 : result.begin()->second.dbCode;
         UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
-        RadarReporter::Report(
-            { storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, dbCode }, "GetCallback", END);
+        RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, triggerMode,
+                                  result.begin()->second.dataChange, dbCode },
+            "GetCallback", END);
     };
 }
 
@@ -680,9 +692,9 @@ bool SyncManager::InitDefaultUser(int32_t &user)
 }
 
 std::function<void(const DistributedData::GenDetails &result)> SyncManager::RetryCallback(
-    const StoreInfo &storeInfo, Retryer retryer)
+    const StoreInfo &storeInfo, Retryer retryer, int32_t triggerMode)
 {
-    return [this, retryer, storeInfo](const GenDetails &details) {
+    return [this, retryer, storeInfo, triggerMode](const GenDetails &details) {
         if (details.empty()) {
             ZLOGE("retry, details empty");
             return;
@@ -693,8 +705,9 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
             QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
             UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
             if (code == E_OK) {
-                RadarReporter::Report(
-                    { storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId }, "RetryCallback", END);
+                RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
+                                          triggerMode, details.begin()->second.dataChange },
+                    "RetryCallback", END);
             }
         }
         retryer(GetInterval(code), code, dbCode);
