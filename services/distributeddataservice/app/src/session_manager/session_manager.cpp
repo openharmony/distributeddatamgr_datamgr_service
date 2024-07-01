@@ -60,8 +60,8 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     
     std::string bundleName = "";
     int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if (!GetParams(from, bundleName, authType)) {
-        ZLOGE("GetParams failed");
+    if (!GetAuthParams(from, bundleName, authType)) {
+        ZLOGE("GetAuthParams failed");
         return session;
     }
 
@@ -80,7 +80,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     return session;
 }
 
-bool SessionManager::GetParams(const SessionPoint &from, std::string &bundleName, int32_t &auth) const
+bool SessionManager::GetAuthParams(const SessionPoint &from, std::string &bundleName, int32_t &auth) const
 {
     std::vector<StoreMetaData> metaData;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
@@ -88,7 +88,7 @@ bool SessionManager::GetParams(const SessionPoint &from, std::string &bundleName
         return false;
     }
     for (const auto &storeMeta : metaData) {
-        if (storeMeta.appId == from.appId) {
+        if (storeMeta.appId == from.appId && storeMeta.storeId == from.storeId) {
             bundleName = storeMeta.bundleName;
             auth = storeMeta.authType;
             break;
@@ -105,8 +105,8 @@ bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &
 {
     std::string bundleName = "";
     int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if (!GetParams(from, bundleName, authType)) {
-        ZLOGE("GetParams failed");
+    if (!GetAuthParams(from, bundleName, authType)) {
+        ZLOGE("GetAuthParams failed");
         return false;
     }
     return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, authType, false);

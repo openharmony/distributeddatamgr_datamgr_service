@@ -54,7 +54,7 @@ bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::str
 bool AuthHandlerStub::CheckAccess(
     int localUserId, int peerUserId, const std::string &peerDeviceId, int32_t authType, bool isSend)
 {
-    if (authType == static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT_CHECK) &&
+    if (authType == static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT) &&
         !DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
         ZLOGE("CheckAccess failed.");
         return false;
