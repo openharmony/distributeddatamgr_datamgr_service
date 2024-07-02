@@ -100,14 +100,15 @@ int32_t CloudDbImpl::BatchUpdate(const std::string &table, DBVBuckets &&values, 
     return ExtensionUtil::ConvertStatus(status);
 }
 
-int32_t CloudDbImpl::BatchDelete(const std::string &table, const DBVBuckets &extends)
+int32_t CloudDbImpl::BatchDelete(const std::string &table, DBVBuckets &extends)
 {
-    auto data = ExtensionUtil::Convert(std::move(const_cast<DBVBuckets &>(extends)));
+    auto data = ExtensionUtil::Convert(std::move(extends));
     if (data.first == nullptr) {
         return DBErr::E_ERROR;
     }
     auto status = OhCloudExtCloudDbBatchDelete(database_, reinterpret_cast<const unsigned char *>(table.c_str()),
         table.size(), data.first);
+    extends = ExtensionUtil::ConvertBuckets(data.first);
     OhCloudExtVectorFree(data.first);
     return ExtensionUtil::ConvertStatus(status);
 }

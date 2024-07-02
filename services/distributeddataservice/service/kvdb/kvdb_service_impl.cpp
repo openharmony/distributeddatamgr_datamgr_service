@@ -294,7 +294,7 @@ Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, Sync
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
-Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId)
+Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId, uint64_t delay)
 {
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
@@ -302,29 +302,25 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
             appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
-        if (meta.cloudAutoSync) {
-            DoCloudSync(meta, {});
-        }
-        if (meta.isAutoSync) {
-            TryToSync(meta, true);
-        }
-        return SUCCESS;
-    }
-    if (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta)) {
+    bool needSync = meta.isAutoSync;
+    if (DeviceMatrix::GetInstance().IsSupportMatrix() &&
+        (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta))) {
         WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
-        if (meta.cloudAutoSync) {
-            DoCloudSync(meta, {});
-        }
-        return SUCCESS;
+        needSync = false;
     }
-    if (meta.cloudAutoSync) {
-        DoCloudSync(meta, {});
-    }
-    if (meta.isAutoSync) {
+    if (DeviceMatrix::GetInstance().IsSupportMatrix() && needSync) {
         AutoSyncMatrix::GetInstance().OnChanged(meta);
-        TryToSync(meta);
+    }
+    if (executors_ != nullptr && (meta.cloudAutoSync || needSync)) {
+        executors_->Schedule(std::chrono::milliseconds(delay), [this, meta, needSync]() {
+            if (meta.cloudAutoSync) {
+                DoCloudSync(meta, {});
+            }
+            if (needSync) {
+                TryToSync(meta, !DeviceMatrix::GetInstance().IsSupportMatrix());
+            }
+        });
     }
     return SUCCESS;
 }

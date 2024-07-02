@@ -243,7 +243,13 @@ int32_t KVDBServiceStub::OnSyncExt(
 int32_t KVDBServiceStub::OnNotifyDataChange(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    int32_t status = NotifyDataChange(appId, storeId);
+    uint64_t delay = 0;
+    if (!ITypesUtil::Unmarshal(data, delay)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = NotifyDataChange(appId, storeId, delay);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s",
             status, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());

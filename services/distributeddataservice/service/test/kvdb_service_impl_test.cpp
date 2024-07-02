@@ -170,6 +170,7 @@ HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest002, TestSize.Level0)
     AppId appId01;
     auto status = kvdbServiceImpl_->GetStoreIds(appId01, storeIds);
     ZLOGI("GetStoreIdsTest002 status = :%{public}d", status);
+
     ASSERT_EQ(status, Status::SUCCESS);
 }
 
