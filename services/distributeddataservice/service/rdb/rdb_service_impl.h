@@ -96,6 +96,8 @@ public:
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
+    using DBStatus = DistributedDB::DBStatus;
+    using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     struct SyncAgent {
         pid_t pid_ = 0;
         int32_t count_ = 0;
@@ -178,6 +180,10 @@ private:
     void GetCloudSchema(const RdbSyncerParam &param);
 
     void SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param);
+
+    bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
+
+    SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
