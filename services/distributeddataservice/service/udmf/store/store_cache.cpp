@@ -34,7 +34,11 @@ std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
 {
     std::shared_ptr<Store> store;
     int foregroundUserId = 0;
-    DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    bool ret = DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    if (!ret) {
+        ZLOGE("QueryForegroundUserId failed.");
+        return nullptr;
+    }
     std::string key = intention;
     key.append(std::to_string(foregroundUserId));
 
