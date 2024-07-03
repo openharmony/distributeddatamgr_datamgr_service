@@ -28,6 +28,7 @@
 #include "cloud/sharing_center.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
+#include "device_matrix.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "hap_token_info.h"
@@ -323,6 +324,9 @@ std::map<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromE
 
 bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName, int32_t triggerMode)
 {
+    if (triggerMode == MODE_UNLOCK && DeviceMatrix::GetInstance().IsConsistent()) {
+        return false;
+    }
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
     stores.insert(stores.end(), staticStores.begin(), staticStores.end());

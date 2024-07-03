@@ -794,4 +794,26 @@ bool DeviceMatrix::IsSupportMatrix()
 {
     return isSupportBroadcast_;
 }
+
+bool DeviceMatrix::IsConsistent()
+{
+    std::vector<MatrixMetaData> metas;
+    if (!MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({}), metas, true)) {
+        return true;
+    }
+    for (const auto &meta : metas) {
+        if (meta.origin == MatrixMetaData::Origin::REMOTE_RECEIVED) {
+            MatrixMetaData consistentMeta;
+            consistentMeta.deviceId = meta.deviceId;
+            if (!MetaDataManager::GetInstance().LoadMeta(consistentMeta.GetConsistentKey(), consistentMeta, true)) {
+                return false;
+            }
+            if ((High(meta.statics) > High(consistentMeta.statics)) ||
+                (High(meta.dynamic) > High(consistentMeta.dynamic))) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 } // namespace OHOS::DistributedData
