@@ -708,7 +708,8 @@ void KvStoreDataService::InitSecurityAdapter(std::shared_ptr<ExecutorPool> execu
         ZLOGE("security is nullptr.");
         return;
     }
-
+    
+    security_->InitLocalSecurity();
     auto dbStatus = DistributedDB::RuntimeConfig::SetProcessSystemAPIAdapter(security_);
     ZLOGD("set distributed db system api adapter: %d.", static_cast<int>(dbStatus));
 
