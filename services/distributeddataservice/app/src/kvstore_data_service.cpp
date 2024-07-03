@@ -199,26 +199,14 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         ZLOGW("check bundleName:%{public}s uid:%{public}d failed.", appId.appId.c_str(), info.uid);
         return Status::PERMISSION_DENIED;
     }
-    KvStoreClientDeathObserverImpl kvStoreClientDeathObserver(*this);
-    auto inserted = clients_.Emplace(
-        [&info, &appId, &kvStoreClientDeathObserver](decltype(clients_)::map_type &entries) {
-            auto it = entries.find(info.tokenId);
-            if (it == entries.end()) {
-                return true;
-            }
-            if (IPCSkeleton::GetCallingPid() == it->second.GetPid()) {
-                ZLOGW("bundleName:%{public}s, uid:%{public}d, pid:%{public}d has already registered.",
-                    appId.appId.c_str(), info.uid, IPCSkeleton::GetCallingPid());
-                return false;
-            }
-            kvStoreClientDeathObserver = std::move(it->second);
-            entries.erase(it);
-            return true;
-        },
-        std::piecewise_construct, std::forward_as_tuple(info.tokenId),
-        std::forward_as_tuple(appId, *this, std::move(observer)));
-    ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d, inserted:%{public}s.", appId.appId.c_str(), info.uid,
-        IPCSkeleton::GetCallingPid(), inserted ? "success" : "failed");
+    auto pid = IPCSkeleton::GetCallingPid();
+    clients_.Compute(
+        info.tokenId, [&appId, &info, pid, this, obs = std::move(observer)](const auto tokenId, auto &clients) {
+            auto res = clients.try_emplace(pid, appId, *this, std::move(obs));
+            ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d, inserted:%{public}s.", appId.appId.c_str(),
+                info.uid, pid, res.second ? "success" : "failed");
+            return !clients.empty();
+        });
     return Status::SUCCESS;
 }
 
@@ -229,9 +217,14 @@ Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const A
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
     KvStoreClientDeathObserverImpl impl(*this);
-    clients_.ComputeIfPresent(token, [&impl](auto &, auto &value) {
-        impl = std::move(value);
-        return false;
+    clients_.ComputeIfPresent(token, [&impl, pid](auto &, auto &value) {
+        auto it = value.find(pid);
+        if (it == value.end()) {
+            return !value.empty();
+        }
+        impl = std::move(it->second);
+        value.erase(it);
+        return !value.empty();
     });
     return Status::SUCCESS;
 }

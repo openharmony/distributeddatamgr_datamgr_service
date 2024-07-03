@@ -97,16 +97,17 @@ private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
     struct SyncAgent {
-        pid_t pid_ = 0;
+        SyncAgent() = default;
+        explicit SyncAgent(const std::string &bundleName);
         int32_t count_ = 0;
         std::map<std::string, int> callBackStores_;
         std::string bundleName_;
         sptr<RdbNotifierProxy> notifier_ = nullptr;
         std::shared_ptr<RdbWatcher> watcher_ = nullptr;
-        void ReInit(pid_t pid, const std::string &bundleName);
         void SetNotifier(sptr<RdbNotifierProxy> notifier);
         void SetWatcher(std::shared_ptr<RdbWatcher> watcher);
     };
+    using SyncAgents = std::map<int32_t, SyncAgent>;
 
     class RdbStatic : public StaticActs {
     public:
@@ -154,7 +155,7 @@ private:
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
-    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result);
+    void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
 
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 
@@ -180,7 +181,7 @@ private:
     void SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param);
 
     static Factory factory_;
-    ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
+    ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedRdb
