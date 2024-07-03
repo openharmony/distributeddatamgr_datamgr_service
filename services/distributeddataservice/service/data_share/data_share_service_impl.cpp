@@ -704,9 +704,8 @@ void DataShareServiceImpl::RegisterDataShareServiceInfo()
 
 void DataShareServiceImpl::RegisterHandler()
 {
-    Handler handler = [this](int fd, std::map<std::string, std::vector<std::string>> &params) {
-        DumpDataShareServiceInfo(fd, params);
-    };
+    Handler handler =
+        std::bind(&DataShareServiceImpl::DumpDataShareServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
 }
 
