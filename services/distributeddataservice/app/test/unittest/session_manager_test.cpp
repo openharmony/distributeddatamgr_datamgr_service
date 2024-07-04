@@ -93,6 +93,7 @@ public:
 
         StoreMetaData metaData;
         metaData.bundleName = "ohos.test.demo";
+        metaData.appId = "ohos.test.demo";
         metaData.storeId = "test_store";
         metaData.user = "100";
         metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
@@ -110,6 +111,7 @@ public:
         MetaDataManager::GetInstance().DelMeta(std::string(peerCapMetaKey.begin(), peerCapMetaKey.end()));
         StoreMetaData metaData;
         metaData.bundleName = "ohos.test.demo";
+        metaData.appId = "ohos.test.demo";
         metaData.storeId = "test_store";
         metaData.user = "100";
         metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
