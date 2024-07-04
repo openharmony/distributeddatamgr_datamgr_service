@@ -105,20 +105,20 @@ public:
     }
     static void TearDownTestCase()
     {
-        auto peerUserMetaKey = UserMetaRow::GetKeyFor(PEER_DEVICE_ID);
-        MetaDataManager::GetInstance().DelMeta(std::string(peerUserMetaKey.begin(), peerUserMetaKey.end()));
-        auto peerCapMetaKey = CapMetaRow::GetKeyFor(PEER_DEVICE_ID);
-        MetaDataManager::GetInstance().DelMeta(std::string(peerCapMetaKey.begin(), peerCapMetaKey.end()));
-        StoreMetaData metaData;
-        metaData.bundleName = "ohos.test.demo";
-        metaData.appId = "ohos.test.demo";
-        metaData.storeId = "test_store";
-        metaData.user = "100";
-        metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-        metaData.tokenId = AccessTokenKit::GetHapTokenID(PEER_USER_ID2, "ohos.test.demo", 0);
-        metaData.uid = METADATA_UID;
-        metaData.storeType = 1;
-        MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
+        // auto peerUserMetaKey = UserMetaRow::GetKeyFor(PEER_DEVICE_ID);
+        // MetaDataManager::GetInstance().DelMeta(std::string(peerUserMetaKey.begin(), peerUserMetaKey.end()));
+        // auto peerCapMetaKey = CapMetaRow::GetKeyFor(PEER_DEVICE_ID);
+        // MetaDataManager::GetInstance().DelMeta(std::string(peerCapMetaKey.begin(), peerCapMetaKey.end()));
+        // StoreMetaData metaData;
+        // metaData.bundleName = "ohos.test.demo";
+        // metaData.appId = "ohos.test.demo";
+        // metaData.storeId = "test_store";
+        // metaData.user = "100";
+        // metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+        // metaData.tokenId = AccessTokenKit::GetHapTokenID(PEER_USER_ID2, "ohos.test.demo", 0);
+        // metaData.uid = METADATA_UID;
+        // metaData.storeType = 1;
+        // MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     }
     void SetUp()
     {
