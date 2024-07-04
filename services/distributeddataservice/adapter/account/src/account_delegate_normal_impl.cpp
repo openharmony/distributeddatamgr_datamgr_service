@@ -216,7 +216,12 @@ std::string AccountDelegateNormalImpl::GetUnencryptedAccountId(int32_t userId) c
 
 bool AccountDelegateNormalImpl::QueryForegroundUserId(int &foregroundUserId)
 {
-    return AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(foregroundUserId);
+    int32_t status = AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(foregroundUserId);
+    if (status != ERR_OK) {
+        ZLOGE("GetForegroundOsAccountLocalId failed, status: %{public}d", status);
+        return false;
+    }
+    return true;
 }
 }  // namespace DistributedKv
 }  // namespace OHOS
