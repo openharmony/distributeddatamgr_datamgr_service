@@ -70,7 +70,7 @@ public:
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
         DeviceManagerAdapter::GetInstance().Init(executors);
-
+        GrantPermissionNative();
         // init peer device
         UserMetaData userMetaData;
         userMetaData.deviceId = PEER_DEVICE_ID;
@@ -101,7 +101,6 @@ public:
         metaData.uid = METADATA_UID;
         metaData.storeType = 1;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
-        GrantPermissionNative();
     }
     static void TearDownTestCase()
     {
