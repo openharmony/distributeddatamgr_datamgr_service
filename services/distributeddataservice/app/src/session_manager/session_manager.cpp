@@ -87,7 +87,6 @@ bool SessionManager::GetAuthParams(const SessionPoint &from, std::string &bundle
         ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(from.deviceId).c_str());
         return false;
     }
-
     for (const auto &storeMeta : metaData) {
         if (storeMeta.appId == from.appId) {
             bundleName = storeMeta.bundleName;
