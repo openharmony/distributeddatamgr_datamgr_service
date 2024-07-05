@@ -69,8 +69,8 @@ public:
         KvStoreMetaManager::GetInstance().BindExecutor(executors);
         KvStoreMetaManager::GetInstance().InitMetaParameter();
         KvStoreMetaManager::GetInstance().InitMetaListener();
-        DeviceManagerAdapter::GetInstance().Init(executors);
         GrantPermissionNative();
+        DeviceManagerAdapter::GetInstance().Init(executors);
         // init peer device
         UserMetaData userMetaData;
         userMetaData.deviceId = PEER_DEVICE_ID;
