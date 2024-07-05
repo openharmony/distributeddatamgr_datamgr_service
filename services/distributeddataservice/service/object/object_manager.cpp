@@ -272,7 +272,7 @@ int32_t ObjectStoreManager::Retrieve(
             objectKey, [](const std::string& key) -> auto {
             return RestoreStatus::NONE;
         });
-        if (restoreStatus_[objectKey] == RestoreStatus::ALL_READY) {
+        if (restoreStatus_.Find(objectKey).second == RestoreStatus::ALL_READY) {
             allReady = true;
         }
     }
@@ -432,20 +432,23 @@ void ObjectStoreManager::NotifyDataChanged(std::map<std::string, std::map<std::s
             objectKey, [](const std::string& key) -> auto {
             return RestoreStatus::NONE;
         });
-        if (restoreStatus_[objectKey] == RestoreStatus::ASSETS_READY) {
-            restoreStatus_[objectKey] = RestoreStatus::ALL_READY;
-            callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
-                DoNotify(tokenId, value, data, true);
-                return false;
-            });
-        } else {
-            restoreStatus_[objectKey] = RestoreStatus::DATA_READY;
-            callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
-                DoNotify(tokenId, value, data, false);
-                return false;
-            });
-            WaitAssets(objectKey);
-        }
+        restoreStatus_.Compute(objectKey, [this, &data] (const auto &key, auto &value) {
+            if (value == RestoreStatus::ASSETS_READY) {
+                value = RestoreStatus::ALL_READY;
+                callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
+                    DoNotify(tokenId, value, data, true);
+                    return false;
+                });
+            } else {
+                value = RestoreStatus::DATA_READY;
+                    callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
+                    DoNotify(tokenId, value, data, false);
+                    return false;
+                });
+                WaitAssets(key);
+            }
+            return true;
+        });
     }
 }
 
@@ -469,15 +472,18 @@ void ObjectStoreManager::NotifyAssetsReady(const std::string& objectKey, const s
         objectKey, [](const std::string& key) -> auto {
         return RestoreStatus::NONE;
     });
-    if (restoreStatus_[objectKey] == RestoreStatus::DATA_READY) {
-        restoreStatus_[objectKey] = RestoreStatus::ALL_READY;
-        callbacks_.ForEach([this, objectKey](uint32_t tokenId, const CallbackInfo& value) {
-            DoNotifyAssetsReady(tokenId, value,  objectKey, true);
-            return false;
-        });
-    } else {
-        restoreStatus_[objectKey] = RestoreStatus::ASSETS_READY;
-    }
+    restoreStatus_.Compute(objectKey, [this] (const auto &key, auto &value) {
+        if (value == RestoreStatus::DATA_READY) {
+            value = RestoreStatus::ALL_READY;
+            callbacks_.ForEach([this, key](uint32_t tokenId, const CallbackInfo& value) {
+                DoNotifyAssetsReady(tokenId, value,  key, true);
+                return false;
+            });
+        } else {
+            value = RestoreStatus::ASSETS_READY;
+        }
+        return true;
+    });
 }
 
 void ObjectStoreManager::NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId)
@@ -1026,7 +1032,10 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
         storeKey, [](const std::string& key) -> auto {
             return std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
         });
-    bindSnapshots_[storeKey]->emplace(std::pair{asset.uri, snapshots_[snapshotKey]});
+    bindSnapshots_.Compute(storeKey, [this, &asset, snapshotKey] (const auto &key, auto &value) {
+        value->emplace(std::pair{asset.uri, snapshots_.Find(snapshotKey).second});
+        return true;
+    });
 
     HapTokenInfo tokenInfo;
     auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
@@ -1041,7 +1050,10 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
     storeInfo.user = tokenInfo.userID;
     storeInfo.storeName = bindInfo.storeName;
 
-    snapshots_[snapshotKey]->BindAsset(ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
+    snapshots_.Compute(snapshotKey, [this, &asset, &bindInfo, &storeInfo] (const auto &key, auto &value) {
+        value->BindAsset(ValueProxy::Convert(std::move(asset)), ConvertBindInfo(bindInfo), storeInfo);
+        return true;
+    });
     return OBJECT_SUCCESS;
 }
 
@@ -1063,8 +1075,8 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
     auto objectAsset = asset;
     Asset dataAsset =  ValueProxy::Convert(std::move(objectAsset));
     auto snapshotKey = appId + SEPERATOR + sessionId;
-    if (snapshots_.Contains(snapshotKey) && snapshots_[snapshotKey]->IsBoundAsset(dataAsset)) {
-        return snapshots_[snapshotKey]->OnDataChanged(dataAsset, deviceId); // needChange
+    if (snapshots_.Contains(snapshotKey) && snapshots_.Find(snapshotKey).second->IsBoundAsset(dataAsset)) {
+        return snapshots_.Find(snapshotKey).second->OnDataChanged(dataAsset, deviceId); // needChange
     }
 
     auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
@@ -1088,7 +1100,7 @@ ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::st
         storeKey, [](const std::string& key) -> auto {
             return std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
         });
-    return bindSnapshots_[storeKey];
+    return bindSnapshots_.Find(storeKey).second;
 }
 
 void ObjectStoreManager::DeleteSnapshot(const std::string& bundleName, const std::string& sessionId)
@@ -1098,7 +1110,7 @@ void ObjectStoreManager::DeleteSnapshot(const std::string& bundleName, const std
         ZLOGD("Not find snapshot, don't need delete");
         return;
     }
-    auto snapshot = snapshots_[snapshotKey];
+    auto snapshot = snapshots_.Find(snapshotKey).second;
     bindSnapshots_.ForEach([snapshot](auto& key, auto& value) {
         for (auto pos = value->begin(); pos != value->end();) {
             if (pos->second == snapshot) {
