@@ -87,11 +87,9 @@ bool SessionManager::GetAuthParams(const SessionPoint &from, std::string &bundle
         ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(from.deviceId).c_str());
         return false;
     }
-    ZLOGE("yltest from appid:%{public}s", from.appId.c_str());
+
     for (const auto &storeMeta : metaData) {
-        ZLOGE("yltest cycle appid:%{public}s", storeMeta.appId.c_str());
         if (storeMeta.appId == from.appId) {
-            ZLOGE("yltest equal appid:%{public}s", storeMeta.appId.c_str());
             bundleName = storeMeta.bundleName;
             auth = storeMeta.authType;
             break;
