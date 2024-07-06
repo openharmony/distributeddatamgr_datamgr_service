@@ -425,14 +425,10 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     SaveUserToMeta();
 }
 
-void ObjectStoreManager::NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
+void ObjectStoreManager::ComputeStatus(const std::string& objectKey,
+    const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
 {
-    for (auto const& [objectKey, results] : data) {
-        restoreStatus_.ComputeIfAbsent(
-            objectKey, [](const std::string& key) -> auto {
-            return RestoreStatus::NONE;
-        });
-        restoreStatus_.Compute(objectKey, [this, &data] (const auto &key, auto &value) {
+    restoreStatus_.Compute(objectKey, [this, &data] (const auto &key, auto &value) {
             if (value == RestoreStatus::ASSETS_READY) {
                 value = RestoreStatus::ALL_READY;
                 callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
@@ -448,7 +444,17 @@ void ObjectStoreManager::NotifyDataChanged(std::map<std::string, std::map<std::s
                 WaitAssets(key);
             }
             return true;
+    });
+}
+
+void ObjectStoreManager::NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
+{
+    for (auto const& [objectKey, results] : data) {
+        restoreStatus_.ComputeIfAbsent(
+            objectKey, [](const std::string& key) -> auto {
+            return RestoreStatus::NONE;
         });
+        ComputeStatus(objectKey, data);
     }
 }
 
@@ -1032,8 +1038,9 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
         storeKey, [](const std::string& key) -> auto {
             return std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
         });
-    bindSnapshots_.Compute(storeKey, [this, &asset, snapshotKey] (const auto &key, auto &value) {
-        value->emplace(std::pair{asset.uri, snapshots_.Find(snapshotKey).second});
+    auto snapshots = snapshots_.Find(snapshotKey).second;
+    bindSnapshots_.Compute(storeKey, [this, &asset, snapshots] (const auto &key, auto &value) {
+        value->emplace(std::pair{asset.uri, snapshots});
         return true;
     });
 
@@ -1075,8 +1082,16 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
     auto objectAsset = asset;
     Asset dataAsset =  ValueProxy::Convert(std::move(objectAsset));
     auto snapshotKey = appId + SEPERATOR + sessionId;
-    if (snapshots_.Contains(snapshotKey) && snapshots_.Find(snapshotKey).second->IsBoundAsset(dataAsset)) {
-        return snapshots_.Find(snapshotKey).second->OnDataChanged(dataAsset, deviceId); // needChange
+    int32_t res = OBJECT_SUCCESS;
+    bool exist = snapshots_.ComputeIfPresent(snapshotKey,
+        [&res, &dataAsset, &deviceId](std::string key, std::shared_ptr<Snapshot> snapshot) {
+            if (snapshot != nullptr) {
+                res = snapshot->OnDataChanged(dataAsset, deviceId); // needChange
+            }
+            return snapshot != nullptr;
+        });
+    if (exist) {
+        return res;
     }
 
     auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
@@ -1106,11 +1121,11 @@ ObjectStoreManager::UriToSnapshot ObjectStoreManager::GetSnapShots(const std::st
 void ObjectStoreManager::DeleteSnapshot(const std::string& bundleName, const std::string& sessionId)
 {
     auto snapshotKey = bundleName + SEPERATOR + sessionId;
-    if (!snapshots_.Contains(snapshotKey)) {
+    auto snapshot = snapshots_.Find(snapshotKey).second;
+    if (snapshot == nullptr) {
         ZLOGD("Not find snapshot, don't need delete");
         return;
     }
-    auto snapshot = snapshots_.Find(snapshotKey).second;
     bindSnapshots_.ForEach([snapshot](auto& key, auto& value) {
         for (auto pos = value->begin(); pos != value->end();) {
             if (pos->second == snapshot) {
