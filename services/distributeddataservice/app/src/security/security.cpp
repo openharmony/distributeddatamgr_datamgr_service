@@ -165,6 +165,12 @@ bool Security::IsExits(const std::string &file) const
     return access(file.c_str(), F_OK) == 0;
 }
 
+void Security::InitLocalSecurity()
+{
+    auto devInfo = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
+    GetSensitiveByUuid(devInfo.uuid);
+}
+
 Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
 {
     auto it = devicesUdid_.Find(uuid);
