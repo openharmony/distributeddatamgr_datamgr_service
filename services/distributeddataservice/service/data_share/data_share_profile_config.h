@@ -63,7 +63,7 @@ enum AccessCrossMode : uint8_t {
     USER_MAX,
 };
 
-class API_EXPORT DataShareProfileConfig {
+class DataShareProfileConfig {
 public:
     constexpr static int8_t TABLE_MATCH_PRIORITY = 3;
     constexpr static int8_t STORE_MATCH_PRIORITY = 2;
