@@ -327,7 +327,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
     auto callingPid = IPCSkeleton::GetCallingPid();
-    if (code != DATA_SHARE_SERVICE_CMD_QUERY) {
+    if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
         ZLOGI("code:%{public}u, callingPid:%{public}d", code, callingPid);
     }
     if (!CheckInterfaceToken(data)) {

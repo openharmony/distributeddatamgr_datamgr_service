@@ -51,25 +51,31 @@ int32_t ExtensionAbilityManager::ConnectExtension(const std::string &uri, const 
         connectCallbackCache_.Erase(bundleName);
         return E_ERROR;
     }
+    Disconnect(bundleName, MAX_WAIT_DISCONNECT_TIME);
     return E_OK;
 }
 
 void ExtensionAbilityManager::DelayDisconnect(const std::string &bundleName)
 {
-    executor_->Schedule(std::chrono::seconds(WAIT_DISCONNECT_TIME), [bundleName, this]() {
+    Disconnect(bundleName, WAIT_DISCONNECT_TIME);
+}
+
+void ExtensionAbilityManager::Disconnect(const std::string &bundleName, int time)
+{
+    executor_->Schedule(std::chrono::seconds(time), [bundleName, this]() {
         ZLOGI("Delay disconnect %{public}s", bundleName.c_str());
-        connectCallbackCache_.ComputeIfPresent(bundleName, [bundleName](const std::string &,
-            sptr<IRemoteObject> &disconnect) {
-            if (disconnect == nullptr) {
-                ZLOGI("Delay disconnect nullptr %{public}s", bundleName.c_str());
+        connectCallbackCache_.ComputeIfPresent(bundleName,
+            [bundleName](const std::string &, sptr<IRemoteObject> &disconnect) {
+                if (disconnect == nullptr) {
+                    ZLOGI("Delay disconnect nullptr %{public}s", bundleName.c_str());
+                    return false;
+                }
+                auto ret = ExtensionMgrProxy::GetInstance()->DisConnect(disconnect);
+                if (ret != E_OK) {
+                    ZLOGE("Delay disConnect failed bundleName: %{public}s, ret: %{public}d", bundleName.c_str(), ret);
+                }
                 return false;
-            }
-            auto ret = ExtensionMgrProxy::GetInstance()->DisConnect(disconnect);
-            if (ret != E_OK) {
-                ZLOGE("Delay disConnect failed bundleName: %{public}s, ret: %{public}d", bundleName.c_str(), ret);
-            }
-            return false;
-        });
+            });
     });
 }
 } // namespace OHOS::DataShare
