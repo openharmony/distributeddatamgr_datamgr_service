@@ -365,11 +365,11 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSyncCompleteCB, TestSize.Level0)
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     GeneralStore::DetailAsync async;
-    EXPECT_EQ(!async, true);
+    EXPECT_EQ(async, nullptr);
     KVDBGeneralStore::DBSyncCallback ret = store->GetDBSyncCompleteCB(async);
     EXPECT_NE(ret, nullptr);
     auto asyncs = [](const GenDetails &result) {};
-    EXPECT_NE(!asyncs, true);
+    EXPECT_NE(asyncs, nullptr);
     ret = store->GetDBSyncCompleteCB(asyncs);
     EXPECT_NE(ret, nullptr);
 }
