@@ -46,7 +46,8 @@ public:
         using Stores = std::vector<Store>;
         using Tables = std::vector<std::string>;
         using MutliStoreTables = std::map<Store, Tables>;
-        SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "", const Tables &tables = {});
+        explicit SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "",
+            const Tables &tables = {}, int32_t triggerMode = 0);
         SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores);
         SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables);
         void SetMode(int32_t mode);
@@ -55,6 +56,7 @@ public:
         void SetQuery(std::shared_ptr<GenQuery> query);
         void SetError(int32_t code) const;
         void SetCompensation(bool isCompensation);
+        void SetTriggerMode(int32_t triggerMode);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string &storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
@@ -71,6 +73,7 @@ public:
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
         bool isCompensation_ = false;
+        int32_t triggerMode_ = 0;
     };
     SyncManager();
     ~SyncManager();
@@ -84,12 +87,11 @@ private:
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
-    using Retryer = std::function<bool(Duration interval, int32_t status)>;
+    using Retryer = std::function<bool(Duration interval, int32_t status, int32_t dbCode)>;
     using CloudInfo = DistributedData::CloudInfo;
     using StoreInfo = DistributedData::StoreInfo;
     using SyncStrategy = DistributedData::SyncStrategy;
     using SyncId = uint64_t;
-    using SyncIdCloudInfos = ConcurrentMap<SyncId, CloudSyncInfo>;
     using GeneralError = DistributedData::GeneralError;
     using GenProgress = DistributedData::GenProgress;
     using GenDetails = DistributedData::GenDetails;
@@ -121,21 +123,22 @@ private:
     void UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
-        const StoreInfo &storeInfo);
+        const StoreInfo &storeInfo, int32_t triggerMode);
     std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry);
     void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo);
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(
-        const StoreInfo &storeInfo, Retryer retryer);
+        const StoreInfo &storeInfo, Retryer retryer, int32_t triggerMode);
+    static void GetLastResults(
+        const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
-    std::map<QueryKey, SyncIdCloudInfos> lastSyncInfos_;
-    std::mutex mutex_;
+    ConcurrentMap<QueryKey, std::map<SyncId, CloudSyncInfo>> lastSyncInfos_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

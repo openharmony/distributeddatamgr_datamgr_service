@@ -58,6 +58,8 @@ public:
 
     AppDistributedKv::ChangeLevelType GetChangeLevelType() const override;
 
+    void InitLocalSecurity();
+
 private:
     enum {
         NO_PWD = -1,

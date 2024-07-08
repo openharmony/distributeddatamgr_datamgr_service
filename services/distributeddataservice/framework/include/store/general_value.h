@@ -31,6 +31,14 @@ enum GenProgress {
     SYNC_FINISH,
 };
 
+enum SyncTriggerMode {
+    MODE_DEFAULT = 0,
+    MODE_PUSH,
+    MODE_ONLINE,
+    MODE_UNLOCK,
+    MODE_BROADCASTER,
+};
+
 struct GenStatistic {
     uint32_t total;
     uint32_t success;
@@ -46,6 +54,8 @@ struct GenTableDetail {
 struct GenProgressDetail {
     int32_t progress;
     int32_t code;
+    int32_t dbCode;
+    bool dataChange = false;
     std::map<std::string, GenTableDetail> details;
 };
 
@@ -85,6 +95,7 @@ struct SyncParam {
     int32_t mode;
     int32_t wait;
     bool isCompensation = false;
+    int32_t triggerMode = MODE_DEFAULT;
 };
 
 using Assets = std::vector<Asset>;

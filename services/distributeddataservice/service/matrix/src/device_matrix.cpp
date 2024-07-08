@@ -205,7 +205,9 @@ std::pair<uint16_t, uint16_t> DeviceMatrix::OnBroadcast(const std::string &devic
     } else {
         mask.statics &= ~dataLevel.statics;
     }
-    UpdateRemoteMeta(device, mask);
+    auto meta = GetMatrixMetaData(device, mask);
+    auto [statics, dynamic] = NeedCloudSync(device, meta);
+    UpdateRemoteMeta(device, mask, meta);
     {
         std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
         auto it = remotes_.find(device);
@@ -215,8 +217,8 @@ std::pair<uint16_t, uint16_t> DeviceMatrix::OnBroadcast(const std::string &devic
         }
         remotes_.insert_or_assign(device, mask);
     }
-    if (observer_) {
-        observer_(device, { mask.statics, mask.dynamic });
+    if (observer_ && (statics || dynamic)) {
+        observer_(statics, dynamic);
     }
     return { mask.dynamic, mask.statics };
 }
@@ -288,15 +290,39 @@ uint16_t DeviceMatrix::ConvertIndex(uint16_t code)
     return index;
 }
 
-void DeviceMatrix::UpdateRemoteMeta(const std::string &device, Mask &mask)
+MatrixMetaData DeviceMatrix::GetMatrixMetaData(const std::string &device, const Mask &mask)
 {
-    MatrixMetaData newMeta;
-    newMeta.dynamic = mask.dynamic;
-    newMeta.statics = mask.statics;
-    newMeta.deviceId = device;
-    newMeta.origin = Origin::REMOTE_RECEIVED;
-    newMeta.dynamicInfo = dynamicApps_;
-    newMeta.staticsInfo = staticsApps_;
+    MatrixMetaData meta;
+    meta.dynamic = mask.dynamic;
+    meta.statics = mask.statics;
+    meta.deviceId = device;
+    meta.origin = Origin::REMOTE_RECEIVED;
+    meta.dynamicInfo = dynamicApps_;
+    meta.staticsInfo = staticsApps_;
+    return meta;
+}
+
+std::pair<bool, bool> DeviceMatrix::NeedCloudSync(const std::string &device, const MatrixMetaData &newMeta)
+{
+    auto [exist, oldMeta] = GetMatrixMeta(device);
+    if (exist && oldMeta == newMeta) {
+        return { false, false };
+    }
+    if (exist) {
+        auto broadStaticVersion = High(newMeta.statics) > High(oldMeta.statics);
+        auto broadDynamicVersion = High(newMeta.dynamic) > High(oldMeta.dynamic);
+        auto [isExisted, metaData] = GetMatrixMeta(device, true);
+        if (!isExisted) {
+            return { broadStaticVersion, broadDynamicVersion };
+        }
+        return { broadStaticVersion && High(newMeta.statics) > High(metaData.statics),
+            broadDynamicVersion && High(newMeta.dynamic) > High(metaData.dynamic) };
+    }
+    return { true, true };
+}
+
+void DeviceMatrix::UpdateRemoteMeta(const std::string &device, Mask &mask, MatrixMetaData &newMeta)
+{
     auto [exist, oldMeta] = GetMatrixMeta(device);
     if (exist && oldMeta == newMeta) {
         return;
@@ -486,9 +512,6 @@ void DeviceMatrix::OnExchanged(const std::string &device, uint16_t code, LevelTy
         it->second.statics &= ~codes[LevelType::STATICS];
         it->second.dynamic &= ~codes[LevelType::DYNAMIC];
         UpdateConsistentMeta(device, it->second);
-        if (observer_) {
-            observer_(device, { it->second.statics, it->second.dynamic });
-        }
     }
 }
 
@@ -713,7 +736,7 @@ MatrixMetaData DeviceMatrix::GetMatrixInfo(const std::string &device)
     return meta;
 }
 
-void DeviceMatrix::RegRemoteChange(std::function<void(const std::string &, std::pair<uint16_t, uint16_t>)> observer)
+void DeviceMatrix::RegRemoteChange(std::function<void(bool, bool)> observer)
 {
     if (observer_) {
         ZLOGD("duplicate register");
@@ -770,5 +793,27 @@ bool DeviceMatrix::DataLevel::IsValid() const
 bool DeviceMatrix::IsSupportMatrix()
 {
     return isSupportBroadcast_;
+}
+
+bool DeviceMatrix::IsConsistent()
+{
+    std::vector<MatrixMetaData> metas;
+    if (!MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({}), metas, true)) {
+        return true;
+    }
+    for (const auto &meta : metas) {
+        if (meta.origin == MatrixMetaData::Origin::REMOTE_RECEIVED) {
+            MatrixMetaData consistentMeta;
+            consistentMeta.deviceId = meta.deviceId;
+            if (!MetaDataManager::GetInstance().LoadMeta(consistentMeta.GetConsistentKey(), consistentMeta, true)) {
+                return false;
+            }
+            if ((High(meta.statics) > High(consistentMeta.statics)) ||
+                (High(meta.dynamic) > High(consistentMeta.dynamic))) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 } // namespace OHOS::DistributedData

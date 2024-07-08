@@ -47,6 +47,8 @@
 #include "rdb_general_store.h"
 #include "rdb_result_set_impl.h"
 #include "xcollie.h"
+#include "device_matrix.h"
+#include "metadata/capability_meta_data.h"
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -404,18 +406,29 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     RdbQuery rdbQuery;
     rdbQuery.MakeQuery(predicates);
     auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
-                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
+                                                : DmAdapter::ToUUID(rdbQuery.GetDevices());
     if (!option.isAsync) {
         SyncParam syncParam = { option.mode, 1, option.isCompensation };
+        StoreMetaData meta = GetStoreMetaData(param);
         Details details = {};
-        auto status = store->Sync(
-            devices, rdbQuery,
-            [&details, &param](const GenDetails &result) mutable {
-                ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
-                    Anonymous::Change(param.storeName_).c_str());
-                details = HandleGenDetails(result);
-            },
-            syncParam);
+        auto asyncFunc = [&details, &param](const GenDetails &result) mutable {
+            ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+                Anonymous::Change(param.storeName_).c_str());
+            details = HandleGenDetails(result);
+        };
+        auto complete = [this, rdbQuery, store, details, param, syncParam,
+                asyncFunc, async](const auto &results) mutable {
+            auto ret = ProcessResult(results);
+            store->Sync(ret.first, rdbQuery, asyncFunc, syncParam);
+            if (async != nullptr) {
+                async(std::move(details));
+            }
+        };
+        if (IsNeedMetaSync(meta, devices)) {
+            auto result = MetaDataManager::GetInstance().Sync(devices, complete);
+            return result ? GeneralError::E_OK :GeneralError::E_ERROR;
+        }
+        auto status = store->Sync(devices, rdbQuery, asyncFunc, syncParam);
         if (async != nullptr) {
             async(std::move(details));
         }
@@ -430,6 +443,44 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
             OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
         },
         syncParam);
+}
+
+bool RdbServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
+{
+    bool isAfterMeta = false;
+    for (const auto &uuid : uuids) {
+        auto metaData = meta;
+        metaData.deviceId = uuid;
+        CapMetaData capMeta;
+        auto capKey = CapMetaRow::GetKeyFor(uuid);
+        if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
+        if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+    }
+    return isAfterMeta;
+}
+
+RdbServiceImpl::SyncResult RdbServiceImpl::ProcessResult(const std::map<std::string, int32_t> &results)
+{
+    std::map<std::string, DBStatus> dbResults;
+    std::vector<std::string> devices;
+    for (const auto &[uuid, status] : results) {
+        dbResults.insert_or_assign(uuid, static_cast<DBStatus>(status));
+        if (static_cast<DBStatus>(status) != DBStatus::OK) {
+            continue;
+        }
+        DeviceMatrix::GetInstance().OnExchanged(uuid, DeviceMatrix::META_STORE_MASK);
+        devices.emplace_back(uuid);
+    }
+    ZLOGD("meta sync finish, total size:%{public}zu, success size:%{public}zu", dbResults.size(), devices.size());
+    return { devices, dbResults };
 }
 
 void RdbServiceImpl::DoCompensateSync(const BindEvent& event)

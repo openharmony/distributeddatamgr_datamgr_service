@@ -37,7 +37,7 @@ using DBErr = DistributedData::GeneralError;
 class CloudServerImpl : public DistributedData::CloudServer {
 public:
     DBCloudInfo GetServerInfo(int32_t userId, bool needSpaceInfo) override;
-    DBSchemaMeta GetAppSchema(int32_t userId, const std::string &bundleName) override;
+    std::pair<int32_t, DBSchemaMeta> GetAppSchema(int32_t userId, const std::string &bundleName) override;
     int32_t Subscribe(int32_t userId, const std::map<std::string, std::vector<DBMeta>> &dbs) override;
     int32_t Unsubscribe(int32_t userId, const std::map<std::string, std::vector<DBMeta>> &dbs) override;
     std::shared_ptr<DBAssetLoader> ConnectAssetLoader(uint32_t tokenId, const DBMeta &dbMeta) override;

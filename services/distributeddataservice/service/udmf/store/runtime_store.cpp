@@ -415,7 +415,12 @@ bool RuntimeStore::SaveMetaData()
     }
 
     int foregroundUserId = 0;
-    DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    bool ret = DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    if (!ret) {
+        ZLOGE("QueryForegroundUserId failed.");
+        return false;
+    }
+
     saveMeta.dataDir.append("/").append(std::to_string(foregroundUserId));
     if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
         ZLOGE("Create directory error");

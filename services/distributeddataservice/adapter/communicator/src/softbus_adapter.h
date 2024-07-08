@@ -91,6 +91,7 @@ private:
     std::string DelConnect(int32_t socket);
     void StartCloseSessionTask(const std::string &deviceId);
     Task GetCloseSessionTask();
+    bool CloseSession(const std::string &networkId);
     static constexpr const char *PKG_NAME = "distributeddata-default";
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;

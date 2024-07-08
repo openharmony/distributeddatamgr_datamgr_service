@@ -28,6 +28,7 @@
 #include "cloud/sharing_center.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
+#include "device_matrix.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "hap_token_info.h"
@@ -151,6 +152,9 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     if (status != SUCCESS) {
         return status;
     }
+    if (!cloudInfo.enableCloud) {
+        return SUCCESS;
+    }
     if (cloudInfo.id != id || !cloudInfo.Exist(bundleName)) {
         ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
             Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
@@ -162,7 +166,8 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        syncManager_.DoCloudSync({ cloudInfo.user, bundleName });
+        SyncManager::SyncInfo info(cloudInfo.user, bundleName);
+        syncManager_.DoCloudSync(info);
     }
     return SUCCESS;
 }
@@ -317,8 +322,11 @@ std::map<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromE
     return dbInfos;
 }
 
-bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName)
+bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName, int32_t triggerMode)
 {
+    if (triggerMode == MODE_UNLOCK && DeviceMatrix::GetInstance().IsConsistent()) {
+        return false;
+    }
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
     stores.insert(stores.end(), staticStores.begin(), staticStores.end());
@@ -340,7 +348,7 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
     }
     for (auto user : users) {
         for (auto &store : stores) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId));
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId, {}, triggerMode));
         }
     }
     return found;
@@ -381,7 +389,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             ZLOGD("invalid user:%{public}d", user);
             return INVALID_ARGUMENT;
         }
-        if (DoKvCloudSync(cloudInfo.user, exData.info.bundleName)) {
+        if (DoKvCloudSync(cloudInfo.user, exData.info.bundleName, MODE_PUSH)) {
             continue;
         }
         auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
@@ -397,7 +405,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         }
         for (auto &dbInfo : dbInfos) {
             syncManager_.DoCloudSync(
-                SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second));
+                SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second, MODE_PUSH));
         }
     }
     return SUCCESS;
@@ -646,7 +654,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
 
 int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
 {
-    DoKvCloudSync(user);
+    DoKvCloudSync(user, "", MODE_UNLOCK);
     return E_OK;
 }
 
@@ -661,7 +669,7 @@ int32_t CloudServiceImpl::OnReady(const std::string& device)
         return SUCCESS;
     }
     for (auto user : users) {
-        DoKvCloudSync(user);
+        DoKvCloudSync(user, "", MODE_ONLINE);
         Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     }
     return SUCCESS;
@@ -756,7 +764,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
 
 bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
-    auto [status, cloudInfo] = GetCloudInfoFromServer(user);
+    auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
@@ -765,6 +773,11 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
     for (const auto &[bundle, key] : keys) {
         SchemaMeta schemaMeta;
         std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
+        if (status == NOT_SUPPORT) {
+            ZLOGW("app not support, del cloudInfo! user:%{public}d, bundleName:%{public}s", user, bundle.c_str());
+            MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey());
+            return false;
+        }
         if (status != SUCCESS) {
             continue;
         }
@@ -787,10 +800,12 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t 
     if (instance == nullptr) {
         return { SERVER_UNAVAILABLE, schemaMeta };
     }
-    schemaMeta = instance->GetAppSchema(user, bundleName);
-    if (!schemaMeta.IsValid()) {
-        ZLOGE("schema is InValid, user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
-        return { SCHEMA_INVALID, schemaMeta };
+    int32_t status = E_OK;
+    std::tie(status, schemaMeta) = instance->GetAppSchema(user, bundleName);
+    if (status != E_OK || !schemaMeta.IsValid()) {
+        ZLOGE("schema is InValid, user:%{public}d, bundleName:%{public}s, status:%{public}d", user, bundleName.c_str(),
+            status);
+        return { status == E_NOT_SUPPORT ? NOT_SUPPORT : SCHEMA_INVALID, schemaMeta };
     }
     return { SUCCESS, schemaMeta };
 }
@@ -990,7 +1005,8 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
 
 bool CloudServiceImpl::DoCloudSync(int32_t user)
 {
-    syncManager_.DoCloudSync(user);
+    SyncManager::SyncInfo info(user);
+    syncManager_.DoCloudSync(info);
     return true;
 }
 

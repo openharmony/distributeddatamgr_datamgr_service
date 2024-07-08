@@ -650,11 +650,11 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
             return;
         }
         DistributedData::GenDetails details;
-        bool downloadFinished = false;
         for (auto &[id, process] : processes) {
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
+            detail.dbCode = DB_ERR_OFFSET + process.errCode;
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];
                 table.upload.total = value.upLoadInfo.total;
@@ -665,14 +665,16 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
                 table.download.success = value.downLoadInfo.successCount;
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
-                downloadFinished = downloadFinished ||
-                                   (process.process == FINISHED && value.downLoadInfo.successCount > 0);
+                detail.dataChange = detail.dataChange ||
+                                    (process.process == FINISHED &&
+                                        (value.downLoadInfo.insertCount > 0 || value.downLoadInfo.updateCount > 0 ||
+                                            value.downLoadInfo.deleteCount > 0));
             }
         }
         if (async) {
             async(details);
         }
-        if (downloadFinished && callback) {
+        if (!details.empty() && details.begin()->second.dataChange && callback) {
             callback();
         }
     };

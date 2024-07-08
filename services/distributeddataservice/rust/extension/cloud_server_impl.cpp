@@ -119,13 +119,13 @@ void CloudServerImpl::GetAppInfo(std::shared_ptr<OhCloudExtHashMap> briefInfo, D
     }
 }
 
-DBSchemaMeta CloudServerImpl::GetAppSchema(int32_t userId, const std::string &bundleName)
+std::pair<int32_t, DBSchemaMeta> CloudServerImpl::GetAppSchema(int32_t userId, const std::string &bundleName)
 {
     DBSchemaMeta dbSchema;
     dbSchema.bundleName = bundleName;
     OhCloudExtCloudSync *server = OhCloudExtCloudSyncNew(userId);
     if (server == nullptr) {
-        return dbSchema;
+        return { DBErr::E_ERROR, dbSchema };
     }
     auto pServer = std::shared_ptr<OhCloudExtCloudSync>(server, [](auto *server) {
         OhCloudExtCloudSyncFree(server);
@@ -133,8 +133,11 @@ DBSchemaMeta CloudServerImpl::GetAppSchema(int32_t userId, const std::string &bu
     OhCloudExtSchemaMeta *schema = nullptr;
     auto status = OhCloudExtCloudSyncGetAppSchema(pServer.get(),
         reinterpret_cast<const unsigned char *>(bundleName.c_str()), bundleName.size(), &schema);
+    if (status == ERRNO_UNSUPPORTED) {
+        return { DBErr::E_NOT_SUPPORT, dbSchema };
+    }
     if (status != ERRNO_SUCCESS || schema == nullptr) {
-        return dbSchema;
+        return { DBErr::E_ERROR, dbSchema };
     }
     auto pSchema = std::shared_ptr<OhCloudExtSchemaMeta>(schema, [](auto *schema) {
         OhCloudExtSchemaMetaFree(schema);
@@ -143,13 +146,13 @@ DBSchemaMeta CloudServerImpl::GetAppSchema(int32_t userId, const std::string &bu
     OhCloudExtVector *databases = nullptr;
     status = OhCloudExtSchemaMetaGetDatabases(pSchema.get(), &databases);
     if (status != ERRNO_SUCCESS || databases == nullptr) {
-        return dbSchema;
+        return { DBErr::E_ERROR, dbSchema };
     }
     auto pDatabases = std::shared_ptr<OhCloudExtVector>(databases, [](auto *databases) {
         OhCloudExtVectorFree(databases);
     });
     GetDatabases(pDatabases, dbSchema);
-    return dbSchema;
+    return { DBErr::E_OK, dbSchema };
 }
 
 void CloudServerImpl::GetDatabases(std::shared_ptr<OhCloudExtVector> databases, DBSchemaMeta &dbSchema)

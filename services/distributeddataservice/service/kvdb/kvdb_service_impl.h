@@ -122,7 +122,7 @@ private:
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
     bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
     Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
-    void DoCloudSync(bool isStatic);
+    void DoCloudSync(bool statics, bool dynamic);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,
@@ -148,13 +148,13 @@ private:
     void RegisterMatrixChange();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     void TryToSync(const StoreMetaData &metaData, bool force = false);
-    void OnStaticsChange(std::pair<uint16_t, uint16_t> mask);
-    void OnDynamicChange(std::pair<uint16_t, uint16_t> mask);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
+    bool IsOHOSType(const std::vector<std::string> &ids);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
     std::atomic_uint64_t syncId_ = 0;
+    static constexpr int32_t OH_OS_TYPE = 10;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_IMPL_H

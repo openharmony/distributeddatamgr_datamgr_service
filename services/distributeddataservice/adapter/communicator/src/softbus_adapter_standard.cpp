@@ -17,6 +17,7 @@
 #include <thread>
 
 #include "communicator_context.h"
+#include "communication/connect_manager.h"
 #include "data_level.h"
 #include "device_manager_adapter.h"
 #include "dfx_types.h"
@@ -108,6 +109,15 @@ SoftBusAdapter::SoftBusAdapter()
     Context::GetInstance().SetSessionListener([this](const std::string &deviceId) {
         StartCloseSessionTask(deviceId);
     });
+
+    ConnectManager::GetInstance()->RegisterCloseSessionTask([this](const std::string &networkId) {
+        return CloseSession(networkId);
+    });
+    ConnectManager::GetInstance()->RegisterSessionCloseListener("context", [](const std::string &networkId) {
+        auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(networkId);
+        Context::GetInstance().NotifySessionClose(uuid);
+    });
+    ConnectManager::GetInstance()->OnStart();
 }
 
 SoftBusAdapter::~SoftBusAdapter()
@@ -117,6 +127,7 @@ SoftBusAdapter::~SoftBusAdapter()
         UnregDataLevelChangeCb(PKG_NAME);
     }
     connects_.Clear();
+    ConnectManager::GetInstance()->OnDestory();
 }
 
 std::shared_ptr<SoftBusAdapter> SoftBusAdapter::GetInstance()
@@ -178,7 +189,20 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     if (conn == nullptr) {
         return Status::ERROR;
     }
-    auto status = conn->SendData(dataInfo, &clientListener_);
+    auto status = conn->CheckStatus();
+    if (status == Status::RATE_LIMIT) {
+        return Status::RATE_LIMIT;
+    }
+    if (status != Status::SUCCESS) {
+        auto task = [this, conn]() {
+            conn->OpenConnect(&clientListener_);
+        };
+        auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
+        ConnectManager::GetInstance()->ApplyConnect(networkId, task);
+        return Status::RATE_LIMIT;
+    }
+
+    status = conn->SendData(dataInfo, &clientListener_);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
         Time now = std::chrono::steady_clock::now();
         auto expireTime = conn->GetExpireTime() > now ? conn->GetExpireTime() : now;
@@ -243,7 +267,7 @@ SoftBusAdapter::Task SoftBusAdapter::GetCloseSessionTask()
         });
         connects_.EraseIf([](const auto &key, const auto &conn) -> bool {
             if (conn.empty()) {
-                Context::GetInstance().NotifySessionClose(key);
+                ConnectManager::GetInstance()->OnSessionClose(DmAdapter::GetInstance().GetDeviceInfo(key).networkId);
             }
             return conn.empty();
         });
@@ -517,6 +541,22 @@ void SoftBusAdapter::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     const AppDistributedKv::DeviceChangeType &type) const
 {
     return;
+}
+
+bool SoftBusAdapter::CloseSession(const std::string &networkId)
+{
+    bool hasSession = false;
+    auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(networkId);
+    connects_.Compute(uuid, [&hasSession](const auto &key, auto &connects) {
+        if (!connects.empty()) {
+            hasSession = true;
+        }
+        return false;
+    });
+    if (hasSession) {
+        ConnectManager::GetInstance()->OnSessionClose(networkId);
+    }
+    return hasSession;
 }
 } // namespace AppDistributedKv
 } // namespace OHOS
