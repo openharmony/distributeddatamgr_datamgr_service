@@ -28,7 +28,7 @@
 #include "object_data_listener.h"
 #include "object_snapshot.h"
 #include "object_types.h"
-#include "serializable.h"
+#include "serializable/serializable.h"
 #include "types.h"
 #include "value_proxy.h"
 namespace OHOS {
@@ -133,7 +133,7 @@ private:
             return false;
         }
     };
-    struct SaveInfo : Serializable {
+    struct SaveInfo : DistributedData::Serializable {
         std::string bundleName;
         std::string sessionId;
         std::string sourceDeviceId;
