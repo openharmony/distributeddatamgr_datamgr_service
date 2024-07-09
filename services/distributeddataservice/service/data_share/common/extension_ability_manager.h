@@ -30,9 +30,11 @@ public:
     void DelayDisconnect(const std::string &bundleName);
 
 private:
+    void Disconnect(const std::string &bundleName, int time);
     std::shared_ptr<ExecutorPool> executor_ = nullptr;
     ConcurrentMap<std::string, sptr<IRemoteObject>> connectCallbackCache_;
     static constexpr int WAIT_DISCONNECT_TIME = 5;
+    static constexpr int MAX_WAIT_DISCONNECT_TIME = 30;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_EXTENSION_ABILITY_MANAGER_H
