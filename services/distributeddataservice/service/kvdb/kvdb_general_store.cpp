@@ -390,7 +390,7 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
 {
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! appId:%{public}s storeId:%{public}s", appId.c_str(),
-        Anonymous::Change(storeId).c_str());
+            Anonymous::Change(storeId).c_str());
         return;
     }
     std::vector<std::string> sameAccountDevs {};
