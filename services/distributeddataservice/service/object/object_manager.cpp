@@ -405,7 +405,7 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     SaveInfo saveInfo;
     for (const auto &[key, value] : changedData) {
         if (key.find(SAVE_INFO) != std::string::npos) {
-            OHOS::Serializable::Unmarshall(std::string(value.begin(), value.end()), saveInfo);
+            DistributedData::Serializable::Unmarshall(std::string(value.begin(), value.end()), saveInfo);
             break;
         }
     }
@@ -730,7 +730,7 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     std::string saveInfoKey = GetPropertyPrefix(appId, sessionId, toDeviceId) + timestamp + SEPERATOR + SAVE_INFO;
     saveInfoEntry.key = std::vector<uint8_t>(saveInfoKey.begin(), saveInfoKey.end());
     SaveInfo saveInfo(appId, sessionId, DmAdaper::GetInstance().GetLocalDevice().udid, toDeviceId, timestamp);
-    std::string saveInfoValue = OHOS::Serializable::Marshall(saveInfo);
+    std::string saveInfoValue = DistributedData::Serializable::Marshall(saveInfo);
     saveInfoEntry.value = std::vector<uint8_t>(saveInfoValue.begin(), saveInfoValue.end());
     entries.emplace_back(saveInfoEntry);
     for (auto &item : data) {
