@@ -47,6 +47,7 @@ using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 using ValueProxy = OHOS::DistributedData::ValueProxy;
 using DistributedFileDaemonManager = Storage::DistributedFile::DistributedFileDaemonManager;
+constexpr const char *SAVE_INFO = "p_###SAVEINFO###";
 ObjectStoreManager::ObjectStoreManager()
 {
     ZLOGI("ObjectStoreManager construct");
@@ -399,19 +400,40 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
 void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData)
 {
     ZLOGI("OnChange start, size:%{public}zu", changedData.size());
-    std::map<std::string, std::map<std::string, Assets>> changedAssets = GetAssetsFromStore(changedData);
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
     bool hasAsset = false;
-    for (const auto &item : changedData) {
-        std::vector<std::string> splitKeys = SplitEntryKey(item.first);
-        if (splitKeys.empty()) {
-            continue;
+    SaveInfo saveInfo;
+    for (const auto &[key, value] : changedData) {
+        if (key.find(SAVE_INFO) != std::string::npos) {
+            OHOS::Serializable::Unmarshall(std::string(value.begin(), value.end()), saveInfo);
+            break;
         }
-        std::string prefix = splitKeys[BUNDLE_NAME_INDEX] + splitKeys[SESSION_ID_INDEX];
-        std::string propertyName = splitKeys[PROPERTY_NAME_INDEX];
-        data[prefix].insert_or_assign(propertyName, item.second);
-        if (IsAssetKey(propertyName)) {
-            hasAsset = true;
+    }
+    std::string keyPrefix = saveInfo.ToPropertyPrefix();
+    if (!keyPrefix.empty()) {
+        std::string observerKey = saveInfo.bundleName + saveInfo.sessionId;
+        for (const auto &[key, value] : changedData) {
+            if (key.size() < keyPrefix.size() || key.find(SAVE_INFO) != std::string::npos) {
+                continue;
+            }
+            std::string propertyName = key.substr(keyPrefix.size());
+            data[observerKey].insert_or_assign(propertyName, value);
+            if (!hasAsset && IsAssetKey(propertyName)) {
+                hasAsset = true;
+            }
+        }
+    } else {
+        for (const auto &item : changedData) {
+            std::vector<std::string> splitKeys = SplitEntryKey(item.first);
+            if (splitKeys.empty()) {
+                continue;
+            }
+            std::string prefix = splitKeys[BUNDLE_NAME_INDEX] + splitKeys[SESSION_ID_INDEX];
+            std::string propertyName = splitKeys[PROPERTY_NAME_INDEX];
+            data[prefix].insert_or_assign(propertyName, item.second);
+            if (IsAssetKey(propertyName)) {
+                hasAsset = true;
+            }
         }
     }
     if (!hasAsset) {
@@ -486,50 +508,6 @@ void ObjectStoreManager::NotifyAssetsStart(const std::string& objectKey, const s
         objectKey, [](const std::string& key) -> auto {
         return RestoreStatus::NONE;
     });
-}
-
-std::map<std::string, std::map<std::string, Assets>> ObjectStoreManager::GetAssetsFromStore(
-    const std::map<std::string, std::vector<uint8_t>>& changedData)
-{
-    std::set<std::string> assetKeyPrefix;
-    for (const auto& item : changedData) {
-        if (IsAssetKey(GetPropertyName(item.first))) {
-            assetKeyPrefix.insert(item.first.substr(0, item.first.find_last_of(ObjectStore::ASSET_DOT)));
-        }
-    }
-    std::map<std::string, std::map<std::string, std::map<std::string, std::vector<uint8_t>>>> results;
-    for (const auto& keyPrefix : assetKeyPrefix) {
-        std::vector<DistributedDB::Entry> entries;
-        auto status = delegate_->GetEntries(std::vector<uint8_t>(keyPrefix.begin(), keyPrefix.end()), entries);
-        if (status != DistributedDB::DBStatus::OK) {
-            ZLOGE("GetEntries fail. keyPrefix = %{public}s", keyPrefix.c_str());
-            continue;
-        }
-        std::map<std::string, std::vector<uint8_t>> result{};
-        std::for_each(entries.begin(), entries.end(), [&result, this](const DistributedDB::Entry entry) {
-            std::string key(entry.key.begin(), entry.key.end());
-            result[GetPropertyName(key)] = entry.value;
-        });
-        std::vector<std::string> splitKeys = SplitEntryKey(keyPrefix);
-        if (splitKeys.empty() || !IsAssetComplete(result, splitKeys[PROPERTY_NAME_INDEX])) {
-            continue;
-        }
-        std::string bundleName = splitKeys[BUNDLE_NAME_INDEX];
-        std::string networkId = DmAdaper::GetInstance().ToNetworkID(splitKeys[SOURCE_DEVICE_UDID_INDEX]);
-        for (const auto &[key, value] : result) {
-            results[bundleName][networkId][key] = value;
-        }
-    }
-    std::map<std::string, std::map<std::string, Assets>> changedAssets{};
-    for (const auto& resultOfBundle : results) {
-        std::string bundleName = resultOfBundle.first;
-        for (const auto& resultOfDevice : resultOfBundle.second) {
-            std::string deviceId = resultOfDevice.first;
-            Assets assets = GetAssetsFromDBRecords(resultOfDevice.second);
-            changedAssets[bundleName][deviceId] = assets;
-        }
-    }
-    return changedAssets;
 }
 
 bool ObjectStoreManager::IsAssetKey(const std::string& key)
@@ -719,14 +697,15 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
         if (splitKeys.empty()) {
             continue;
         }
-        std::string id = splitKeys[SESSION_ID_INDEX];
-        if (sessionIds.count(id) == 0) {
+        std::string bundleName = splitKeys[BUNDLE_NAME_INDEX];
+        std::string sessionId = splitKeys[SESSION_ID_INDEX];
+        if (sessionIds.count(sessionId) == 0) {
             char *end = nullptr;
-            sessionIds[id] = strtol(splitKeys[TIME_INDEX].c_str(), &end, DECIMAL_BASE);
+            sessionIds[sessionId] = strtol(splitKeys[TIME_INDEX].c_str(), &end, DECIMAL_BASE);
         }
-        if (oldestTime == 0 || oldestTime > sessionIds[id]) {
-            oldestTime = sessionIds[id];
-            deleteKey = GetPrefixWithoutDeviceId(appId, id);
+        if (oldestTime == 0 || oldestTime > sessionIds[sessionId]) {
+            oldestTime = sessionIds[sessionId];
+            deleteKey = GetPrefixWithoutDeviceId(bundleName, sessionId);
         }
     }
     if (sessionIds.size() < MAX_OBJECT_SIZE_PER_APP) {
@@ -747,6 +726,13 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     RevokeSaveToStore(GetPropertyPrefix(appId, sessionId, toDeviceId));
     std::string timestamp = std::to_string(GetSecondsSince1970ToNow());
     std::vector<DistributedDB::Entry> entries;
+    DistributedDB::Entry saveInfoEntry;
+    std::string saveInfoKey = GetPropertyPrefix(appId, sessionId, toDeviceId) + timestamp + SEPERATOR + SAVE_INFO;
+    saveInfoEntry.key = std::vector<uint8_t>(saveInfoKey.begin(), saveInfoKey.end());
+    SaveInfo saveInfo(appId, sessionId, DmAdaper::GetInstance().GetLocalDevice().udid, toDeviceId, timestamp);
+    std::string saveInfoValue = OHOS::Serializable::Marshall(saveInfo);
+    saveInfoEntry.value = std::vector<uint8_t>(saveInfoValue.begin(), saveInfoValue.end());
+    entries.emplace_back(saveInfoEntry);
     for (auto &item : data) {
         DistributedDB::Entry entry;
         std::string tmp = GetPropertyPrefix(appId, sessionId, toDeviceId) + timestamp + SEPERATOR + item.first;
@@ -855,11 +841,52 @@ int32_t ObjectStoreManager::RetrieveFromStore(
         return DB_ERROR;
     }
     ZLOGI("GetEntries successfully");
-    std::for_each(entries.begin(), entries.end(), [&results, this](const DistributedDB::Entry &entry) {
+    for (const auto &entry : entries) {
         std::string key(entry.key.begin(), entry.key.end());
-        results[GetPropertyName(key)] = entry.value;
-    });
+        if (key.find(SAVE_INFO) != std::string::npos) {
+            continue;
+        }
+        auto splitKeys = SplitEntryKey(key);
+        if (!splitKeys.empty()) {
+            results[splitKeys[PROPERTY_NAME_INDEX]] = entry.value;
+        }
+    }
     return OBJECT_SUCCESS;
+}
+
+ObjectStoreManager::SaveInfo::SaveInfo(const std::string &bundleName, const std::string &sessionId,
+    const std::string &sourceDeviceId, const std::string &targetDeviceId, const std::string &timestamp)
+    : bundleName(bundleName), sessionId(sessionId), sourceDeviceId(sourceDeviceId), targetDeviceId(targetDeviceId),
+    timestamp(timestamp) {}
+
+bool ObjectStoreManager::SaveInfo::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(bundleName)], bundleName);
+    SetValue(node[GET_NAME(sessionId)], sessionId);
+    SetValue(node[GET_NAME(sourceDeviceId)], sourceDeviceId);
+    SetValue(node[GET_NAME(targetDeviceId)], targetDeviceId);
+    SetValue(node[GET_NAME(timestamp)], timestamp);
+    return true;
+}
+
+bool ObjectStoreManager::SaveInfo::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(bundleName), bundleName);
+    GetValue(node, GET_NAME(sessionId), sessionId);
+    GetValue(node, GET_NAME(sourceDeviceId), sourceDeviceId);
+    GetValue(node, GET_NAME(targetDeviceId), targetDeviceId);
+    GetValue(node, GET_NAME(timestamp), timestamp);
+    return true;
+}
+
+std::string ObjectStoreManager::SaveInfo::ToPropertyPrefix()
+{
+    if (bundleName.empty() || sessionId.empty() || sourceDeviceId.empty() || targetDeviceId.empty() ||
+        timestamp.empty()) {
+        return "";
+    }
+    return bundleName + SEPERATOR + sessionId + SEPERATOR + sourceDeviceId + SEPERATOR + targetDeviceId + SEPERATOR +
+        timestamp + SEPERATOR;
 }
 
 std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &key)
@@ -867,7 +894,7 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
     std::smatch match;
     std::regex timeRegex(TIME_REGEX);
     if (!std::regex_search(key, match, timeRegex)) {
-        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        ZLOGW("Format error, key.size = %{public}zu", key.size());
         return {};
     }
     size_t timePos = match.position();
@@ -876,7 +903,7 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
 
     size_t targetDevicePos = beforeTime.find_last_of(SEPERATOR);
     if (targetDevicePos == std::string::npos) {
-        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        ZLOGW("Format error, key.size = %{public}zu", key.size());
         return {};
     }
     std::string targetDevice = beforeTime.substr(targetDevicePos + 1);
@@ -884,7 +911,7 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
 
     size_t sourceDeviceUdidPos = beforeTargetDevice.find_last_of(SEPERATOR);
     if (sourceDeviceUdidPos == std::string::npos) {
-        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        ZLOGW("Format error, key.size = %{public}zu", key.size());
         return {};
     }
     std::string sourceDeviceUdid = beforeTargetDevice.substr(sourceDeviceUdidPos + 1);
@@ -892,7 +919,7 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
 
     size_t sessionIdPos = beforeSourceDeviceUdid.find_last_of(SEPERATOR);
     if (sessionIdPos == std::string::npos) {
-        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        ZLOGW("Format error, key.size = %{public}zu", key.size());
         return {};
     }
     std::string sessionId = beforeSourceDeviceUdid.substr(sessionIdPos + 1);
@@ -900,19 +927,13 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
 
     size_t propertyNamePos = fromTime.find_first_of(SEPERATOR);
     if (propertyNamePos == std::string::npos) {
-        ZLOGE("Format error, key.size = %{public}zu", key.size());
+        ZLOGW("Format error, key.size = %{public}zu", key.size());
         return {};
     }
     std::string propertyName = fromTime.substr(propertyNamePos + 1);
     std::string time = fromTime.substr(0, propertyNamePos);
 
     return { bundleName, sessionId, sourceDeviceUdid, targetDevice, time, propertyName };
-}
-
-std::string ObjectStoreManager::GetPropertyName(const std::string &key)
-{
-    std::vector<std::string> splitKeys = SplitEntryKey(key);
-    return splitKeys.empty() ? "" : splitKeys[PROPERTY_NAME_INDEX];
 }
 
 std::string ObjectStoreManager::GetCurrentUser()
