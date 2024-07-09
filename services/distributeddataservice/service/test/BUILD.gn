@@ -156,7 +156,7 @@ ohos_unittest("CloudTest") {
   ]
 }
 
-ohos_unittest("ValueProxyTest") {
+ohos_unittest("ValueProxyServiceTest") {
   module_out_path = module_output_path
   sources = [
     "../common/value_proxy.cpp",
@@ -169,6 +169,13 @@ ohos_unittest("ValueProxyTest") {
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+  ]
 
   external_deps = [
     "ability_base:base",
@@ -344,6 +351,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "mock/kv_store_nb_delegate_mock.cpp",
   ]
 
   include_dirs = [
@@ -356,6 +364,11 @@ ohos_unittest("KVDBGeneralStoreTest") {
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
 
   external_deps = [
     "ability_base:base",
@@ -437,6 +450,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/rdb_query.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "cache_cursor_test.cpp",
     "rdb_asset_loader_test.cpp",
     "rdb_cloud_test.cpp",
@@ -818,6 +832,11 @@ ohos_unittest("KvdbServiceImplTest") {
 
   configs = [ ":module_private_config" ]
 
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
@@ -864,7 +883,7 @@ group("unittest") {
     ":RdbResultSetImplTest",
     ":RdbServiceTest",
     ":UdmfRunTimeStoreTest",
-    ":ValueProxyTest",
+    ":ValueProxyServiceTest",
     ":WaterVersionManagerTest",
   ]
 }

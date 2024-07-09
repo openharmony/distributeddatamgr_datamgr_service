@@ -866,7 +866,7 @@ HWTEST_F(RdbGeneralStoreTest, OnChange, TestSize.Level1)
 
 /**
 * @tc.name: Release
-* @tc.desc: RdbGeneralStore Release function test
+* @tc.desc: RdbGeneralStore Release and AddRef function test
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: SQL
@@ -877,6 +877,8 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
     ASSERT_NE(store, nullptr);
     auto result = store->Release();
     EXPECT_EQ(result, 0);
+    store = new (std::nothrow) RdbGeneralStore(metaData_);
+    store->ref_ = 0;
     result = store->Release();
     EXPECT_EQ(result, 0);
     store->ref_ = 2;
