@@ -512,5 +512,249 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
     EXPECT_TRUE(!result.empty());
     EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
 }
+
+/**
+* @tc.name: Share
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Share001, TestSize.Level0)
+{
+    std::string sharingRes = "";
+    CloudData::Participants participants{};
+    CloudData::Results results;
+    auto ret = cloudServiceImpl_->Share(sharingRes, participants, results);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: Unshare
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Unshare001, TestSize.Level0)
+{
+    std::string sharingRes = "";
+    CloudData::Participants participants{};
+    CloudData::Results results;
+    auto ret = cloudServiceImpl_->Unshare(sharingRes, participants, results);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: ChangePrivilege
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ChangePrivilege001, TestSize.Level0)
+{
+    std::string sharingRes = "";
+    CloudData::Participants participants{};
+    CloudData::Results results;
+    auto ret = cloudServiceImpl_->ChangePrivilege(sharingRes, participants, results);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: ChangeConfirmation
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ChangeConfirmation001, TestSize.Level0)
+{
+    std::string sharingRes = "";
+    int32_t confirmation = 0;
+    std::pair<int32_t, std::string> result;
+    auto ret = cloudServiceImpl_->ChangeConfirmation(sharingRes, confirmation, result);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: ConfirmInvitation
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ConfirmInvitation001, TestSize.Level0)
+{
+    std::string sharingRes = "";
+    int32_t confirmation = 0;
+    std::tuple<int32_t, std::string, std::string> result;
+    auto ret = cloudServiceImpl_->ConfirmInvitation(sharingRes, confirmation, result);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: Exit
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Exit001, TestSize.Level0)
+{
+    std::string sharingRes = "";
+    std::pair<int32_t, std::string> result;
+    auto ret = cloudServiceImpl_->Exit(sharingRes, result);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: Query
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Query001, TestSize.Level0)
+{
+    std::string sharingRes = "";
+    CloudData::QueryResults result;
+    auto ret = cloudServiceImpl_->Query(sharingRes, result);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: QueryByInvitation
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryByInvitation001, TestSize.Level0)
+{
+    std::string invitation = "";
+    CloudData::QueryResults result;
+    auto ret = cloudServiceImpl_->QueryByInvitation(invitation, result);
+    EXPECT_EQ(ret, CloudData::CloudService::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: AllocResourceAndShare
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, AllocResourceAndShare001, TestSize.Level0)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back(TEST_CLOUD_BUNDLE);
+    std::vector<std::string> columns;
+    CloudData::Participants participants;
+    auto [ret, _] = cloudServiceImpl_->AllocResourceAndShare(TEST_CLOUD_STORE, predicates, columns, participants);
+    EXPECT_EQ(ret, E_ERROR);
+}
+
+/**
+* @tc.name: SetGlobalCloudStrategy
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level0)
+{
+    std::vector<CommonType::Value> values;
+    const int64_t wifi = 0x01;
+    values.push_back(wifi);
+    CloudData::Strategy strategy = CloudData::STRATEGY_NETWORK;
+    auto ret = cloudServiceImpl_->SetGlobalCloudStrategy(strategy, values);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: SetCloudStrategy
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level0)
+{
+    std::vector<CommonType::Value> values;
+    const int64_t wifi = 0x01;
+    values.push_back(wifi);
+    CloudData::Strategy strategy = CloudData::STRATEGY_NETWORK;
+    auto ret = cloudServiceImpl_->SetCloudStrategy(strategy, values);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: Clean
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Clean001, TestSize.Level0)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: NotifyDataChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, NotifyDataChange001, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->NotifyDataChange(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: NotifyDataChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, NotifyDataChange002, TestSize.Level0)
+{
+    constexpr const int32_t userId = 100;
+    std::string extraData;
+    auto ret = cloudServiceImpl_->NotifyDataChange("", extraData, userId);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                "bundleName\\\",\\\"containerName\\\":\\\"alias\\\", \\\"databaseScopes\\\": "
+                "\\\"[\\\\\\\"private\\\\\\\", "
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"xxx\\\\\\\",\\\\\\\"yyy\\\\\\\","
+                "\\\\\\\"zzz\\\\\\\"]\\\"}\"}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: OnReady
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnReady001, TestSize.Level0)
+{
+    std::string device = "test";
+    auto ret = cloudServiceImpl_->OnReady(device);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: Offline
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Offline001, TestSize.Level0)
+{
+    std::string device = "test";
+    auto ret = cloudServiceImpl_->Offline(device);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    ret = cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
