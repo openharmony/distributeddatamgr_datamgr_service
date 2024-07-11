@@ -173,6 +173,8 @@ private:
         const std::string& assetPrefix);
     Assets GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result);
     bool RegisterAssetsLister();
+    void ComputeStatus(const std::string& objectKey,
+        const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
     void NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
     int32_t PushAssets(int32_t userId, const std::string &appId, const std::string &sessionId,
         const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId);
