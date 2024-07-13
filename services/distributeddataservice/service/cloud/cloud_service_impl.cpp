@@ -330,13 +330,9 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
     stores.insert(stores.end(), staticStores.begin(), staticStores.end());
-    bool found = false;
-    for (auto &store : stores) {
-        if (store.bundleName == bundleName || bundleName.empty()) {
-            found = true;
-            break;
-        }
-    }
+    bool found = std::any_of(stores.begin(), stores.end(), [&bundleName](const CheckerManager::StoreInfo &storeInfo) {
+        return bundleName.empty() || storeInfo.bundleName == bundleName;
+    });
     if (!found) {
         return found;
     }

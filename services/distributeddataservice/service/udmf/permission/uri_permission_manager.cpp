@@ -76,7 +76,7 @@ Status UriPermissionManager::GrantUriPermission(
 void UriPermissionManager::RevokeUriPermission()
 {
     auto current = std::chrono::steady_clock::now();
-    uriTimeout_.EraseIf([&](auto &key, Time &time) {
+    uriTimeout_.EraseIf([&](auto &key, const Time &time) {
         if (time > current) {
             return false;
         }
