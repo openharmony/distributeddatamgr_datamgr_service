@@ -115,6 +115,15 @@ public:
 protected:
 };
 
+class AuthHandlerTest : public testing::Test {
+public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
+protected:
+};
+
 /**
 * @tc.name: UpdateStore
 * @tc.desc: UpdateStore test the return result of input with different values.
@@ -634,6 +643,43 @@ HWTEST_F(QueryHelperTest, Get, TestSize.Level0)
     ret3 = {};
     result3 = queryHelper->GetStringList(words1, elementPointer, end);
     EXPECT_EQ(result3, ret3);
+}
+
+/**
+* @tc.name: AuthHandler
+* @tc.desc: AuthHandler test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: SQL
+*/
+HWTEST_F(AuthHandlerTest, AuthHandler, TestSize.Level0)
+{
+    int localUserId = 0;
+    int peerUserId = 0;
+    std::string peerDeviceId = "";
+    int32_t authType = static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT);
+    bool isSend = false;
+    auto result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, authType, isSend);
+    EXPECT_FALSE(result);
+    authType = static_cast<int32_t>(DistributedKv::AuthType::DEFAULT);
+    result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, authType, isSend);
+    EXPECT_TRUE(result);
+
+    authType = static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT);
+    peerDeviceId = "peerDeviceId";
+    result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, authType, isSend);
+    EXPECT_FALSE(result);
+
+    authType = static_cast<int32_t>(DistributedKv::AuthType::DEFAULT);
+    result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, authType, isSend);
+    EXPECT_TRUE(result);
+
+    localUserId = 1;
+    result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, authType, isSend);
+    EXPECT_FALSE(result);
+
+    peerUserId = 1;
+    result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, authType, isSend);
+    EXPECT_FALSE(result);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
