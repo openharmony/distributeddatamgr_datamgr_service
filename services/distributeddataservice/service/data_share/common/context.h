@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "bundle_info.h"
+#include "bundle_mgr_proxy.h"
 
 namespace OHOS::DataShare {
 enum AccessSystemMode : uint8_t {
@@ -53,7 +53,7 @@ public:
     bool needAutoLoadCallerBundleName = false;
     bool isEncryptDb = false;
     AccessSystemMode accessSystemMode = AccessSystemMode::UNDEFINED;
-    OHOS::AppExecFwk::BundleInfo bundleInfo;
+    BundleConfig bundleInfo;
     std::string type = "rdb";
 };
 } // namespace OHOS::DataShare
