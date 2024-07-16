@@ -735,7 +735,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
         return Status::STORE_META_CHANGED;
     }
 
-    if (options.cloudConfig.enableCloud && (!isCreated || !meta.enableCloud) && executors_ != nullptr) {
+    if (options.cloudConfig.enableCloud && !meta.enableCloud && executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
