@@ -818,7 +818,15 @@ ohos_unittest("KvdbServiceImplTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/service/kvdb/auth_delegate.cpp",
+    "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
+    "${data_service_path}/service/kvdb/kvdb_notifier_proxy.cpp",
+    "${data_service_path}/service/kvdb/kvdb_watcher.cpp",
+    "${data_service_path}/service/kvdb/query_helper.cpp",
+    "${data_service_path}/service/kvdb/upgrade.cpp",
+    "${data_service_path}/service/kvdb/user_delegate.cpp",
     "kvdb_service_impl_test.cpp",
+    "kvdb_service_test.cpp",
   ]
 
   include_dirs = [
@@ -843,6 +851,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",

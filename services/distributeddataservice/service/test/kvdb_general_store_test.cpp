@@ -392,6 +392,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync, TestSize.Level0)
     auto asyncs = [](const GenDetails &result) {};
     store->storeInfo_.user = 0;
     auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
+    store->SetEqualIdentifier(bundleName, storeName);
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0);
     EXPECT_EQ(ret, DBStatus::OK);
 
@@ -425,7 +426,9 @@ HWTEST_F(KVDBGeneralStoreTest, Sync, TestSize.Level0)
     store->delegate_ = &mockDelegate;
     auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret, GeneralError::E_NOT_SUPPORT);
-    store->enableCloud_ = true;
+    GeneralStore::StoreConfig storeConfig;
+    storeConfig.enableCloud_ = true;
+    store->SetConfig(storeConfig);
     ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret, GeneralError::E_OK);
 
