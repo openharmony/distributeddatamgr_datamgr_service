@@ -31,6 +31,7 @@
 namespace OHOS::DataShare {
 class DBDelegate {
 public:
+    using Time = std::chrono::steady_clock::time_point;
     static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData);
     virtual int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
@@ -42,8 +43,21 @@ public:
     virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
     virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
+    virtual bool IsInvalid() = 0;
+    static void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
 private:
+    static void GarbageCollect();
+    static void StartTimer();
+    struct Entity {
+        explicit Entity(std::shared_ptr<DBDelegate> store);
+        std::shared_ptr<DBDelegate> store_;
+        Time time_;
+    };
     static constexpr int NO_CHANGE_VERSION = -1;
+    static constexpr int64_t INTERVAL = 1; //min
+    static ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<Entity>>> stores_;
+    static std::shared_ptr<ExecutorPool> executor_;
+    static ExecutorPool::TaskId taskId_;
 };
 
 class Id : public DistributedData::Serializable {

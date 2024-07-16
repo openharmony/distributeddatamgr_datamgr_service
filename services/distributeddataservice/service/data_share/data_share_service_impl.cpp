@@ -498,6 +498,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    DBDelegate::SetExecutorPool(binderInfo.executors);
     InitSubEvent();
     SubscribeTimeChanged();
     SubscribeChange();
