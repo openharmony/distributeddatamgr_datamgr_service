@@ -20,9 +20,83 @@
 #include "log_print.h"
 #include "rdb_delegate.h"
 namespace OHOS::DataShare {
+ExecutorPool::TaskId DBDelegate::taskId_ = ExecutorPool::INVALID_TASK_ID;
+ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::stores_ = {};
+std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData)
 {
-    return std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true);
+    if (metaData.tokenId == 0) {
+        return std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true);
+    }
+    std::shared_ptr<DBDelegate> store;
+    stores_.Compute(metaData.tokenId,
+        [&metaData, &store](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
+            auto it = stores.find(metaData.storeId);
+            if (it != stores.end()) {
+                store = it->second->store_;
+                it->second->time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+                return !stores.empty();
+            }
+            store = std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true);
+            if (store->IsInvalid()) {
+                store = nullptr;
+                ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
+                return false;
+            }
+            auto entity = std::make_shared<Entity>(store);
+            stores.emplace(metaData.storeId, entity);
+            StartTimer();
+            return !stores.empty();
+        });
+    return store;
+}
+
+void DBDelegate::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)
+{
+    executor_ = std::move(executor);
+}
+
+void DBDelegate::GarbageCollect()
+{
+    stores_.EraseIf([](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
+        auto current = std::chrono::steady_clock::now();
+        for (auto it = stores.begin(); it != stores.end();) {
+            // if the store is BUSY we wait more INTERVAL minutes again
+            if (it->second->time_ < current) {
+                it = stores.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        return stores.empty();
+    });
+}
+
+void DBDelegate::StartTimer()
+{
+    if (executor_ == nullptr || taskId_ != Executor::INVALID_TASK_ID) {
+        return;
+    }
+    taskId_ = executor_->Schedule(
+        []() {
+            GarbageCollect();
+            stores_.DoActionIfEmpty([]() {
+                if (executor_ == nullptr || taskId_ == Executor::INVALID_TASK_ID) {
+                    return;
+                }
+                executor_->Remove(taskId_);
+                ZLOGD("remove timer, taskId: %{public}" PRIu64, taskId_);
+                taskId_ = Executor::INVALID_TASK_ID;
+            });
+        },
+        std::chrono::minutes(INTERVAL), std::chrono::minutes(INTERVAL));
+    ZLOGD("start timer, taskId: %{public}" PRIu64, taskId_);
+}
+
+DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store)
+{
+    store_ = std::move(store);
+    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
 }
 
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
