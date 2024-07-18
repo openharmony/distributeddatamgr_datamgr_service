@@ -108,7 +108,7 @@ private:
         TimerReceiver() = default;
         explicit TimerReceiver(const EventFwk::CommonEventSubscribeInfo &subscriberInfo);
         virtual ~TimerReceiver() = default;
-        virtual void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
+        void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
     };
     void RegisterDataShareServiceInfo();
     void RegisterHandler();
