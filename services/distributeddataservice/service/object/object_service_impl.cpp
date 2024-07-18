@@ -251,8 +251,8 @@ int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
     storeInfo.storeId = sessionId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
     if (appId.empty()) {
-        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = 0x%{public}x",
-              bundleName.c_str(), storeInfo.uid, storeInfo.tokenId);
+        ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = %{public}s",
+              bundleName.c_str(), storeInfo.uid, Anonymous::Change(std::to_string(storeInfo.tokenId)).c_str());
         return OBJECT_PERMISSION_DENIED;
     }
     return OBJECT_SUCCESS;

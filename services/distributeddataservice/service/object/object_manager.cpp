@@ -909,7 +909,7 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
         ZLOGW("Format error, key.size = %{public}zu", key.size());
         return {};
     }
-    size_t timePos = match.position();
+    auto timePos = match.position();
     std::string fromTime = key.substr(timePos + 1);
     std::string beforeTime = key.substr(0, timePos);
 
