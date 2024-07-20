@@ -428,38 +428,26 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
     RdbQuery rdbQuery;
     rdbQuery.MakeQuery(predicates);
     auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
-                                                : DmAdapter::ToUUID(rdbQuery.GetDevices());
-    if (!option.isAsync) {
-        SyncParam syncParam = { option.mode, 1, option.isCompensation };
-        StoreMetaData meta = GetStoreMetaData(param);
-        Details details = {};
-        auto asyncFunc = [&details, &param](const GenDetails &result) mutable {
-            ZLOGD("Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
-                Anonymous::Change(param.storeName_).c_str());
-            details = HandleGenDetails(result);
-        };
-        auto complete = [this, rdbQuery, store, details, param, syncParam,
-                asyncFunc, async](const auto &results) mutable {
-            auto ret = ProcessResult(results);
-            store->Sync(ret.first, rdbQuery, asyncFunc, syncParam);
-            if (async != nullptr) {
-                async(std::move(details));
-            }
-        };
-        if (IsNeedMetaSync(meta, devices)) {
-            auto result = MetaDataManager::GetInstance().Sync(devices, complete);
-            return result ? GeneralError::E_OK :GeneralError::E_ERROR;
-        }
-        auto status = store->Sync(devices, rdbQuery, asyncFunc, syncParam);
-        if (async != nullptr) {
-            async(std::move(details));
-        }
-        return status;
-    }
-    ZLOGD("seqNum=%{public}u", option.seqNum);
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
+                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
     auto pid = IPCSkeleton::GetCallingPid();
     SyncParam syncParam = { option.mode, 0, option.isCompensation };
+    StoreMetaData meta = GetStoreMetaData(param);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    ZLOGD("seqNum=%{public}u", option.seqNum);
+    auto complete = [this, rdbQuery, store, pid, syncParam, tokenId, async, seq = option.seqNum](
+                        const auto &results) mutable {
+        auto ret = ProcessResult(results);
+        store->Sync(
+            ret.first, rdbQuery,
+            [this, tokenId, seq, pid](const GenDetails &result) mutable {
+                OnAsyncComplete(tokenId, pid, seq, HandleGenDetails(result));
+            },
+            syncParam);
+    };
+    if (IsNeedMetaSync(meta, devices)) {
+        auto result = MetaDataManager::GetInstance().Sync(devices, complete);
+        return result ? GeneralError::E_OK : GeneralError::E_ERROR;
+    }
     return store->Sync(
         devices, rdbQuery,
         [this, tokenId, pid, seqNum = option.seqNum](const GenDetails &result) mutable {
