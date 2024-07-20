@@ -136,6 +136,9 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
           meta.instanceId)
 {
     observer_.storeId_ = meta.storeId;
+    StoreMetaDataLocal local;
+    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
+    isPublic_ = local.isPublic;
     DBStatus status = DBStatus::NOT_FOUND;
     manager_.SetKvStoreConfig({ meta.dataDir });
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
@@ -449,7 +452,8 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
     DBStatus status = OK;
     switch (mode) {
         case CLOUD_INFO:
-            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_INFO));
+            status = delegate_->RemoveDeviceData(
+                "", isPublic_ ? static_cast<ClearMode>(CLOUD_DATA) : static_cast<ClearMode>(CLOUD_INFO));
             break;
         case CLOUD_DATA:
             status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
