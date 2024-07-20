@@ -1054,7 +1054,8 @@ RdbServiceImpl::~RdbServiceImpl()
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
 
-int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData)
+int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
+    uint32_t delay)
 {
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
@@ -1077,8 +1078,37 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
         eventInfo.tableProperties.insert_or_assign(key, std::move(tableChangeProperties));
     }
 
-    auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
-    EventCenter::GetInstance().PostEvent(std::move(evt));
+    bool postImmediately = false;
+    heartbeatTaskIds_.Compute(param.storeName_,
+        [this, &postImmediately, delay, storeInfo, eventInfo] (const std::string &key, ExecutorPool::TaskId &value) {
+        if (delay == 0) {
+            if (value != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
+                executors_->Remove(value);
+            }
+            postImmediately = true;
+            return false;
+        }
+
+        if (executors_ != nullptr) {
+            auto task = [storeInfoInner = storeInfo, eventInfoInner = eventInfo]() -> int {
+                auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfoInner), std::move(eventInfoInner));
+                EventCenter::GetInstance().PostEvent(std::move(evt));
+                return RDB_OK;
+            };
+            if (value == ExecutorPool::INVALID_TASK_ID) {
+                value = executors_->Schedule(std::chrono::milliseconds(delay), task);
+            } else {
+                value = executors_->Reset(value, std::chrono::milliseconds(delay));
+            }
+        }
+        return true;
+    });
+
+    if (postImmediately) {
+        auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+    }
+
     return RDB_OK;
 }
 
