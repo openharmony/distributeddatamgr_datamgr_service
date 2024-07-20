@@ -91,6 +91,7 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
         ZLOGE("Profile Unmarshall failed! bundleName:%{public}s", URIUtils::Anonymous(bundle.name).c_str());
         return errCode;
     }
+    bundleConfig = bundle;
     bundleCache_.Insert(bundleKey, bundle);
     return E_OK;
 }
