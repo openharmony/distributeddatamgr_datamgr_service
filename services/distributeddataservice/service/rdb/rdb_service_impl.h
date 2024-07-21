@@ -85,7 +85,8 @@ public:
 
     int32_t OnInitialize() override;
 
-    int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData) override;
+    int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
+        uint32_t delay = 0) override;
     int32_t Disable(const RdbSyncerParam& param) override;
     int32_t Enable(const RdbSyncerParam& param) override;
 
@@ -189,6 +190,7 @@ private:
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
+    ConcurrentMap<std::string, ExecutorPool::TaskId> heartbeatTaskIds_;
 };
 } // namespace OHOS::DistributedRdb
 #endif

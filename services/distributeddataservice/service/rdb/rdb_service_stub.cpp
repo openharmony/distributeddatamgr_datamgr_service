@@ -284,13 +284,14 @@ int32_t RdbServiceStub::OnRemoteNotifyDataChange(MessageParcel &data, MessagePar
 {
     RdbSyncerParam param;
     RdbChangedData rdbChangedData;
-    if (!ITypesUtil::Unmarshal(data, param, rdbChangedData)) {
+    uint32_t delay = 0;
+    if (!ITypesUtil::Unmarshal(data, param, rdbChangedData, delay)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s ", param.bundleName_.c_str(),
               Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = NotifyDataChange(param, rdbChangedData);
+    auto status = NotifyDataChange(param, rdbChangedData, delay);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
