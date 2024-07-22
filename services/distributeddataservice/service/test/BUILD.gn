@@ -498,12 +498,87 @@ ohos_unittest("RdbServiceTest") {
   ]
 }
 
+ohos_unittest("ObjectAssetLoaderTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../object/object_asset_loader.cpp",
+    "../object/object_asset_machine.cpp",
+    "../object/object_snapshot.cpp",
+    "object_asset_loader_test.cpp",
+  ]
+
+  include_dirs = [
+    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
+    "${dataobject_path}/interfaces/innerkits",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
 ohos_unittest("ObjectAssetMachineTest") {
   module_out_path = module_output_path
   sources = [
     "../object/object_asset_loader.cpp",
     "../object/object_asset_machine.cpp",
     "object_asset_machine_test.cpp",
+  ]
+
+  include_dirs = [
+    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
+    "${dataobject_path}/interfaces/innerkits",
+    "${relational_store_path}/interfaces/inner_api/common_type/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
+ohos_unittest("ObjectSnapshotTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../object/object_asset_loader.cpp",
+    "../object/object_asset_machine.cpp",
+    "../object/object_snapshot.cpp",
+    "object_snapshot_test.cpp",
   ]
 
   include_dirs = [
@@ -888,7 +963,9 @@ group("unittest") {
     ":KVDBGeneralStoreTest",
     ":KvdbServiceImplTest",
     ":MetaDataTest",
+    ":ObjectAssetLoaderTest",
     ":ObjectAssetMachineTest",
+    ":ObjectSnapshotTest",
     ":RdbResultSetImplTest",
     ":RdbServiceTest",
     ":UdmfRunTimeStoreTest",
