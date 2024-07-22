@@ -201,4 +201,9 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
     }
     return store_->QuerySql(sql);
 }
+
+bool RdbDelegate::IsInvalid()
+{
+    return store_ == nullptr;
+}
 } // namespace OHOS::DataShare

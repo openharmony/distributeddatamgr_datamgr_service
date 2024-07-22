@@ -28,6 +28,7 @@
 #include "object_data_listener.h"
 #include "object_snapshot.h"
 #include "object_types.h"
+#include "serializable/serializable.h"
 #include "types.h"
 #include "value_proxy.h"
 namespace OHOS {
@@ -132,6 +133,19 @@ private:
             return false;
         }
     };
+    struct SaveInfo : DistributedData::Serializable {
+        std::string bundleName;
+        std::string sessionId;
+        std::string sourceDeviceId;
+        std::string targetDeviceId;
+        std::string timestamp;
+        SaveInfo() = default;
+        SaveInfo(const std::string &bundleName, const std::string &sessionId, const std::string &sourceDeviceId,
+            const std::string &targetDeviceId, const std::string &timestamp);
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
+        std::string ToPropertyPrefix();
+    };
     DistributedDB::KvStoreNbDelegate *OpenObjectKvStore();
     void FlushClosedStore();
     void Close();
@@ -144,7 +158,6 @@ private:
         const std::string &appId, const std::string &sessionId, std::map<std::string, std::vector<uint8_t>> &results);
     void SyncCompleted(const std::map<std::string, DistributedDB::DBStatus> &results, uint64_t sequenceId);
     std::vector<std::string> SplitEntryKey(const std::string &key);
-    std::string GetPropertyName(const std::string &key);
     void ProcessOldEntry(const std::string &appId);
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
         const std::string &sessionId, const std::string &deviceId);
@@ -160,6 +173,8 @@ private:
         const std::string& assetPrefix);
     Assets GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result);
     bool RegisterAssetsLister();
+    void ComputeStatus(const std::string& objectKey,
+        const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
     void NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
     int32_t PushAssets(int32_t userId, const std::string &appId, const std::string &sessionId,
         const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId);

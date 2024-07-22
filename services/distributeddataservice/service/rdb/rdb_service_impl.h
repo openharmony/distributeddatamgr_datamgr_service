@@ -85,7 +85,8 @@ public:
 
     int32_t OnInitialize() override;
 
-    int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData) override;
+    int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
+        uint32_t delay = 0) override;
     int32_t Disable(const RdbSyncerParam& param) override;
     int32_t Enable(const RdbSyncerParam& param) override;
 
@@ -99,16 +100,17 @@ private:
     using DBStatus = DistributedDB::DBStatus;
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     struct SyncAgent {
-        pid_t pid_ = 0;
+        SyncAgent() = default;
+        explicit SyncAgent(const std::string &bundleName);
         int32_t count_ = 0;
         std::map<std::string, int> callBackStores_;
         std::string bundleName_;
         sptr<RdbNotifierProxy> notifier_ = nullptr;
         std::shared_ptr<RdbWatcher> watcher_ = nullptr;
-        void ReInit(pid_t pid, const std::string &bundleName);
         void SetNotifier(sptr<RdbNotifierProxy> notifier);
         void SetWatcher(std::shared_ptr<RdbWatcher> watcher);
     };
+    using SyncAgents = std::map<int32_t, SyncAgent>;
 
     class RdbStatic : public StaticActs {
     public:
@@ -156,7 +158,7 @@ private:
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
-    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result);
+    void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
 
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 
@@ -186,8 +188,9 @@ private:
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
 
     static Factory factory_;
-    ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
+    ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
+    ConcurrentMap<std::string, ExecutorPool::TaskId> heartbeatTaskIds_;
 };
 } // namespace OHOS::DistributedRdb
 #endif

@@ -107,7 +107,7 @@ std::pair<bool, uint32_t> URIUtils::Strtoul(const std::string &str)
     char* end = nullptr;
     errno = 0;
     data = strtoul(str.c_str(), &end, 10);
-    if (errno == ERANGE || end == str || *end != '\0') {
+    if (errno == ERANGE || end == nullptr || end == str || *end != '\0') {
         return std::make_pair(false, data);
     }
     return std::make_pair(true, data);

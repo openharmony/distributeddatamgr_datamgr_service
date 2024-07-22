@@ -216,10 +216,11 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     return E_OK;
 }
 
-std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud,
+std::function<bool()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud,
     SyncInfo &info, bool retry)
 {
     return [this, &cloud, &info, &schemas, retry]() {
+        bool isPostEvent = false;
         for (auto &schema : schemas) {
             if (!cloud.IsOn(schema.bundleName)) {
                 continue;
@@ -244,8 +245,14 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
+                isPostEvent = true;
             }
         }
+        if (!isPostEvent) {
+            ZLOGE("schema is invalid, user: %{public}d", cloud.user);
+            info.SetError(E_ERROR);
+        }
+        return isPostEvent;
     };
 }
 
@@ -267,9 +274,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
         if (code != E_OK) {
-            for (const auto &[queryKey, syncId] : cloudSyncInfos) {
-                UpdateFinishSyncInfo(queryKey, syncId, code);
-            }
+            BatchUpdateFinishState(cloudSyncInfos, code);
             return;
         }
 
@@ -279,7 +284,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             UpdateSchema(info);
             schemas = GetSchemaMeta(cloud, info.bundleName_);
             if (schemas.empty()) {
-                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, Status::SCHEMA_INVALID);
+                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, E_CLOUD_DISABLED);
+                BatchUpdateFinishState(cloudSyncInfos, E_CLOUD_DISABLED);
                 return;
             }
         }
@@ -288,9 +294,10 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             info.user_ = 0;
         }
         auto task = GetPostEventTask(schemas, cloud, info, retry);
-        if (task != nullptr) {
-            task();
+        if (task != nullptr && task()) {
+            return;
         }
+        BatchUpdateFinishState(cloudSyncInfos, E_ERROR);
     };
 }
 
@@ -318,8 +325,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         auto store = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
-            DoExceptionalCallback(async, details, storeInfo);
-            return;
+            return DoExceptionalCallback(async, details, storeInfo);
         }
         ZLOGD("database:<%{public}d:%{public}s:%{public}s> sync start", storeInfo.user, storeInfo.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
@@ -336,6 +342,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 detail.code = status;
                 async(std::move(details));
             }
+            UpdateFinishSyncInfo({ GetAccountId(storeInfo.user), storeInfo.bundleName, "" }, storeInfo.syncId, E_ERROR);
             if (status == GeneralError::E_NOT_SUPPORT) {
                 return;
             }
@@ -578,6 +585,9 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
 {
     int64_t startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     for (const auto &[queryKey, syncId] : cloudSyncInfos) {
+        if (queryKey.accountId.empty()) {
+            continue;
+        }
         lastSyncInfos_.Compute(queryKey, [id = syncId, startTime](auto &, std::map<SyncId, CloudSyncInfo> &val) {
             val[id] = { .startTime = startTime };
             return !val.empty();
@@ -587,13 +597,20 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
 
 void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code)
 {
+    if (queryKey.accountId.empty()) {
+        return;
+    }
     lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key, std::map<SyncId, CloudSyncInfo> &val) {
+        auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         for (auto iter = val.begin(); iter != val.end();) {
-            if (iter->first != syncId && iter->second.code != -1) {
+            bool isExpired = ((now - iter->second.startTime) >= EXPIRATION_TIME) && iter->second.code == -1;
+            if ((iter->first != syncId && ((iter->second.code != -1) || isExpired))) {
                 iter = val.erase(iter);
-            } else {
+            } else if (iter->first == syncId) {
                 iter->second.finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
                 iter->second.code = code;
+                iter++;
+            } else {
                 iter++;
             }
         }
@@ -713,4 +730,13 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
         retryer(GetInterval(code), code, dbCode);
     };
 }
+
+void SyncManager::BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos,
+    int32_t code)
+{
+    for (const auto &[queryKey, syncId] : cloudSyncInfos) {
+        UpdateFinishSyncInfo(queryKey, syncId, code);
+    }
+}
+
 } // namespace OHOS::CloudData

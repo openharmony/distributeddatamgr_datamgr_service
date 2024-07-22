@@ -154,6 +154,7 @@ private:
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
     std::atomic_uint64_t syncId_ = 0;
+    static constexpr int32_t OH_OS_TYPE = 10;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_IMPL_H

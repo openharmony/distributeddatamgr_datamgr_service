@@ -731,7 +731,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
         return Status::STORE_META_CHANGED;
     }
 
-    if (options.cloudConfig.enableCloud && (!isCreated || !meta.enableCloud) && executors_ != nullptr) {
+    if (options.cloudConfig.enableCloud && !meta.enableCloud && executors_ != nullptr) {
         DistributedData::StoreInfo storeInfo;
         storeInfo.bundleName = appId.appId;
         storeInfo.instanceId = GetInstIndex(storeInfo.tokenId, appId);
@@ -1135,7 +1135,10 @@ bool KVDBServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
         metaData.deviceId = uuid;
         CapMetaData capMeta;
         auto capKey = CapMetaRow::GetKeyFor(uuid);
-        if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
+        auto devInfo = DMAdapter::GetInstance().GetDeviceInfo(uuid);
+        if ((!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) &&
+            !(devInfo.osType != OH_OS_TYPE &&
+            devInfo.deviceType == static_cast<uint32_t>(DistributedHardware::DmDeviceType::DEVICE_TYPE_CAR))) ||
             !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
             isAfterMeta = true;
             break;

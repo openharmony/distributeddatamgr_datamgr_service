@@ -498,6 +498,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    DBDelegate::SetExecutorPool(binderInfo.executors);
     InitSubEvent();
     SubscribeTimeChanged();
     SubscribeChange();
@@ -884,7 +885,7 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
     if (errCode != E_OK) {
         ZLOGE("CalledInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
             errCode, URIUtils::Anonymous(calledInfo.uri).c_str());
-        return E_BMS_NOT_READY;
+        return errCode;
     }
     DataShareDbConfig dbConfig;
     auto [code, metaData] = dbConfig.GetMetaData(calledInfo.uri, calledInfo.bundleName,

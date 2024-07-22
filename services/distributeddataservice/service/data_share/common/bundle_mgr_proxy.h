@@ -22,12 +22,50 @@
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "concurrent_map.h"
+#include "data_share_profile_config.h"
+
 namespace OHOS::DataShare {
+struct ProfileConfig {
+    ProfileInfo profile;
+    int resultCode = 0;
+};
+
+struct ProxyData {
+    std::string uri;
+    std::string requiredReadPermission;
+    std::string requiredWritePermission;
+    ProfileConfig profileInfo;
+};
+
+struct HapModuleInfo {
+    std::string resourcePath;
+    std::string hapPath;
+    std::string moduleName;
+    std::vector<ProxyData> proxyDatas;
+};
+
+struct ExtensionAbilityInfo {
+    AppExecFwk::ExtensionAbilityType type = AppExecFwk::ExtensionAbilityType::UNSPECIFIED;
+    std::string readPermission;
+    std::string writePermission;
+    std::string uri;
+    std::string resourcePath;
+    std::string hapPath;
+    ProfileConfig profileInfo;
+};
+
+struct BundleConfig {
+    std::string name;
+    bool singleton = false;
+    std::vector<HapModuleInfo> hapModuleInfos;
+    std::vector<ExtensionAbilityInfo> extensionInfos;
+};
+
 class BundleMgrProxy final : public std::enable_shared_from_this<BundleMgrProxy> {
 public:
     ~BundleMgrProxy();
     static std::shared_ptr<BundleMgrProxy> GetInstance();
-    bool GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId, AppExecFwk::BundleInfo &bundleInfo);
+    int GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId, BundleConfig &bundleInfo);
     void Delete(const std::string &bundleName, int32_t userId);
     sptr<IRemoteObject> CheckBMS();
 
@@ -49,10 +87,15 @@ private:
     };
     sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy();
     void OnProxyDied();
+    std::pair<int, BundleConfig> ConvertToDataShareBundle(AppExecFwk::BundleInfo &bundleInfo);
+    std::pair<int, std::vector<ExtensionAbilityInfo>> ConvertExtensionAbility(AppExecFwk::BundleInfo &bundleInfo);
+    std::pair<int, std::vector<HapModuleInfo>> ConvertHapModuleInfo(AppExecFwk::BundleInfo &bundleInfo);
     std::mutex mutex_;
     sptr<IRemoteObject> proxy_;
     sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient_;
-    ConcurrentMap<std::string, AppExecFwk::BundleInfo> bundleCache_;
+    ConcurrentMap<std::string, BundleConfig> bundleCache_;
+    static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
+    static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

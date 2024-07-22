@@ -59,7 +59,8 @@ Status UriPermissionManager::GrantUriPermission(
         }
         auto time = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
         std::for_each(uriLst.begin(), uriLst.end(), [&](const Uri &uri) {
-            uriTimeout_[std::make_pair(uri.ToString(), tokenId)] = time;
+            auto times = std::make_pair(uri.ToString(), tokenId);
+            uriTimeout_.Insert(times, time);
         });
     }
     ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
@@ -75,7 +76,7 @@ Status UriPermissionManager::GrantUriPermission(
 void UriPermissionManager::RevokeUriPermission()
 {
     auto current = std::chrono::steady_clock::now();
-    uriTimeout_.EraseIf([&](auto &key, Time &time) {
+    uriTimeout_.EraseIf([&](const auto &key, const Time &time) {
         if (time > current) {
             return false;
         }

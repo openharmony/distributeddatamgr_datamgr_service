@@ -42,7 +42,7 @@
 #include "visibility.h"
 
 namespace OHOS::DataShare {
-class API_EXPORT DataShareServiceImpl : public DataShareServiceStub {
+class DataShareServiceImpl : public DataShareServiceStub {
 public:
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using ExecuteCallback = std::function<int32_t(DataProviderConfig::ProviderInfo &,

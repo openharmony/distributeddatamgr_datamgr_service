@@ -103,6 +103,7 @@ private:
     static constexpr int32_t CLIENT_RETRY_TIMES = 3; // normal retry
     static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000; // high 32 bit
     static constexpr int32_t MV_BIT = 32;
+    static constexpr int32_t EXPIRATION_TIME = 6 * 60 * 60 * 1000; // 6 hours
 
     static uint64_t GenerateId(int32_t user);
     static ExecutorPool::Duration GetInterval(int32_t code);
@@ -124,7 +125,7 @@ private:
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
         const StoreInfo &storeInfo, int32_t triggerMode);
-    std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
+    std::function<bool()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry);
     void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo);
     bool InitDefaultUser(int32_t &user);
@@ -132,6 +133,7 @@ private:
         const StoreInfo &storeInfo, Retryer retryer, int32_t triggerMode);
     static void GetLastResults(
         const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
+    void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;

@@ -33,7 +33,7 @@ int64_t KvDelegate::Upsert(const std::string &collectionName, const std::string 
     }
     int count = GRD_UpsertDoc(db_, collectionName.c_str(), filter.c_str(), value.c_str(), 0);
     if (count <= 0) {
-        ZLOGE("GRD_UpSertDoc failed，status %{public}d", count);
+        ZLOGE("GRD_UpSertDoc failed,status %{public}d", count);
         return count;
     }
     Flush();
@@ -57,7 +57,7 @@ int32_t KvDelegate::Delete(const std::string &collectionName, const std::string 
     for (auto &result : queryResults) {
         auto count = GRD_DeleteDoc(db_, collectionName.c_str(), result.c_str(), 0);
         if (count < 0) {
-            ZLOGE("GRD_UpSertDoc failed，status %{public}d %{public}s", count, result.c_str());
+            ZLOGE("GRD_UpSertDoc failed,status %{public}d %{public}s", count, result.c_str());
             continue;
         }
     }
@@ -79,7 +79,7 @@ bool KvDelegate::Init()
     int status = GRD_DBOpen(
         (path_ + "/dataShare.db").c_str(), nullptr, GRD_DB_OPEN_CREATE | GRD_DB_OPEN_CHECK_FOR_ABNORMAL, &db_);
     if (status != GRD_OK || db_ == nullptr) {
-        ZLOGE("GRD_DBOpen failed，status %{public}d", status);
+        ZLOGE("GRD_DBOpen failed,status %{public}d", status);
         return false;
     }
     if (executors_ != nullptr) {
@@ -93,13 +93,13 @@ bool KvDelegate::Init()
     }
     status = GRD_CreateCollection(db_, TEMPLATE_TABLE, nullptr, 0);
     if (status != GRD_OK) {
-        ZLOGE("GRD_CreateCollection template table failed，status %{public}d", status);
+        ZLOGE("GRD_CreateCollection template table failed,status %{public}d", status);
         return false;
     }
 
     status = GRD_CreateCollection(db_, DATA_TABLE, nullptr, 0);
     if (status != GRD_OK) {
-        ZLOGE("GRD_CreateCollection data table failed，status %{public}d", status);
+        ZLOGE("GRD_CreateCollection data table failed,status %{public}d", status);
         return false;
     }
     isInitDone_ = true;
@@ -112,7 +112,7 @@ KvDelegate::~KvDelegate()
     if (isInitDone_) {
         int status = GRD_DBClose(db_, 0);
         if (status != GRD_OK) {
-            ZLOGE("GRD_DBClose failed，status %{public}d", status);
+            ZLOGE("GRD_DBClose failed,status %{public}d", status);
         }
     }
 }
@@ -124,7 +124,7 @@ int32_t KvDelegate::Upsert(const std::string &collectionName, const KvData &valu
         int version = -1;
         if (GetVersion(collectionName, id, version)) {
             if (value.GetVersion() <= version) {
-                ZLOGE("GetVersion failed，%{public}s id %{private}s %{public}d %{public}d", collectionName.c_str(),
+                ZLOGE("GetVersion failed,%{public}s id %{private}s %{public}d %{public}d", collectionName.c_str(),
                       id.c_str(), value.GetVersion(), version);
                 return E_VERSION_NOT_NEWER;
             }
@@ -152,7 +152,7 @@ bool KvDelegate::GetVersion(const std::string &collectionName, const std::string
     }
     VersionData data(-1);
     if (!DistributedData::Serializable::Unmarshall(value, data)) {
-        ZLOGE("Unmarshall failed，data %{public}s", value.c_str());
+        ZLOGE("Unmarshall failed,data %{public}s", value.c_str());
         return false;
     }
     version = data.GetVersion();
@@ -173,20 +173,20 @@ int32_t KvDelegate::Get(
     GRD_ResultSet *resultSet = nullptr;
     int status = GRD_FindDoc(db_, collectionName.c_str(), query, 0, &resultSet);
     if (status != GRD_OK || resultSet == nullptr) {
-        ZLOGE("GRD_FindDoc failed，status %{public}d", status);
+        ZLOGE("GRD_FindDoc failed,status %{public}d", status);
         return status;
     }
     status = GRD_Next(resultSet);
     if (status != GRD_OK) {
         GRD_FreeResultSet(resultSet);
-        ZLOGE("GRD_Next failed，status %{public}d", status);
+        ZLOGE("GRD_Next failed,status %{public}d", status);
         return status;
     }
     char *value = nullptr;
     status = GRD_GetValue(resultSet, &value);
     if (status != GRD_OK || value == nullptr) {
         GRD_FreeResultSet(resultSet);
-        ZLOGE("GRD_GetValue failed，status %{public}d", status);
+        ZLOGE("GRD_GetValue failed,status %{public}d", status);
         return status;
     }
     result = value;
@@ -199,7 +199,7 @@ void KvDelegate::Flush()
 {
     int status = GRD_Flush(db_, GRD_DB_FLUSH_ASYNC);
     if (status != GRD_OK) {
-        ZLOGE("GRD_Flush failed，status %{public}d", status);
+        ZLOGE("GRD_Flush failed,status %{public}d", status);
     }
 }
 
@@ -217,7 +217,7 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
     GRD_ResultSet *resultSet;
     int status = GRD_FindDoc(db_, collectionName.c_str(), query, GRD_DOC_ID_DISPLAY, &resultSet);
     if (status != GRD_OK || resultSet == nullptr) {
-        ZLOGE("GRD_UpSertDoc failed，status %{public}d", status);
+        ZLOGE("GRD_UpSertDoc failed,status %{public}d", status);
         return status;
     }
     char *value = nullptr;
@@ -225,7 +225,7 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
         status = GRD_GetValue(resultSet, &value);
         if (status != GRD_OK || value == nullptr) {
             GRD_FreeResultSet(resultSet);
-            ZLOGE("GRD_GetValue failed，status %{public}d", status);
+            ZLOGE("GRD_GetValue failed,status %{public}d", status);
             return status;
         }
         result.emplace_back(value);
