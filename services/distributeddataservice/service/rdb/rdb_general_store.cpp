@@ -470,7 +470,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
     bool isPriority = false;
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
-        dbQuery.FromTable(query.GetTables());
+        dbQuery.FromTable(GetIntersection(query.GetTables(), GetTables()));
     } else {
         dbQuery = rdbQuery->GetQuery();
         isPriority = rdbQuery->IsPriority();
@@ -882,6 +882,48 @@ void RdbGeneralStore::OnSyncFinish(const StoreInfo &storeInfo, uint32_t flag, ui
     StoreInfo info = storeInfo;
     auto evt = std::make_unique<DataSyncEvent>(std::move(info), syncMode, DataSyncEvent::DataSyncStatus::FINISH);
     EventCenter::GetInstance().PostEvent(std::move(evt));
+}
+
+std::vector<std::string> RdbGeneralStore::GetTables()
+{
+    std::vector<std::string> tables;
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        return tables;
+    }
+    auto res = QuerySql(QUERY_TABLES_SQL, {});
+    for (auto &table : res) {
+        auto it = table.find("name");
+        if (it == table.end() || TYPE_INDEX<std::string> != it->second.index()) {
+            ZLOGW("error res! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+            continue;
+        }
+        tables.push_back(std::move(*std::get_if<std::string>(&(it->second))));
+    }
+    return tables;
+}
+
+std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::string> &&collecter1,
+    const std::vector<std::string> &collecter2)
+{
+    std::sort(collecter1.begin(), collecter1.end());
+    std::sort(collecter2.begin(), collecter2.end());
+    auto it1 = collecter1.begin();
+    auto it2 = collecter2.begin();
+    std::vector<std::string> res;
+    while (it1 != collecter1.end() && it2 != collecter2.end()) {
+        if (*it1 == *it2) {
+            res.push_back(std::move(*it1));
+            it1++;
+            it2++;
+        } else if (*it1 < *it2) {
+            it1++;
+        } else {
+            it2++;
+        }
+    }
+    return res;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
