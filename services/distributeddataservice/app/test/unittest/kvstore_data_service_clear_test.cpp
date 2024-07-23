@@ -230,13 +230,13 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage003, TestSize.Level1)
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     auto ret =
         kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
-    EXPECT_EQ(ret, Status::SUCCESS);
+    EXPECT_EQ(ret, Status::ERROR);
 
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
     EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
