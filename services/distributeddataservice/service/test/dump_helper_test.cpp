@@ -30,9 +30,29 @@ class DumpHelperTest  : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
-    void SetUp(){};
+    void SetUp();
     void TearDown(){};
 };
+
+void DumpHelperTest::SetUp(void) {
+    DumpManager &dumpManager = DumpManager::GetInstance();
+    DumpManager::Config config;
+    config.dumpName = "test_dump";
+    config.fullCmd = "test_full_cmd";
+    config.abbrCmd = "test_abbr_cmd";
+    config.countPrintf = 1;
+    config.infoName = "test_info";
+    config.minParamsNum = 2;
+    config.maxParamsNum = 5;
+    config.parentNode = "test_parent";
+    config.childNode = "test_child";
+    config.dumpCaption = {"test_caption1", "test_caption2"};
+
+    dumpManager.AddConfig("111", config);
+    dumpManager.GetHandler(config.infoName);
+    DumpManager::Config result = dumpManager.GetConfig("111");
+    ASSERT_EQ(result.dumpName, config.dumpName);
+}
 
 /**
 * @tc.name: GetInstanceTest
