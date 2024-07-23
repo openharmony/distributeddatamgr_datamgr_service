@@ -470,7 +470,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
     bool isPriority = false;
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
-        dbQuery.FromTable(query.GetTables());
+        dbQuery.FromTable(GetIntersection(query.GetTables(), GetTables()));
     } else {
         dbQuery = rdbQuery->GetQuery();
         isPriority = rdbQuery->IsPriority();
@@ -882,6 +882,38 @@ void RdbGeneralStore::OnSyncFinish(const StoreInfo &storeInfo, uint32_t flag, ui
     StoreInfo info = storeInfo;
     auto evt = std::make_unique<DataSyncEvent>(std::move(info), syncMode, DataSyncEvent::DataSyncStatus::FINISH);
     EventCenter::GetInstance().PostEvent(std::move(evt));
+}
+
+std::set<std::string> RdbGeneralStore::GetTables()
+{
+    std::set<std::string> tables;
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        return tables;
+    }
+    auto res = QuerySql(QUERY_TABLES_SQL, {});
+    for (auto &table : res) {
+        auto it = table.find("name");
+        if (it == table.end() || TYPE_INDEX<std::string> != it->second.index()) {
+            ZLOGW("error res! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+            continue;
+        }
+        tables.emplace(std::move(*std::get_if<std::string>(&(it->second))));
+    }
+    return tables;
+}
+
+std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::string> &&syncTables,
+    const std::set<std::string> &localTables)
+{
+    std::vector<std::string> res;
+    for (auto &it : syncTables) {
+        if (localTables.count(it)) {
+            res.push_back(std::move(it));
+        }
+    }
+    return res;
 }
 
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
