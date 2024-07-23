@@ -462,6 +462,16 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData006, TestSize.Level1)
     EXPECT_FALSE(storemetaData1 == storemetaData2);
     storemetaData2.isNeedCompress = true;
     EXPECT_TRUE(storemetaData1 == storemetaData2);
+
+    storemetaData1.enableCloud = true;
+    EXPECT_FALSE(storemetaData1 == storemetaData2);
+    storemetaData2.enableCloud = true;
+    EXPECT_TRUE(storemetaData1 == storemetaData2);
+
+    storemetaData1.cloudAutoSync = true;
+    EXPECT_FALSE(storemetaData1 == storemetaData2);
+    storemetaData2.cloudAutoSync = true;
+    EXPECT_TRUE(storemetaData1 == storemetaData2);
 }
 
 /**
@@ -507,6 +517,16 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData007, TestSize.Level1)
     storemetaData1.isNeedCompress = true;
     EXPECT_TRUE(storemetaData1 != storemetaData2);
     storemetaData2.isNeedCompress = true;
+    EXPECT_FALSE(storemetaData1 != storemetaData2);
+
+    storemetaData1.enableCloud = true;
+    EXPECT_TRUE(storemetaData1 != storemetaData2);
+    storemetaData2.enableCloud = true;
+    EXPECT_FALSE(storemetaData1 != storemetaData2);
+
+    storemetaData1.cloudAutoSync = true;
+    EXPECT_TRUE(storemetaData1 != storemetaData2);
+    storemetaData2.cloudAutoSync = true;
     EXPECT_FALSE(storemetaData1 != storemetaData2);
 }
 
