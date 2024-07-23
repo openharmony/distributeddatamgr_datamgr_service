@@ -90,8 +90,9 @@ private:
     using DBBriefCB = DistributedDB::SyncStatusCallback;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
+    // GetIntersection and return results in the order of collecter1
     static std::vector<std::string> GetIntersection(std::vector<std::string> &&collecter1,
-        const std::vector<std::string> &collecter2);
+        const std::set<std::string> &collecter2);
     static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
     static constexpr const char* CLOUD_GID = "cloud_gid";
     static constexpr const char* DATE_KEY = "data_key";
@@ -124,7 +125,7 @@ private:
     std::string BuildSql(const std::string& table, const std::string& statement,
         const std::vector<std::string>& columns) const;
     VBuckets QuerySql(const std::string& sql, Values &&args);
-    std::vector<std::string> GetTables();
+    std::set<std::string> GetTables();
     VBuckets ExtractExtend(VBuckets& values) const;
     size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
     bool IsPrintLog(DistributedDB::DBStatus status);

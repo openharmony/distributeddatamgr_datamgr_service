@@ -884,9 +884,9 @@ void RdbGeneralStore::OnSyncFinish(const StoreInfo &storeInfo, uint32_t flag, ui
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
-std::vector<std::string> RdbGeneralStore::GetTables()
+std::set<std::string> RdbGeneralStore::GetTables()
 {
-    std::vector<std::string> tables;
+    std::set<std::string> tables;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
@@ -899,28 +899,18 @@ std::vector<std::string> RdbGeneralStore::GetTables()
             ZLOGW("error res! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
             continue;
         }
-        tables.push_back(std::move(*std::get_if<std::string>(&(it->second))));
+        tables.emplace(std::move(*std::get_if<std::string>(&(it->second))));
     }
     return tables;
 }
 
 std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::string> &&collecter1,
-    const std::vector<std::string> &collecter2)
+    const std::set<std::string> &collecter2)
 {
-    std::sort(collecter1.begin(), collecter1.end());
-    std::sort(collecter2.begin(), collecter2.end());
-    auto it1 = collecter1.begin();
-    auto it2 = collecter2.begin();
     std::vector<std::string> res;
-    while (it1 != collecter1.end() && it2 != collecter2.end()) {
-        if (*it1 == *it2) {
-            res.push_back(std::move(*it1));
-            it1++;
-            it2++;
-        } else if (*it1 < *it2) {
-            it1++;
-        } else {
-            it2++;
+    for (auto &it : collecter1) {
+        if (collecter2.count(it)) {
+            res.push_back(std::move(it));
         }
     }
     return res;
