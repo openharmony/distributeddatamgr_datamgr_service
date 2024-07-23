@@ -35,7 +35,7 @@ int32_t CloudDB::BatchUpdate(const std::string &table, VBuckets &&values, const 
     return E_NOT_SUPPORT;
 }
 
-int32_t CloudDB::BatchDelete(const std::string &table, const VBuckets &extends)
+int32_t CloudDB::BatchDelete(const std::string &table, VBuckets &extends)
 {
     return E_NOT_SUPPORT;
 }

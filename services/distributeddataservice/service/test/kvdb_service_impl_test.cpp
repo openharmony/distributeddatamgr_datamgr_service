@@ -171,7 +171,7 @@ HWTEST_F(KvdbServiceImplTest, KvdbServiceImpl001, TestSize.Level0)
     DistributedKv::StoreConfig storeConfig;
     status = kvdbServiceImpl_->SetConfig(appId, id1, storeConfig);
     EXPECT_EQ(status, Status::SUCCESS);
-    status = kvdbServiceImpl_->NotifyDataChange(appId, id1);
+    status = kvdbServiceImpl_->NotifyDataChange(appId, id1, 0);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
 
     status = kvdbServiceImpl_->UnsubscribeSwitchData(appId);
