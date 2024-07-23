@@ -91,8 +91,8 @@ private:
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
     // GetIntersection and return results in the order of collecter1
-    static std::vector<std::string> GetIntersection(std::vector<std::string> &&collecter1,
-        const std::set<std::string> &collecter2);
+    static std::vector<std::string> GetIntersection(std::vector<std::string> &&syncTables,
+        const std::set<std::string> &localTables);
     static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
     static constexpr const char* CLOUD_GID = "cloud_gid";
     static constexpr const char* DATE_KEY = "data_key";

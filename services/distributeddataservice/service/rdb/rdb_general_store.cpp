@@ -904,12 +904,12 @@ std::set<std::string> RdbGeneralStore::GetTables()
     return tables;
 }
 
-std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::string> &&collecter1,
-    const std::set<std::string> &collecter2)
+std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::string> &&syncTables,
+    const std::set<std::string> &localTables)
 {
     std::vector<std::string> res;
-    for (auto &it : collecter1) {
-        if (collecter2.count(it)) {
+    for (auto &it : syncTables) {
+        if (localTables.count(it)) {
             res.push_back(std::move(it));
         }
     }
