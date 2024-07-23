@@ -75,6 +75,8 @@ using DBConfig = DistributedDB::RuntimeConfig;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
+constexpr char FOUNDATION_PROCESS_NAME[] = "foundation";
+
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
     : SystemAbility(runOnCreate), clients_()
 {
@@ -802,10 +804,9 @@ int32_t KvStoreDataService::OnScreenUnlocked(int32_t user)
 int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
     int32_t tokenId)
 {
-    HapTokenInfo hapTokenInfo;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != RET_SUCCESS ||
-        hapTokenInfo.bundleName != bundleName || hapTokenInfo.userID != userId ||
-        hapTokenInfo.instIndex != appIndex) {
+    NativeTokenInfo nativeTokenInfo;
+    if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS ||
+        nativeTokenInfo.processName != FOUNDATION_PROCESS_NAME) {
         ZLOGE("passed wrong, tokenId: %{public}u, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
             tokenId, bundleName.c_str(), userId, appIndex);
         return ERROR;
