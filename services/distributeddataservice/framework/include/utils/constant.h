@@ -42,6 +42,8 @@ public:
 
     API_EXPORT static bool NotEqual(bool first, bool second);
 
+    API_EXPORT static std::vector<std::string> Split(const std::string &str, const std::string &delim);
+
     template<typename T>
     inline static constexpr bool is_pod = (std::is_standard_layout_v<T> && std::is_trivial_v<T>);
 
