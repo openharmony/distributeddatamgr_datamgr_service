@@ -65,7 +65,7 @@ class BundleMgrProxy final : public std::enable_shared_from_this<BundleMgrProxy>
 public:
     ~BundleMgrProxy();
     static std::shared_ptr<BundleMgrProxy> GetInstance();
-    int GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId, BundleConfig &bundleInfo);
+    int GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId, BundleConfig &bundleConfig);
     void Delete(const std::string &bundleName, int32_t userId);
     sptr<IRemoteObject> CheckBMS();
 

@@ -85,7 +85,7 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
         return false;
     }
-    for (auto &item : context->bundleInfo.extensionInfos) {
+    for (auto const &item : context->bundleInfo.extensionInfos) {
         if (item.type == AppExecFwk::ExtensionAbilityType::DATASHARE) {
             context->permission = context->isRead ? item.readPermission : item.writePermission;
 
