@@ -391,6 +391,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
 
 void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId)
 {
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! appId:%{public}s storeId:%{public}s", appId.c_str(),
             Anonymous::Change(storeId).c_str());
