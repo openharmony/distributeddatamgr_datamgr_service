@@ -117,18 +117,18 @@ std::string DirectoryManager::GetType(const StoreMetaData &metaData) const
 
 std::string DirectoryManager::GetStore(const StoreMetaData &metaData) const
 {
-    if (metaData.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN
-        && metaData.storeType <= StoreMetaData::StoreType::STORE_KV_END) {
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN &&
+        metaData.storeType <= StoreMetaData::StoreType::STORE_KV_END) {
         return "kvdb";
     }
     // rdb use empty session
-    if (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
-        && metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END) {
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN &&
+        metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END) {
         return "rdb";
     }
     // object use meta
-    if (metaData.storeType >= StoreMetaData::StoreType::STORE_OBJECT_BEGIN
-        && metaData.storeType <= StoreMetaData::StoreType::STORE_OBJECT_END) {
+    if (metaData.storeType >= StoreMetaData::StoreType::STORE_OBJECT_BEGIN &&
+        metaData.storeType <= StoreMetaData::StoreType::STORE_OBJECT_END) {
         return "kvdb";
     }
     return "other";
@@ -142,7 +142,8 @@ std::string DirectoryManager::GetSecurity(const StoreMetaData &metaData) const
                 break;
             }
             [[fallthrough]];
-        case SecurityLevel::S0: [[fallthrough]];
+        case SecurityLevel::S0:
+            [[fallthrough]];
         case SecurityLevel::S1:
             return "misc_de";
     }

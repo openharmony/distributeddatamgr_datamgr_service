@@ -14,6 +14,7 @@
  */
 
 #include "cloud/cloud_info.h"
+
 #include "utils/constant.h"
 
 namespace OHOS::DistributedData {
@@ -76,8 +77,7 @@ std::map<std::string, std::string> CloudInfo::GetSchemaKey() const
 {
     std::map<std::string, std::string> keys;
     for (const auto &[bundle, app] : apps) {
-        const auto key = GetKey(
-            SCHEMA_PREFIX, { std::to_string(user), bundle, std::to_string(app.instanceId) });
+        const auto key = GetKey(SCHEMA_PREFIX, { std::to_string(user), bundle, std::to_string(app.instanceId) });
         keys.insert_or_assign(app.bundleName, key);
     }
     return keys;
@@ -98,12 +98,12 @@ std::string CloudInfo::GetSchemaPrefix(const std::string &bundleName) const
     if (bundleName.empty()) {
         return GetKey(SCHEMA_PREFIX, { std::to_string(user) });
     }
-    return GetKey(SCHEMA_PREFIX, { std::to_string(user), bundleName});
+    return GetKey(SCHEMA_PREFIX, { std::to_string(user), bundleName });
 }
 
 std::string CloudInfo::GetSchemaKey(const StoreMetaData &meta)
 {
-    return GetKey(SCHEMA_PREFIX, { meta.user,  meta.bundleName, std::to_string(meta.instanceId) });
+    return GetKey(SCHEMA_PREFIX, { meta.user, meta.bundleName, std::to_string(meta.instanceId) });
 }
 
 bool CloudInfo::IsValid() const

@@ -29,8 +29,8 @@ public:
     using DBOrigin = DistributedDB::Origin;
     using DBChangeData = DistributedDB::ChangedData;
     using Type = DistributedDB::Type;
-    MetaObserver(std::shared_ptr<MetaStore> metaStore,
-        std::shared_ptr<Filter> filter, Observer observer, bool isLocal = false);
+    MetaObserver(std::shared_ptr<MetaStore> metaStore, std::shared_ptr<Filter> filter, Observer observer,
+        bool isLocal = false);
     virtual ~MetaObserver();
 
     // Database change callback
@@ -38,14 +38,15 @@ public:
     void OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data) override;
 
     void HandleChanges(int32_t flag, std::vector<std::vector<Type>> &priData);
+
 private:
     std::shared_ptr<MetaStore> metaStore_;
     std::shared_ptr<Filter> filter_;
     Observer observer_;
 };
 
-MetaObserver::MetaObserver(std::shared_ptr<MetaStore> metaStore,
-    std::shared_ptr<Filter> filter, Observer observer, bool isLocal)
+MetaObserver::MetaObserver(
+    std::shared_ptr<MetaStore> metaStore, std::shared_ptr<Filter> filter, Observer observer, bool isLocal)
     : metaStore_(std::move(metaStore)), filter_(std::move(filter)), observer_(std::move(observer))
 {
     if (metaStore_ != nullptr) {
@@ -78,8 +79,7 @@ std::vector<uint8_t> MetaDataManager::Filter::GetKey() const
     return std::vector<uint8_t>();
 }
 
-MetaDataManager::Filter::Filter(const std::string &pattern)
-    : pattern_(pattern)
+MetaDataManager::Filter::Filter(const std::string &pattern) : pattern_(pattern)
 {
 }
 
@@ -191,8 +191,8 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
         cloudSyncer_();
     }
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("failed! status:%{public}d isLocal:%{public}d, key:%{public}s",
-            status, isLocal, Anonymous::Change(key).c_str());
+        ZLOGE("failed! status:%{public}d isLocal:%{public}d, key:%{public}s", status, isLocal,
+            Anonymous::Change(key).c_str());
     }
     return status == DistributedDB::DBStatus::OK;
 }
@@ -256,8 +256,7 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
     if (!inited_ || devices.empty()) {
         return false;
     }
-    auto status = metaStore_->Sync(
-        devices, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, [complete](auto &dbResults) {
+    auto status = metaStore_->Sync(devices, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, [complete](auto &dbResults) {
         std::map<std::string, int32_t> results;
         for (auto &[uuid, status] : dbResults) {
             results.insert_or_assign(uuid, static_cast<int32_t>(status));
@@ -276,10 +275,9 @@ bool MetaDataManager::Subscribe(std::shared_ptr<Filter> filter, Observer observe
         return false;
     }
 
-    return metaObservers_.ComputeIfAbsent(
-        "", [ this, &observer, &filter ](const std::string &key) -> auto {
-            return std::make_shared<MetaObserver>(metaStore_, filter, observer);
-        });
+    return metaObservers_.ComputeIfAbsent("", [this, &observer, &filter](const std::string &key) -> auto {
+        return std::make_shared<MetaObserver>(metaStore_, filter, observer);
+    });
 }
 
 bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLocal)
@@ -288,10 +286,9 @@ bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLo
         return false;
     }
 
-    return metaObservers_.ComputeIfAbsent(
-        prefix, [ this,  isLocal, &observer, &prefix ](const std::string &key) -> auto {
-            return std::make_shared<MetaObserver>(metaStore_, std::make_shared<Filter>(prefix), observer, isLocal);
-        });
+    return metaObservers_.ComputeIfAbsent(prefix, [this, isLocal, &observer, &prefix](const std::string &key) -> auto {
+        return std::make_shared<MetaObserver>(metaStore_, std::make_shared<Filter>(prefix), observer, isLocal);
+    });
 }
 
 bool MetaDataManager::Unsubscribe(std::string filter)

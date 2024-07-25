@@ -14,6 +14,7 @@
  */
 
 #include "cloud/subscription.h"
+
 #include "utils/constant.h"
 namespace OHOS::DistributedData {
 bool Subscription::Relation::Marshal(json &node) const
