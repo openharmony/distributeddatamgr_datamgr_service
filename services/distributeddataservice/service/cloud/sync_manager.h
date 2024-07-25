@@ -96,14 +96,14 @@ private:
     using GenProgress = DistributedData::GenProgress;
     using GenDetails = DistributedData::GenDetails;
 
-    static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10); // second
+    static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10);  // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
-    static constexpr ExecutorPool::Duration BUSY_INTERVAL = std::chrono::seconds(180); // second
-    static constexpr int32_t RETRY_TIMES = 6; // normal retry
-    static constexpr int32_t CLIENT_RETRY_TIMES = 3; // normal retry
-    static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000; // high 32 bit
+    static constexpr ExecutorPool::Duration BUSY_INTERVAL = std::chrono::seconds(180);  // second
+    static constexpr int32_t RETRY_TIMES = 6;                                           // normal retry
+    static constexpr int32_t CLIENT_RETRY_TIMES = 3;                                    // normal retry
+    static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000;                           // high 32 bit
     static constexpr int32_t MV_BIT = 32;
-    static constexpr int32_t EXPIRATION_TIME = 6 * 60 * 60 * 1000; // 6 hours
+    static constexpr int32_t EXPIRATION_TIME = 6 * 60 * 60 * 1000;                      // 6 hours
 
     static uint64_t GenerateId(int32_t user);
     static ExecutorPool::Duration GetInterval(int32_t code);

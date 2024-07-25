@@ -19,6 +19,7 @@
 
 #include <chrono>
 #include <cinttypes>
+
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
@@ -343,7 +344,7 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
         Account::GetInstance()->QueryForegroundUsers(users);
     }
     for (auto user : users) {
-        for (auto &store : stores) {
+        for (const auto &store : stores) {
             syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId, {}, triggerMode));
         }
     }
@@ -399,7 +400,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             ZLOGE("GetDbInfoFromExtraData failed, empty database info.");
             return INVALID_ARGUMENT;
         }
-        for (auto &dbInfo : dbInfos) {
+        for (const auto &dbInfo : dbInfos) {
             syncManager_.DoCloudSync(
                 SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second, MODE_PUSH));
         }
@@ -411,7 +412,7 @@ std::map<std::string, StatisticInfos> CloudServiceImpl::ExecuteStatistics(const 
     const CloudInfo &cloudInfo, const SchemaMeta &schemaMeta)
 {
     std::map<std::string, StatisticInfos> result;
-    for (auto& database : schemaMeta.databases) {
+    for (auto &database : schemaMeta.databases) {
         if (storeId.empty() || database.alias == storeId) {
             StoreMetaData meta;
             meta.bundleName = schemaMeta.bundleName;
@@ -442,7 +443,7 @@ StatisticInfos CloudServiceImpl::QueryStatistics(const StoreMetaData &storeMetaD
         return infos;
     }
     infos.reserve(database.tables.size());
-    for (auto& table : database.tables) {
+    for (const auto &table : database.tables) {
         auto [success, info] = QueryTableStatistic(table.name, store);
         if (success) {
             info.table = table.alias;
@@ -523,7 +524,7 @@ std::pair<int32_t, std::map<std::string, StatisticInfos>> CloudServiceImpl::Quer
 
 int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
-    if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
+    if (strategy < Strategy::STRATEGY_HEAD || strategy >= Strategy::STRATEGY_BUTT) {
         ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
         return INVALID_ARGUMENT;
     }
@@ -833,7 +834,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
         std::vector<int32_t> users;
         if (user == 0) {
             auto account = Account::GetInstance();
-            finished = !(account == nullptr) && account->QueryUsers(users);
+            finished = (account != nullptr) && account->QueryUsers(users);
         } else {
             users.push_back(user);
         }

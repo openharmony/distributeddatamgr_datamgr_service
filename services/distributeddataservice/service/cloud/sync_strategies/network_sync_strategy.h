@@ -40,12 +40,13 @@ public:
     };
     NetworkSyncStrategy();
     ~NetworkSyncStrategy();
-    int32_t CheckSyncAction(const StoreInfo& storeInfo) override;
+    int32_t CheckSyncAction(const StoreInfo &storeInfo) override;
 
     static std::string GetKey(int32_t user);
-    static std::string GetKey(int32_t user, const std::string& bundleName);
+    static std::string GetKey(int32_t user, const std::string &bundleName);
+
 private:
-    StrategyInfo GetStrategy(int32_t user, const std::string& bundleName);
+    StrategyInfo GetStrategy(int32_t user, const std::string &bundleName);
 
     static bool Check(uint32_t strategy);
     static constexpr uint32_t DEFAULT_STRATEGY = WIFI | CELLULAR;
@@ -53,5 +54,5 @@ private:
     int32_t user_ = -1;
     ConcurrentMap<std::string, StrategyInfo> strategies_;
 };
-}
+} // namespace OHOS::CloudData
 #endif //OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_NETWORK_SYNC_STRATEGY_H

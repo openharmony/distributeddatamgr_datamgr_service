@@ -18,12 +18,13 @@
 
 #include <mutex>
 #include <queue>
+
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_extra_data.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
-#include "cloud/subscription.h"
 #include "cloud/sharing_center.h"
+#include "cloud/subscription.h"
 #include "cloud_service_stub.h"
 #include "feature/static_acts.h"
 #include "sync_manager.h"
