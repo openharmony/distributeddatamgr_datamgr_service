@@ -18,6 +18,7 @@
 #include "object_data_listener.h"
 #include "log_print.h"
 #include "object_manager.h"
+#include "utils/anonymous.h"
 namespace OHOS {
 namespace DistributedObject {
 ObjectDataListener::ObjectDataListener()
@@ -56,6 +57,11 @@ int32_t ObjectAssetsRecvListener::OnStart(const std::string &srcNetworkId, const
 int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, const sptr<AssetObj> &assetObj,
     int32_t result)
 {
+    if (assetObj == nullptr) {
+        ZLOGE("OnFinished error! status:%{public}d, srcNetworkId:%{public}s", result,
+            DistributedData::Anonymous::Change(srcNetworkId).c_str());
+        return result;
+    }
     auto objectKey = assetObj->dstBundleName_+assetObj->sessionId_;
     ZLOGI("OnFinished, status:%{public}d objectKey:%{public}s, asset size:%{public}zu", result, objectKey.c_str(),
         assetObj->uris_.size());

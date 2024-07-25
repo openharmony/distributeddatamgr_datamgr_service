@@ -125,7 +125,7 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
         { STATUS_STABLE, nullptr, (Action)CompensateSync },              // transfer_finished
         { STATUS_WAIT_UPLOAD, nullptr, (Action)ChangeAssetToNormal },    // upload
         { STATUS_NO_CHANGE, nullptr, (Action)Recover },                  // upload_finished
-        { STATUS_WAIT_DOWNLOAD, nullptr, (Action)STATUS_WAIT_DOWNLOAD }, // download
+        { STATUS_WAIT_DOWNLOAD, nullptr, (Action)ChangeAssetToNormal }, // download
         { STATUS_NO_CHANGE, nullptr, (Action)Recover },                  // download_finished
     }
 };

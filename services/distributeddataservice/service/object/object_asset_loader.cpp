@@ -187,6 +187,10 @@ int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &asset
 
 int32_t ObjectAssetsSendListener::OnSendResult(const sptr<AssetObj> &assetObj, int32_t result)
 {
+    if (assetObj == nullptr) {
+        ZLOGE("OnSendResult error! status:%{public}d", result);
+        return result;
+    }
     ZLOGI("OnSendResult, status:%{public}d, asset size:%{public}zu", result, assetObj->uris_.size());
     if (result == OBJECT_SUCCESS) {
         RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_SUCCESS);
