@@ -12,11 +12,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
+#define LOG_TAG "RdbCloudDataTranslate"
 #include "rdb_cloud_data_translate.h"
 
 #include "utils/endian_converter.h"
 #include "value_proxy.h"
+#include "log_print.h"
 
 namespace OHOS::DistributedRdb {
 using Asset = DistributedDB::Asset;
@@ -131,6 +132,7 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
     num = DistributedData::NetToHost(*(reinterpret_cast<decltype(&num)>(alignData.data())));
     used += sizeof(num);
     uint16_t count = 0;
+    std::set<std::string> names;
     while (used < length && count < num) {
         DataAsset asset;
         auto dataLen = ParserRawData(&data[used], length - used, asset);
@@ -138,10 +140,30 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
             break;
         }
         used += dataLen;
-        assets.push_back(ValueProxy::Convert(asset));
+        if (!names.insert(asset.name).second) {
+            ZLOGE("duplicate assets! name:%{public}.6s start merge.", asset.name.c_str());
+            MergeAsset(assets, asset);
+        } else {
+            assets.push_back(std::move(asset));
+        }
         count++;
     }
     return used;
+}
+
+void RdbCloudDataTranslate::MergeAsset(DataAssets &assets, DataAsset &asset)
+{
+    auto it = assets.begin();
+    while (it != assets.end()) {
+        if (it->name == asset.name &&
+            strtoll(it->modifyTime.c_str(), nullptr, 0) < strtoll(asset.modifyTime.c_str(), nullptr, 0)) {
+            assets.erase(it);
+            assets.push_back(std::move(asset));
+            break;
+        }
+        it++;
+    }
+    return;
 }
 
 bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializable::json &node) const
