@@ -25,7 +25,8 @@ namespace DistributedData {
 class WaterVersionManager {
 public:
     enum Type {
-        DYNAMIC,
+        BEGIN,
+        DYNAMIC = BEGIN,
         STATIC,
         BUTT
     };

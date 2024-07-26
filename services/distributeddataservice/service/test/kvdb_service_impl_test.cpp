@@ -672,13 +672,11 @@ HWTEST_F(KvdbServiceImplTest, DoCloudSync, TestSize.Level0)
     ASSERT_EQ(status, Status::SUCCESS);
     StoreMetaData metaData;
     SyncInfo syncInfo;
-    kvdbServiceImpl_->DoCloudSync(true, true);
     status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
     EXPECT_EQ(status, Status::NOT_SUPPORT);
     syncInfo.devices = {"device1", "device2"};
     syncInfo.query = "query";
     metaData.enableCloud = true;
-    kvdbServiceImpl_->DoCloudSync(false, false);
     status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
     EXPECT_EQ(status, Status::NETWORK_ERROR);
 }

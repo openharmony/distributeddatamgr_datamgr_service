@@ -142,7 +142,6 @@ private:
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
     void RegisterKvServiceInfo();
     void RegisterHandler();
-    void RegisterMatrixChange();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     void TryToSync(const StoreMetaData &metaData, bool force = false);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);

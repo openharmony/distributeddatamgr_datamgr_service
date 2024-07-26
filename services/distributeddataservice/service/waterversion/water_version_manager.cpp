@@ -17,14 +17,14 @@
 
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
-#include "device_matrix.h"
-#include "store/auto_cache.h"
 #include "device_manager_adapter.h"
+#include "device_matrix.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/matrix_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "store/auto_cache.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 
@@ -39,7 +39,7 @@ WaterVersionManager &WaterVersionManager::GetInstance()
 }
 WaterVersionManager::WaterVersionManager() : waterVersions_(BUTT)
 {
-    for (int i = 0; i < BUTT; ++i) {
+    for (int i = 0; i < static_cast<int>(BUTT); ++i) {
         waterVersions_[i].SetType(static_cast<Type>(i));
     }
 }
@@ -58,7 +58,7 @@ void WaterVersionManager::Init()
     }
     MetaDataManager::GetInstance().LoadMeta(WaterVersionMetaData::GetPrefix(), metas, true);
     for (auto &meta : metas) {
-        if (meta.type < 0 || meta.type > BUTT) {
+        if (meta.type < BEGIN || meta.type > BUTT) {
             ZLOGW("error meta:%{public}s", meta.ToAnonymousString().c_str());
             continue;
         }
@@ -90,7 +90,7 @@ std::string WaterVersionManager::GenerateWaterVersion(const std::string &bundleN
     if (CheckerManager::GetInstance().IsStatic(info)) {
         type = STATIC;
     }
-    if (type < 0 || type >= BUTT || bundleName.empty() || storeName.empty()) {
+    if (type < BEGIN || type >= BUTT || bundleName.empty() || storeName.empty()) {
         ZLOGE("invalid args. bundleName:%{public}s, storeName:%{public}s, type:%{public}d", bundleName.c_str(),
             Anonymous::Change(storeName).c_str(), type);
         return "";
@@ -111,7 +111,7 @@ std::string WaterVersionManager::GetWaterVersion(const std::string &bundleName, 
     if (CheckerManager::GetInstance().IsStatic(info)) {
         type = STATIC;
     }
-    if (type < 0 || type >= BUTT || bundleName.empty() || storeName.empty()) {
+    if (type < BEGIN || type >= BUTT || bundleName.empty() || storeName.empty()) {
         ZLOGE("invalid args. bundleName:%{public}s, storeName:%{public}s, type:%{public}d", bundleName.c_str(),
             Anonymous::Change(storeName).c_str(), type);
         return "";
@@ -137,7 +137,7 @@ std::string WaterVersionManager::GetWaterVersion(const std::string &bundleName, 
 std::pair<bool, uint64_t> WaterVersionManager::GetVersion(const std::string &deviceId,
     WaterVersionManager::Type type)
 {
-    if (type < 0 || type >= BUTT || deviceId.empty()) {
+    if (type < BEGIN || type >= BUTT || deviceId.empty()) {
         ZLOGE("invalid args, type:%{public}d", type);
         return { false, 0 };
     }
@@ -147,7 +147,7 @@ std::pair<bool, uint64_t> WaterVersionManager::GetVersion(const std::string &dev
 
 std::string WaterVersionManager::GetWaterVersion(const std::string &deviceId, WaterVersionManager::Type type)
 {
-    if (type < 0 || type >= BUTT || deviceId.empty()) {
+    if (type < BEGIN || type >= BUTT || deviceId.empty()) {
         ZLOGE("invalid args, type:%{public}d", type);
         return { false, 0 };
     }
@@ -181,7 +181,7 @@ bool WaterVersionManager::DelWaterVersion(const std::string &deviceId)
 
 bool WaterVersionManager::InitMeta(WaterVersionMetaData &metaData)
 {
-    metaData.waterVersion = 0;
+    metaData.waterVersion = WaterVersionMetaData::DEFAULT_VERSION;
     std::string uuid = DMAdapter::GetInstance().GetLocalDevice().uuid;
     for (size_t i = 0; i < metaData.keys.size(); ++i) {
         auto key = metaData.keys[i];
@@ -326,7 +326,7 @@ bool WaterVersionMetaData::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(waterVersion), waterVersion);
     int32_t tmp = -1;
     GetValue(node, GET_NAME(type), tmp);
-    if (tmp < 0 || tmp >= BUTT) {
+    if (tmp < BEGIN || tmp >= BUTT) {
         return false;
     }
     type = static_cast<Type>(tmp);
@@ -360,7 +360,7 @@ std::string WaterVersionMetaData::GetPrefix()
 
 bool WaterVersionMetaData::IsValid()
 {
-    if (type < 0 || type >= BUTT) {
+    if (type < BEGIN || type >= BUTT) {
         return false;
     }
     if (keys.size() != infos.size()) {
