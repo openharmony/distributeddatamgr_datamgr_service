@@ -26,8 +26,9 @@ public:
         FINISH,
     };
 
-    DataSyncEvent(StoreInfo storeInfo, uint32_t syncMode, int32_t status)
-        : CloudEvent(DATA_SYNC, std::move(storeInfo)), syncMode_(syncMode), status_(std::move(status))
+    DataSyncEvent(StoreInfo storeInfo, uint32_t syncMode, int32_t status, uint32_t traceId, uint32_t count = 0)
+        : CloudEvent(DATA_SYNC, std::move(storeInfo)), syncMode_(syncMode), status_(std::move(status)),
+        traceId_(traceId), count_(count)
     {
     }
 
@@ -38,14 +39,26 @@ public:
         return syncMode_;
     }
 
-    uint32_t GetSyncStatus() const
+    int32_t GetSyncStatus() const
     {
         return status_;
+    }
+
+    uint32_t GetTraceId() const
+    {
+        return traceId_;
+    }
+
+    uint32_t GetCount() const
+    {
+        return count_;
     }
 
 private:
     uint32_t syncMode_;
     int32_t status_;
+    uint32_t traceId_;
+    uint32_t count_;
 };
 } // OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_COMMON_EVENT_DATA_SYNC_EVENT_H
