@@ -18,6 +18,7 @@
 #include "object_data_listener.h"
 #include "log_print.h"
 #include "object_manager.h"
+#include "object_radar_reporter.h"
 #include "utils/anonymous.h"
 namespace OHOS {
 namespace DistributedObject {
@@ -31,6 +32,8 @@ ObjectDataListener::~ObjectDataListener()
 
 void ObjectDataListener::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
+    RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS,
+        ObjectStore::BIZ_STATE, ObjectStore::START);
     const auto &insertedDatas = data.GetEntriesInserted();
     const auto &updatedDatas = data.GetEntriesUpdated();
     std::map<std::string, std::vector<uint8_t>> changedData {};
@@ -48,6 +51,7 @@ void ObjectDataListener::OnChange(const DistributedDB::KvStoreChangedData &data)
 int32_t ObjectAssetsRecvListener::OnStart(const std::string &srcNetworkId, const std::string &dstNetworkId,
     const std::string &sessionId, const std::string &dstBundleName)
 {
+    RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::IDLE);
     auto objectKey = dstBundleName + sessionId;
     ZLOGI("OnStart, objectKey:%{public}s", objectKey.c_str());
     ObjectStoreManager::GetInstance()->NotifyAssetsStart(objectKey, srcNetworkId);
@@ -60,8 +64,11 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
     if (assetObj == nullptr) {
         ZLOGE("OnFinished error! status:%{public}d, srcNetworkId:%{public}s", result,
             DistributedData::Anonymous::Change(srcNetworkId).c_str());
+        RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, result);
         return result;
     }
+    RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_SUCCESS);
     auto objectKey = assetObj->dstBundleName_+assetObj->sessionId_;
     ZLOGI("OnFinished, status:%{public}d objectKey:%{public}s, asset size:%{public}zu", result, objectKey.c_str(),
         assetObj->uris_.size());
