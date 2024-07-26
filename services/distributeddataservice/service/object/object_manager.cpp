@@ -484,6 +484,8 @@ int32_t ObjectStoreManager::WaitAssets(const std::string& objectKey)
 {
     auto taskId = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this, objectKey]() {
         ZLOGE("wait assets finisehd timeout, objectKey:%{public}s", objectKey.c_str());
+        RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, ObjectStore::TIMEOUT);
         NotifyAssetsReady(objectKey);
     });
 
