@@ -44,8 +44,8 @@ public:
     using CloudSyncOption = DistributedDB::CloudSyncOption;
     using SyncProcessCallback = DistributedDB::SyncProcessCallback;
     using GenerateCloudVersionCallback = DistributedDB::GenerateCloudVersionCallback;
-    using DataInterceptor = DistributedDB::DataInterceptor;
     using CloudSyncConfig = DistributedDB::CloudSyncConfig;
+    using DataInterceptor = DistributedDB::DataInterceptor;
     DBStatus Get(const Key &key, Value &value) const override;
     DBStatus GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const override;
     DBStatus GetEntries(const Key &keyPrefix, KvStoreResultSet *&resultSet) const override;
@@ -107,8 +107,8 @@ public:
     int32_t GetTaskCount() override;
     void SetGenCloudVersionCallback(const GenerateCloudVersionCallback &callback) override;
     std::pair<DBStatus, std::map<std::string, std::string>> GetCloudVersion(const std::string &device) override;
-    DBStatus SetReceiveDataInterceptor(const DataInterceptor &interceptor) override;
     DBStatus SetCloudSyncConfig(const CloudSyncConfig &config) override;
+    DBStatus SetReceiveDataInterceptor(const DataInterceptor &interceptor) override;
     DBStatus GetDeviceEntries(const std::string &device, std::vector<Entry> &entries) const override;
 private:
     static const uint32_t DEFAULT_SIZE = 0;
