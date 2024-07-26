@@ -15,9 +15,10 @@
 #define LOG_TAG "BackupManager"
 #include "backup_manager.h"
 
+#include <unistd.h>
+
 #include <fstream>
 #include <iostream>
-#include <unistd.h>
 
 #include "backuprule/backup_rule_manager.h"
 #include "crypto_manager.h"
@@ -53,13 +54,12 @@ void BackupManager::Init()
 {
     std::vector<StoreMetaData> metas;
     MetaDataManager::GetInstance().LoadMeta(
-        StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid}), metas, true);
+        StoreMetaData::GetPrefix({ DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), metas, true);
     for (auto &meta : metas) {
         if (!meta.isBackup || meta.isDirty) {
-                continue;
+            continue;
         }
-        auto backupPath =
-            DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
+        auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
         switch (GetClearType(meta)) {
             case ROLLBACK:
                 RollBackData(backupPath);
@@ -171,8 +171,7 @@ void BackupManager::KeepData(const std::string &path)
     CopyFile(path, backupPath, true);
 }
 
-void BackupManager::SaveData(
-    const std::string &path, const std::string &key, const SecretKeyMetaData &secretKey)
+void BackupManager::SaveData(const std::string &path, const std::string &key, const SecretKeyMetaData &secretKey)
 {
     auto tmpPath = path + BACKUP_TMP_POSTFIX;
     auto backupPath = path + BACKUP_BK_POSTFIX;
@@ -249,8 +248,7 @@ void BackupManager::CleanData(const std::string &path)
  * */
 BackupManager::ClearType BackupManager::GetClearType(const StoreMetaData &meta)
 {
-    auto backupFile =
-        DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
+    auto backupFile = DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
     auto dbKey = meta.GetSecretKey();
     auto backupKey = meta.GetBackupSecretKey();
     auto bkFile = backupFile + BACKUP_BK_POSTFIX;
@@ -289,7 +287,7 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
     } else {
         fout.open(newPath, std::ios_base::out | std::ios_base::trunc);
     }
-    char buf[COPY_SIZE] = {0};
+    char buf[COPY_SIZE] = { 0 };
     while (fin.good()) {
         fin.read(buf, COPY_SIZE);
         fout.write(buf, fin.gcount());

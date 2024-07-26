@@ -15,50 +15,50 @@
 
 #include "cloud/sharing_center.h"
 namespace OHOS::DistributedData {
-SharingCenter::Results SharingCenter::Share(int32_t userId, const std::string &bundleName,
-    const std::string &sharingRes, const Participants &participants)
+SharingCenter::Results SharingCenter::Share(
+    int32_t userId, const std::string &bundleName, const std::string &sharingRes, const Participants &participants)
 {
     return {};
 }
 
-SharingCenter::Results SharingCenter::Unshare(int32_t userId, const std::string &bundleName,
-    const std::string &sharingRes, const Participants &participants)
+SharingCenter::Results SharingCenter::Unshare(
+    int32_t userId, const std::string &bundleName, const std::string &sharingRes, const Participants &participants)
 {
     return {};
 }
 
-std::pair<int32_t, std::string> SharingCenter::Exit(int32_t userId, const std::string &bundleName,
-    const std::string &sharingRes)
+std::pair<int32_t, std::string> SharingCenter::Exit(
+    int32_t userId, const std::string &bundleName, const std::string &sharingRes)
 {
     return {};
 }
 
-SharingCenter::Results SharingCenter::ChangePrivilege(int32_t userId, const std::string &bundleName,
-    const std::string &sharingRes, const Participants &participants)
+SharingCenter::Results SharingCenter::ChangePrivilege(
+    int32_t userId, const std::string &bundleName, const std::string &sharingRes, const Participants &participants)
 {
     return {};
 }
 
-SharingCenter::QueryResults SharingCenter::Query(int32_t userId, const std::string &bundleName,
-    const std::string &sharingRes)
+SharingCenter::QueryResults SharingCenter::Query(
+    int32_t userId, const std::string &bundleName, const std::string &sharingRes)
 {
     return {};
 }
 
-SharingCenter::QueryResults SharingCenter::QueryByInvitation(int32_t userId, const std::string &bundleName,
-    const std::string &invitation)
+SharingCenter::QueryResults SharingCenter::QueryByInvitation(
+    int32_t userId, const std::string &bundleName, const std::string &invitation)
 {
     return {};
 }
 
-std::tuple<int32_t, std::string, std::string> SharingCenter::ConfirmInvitation(int32_t userId,
-    const std::string &bundleName, const std::string &invitation, int32_t confirmation)
+std::tuple<int32_t, std::string, std::string> SharingCenter::ConfirmInvitation(
+    int32_t userId, const std::string &bundleName, const std::string &invitation, int32_t confirmation)
 {
     return {};
 }
 
-std::pair<int32_t, std::string> SharingCenter::ChangeConfirmation(int32_t userId,
-    const std::string &bundleName, const std::string &sharingRes, int32_t confirmation)
+std::pair<int32_t, std::string> SharingCenter::ChangeConfirmation(
+    int32_t userId, const std::string &bundleName, const std::string &sharingRes, int32_t confirmation)
 {
     return {};
 }

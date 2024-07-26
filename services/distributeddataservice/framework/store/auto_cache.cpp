@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 #define LOG_TAG "AutoCache"
-#include <cinttypes>
-#include "changeevent/remote_change_event.h"
-#include "eventcenter/event_center.h"
-#include "utils/anonymous.h"
 #include "store/auto_cache.h"
 
+#include <cinttypes>
+
+#include "changeevent/remote_change_event.h"
+#include "eventcenter/event_center.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedData {
 AutoCache &AutoCache::GetInstance()
 {
@@ -44,7 +45,9 @@ void AutoCache::Bind(std::shared_ptr<Executor> executor)
     executor_ = executor;
 }
 
-AutoCache::AutoCache() {}
+AutoCache::AutoCache()
+{
+}
 
 AutoCache::~AutoCache()
 {
@@ -58,14 +61,13 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
 {
     Store store;
     if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
-        disables_.ContainIf(meta.tokenId, [&meta](const std::set<std::string>& stores) -> bool {
-            return stores.count(meta.storeId) != 0;
-        })) {
+        disables_.ContainIf(meta.tokenId,
+            [&meta](const std::set<std::string> &stores) -> bool { return stores.count(meta.storeId) != 0; })) {
         return store;
     }
 
-    stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
+    stores_.Compute(
+        meta.tokenId, [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
             auto it = stores.find(meta.storeId);
             if (it != stores.end()) {
                 if (!watchers.empty()) {
@@ -88,22 +90,23 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
     return store;
 }
 
-AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::string& storeName)
+AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::string &storeName)
 {
     Stores stores;
-    stores_.ComputeIfPresent(tokenId, [&stores, &storeName](auto&, std::map<std::string, Delegate>& delegates) -> bool {
-        if (storeName.empty()) {
-            for (auto& [_, delegate] : delegates) {
-                stores.push_back(delegate);
+    stores_.ComputeIfPresent(
+        tokenId, [&stores, &storeName](auto &, std::map<std::string, Delegate> &delegates) -> bool {
+            if (storeName.empty()) {
+                for (auto &[_, delegate] : delegates) {
+                    stores.push_back(delegate);
+                }
+            } else {
+                auto it = delegates.find(storeName);
+                if (it != delegates.end()) {
+                    stores.push_back(it->second);
+                }
             }
-        } else {
-            auto it = delegates.find(storeName);
-            if (it != delegates.end()) {
-                stores.push_back(it->second);
-            }
-        }
-        return !stores.empty();
-    });
+            return !stores.empty();
+        });
     return stores;
 }
 
@@ -168,8 +171,8 @@ void AutoCache::CloseExcept(const std::set<int32_t> &users)
 void AutoCache::SetObserver(uint32_t tokenId, const std::string &storeId, const AutoCache::Watchers &watchers)
 {
     stores_.ComputeIfPresent(tokenId, [&storeId, &watchers](auto &key, auto &stores) {
-        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key, Anonymous::Change(storeId).c_str(),
-            watchers.size());
+        ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key,
+            Anonymous::Change(storeId).c_str(), watchers.size());
         auto it = stores.find(storeId);
         if (it != stores.end()) {
             it->second.SetObservers(watchers);
@@ -194,25 +197,24 @@ void AutoCache::GarbageCollect(bool isForce)
     });
 }
 
-void AutoCache::Enable(uint32_t tokenId, const std::string& storeId)
+void AutoCache::Enable(uint32_t tokenId, const std::string &storeId)
 {
-    disables_.ComputeIfPresent(tokenId, [&storeId](auto key, std::set<std::string>& stores) {
+    disables_.ComputeIfPresent(tokenId, [&storeId](auto key, std::set<std::string> &stores) {
         stores.erase(storeId);
         return !(stores.empty() || storeId.empty());
     });
 }
 
-void AutoCache::Disable(uint32_t tokenId, const std::string& storeId)
+void AutoCache::Disable(uint32_t tokenId, const std::string &storeId)
 {
-    disables_.Compute(tokenId, [&storeId](auto key, std::set<std::string>& stores) {
+    disables_.Compute(tokenId, [&storeId](auto key, std::set<std::string> &stores) {
         stores.insert(storeId);
         return !stores.empty();
     });
     CloseStore(tokenId, storeId);
 }
 
-AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user,
-    const StoreMetaData &meta)
+AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta)
     : store_(delegate), watchers_(watchers), user_(user), meta_(meta)
 {
     time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
