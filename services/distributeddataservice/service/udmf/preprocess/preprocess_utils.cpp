@@ -37,7 +37,7 @@ namespace UDMF {
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
-const char SPECIAL = '^';
+constexpr char SPECIAL = '^';
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
