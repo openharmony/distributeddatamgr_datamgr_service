@@ -263,7 +263,7 @@ DBStatus DBStoreMock::GetEntries(ConcurrentMap<Key, Value> &store, const Key &ke
     store.ForEach([&entries, &keyPrefix](const Key &key, Value &value) {
         auto it = std::search(key.begin(), key.end(), keyPrefix.begin(), keyPrefix.end());
         if (it == key.begin()) {
-            entries.push_back({key, value});  
+            entries.push_back({key, value});
         }
         return false;
     });
@@ -357,12 +357,12 @@ std::pair<DBStatus, std::map<std::string, std::string>> DBStoreMock::GetCloudVer
     return { NOT_SUPPORT, {} };
 }
 
-DBStatus DBStoreMock::SetReceiveDataInterceptor(const DataInterceptor &interceptor)
+DBStatus DBStoreMock::SetCloudSyncConfig(const CloudSyncConfig &config)
 {
     return NOT_SUPPORT;
 }
 
-DBStatus DBStoreMock::SetCloudSyncConfig(const CloudSyncConfig &config)
+DBStatus DBStoreMock::SetReceiveDataInterceptor(const DataInterceptor &interceptor)
 {
     return NOT_SUPPORT;
 }
