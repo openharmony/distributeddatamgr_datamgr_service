@@ -500,7 +500,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
         SchemaMeta schemaMeta;
         std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
-        if (!MetaDataManager::GetInstance().LoadMeta(std::move(schemaKey), schemaMeta, true)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
             ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
             return nullptr;
@@ -569,7 +569,7 @@ void SyncManager::GetLastResults(
 
 int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)
 {
-    for (auto &queryKey : queryKeys) {
+    for (const auto &queryKey : queryKeys) {
         std::string storeId = queryKey.storeId;
         QueryKey key{ .accountId = queryKey.accountId, .bundleName = queryKey.bundleName, .storeId = "" };
         lastSyncInfos_.ComputeIfPresent(

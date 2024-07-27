@@ -14,9 +14,10 @@
  */
 #define LOG_TAG "RdbCloudTest"
 
+#include "rdb_cloud.h"
+
 #include "gtest/gtest.h"
 #include "log_print.h"
-#include "rdb_cloud.h"
 #include "rdb_cloud_data_translate.h"
 
 using namespace testing::ext;
@@ -56,7 +57,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
 {
     BindAssets bindAssets;
     Bytes bytes;
-    std::shared_ptr<CloudDB> cloudDB  = std::make_shared<CloudDB>();
+    std::shared_ptr<CloudDB> cloudDB = std::make_shared<CloudDB>();
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     std::string tableName = "testTable";
     auto result = rdbCloud.BatchInsert(tableName, std::move(g_DBVBucket), g_DBVBucket);
@@ -77,7 +78,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
 HWTEST_F(RdbCloudTest, RdbCloudTest002, TestSize.Level1)
 {
     BindAssets bindAssets;
-    std::shared_ptr<CloudDB> cloudDB  = std::make_shared<CloudDB>();
+    std::shared_ptr<CloudDB> cloudDB = std::make_shared<CloudDB>();
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     std::string tableName = "testTable";
     rdbCloud.Lock();
@@ -113,7 +114,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 {
     BindAssets bindAssets;
     bindAssets.bindAssets = nullptr;
-    std::shared_ptr<CloudDB> cloudDB  = std::make_shared<CloudDB>();
+    std::shared_ptr<CloudDB> cloudDB = std::make_shared<CloudDB>();
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     std::string tableName = "testTable";
     DBVBucket extends = {
@@ -151,7 +152,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 HWTEST_F(RdbCloudTest, ConvertStatus, TestSize.Level1)
 {
     BindAssets bindAssets;
-    std::shared_ptr<CloudDB> cloudDB  = std::make_shared<CloudDB>();
+    std::shared_ptr<CloudDB> cloudDB = std::make_shared<CloudDB>();
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     auto result = rdbCloud.ConvertStatus(GeneralError::E_OK);
     EXPECT_EQ(result, DBStatus::OK);

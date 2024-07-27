@@ -16,11 +16,12 @@
 #define LOG_TAG "NetworkSyncStrategy"
 
 #include "network_sync_strategy.h"
-#include "metadata/meta_data_manager.h"
+
 #include "device_manager_adapter.h"
 #include "error/general_error.h"
-#include "utils/constant.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
+#include "utils/constant.h"
 namespace OHOS::CloudData {
 using namespace OHOS::DistributedData;
 NetworkSyncStrategy::NetworkSyncStrategy()
@@ -43,10 +44,12 @@ NetworkSyncStrategy::NetworkSyncStrategy()
             return true;
         }, true);
 }
+
 NetworkSyncStrategy::~NetworkSyncStrategy()
 {
     MetaDataManager::GetInstance().Unsubscribe(StrategyInfo::PREFIX);
 }
+
 int32_t NetworkSyncStrategy::CheckSyncAction(const StoreInfo &storeInfo)
 {
     if (!DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {

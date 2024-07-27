@@ -17,7 +17,6 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H
 #include "cloud_types.h"
 #include "itypes_util.h"
-#include "cloud_types.h"
 #include "values_bucket.h"
 
 namespace OHOS::ITypesUtil {

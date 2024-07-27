@@ -15,14 +15,14 @@
 #define LOG_TAG "CloudServiceStub"
 #include "cloud_service_stub.h"
 
-#include "ipc_skeleton.h"
-#include "cloud_types_util.h"
 #include "cloud/cloud_config_manager.h"
+#include "cloud_types_util.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "permission/permission_validator.h"
 #include "rdb_types.h"
-#include "utils/anonymous.h"
 #include "tokenid_kit.h"
+#include "utils/anonymous.h"
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace OHOS::Security::AccessToken;
@@ -89,7 +89,7 @@ int32_t CloudServiceStub::OnEnableCloud(MessageParcel &data, MessageParcel &repl
         return IPC_STUB_INVALID_DATA_ERR;
     }
     std::map<std::string, int32_t> localSwitches;
-    for (auto &[bundle, status] : switches) {
+    for (const auto &[bundle, status] : switches) {
         localSwitches.insert_or_assign(CloudConfigManager::GetInstance().ToLocal(bundle), status);
     }
     auto result = EnableCloud(id, localSwitches);
@@ -129,7 +129,7 @@ int32_t CloudServiceStub::OnClean(MessageParcel &data, MessageParcel &reply)
         return IPC_STUB_INVALID_DATA_ERR;
     }
     std::map<std::string, int32_t> localActions;
-    for (auto &[bundle, action] : actions) {
+    for (const auto &[bundle, action] : actions) {
         localActions.insert_or_assign(CloudConfigManager::GetInstance().ToLocal(bundle), action);
     }
     auto result = Clean(id, localActions);

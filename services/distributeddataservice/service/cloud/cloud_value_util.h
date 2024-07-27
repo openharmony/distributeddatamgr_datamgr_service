@@ -16,9 +16,9 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_VALUE_UTIL_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_VALUE_UTIL_H
 
+#include "cloud/sharing_center.h"
 #include "cloud_service.h"
 #include "cloud_types.h"
-#include "cloud/sharing_center.h"
 #include "error/general_error.h"
 
 namespace OHOS::CloudData {
