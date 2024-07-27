@@ -654,6 +654,12 @@ void ObjectStoreManager::Close()
     if (delegate_ == nullptr) {
         return;
     }
+    int32_t taskCount = delegate_->GetTaskCount();
+    if (taskCount > 0 && syncCount_ == 1) {
+        CloseAfterMinute();
+        ZLOGW("Store is busy, close after a minute, task count: %{public}d", taskCount);
+        return;
+    }
     syncCount_--;
     ZLOGI("closed a store, syncCount = %{public}d", syncCount_);
     FlushClosedStore();
