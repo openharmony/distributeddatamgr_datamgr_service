@@ -308,6 +308,7 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
                 continue;
             }
             DistributedObject::ObjectStoreManager::GetInstance()->CloseAfterMinute();
+            ZLOGI("Auto launch, close after a minute");
             return OBJECT_SUCCESS;
         }
     }
