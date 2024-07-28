@@ -17,7 +17,7 @@ namespace OHOS {
 namespace DistributedData {
 CheckerManager &CheckerManager::GetInstance()
 {
-    constexpr CheckerManager instance;
+    static CheckerManager instance;
     return instance;
 }
 

@@ -40,7 +40,7 @@ using namespace DistributedDB;
 using Anonymous = OHOS::DistributedData::Anonymous;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
-constexpr std::string TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
+constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
 static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
 
 RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
