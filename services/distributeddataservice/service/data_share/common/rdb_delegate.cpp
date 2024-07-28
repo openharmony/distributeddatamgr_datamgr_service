@@ -31,6 +31,7 @@ namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
 constexpr static int64_t TIMEOUT_TIME = 500;
 std::atomic<int32_t> RdbDelegate::resultSetCount = 0;
+ConcurrentMap<uint32_t, int32_t> RdbDelegate::resultSetCallingPids;
 enum REMIND_TIMER_ARGS : int32_t {
     ARG_DB_PATH = 0,
     ARG_VERSION,
@@ -147,8 +148,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     }
     int count = resultSetCount.fetch_add(1);
     ZLOGD("start query %{public}d", count);
-    if (count > MAX_RESULTSET_COUNT) {
-        ZLOGE("resultSetCount is full");
+    if (count > MAX_RESULTSET_COUNT && IsLimit(count)) {
         resultSetCount--;
         return std::make_pair(E_ERROR, nullptr);
     }
@@ -161,6 +161,10 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         resultSetCount--;
         return std::make_pair(E_ERROR, nullptr);
     }
+    resultSetCallingPids.Compute(callingPid, [](const uint32_t &, int32_t &value) {
+        ++value;
+        return true;
+    });
     int64_t beginTime = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
@@ -173,6 +177,10 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
             ZLOGE("pid %{public}d query time is %{public}" PRId64 ", %{public}d resultSet is used.", callingPid,
                 (endTime - beginTime), resultSetCount.load());
         }
+        resultSetCallingPids.ComputeIfPresent(callingPid, [](const uint32_t &, int32_t &value) {
+            --value;
+            return value > 0;
+        });
         delete p;
     }};
     return std::make_pair(E_OK, result);
@@ -205,5 +213,27 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
 bool RdbDelegate::IsInvalid()
 {
     return store_ == nullptr;
+}
+
+bool RdbDelegate::IsLimit(int count)
+{
+    bool isFull = true;
+    for (int32_t retryCount = 0; retryCount < RETRY; retryCount++) {
+        std::this_thread::sleep_for(WAIT_TIME);
+        if (resultSetCount.load() <= MAX_RESULTSET_COUNT) {
+            isFull = false;
+            break;
+        }
+    }
+    if (!isFull) {
+        return false;
+    }
+    std::string logStr;
+    resultSetCallingPids.ForEach([&logStr](const uint32_t &key, int32_t &value) {
+        logStr += std::to_string(key) + ":" + std::to_string(value) + ";";
+        return false;
+    });
+    ZLOGE("resultSetCount is full, owner is %{public}s", logStr.c_str());
+    return true;
 }
 } // namespace OHOS::DataShare
