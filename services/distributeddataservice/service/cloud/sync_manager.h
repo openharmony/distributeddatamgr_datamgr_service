@@ -134,6 +134,7 @@ private:
     static void GetLastResults(
         const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
     void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
+    bool NeedSaveSyncInfo(const QueryKey &queryKey);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
@@ -141,6 +142,7 @@ private:
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
     ConcurrentMap<QueryKey, std::map<SyncId, CloudSyncInfo>> lastSyncInfos_;
+    std::set<std::string> kvApps_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
