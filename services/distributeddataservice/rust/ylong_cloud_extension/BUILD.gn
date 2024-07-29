@@ -39,18 +39,23 @@ ohos_rust_shared_ffi("ylong_cloud_extension") {
   ]
 }
 
-ohos_rust_unittest("rust_ylong_cloud_ext_unit_test") {
-  module_out_path =
-      "distributeddatamgr/datamgr_service/services/rust/ylong_cloud_extension"
-  sources = [ "src/lib.rs" ]
+if (use_clang_coverage) {
+  group("rust_ylong_cloud_ext_unit_test") {
+  }
+} else {
+  ohos_rust_unittest("rust_ylong_cloud_ext_unit_test") {
+    module_out_path =
+        "distributeddatamgr/datamgr_service/services/rust/ylong_cloud_extension"
+    sources = [ "src/lib.rs" ]
 
-  external_deps = [
-    "hilog:hilog_rust",
-    "ipc:ipc_rust",
-  ]
-  deps = [
-    ":ylong_cloud_extension",
-    "../connect_adapter:conn_adapter",
-  ]
-  rustflags = [ "--cfg=feature=\"test_server_ready\"" ]
+    external_deps = [
+      "hilog:hilog_rust",
+      "ipc:ipc_rust",
+    ]
+    deps = [
+      ":ylong_cloud_extension",
+      "../connect_adapter:conn_adapter",
+    ]
+    rustflags = [ "--cfg=feature=\"test_server_ready\"" ]
+  }
 }
