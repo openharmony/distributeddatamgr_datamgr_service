@@ -35,8 +35,8 @@ public:
     void TearDown(){};
 
 protected:
-    static constexpr const char* testCloudBundle = "test_cloud_bundleName";
-    static constexpr const char* testCloudStore = "test_cloud_database_name";
+    static constexpr const char* TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
+    static constexpr const char* TEST_CLOUD_STORE = "test_cloud_database_name";
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
 };
 std::shared_ptr<DBStoreMock> CloudTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
@@ -65,7 +65,7 @@ HWTEST_F(CloudTest, EventInfo, TestSize.Level1)
     SyncEvent::EventInfo eventInfo1(mode, wait, retry, query, async);
     SyncEvent::EventInfo eventInfo2(std::move(eventInfo1));
     SyncEvent::EventInfo eventInfo3 = std::move(eventInfo2);
-    StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), testCloudBundle, testCloudStore, 0 };
+    StoreInfo storeInfo{ IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
     SyncEvent evt(storeInfo, eventInfo3);
     EXPECT_EQ(evt.GetMode(), mode);
     EXPECT_EQ(evt.GetWait(), wait);
@@ -88,11 +88,11 @@ HWTEST_F(CloudTest, Serializable_Marshal, TestSize.Level1)
     EXPECT_EQ(false, ret);
 
     SchemaMeta::Database database;
-    database.name = testCloudStore;
+    database.name = TEST_CLOUD_STORE;
     database.alias = "database_alias_test";
 
     schemaMeta.version = 1;
-    schemaMeta.bundleName = testCloudBundle;
+    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
     schemaMeta.databases.emplace_back(database);
     ret = schemaMeta.IsValid();
     EXPECT_EQ(true, ret);
@@ -103,7 +103,7 @@ HWTEST_F(CloudTest, Serializable_Marshal, TestSize.Level1)
 
     EXPECT_EQ(schemaMeta.version, schemaMeta2.version);
     EXPECT_EQ(schemaMeta.bundleName, schemaMeta2.bundleName);
-    Database database2 = schemaMeta2.GetDataBase(testCloudStore);
+    Database database2 = schemaMeta2.GetDataBase(TEST_CLOUD_STORE);
     EXPECT_EQ(database.alias, database2.alias);
 }
 
@@ -149,7 +149,7 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
     table2.alias = "test_cloud_table_alias2";
 
     SchemaMeta::Database database1;
-    database1.name = testCloudStore;
+    database1.name = TEST_CLOUD_STORE;
     database1.alias = "test_cloud_database_alias";
     database1.tables.emplace_back(table1);
     database1.tables.emplace_back(table2);
