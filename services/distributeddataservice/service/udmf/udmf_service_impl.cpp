@@ -198,8 +198,8 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         return E_DB_ERROR;
     }
     if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info) && !IsPermissionInCache(query)) {
-        RADAR_REPORT(BizScene::GET_DATA, GetDataStage::VERIFY_PRIVILEGE, StageRes::FAILED,
-                     ERROR_CODE, E_NO_PERMISSION);
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::GET_DATA, GetDataStage::VERIFY_PRIVILEGE, StageRes::FAILED, E_NO_PERMISSION);
         return E_NO_PERMISSION;
     }
 
@@ -285,8 +285,8 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         }
     }
     if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
-        RADAR_REPORT(BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED,
-                     ERROR_CODE, E_NO_PERMISSION);
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
               bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
@@ -484,7 +484,8 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
 {
     ZLOGD("start");
-    RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BIZ_STATE, BizState::DFX_BEGIN);
+    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+        BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN,StageRes::IDLE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
     if (!key.IsValid()) {
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
@@ -499,11 +500,12 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
 
     if (store->Sync(devices) != E_OK) {
         ZLOGE("Store sync failed, intention: %{public}s.", key.intention.c_str());
-        RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, ERROR_CODE, E_DB_ERROR,
-                     BIZ_STATE, BizState::DFX_ABNORMAL_END);
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_ABNORMAL_END);
         return E_DB_ERROR;
     }
-    RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
+    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+        BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_NORMAL_END);
     return E_OK;
 }
 

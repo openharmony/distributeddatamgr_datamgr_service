@@ -277,17 +277,19 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices)
             }
         }
         if (dbStatus != DBStatus::OK) {
-            RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, ERROR_CODE, dbStatus);
+            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, dbStatus);
         } else {
-            RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS,
-                         BIZ_STATE, BizState::DFX_NORMAL_END);
+            RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_NORMAL_END);
         }
 
         ZLOGI("sync complete, %{public}s, status:%{public}d.", Anonymous::Change(storeId_).c_str(), dbStatus);
     };
     DBStatus status = kvStore_->Sync(syncDevices, SyncMode::SYNC_MODE_PULL_ONLY, onComplete);
     if (status != DBStatus::OK) {
-        RADAR_REPORT(BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, ERROR_CODE, status);
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, status);
         ZLOGE("Sync kvStore failed, status: %{public}d.", status);
         return E_DB_ERROR;
     }
