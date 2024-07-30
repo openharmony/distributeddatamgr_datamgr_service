@@ -485,7 +485,7 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
 {
     ZLOGD("start");
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-        BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN,StageRes::IDLE, BizState::DFX_BEGIN);
+        BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
     if (!key.IsValid()) {
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
