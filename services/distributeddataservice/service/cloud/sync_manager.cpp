@@ -18,6 +18,8 @@
 #include <chrono>
 
 #include "account/account_delegate.h"
+#include "bootstrap.h"
+#include "checker/checker_manager.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"
@@ -142,6 +144,16 @@ SyncManager::SyncManager()
 {
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
     syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
+    auto metaName = Bootstrap::GetInstance().GetProcessLabel();
+    kvApps_.insert(std::move(metaName));
+    auto stores = CheckerManager::GetInstance().GetStaticStores();
+    for (auto &store : stores) {
+        kvApps_.insert(std::move(store.bundleName));
+    }
+    stores = CheckerManager::GetInstance().GetDynamicStores();
+    for (auto &store : stores) {
+        kvApps_.insert(std::move(store.bundleName));
+    }
 }
 
 SyncManager::~SyncManager()
@@ -566,6 +578,17 @@ void SyncManager::GetLastResults(
     }
 }
 
+bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
+{
+    if (queryKey.accountId.empty()) {
+        return false;
+    }
+    if (std::find(kvApps_.begin(), kvApps_.end(), queryKey.bundleName) != kvApps_.end()) {
+        return false;
+    }
+    return true;
+}
+
 int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)
 {
     for (const auto &queryKey : queryKeys) {
@@ -584,7 +607,7 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
 {
     int64_t startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
     for (const auto &[queryKey, syncId] : cloudSyncInfos) {
-        if (queryKey.accountId.empty()) {
+        if (!NeedSaveSyncInfo(queryKey)) {
             continue;
         }
         lastSyncInfos_.Compute(queryKey, [id = syncId, startTime](auto &, std::map<SyncId, CloudSyncInfo> &val) {
@@ -596,7 +619,7 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
 
 void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code)
 {
-    if (queryKey.accountId.empty()) {
+    if (!NeedSaveSyncInfo(queryKey)) {
         return;
     }
     lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key, std::map<SyncId, CloudSyncInfo> &val) {
