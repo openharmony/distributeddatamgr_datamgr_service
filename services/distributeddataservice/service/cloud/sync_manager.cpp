@@ -544,7 +544,6 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
             ZLOGW("save cloud info fail, user: %{public}d", cloud.user);
         }
     }
-
     if (info.bundleName_.empty()) {
         for (const auto &it : cloud.apps) {
             QueryKey queryKey{ .accountId = cloud.id, .bundleName = it.first, .storeId = "" };
