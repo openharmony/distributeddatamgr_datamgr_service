@@ -31,7 +31,7 @@ pub(crate) enum AssetLoaderFunc {
 }
 
 pub(crate) enum CloudServiceFunc {
-    ConnectAssetLoader = 1,
+    ConnectAssetLoader,
     ConnectDatabase,
     GetAppBriefInfo,
     GetServiceInfo,
