@@ -201,8 +201,8 @@ static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBin
     Values args;
     VBuckets vBuckets;
     auto sql = BuildSql(assetBindInfo, args);
-    auto cursor = store->Query(assetBindInfo.tableName, sql, std::move(args));
-    if (cursor == nullptr) {
+    auto [errCode, cursor] = store->Query(assetBindInfo.tableName, sql, std::move(args));
+    if (errCode != E_OK || cursor == nullptr) {
         return vBuckets;
     }
     int32_t count = cursor->GetCount();

@@ -351,6 +351,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "mock/general_watcher_mock.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
   ]
 
@@ -452,6 +453,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "cache_cursor_test.cpp",
+    "mock/general_watcher_mock.cpp",
     "rdb_asset_loader_test.cpp",
     "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",

@@ -414,40 +414,40 @@ int32_t RdbGeneralStore::Delete(const std::string &table, const std::string &sql
     return 0;
 }
 
-std::shared_ptr<Cursor> RdbGeneralStore::Query(__attribute__((unused))const std::string &table,
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(__attribute__((unused))const std::string &table,
     const std::string &sql, Values &&args)
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
-        return nullptr;
+        return { GeneralError::E_ALREADY_CLOSED, nullptr };
     }
-    std::vector<VBucket> records = QuerySql(sql, std::move(args));
-    return std::make_shared<CacheCursor>(std::move(records));
+    auto [errCode, records] = QuerySql(sql, std::move(args));
+    return { errCode, std::make_shared<CacheCursor>(std::move(records)) };
 }
 
-std::shared_ptr<Cursor> RdbGeneralStore::Query(const std::string &table, GenQuery &query)
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(const std::string &table, GenQuery &query)
 {
     RdbQuery *rdbQuery = nullptr;
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
         ZLOGE("not RdbQuery!");
-        return nullptr;
+        return { GeneralError::E_INVALID_ARGS, nullptr };
     }
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
             Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
-        return nullptr;
+        return { GeneralError::E_ALREADY_CLOSED, nullptr };
     }
     if (rdbQuery->IsRemoteQuery()) {
         if (rdbQuery->GetDevices().size() != 1) {
             ZLOGE("RemoteQuery: devices size error! size:%{public}zu", rdbQuery->GetDevices().size());
-            return nullptr;
+            return { GeneralError::E_ERROR, nullptr };
         }
-        return RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition());
+        return { GeneralError::E_OK, RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition()) };
     }
-    return nullptr;
+    return { GeneralError::E_ERROR, nullptr };
 }
 
 int32_t RdbGeneralStore::MergeMigratedData(const std::string &tableName, VBuckets &&values)
@@ -496,19 +496,19 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
     return status;
 }
 
-std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery &query)
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::PreSharing(GenQuery &query)
 {
     RdbQuery *rdbQuery = nullptr;
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
         ZLOGE("not RdbQuery!");
-        return nullptr;
+        return { GeneralError::E_INVALID_ARGS, nullptr };
     }
     auto tables = rdbQuery->GetTables();
     auto statement = rdbQuery->GetStatement();
     if (statement.empty() || tables.empty()) {
         ZLOGE("statement size:%{public}zu, tables size:%{public}zu", statement.size(), tables.size());
-        return nullptr;
+        return { GeneralError::E_INVALID_ARGS, nullptr };
     }
     std::string sql = BuildSql(*tables.begin(), statement, rdbQuery->GetColumns());
     VBuckets values;
@@ -516,14 +516,17 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery &query)
         std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
         if (delegate_ == nullptr) {
             ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
-            return nullptr;
+            return { GeneralError::E_ALREADY_CLOSED, nullptr };
         }
-        values = QuerySql(sql, rdbQuery->GetBindArgs());
+        auto [errCode, ret] = QuerySql(sql, rdbQuery->GetBindArgs());
+        if (errCode != GeneralError::E_OK) {
+            values = std::move(ret);
+        }
     }
     if (rdbCloud_ == nullptr || values.empty()) {
         ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud_ == nullptr ? "nullptr" : "not nullptr",
             values.size());
-        return nullptr;
+        return { GeneralError::E_CLOUD_DISABLED, nullptr };
     }
     VBuckets extends = ExtractExtend(values);
     rdbCloud_->PreSharing(*tables.begin(), extends);
@@ -532,7 +535,7 @@ std::shared_ptr<Cursor> RdbGeneralStore::PreSharing(GenQuery &query)
         value->insert_or_assign(DistributedRdb::Field::SHARING_RESOURCE_FIELD, (*extend)[SchemaMeta::SHARING_RESOURCE]);
         value->erase(CLOUD_GID);
     }
-    return std::make_shared<CacheCursor>(std::move(values));
+    return { GeneralError::E_OK, std::make_shared<CacheCursor>(std::move(values)) };
 }
 
 VBuckets RdbGeneralStore::ExtractExtend(VBuckets &values) const
@@ -838,7 +841,7 @@ int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
     return GenErr::E_OK;
 }
 
-VBuckets RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
+std::pair<int32_t, VBuckets> RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
 {
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
@@ -846,9 +849,9 @@ VBuckets RdbGeneralStore::QuerySql(const std::string &sql, Values &&args)
     if (status != DBStatus::OK) {
         ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
             changedData.size());
-        return {};
+        return { GenErr::E_ERROR, {} };
     }
-    return ValueProxy::Convert(std::move(changedData));
+    return { GenErr::E_OK, ValueProxy::Convert(std::move(changedData)) };
 }
 
 std::vector<std::string> RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
@@ -889,7 +892,10 @@ std::set<std::string> RdbGeneralStore::GetTables()
         ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
         return tables;
     }
-    auto res = QuerySql(QUERY_TABLES_SQL, {});
+    auto [errCode, res] = QuerySql(QUERY_TABLES_SQL, {});
+    if (errCode != GenErr::E_OK) {
+        return tables;
+    }
     for (auto &table : res) {
         auto it = table.find("name");
         if (it == table.end() || TYPE_INDEX<std::string> != it->second.index()) {

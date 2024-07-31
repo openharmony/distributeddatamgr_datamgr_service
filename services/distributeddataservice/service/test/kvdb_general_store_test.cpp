@@ -32,6 +32,7 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
+#include "mock/general_watcher_mock.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
@@ -660,6 +661,42 @@ HWTEST_F(KVDBGeneralStoreTest, Delete, TestSize.Level0)
     store->SetDBReceiveDataInterceptor(DistributedKv::KvStoreType::SINGLE_VERSION);
     ret = store->Delete("table", "sql", std::move(args));
     EXPECT_EQ(ret, GeneralError::E_NOT_SUPPORT);
+}
+
+/**
+* @tc.name: Query001
+* @tc.desc: KVDBGeneralStoreTest Query function test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(KVDBGeneralStoreTest, Query001, TestSize.Level1)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::string table = "table";
+    std::string sql = "sql";
+    auto [errCode, result] = store->Query(table, sql, {});
+    EXPECT_EQ(errCode, GeneralError::E_NOT_SUPPORT);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name: Query002
+* @tc.desc: KVDBGeneralStoreTest Query function test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(KVDBGeneralStoreTest, Query002, TestSize.Level1)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::string table = "table";
+    MockQuery query;
+    auto [errCode, result] = store->Query(table, query);
+    EXPECT_EQ(errCode, GeneralError::E_NOT_SUPPORT);
+    EXPECT_EQ(result, nullptr);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
