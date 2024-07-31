@@ -19,6 +19,7 @@
 #include <bitset>
 #include <map>
 #include <mutex>
+
 #include "metadata/store_meta_data.h"
 
 namespace OHOS::DistributedData {
