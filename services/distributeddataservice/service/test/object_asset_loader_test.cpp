@@ -99,7 +99,7 @@ HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync002, TestSize.Level0)
         if (success) {}
     };
     std::vector<Asset> assets{ asset_ };
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(100, 0);
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3);
     ASSERT_NE(executors, nullptr);
     assetLoader->SetThreadPool(executors);
     ASSERT_NE(assetLoader->executors_, nullptr);
@@ -130,9 +130,8 @@ HWTEST_F(ObjectAssetLoaderTest, FinishTask001, TestSize.Level0)
 HWTEST_F(ObjectAssetLoaderTest, IsDownloading001, TestSize.Level0)
 {
     auto assetLoader = ObjectAssetLoader::GetInstance();
-    assetLoader->IsDownloading(asset_);
-    assetLoader->UpdateDownloaded(asset_);
-    assetLoader->IsDownloading(asset_);
+    auto result = assetLoader->IsDownloading(asset_);
+    ASSERT_EQ(result, true);
 }
 
 /**
@@ -145,9 +144,11 @@ HWTEST_F(ObjectAssetLoaderTest, IsDownloading001, TestSize.Level0)
 HWTEST_F(ObjectAssetLoaderTest, IsDownloaded001, TestSize.Level0)
 {
     auto assetLoader = ObjectAssetLoader::GetInstance();
-    assetLoader->IsDownloaded(asset_);
-    assetLoader->UpdateDownloaded(asset_);
-    assetLoader->IsDownloaded(asset_);
+    auto result = assetLoader->IsDownloaded(asset_);
+    ASSERT_EQ(result, false);
+    assetLoader->downloaded_.Insert(asset_.uri, "modifyTime_size");
+    result = assetLoader->IsDownloaded(asset_);
+    ASSERT_EQ(result, true);
 }
 
 /**

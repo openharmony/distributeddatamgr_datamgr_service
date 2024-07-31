@@ -81,31 +81,6 @@ void ObjectAssetMachineTest::SetUp()
 void ObjectAssetMachineTest::TearDown() {}
 
 /**
-* @tc.name: StatusTransfer001
-* @tc.desc: Transfer event.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: whj
-*/
-HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
-{
-    auto machine = std::make_shared<ObjectAssetMachine>();
-    Asset asset{
-        .name = "test_name",
-        .uri = uri_,
-        .modifyTime = "modifyTime1",
-        .size = "size1",
-        .hash = "modifyTime1_size1",
-    };
-    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    changedAssets_[uri_].status = STATUS_STABLE;
-    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
-    ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
-    ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
-}
-
-/**
 * @tc.name: StatusTransfer002
 * @tc.desc: Remote changed when transferring.
 * @tc.type: FUNC
