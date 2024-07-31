@@ -818,6 +818,7 @@ ohos_unittest("KvdbServiceImplTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/kvdb/auth_delegate.cpp",
     "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
     "${data_service_path}/service/kvdb/kvdb_notifier_proxy.cpp",
