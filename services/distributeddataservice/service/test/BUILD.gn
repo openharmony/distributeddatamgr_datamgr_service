@@ -825,6 +825,9 @@ ohos_unittest("KvdbServiceImplTest") {
     "${data_service_path}/service/kvdb/query_helper.cpp",
     "${data_service_path}/service/kvdb/upgrade.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/waterversion/water_version_manager.cpp",
     "kvdb_service_impl_test.cpp",
     "kvdb_service_test.cpp",
   ]
@@ -856,6 +859,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "relational_store:native_rdb",
   ]
 
   deps = [
