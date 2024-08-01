@@ -99,6 +99,11 @@ DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store)
     time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
 }
 
+void DBDelegate::EraseStoreCache(const int32_t tokenId)
+{
+    stores_.Erase(tokenId);
+}
+
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
     bool reInit, const std::string &dir, const std::shared_ptr<ExecutorPool> &executors)
 {
