@@ -58,7 +58,7 @@ void GrantPermissionNative()
     delete []perms;
 }
 
-class ServiceSessionManagerTest : public testing::Test {
+class SessionManagerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
@@ -135,7 +135,7 @@ public:
 * @tc.require:
 * @tc.author: illybyy
 */
-HWTEST_F(ServiceSessionManagerTest, PackAndUnPack01, TestSize.Level2)
+HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
 {
     const DistributedDB::ExtendInfo info = {
         .appId = "ohos.test.demo", .storeId = "test_store", .userId = "100", .dstTarget = PEER_DEVICE_ID
