@@ -26,6 +26,7 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "mock/general_watcher_mock.h"
 #include "rdb_query.h"
 #include "store/general_store.h"
 #include "types.h"
@@ -229,42 +230,13 @@ protected:
     }
 };
 
-class MockQuery : public GenQuery {
-public:
-    ~MockQuery() = default;
-    static constexpr uint64_t TYPE_ID = 0x20000001;
-    std::vector<std::string> tables_;
-    bool lastResult = false;
-    bool IsEqual(uint64_t tid) override
-    {
-        return (tid == TYPE_ID) && lastResult;
-    }
-
-    std::vector<std::string> GetTables() override
-    {
-        return tables_;
-    }
-};
-
-class MockGeneralWatcher : public DistributedData::GeneralWatcher {
-public:
-    int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override
-    {
-        return GeneralError::E_OK;
-    }
-
-    int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override
-    {
-        return GeneralError::E_OK;
-    }
-};
-
 class MockStoreChangedData : public DistributedDB::StoreChangedData {
 public:
     std::string GetDataChangeDevice() const override
     {
         return "DataChangeDevice";
     }
+
     void GetStoreProperty(DistributedDB::StoreProperty &storeProperty) const override
     {
         return;
@@ -657,13 +629,15 @@ HWTEST_F(RdbGeneralStoreTest, Query001, TestSize.Level1)
     ASSERT_NE(store, nullptr);
     std::string table = "table";
     std::string sql = "sql";
-    auto result = store->Query(table, sql, std::move(g_RdbValues));
-    EXPECT_EQ(result, nullptr);
+    auto [err1, result1] = store->Query(table, sql, std::move(g_RdbValues));
+    EXPECT_EQ(err1, GeneralError::E_ALREADY_CLOSED);
+    EXPECT_EQ(result1, nullptr);
 
     MockRelationalStoreDelegate mockDelegate;
     store->delegate_ = &mockDelegate;
-    result = store->Query(table, sql, std::move(g_RdbValues));
-    EXPECT_NE(result, nullptr);
+    auto [err2, result2] = store->Query(table, sql, std::move(g_RdbValues));
+    EXPECT_EQ(err2, GeneralError::E_OK);
+    EXPECT_NE(result2, nullptr);
 }
 
 /**
@@ -680,12 +654,14 @@ HWTEST_F(RdbGeneralStoreTest, Query002, TestSize.Level1)
     std::string table = "table";
     std::string sql = "sql";
     MockQuery query;
-    auto result = store->Query(table, query);
-    EXPECT_EQ(result, nullptr);
+    auto [err1, result1] = store->Query(table, query);
+    EXPECT_EQ(err1, GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(result1, nullptr);
 
     query.lastResult = true;
-    result = store->Query(table, query);
-    EXPECT_EQ(result, nullptr);
+    auto [err2, result2] = store->Query(table, query);
+    EXPECT_EQ(err2, GeneralError::E_ALREADY_CLOSED);
+    EXPECT_EQ(result2, nullptr);
 }
 
 /**
@@ -746,7 +722,8 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing, TestSize.Level1)
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     MockQuery query;
-    auto result = store->PreSharing(query);
+    auto [errCode, result] = store->PreSharing(query);
+    EXPECT_NE(errCode, GeneralError::E_OK);
     EXPECT_EQ(result, nullptr);
 }
 
@@ -1010,10 +987,13 @@ HWTEST_F(RdbGeneralStoreTest, QuerySql, TestSize.Level1)
     ASSERT_NE(store, nullptr);
     MockRelationalStoreDelegate mockDelegate;
     store->delegate_ = &mockDelegate;
-    auto result = store->QuerySql("", std::move(g_RdbValues));
-    EXPECT_TRUE(result.empty());
-    result = store->QuerySql("sql", std::move(g_RdbValues));
-    EXPECT_TRUE(result.empty());
+    auto [err1, result1] = store->QuerySql("", std::move(g_RdbValues));
+    EXPECT_EQ(err1, GeneralError::E_ERROR);
+    EXPECT_TRUE(result1.empty());
+
+    auto [err2, result2] = store->QuerySql("sql", std::move(g_RdbValues));
+    EXPECT_EQ(err1, GeneralError::E_ERROR);
+    EXPECT_TRUE(result2.empty());
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

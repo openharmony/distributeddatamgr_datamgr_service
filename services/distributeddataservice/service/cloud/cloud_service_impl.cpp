@@ -458,8 +458,8 @@ std::pair<bool, StatisticInfo> CloudServiceImpl::QueryTableStatistic(const std::
 {
     StatisticInfo info;
     auto sql = BuildStatisticSql(tableName);
-    auto cursor = store->Query(tableName, sql, {});
-    if (cursor == nullptr || cursor->GetCount() != 1 || cursor->MoveToFirst() != E_OK) {
+    auto [errCode, cursor] = store->Query(tableName, sql, {});
+    if (errCode != E_OK || cursor == nullptr || cursor->GetCount() != 1 || cursor->MoveToFirst() != E_OK) {
         ZLOGE("query failed, cursor is nullptr or move to first failed,tableName:%{public}s",
             Anonymous::Change(tableName).c_str());
         return { false, info };
@@ -987,7 +987,7 @@ std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::P
         ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
         return { GeneralError::E_ERROR, nullptr };
     }
-    return { GeneralError::E_OK, store->PreSharing(query) };
+    return store->PreSharing(query);
 }
 
 bool CloudServiceImpl::ReleaseUserInfo(int32_t user)

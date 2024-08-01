@@ -288,15 +288,15 @@ int32_t KVDBGeneralStore::Replace(const std::string &table, VBucket &&value)
     return GeneralError::E_NOT_SUPPORT;
 }
 
-std::shared_ptr<Cursor> KVDBGeneralStore::Query(
+std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::Query(
     __attribute__((unused)) const std::string &table, const std::string &sql, Values &&args)
 {
-    return nullptr;
+    return { GeneralError::E_NOT_SUPPORT, nullptr };
 }
 
-std::shared_ptr<Cursor> KVDBGeneralStore::Query(const std::string &table, GenQuery &query)
+std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::Query(const std::string &table, GenQuery &query)
 {
-    return nullptr;
+    return { GeneralError::E_NOT_SUPPORT, nullptr };
 }
 
 int32_t KVDBGeneralStore::MergeMigratedData(const std::string &tableName, VBuckets &&values)
@@ -434,9 +434,9 @@ void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
     ZLOGI("devices size: %{public}zu", devices.size());
 }
 
-std::shared_ptr<Cursor> KVDBGeneralStore::PreSharing(GenQuery &query)
+std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::PreSharing(GenQuery &query)
 {
-    return nullptr;
+    return { GeneralError::E_NOT_SUPPORT, nullptr };
 }
 
 int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)

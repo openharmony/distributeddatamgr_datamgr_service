@@ -64,9 +64,9 @@ int32_t GeneralStoreMock::Delete(const std::string &table, const std::string &sq
     return 0;
 }
 
-std::shared_ptr<Cursor> GeneralStoreMock::Query(const std::string &table, GenQuery &query)
+std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::string &table, GenQuery &query)
 {
-    return nullptr;
+    return {GeneralError::E_NOT_SUPPORT, nullptr};
 }
 
 int32_t GeneralStoreMock::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
@@ -74,9 +74,9 @@ int32_t GeneralStoreMock::Sync(const Devices &devices, GenQuery &query, DetailAs
     return 0;
 }
 
-std::shared_ptr<Cursor> GeneralStoreMock::PreSharing(GenQuery &query)
+std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::PreSharing(GenQuery &query)
 {
-    return nullptr;
+    return {GeneralError::E_NOT_SUPPORT, nullptr};
 }
 
 int32_t GeneralStoreMock::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
@@ -129,9 +129,10 @@ int32_t GeneralStoreMock::MergeMigratedData(const std::string &tableName, VBucke
     return 0;
 }
 
-std::shared_ptr<Cursor> GeneralStoreMock::Query(const std::string &table, const std::string &sql, Values &&args)
+std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::string &table, const std::string &sql,
+    Values &&args)
 {
-    return cursor_;
+    return {GeneralError::E_OK, cursor_};
 }
 
 std::vector<std::string> GeneralStoreMock::GetWaterVersion(const std::string &deviceId)
