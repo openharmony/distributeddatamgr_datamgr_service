@@ -22,7 +22,6 @@
 #include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
-#include "auto_sync_matrix.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
@@ -340,7 +339,6 @@ void KvStoreDataService::StartService()
     ZLOGI("begin.");
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
-    AutoSyncMatrix::GetInstance().Initialize();
     WaterVersionManager::GetInstance().Init();
     LoadFeatures();
     bool ret = SystemAbility::Publish(this);

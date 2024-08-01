@@ -83,7 +83,6 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/kvdb/query_helper.cpp",
     "${data_service_path}/service/kvdb/upgrade.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
-    "${data_service_path}/service/matrix/src/auto_sync_matrix.cpp",
     "${data_service_path}/service/matrix/src/device_matrix.cpp",
     "${data_service_path}/service/matrix/src/matrix_event.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
