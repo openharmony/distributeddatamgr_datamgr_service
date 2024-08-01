@@ -340,7 +340,8 @@ uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
 std::string SoftBusAdapter::DelConnect(int32_t socket)
 {
     std::string name;
-    connects_.ForEach([socket, &name](const auto &deviceId, auto &connects) -> bool {
+    std::set<std::string> closedConnect;
+    connects_.EraseIf([socket, &name, &closedConnect](const auto &deviceId, auto &connects) -> bool {
         for (auto iter = connects.begin(); iter != connects.end();) {
             if (*iter != nullptr && **iter == socket) {
                 name += deviceId;
@@ -350,8 +351,16 @@ std::string SoftBusAdapter::DelConnect(int32_t socket)
                 iter++;
             }
         }
+        if (connects.empty()) {
+            closedConnect.insert(deviceId);
+            return true;
+        }
         return false;
     });
+    for (const auto &deviceId : closedConnect) {
+        auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId).networkId;
+        ConnectManager::GetInstance()->OnSessionClose(networkId);
+    }
     return name;
 }
 
@@ -545,18 +554,12 @@ void SoftBusAdapter::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
 
 bool SoftBusAdapter::CloseSession(const std::string &networkId)
 {
-    bool hasSession = false;
     auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(networkId);
-    connects_.Compute(uuid, [&hasSession](const auto &key, auto &connects) {
-        if (!connects.empty()) {
-            hasSession = true;
-        }
-        return false;
-    });
-    if (hasSession) {
+    auto ret = connects_.Erase(uuid);
+    if (ret != 0) {
         ConnectManager::GetInstance()->OnSessionClose(networkId);
     }
-    return hasSession;
+    return ret != 0;
 }
 } // namespace AppDistributedKv
 } // namespace OHOS
