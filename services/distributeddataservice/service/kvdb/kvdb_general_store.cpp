@@ -241,14 +241,13 @@ bool KVDBGeneralStore::IsBound()
     return isBound_;
 }
 
-int32_t KVDBGeneralStore::Close()
+int32_t KVDBGeneralStore::Close(bool isForce)
 {
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         return GeneralError::E_OK;
     }
-    int32_t count = delegate_->GetTaskCount();
-    if (count > 0) {
+    if (!isForce && delegate_->GetTaskCount() > 0) {
         return GeneralError::E_BUSY;
     }
     if (delegate_ != nullptr) {

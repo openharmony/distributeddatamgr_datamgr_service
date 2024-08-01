@@ -204,14 +204,13 @@ bool RdbGeneralStore::IsBound()
     return isBound_;
 }
 
-int32_t RdbGeneralStore::Close()
+int32_t RdbGeneralStore::Close(bool isForce)
 {
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         return 0;
     }
-    int32_t count = delegate_->GetCloudSyncTaskCount();
-    if (count > 0) {
+    if (!isForce && delegate_->GetCloudSyncTaskCount() > 0) {
         return GeneralError::E_BUSY;
     }
     auto status = manager_.CloseStore(delegate_);

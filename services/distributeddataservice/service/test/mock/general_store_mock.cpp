@@ -104,7 +104,7 @@ int32_t GeneralStoreMock::UnregisterDetailProgressObserver()
     return 0;
 }
 
-int32_t GeneralStoreMock::Close()
+int32_t GeneralStoreMock::Close(bool isForce)
 {
     return 0;
 }
