@@ -90,6 +90,27 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
     return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
+std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &uri,
+    const DataShareValuesBucket &valuesBucket)
+{
+    ZLOGD("InsertEx enter.");
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    if (GetSilentProxyStatus(uri, false) != E_OK) {
+        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
+        return std::make_pair(ERROR, 0);
+    }
+    auto callBack = [&uri, &valuesBucket, this](ProviderInfo &providerInfo, DistributedData::StoreMetaData &metaData,
+        std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+        auto [errCode, ret] = dbDelegate->InsertEx(providerInfo.tableName, valuesBucket);
+        if (errCode == E_OK) {
+            NotifyChange(uri);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+        }
+        return std::make_pair(errCode, ret);
+    };
+    return ExecuteEx(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+}
+
 bool DataShareServiceImpl::NotifyChange(const std::string &uri)
 {
     RadarReporter::RadarReport report(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE,
@@ -132,6 +153,28 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
     return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
+std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &uri,
+    const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
+{
+    ZLOGD("UpdateEx enter.");
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    if (GetSilentProxyStatus(uri, false) != E_OK) {
+        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
+        return std::make_pair(ERROR, 0);
+    }
+    auto callBack = [&uri, &predicate, &valuesBucket, this](ProviderInfo &providerInfo,
+        DistributedData::StoreMetaData &metaData,
+        std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+        auto [errCode, ret] = dbDelegate->UpdateEx(providerInfo.tableName, predicate, valuesBucket);
+        if (errCode == E_OK) {
+            NotifyChange(uri);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+        }
+        return std::make_pair(errCode, ret);
+    };
+    return ExecuteEx(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+}
+
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
 {
     XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
@@ -150,6 +193,26 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         return ret;
     };
     return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+}
+
+std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &uri,
+    const DataSharePredicates &predicate)
+{
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    if (GetSilentProxyStatus(uri, false) != E_OK) {
+        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
+        return std::make_pair(ERROR, 0);
+    }
+    auto callBack = [&uri, &predicate, this](ProviderInfo &providerInfo, DistributedData::StoreMetaData &metaData,
+        std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+        auto [errCode, ret] = dbDelegate->DeleteEx(providerInfo.tableName, predicate);
+        if (errCode == E_OK) {
+            NotifyChange(uri);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+        }
+        return std::make_pair(errCode, ret);
+    };
+    return ExecuteEx(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri,
@@ -915,6 +978,39 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t toke
             provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
             URIUtils::Anonymous(provider.uri).c_str());
         return code;
+    }
+    return callback(provider, metaData, dbDelegate);
+}
+
+std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const int32_t tokenId,
+    bool isRead, ExecuteCallbackEx callback)
+{
+    DataProviderConfig providerConfig(uri, tokenId);
+    auto [errCode, provider] = providerConfig.GetProviderInfo();
+    if (errCode != E_OK) {
+        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
+            errCode, URIUtils::Anonymous(provider.uri).c_str());
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
+        return std::make_pair(E_DATA_SUPPLIER_ERROR, 0);
+    }
+    std::string permission = isRead ? provider.readPermission : provider.writePermission;
+    if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
+        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
+            tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
+        return std::make_pair(ERROR_PERMISSION_DENIED, 0);
+    }
+    DataShareDbConfig dbConfig;
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(provider.uri,
+        provider.hasExtension, provider.bundleName, provider.storeName,
+        provider.singleton ? 0 : provider.currentUserId);
+    if (code != E_OK) {
+        ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
+            provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
+            URIUtils::Anonymous(provider.uri).c_str());
+        return std::make_pair(code, 0);
     }
     return callback(provider, metaData, dbDelegate);
 }

@@ -89,6 +89,57 @@ int32_t DataShareServiceStub::OnDelete(MessageParcel &data, MessageParcel &reply
     return 0;
 }
 
+int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    DataShareValuesBucket bucket;
+    if (!ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
+        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+            bucket.valuesMap.size());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [errCode, status] = InsertEx(uri, bucket);
+    if (!ITypesUtil::Marshal(reply, errCode, status)) {
+        ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
+int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    DataSharePredicates predicate;
+    DataShareValuesBucket bucket;
+    if (!ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
+        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+            bucket.valuesMap.size());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [errCode, status] = UpdateEx(uri, predicate, bucket);
+    if (!ITypesUtil::Marshal(reply, errCode, status)) {
+        ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
+int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &reply)
+{
+    std::string uri;
+    DataSharePredicates predicate;
+    if (!ITypesUtil::Unmarshal(data, uri, predicate)) {
+        ZLOGE("Unmarshal uri:%{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [errCode, status] = DeleteEx(uri, predicate);
+    if (!ITypesUtil::Marshal(reply, errCode, status)) {
+        ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
 int32_t DataShareServiceStub::OnQuery(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
