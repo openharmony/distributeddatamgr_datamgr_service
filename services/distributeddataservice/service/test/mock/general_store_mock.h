@@ -44,7 +44,7 @@ public:
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t RegisterDetailProgressObserver(DetailAsync async) override;
     int32_t UnregisterDetailProgressObserver() override;
-    int32_t Close() override;
+    int32_t Close(bool isForce) override;
     int32_t AddRef() override;
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;

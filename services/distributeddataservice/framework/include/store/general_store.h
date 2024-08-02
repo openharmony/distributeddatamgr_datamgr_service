@@ -148,7 +148,7 @@ public:
 
     virtual int32_t UnregisterDetailProgressObserver() = 0;
 
-    virtual int32_t Close() = 0;
+    virtual int32_t Close(bool isForce = false) = 0;
 
     virtual int32_t AddRef() = 0;
 

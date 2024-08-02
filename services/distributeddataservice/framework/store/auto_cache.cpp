@@ -42,7 +42,7 @@ void AutoCache::Bind(std::shared_ptr<Executor> executor)
     if (executor == nullptr || taskId_ != Executor::INVALID_TASK_ID) {
         return;
     }
-    executor_ = executor;
+    executor_ = std::move(executor);
 }
 
 AutoCache::AutoCache()
@@ -226,8 +226,8 @@ AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, 
 AutoCache::Delegate::~Delegate()
 {
     if (store_ != nullptr) {
+        store_->Close(true);
         store_->Unwatch(Origin::ORIGIN_ALL, *this);
-        store_->Close();
         store_->Release();
         store_ = nullptr;
     }

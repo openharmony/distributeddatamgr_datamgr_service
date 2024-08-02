@@ -62,7 +62,7 @@ int32_t RdbNotifierProxy::OnChange(const Origin &origin, const PrimaryFields &pr
     }
 
     MessageParcel reply;
-    MessageOption option;
+    MessageOption option(MessageOption::TF_ASYNC);
     if (Remote()->SendRequest(
         static_cast<uint32_t>(NotifierIFCode::RDB_NOTIFIER_CMD_DATA_CHANGE), data, reply, option) != 0) {
         ZLOGE("storeName:%{public}s, send request failed", DistributedData::Anonymous::Change(origin.store).c_str());
