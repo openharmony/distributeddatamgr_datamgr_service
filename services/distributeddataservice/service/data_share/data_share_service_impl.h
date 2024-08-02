@@ -95,6 +95,7 @@ private:
         ~DataShareStatic() override {};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId) override;
     };
     class Factory {
     public:

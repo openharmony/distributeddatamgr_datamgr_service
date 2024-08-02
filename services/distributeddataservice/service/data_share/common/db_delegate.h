@@ -45,6 +45,7 @@ public:
     virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
     virtual bool IsInvalid() = 0;
     static void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
+    static void EraseStoreCache(const int32_t tokenId);
 private:
     static void GarbageCollect();
     static void StartTimer();
