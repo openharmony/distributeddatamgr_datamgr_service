@@ -543,6 +543,7 @@ HWTEST_F(KVDBGeneralStoreTest, Release, TestSize.Level0)
     auto ret = store->Release();
     EXPECT_EQ(ret, 0);
     store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    store->ref_ = 0;
     ret = store->Release();
     EXPECT_EQ(ret, 0);
     store->ref_ = 2;
