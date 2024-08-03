@@ -248,14 +248,19 @@ void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
     }
-    rdbCache_.ForEach([&uri, &userId, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
+    bool hasObserver = false;
+    rdbCache_.ForEach([&uri, &userId, &metaData, &hasObserver, this](const Key &key, std::vector<ObserverNode> &val) {
         if (key.uri != uri) {
             return false;
         }
+        hasObserver = true;
         Notify(key, userId, val, metaData.dataDir, metaData.version);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
+    if (!hasObserver) {
+        return;
+    }
     SchedulerManager::GetInstance().Execute(
         uri, userId, metaData.dataDir, metaData.version, metaData.bundleName);
 }
