@@ -73,7 +73,7 @@ void ObjectSnapshotTest::TearDown() {}
 
 /**
 * @tc.name: UploadTest001
-* @tc.desc: Transfer event.
+* @tc.desc: Upload test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -96,7 +96,7 @@ HWTEST_F(ObjectSnapshotTest, UploadTest001, TestSize.Level0)
 
 /**
 * @tc.name: UploadTest002
-* @tc.desc: Transfer event.
+* @tc.desc: Upload test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -112,7 +112,7 @@ HWTEST_F(ObjectSnapshotTest, UploadTest002, TestSize.Level0)
 
 /**
 * @tc.name: DownloadTest001
-* @tc.desc: Transfer event.
+* @tc.desc: Download test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -135,7 +135,7 @@ HWTEST_F(ObjectSnapshotTest, DownloadTest001, TestSize.Level0)
 
 /**
 * @tc.name: DownloadTest002
-* @tc.desc: Transfer event.
+* @tc.desc: Download test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -151,7 +151,7 @@ HWTEST_F(ObjectSnapshotTest, DownloadTest002, TestSize.Level0)
 
 /**
 * @tc.name: GetAssetStatusTest001
-* @tc.desc: Transfer event.
+* @tc.desc: GetAssetStatus test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -174,7 +174,7 @@ HWTEST_F(ObjectSnapshotTest, GetAssetStatusTest001, TestSize.Level0)
 
 /**
 * @tc.name: GetAssetStatusTest002
-* @tc.desc: Transfer event.
+* @tc.desc: GetAssetStatus test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -190,7 +190,7 @@ HWTEST_F(ObjectSnapshotTest, GetAssetStatusTest002, TestSize.Level0)
 
 /**
 * @tc.name: UploadedTest001
-* @tc.desc: Transfer event.
+* @tc.desc: Uploaded test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -213,7 +213,7 @@ HWTEST_F(ObjectSnapshotTest, UploadedTest001, TestSize.Level0)
 
 /**
 * @tc.name: UploadedTest002
-* @tc.desc: Transfer event.
+* @tc.desc: Uploaded test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -229,7 +229,7 @@ HWTEST_F(ObjectSnapshotTest, UploadedTest002, TestSize.Level0)
 
 /**
 * @tc.name: DownloadedTest001
-* @tc.desc: Transfer event.
+* @tc.desc: Downloaded test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -252,7 +252,7 @@ HWTEST_F(ObjectSnapshotTest, DownloadedTest001, TestSize.Level0)
 
 /**
 * @tc.name: DownloadedTest002
-* @tc.desc: Transfer event.
+* @tc.desc: Downloaded test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -268,7 +268,7 @@ HWTEST_F(ObjectSnapshotTest, DownloadedTest002, TestSize.Level0)
 
 /**
 * @tc.name: TransferredTest001
-* @tc.desc: Transfer event.
+* @tc.desc: Transferred test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -291,7 +291,7 @@ HWTEST_F(ObjectSnapshotTest, TransferredTest001, TestSize.Level0)
 
 /**
 * @tc.name: TransferredTest002
-* @tc.desc: Transfer event.
+* @tc.desc: Transferred test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -307,7 +307,7 @@ HWTEST_F(ObjectSnapshotTest, TransferredTest002, TestSize.Level0)
 
 /**
 * @tc.name: OnDataChangedTest001
-* @tc.desc: Transfer event.
+* @tc.desc: OnDataChanged test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -331,7 +331,7 @@ HWTEST_F(ObjectSnapshotTest, OnDataChangedTest001, TestSize.Level0)
 
 /**
 * @tc.name: OnDataChangedTest002
-* @tc.desc: Transfer event.
+* @tc.desc: OnDataChanged test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -347,13 +347,13 @@ HWTEST_F(ObjectSnapshotTest, OnDataChangedTest002, TestSize.Level0)
 }
 
 /**
-* @tc.name: IsBoundAssetTest001
-* @tc.desc: Transfer event.
+* @tc.name: BindAsset001
+* @tc.desc: BindAsset test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
 */
-HWTEST_F(ObjectSnapshotTest, IsBoundAsset001, TestSize.Level0)
+HWTEST_F(ObjectSnapshotTest, BindAsset001, TestSize.Level0)
 {
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{

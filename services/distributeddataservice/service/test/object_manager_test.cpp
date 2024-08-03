@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +25,7 @@
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
 using AssetValue = OHOS::CommonType::AssetValue;
+using RestoreStatus = OHOS::DistributedObject::ObjectStoreManager::RestoreStatus;
 namespace OHOS::Test {
 
 class ObjectManagerTest : public testing::Test {
@@ -91,7 +92,7 @@ void ObjectManagerTest::TearDown() {}
 
 /**
 * @tc.name: DeleteNotifier001
-* @tc.desc: Transfer event.
+* @tc.desc: DeleteNotifier test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -105,7 +106,7 @@ HWTEST_F(ObjectManagerTest, DeleteNotifier001, TestSize.Level0)
 
 /**
 * @tc.name: Process001
-* @tc.desc: Transfer event.
+* @tc.desc: Process test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -129,7 +130,7 @@ HWTEST_F(ObjectManagerTest, Process001, TestSize.Level0)
 
 /**
 * @tc.name: DeleteNotifierNoLock001
-* @tc.desc: Transfer event.
+* @tc.desc: DeleteNotifierNoLock test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -152,13 +153,13 @@ HWTEST_F(ObjectManagerTest, DeleteNotifierNoLock001, TestSize.Level0)
 }
 
 /**
-* @tc.name: Save001
-* @tc.desc: Transfer event.
+* @tc.name: Clear001
+* @tc.desc: Clear test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
 */
-HWTEST_F(ObjectManagerTest, Save001, TestSize.Level0)
+HWTEST_F(ObjectManagerTest, Clear001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
     auto result = manager->Clear();
@@ -166,22 +167,95 @@ HWTEST_F(ObjectManagerTest, Save001, TestSize.Level0)
 }
 
 /**
-* @tc.name: UnregisterRemoteCallback001
-* @tc.desc: Transfer event.
+* @tc.name: registerAndUnregisterRemoteCallback001
+* @tc.desc: test RegisterRemoteCallback and UnregisterRemoteCallback.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
 */
-HWTEST_F(ObjectManagerTest, UnregisterRemoteCallback001, TestSize.Level0)
+HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
-    manager->UnregisterRemoteCallback("", pid_, tokenId_, sessionId_);
+    sptr<IRemoteObject> callback;
+    manager->RegisterRemoteCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
+    ObjectStoreManager::CallbackInfo callbackInfo = manager->callbacks_.Find(tokenId_).second;
+    std::string prefix = bundleName_ + sessionId_;
+    ASSERT_NE(callbackInfo.observers_.find(prefix), callbackInfo.observers_.end());
     manager->UnregisterRemoteCallback(bundleName_, pid_, tokenId_, sessionId_);
+    callbackInfo = manager->callbacks_.Find(tokenId_).second;
+    ASSERT_EQ(callbackInfo.observers_.find(prefix), callbackInfo.observers_.end());
+}
+
+/**
+* @tc.name: registerAndUnregisterRemoteCallback002
+* @tc.desc: abnormal use cases.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: wangbin
+*/
+HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback002, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    sptr<IRemoteObject> callback;
+    uint32_t tokenId = 101;
+    manager->RegisterRemoteCallback("", sessionId_, pid_, tokenId, callback);
+    manager->RegisterRemoteCallback(bundleName_, "", pid_, tokenId, callback);
+    manager->RegisterRemoteCallback("", "", pid_, tokenId, callback);
+    ASSERT_EQ(manager->callbacks_.Find(tokenId).first, false);
+    manager->UnregisterRemoteCallback("", pid_, tokenId, sessionId_);
+}
+
+/**
+* @tc.name: NotifyDataChanged001
+* @tc.desc: NotifyDataChanged test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: wangbin
+*/
+HWTEST_F(ObjectManagerTest, NotifyDataChanged001, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::string bundleName1_ = "com.examples.ophm.notepad";
+    std::string objectKey = bundleName1_ + sessionId_;
+    std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
+    std::map<std::string, std::vector<uint8_t>> data1;
+    std::vector<uint8_t> data1_;
+    data1_.push_back(RestoreStatus::DATA_READY);
+    data1_.push_back(RestoreStatus::ASSETS_READY);
+    data1_.push_back(RestoreStatus::ALL_READY);
+    data1 = {{ "objectKey", data1_ }};
+    data = {{ objectKey, data1 }};
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3); // executor pool
+    manager->SetThreadPool(executors);
+    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).first, false);
+    manager->NotifyDataChanged(data);
+    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).second, RestoreStatus::DATA_READY);
+}
+
+/**
+* @tc.name: NotifyAssetsReady001
+* @tc.desc: NotifyAssetsReady test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: wangbin
+*/
+HWTEST_F(ObjectManagerTest, NotifyAssetsReady001, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = bundleName_ + sessionId_;
+    std::string srcNetworkId = "1";
+    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).first, false);
+    manager->NotifyAssetsReady(objectKey, srcNetworkId);
+    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).second, RestoreStatus::ASSETS_READY);
+    manager->restoreStatus_.Clear();
+    manager->restoreStatus_.Insert(objectKey, RestoreStatus::DATA_READY);
+    manager->NotifyAssetsReady(objectKey, srcNetworkId);
+    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).second, RestoreStatus::ALL_READY);
 }
 
 /**
 * @tc.name: NotifyChange001
-* @tc.desc: Transfer event.
+* @tc.desc: NotifyChange test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -192,37 +266,17 @@ HWTEST_F(ObjectManagerTest, NotifyChange001, TestSize.Level0)
     std::map<std::string, std::vector<uint8_t>> data;
     std::map<std::string, std::vector<uint8_t>> data1;
     std::vector<uint8_t> data1_;
+    data1_.push_back(RestoreStatus::DATA_READY);
+    data_.push_back(RestoreStatus::ALL_READY);
     data = {{ "test_cloud", data_ }};
-    data1 = {{ "", data1_ }};
+    data1 = {{ "p_###SAVEINFO###001", data1_ }};
     manager->NotifyChange(data1);
     manager->NotifyChange(data);
 }
 
 /**
-* @tc.name: NotifyAssetsReady001
-* @tc.desc: Transfer event.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
-*/
-HWTEST_F(ObjectManagerTest, NotifyAssetsReady001, TestSize.Level0)
-{
-    auto manager = ObjectStoreManager::GetInstance();
-    std::string bundleName_1 = bundleName_ + "1";
-    std::string bundleName_2 = bundleName_ + "2";
-    std::string bundleName_3 = bundleName_ + "3";
-    std::string srcNetworkId = "1";
-    manager->restoreStatus_.Insert(bundleName_1, DistributedObject::ObjectStoreManager::RestoreStatus::ALL_READY);
-    manager->restoreStatus_.Insert(bundleName_2, DistributedObject::ObjectStoreManager::RestoreStatus::DATA_READY);
-    manager->restoreStatus_.Insert(bundleName_3, DistributedObject::ObjectStoreManager::RestoreStatus::ASSETS_READY);
-    manager->NotifyAssetsReady(bundleName_1, srcNetworkId);
-    manager->NotifyAssetsReady(bundleName_2, srcNetworkId);
-    manager->NotifyAssetsReady(bundleName_3, srcNetworkId);
-}
-
-/**
 * @tc.name: Open001
-* @tc.desc: Transfer event.
+* @tc.desc: Open test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -245,7 +299,7 @@ HWTEST_F(ObjectManagerTest, Open001, TestSize.Level0)
 
 /**
 * @tc.name: OnAssetChanged001
-* @tc.desc: Transfer event.
+* @tc.desc: OnAssetChanged test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -264,7 +318,7 @@ HWTEST_F(ObjectManagerTest, OnAssetChanged001, TestSize.Level0)
 
 /**
 * @tc.name: DeleteSnapshot001
-* @tc.desc: Transfer event.
+* @tc.desc: DeleteSnapshot test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -286,7 +340,7 @@ HWTEST_F(ObjectManagerTest, DeleteSnapshot001, TestSize.Level0)
 
 /**
 * @tc.name: OpenObjectKvStore001
-* @tc.desc: Transfer event.
+* @tc.desc: OpenObjectKvStore test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -303,7 +357,7 @@ HWTEST_F(ObjectManagerTest, OpenObjectKvStore001, TestSize.Level0)
 
 /**
 * @tc.name: FlushClosedStore001
-* @tc.desc: Transfer event.
+* @tc.desc: FlushClosedStore test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -325,7 +379,7 @@ HWTEST_F(ObjectManagerTest, FlushClosedStore001, TestSize.Level0)
 
 /**
 * @tc.name: Close001
-* @tc.desc: Transfer event.
+* @tc.desc: Close test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -343,7 +397,7 @@ HWTEST_F(ObjectManagerTest, Close001, TestSize.Level0)
 
 /**
 * @tc.name: SyncOnStore001
-* @tc.desc: Transfer event.
+* @tc.desc: SyncOnStore test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -365,7 +419,7 @@ HWTEST_F(ObjectManagerTest, SyncOnStore001, TestSize.Level0)
 
 /**
 * @tc.name: RevokeSaveToStore001
-* @tc.desc: Transfer event.
+* @tc.desc: RetrieveFromStore test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -386,7 +440,7 @@ HWTEST_F(ObjectManagerTest, RevokeSaveToStore001, TestSize.Level0)
 
 /**
 * @tc.name: SyncCompleted001
-* @tc.desc: Transfer event.
+* @tc.desc: SyncCompleted test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -418,7 +472,7 @@ HWTEST_F(ObjectManagerTest, SyncCompleted001, TestSize.Level0)
 
 /**
 * @tc.name: SplitEntryKey001
-* @tc.desc: Transfer event.
+* @tc.desc: SplitEntryKey test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -436,7 +490,7 @@ HWTEST_F(ObjectManagerTest, SplitEntryKey001, TestSize.Level0)
 
 /**
 * @tc.name: ProcessOldEntry001
-* @tc.desc: Transfer event.
+* @tc.desc: ProcessOldEntry test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -459,7 +513,7 @@ HWTEST_F(ObjectManagerTest, ProcessOldEntry001, TestSize.Level0)
 
 /**
 * @tc.name: ProcessSyncCallback001
-* @tc.desc: Transfer event.
+* @tc.desc: ProcessSyncCallback test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -477,7 +531,7 @@ HWTEST_F(ObjectManagerTest, ProcessSyncCallback001, TestSize.Level0)
 
 /**
 * @tc.name: IsAssetComplete001
-* @tc.desc: Transfer event.
+* @tc.desc: IsAssetComplete test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -515,7 +569,7 @@ HWTEST_F(ObjectManagerTest, IsAssetComplete001, TestSize.Level0)
 
 /**
 * @tc.name: GetAssetsFromDBRecords001
-* @tc.desc: Transfer event.
+* @tc.desc: GetAssetsFromDBRecords test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -539,7 +593,7 @@ HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords001, TestSize.Level0)
 
 /**
 * @tc.name: RegisterAssetsLister001
-* @tc.desc: Transfer event.
+* @tc.desc: RegisterAssetsLister test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -559,7 +613,7 @@ HWTEST_F(ObjectManagerTest, RegisterAssetsLister001, TestSize.Level0)
 
 /**
 * @tc.name: RegisterAssetsLister001
-* @tc.desc: Transfer event.
+* @tc.desc: PushAssets test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -576,4 +630,4 @@ HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
     auto result = manager->PushAssets(100, appId_, sessionId_, data, deviceId_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
 }
-} // namespace OHOS::TestF
+} // namespace OHOS::Test

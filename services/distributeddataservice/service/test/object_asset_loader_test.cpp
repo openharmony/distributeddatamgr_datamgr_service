@@ -55,7 +55,7 @@ void ObjectAssetLoaderTest::TearDown() {}
 
 /**
 * @tc.name: UploadTest001
-* @tc.desc: Transfer event.
+* @tc.desc: Transfer test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -69,7 +69,7 @@ HWTEST_F(ObjectAssetLoaderTest, UploadTest001, TestSize.Level0)
 
 /**
 * @tc.name: TransferAssetsAsync001
-* @tc.desc: Transfer event.
+* @tc.desc: TransferAssetsAsync test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -87,7 +87,7 @@ HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync001, TestSize.Level0)
 
 /**
 * @tc.name: TransferAssetsAsync002
-* @tc.desc: Transfer event.
+* @tc.desc: TransferAssetsAsync test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -108,7 +108,7 @@ HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync002, TestSize.Level0)
 
 /**
 * @tc.name: FinishTask001
-* @tc.desc: Transfer event.
+* @tc.desc: FinishTask test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -122,7 +122,7 @@ HWTEST_F(ObjectAssetLoaderTest, FinishTask001, TestSize.Level0)
 
 /**
 * @tc.name: IsDownloading001
-* @tc.desc: Transfer event.
+* @tc.desc: IsDownloading test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -136,7 +136,7 @@ HWTEST_F(ObjectAssetLoaderTest, IsDownloading001, TestSize.Level0)
 
 /**
 * @tc.name: IsDownloaded001
-* @tc.desc: Transfer event.
+* @tc.desc: IsDownloaded test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -153,7 +153,7 @@ HWTEST_F(ObjectAssetLoaderTest, IsDownloaded001, TestSize.Level0)
 
 /**
 * @tc.name: UpdateDownloaded001
-* @tc.desc: Transfer event.
+* @tc.desc: UpdateDownloaded test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
