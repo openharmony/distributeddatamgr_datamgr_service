@@ -34,7 +34,8 @@ public:
     void TearDown(){};
 };
 
-void DumpHelperTest::SetUp(void) {
+void DumpHelperTest::SetUp(void)
+{
     DumpManager &dumpManager = DumpManager::GetInstance();
     DumpManager::Config config;
     config.dumpName = "test_dump";
@@ -42,8 +43,8 @@ void DumpHelperTest::SetUp(void) {
     config.abbrCmd = "test_abbr_cmd";
     config.countPrintf = 1;
     config.infoName = "test_info";
-    config.minParamsNum = 2;
-    config.maxParamsNum = 5;
+    config.minParamsNum = 2; //minParamsNum is 2
+    config.maxParamsNum = 5; //maxParamsNum is 5
     config.parentNode = "test_parent";
     config.childNode = "test_child";
     config.dumpCaption = {"test_caption1", "test_caption2"};
@@ -83,16 +84,16 @@ HWTEST_F(DumpHelperTest, GetInstanceTest, TestSize.Level0)
 */
 HWTEST_F(DumpHelperTest, AddErrorInfoTest, TestSize.Level0)
 {
-   DumpHelper &dumpHelper = DumpHelper::GetInstance();
-   EXPECT_NE(&dumpHelper, nullptr);
-   int32_t errorCode = 1001;
-   std::string errorInfo = "Test error information";
+    DumpHelper &dumpHelper = DumpHelper::GetInstance();
+    EXPECT_NE(&dumpHelper, nullptr);
+    int32_t errorCode = 1001;
+    std::string errorInfo = "Test error information";
 
-   dumpHelper.AddErrorInfo(errorCode, errorInfo);
+    dumpHelper.AddErrorInfo(errorCode, errorInfo);
 
-   const OHOS::DistributedData::DumpHelper::ErrorInfo& lastError = dumpHelper.errorInfo_.back();
-   EXPECT_EQ(lastError.errorCode, errorCode);
-   EXPECT_EQ(lastError.errorInfo, errorInfo);
+    const OHOS::DistributedData::DumpHelper::ErrorInfo& lastError = dumpHelper.errorInfo_.back();
+    EXPECT_EQ(lastError.errorCode, errorCode);
+    EXPECT_EQ(lastError.errorInfo, errorInfo);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -610,7 +610,6 @@ HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch, TestSize.Level0)
     auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
     EXPECT_EQ(result, Status::STORE_NOT_FOUND);
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
-    Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
@@ -680,7 +679,7 @@ HWTEST_F(KvdbServiceImplTest, DoCloudSync, TestSize.Level0)
     metaData.enableCloud = true;
     kvdbServiceImpl_->DoCloudSync(false, false);
     status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
-    EXPECT_EQ(status, Status::NETWORK_ERROR);
+    EXPECT_EQ(status, Status::CLOUD_DISABLED);
 }
 
 /**

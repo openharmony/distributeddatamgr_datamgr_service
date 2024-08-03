@@ -45,7 +45,6 @@ public:
     static void SetUpTestCase()
     {
         std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-        Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
         Bootstrap::GetInstance().LoadCheckers();
         KvStoreMetaManager::GetInstance().BindExecutor(executors);
