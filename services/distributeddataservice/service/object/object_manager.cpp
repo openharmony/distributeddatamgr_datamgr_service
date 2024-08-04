@@ -161,6 +161,8 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     result = SaveToStore(appId, sessionId, deviceId, data);
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Save failed, errCode = %{public}d", result);
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
+            ObjectStore::ERROR_CODE, result, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         Close();
         proxy->Completed(std::map<std::string, int32_t>());
         return result;
@@ -175,7 +177,7 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     if (result != OBJECT_SUCCESS) {
         ZLOGE("sync failed, errCode = %{public}d", result);
         proxy->Completed(std::map<std::string, int32_t>());
-        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
+        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SYNC_DATA, ObjectStore::RADAR_FAILED,
             ObjectStore::ERROR_CODE, result, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
     }
     result = PushAssets(std::stoi(GetCurrentUser()), appId, sessionId, data, deviceId);
@@ -269,13 +271,16 @@ int32_t ObjectStoreManager::Retrieve(
         allReady = true;
     } else {
         auto objectKey = bundleName + sessionId;
-        restoreStatus_.ComputeIfAbsent(
-            objectKey, [](const std::string& key) -> auto {
-            return RestoreStatus::NONE;
+        restoreStatus_.ComputeIfPresent(objectKey, [&allReady](const auto &key, auto &value) {
+            if (value == RestoreStatus::ALL_READY) {
+                allReady = true;
+                return false;
+            }
+            if (value == RestoreStatus::DATA_READY) {
+                value = RestoreStatus::DATA_NOTIFIED;
+            }
+            return true;
         });
-        if (restoreStatus_.Find(objectKey).second == RestoreStatus::ALL_READY) {
-            allReady = true;
-        }
     }
     // delete local data
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
@@ -287,8 +292,10 @@ int32_t ObjectStoreManager::Retrieve(
     }
     Close();
     proxy->Completed(results, allReady);
-    RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_SUCCESS, ObjectStore::BIZ_STATE,
-        ObjectStore::FINISHED);
+    if (allReady) {
+        RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::NOTIFY, ObjectStore::RADAR_SUCCESS,
+            ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+    }
     return status;
 }
 
@@ -437,6 +444,8 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
         }
     }
     if (!hasAsset) {
+        RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS,
+            ObjectStore::BIZ_STATE, ObjectStore::START);
         callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
             DoNotify(tokenId, value, data, true); // no asset, data ready means all ready
             return false;
@@ -451,21 +460,24 @@ void ObjectStoreManager::ComputeStatus(const std::string& objectKey,
     const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data)
 {
     restoreStatus_.Compute(objectKey, [this, &data] (const auto &key, auto &value) {
-            if (value == RestoreStatus::ASSETS_READY) {
-                value = RestoreStatus::ALL_READY;
-                callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
-                    DoNotify(tokenId, value, data, true);
-                    return false;
-                });
-            } else {
-                value = RestoreStatus::DATA_READY;
-                    callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
-                    DoNotify(tokenId, value, data, false);
-                    return false;
-                });
-                WaitAssets(key);
-            }
-            return true;
+        if (value == RestoreStatus::ASSETS_READY) {
+            value = RestoreStatus::ALL_READY;
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS);
+            callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
+                DoNotify(tokenId, value, data, true);
+                return false;
+            });
+        } else {
+            value = RestoreStatus::DATA_READY;
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS,
+                ObjectStore::BIZ_STATE, ObjectStore::START);
+            callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
+                DoNotify(tokenId, value, data, false);
+                return false;
+            });
+            WaitAssets(key);
+        }
+        return true;
     });
 }
 
@@ -484,9 +496,7 @@ int32_t ObjectStoreManager::WaitAssets(const std::string& objectKey)
 {
     auto taskId = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this, objectKey]() {
         ZLOGE("wait assets finisehd timeout, objectKey:%{public}s", objectKey.c_str());
-        RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, ObjectStore::TIMEOUT);
-        NotifyAssetsReady(objectKey);
+        DoNotifyWaitAssetTimeout(objectKey);
     });
 
     objectTimer_.ComputeIfAbsent(
@@ -503,14 +513,25 @@ void ObjectStoreManager::NotifyAssetsReady(const std::string& objectKey, const s
         return RestoreStatus::NONE;
     });
     restoreStatus_.Compute(objectKey, [this] (const auto &key, auto &value) {
-        if (value == RestoreStatus::DATA_READY) {
+        if (value == RestoreStatus::DATA_NOTIFIED) {
             value = RestoreStatus::ALL_READY;
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_SUCCESS);
             callbacks_.ForEach([this, key](uint32_t tokenId, const CallbackInfo& value) {
                 DoNotifyAssetsReady(tokenId, value,  key, true);
                 return false;
             });
+        } else if (value == RestoreStatus::DATA_READY) {
+            value = RestoreStatus::ALL_READY;
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_SUCCESS);
+            auto [has, taskId] = objectTimer_.Find(key);
+            if (has) {
+                executors_->Remove(taskId);
+                objectTimer_.Erase(key);
+            }
         } else {
             value = RestoreStatus::ASSETS_READY;
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_SUCCESS,
+                ObjectStore::BIZ_STATE, ObjectStore::START);
         }
         return true;
     });
@@ -593,6 +614,13 @@ void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
         observer.second->Completed((*it).second, allReady);
         if (allReady) {
             restoreStatus_.Erase(observer.first);
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::NOTIFY, ObjectStore::RADAR_SUCCESS,
+                ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+        } else {
+            restoreStatus_.ComputeIfPresent(observer.first, [](const auto &key, auto &value) {
+                value = RestoreStatus::DATA_NOTIFIED;
+                return true;
+            });
         }
     }
 }
@@ -607,6 +635,8 @@ void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInf
         observer.second->Completed(std::map<std::string, std::vector<uint8_t>>(), allReady);
         if (allReady) {
             restoreStatus_.Erase(objectKey);
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::NOTIFY, ObjectStore::RADAR_SUCCESS,
+                ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         }
         auto [has, taskId] = objectTimer_.Find(objectKey);
         if (has) {
@@ -614,6 +644,29 @@ void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInf
             objectTimer_.Erase(objectKey);
         }
     }
+}
+
+void ObjectStoreManager::DoNotifyWaitAssetTimeout(const std::string &objectKey)
+{
+    RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED,
+        ObjectStore::ERROR_CODE, ObjectStore::TIMEOUT);
+    callbacks_.ForEach([this, &objectKey](uint32_t tokenId, const CallbackInfo &value) {
+        for (const auto& observer : value.observers_) {
+            if (objectKey != observer.first) {
+                continue;
+            }
+            observer.second->Completed(std::map<std::string, std::vector<uint8_t>>(), true);
+            restoreStatus_.Erase(objectKey);
+            auto [has, taskId] = objectTimer_.Find(objectKey);
+            if (has) {
+                executors_->Remove(taskId);
+                objectTimer_.Erase(objectKey);
+            }
+            RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::NOTIFY, ObjectStore::RADAR_FAILED,
+                ObjectStore::ERROR_CODE, ObjectStore::TIMEOUT, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+        }
+        return false;
+    });
 }
 
 void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &userId)
@@ -674,6 +727,15 @@ void ObjectStoreManager::SyncCompleted(
         std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
         SetSyncStatus(false);
         FlushClosedStore();
+    }
+    for (const auto &item : results) {
+        if (item.second == DistributedDB::DBStatus::OK) {
+            RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SYNC_DATA, ObjectStore::RADAR_SUCCESS,
+                ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+        } else {
+            RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SYNC_DATA, ObjectStore::RADAR_FAILED,
+                ObjectStore::ERROR_CODE, item.second, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+        }
     }
 }
 
@@ -763,8 +825,6 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     auto status = delegate_->PutBatch(entries);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("putBatch fail %{public}d", status);
-        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, status, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
     }
     return status;
 }
