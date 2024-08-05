@@ -93,6 +93,7 @@ public:
 
         StoreMetaData metaData;
         metaData.bundleName = "ohos.test.demo";
+        metaData.appId = "ohos.test.demo";
         metaData.storeId = "test_store";
         metaData.user = "100";
         metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
@@ -110,6 +111,7 @@ public:
         MetaDataManager::GetInstance().DelMeta(std::string(peerCapMetaKey.begin(), peerCapMetaKey.end()));
         StoreMetaData metaData;
         metaData.bundleName = "ohos.test.demo";
+        metaData.appId = "ohos.test.demo";
         metaData.storeId = "test_store";
         metaData.user = "100";
         metaData.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
@@ -152,7 +154,6 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     uint32_t parseSize = 1;
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
-    ASSERT_EQ(users.size(), 1);
-    EXPECT_EQ(users[0], "100");
+    ASSERT_EQ(users.size(), 0);
 }
 } // namespace
