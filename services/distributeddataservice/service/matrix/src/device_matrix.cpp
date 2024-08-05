@@ -206,7 +206,6 @@ std::pair<uint16_t, uint16_t> DeviceMatrix::OnBroadcast(const std::string &devic
         mask.statics &= ~dataLevel.statics;
     }
     auto meta = GetMatrixMetaData(device, mask);
-    auto [statics, dynamic] = NeedCloudSync(device, meta);
     UpdateRemoteMeta(device, mask, meta);
     {
         std::lock_guard<decltype(mutex_)> lockGuard(mutex_);
@@ -216,9 +215,6 @@ std::pair<uint16_t, uint16_t> DeviceMatrix::OnBroadcast(const std::string &devic
             mask.statics |= Low(it->second.statics);
         }
         remotes_.insert_or_assign(device, mask);
-    }
-    if (observer_ && (statics || dynamic)) {
-        observer_(statics, dynamic);
     }
     return { mask.dynamic, mask.statics };
 }
@@ -300,25 +296,6 @@ MatrixMetaData DeviceMatrix::GetMatrixMetaData(const std::string &device, const 
     meta.dynamicInfo = dynamicApps_;
     meta.staticsInfo = staticsApps_;
     return meta;
-}
-
-std::pair<bool, bool> DeviceMatrix::NeedCloudSync(const std::string &device, const MatrixMetaData &newMeta)
-{
-    auto [exist, oldMeta] = GetMatrixMeta(device);
-    if (exist && oldMeta == newMeta) {
-        return { false, false };
-    }
-    if (exist) {
-        auto broadStaticVersion = High(newMeta.statics) > High(oldMeta.statics);
-        auto broadDynamicVersion = High(newMeta.dynamic) > High(oldMeta.dynamic);
-        auto [isExisted, metaData] = GetMatrixMeta(device, true);
-        if (!isExisted) {
-            return { broadStaticVersion, broadDynamicVersion };
-        }
-        return { broadStaticVersion && High(newMeta.statics) > High(metaData.statics),
-            broadDynamicVersion && High(newMeta.dynamic) > High(metaData.dynamic) };
-    }
-    return { true, true };
 }
 
 void DeviceMatrix::UpdateRemoteMeta(const std::string &device, Mask &mask, MatrixMetaData &newMeta)
@@ -734,15 +711,6 @@ MatrixMetaData DeviceMatrix::GetMatrixInfo(const std::string &device)
         versions_.Set(device, meta);
     }
     return meta;
-}
-
-void DeviceMatrix::RegRemoteChange(std::function<void(bool, bool)> observer)
-{
-    if (observer_) {
-        ZLOGD("duplicate register");
-        return;
-    }
-    observer_ = std::move(observer);
 }
 
 bool DeviceMatrix::IsDynamic(const StoreMetaData &metaData)

@@ -378,17 +378,6 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
     return Status::SUCCESS;
 }
 
-void KVDBServiceImpl::RegisterMatrixChange()
-{
-    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
-        ZLOGD("not support matrix");
-        return;
-    }
-    DeviceMatrix::GetInstance().RegRemoteChange([this](bool statics, bool dynamic) {
-        DoCloudSync(statics, dynamic);
-    });
-}
-
 Status KVDBServiceImpl::UnregServiceNotifier(const AppId &appId)
 {
     syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [&appId](const auto &key, SyncAgent &value) {
@@ -935,26 +924,6 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
     return dbResults;
 }
 
-void KVDBServiceImpl::DoCloudSync(bool statics, bool dynamic)
-{
-    std::vector<CheckerManager::StoreInfo> stores;
-    if (statics) {
-        auto staticStores = CheckerManager::GetInstance().GetStaticStores();
-        stores.insert(stores.end(), staticStores.begin(), staticStores.end());
-    }
-    if (dynamic) {
-        auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
-        stores.insert(stores.end(), dynamicStores.begin(), dynamicStores.end());
-    }
-    for (const auto &store : stores) {
-        auto status = CloudSync({ store.bundleName }, { store.storeId }, { .triggerMode = MODE_BROADCASTER });
-        if (status != SUCCESS) {
-            ZLOGW("cloud sync failed:%{public}d, appId:%{public}s storeId:%{public}s", status,
-                  store.bundleName.c_str(), Anonymous::Change(store.storeId).c_str());
-        }
-    }
-}
-
 Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
 {
     if (!meta.enableCloud) {
@@ -1376,7 +1345,6 @@ int32_t KVDBServiceImpl::OnInitialize()
     RegisterKvServiceInfo();
     RegisterHandler();
     Init();
-    RegisterMatrixChange();
     return SUCCESS;
 }
 
