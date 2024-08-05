@@ -38,7 +38,9 @@
 #include "dump/dump_manager.h"
 #include "extension_ability_manager.h"
 #include "hap_token_info.h"
+#include "if_system_ability_manager.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
@@ -48,6 +50,8 @@
 #include "scheduler_manager.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
 #include "sys_event_subscriber.h"
+#include "system_ability_definition.h"
+#include "system_ability_status_change_stub.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 #include "xcollie.h"
@@ -58,6 +62,29 @@ using DumpManager = OHOS::DistributedData::DumpManager;
 using ProviderInfo = DataProviderConfig::ProviderInfo;
 using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
+class DataShareServiceImpl::SystemAbilityStatusChangeListener
+    : public SystemAbilityStatusChangeStub {
+public:
+    SystemAbilityStatusChangeListener()
+    {
+    }
+    ~SystemAbilityStatusChangeListener() = default;
+    void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
+    void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
+    {
+    }
+};
+
+void DataShareServiceImpl::SystemAbilityStatusChangeListener::OnAddSystemAbility(
+    int32_t systemAbilityId, const std::string &deviceId)
+{
+    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        return;
+    }
+    ZLOGI("Common event service start. saId:%{public}d", systemAbilityId);
+    InitSubEvent();
+}
+
 DataShareServiceImpl::Factory::Factory()
 {
     FeatureSystem::GetInstance().RegisterCreator("data_share", []() {
@@ -566,11 +593,22 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
-    InitSubEvent();
+    SubscribeCommonEvent();
     SubscribeTimeChanged();
     SubscribeChange();
     ZLOGI("end");
     return E_OK;
+}
+
+void DataShareServiceImpl::SubscribeCommonEvent()
+{
+    sptr<ISystemAbilityManager> systemManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemManager == nullptr) {
+        ZLOGE("System mgr is nullptr");
+        return;
+    }
+    sptr<SystemAbilityStatusChangeListener> callback(new SystemAbilityStatusChangeListener());
+    systemManager->SubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, callback);
 }
 
 void DataShareServiceImpl::SubscribeChange()
