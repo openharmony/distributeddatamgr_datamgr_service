@@ -37,6 +37,12 @@ public:
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate) = 0;
+    virtual std::pair<int64_t, int64_t> InsertEx(const std::string &tableName,
+        const DataShareValuesBucket &valuesBucket) = 0;
+    virtual std::pair<int64_t, int64_t> UpdateEx(const std::string &tableName,
+        const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) = 0;
+    virtual std::pair<int64_t, int64_t> DeleteEx(const std::string &tableName,
+        const DataSharePredicates &predicate) = 0;
     virtual std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,
         const int32_t callingPid) = 0;

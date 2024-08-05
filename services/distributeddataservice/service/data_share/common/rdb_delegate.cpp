@@ -16,6 +16,7 @@
 #include "rdb_delegate.h"
 
 #include "crypto_manager.h"
+#include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "metadata/meta_data_manager.h"
@@ -138,6 +139,64 @@ int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredica
     }
     return changeCount;
 }
+
+std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
+    const DataShareValuesBucket &valuesBucket)
+{
+    if (store_ == nullptr) {
+        ZLOGE("store is null");
+        return std::make_pair(E_DB_ERROR, 0);
+    }
+    int64_t rowId = 0;
+    ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
+    int ret = store_->Insert(rowId, tableName, bucket);
+    if (ret != E_OK) {
+        ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::INSERT_RDB_ERROR);
+        return std::make_pair(E_DB_ERROR, rowId);
+    }
+    return std::make_pair(E_OK, rowId);
+}
+
+std::pair<int64_t, int64_t> RdbDelegate::UpdateEx(
+    const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
+{
+    if (store_ == nullptr) {
+        ZLOGE("store is null");
+        return std::make_pair(E_DB_ERROR, 0);
+    }
+    int changeCount = 0;
+    ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
+    RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
+    int ret = store_->Update(changeCount, bucket, predicates);
+    if (ret != E_OK) {
+        ZLOGE("Update failed  %{public}s %{public}d", tableName.c_str(), ret);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::UPDATE_RDB_ERROR);
+        return std::make_pair(E_DB_ERROR, changeCount);
+    }
+    return std::make_pair(E_OK, changeCount);
+}
+
+std::pair<int64_t, int64_t> RdbDelegate::DeleteEx(const std::string &tableName, const DataSharePredicates &predicate)
+{
+    if (store_ == nullptr) {
+        ZLOGE("store is null");
+        return std::make_pair(E_DB_ERROR, 0);
+    }
+    int changeCount = 0;
+    RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
+    int ret = store_->Delete(changeCount, predicates);
+    if (ret != E_OK) {
+        ZLOGE("Delete failed  %{public}s %{public}d", tableName.c_str(), ret);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::DELETE_RDB_ERROR);
+        return std::make_pair(E_DB_ERROR, changeCount);
+    }
+    return std::make_pair(E_OK, changeCount);
+}
+
 std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std::string &tableName,
     const DataSharePredicates &predicates, const std::vector<std::string> &columns,
     const int32_t callingPid)
