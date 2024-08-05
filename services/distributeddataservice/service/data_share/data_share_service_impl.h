@@ -89,6 +89,7 @@ public:
     int32_t UnregisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
 
 private:
+    class SystemAbilityStatusChangeListener;
     using StaticActs = DistributedData::StaticActs;
     class DataShareStatic : public StaticActs {
     public:
@@ -118,7 +119,8 @@ private:
     bool GetCallerBundleName(std::string &bundleName);
     int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
-    void InitSubEvent();
+    void SubscribeCommonEvent();
+    static void InitSubEvent();
     void AutoLaunch(const DistributedData::Event &event);
     void SubscribeChange();
     static void SaveLaunchInfo(const std::string &bundleName, const std::string &userId,
