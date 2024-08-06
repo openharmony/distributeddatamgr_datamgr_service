@@ -345,7 +345,9 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
     }
     for (auto user : users) {
         for (const auto &store : stores) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId, {}, triggerMode));
+            int32_t mode = (store.bundleName != bundleName && triggerMode == MODE_PUSH) ? MODE_CONSISTENCY
+                                                                                        : triggerMode;
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId, {}, mode));
         }
     }
     return found;
