@@ -48,7 +48,7 @@ DeviceMatrix::DeviceMatrix()
                 return true;
             }
             auto deviceId = std::move(metaData.deviceId);
-            ZLOGI("Matrix ver:%{public}u origin:%{public}d device:%{public}s",
+            ZLOGI("matrix version:%{public}u origin:%{public}d device:%{public}s",
                 metaData.version, metaData.origin, Anonymous::Change(deviceId).c_str());
             if (metaData.origin == MatrixMetaData::Origin::REMOTE_CONSISTENT) {
                 return true;
@@ -69,7 +69,7 @@ DeviceMatrix::DeviceMatrix()
             }
             auto deviceId = std::move(metaData.deviceId);
             versions_.Set(deviceId, metaData);
-            ZLOGI("Matrix ver:%{public}u device:%{public}s",
+            ZLOGI("matrix version:%{public}u device:%{public}s",
                 metaData.version, Anonymous::Change(deviceId).c_str());
             return true;
         });
@@ -118,7 +118,7 @@ bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
         newMeta.dynamic = Merge(oldMeta.dynamic, newMeta.dynamic);
         newMeta.statics = Merge(oldMeta.statics, newMeta.statics);
     }
-    ZLOGI("Save Matrix ver:%{public}u -> %{public}u ", oldMeta.version, newMeta.version);
+    ZLOGI("Save Matrix, oldMeta.version:%{public}u , newMeta.version:%{public}u ", oldMeta.version, newMeta.version);
     MetaDataManager::GetInstance().SaveMeta(newMeta.GetKey(), newMeta, true);
     return MetaDataManager::GetInstance().SaveMeta(newMeta.GetKey(), newMeta);
 }
@@ -367,15 +367,15 @@ void DeviceMatrix::Broadcast(const DataLevel &dataLevel)
     }
     matrix.dynamic |= Low(lasts_.dynamic);
     matrix.statics |= Low(lasts_.statics);
-    if (High(matrix.dynamic) != INVALID_HIGH &&  High(lasts_.dynamic)!= INVALID_HIGH &&
+    if (High(matrix.dynamic) != INVALID_HIGH && High(lasts_.dynamic) != INVALID_HIGH &&
         High(matrix.dynamic) < High(lasts_.dynamic)) {
-            matrix.dynamic &= 0x000F;
-            matrix.dynamic |= High(matrix.dynamic);
+        matrix.dynamic &= 0x000F;
+        matrix.dynamic |= High(matrix.dynamic);
     }
-    if (High(matrix.statics) != INVALID_HIGH &&  High(lasts_.statics)!= INVALID_HIGH &&
+    if (High(matrix.statics) != INVALID_HIGH && High(lasts_.statics) != INVALID_HIGH &&
         High(matrix.statics) < High(lasts_.statics)) {
-            matrix.statics &= 0x000F;
-            matrix.statics |= High(matrix.statics);
+        matrix.statics &= 0x000F;
+        matrix.statics |= High(matrix.statics);
     }
     EventCenter::GetInstance().PostEvent(std::make_unique<MatrixEvent>(MATRIX_BROADCAST, "", matrix));
     lasts_ = matrix;
@@ -461,7 +461,7 @@ void DeviceMatrix::OnChanged(const StoreMetaData &metaData)
 void DeviceMatrix::OnExchanged(const std::string &device, uint16_t code, LevelType type, ChangeType changeType)
 {
     if (device.empty() || type < LevelType::STATICS || type > LevelType::DYNAMIC) {
-        ZLOGE("Invalid args.device:%{public}s, code:%{public}d, type:%{public}d", Anonymous::Change(device).c_str(),
+        ZLOGE("invalid args, device:%{public}s, code:%{public}d, type:%{public}d", Anonymous::Change(device).c_str(),
             code, type);
         return;
     }
@@ -675,7 +675,7 @@ void DeviceMatrix::UpdateLevel(const std::string &device, uint16_t level, Device
     bool isConsistent)
 {
     if (device.empty() || type < 0 || type >= LevelType::BUTT) {
-        ZLOGE("Invalid args.device:%{public}s, level:%{public}d, type:%{public}d", Anonymous::Change(device).c_str(),
+        ZLOGE("invalid args, device:%{public}s, level:%{public}d, type:%{public}d", Anonymous::Change(device).c_str(),
             level, type);
         return;
     }

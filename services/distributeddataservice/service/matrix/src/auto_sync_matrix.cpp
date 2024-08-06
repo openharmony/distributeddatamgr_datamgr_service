@@ -16,10 +16,11 @@
 #define LOG_TAG "AutoSyncMatrix"
 
 #include "auto_sync_matrix.h"
+
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
-#include "device_matrix.h"
 #include "device_manager_adapter.h"
+#include "device_matrix.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
@@ -64,7 +65,7 @@ AutoSyncMatrix::AutoSyncMatrix()
                     break;
             }
             return true;
-    });
+        });
 }
 
 AutoSyncMatrix::~AutoSyncMatrix()

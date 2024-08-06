@@ -738,7 +738,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
     }
-    ZLOGI("[server] id:%{public}s, enableCloud:%{pubic}d, user:%{public}d, app size:%{public}zu",
+    ZLOGI("[server] id:%{public}s, enableCloud:%{public}d, user:%{public}d, app size:%{public}zu",
           Anonymous::Change(cloudInfo.id).c_str(), cloudInfo.enableCloud, cloudInfo.user, cloudInfo.apps.size());
     CloudInfo oldInfo;
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldInfo, true)) {

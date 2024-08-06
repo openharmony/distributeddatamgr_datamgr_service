@@ -16,6 +16,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_DEVICE_MATRIX_H
 #include <map>
 #include <mutex>
+
 #include "eventcenter/event.h"
 #include "executor_pool.h"
 #include "lru_bucket.h"
@@ -24,6 +25,7 @@
 #include "metadata/store_meta_data.h"
 #include "utils/ref_count.h"
 #include "visibility.h"
+
 namespace OHOS::DistributedData {
 class API_EXPORT DeviceMatrix {
 public:
