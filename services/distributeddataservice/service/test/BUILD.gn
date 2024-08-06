@@ -960,6 +960,37 @@ ohos_unittest("KvdbServiceImplTest") {
   ]
 }
 
+ohos_unittest("DumpHelperTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/dumper/src/dump_helper.cpp",
+    "dump_helper_test.cpp",
+  ]
+
+  include_dirs = [ "${data_service_path}/service/dumper/include" ]
+
+  configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -977,6 +1008,7 @@ group("unittest") {
     ":DataShareServiceImplTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
+    ":DumpHelperTest",
     ":KVDBGeneralStoreTest",
     ":KvdbServiceImplTest",
     ":MetaDataTest",

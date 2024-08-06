@@ -45,7 +45,6 @@ public:
     static void SetUpTestCase()
     {
         std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-        Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
         Bootstrap::GetInstance().LoadCheckers();
         KvStoreMetaManager::GetInstance().BindExecutor(executors);
@@ -462,6 +461,16 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData006, TestSize.Level1)
     EXPECT_FALSE(storemetaData1 == storemetaData2);
     storemetaData2.isNeedCompress = true;
     EXPECT_TRUE(storemetaData1 == storemetaData2);
+
+    storemetaData1.enableCloud = true;
+    EXPECT_FALSE(storemetaData1 == storemetaData2);
+    storemetaData2.enableCloud = true;
+    EXPECT_TRUE(storemetaData1 == storemetaData2);
+
+    storemetaData1.cloudAutoSync = true;
+    EXPECT_FALSE(storemetaData1 == storemetaData2);
+    storemetaData2.cloudAutoSync = true;
+    EXPECT_TRUE(storemetaData1 == storemetaData2);
 }
 
 /**
@@ -507,6 +516,16 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData007, TestSize.Level1)
     storemetaData1.isNeedCompress = true;
     EXPECT_TRUE(storemetaData1 != storemetaData2);
     storemetaData2.isNeedCompress = true;
+    EXPECT_FALSE(storemetaData1 != storemetaData2);
+
+    storemetaData1.enableCloud = true;
+    EXPECT_TRUE(storemetaData1 != storemetaData2);
+    storemetaData2.enableCloud = true;
+    EXPECT_FALSE(storemetaData1 != storemetaData2);
+
+    storemetaData1.cloudAutoSync = true;
+    EXPECT_TRUE(storemetaData1 != storemetaData2);
+    storemetaData2.cloudAutoSync = true;
     EXPECT_FALSE(storemetaData1 != storemetaData2);
 }
 

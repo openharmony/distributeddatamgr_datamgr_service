@@ -207,13 +207,13 @@ HWTEST_F(CloudInfoTest, GetPrefix, TestSize.Level0)
 }
 
 /**
-* @tc.name: CloudInfoTest
+* @tc.name: CloudInfoTest001
 * @tc.desc: Marshal and Unmarshal of CloudInfo.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: Anvette
 */
-HWTEST_F(CloudInfoTest, CloudInfoTest, TestSize.Level0)
+HWTEST_F(CloudInfoTest, CloudInfoTest001, TestSize.Level0)
 {
     CloudInfo cloudInfo1;
     cloudInfo1.user = 111;
@@ -221,6 +221,33 @@ HWTEST_F(CloudInfoTest, CloudInfoTest, TestSize.Level0)
     cloudInfo1.totalSpace = 0;
     cloudInfo1.remainSpace = 0;
     cloudInfo1.enableCloud = false;
+
+    Serializable::json node1;
+    cloudInfo1.Marshal(node1);
+    EXPECT_EQ(Serializable::Marshall(cloudInfo1), to_string(node1));
+
+    CloudInfo cloudInfo2;
+    cloudInfo2.Unmarshal(node1);
+    EXPECT_EQ(Serializable::Marshall(cloudInfo1), Serializable::Marshall(cloudInfo1));
+}
+
+/**
+* @tc.name: CloudInfoTest002
+* @tc.desc: Marshal and Unmarshal of CloudInfo.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(CloudInfoTest, CloudInfoTest002, TestSize.Level0)
+{
+    CloudInfo cloudInfo1;
+    cloudInfo1.user = 111;
+    cloudInfo1.id = "test1_id";
+    cloudInfo1.totalSpace = 0;
+    cloudInfo1.remainSpace = 0;
+    cloudInfo1.enableCloud = false;
+    cloudInfo1.maxNumber = CloudInfo::DEFAULT_BATCH_NUMBER;
+    cloudInfo1.maxSize = CloudInfo::DEFAULT_BATCH_SIZE;
 
     Serializable::json node1;
     cloudInfo1.Marshal(node1);
