@@ -94,6 +94,8 @@ public:
 
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
+    int32_t GetPassword(const RdbSyncerParam &param, std::vector<uint8_t> &password) override;
+
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
@@ -177,7 +179,7 @@ private:
 
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
-    static bool GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+    static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
     void GetCloudSchema(const RdbSyncerParam &param);
 
