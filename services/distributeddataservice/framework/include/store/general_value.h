@@ -37,6 +37,7 @@ enum SyncTriggerMode {
     MODE_ONLINE,
     MODE_UNLOCK,
     MODE_BROADCASTER,
+    MODE_CONSISTENCY,
 };
 
 struct GenStatistic {
