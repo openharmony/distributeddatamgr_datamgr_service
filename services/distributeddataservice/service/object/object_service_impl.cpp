@@ -73,8 +73,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
-    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_SUCCESS, ObjectStore::BIZ_STATE,
-        ObjectStore::FINISHED);
+    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_SUCCESS);
     return status;
 }
 
@@ -196,8 +195,6 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback, tokenId);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
-        RADAR_REPORT(ObjectStore::CREATE, ObjectStore::RESTORE, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, status, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         return status;
     }
     return OBJECT_SUCCESS;

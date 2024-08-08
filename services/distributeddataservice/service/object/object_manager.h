@@ -68,6 +68,7 @@ public:
     enum RestoreStatus : int32_t {
         NONE = 0,
         DATA_READY,
+        DATA_NOTIFIED,
         ASSETS_READY,
         ALL_READY,
         STATUS_BUTT
@@ -166,6 +167,7 @@ private:
     void DoNotify(uint32_t tokenId, const CallbackInfo& value,
         const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data, bool allReady);
     void DoNotifyAssetsReady(uint32_t tokenId, const CallbackInfo& value, const std::string& objectKey, bool allReady);
+    void DoNotifyWaitAssetTimeout(const std::string &objectKey);
     std::map<std::string, std::map<std::string, Assets>> GetAssetsFromStore(
         const std::map<std::string, std::vector<uint8_t>>& changedData);
     static bool IsAssetKey(const std::string& key);
