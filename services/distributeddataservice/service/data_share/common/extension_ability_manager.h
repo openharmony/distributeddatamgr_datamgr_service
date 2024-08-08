@@ -19,6 +19,7 @@
 #include "concurrent_map.h"
 #include "executor_pool.h"
 #include "iremote_object.h"
+#include "want.h"
 
 namespace OHOS::DataShare {
 class ExtensionAbilityManager {
@@ -26,7 +27,7 @@ public:
     static ExtensionAbilityManager &GetInstance();
     void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
     int32_t ConnectExtension(const std::string &uri, const std::string &bundleName,
-        const sptr<IRemoteObject> &callback);
+        const sptr<IRemoteObject> &callback, AAFwk::WantParams &wantParams);
     void DelayDisconnect(const std::string &bundleName);
 
 private:

@@ -19,15 +19,16 @@
 #include "ability_connect_callback_interface.h"
 #include "block_data.h"
 #include "context.h"
+#include "want.h"
 namespace OHOS::DataShare {
 class ExtensionConnectAdaptor {
 public:
-    static bool TryAndWait(const std::string &uri, const std::string &bundleName,
+    static bool TryAndWait(const std::string &uri, const std::string &bundleName, AAFwk::WantParams &wantParams,
         int maxWaitTime = 2);
     ExtensionConnectAdaptor();
 private:
     void Disconnect();
-    bool DoConnect(const std::string &uri, const std::string &bundleName);
+    bool DoConnect(const std::string &uri, const std::string &bundleName, AAFwk::WantParams &wantParams);
     std::shared_ptr<BlockData<bool>> data_;
     sptr<AAFwk::IAbilityConnection> callback_ = nullptr;
 };

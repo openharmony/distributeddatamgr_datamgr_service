@@ -32,13 +32,15 @@ ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(std::make_shared<Bloc
     callback_ = new (std::nothrow) CallbackImpl(data_);
 }
 
-bool ExtensionConnectAdaptor::DoConnect(const std::string &uri, const std::string &bundleName)
+bool ExtensionConnectAdaptor::DoConnect(const std::string &uri, const std::string &bundleName,
+    AAFwk::WantParams &wantParams)
 {
     data_->Clear();
     if (callback_ == nullptr) {
         return false;
     }
-    ErrCode ret = ExtensionAbilityManager::GetInstance().ConnectExtension(uri, bundleName, callback_->AsObject());
+    ErrCode ret = ExtensionAbilityManager::GetInstance().ConnectExtension(uri, bundleName,
+        callback_->AsObject(), wantParams);
     if (ret != ERR_OK) {
         ZLOGE("connect ability failed, ret = %{public}d, uri: %{public}s", ret,
             URIUtils::Anonymous(uri).c_str());
@@ -51,13 +53,13 @@ bool ExtensionConnectAdaptor::DoConnect(const std::string &uri, const std::strin
 }
 
 bool ExtensionConnectAdaptor::TryAndWait(const std::string &uri, const std::string &bundleName,
-    int maxWaitTime)
+    AAFwk::WantParams &wantParams, int maxWaitTime)
 {
     ExtensionConnectAdaptor strategy;
     return AppConnectManager::Wait(
         bundleName, maxWaitTime,
-        [&uri, &bundleName, &strategy]() {
-            return strategy.DoConnect(uri, bundleName);
+        [&uri, &bundleName, &strategy, &wantParams]() {
+            return strategy.DoConnect(uri, bundleName, wantParams);
         },
         [&strategy]() {
             strategy.Disconnect();

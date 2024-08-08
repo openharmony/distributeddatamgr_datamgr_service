@@ -12,6 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#include <utility>
 #define LOG_TAG "DataShareProfileConfigTest"
 
 #include <gtest/gtest.h>
@@ -47,18 +48,18 @@ public:
 HWTEST_F(DataShareProfileConfigTest, GetDbConfig, TestSize.Level1)
 {
     DataShareDbConfig dbConfig;
-    auto result = dbConfig.GetDbConfig("", false, "", "", 0);
+    auto result = dbConfig.GetDbConfig(std::make_pair("", ""), false, "", "", 0);
     EXPECT_EQ(std::get<0>(result), NativeRdb::E_DB_NOT_EXIST);
 
     bool hasExtension = true;
-    result = dbConfig.GetDbConfig("", hasExtension, "", "", 0);
+    result = dbConfig.GetDbConfig(std::make_pair("", ""), hasExtension, "", "", 0);
     EXPECT_EQ(std::get<0>(result), NativeRdb::E_DB_NOT_EXIST);
 
     std::string uri = DATA_SHARE_URI;
     std::string bundleName = "bundleName";
     std::string storeName = "storeName";
     int32_t userId = USER_TEST;
-    result = dbConfig.GetDbConfig(uri, hasExtension, bundleName, storeName, userId);
+    result = dbConfig.GetDbConfig(std::make_pair(uri, ""), hasExtension, bundleName, storeName, userId);
     EXPECT_NE(std::get<0>(result), DataShare::E_OK);
 }
 

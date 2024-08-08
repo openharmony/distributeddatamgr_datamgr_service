@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "bundle_mgr_proxy.h"
+#include <string>
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
@@ -19,6 +21,7 @@
 #include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
+#include "extension_connect_adaptor.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/secret_key_meta_data.h"
@@ -27,7 +30,9 @@
 #include "rdb_errno.h"
 #include "rdb_utils.h"
 #include "scheduler_manager.h"
+#include "string_wrapper.h"
 #include "utils/anonymous.h"
+#include "want_params.h"
 
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
@@ -80,16 +85,38 @@ RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta
     return config;
 }
 
-RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version, bool registerFunction)
+RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
+    bool registerFunction, const std::string &extUriData)
 {
+    tokenId_ = meta.tokenId;
+    bundleName = meta.bundleName;
+    storeName = meta.storeId;
+    userId = std::stoi(meta.user);
+    extUri = extUriData;
+    haMode = meta.haMode;
+
     RdbStoreConfig config = GetConfig(meta, registerFunction);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
+        RdbDelegate::TryAndSend(errCode_);
     }
-    tokenId_ = meta.tokenId;
+}
+
+void RdbDelegate::TryAndSend(int errCode)
+{
+    if (errCode != E_SQLITE_CORRUPT || haMode == 0) {
+        return;
+    }
+    ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s.",
+        bundleName.c_str(), storeName.c_str());
+    AAFwk::WantParams params;
+    params.SetParam("Database corruption", AAFwk::String::Box("Master Database"));
+    params.SetParam("BundleName", AAFwk::String::Box(bundleName));
+    params.SetParam("StoreName", AAFwk::String::Box(storeName));
+    ExtensionConnectAdaptor::TryAndWait(extUri, bundleName, params);
 }
 
 int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket)
@@ -169,6 +196,7 @@ std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
         if (ret == E_SQLITE_ERROR) {
             EraseStoreCache(tokenId_);
         }
+        RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, rowId);
     }
     return std::make_pair(E_OK, rowId);
@@ -192,6 +220,7 @@ std::pair<int64_t, int64_t> RdbDelegate::UpdateEx(
         if (ret == E_SQLITE_ERROR) {
             EraseStoreCache(tokenId_);
         }
+        RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, changeCount);
     }
     return std::make_pair(E_OK, changeCount);
@@ -213,6 +242,7 @@ std::pair<int64_t, int64_t> RdbDelegate::DeleteEx(const std::string &tableName, 
         if (ret == E_SQLITE_ERROR) {
             EraseStoreCache(tokenId_);
         }
+        RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, changeCount);
     }
     return std::make_pair(E_OK, changeCount);
@@ -237,12 +267,13 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     if (resultSet == nullptr) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::QUERY_RDB_ERROR);
-        ZLOGE("Query failed %{public}s, pid: %{public}d", tableName.c_str(), callingPid);
         resultSetCount--;
         return std::make_pair(E_ERROR, nullptr);
     }
     int rowCount;
-    if (resultSet->GetRowCount(rowCount) == E_SQLITE_ERROR) {
+    int err = resultSet->GetRowCount(rowCount);
+    RdbDelegate::TryAndSend(err);
+    if (err == E_SQLITE_ERROR) {
         ZLOGE("query failed, err:%{public}d, pid:%{public}d", E_SQLITE_ERROR, callingPid);
         EraseStoreCache(tokenId_);
     }
