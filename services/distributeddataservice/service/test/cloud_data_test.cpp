@@ -23,6 +23,7 @@
 #include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
+#include "cloud/cloud_share_event.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service_impl.h"
 #include "cloud_types.h"
@@ -687,9 +688,48 @@ HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level0)
 HWTEST_F(CloudDataTest, Clean001, TestSize.Level0)
 {
     std::map<std::string, int32_t> actions;
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_BUTT);
+    std::string id = "testId";
+    std::string bundleName = "testBundleName";
+    auto ret = cloudServiceImpl_->Clean(id, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::ERROR);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::ERROR);
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+    actions.insert_or_assign(bundleName, CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: Clean
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Clean002, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    std::map<std::string, int32_t> actions;
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
     auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    StoreMetaDataLocal localMeta;
+    localMeta.isPublic = false;
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    localMeta.isPublic = true;
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    metaData_.user = "0";
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    metaData_.user = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyLocal(), true);
 }
 
 /**
@@ -712,19 +752,53 @@ HWTEST_F(CloudDataTest, NotifyDataChange001, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, NotifyDataChange002, TestSize.Level0)
 {
-    constexpr const int32_t userId = 100;
+    constexpr const int32_t invalidUserId = -1;
     std::string extraData;
-    auto ret = cloudServiceImpl_->NotifyDataChange("", extraData, userId);
+    auto ret = cloudServiceImpl_->NotifyDataChange("", extraData, invalidUserId);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
-                "bundleName\\\",\\\"containerName\\\":\\\"alias\\\", \\\"databaseScopes\\\": "
+    extraData = "{data:test}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                "bundleName\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", \\\"databaseScopes\\\": "
                 "\\\"[\\\\\\\"private\\\\\\\", "
-                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"xxx\\\\\\\",\\\\\\\"yyy\\\\\\\","
-                "\\\\\\\"zzz\\\\\\\"]\\\"}\"}";
-    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"cloud_"
+                "bundleName_test\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", "
+                "\\\"databaseScopes\\\": "
+                "\\\"[\\\\\\\"private\\\\\\\", "
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: NotifyDataChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level0)
+{
+    constexpr const int32_t userId = 100;
+    constexpr const int32_t defaultUserId = 0;
+    std::string extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                            "bundleName\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", "
+                            "\\\"databaseScopes\\\": "
+                            "\\\"[\\\\\\\"private\\\\\\\", "
+                            "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"\\\\\\\"]\\\"}\"}";
+    auto ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, defaultUserId);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                "bundleName\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", \\\"databaseScopes\\\": "
+                "\\\"[\\\\\\\"private\\\\\\\", "
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
 /**
@@ -754,6 +828,88 @@ HWTEST_F(CloudDataTest, Offline001, TestSize.Level0)
     auto ret = cloudServiceImpl_->Offline(device);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     ret = cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudShare
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudShare001, TestSize.Level0)
+{
+    ZLOGI("weisx CloudShare start");
+    StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
+    std::pair<int32_t, std::shared_ptr<Cursor>> result;
+    CloudShareEvent::Callback asyncCallback = [&result](int32_t status, std::shared_ptr<Cursor> cursor) {
+        result.first = status;
+        result.second = cursor;
+    };
+    auto event = std::make_unique<CloudShareEvent>(storeInfo, nullptr, nullptr);
+    EventCenter::GetInstance().PostEvent(std::move(event));
+    auto event1 = std::make_unique<CloudShareEvent>(storeInfo, nullptr, asyncCallback);
+    EventCenter::GetInstance().PostEvent(std::move(event1));
+    EXPECT_EQ(result.first, GeneralError::E_ERROR);
+    auto rdbQuery = std::make_shared<DistributedRdb::RdbQuery>();
+    auto event2 = std::make_unique<CloudShareEvent>(storeInfo, rdbQuery, nullptr);
+    EventCenter::GetInstance().PostEvent(std::move(event2));
+    auto event3 = std::make_unique<CloudShareEvent>(storeInfo, rdbQuery, asyncCallback);
+    EventCenter::GetInstance().PostEvent(std::move(event3));
+    EXPECT_EQ(result.first, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: OnUserChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnUserChange001, TestSize.Level0)
+{
+    constexpr const uint32_t ACCOUNT_DEFAULT = 2;
+    constexpr const uint32_t ACCOUNT_DELETE = 3;
+    constexpr const uint32_t ACCOUNT_SWITCHED = 4;
+    constexpr const uint32_t ACCOUNT_UNLOCKED = 5;
+    auto ret = cloudServiceImpl_->OnUserChange(ACCOUNT_DEFAULT, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = cloudServiceImpl_->OnUserChange(ACCOUNT_DELETE, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = cloudServiceImpl_->OnUserChange(ACCOUNT_SWITCHED, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = cloudServiceImpl_->OnUserChange(ACCOUNT_UNLOCKED, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: DisableCloud
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, DisableCloud001, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->DisableCloud("test");
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: ChangeAppSwitch
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
+{
+    std::string id = "testId";
+    std::string bundleName = "testName";
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(id, bundleName, CloudData::CloudService::SWITCH_ON);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 } // namespace DistributedDataTest
