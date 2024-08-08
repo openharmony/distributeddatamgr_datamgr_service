@@ -87,10 +87,10 @@ int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValu
         }
         return ret;
     };
-    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return Execute(uri, "", IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
-std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &uri,
+std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &uri, const std::string &extUri,
     const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("InsertEx enter.");
@@ -108,7 +108,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
         }
         return std::make_pair(errCode, ret);
     };
-    return ExecuteEx(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 bool DataShareServiceImpl::NotifyChange(const std::string &uri)
@@ -131,8 +131,8 @@ bool DataShareServiceImpl::NotifyChange(const std::string &uri)
     return true;
 }
 
-int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePredicates &predicate,
-    const DataShareValuesBucket &valuesBucket)
+int32_t DataShareServiceImpl::Update(const std::string &uri,
+    const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Update enter.");
     XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
@@ -150,10 +150,10 @@ int32_t DataShareServiceImpl::Update(const std::string &uri, const DataSharePred
         }
         return ret;
     };
-    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return Execute(uri, "", IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
-std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &uri,
+std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("UpdateEx enter.");
@@ -172,7 +172,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         }
         return std::make_pair(errCode, ret);
     };
-    return ExecuteEx(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
@@ -192,10 +192,10 @@ int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePred
         }
         return ret;
     };
-    return Execute(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return Execute(uri, "", IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
-std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &uri,
+std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicate)
 {
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
@@ -212,10 +212,10 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
         }
         return std::make_pair(errCode, ret);
     };
-    return ExecuteEx(uri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
-std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri,
+std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
     ZLOGD("Query enter.");
@@ -234,7 +234,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         resultSet = std::move(result);
         return err;
     };
-    errCode = Execute(uri, IPCSkeleton::GetCallingTokenID(), true, callBack);
+    errCode = Execute(uri, extUri, IPCSkeleton::GetCallingTokenID(), true, callBack);
     return resultSet;
 }
 
@@ -655,13 +655,15 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
         if (dataInfo.tables.empty() && dataInfo.changeType == 1) {
             ZLOGI("Start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
-            ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+            AAFwk::WantParams wantParams;
+            ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
             return;
         }
         for (const auto &table : dataInfo.tables) {
             if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
                 ZLOGI("Find table, start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
-                ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+                AAFwk::WantParams wantParams;
+                ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
                 break;
             }
         }
@@ -949,70 +951,70 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     return obsMgrClient->UnregisterObserver(Uri(uri), obServer);
 }
 
-int32_t DataShareServiceImpl::Execute(const std::string &uri, const int32_t tokenId,
+int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string &extUri, const int32_t tokenId,
     bool isRead, ExecuteCallback callback)
 {
     DataProviderConfig providerConfig(uri, tokenId);
-    auto [errCode, provider] = providerConfig.GetProviderInfo();
+    auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
         ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
-            errCode, URIUtils::Anonymous(provider.uri).c_str());
+            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
         return errCode;
     }
-    std::string permission = isRead ? provider.readPermission : provider.writePermission;
+    std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
-            tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
+            tokenId, permission.c_str(), URIUtils::Anonymous(providerInfo.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
         return ERROR_PERMISSION_DENIED;
     }
     DataShareDbConfig dbConfig;
-    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(provider.uri,
-        provider.hasExtension, provider.bundleName, provider.storeName,
-        provider.singleton ? 0 : provider.currentUserId);
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(std::make_pair(providerInfo.uri, extUri),
+        providerInfo.hasExtension, providerInfo.bundleName, providerInfo.storeName,
+        providerInfo.singleton ? 0 : providerInfo.currentUserId);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
-            URIUtils::Anonymous(provider.uri).c_str());
+            providerInfo.bundleName.c_str(), providerInfo.tableName.c_str(), tokenId,
+            URIUtils::Anonymous(providerInfo.uri).c_str());
         return code;
     }
-    return callback(provider, metaData, dbDelegate);
+    return callback(providerInfo, metaData, dbDelegate);
 }
 
-std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const int32_t tokenId,
-    bool isRead, ExecuteCallbackEx callback)
+std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const std::string &extUri,
+    const int32_t tokenId, bool isRead, ExecuteCallbackEx callback)
 {
     DataProviderConfig providerConfig(uri, tokenId);
-    auto [errCode, provider] = providerConfig.GetProviderInfo();
+    auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
         ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
-            errCode, URIUtils::Anonymous(provider.uri).c_str());
+            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
         return std::make_pair(E_DATA_SUPPLIER_ERROR, 0);
     }
-    std::string permission = isRead ? provider.readPermission : provider.writePermission;
+    std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
-            tokenId, permission.c_str(), URIUtils::Anonymous(provider.uri).c_str());
+            tokenId, permission.c_str(), URIUtils::Anonymous(providerInfo.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
     DataShareDbConfig dbConfig;
-    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(provider.uri,
-        provider.hasExtension, provider.bundleName, provider.storeName,
-        provider.singleton ? 0 : provider.currentUserId);
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(std::make_pair(providerInfo.uri, extUri),
+        providerInfo.hasExtension, providerInfo.bundleName, providerInfo.storeName,
+        providerInfo.singleton ? 0 : providerInfo.currentUserId);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            provider.bundleName.c_str(), provider.tableName.c_str(), tokenId,
-            URIUtils::Anonymous(provider.uri).c_str());
+            providerInfo.bundleName.c_str(), providerInfo.tableName.c_str(), tokenId,
+            URIUtils::Anonymous(providerInfo.uri).c_str());
         return std::make_pair(code, 0);
     }
-    return callback(provider, metaData, dbDelegate);
+    return callback(providerInfo, metaData, dbDelegate);
 }
 
 int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId)

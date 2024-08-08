@@ -50,7 +50,8 @@ std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(co
         if (!hasExtension) {
             return std::pair(NativeRdb::E_DB_NOT_EXIST, metaData);
         }
-        ExtensionConnectAdaptor::TryAndWait(uri, bundleName);
+        AAFwk::WantParams wantParams;
+        ExtensionConnectAdaptor::TryAndWait(uri, bundleName, wantParams);
         auto [succ, meta] = QueryMetaData(bundleName, storeName, userId);
         if (!succ) {
             return std::pair(NativeRdb::E_DB_NOT_EXIST, meta);
@@ -61,9 +62,11 @@ std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(co
 }
 
 std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbConfig::GetDbConfig(
-    const std::string &uri, bool hasExtension, const std::string &bundleName, const std::string &storeName,
-    int32_t userId)
+    const std::pair<std::string, std::string> &uriPair, bool hasExtension, const std::string &bundleName,
+    const std::string &storeName, int32_t userId)
 {
+    auto uri = uriPair.first;
+    auto extUri = uriPair.second;
     auto [errCode, metaData] = GetMetaData(uri, bundleName, storeName, userId, hasExtension);
     if (errCode != E_OK) {
         ZLOGE("DB not exist,bundleName:%{public}s,storeName:%{public}s,user:%{public}d,err:%{public}d,uri:%{public}s",
@@ -72,7 +75,7 @@ std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> Dat
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::META_DATA_NOT_EXISTS);
         return std::make_tuple(errCode, metaData, nullptr);
     }
-    auto dbDelegate = DBDelegate::Create(metaData);
+    auto dbDelegate = DBDelegate::Create(metaData, extUri);
     if (dbDelegate == nullptr) {
         ZLOGE("Create delegate fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
             bundleName.c_str(), userId, URIUtils::Anonymous(uri).c_str());

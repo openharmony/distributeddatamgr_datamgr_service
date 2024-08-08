@@ -19,6 +19,8 @@
 #include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
+#include "extension_connect_adaptor.h"
+#include "int_wrapper.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/secret_key_meta_data.h"
@@ -26,7 +28,9 @@
 #include "log_print.h"
 #include "rdb_utils.h"
 #include "scheduler_manager.h"
+#include "string_wrapper.h"
 #include "utils/anonymous.h"
+#include "want_params.h"
 
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 16;
@@ -78,15 +82,37 @@ RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta
     return config;
 }
 
-RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version, bool registerFunction)
+RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
+    bool registerFunction, const std::string &extUriData)
 {
+    tokenId_ = meta.tokenId;
+    bundleName_ = meta.bundleName;
+    storeName_ = meta.storeId;
+    extUri_ = extUriData;
+    haMode_ = meta.haMode;
+
     RdbStoreConfig config = GetConfig(meta, registerFunction);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
+        RdbDelegate::TryAndSend(errCode_);
     }
+}
+
+void RdbDelegate::TryAndSend(int errCode)
+{
+    if (errCode != E_SQLITE_CORRUPT || haMode_ == HAMode::SINGLE) {
+        return;
+    }
+    ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s. ExtUri: %{public}s",
+        bundleName_.c_str(), storeName_.c_str(), DistributedData::Anonymous::Change(extUri_).c_str());
+    AAFwk::WantParams params;
+    params.SetParam("BundleName", AAFwk::String::Box(bundleName_));
+    params.SetParam("StoreName", AAFwk::String::Box(storeName_));
+    params.SetParam("StoreStatus", AAFwk::Integer::Box(1));
+    ExtensionConnectAdaptor::TryAndWait(extUri_, bundleName_, params);
 }
 
 int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket)
@@ -154,6 +180,7 @@ std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
         ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::INSERT_RDB_ERROR);
+        RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, rowId);
     }
     return std::make_pair(E_OK, rowId);
@@ -174,6 +201,7 @@ std::pair<int64_t, int64_t> RdbDelegate::UpdateEx(
         ZLOGE("Update failed  %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::UPDATE_RDB_ERROR);
+        RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, changeCount);
     }
     return std::make_pair(E_OK, changeCount);
@@ -192,6 +220,7 @@ std::pair<int64_t, int64_t> RdbDelegate::DeleteEx(const std::string &tableName, 
         ZLOGE("Delete failed  %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::DELETE_RDB_ERROR);
+        RdbDelegate::TryAndSend(ret);
         return std::make_pair(E_DB_ERROR, changeCount);
     }
     return std::make_pair(E_OK, changeCount);
@@ -220,6 +249,8 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         resultSetCount--;
         return std::make_pair(E_ERROR, nullptr);
     }
+    int err = resultSet->GetRowCount(count);
+    RdbDelegate::TryAndSend(err);
     resultSetCallingPids.Compute(callingPid, [](const uint32_t &, int32_t &value) {
         ++value;
         return true;

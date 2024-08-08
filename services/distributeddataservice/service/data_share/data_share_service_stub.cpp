@@ -92,13 +92,14 @@ int32_t DataShareServiceStub::OnDelete(MessageParcel &data, MessageParcel &reply
 int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
+    std::string extUri;
     DataShareValuesBucket bucket;
-    if (!ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
+    if (!ITypesUtil::Unmarshal(data, uri, extUri, bucket.valuesMap)) {
         ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             bucket.valuesMap.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto [errCode, status] = InsertEx(uri, bucket);
+    auto [errCode, status] = InsertEx(uri, extUri, bucket);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -109,14 +110,15 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
 int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
+    std::string extUri;
     DataSharePredicates predicate;
     DataShareValuesBucket bucket;
-    if (!ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
+    if (!ITypesUtil::Unmarshal(data, uri, extUri, predicate, bucket.valuesMap)) {
         ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             bucket.valuesMap.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto [errCode, status] = UpdateEx(uri, predicate, bucket);
+    auto [errCode, status] = UpdateEx(uri, extUri, predicate, bucket);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -127,12 +129,13 @@ int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &rep
 int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
+    std::string extUri;
     DataSharePredicates predicate;
-    if (!ITypesUtil::Unmarshal(data, uri, predicate)) {
+    if (!ITypesUtil::Unmarshal(data, uri, extUri, predicate)) {
         ZLOGE("Unmarshal uri:%{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto [errCode, status] = DeleteEx(uri, predicate);
+    auto [errCode, status] = DeleteEx(uri, extUri, predicate);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -143,15 +146,16 @@ int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &rep
 int32_t DataShareServiceStub::OnQuery(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;
+    std::string extUri;
     DataSharePredicates predicate;
     std::vector<std::string> columns;
-    if (!ITypesUtil::Unmarshal(data, uri, predicate, columns)) {
+    if (!ITypesUtil::Unmarshal(data, uri, extUri, predicate, columns)) {
         ZLOGE("Unmarshal uri:%{public}s columns size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             columns.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int status = 0;
-    auto result = ISharedResultSet::WriteToParcel(Query(uri, predicate, columns, status), reply);
+    auto result = ISharedResultSet::WriteToParcel(Query(uri, extUri, predicate, columns, status), reply);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
