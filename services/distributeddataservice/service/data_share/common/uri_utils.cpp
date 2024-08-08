@@ -72,7 +72,7 @@ void URIUtils::FormatUri(std::string &uri)
     uri.resize(pos);
 }
 
-UriConfig URIUtils::GetUriConfig(const std::string &uri)
+__attribute__((no_sanitize("cfi"))) UriConfig URIUtils::GetUriConfig(const std::string &uri)
 {
     UriConfig uriConfig;
     Uri uriTemp(uri);
