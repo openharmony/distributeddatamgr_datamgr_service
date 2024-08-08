@@ -80,6 +80,7 @@
                 "resource_management",
                 "safwk",
                 "samgr",
+                "screenlock_mgr",
                 "time_service",
                 "udmf",
                 "app_file_service",

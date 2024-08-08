@@ -59,6 +59,7 @@ ohos_shared_library("distributeddata_adapter") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx:distributeddata_dfx_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/screenlock:distributeddata_screenlock_static",
   ]
 
   external_deps = [

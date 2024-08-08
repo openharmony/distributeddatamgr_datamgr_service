@@ -20,6 +20,7 @@
 #include "changeevent/remote_change_event.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
+#include "screenlock/screen_lock.h"
 #include "utils/anonymous.h"
 namespace OHOS::DistributedData {
 AutoCache &AutoCache::GetInstance()
@@ -60,9 +61,11 @@ AutoCache::~AutoCache()
 AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
-        disables_.ContainIf(meta.tokenId,
-            [&meta](const std::set<std::string> &stores) -> bool { return stores.count(meta.storeId) != 0; })) {
+    if ((meta.area >= GeneralStore::EL4 && ScreenLock::GetInstance().IsLocked()) ||
+        meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
+        disables_.ContainIf(meta.tokenId, [&meta](const std::set<std::string> &stores) -> bool {
+            return stores.count(meta.storeId) != 0;
+        })) {
         return store;
     }
 
@@ -134,31 +137,33 @@ void AutoCache::StartTimer()
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
 {
-    stores_.ComputeIfPresent(tokenId, [&storeId](auto &key, std::map<std::string, Delegate> &delegates) {
-        auto it = delegates.find(storeId);
-        if (it != delegates.end()) {
-            it->second.Close();
-            delegates.erase(it);
+    bool isScreenLocked = ScreenLock::GetInstance().IsLocked();
+    stores_.ComputeIfPresent(tokenId, [&storeId, isScreenLocked](auto &key, auto &delegates) {
+        auto it = delegates.begin();
+        while (it != delegates.end()) {
+            if ((storeId == it->first || storeId.empty()) &&
+                (!isScreenLocked || it->second.GetArea() < GeneralStore::EL4)) {
+                it->second.Close();
+                it = delegates.erase(it);
+            } else {
+                ++it;
+            }
         }
         return !delegates.empty();
     });
 }
 
-void AutoCache::CloseStore(uint32_t tokenId)
-{
-    stores_.Erase(tokenId);
-}
-
 void AutoCache::CloseExcept(const std::set<int32_t> &users)
 {
-    stores_.EraseIf([&users](const auto &tokenId, std::map<std::string, Delegate> &delegates) {
+    bool isScreenLocked = ScreenLock::GetInstance().IsLocked();
+    stores_.EraseIf([&users, isScreenLocked](const auto &tokenId, std::map<std::string, Delegate> &delegates) {
         if (delegates.empty() || users.count(delegates.begin()->second.GetUser()) != 0) {
             return delegates.empty();
         }
 
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the kv store is BUSY we wait more INTERVAL minutes again
-            if (!it->second.Close()) {
+            if ((isScreenLocked && it->second.GetArea() >= GeneralStore::EL4) || !it->second.Close()) {
                 ++it;
             } else {
                 it = delegates.erase(it);
@@ -184,10 +189,12 @@ void AutoCache::SetObserver(uint32_t tokenId, const std::string &storeId, const 
 void AutoCache::GarbageCollect(bool isForce)
 {
     auto current = std::chrono::steady_clock::now();
-    stores_.EraseIf([&current, isForce](auto &key, std::map<std::string, Delegate> &delegates) {
+    bool isScreenLocked = ScreenLock::GetInstance().IsLocked();
+    stores_.EraseIf([&current, isForce, isScreenLocked](auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the store is BUSY we wait more INTERVAL minutes again
-            if ((isForce || it->second < current) && it->second.Close()) {
+            if ((!isScreenLocked || it->second.GetArea() < GeneralStore::EL4) && (isForce || it->second < current) &&
+                it->second.Close()) {
                 it = delegates.erase(it);
             } else {
                 ++it;
@@ -270,6 +277,11 @@ void AutoCache::Delegate::SetObservers(const AutoCache::Watchers &watchers)
 int32_t AutoCache::Delegate::GetUser() const
 {
     return user_;
+}
+
+int32_t AutoCache::Delegate::GetArea() const
+{
+    return meta_.area;
 }
 
 int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
