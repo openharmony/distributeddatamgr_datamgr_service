@@ -32,12 +32,7 @@ using namespace OHOS::EventFwk;
 using namespace OHOS::AAFwk;
 using namespace OHOS::DistributedData;
 using namespace Security::AccessToken;
-AccountDelegate::BaseInstance AccountDelegate::getInstance_ = AccountDelegateNormalImpl::GetBaseInstance;
-AccountDelegate *AccountDelegateNormalImpl::GetBaseInstance()
-{
-    static AccountDelegateNormalImpl accountDelegate;
-    return &accountDelegate;
-}
+__attribute__((used)) static bool g_isInit = AccountDelegateNormalImpl::Init();
 
 std::string AccountDelegateNormalImpl::GetCurrentAccountId() const
 {
@@ -223,5 +218,13 @@ bool AccountDelegateNormalImpl::QueryForegroundUserId(int &foregroundUserId)
     }
     return true;
 }
-}  // namespace DistributedKv
+
+bool AccountDelegateNormalImpl::Init()
+{
+    static AccountDelegateNormalImpl normalAccountDelegate;
+    static std::once_flag onceFlag;
+    std::call_once(onceFlag, [&]() { AccountDelegate::RegisterAccountInstance(&normalAccountDelegate); });
+    return true;
+}
+} // namespace DistributedKv
 }  // namespace OHOS
