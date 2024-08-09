@@ -93,7 +93,6 @@ private:
     DBSyncCallback GetDBSyncCompleteCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async);
     DBStatus CloudSync(const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait);
-    void InitWaterVersion(const StoreMetaData &meta);
     void GetIdentifierParams(std::vector<std::string> &devices,
         const std::vector<std::string> &uuids, int32_t authType);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
@@ -128,7 +127,6 @@ private:
     int32_t ref_ = 1;
     mutable std::shared_mutex rwMutex_;
     StoreInfo storeInfo_;
-    std::function<void()> callback_;
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;

@@ -598,7 +598,6 @@ HWTEST_F(KVDBGeneralStoreTest, GetWaterVersion, TestSize.Level0)
     ASSERT_NE(store, nullptr);
     std::string deviceId = "deviceId";
     std::vector<std::string> res = {};
-    store->InitWaterVersion(metaData_);
     auto ret = store->GetWaterVersion(deviceId);
     EXPECT_EQ(ret, res);
     KvStoreNbDelegateMock mockDelegate;

@@ -156,7 +156,6 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     SetDBReceiveDataInterceptor(meta.storeType);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
-    InitWaterVersion(meta);
     if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
         delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
             DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
@@ -587,23 +586,6 @@ std::vector<std::string> KVDBGeneralStore::GetWaterVersion(const std::string &de
     return res;
 }
 
-void KVDBGeneralStore::InitWaterVersion(const StoreMetaData &meta)
-{
-    CheckerManager::StoreInfo info = { atoi(meta.user.c_str()), meta.tokenId, meta.bundleName, meta.storeId };
-    bool isDynamic = CheckerManager::GetInstance().IsDynamic(info);
-    bool isStatic = CheckerManager::GetInstance().IsStatic(info);
-    if (!isDynamic && !isStatic) {
-        return;
-    }
-    delegate_->SetGenCloudVersionCallback([info](auto &originVersion) {
-        return WaterVersionManager::GetInstance().GetWaterVersion(info.bundleName, info.storeId);
-    });
-    callback_ = [meta]() {
-        auto event = std::make_unique<CloudSyncFinishedEvent>(CloudEvent::CLOUD_SYNC_FINISHED, meta);
-        EventCenter::GetInstance().PostEvent(std::move(event));
-    };
-}
-
 void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data)
 {
     if (!HasWatcher()) {
@@ -654,8 +636,8 @@ void KVDBGeneralStore::ObserverProxy::ConvertChangeData(const std::list<DBEntry>
 
 KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async)
 {
-    return [async, callback = callback_](const std::map<std::string, SyncProcess> &processes) {
-        if (!async && !callback) {
+    return [async](const std::map<std::string, SyncProcess> &processes) {
+        if (!async) {
             return;
         }
         DistributedData::GenDetails details;
@@ -682,9 +664,6 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
         }
         if (async) {
             async(details);
-        }
-        if (!details.empty() && details.begin()->second.dataChange && callback) {
-            callback();
         }
     };
 }
