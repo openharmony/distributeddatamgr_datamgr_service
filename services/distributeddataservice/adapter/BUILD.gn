@@ -54,12 +54,12 @@ ohos_shared_library("distributeddata_adapter") {
 
   configs = [ ":distributeddata_adapter_private_config" ]
   deps = [
+    "${data_service_path}/adapter/account:distributeddata_account_static",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx_static",
+    "${data_service_path}/adapter/permission:distributeddata_permission_static",
+    "${data_service_path}/adapter/screenlock:distributeddata_screenlock_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/account:distributeddata_account_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx:distributeddata_dfx_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/permission:distributeddata_permission_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/screenlock:distributeddata_screenlock_static",
   ]
 
   external_deps = [
