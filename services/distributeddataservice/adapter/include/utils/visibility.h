@@ -13,21 +13,17 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "screen_lock"
-#include "screen_lock.h"
+#ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_VISIBILITY_H
+#define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_VISIBILITY_H
 
-#include "screenlock_manager.h"
+#ifndef API_EXPORT
+#define API_EXPORT __attribute__((visibility ("default")))
+#endif
+#ifndef API_LOCAL
+#define API_LOCAL __attribute__((visibility ("hidden")))
+#endif
+#ifndef KVSTORE_API
+#define KVSTORE_API API_EXPORT
+#endif
 
-namespace OHOS::DistributedData {
-using namespace OHOS::ScreenLock;
-__attribute__((used)) static bool g_init =
-    ScreenManager::RegisterInstance(std::static_pointer_cast<ScreenManager>(std::make_shared<ScreenLock>()));
-bool ScreenLock::IsLocked()
-{
-    auto manager = ScreenLockManager::GetInstance();
-    if (manager == nullptr) {
-        return false;
-    }
-    return manager->IsScreenLocked();
-}
-} // namespace OHOS::DistributedData
+#endif // OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_VISIBILITY_H

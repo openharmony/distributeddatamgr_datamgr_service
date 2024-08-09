@@ -28,7 +28,8 @@ ohos_static_library("distributeddata_screenlock_static") {
 
   include_dirs = [
     "../include/screenlock",
-    "${kv_store_common_path}",
+    "../include/utils",
+    "${data_service_path}/framework/include",
   ]
 
   external_deps = [

@@ -12,18 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef DISTRIBUTEDDATAMGR_ADAPTER_SCREEN_LOCK_H
-#define DISTRIBUTEDDATAMGR_ADAPTER_SCREEN_LOCK_H
+#ifndef DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_LOCK_H
+#define DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_LOCK_H
 
+#include <memory>
+#include <mutex>
 #include "visibility.h"
-#include "screen/screen_manager.h"
 
 namespace OHOS {
 namespace DistributedData {
-class ScreenLock : public ScreenManager {
+class ScreenManager {
 public:
-    API_EXPORT bool IsLocked();
+    API_EXPORT static std::shared_ptr<ScreenManager> GetInstance();
+    API_EXPORT static bool RegisterInstance(std::shared_ptr<ScreenManager> instance);
+    ScreenManager() = default;
+    virtual ~ScreenManager() = default;
+    virtual bool IsLocked();
+
+private:
+    static std::mutex mutex_;
+    static std::shared_ptr<ScreenManager> instance_;
 };
 } // namespace DistributedData
 } // namespace OHOS
-#endif //DISTRIBUTEDDATAMGR_ADAPTER_SCREEN_LOCK_H
+#endif //DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_LOCK_H

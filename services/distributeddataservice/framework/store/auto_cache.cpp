@@ -61,7 +61,7 @@ AutoCache::~AutoCache()
 AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    if ((meta.area >= GeneralStore::EL4 && ScreenLock::GetInstance().IsLocked()) ||
+    if ((meta.area >= GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) ||
         meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
         disables_.ContainIf(meta.tokenId, [&meta](const std::set<std::string> &stores) -> bool {
             return stores.count(meta.storeId) != 0;
@@ -137,7 +137,7 @@ void AutoCache::StartTimer()
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
 {
-    bool isScreenLocked = ScreenLock::GetInstance().IsLocked();
+    bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
     stores_.ComputeIfPresent(tokenId, [&storeId, isScreenLocked](auto &key, auto &delegates) {
         auto it = delegates.begin();
         while (it != delegates.end()) {
@@ -155,7 +155,7 @@ void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
 
 void AutoCache::CloseExcept(const std::set<int32_t> &users)
 {
-    bool isScreenLocked = ScreenLock::GetInstance().IsLocked();
+    bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
     stores_.EraseIf([&users, isScreenLocked](const auto &tokenId, std::map<std::string, Delegate> &delegates) {
         if (delegates.empty() || users.count(delegates.begin()->second.GetUser()) != 0) {
             return delegates.empty();
@@ -189,7 +189,7 @@ void AutoCache::SetObserver(uint32_t tokenId, const std::string &storeId, const 
 void AutoCache::GarbageCollect(bool isForce)
 {
     auto current = std::chrono::steady_clock::now();
-    bool isScreenLocked = ScreenLock::GetInstance().IsLocked();
+    bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
     stores_.EraseIf([&current, isForce, isScreenLocked](auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the store is BUSY we wait more INTERVAL minutes again
