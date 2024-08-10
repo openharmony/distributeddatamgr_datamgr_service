@@ -352,4 +352,24 @@ int32_t RdbServiceStub::OnEnable(MessageParcel& data, MessageParcel& reply)
     }
     return RDB_OK;
 }
+
+int32_t RdbServiceStub::OnGetPassword(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    std::vector<uint8_t> key;
+    auto status = GetPassword(param, key);
+    if (!ITypesUtil::Marshal(reply, status, key)) {
+        key.assign(key.size(), 0);
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    key.assign(key.size(), 0);
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

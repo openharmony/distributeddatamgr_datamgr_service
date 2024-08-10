@@ -172,7 +172,7 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
         if (entry.isEncrypt) {
             param.option.iterateTimes = ITERATE_TIMES;
             param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
-            GetPassword(entry, param.option.passwd);
+            GetDBPassword(entry, param.option.passwd);
         }
         AutoCache::GetInstance().GetStore(entry, GetWatchers(entry.tokenId, entry.storeId));
         return true;
@@ -887,7 +887,7 @@ Details RdbServiceImpl::HandleGenDetails(const GenDetails &details)
     return dbDetails;
 }
 
-bool RdbServiceImpl::GetPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
+bool RdbServiceImpl::GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
 {
     if (!metaData.isEncrypt) {
         return true;
@@ -1108,13 +1108,37 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam& param)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
     AutoCache::GetInstance().Disable(tokenId, storeId);
-    return E_OK;
+    return RDB_OK;
 }
+
 int32_t RdbServiceImpl::Enable(const RdbSyncerParam& param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
     AutoCache::GetInstance().Enable(tokenId, storeId);
-    return E_OK;
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<uint8_t> &password)
+{
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto meta = GetStoreMetaData(param);
+    SecretKeyMetaData secretKey;
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKey, true)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_NO_META;
+    }
+
+    if (!CryptoManager::GetInstance().Decrypt(secretKey.sKey, password)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. decrypt err", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb
