@@ -28,6 +28,7 @@
 #include "cloud_service_impl.h"
 #include "cloud_types.h"
 #include "cloud_types_util.h"
+#include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
@@ -53,7 +54,11 @@ using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Querykey = OHOS::CloudData::QueryKey;
 using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
-
+using SharingCfm = OHOS::CloudData::SharingUtil::SharingCfm;
+using Confirmation = OHOS::CloudData::Confirmation;
+using CenterCode = OHOS::DistributedData::SharingCenter::SharingCode;
+using Status = OHOS::CloudData::CloudService::Status;
+using GenErr = OHOS::DistributedData::GeneralError;
 uint64_t g_selfTokenID = 0;
 
 void AllocHapToken(const HapPolicyParams &policy)
@@ -656,10 +661,12 @@ HWTEST_F(CloudDataTest, AllocResourceAndShare001, TestSize.Level0)
 HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level0)
 {
     std::vector<CommonType::Value> values;
-    const int64_t wifi = 0x01;
-    values.push_back(wifi);
-    CloudData::Strategy strategy = CloudData::STRATEGY_NETWORK;
+    values.push_back(CloudData::NetWorkStrategy::WIFI);
+    CloudData::Strategy strategy = CloudData::Strategy::STRATEGY_BUTT;
     auto ret = cloudServiceImpl_->SetGlobalCloudStrategy(strategy, values);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    strategy = CloudData::Strategy::STRATEGY_NETWORK;
+    ret = cloudServiceImpl_->SetGlobalCloudStrategy(strategy, values);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -672,10 +679,12 @@ HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level0)
 HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level0)
 {
     std::vector<CommonType::Value> values;
-    const int64_t wifi = 0x01;
-    values.push_back(wifi);
-    CloudData::Strategy strategy = CloudData::STRATEGY_NETWORK;
+    values.push_back(CloudData::NetWorkStrategy::WIFI);
+    CloudData::Strategy strategy = CloudData::Strategy::STRATEGY_BUTT;
     auto ret = cloudServiceImpl_->SetCloudStrategy(strategy, values);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    strategy = CloudData::Strategy::STRATEGY_NETWORK;
+    ret = cloudServiceImpl_->SetCloudStrategy(strategy, values);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -1332,6 +1341,88 @@ HWTEST_F(CloudDataTest, OnSetCloudStrategy, TestSize.Level0)
     ITypesUtil::Marshal(data, strategy, values);
     ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SET_CLOUD_STRATEGY, data, reply);
     EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: SharingUtil001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil001, TestSize.Level0)
+{
+    auto cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_UNKNOWN);
+    EXPECT_EQ(cfm, SharingCfm::CFM_UNKNOWN);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_ACCEPTED);
+    EXPECT_EQ(cfm, SharingCfm::CFM_ACCEPTED);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_REJECTED);
+    EXPECT_EQ(cfm, SharingCfm::CFM_REJECTED);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_SUSPENDED);
+    EXPECT_EQ(cfm, SharingCfm::CFM_SUSPENDED);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_UNAVAILABLE);
+    EXPECT_EQ(cfm, SharingCfm::CFM_UNAVAILABLE);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_BUTT);
+    EXPECT_EQ(cfm, SharingCfm::CFM_UNKNOWN);
+}
+
+/**
+* @tc.name: SharingUtil002
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil002, TestSize.Level0)
+{
+    auto cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_UNKNOWN);
+    EXPECT_EQ(cfm, Confirmation::CFM_UNKNOWN);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_ACCEPTED);
+    EXPECT_EQ(cfm, Confirmation::CFM_ACCEPTED);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_REJECTED);
+    EXPECT_EQ(cfm, Confirmation::CFM_REJECTED);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_SUSPENDED);
+    EXPECT_EQ(cfm, Confirmation::CFM_SUSPENDED);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_UNAVAILABLE);
+    EXPECT_EQ(cfm, Confirmation::CFM_UNAVAILABLE);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_BUTT);
+    EXPECT_EQ(cfm, Confirmation::CFM_UNKNOWN);
+}
+
+/**
+* @tc.name: SharingUtil003
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil003, TestSize.Level0)
+{
+    auto status = CloudData::SharingUtil::Convert(CenterCode::IPC_ERROR);
+    EXPECT_EQ(status, Status::IPC_ERROR);
+    status = CloudData::SharingUtil::Convert(CenterCode::NOT_SUPPORT);
+    EXPECT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: SharingUtil004
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
+{
+    auto status = CloudData::SharingUtil::Convert(GenErr::E_OK);
+    EXPECT_EQ(status, Status::SUCCESS);
+    status = CloudData::SharingUtil::Convert(GenErr::E_ERROR);
+    EXPECT_EQ(status, Status::ERROR);
+    status = CloudData::SharingUtil::Convert(GenErr::E_INVALID_ARGS);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    status = CloudData::SharingUtil::Convert(GenErr::E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_EQ(status, Status::STRATEGY_BLOCKING);
+    status = CloudData::SharingUtil::Convert(GenErr::E_CLOUD_DISABLED);
+    EXPECT_EQ(status, Status::CLOUD_DISABLE);
+    status = CloudData::SharingUtil::Convert(GenErr::E_NETWORK_ERROR);
+    EXPECT_EQ(status, Status::NETWORK_ERROR);
+    status = CloudData::SharingUtil::Convert(GenErr::E_BUSY);
+    EXPECT_EQ(status, Status::ERROR);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
