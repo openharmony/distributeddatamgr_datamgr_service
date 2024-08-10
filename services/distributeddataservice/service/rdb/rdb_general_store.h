@@ -154,6 +154,7 @@ private:
     uint32_t lastErrCnt_ = 0;
     uint32_t syncNotifyFlag_ = 0;
     std::atomic<uint32_t> syncTaskId_ = 0;
+    std::shared_mutex asyncMutex_ {};
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

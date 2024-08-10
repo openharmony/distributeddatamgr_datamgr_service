@@ -663,6 +663,7 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t syncId,
     uint32_t highMode)
 {
+    std::shared_lock<std::shared_mutex> lock(asyncMutex_);
     return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode, syncId](
         const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
@@ -830,12 +831,14 @@ bool RdbGeneralStore::IsValid()
 
 int32_t RdbGeneralStore::RegisterDetailProgressObserver(GeneralStore::DetailAsync async)
 {
+    std::unique_lock<std::shared_mutex> lock(asyncMutex_);
     async_ = std::move(async);
     return GenErr::E_OK;
 }
 
 int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
 {
+    std::unique_lock<std::shared_mutex> lock(asyncMutex_);
     async_ = nullptr;
     return GenErr::E_OK;
 }
