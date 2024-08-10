@@ -16,8 +16,9 @@
 #ifndef DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_H
 #define DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_H
 
-#include <mutex>
 #include <memory>
+#include <mutex>
+
 #include "executor_pool.h"
 #include "types.h"
 #include "visibility.h"
@@ -26,11 +27,11 @@ namespace OHOS {
 namespace DistributedKv {
 enum class AccountStatus {
     HARMONY_ACCOUNT_LOGIN = 0, // the openHarmony account is logged in
-    HARMONY_ACCOUNT_LOGOUT, // the openHarmony account is logged out
-    HARMONY_ACCOUNT_DELETE, // the openHarmony account is deleted
-    DEVICE_ACCOUNT_DELETE, // the device account is deleted
-    DEVICE_ACCOUNT_SWITCHED, // the device account is switched
-    DEVICE_ACCOUNT_UNLOCKED, // the device account is unlocked
+    HARMONY_ACCOUNT_LOGOUT,    // the openHarmony account is logged out
+    HARMONY_ACCOUNT_DELETE,    // the openHarmony account is deleted
+    DEVICE_ACCOUNT_DELETE,     // the device account is deleted
+    DEVICE_ACCOUNT_SWITCHED,   // the device account is switched
+    DEVICE_ACCOUNT_UNLOCKED,   // the device account is unlocked
 };
 
 struct AccountEventInfo {
@@ -54,7 +55,7 @@ public:
         API_EXPORT virtual std::string Name() = 0;
         API_EXPORT virtual LevelType GetLevel() = 0;
     };
-    using HashFunc = std::string(*)(const void *data, size_t size, bool isUpper);
+    using HashFunc = std::string (*)(const void *data, size_t size, bool isUpper);
     API_EXPORT virtual ~AccountDelegate() = default;
     API_EXPORT virtual Status Subscribe(std::shared_ptr<Observer> observer) = 0;
     API_EXPORT virtual Status Unsubscribe(std::shared_ptr<Observer> observer) = 0;
@@ -71,11 +72,11 @@ public:
     API_EXPORT virtual void BindExecutor(std::shared_ptr<ExecutorPool> executors) = 0;
     API_EXPORT virtual std::string GetUnencryptedAccountId(int32_t userId = 0) const = 0;
     API_EXPORT static AccountDelegate *GetInstance();
+    API_EXPORT static bool RegisterAccountInstance(AccountDelegate *instance);
 
 private:
-    using BaseInstance = AccountDelegate *(*)();
-    static BaseInstance getInstance_;
+    static AccountDelegate *instance_;
 };
-}  // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedKv
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_H

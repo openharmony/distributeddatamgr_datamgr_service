@@ -22,13 +22,7 @@ namespace DistributedKv {
 namespace {
     constexpr const char *DEFAULT_OHOS_ACCOUNT_UID = ""; // default UID
 }
-
-AccountDelegate::BaseInstance AccountDelegate::getInstance_ = AccountDelegateDefaultImpl::GetBaseInstance;
-AccountDelegate *AccountDelegateDefaultImpl::GetBaseInstance()
-{
-    static AccountDelegateDefaultImpl accountDelegate;
-    return &accountDelegate;
-}
+__attribute__((used)) static bool g_isInit = AccountDelegateDefaultImpl::Init();
 
 std::string AccountDelegateDefaultImpl::GetCurrentAccountId() const
 {
@@ -87,5 +81,13 @@ void AccountDelegateDefaultImpl::BindExecutor(std::shared_ptr<ExecutorPool> exec
 {
     ZLOGD("no account part");
 }
-}  // namespace DistributedKv
+
+bool AccountDelegateDefaultImpl::Init()
+{
+    static AccountDelegateDefaultImpl defaultAccountDelegate;
+    static std::once_flag onceFlag;
+    std::call_once(onceFlag, [&]() { AccountDelegate::RegisterAccountInstance(&defaultAccountDelegate); });
+    return true;
+}
+} // namespace DistributedKv
 }  // namespace OHOS

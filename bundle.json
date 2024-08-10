@@ -107,6 +107,7 @@
                     "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
                     "header": {
                         "header_files": [
+                            "account/account_delegate.h",
                             "backuprule/backup_rule_manager.h",
                             "checker/checker_manager.h",
                             "cloud/asset_loader.h",
