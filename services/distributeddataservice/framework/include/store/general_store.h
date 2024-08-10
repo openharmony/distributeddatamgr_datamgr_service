@@ -60,6 +60,14 @@ public:
         CLEAN_MODE_BUTT
     };
 
+    enum Area : int32_t {
+        EL1,
+        EL2,
+        EL3,
+        EL4,
+        EL5
+    };
+
     static inline uint32_t MixMode(uint32_t syncMode, uint32_t highMode)
     {
         return syncMode | highMode;
