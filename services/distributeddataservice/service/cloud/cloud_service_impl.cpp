@@ -523,7 +523,7 @@ std::pair<int32_t, std::map<std::string, StatisticInfos>> CloudServiceImpl::Quer
 
 int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
-    if (strategy < Strategy::STRATEGY_HEAD || strategy >= Strategy::STRATEGY_BUTT) {
+    if (strategy >= Strategy::STRATEGY_BUTT) {
         ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
         return INVALID_ARGUMENT;
     }
@@ -1407,7 +1407,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub, uint64_t minInterval
 
 int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
-    if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
+    if (strategy >= Strategy::STRATEGY_BUTT) {
         ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
         return INVALID_ARGUMENT;
     }
