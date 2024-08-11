@@ -20,6 +20,7 @@
 #include <cinttypes>
 
 #include "cache_cursor.h"
+#include "changeevent/remote_change_event.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_store_types.h"
@@ -87,6 +88,7 @@ static DBSchema GetDBSchema(const Database &database)
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
 {
     observer_.storeId_ = meta.storeId;
+    observer_.meta_ = meta;
     RelationalStoreDelegate::Option option;
     option.observer = &observer_;
     if (meta.isEncrypt) {
@@ -958,17 +960,41 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     genOrigin.store = storeId_;
     Watcher::PRIFields fields;
     Watcher::ChangeInfo changeInfo;
+    bool notifyFlag = false;
     for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
         auto &info = changeInfo[data.tableName][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             Convert(std::move(*(priData.begin())), value);
+            if (!notifyFlag && origin == DBOrigin::ORIGIN_CLOUD && i == DistributedDB::OP_DELETE) {
+                auto deleteKey = std::get_if<std::string>(&value);
+                if (deleteKey != nullptr && (*deleteKey).equal("DELETE#ALL_CLOUDDATA")) {
+                    // notify to start app
+                    notifyFlag = true;
+                }
+            }
             info.push_back(std::move(value));
         }
+    }
+    if (notifyFlag) {
+        PostDataChange(meta_, {}, CLOUD_DATA_CLEAN);
     }
     if (!data.field.empty()) {
         fields[std::move(data.tableName)] = std::move(*(data.field.begin()));
     }
     watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
+}
+
+void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables, ChangeType type)
+{
+    RemoteChangeEvent::DataInfo info;
+    info.userId = meta.user;
+    info.storeId = meta.storeId;
+    info.deviceId = meta.deviceId;
+    info.bundleName = meta.bundleName;
+    info.tables = tables;
+    info.changeType = type;
+    auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 } // namespace OHOS::DistributedRdb

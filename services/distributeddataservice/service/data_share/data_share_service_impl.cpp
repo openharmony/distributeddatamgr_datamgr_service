@@ -644,6 +644,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
         for (const auto &launchInfo : value.launchInfos) {
             AutoLaunchMetaData &autoLaunchMetaData = maps[launchInfo.storeId];
             autoLaunchMetaData.datas.emplace(extUri, launchInfo.tableNames);
+            autoLaunchMetaData.type = value.type;
         }
     }
     StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
@@ -651,6 +652,20 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
         meta.storeId = storeId;
         MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), value, true);
     }
+}
+
+bool DataShareServiceImpl::AllowCleanDataLaunchApp(const Event &event, const std::string &type)
+{
+    auto &evt = static_cast<const RemoteChangeEvent &>(event);
+    auto dataInfo = evt.GetDataInfo();
+    // 1 means CLOUD_DATA_CLEAN
+    if (dataInfo.changeType != 1) {
+        return true; // Applications can be started by default
+    }
+    if (type.find("CleanCloudData") != std::string::npos) {
+        return true;
+    }
+    return false;
 }
 
 void DataShareServiceImpl::AutoLaunch(const Event &event)
@@ -662,19 +677,21 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
         return;
     }
-    if (autoLaunchMetaData.datas.empty()) {
+    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, autoLaunchMetaData.type)) {
         return;
     }
-    std::vector<std::string> uris;
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
-        for (const auto &table : dataInfo.tables)
-        if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
-            uris.emplace_back(uri);
-            break;
+        if (dataInfo.tables.empty() && dataInfo.changeType == 1) {
+            ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+            return;
         }
-    }
-    for (const auto &uri : uris) {
-        ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+        for (const auto &table : dataInfo.tables) {
+            if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
+                // uris.emplace_back(uri);
+                ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+                break;
+            }
+        }
     }
 }
 

@@ -21,6 +21,7 @@
 namespace OHOS::DistributedData {
 struct API_EXPORT AutoLaunchMetaData final : public Serializable {
     std::map<std::string, std::vector<std::string>> datas;
+    std::string type;
 
     API_EXPORT AutoLaunchMetaData();
     API_EXPORT ~AutoLaunchMetaData() = default;
