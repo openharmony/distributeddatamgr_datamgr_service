@@ -756,4 +756,9 @@ void KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
 {
     enableCloud_ = storeConfig.enableCloud_;
 }
+
+std::shared_ptr<DistributedDB::ICloudDb> KVDBGeneralStore::GetCloudDB()
+{
+    return nullptr;
+}
 } // namespace OHOS::DistributedKv

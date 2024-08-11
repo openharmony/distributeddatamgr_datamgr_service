@@ -20,10 +20,12 @@
 #include <memory>
 #include <set>
 
+#include "cloud/icloud_db.h"
 #include "snapshot/snapshot.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
+
 namespace OHOS::DistributedData {
 class CloudDB;
 class AssetLoader;
@@ -171,6 +173,8 @@ public:
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId) {};
 
     virtual void SetConfig(const StoreConfig &storeConfig) {};
+
+    virtual std::shared_ptr<DistributedDB::ICloudDb> GetCloudDB() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
