@@ -296,6 +296,63 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices)
     return E_OK;
 }
 
+Status RuntimeStore::Sync(const std::vector<std::string> &devices, ProcessCallback callback)
+{
+    UpdateTime();
+    if (devices.empty()) {
+        ZLOGE("devices empty, no need sync.");
+        return E_INVALID_PARAMETERS;
+    }
+    std::vector<std::string> syncDevices = DmAdapter::ToUUID(devices);
+    DevNameMap deviceNameMap;
+    for (const auto &device : devices) {
+        std::string deviceUuid = DmAdapter::GetInstance().ToUUID(device);
+        std::string deviceName = DmAdapter::GetInstance().GetDeviceInfo(device).deviceName;
+        deviceNameMap.emplace(deviceUuid, deviceName);
+    }
+    auto progressCallback = [this, callback, deviceNameMap](const DevSyncProcessMap &processMap) {
+        this->NotifySyncProcss(processMap, callback, deviceNameMap);
+    };
+
+    DistributedDB::DeviceSyncOption option;
+    option.devices = syncDevices;
+    option.isWait = false;
+    DBStatus status = kvStore_->Sync(option, progressCallback);
+    if (status != DBStatus::OK) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, status);
+        ZLOGE("Sync kvStore failed, status: %{public}d.", status);
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+void RuntimeStore::NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
+    const DevNameMap &deviceNameMap)
+{
+    AsyncProcessInfo processInfo{ASYNC_IDLE, ASYNC_IDLE, "", 0, 0, 0, 0, 0};
+    for (const auto &[originDeviceId, syncProcess] : processMap) { // only one device
+        processInfo.srcDevName = deviceNameMap.at(originDeviceId);
+        processInfo.syncId = syncProcess.syncId;
+        processInfo.syncFinished = syncProcess.pullInfo.finishedCount;
+        processInfo.syncTotal = syncProcess.pullInfo.total;
+        if (syncProcess.process != DistributedDB::ProcessStatus::FINISHED) {
+            processInfo.syncStatus = ASYNC_RUNNING;
+            continue;
+        }
+        if (syncProcess.errCode == DBStatus::OK) {
+            processInfo.syncStatus = ASYNC_SUCCESS;
+            RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_NORMAL_END);
+        } else {
+            processInfo.syncStatus = ASYNC_FAILURE;
+            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, syncProcess.errCode);
+        }
+    }
+    callback(processInfo);
+}
+
 Status RuntimeStore::Clear()
 {
     UpdateTime();

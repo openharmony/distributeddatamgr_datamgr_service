@@ -51,6 +51,8 @@ public:
     int32_t RemoveAppShareOption(const std::string &intention) override;
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &bindInfo) override;
+    int32_t ObtainAsynProcess(AsyncProcessInfo &processInfo) override;
+    int32_t ClearAsynProcess() override;
 
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
@@ -81,6 +83,10 @@ private:
     static Factory factory_;
     std::map<std::string, Privilege> privilegeCache_;
     std::shared_ptr<ExecutorPool> executors_;
+
+    AsyncProcessInfo asyncProcessInfo_{};
+    bool syncingData_{false};
+    std::string syncingDevName_;
 };
 } // namespace UDMF
 } // namespace OHOS

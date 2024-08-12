@@ -31,7 +31,7 @@ UriPermissionManager &UriPermissionManager::GetInstance()
 }
 
 Status UriPermissionManager::GrantUriPermission(
-    const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey)
+    const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey, uint32_t &completeCount)
 {
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
@@ -57,6 +57,7 @@ Status UriPermissionManager::GrantUriPermission(
                 status, queryKey.c_str(), instIndex);
             return E_NO_PERMISSION;
         }
+        completeCount = std::min(allUri.size(), index + GRANT_URI_PERMISSION_MAX_SIZE);
         auto time = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
         std::for_each(uriLst.begin(), uriLst.end(), [&](const Uri &uri) {
             auto times = std::make_pair(uri.ToString(), tokenId);

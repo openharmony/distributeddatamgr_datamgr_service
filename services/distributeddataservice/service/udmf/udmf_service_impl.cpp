@@ -33,6 +33,9 @@
 #include "uri.h"
 #include "utd/custom_utd_installer.h"
 #include "udmf_radar_reporter.h"
+#include "securec.h"
+#include "unified_types.h"
+#include "device_manager_adapter.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -284,7 +287,10 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
             allUri.push_back(uri);
         }
     }
-    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
+    asyncProcessInfo_.permStatus = ASYNC_RUNNING;
+    asyncProcessInfo_.permTotal = allUri.size();
+    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key,
+        asyncProcessInfo_.permFnished) != E_OK) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
@@ -497,8 +503,22 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
-
-    if (store->Sync(devices) != E_OK) {
+    syncingData_ = true;
+    if (devices.size() > 0) {
+        syncingDevName_ = DistributedData::DeviceManagerAdapter::GetInstance().GetDeviceInfo(devices[0]).deviceName;
+    }
+    auto callback = [this](AsyncProcessInfo &syncInfo) {
+        asyncProcessInfo_.syncId = syncInfo.syncId;
+        asyncProcessInfo_.syncStatus = syncInfo.syncStatus;
+        asyncProcessInfo_.syncTotal = syncInfo.syncTotal;
+        asyncProcessInfo_.syncFinished = syncInfo.syncFinished;
+        asyncProcessInfo_.srcDevName = syncInfo.srcDevName;
+        if (asyncProcessInfo_.syncStatus != ASYNC_RUNNING) {
+            syncingData_ = false;
+        }
+    };
+    if (store->Sync(devices, callback) != E_OK) {
+        syncingData_ = false;
         ZLOGE("Store sync failed, intention: %{public}s.", key.intention.c_str());
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_ABNORMAL_END);
@@ -712,6 +732,22 @@ int32_t UdmfServiceImpl::UdmfStatic::OnAppUninstall(const std::string &bundleNam
         ZLOGE("Uninstall utd failed, bundleName: %{public}s, status: %{public}d.", bundleName.c_str(), status);
     }
     return status;
+}
+
+int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
+{
+    processInfo = asyncProcessInfo_;
+    if (syncingData_ && processInfo.syncStatus != ASYNC_RUNNING) {
+        processInfo.syncStatus = ASYNC_RUNNING;
+        processInfo.srcDevName = syncingDevName_;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::ClearAsynProcess()
+{
+    (void)memset_s(&asyncProcessInfo_, sizeof(asyncProcessInfo_), 0, sizeof(asyncProcessInfo_));
+    return E_OK;
 }
 } // namespace UDMF
 } // namespace OHOS

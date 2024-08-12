@@ -320,4 +320,14 @@ DBStatus KvStoreNbDelegateMock::GetDeviceEntries(const std::string &device, std:
 {
     return DBStatus::OK;
 }
+
+DBStatus KvStoreNbDelegateMock::Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess)
+{
+    return DBStatus::OK;
+}
+
+DBStatus KvStoreNbDelegateMock::CancelSync(uint32_t syncId)
+{
+    return DBStatus::OK;
+}
 } // namespace DistributedDB

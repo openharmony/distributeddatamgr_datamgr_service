@@ -263,5 +263,29 @@ int32_t UdmfServiceStub::OnRemoveAppShareOption(MessageParcel &data, MessageParc
     }
     return E_OK;
 }
+
+int32_t UdmfServiceStub::OnObtainAsynProcess(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGD("start");
+    AsyncProcessInfo processInfo;
+    int32_t status = ObtainAsynProcess(processInfo);
+    if (!ITypesUtil::Marshal(reply, status, processInfo)) {
+        ZLOGE("Marshal status or processInfo failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceStub::OnClearAsynProcess(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGD("start");
+    int32_t status = ClearAsynProcess();
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
 } // namespace UDMF
 } // namespace OHOS

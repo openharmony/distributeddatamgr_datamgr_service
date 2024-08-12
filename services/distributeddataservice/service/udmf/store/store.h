@@ -27,6 +27,7 @@
 
 namespace OHOS {
 namespace UDMF {
+using ProcessCallback = std::function<void(AsyncProcessInfo &syncInfo)>;
 class Store {
 public:
     using Time = std::chrono::steady_clock::time_point;
@@ -37,6 +38,7 @@ public:
     virtual Status Delete(const std::string &key) = 0;
     virtual Status DeleteBatch(const std::vector<std::string> &unifiedKeys) = 0;
     virtual Status Sync(const std::vector<std::string> &devices) = 0;
+    virtual Status Sync(const std::vector<std::string> &devices, ProcessCallback callback) = 0;
     virtual Status Clear() = 0;
     virtual Status GetBatchData(const std::string &dataPrefix, std::vector<UnifiedData> &unifiedDataSet) = 0;
     virtual Status PutLocal(const std::string &key, const std::string &value) = 0;
