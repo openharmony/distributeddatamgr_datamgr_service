@@ -966,8 +966,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             Convert(std::move(*(priData.begin())), value);
+            info.push_back(std::move(value));
             if (notifyFlag || origin != DBOrigin::ORIGIN_CLOUD || i != DistributedDB::OP_DELETE) {
-                info.push_back(std::move(value));
                 continue;
             }
             auto deleteKey = std::get_if<std::string>(&value);
@@ -975,7 +975,6 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
                 // notify to start app
                 notifyFlag = true;
             }
-            info.push_back(std::move(value));
         }
     }
     if (notifyFlag) {
@@ -987,7 +986,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
 }
 
-void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables, ChangeType type)
+void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta, 
+    const std::vector<std::string> &tables, ChangeType type)
 {
     RemoteChangeEvent::DataInfo info;
     info.userId = meta.user;

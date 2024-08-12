@@ -654,7 +654,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     }
 }
 
-bool DataShareServiceImpl::AllowCleanDataLaunchApp(const Event &event,bool launchForCleanData)
+bool DataShareServiceImpl::AllowCleanDataLaunchApp(const Event &event, bool launchForCleanData)
 {
     auto &evt = static_cast<const RemoteChangeEvent &>(event);
     auto dataInfo = evt.GetDataInfo();
