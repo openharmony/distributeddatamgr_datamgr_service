@@ -56,7 +56,7 @@ struct GenProgressDetail {
     int32_t progress;
     int32_t code;
     int32_t dbCode;
-    uint64_t dataChange = 0;
+    uint64_t changeCount = 0;
     std::map<std::string, GenTableDetail> details;
 };
 

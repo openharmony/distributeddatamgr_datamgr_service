@@ -49,14 +49,14 @@ void RadarReporter::Report(const RadarParam &param, const char *funcName, int32_
             BIZ_SCENE_LABEL, param.scene_, BIZ_STAGE_LABEL, param.stage_, BIZ_STATE_LABEL, state, STAGE_RES_LABEL, res,
             ERROR_CODE_LABEL, param.errCode_, HOST_PKG, param.bundleName_, LOCAL_UUID_LABEL,
             AnonymousUuid(DmAdapter::GetInstance().GetLocalDevice().uuid), CONCURRENT_ID,
-            std::to_string(param.syncId_), TRIGGER_MODE, param.triggerMode_, WATER_VERSION, param.dataChange_);
+            std::to_string(param.syncId_), TRIGGER_MODE, param.triggerMode_, WATER_VERSION, param.changeCount);
     } else {
         HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::DISTRIBUTED_DATAMGR, eventName,
             OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR, ORG_PKG_LABEL, ORG_PKG, FUNC_LABEL, funcName,
             BIZ_SCENE_LABEL, param.scene_, BIZ_STAGE_LABEL, param.stage_, STAGE_RES_LABEL, res, ERROR_CODE_LABEL,
             param.errCode_, HOST_PKG, param.bundleName_, LOCAL_UUID_LABEL,
             AnonymousUuid(DmAdapter::GetInstance().GetLocalDevice().uuid), CONCURRENT_ID,
-            std::to_string(param.syncId_), TRIGGER_MODE, param.triggerMode_, WATER_VERSION, param.dataChange_);
+            std::to_string(param.syncId_), TRIGGER_MODE, param.triggerMode_, WATER_VERSION, param.changeCount);
     }
     return;
 }

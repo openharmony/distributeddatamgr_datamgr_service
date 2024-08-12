@@ -656,7 +656,7 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
                 table.download.success = value.downLoadInfo.successCount;
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
-                detail.dataChange = (process.process == FINISHED)
+                detail.changeCount = (process.process == FINISHED)
                                         ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
                                               value.downLoadInfo.deleteCount
                                         : 0;

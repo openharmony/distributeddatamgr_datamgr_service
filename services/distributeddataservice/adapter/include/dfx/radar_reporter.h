@@ -71,7 +71,7 @@ struct RadarParam {
     int32_t stage_ = GENERAL_STAGE;
     uint64_t syncId_ = 0;
     int32_t triggerMode_ = 0;
-    uint64_t dataChange_ = 0;
+    uint64_t changeCount = 0;
     int32_t errCode_ = 0;
     int32_t res_ = RES_SUCCESS;
 };
