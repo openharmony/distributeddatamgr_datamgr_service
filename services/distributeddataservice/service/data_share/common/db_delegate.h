@@ -128,6 +128,7 @@ public:
         std::string &result) = 0;
     virtual int32_t GetBatch(const std::string &collectionName, const std::string &filter,
         const std::string &projection, std::vector<std::string> &result) = 0;
+    virtual void NotifyBackup() = 0;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_DB_DELEGATE_H
