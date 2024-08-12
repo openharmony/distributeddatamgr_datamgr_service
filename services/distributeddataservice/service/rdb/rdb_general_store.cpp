@@ -923,6 +923,20 @@ std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::strin
     return res;
 }
 
+void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta,
+    const std::vector<std::string> &tables, ChangeType type)
+{
+    RemoteChangeEvent::DataInfo info;
+    info.userId = meta.user;
+    info.storeId = meta.storeId;
+    info.deviceId = meta.deviceId;
+    info.bundleName = meta.bundleName;
+    info.tables = tables;
+    info.changeType = type;
+    auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+}
+
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
 {
     if (!HasWatcher()) {
@@ -984,19 +998,5 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         fields[std::move(data.tableName)] = std::move(*(data.field.begin()));
     }
     watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
-}
-
-void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta, 
-    const std::vector<std::string> &tables, ChangeType type)
-{
-    RemoteChangeEvent::DataInfo info;
-    info.userId = meta.user;
-    info.storeId = meta.storeId;
-    info.deviceId = meta.deviceId;
-    info.bundleName = meta.bundleName;
-    info.tables = tables;
-    info.changeType = type;
-    auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
-    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 } // namespace OHOS::DistributedRdb
