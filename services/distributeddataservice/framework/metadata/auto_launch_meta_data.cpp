@@ -25,14 +25,14 @@ AutoLaunchMetaData::AutoLaunchMetaData()
 bool AutoLaunchMetaData::Marshal(json& node) const
 {
     SetValue(node[GET_NAME(datas)], datas);
-    SetValue(node[GET_NAME(type)], type);
+    SetValue(node[GET_NAME(launchForCleanData)], launchForCleanData);
     return true;
 }
 
 bool AutoLaunchMetaData::Unmarshal(const json& node)
 {
     GetValue(node, GET_NAME(datas), datas);
-    GetValue(node, GET_NAME(type), type);
+    GetValue(node, GET_NAME(launchForCleanData), launchForCleanData);
     return true;
 }
 

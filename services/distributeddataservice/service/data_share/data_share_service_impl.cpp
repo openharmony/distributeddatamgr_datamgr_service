@@ -644,7 +644,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
         for (const auto &launchInfo : value.launchInfos) {
             AutoLaunchMetaData &autoLaunchMetaData = maps[launchInfo.storeId];
             autoLaunchMetaData.datas.emplace(extUri, launchInfo.tableNames);
-            autoLaunchMetaData.type = value.type;
+            autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
         }
     }
     StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
@@ -659,13 +659,10 @@ bool DataShareServiceImpl::AllowCleanDataLaunchApp(const Event &event, const std
     auto &evt = static_cast<const RemoteChangeEvent &>(event);
     auto dataInfo = evt.GetDataInfo();
     // 1 means CLOUD_DATA_CLEAN
-    if (dataInfo.changeType != 1) {
-        return true; // Applications can be started by default
+    if (dataInfo.changeType == 1) {
+        return launchForCleanData; // Applications can be started by default
     }
-    if (type.find("CleanCloudData") != std::string::npos) {
-        return true;
-    }
-    return false;
+    return true;
 }
 
 void DataShareServiceImpl::AutoLaunch(const Event &event)

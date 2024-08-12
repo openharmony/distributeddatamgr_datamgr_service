@@ -52,6 +52,7 @@ struct ProfileInfo : public DistributedData::Serializable {
     std::string type = "rdb";
     std::vector<LaunchInfo> launchInfos;
     bool storeMetaDataFromUri = false;
+    bool launchForCleanData = false;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
