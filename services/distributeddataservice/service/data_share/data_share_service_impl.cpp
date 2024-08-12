@@ -654,7 +654,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     }
 }
 
-bool DataShareServiceImpl::AllowCleanDataLaunchApp(const Event &event, const std::string &type)
+bool DataShareServiceImpl::AllowCleanDataLaunchApp(const Event &event,bool launchForCleanData)
 {
     auto &evt = static_cast<const RemoteChangeEvent &>(event);
     auto dataInfo = evt.GetDataInfo();
@@ -674,7 +674,7 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
         return;
     }
-    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, autoLaunchMetaData.type)) {
+    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, launchForCleanData)) {
         return;
     }
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
@@ -684,7 +684,6 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
         }
         for (const auto &table : dataInfo.tables) {
             if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
-                // uris.emplace_back(uri);
                 ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
                 break;
             }
