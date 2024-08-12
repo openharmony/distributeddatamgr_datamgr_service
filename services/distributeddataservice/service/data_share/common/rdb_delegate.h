@@ -58,6 +58,7 @@ private:
     std::shared_ptr<RdbStore> store_;
     int errCode_ = E_OK;
     static constexpr int RETRY = 3;
+    uint32_t tokenId_;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:
