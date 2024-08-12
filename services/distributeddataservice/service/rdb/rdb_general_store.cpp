@@ -683,10 +683,10 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 table.download.success = value.downLoadInfo.successCount;
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
-                detail.dataChange = detail.dataChange ||
-                                    (process.process == FINISHED &&
-                                        (value.downLoadInfo.insertCount > 0 || value.downLoadInfo.updateCount > 0 ||
-                                            value.downLoadInfo.deleteCount > 0));
+                detail.dataChange = (process.process == FINISHED)
+                                        ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
+                                              value.downLoadInfo.deleteCount
+                                        : 0;
                 totalCount += table.download.total;
             }
             if (process.process == FINISHED) {
