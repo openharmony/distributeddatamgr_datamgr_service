@@ -985,7 +985,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
                 continue;
             }
             auto deleteKey = std::get_if<std::string>(&value);
-            if (deleteKey != nullptr && (*deleteKey).equal("DELETE#ALL_CLOUDDATA")) {
+            if (deleteKey != nullptr && (*deleteKey == "DELETE#ALL_CLOUDDATA")) {
                 // notify to start app
                 notifyFlag = true;
             }
