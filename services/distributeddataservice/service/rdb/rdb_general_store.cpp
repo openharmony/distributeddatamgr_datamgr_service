@@ -966,12 +966,14 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             Convert(std::move(*(priData.begin())), value);
-            if (!notifyFlag && origin == DBOrigin::ORIGIN_CLOUD && i == DistributedDB::OP_DELETE) {
-                auto deleteKey = std::get_if<std::string>(&value);
-                if (deleteKey != nullptr && (*deleteKey).equal("DELETE#ALL_CLOUDDATA")) {
-                    // notify to start app
-                    notifyFlag = true;
-                }
+            if (notifyFlag || origin != DBOrigin::ORIGIN_CLOUD || i != DistributedDB::OP_DELETE) {
+                info.push_back(std::move(value));
+                continue;
+            }
+            auto deleteKey = std::get_if<std::string>(&value);
+            if (deleteKey != nullptr && (*deleteKey).equal("DELETE#ALL_CLOUDDATA")) {
+                // notify to start app
+                notifyFlag = true;
             }
             info.push_back(std::move(value));
         }
