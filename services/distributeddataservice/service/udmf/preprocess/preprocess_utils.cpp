@@ -256,7 +256,7 @@ bool PreProcessUtils::IsNetworkingEnabled()
 {
     std::vector<AppDistributedKv::DeviceInfo> devInfos =
         DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
-    ZLOGI("DM remote devices count is %{public}u.", devInfos.size());
+    ZLOGI("DM remote devices count is %{public}u.", static_cast<uint32_t>(devInfos.size()));
     if (devInfos.empty()) {
         return false;
     }
