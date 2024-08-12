@@ -61,7 +61,7 @@ private:
         Time time_;
     };
     static constexpr int NO_CHANGE_VERSION = -1;
-    static constexpr int64_t INTERVAL = 1; //min
+    static constexpr int64_t INTERVAL = 20; //seconds
     static ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<Entity>>> stores_;
     static std::shared_ptr<ExecutorPool> executor_;
     static ExecutorPool::TaskId taskId_;
