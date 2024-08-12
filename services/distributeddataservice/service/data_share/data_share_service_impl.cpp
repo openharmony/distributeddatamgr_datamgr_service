@@ -674,7 +674,7 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
         return;
     }
-    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, launchForCleanData)) {
+    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, autoLaunchMetaData.launchForCleanData)) {
         return;
     }
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
