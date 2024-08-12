@@ -50,9 +50,7 @@ public:
 
     API_EXPORT Stores GetStoresIfPresent(uint32_t tokenId, const std::string &storeName = "");
 
-    API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId);
-
-    API_EXPORT void CloseStore(uint32_t tokenId);
+    API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId = "");
 
     API_EXPORT void CloseExcept(const std::set<int32_t> &users);
 
@@ -74,6 +72,7 @@ private:
         bool operator<(const Time &time) const;
         bool Close();
         int32_t GetUser() const;
+        int32_t GetArea() const;
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
         int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
@@ -84,7 +83,7 @@ private:
         GeneralStore *store_ = nullptr;
         Watchers watchers_;
         int32_t user_;
-        StoreMetaData meta_;
+        const StoreMetaData meta_;
         std::shared_mutex mutex_;
     };
 
