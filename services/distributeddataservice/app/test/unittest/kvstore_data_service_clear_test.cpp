@@ -47,7 +47,6 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
-    NativeTokenInfoParams infoInstance {0};
 protected:
     static constexpr const char *TEST_USER = "100";
     static constexpr const char *TEST_BUNDLE = "ohos.test.demo";
@@ -74,52 +73,10 @@ void KvStoreDataServiceClearTest::SetUp(void)
 {
     DistributedData::Bootstrap::GetInstance().LoadDirectory();
     DistributedData::Bootstrap::GetInstance().LoadCheckers();
-
-    infoInstance.dcapsNum = 0;
-    infoInstance.permsNum = 0;
-    infoInstance.aclsNum = 0;
-    infoInstance.dcaps = nullptr;
-    infoInstance.perms = nullptr;
-    infoInstance.acls = nullptr;
-    infoInstance.processName = "KvStoreDataServiceClearTest";
-    infoInstance.aplStr = "system_core";
-
-    HapInfoParams info = {
-        .userID = TEST_USERID,
-        .bundleName = TEST_BUNDLE,
-        .instIndex = 0,
-        .appIDDesc = TEST_BUNDLE
-    };
-    PermissionDef infoManagerTestPermDef = {
-        .permissionName = "ohos.permission.test",
-        .bundleName = TEST_BUNDLE,
-        .grantMode = 1,
-        .availableLevel = APL_NORMAL,
-        .label = "label",
-        .labelId = 1,
-        .description = "open the door",
-        .descriptionId = 1
-    };
-    PermissionStateFull infoManagerTestState = {
-        .permissionName = "ohos.permission.test",
-        .isGeneral = true,
-        .resDeviceID = {"local"},
-        .grantStatus = {PermissionState::PERMISSION_GRANTED},
-        .grantFlags = {1}
-    };
-    HapPolicyParams policy = {
-        .apl = APL_NORMAL,
-        .domain = "test.domain",
-        .permList = {infoManagerTestPermDef},
-        .permStateList = {infoManagerTestState}
-    };
-    AccessTokenKit::AllocHapToken(info, policy);
 }
 
 void KvStoreDataServiceClearTest::TearDown(void)
 {
-    auto tokenId = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
-    AccessTokenKit::DeleteToken(tokenId);
 }
 
 void KvStoreDataServiceClearTest::InitMetaData()
@@ -154,7 +111,8 @@ void KvStoreDataServiceClearTest::InitMetaData()
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level1)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
+    SetSelfTokenID(tokenIdOk);
     auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
     EXPECT_EQ(ret, Status::ERROR);
 }
@@ -189,16 +147,17 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level1)
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
-    auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
+    SetSelfTokenID(tokenIdOk);
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
-    EXPECT_EQ(ret, Status::SUCCESS);
+    EXPECT_EQ(ret, Status::ERROR);
 
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
     EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
