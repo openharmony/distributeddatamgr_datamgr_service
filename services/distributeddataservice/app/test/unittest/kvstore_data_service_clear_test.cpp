@@ -43,8 +43,8 @@ using KvStoreDataService = OHOS::DistributedKv::KvStoreDataService;
 namespace OHOS::Test {
 class KvStoreDataServiceClearTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
     NativeTokenInfoParams infoInstance {0};
@@ -57,21 +57,69 @@ protected:
     static constexpr const char *BUNDLE_NAME = "ohos.test.demo";
     static constexpr int32_t USER_ID = 100;
     static constexpr int32_t APP_INDEX = 0;
-
     DistributedData::StoreMetaData metaData_;
     DistributedData::StoreMetaDataLocal localMeta_;
-
     void InitMetaData();
 };
+
+void KvStoreDataServiceClearTest::SetUpTestCase(void)
+{
+}
+
+void KvStoreDataServiceClearTest::TearDownTestCase(void)
+{
+}
 
 void KvStoreDataServiceClearTest::SetUp(void)
 {
     DistributedData::Bootstrap::GetInstance().LoadDirectory();
     DistributedData::Bootstrap::GetInstance().LoadCheckers();
+
+    infoInstance.dcapsNum = 0;
+    infoInstance.permsNum = 0;
+    infoInstance.aclsNum = 0;
+    infoInstance.dcaps = nullptr;
+    infoInstance.perms = nullptr;
+    infoInstance.acls = nullptr;
+    infoInstance.processName = "KvStoreDataServiceClearTest";
+    infoInstance.aplStr = "system_core";
+
+    HapInfoParams info = {
+        .userID = TEST_USERID,
+        .bundleName = TEST_BUNDLE,
+        .instIndex = 0,
+        .appIDDesc = TEST_BUNDLE
+    };
+    PermissionDef infoManagerTestPermDef = {
+        .permissionName = "ohos.permission.test",
+        .bundleName = TEST_BUNDLE,
+        .grantMode = 1,
+        .availableLevel = APL_NORMAL,
+        .label = "label",
+        .labelId = 1,
+        .description = "open the door",
+        .descriptionId = 1
+    };
+    PermissionStateFull infoManagerTestState = {
+        .permissionName = "ohos.permission.test",
+        .isGeneral = true,
+        .resDeviceID = {"local"},
+        .grantStatus = {PermissionState::PERMISSION_GRANTED},
+        .grantFlags = {1}
+    };
+    HapPolicyParams policy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = {infoManagerTestPermDef},
+        .permStateList = {infoManagerTestState}
+    };
+    AccessTokenKit::AllocHapToken(info, policy);
 }
 
 void KvStoreDataServiceClearTest::TearDown(void)
 {
+    auto tokenId = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
+    AccessTokenKit::DeleteToken(tokenId);
 }
 
 void KvStoreDataServiceClearTest::InitMetaData()
@@ -106,8 +154,7 @@ void KvStoreDataServiceClearTest::InitMetaData()
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level1)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
-    SetSelfTokenID(tokenId);
+    auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
     auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
     EXPECT_EQ(ret, Status::ERROR);
 }
@@ -121,8 +168,7 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level1)
  */
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level1)
 {
-    auto executors = std::make_shared<ExecutorPool>(12, 5);
-    // Create an object of the ExecutorPool class and pass 12 and 5 as arguments to the constructor of the class
+    auto executors = std::make_shared<ExecutorPool>(1, 0);
     KvStoreMetaManager::GetInstance().BindExecutor(executors);
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     DmAdapter::GetInstance().Init(executors);
@@ -143,8 +189,7 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level1)
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
-    auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
-    SetSelfTokenID(tokenId);
+    auto tokenIdOk = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
     EXPECT_EQ(ret, Status::SUCCESS);
