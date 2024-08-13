@@ -999,4 +999,9 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     }
     watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
 }
+
+std::shared_ptr<DistributedDB::ICloudDb> RdbGeneralStore::GetCloudDB()
+{
+    return rdbCloud_;
+}
 } // namespace OHOS::DistributedRdb

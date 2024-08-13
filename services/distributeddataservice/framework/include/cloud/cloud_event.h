@@ -33,14 +33,18 @@ public:
         MAKE_QUERY,
         CLOUD_SYNC_FINISHED,
         DATA_SYNC,
+        LOCK_CLOUD_CONTAINER,
+        UNLOCK_CLOUD_CONTAINER,
         CLOUD_BUTT
     };
 
     CloudEvent(int32_t evtId, StoreInfo storeInfo);
     ~CloudEvent() = default;
     const StoreInfo& GetStoreInfo() const;
+    int32_t GetEventId() const;
 
 private:
+    int32_t eventId_;
     StoreInfo storeInfo_;
 };
 } // namespace OHOS::DistributedData

@@ -79,6 +79,7 @@ public:
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
     static DBSecurity GetDBSecurity(int32_t secLevel);
+    std::shared_ptr<DistributedDB::ICloudDb> GetCloudDB() override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;

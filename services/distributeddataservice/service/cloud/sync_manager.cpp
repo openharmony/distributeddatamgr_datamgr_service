@@ -24,6 +24,7 @@
 #include "cloud/schema_meta.h"
 #include "cloud/sync_event.h"
 #include "cloud_value_util.h"
+#include "cloud/cloud_lock_event.h"
 #include "device_manager_adapter.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
@@ -140,8 +141,42 @@ bool SyncManager::SyncInfo::Contains(const std::string &storeName)
     return tables_.empty() || tables_.find(storeName) != tables_.end();
 }
 
+std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
+{
+    return [this](const Event &event) {
+        auto &evt = static_cast<const CloudLockEvent &>(event);
+        auto storeInfo = evt.GetStoreInfo();
+        auto callback = evt.GetCallback();
+        if (callback == nullptr) {
+            return;
+        }
+        StoreMetaData meta(storeInfo);
+        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            return;
+        }
+        auto store = GetStore(meta, storeInfo.user);
+        if (store == nullptr) {
+            return;
+        }
+        auto cloud = store->GetCloudDB();
+        if (cloud == nullptr) {
+            return;
+        }
+        if (evt.GetEventId() == CloudEvent::LOCK_CLOUD_CONTAINER) {
+            auto [result, expiredTime] = cloud->Lock();
+            callback(result, expiredTime);
+        } else {
+            auto result = cloud->UnLock();
+            callback(result, 0);
+        }
+    };
+}
+
 SyncManager::SyncManager()
 {
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCK_CLOUD_CONTAINER, GetLockChangeHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::UNLOCK_CLOUD_CONTAINER, GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
     syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
     auto metaName = Bootstrap::GetInstance().GetProcessLabel();

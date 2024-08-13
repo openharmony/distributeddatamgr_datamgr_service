@@ -15,6 +15,9 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
+
+#include <mutex>
+
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/icloud_db.h"
@@ -24,6 +27,10 @@
 namespace OHOS::DistributedRdb {
 class RdbCloud : public DistributedDB::ICloudDb {
 public:
+    enum FLAG : uint8_t {
+        SYSTEM_ABILITY = 1,
+        APPLICATION
+    };
     using DBStatus = DistributedDB::DBStatus;
     using DBVBucket = DistributedDB::VBucket;
     using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
@@ -45,6 +52,10 @@ public:
     DBStatus Close() override;
     std::pair<DBStatus, std::string> GetEmptyCursor(const std::string &tableName) override;
     static DBStatus ConvertStatus(DistributedData::GeneralError error);
+    std::pair<DBStatus, uint32_t> LockContainer();
+    DBStatus UnLockContainer();
+    std::pair<DBStatus, uint32_t> InnerLock(FLAG flag);
+    DBStatus InnerUnLock(FLAG flag);
 
 private:
     static constexpr const char *TYPE_FIELD = "#_type";
@@ -55,6 +66,8 @@ private:
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
     BindAssets* snapshots_;
+    uint8_t flag_ = 0;
+    std::mutex mutex_;
 
     void PostEvent(DistributedData::VBuckets& records, std::set<std::string>& skipAssets,
         DistributedData::VBuckets& extend, DistributedData::AssetEvent eventId);
