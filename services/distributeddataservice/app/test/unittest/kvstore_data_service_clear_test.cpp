@@ -107,6 +107,7 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level1)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
+    SetSelfTokenID(tokenId);
     auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
     EXPECT_EQ(ret, Status::ERROR);
 }
@@ -143,6 +144,7 @@ HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level1)
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
 
     auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
+    SetSelfTokenID(tokenId);
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
     auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
     EXPECT_EQ(ret, Status::SUCCESS);
