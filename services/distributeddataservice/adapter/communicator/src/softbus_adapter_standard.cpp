@@ -244,7 +244,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
 void SoftBusAdapter::StartCloseSessionTask(const std::string &deviceId)
 {
     std::shared_ptr<SoftBusClient> conn;
-    bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
+    bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId);
     uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
     auto connects = connects_.Find(deviceId);
     if (!connects.first) {
