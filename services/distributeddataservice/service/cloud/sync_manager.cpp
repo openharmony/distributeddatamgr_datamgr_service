@@ -706,7 +706,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
         int32_t dbCode = (result.begin()->second.dbCode == GenStore::DB_ERR_OFFSET) ? 0 : result.begin()->second.dbCode;
         UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
         RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, triggerMode,
-                                  result.begin()->second.dataChange, dbCode },
+                                  result.begin()->second.changeCount, dbCode },
             "GetCallback", END);
     };
 }
@@ -780,7 +780,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
             UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
             if (code == E_OK) {
                 RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                          triggerMode, details.begin()->second.dataChange },
+                                          triggerMode, details.begin()->second.changeCount },
                     "RetryCallback", END);
             }
         }
