@@ -1424,5 +1424,248 @@ HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
     status = CloudData::SharingUtil::Convert(GenErr::E_BUSY);
     EXPECT_EQ(status, Status::ERROR);
 }
+
+/**
+* @tc.name: DoCloudSync
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, DoCloudSync, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user);
+    auto ret = sync.DoCloudSync(info);
+    EXPECT_EQ(ret, GenErr::E_NOT_INIT);
+    ret = sync.StopCloudSync(user);
+    EXPECT_EQ(ret, GenErr::E_NOT_INIT);
+    size_t max = 12;
+    size_t min = 5;
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
+    ret = sync.DoCloudSync(info);
+    EXPECT_EQ(ret, GenErr::E_OK);
+    int32_t invalidUser = -1;
+    sync.StopCloudSync(invalidUser);
+    ret = sync.StopCloudSync(user);
+    EXPECT_EQ(ret, GenErr::E_OK);
+}
+
+/**
+* @tc.name: GetPostEventTask
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
+{
+    std::vector<SchemaMeta> schemas;
+    schemaMeta_.databases[0].name = "test";
+    schemas.push_back(schemaMeta_);
+    schemaMeta_.bundleName = "test";
+    schemas.push_back(schemaMeta_);
+
+    int32_t user = 100;
+    CloudData::SyncManager::SyncInfo info(user);
+    std::vector<std::string> value;
+    info.tables_.insert_or_assign(TEST_CLOUD_STORE, value);
+
+    CloudData::SyncManager sync;
+    auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true);
+    auto ret = task();
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: GetRetryer
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager::SyncInfo info(user);
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::Duration duration;
+    auto ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info)(duration, E_OK, E_OK);
+    EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED);
+    EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(0, info)(duration, E_OK, E_OK);
+    EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(0, info)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: GetCallback
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCallback, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager::SyncInfo info(user);
+    CloudData::SyncManager sync;
+    DistributedData::GenDetails result;
+    StoreInfo storeInfo;
+    storeInfo.user = user;
+    storeInfo.bundleName = "testBundleName";
+    int32_t triggerMode = MODE_DEFAULT;
+    GenAsync async = nullptr;
+    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    int32_t process = 0;
+    async = [&process](const GenDetails &details) { process = details.begin()->second.progress; };
+    GenProgressDetail detail;
+    detail.progress = GenProgress::SYNC_IN_PROGRESS;
+    result.insert_or_assign("test", detail);
+    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    EXPECT_EQ(process, GenProgress::SYNC_IN_PROGRESS);
+    detail.progress = GenProgress::SYNC_FINISH;
+    result.insert_or_assign("test", detail);
+    storeInfo.user = -1;
+    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    storeInfo.user = user;
+    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    EXPECT_EQ(process, GenProgress::SYNC_FINISH);
+}
+
+/**
+* @tc.name: GetInterval
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetInterval, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+
+    auto ret = sync.GetInterval(E_LOCKED_BY_OTHERS);
+    EXPECT_EQ(ret, CloudData::SyncManager::LOCKED_INTERVAL);
+    ret = sync.GetInterval(E_BUSY);
+    EXPECT_EQ(ret, CloudData::SyncManager::BUSY_INTERVAL);
+    ret = sync.GetInterval(E_OK);
+    EXPECT_EQ(ret, CloudData::SyncManager::RETRY_INTERVAL);
+}
+
+/**
+* @tc.name: GetCloudSyncInfo
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCloudSyncInfo, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = false;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    info.bundleName_ = "test";
+    auto ret = sync.GetCloudSyncInfo(info, cloud);
+    EXPECT_TRUE(!ret.empty());
+}
+
+/**
+* @tc.name: RetryCallback
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, RetryCallback, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    StoreInfo storeInfo;
+    int32_t retCode = -1;
+    CloudData::SyncManager::Retryer retry = [&retCode](CloudData::SyncManager::Duration interval, int32_t code,
+                                                int32_t dbCode) {
+        retCode = code;
+        return true;
+    };
+    DistributedData::GenDetails result;
+    auto task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT);
+    task(result);
+    GenProgressDetail detail;
+    detail.progress = GenProgress::SYNC_IN_PROGRESS;
+    detail.code = 100;
+    result.insert_or_assign("test", detail);
+    task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT);
+    task(result);
+    EXPECT_EQ(retCode, detail.code);
+}
+
+/**
+* @tc.name: UpdateCloudInfoFromServer
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->UpdateCloudInfoFromServer(cloudInfo_.user);
+    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
+        EXPECT_EQ(ret, E_OK);
+    } else {
+        EXPECT_EQ(ret, E_ERROR);
+    }
+}
+
+/**
+* @tc.name: GetCloudInfo
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    auto ret = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
+    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
+        EXPECT_EQ(ret.first, CloudData::SUCCESS);
+    } else {
+        EXPECT_EQ(ret.first, Status::NETWORK_ERROR);
+    }
+}
+
+/**
+* @tc.name: SubTask
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SubTask, TestSize.Level0)
+{
+    DistributedData::Subscription sub;
+    cloudServiceImpl_->InitSubTask(sub, 0);
+    MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(cloudInfo_.user), sub, true);
+    cloudServiceImpl_->InitSubTask(sub, 0);
+    int32_t userId = 0;
+    CloudData::CloudServiceImpl::Task task = [&userId]() { userId = cloudInfo_.user; };
+    cloudServiceImpl_->GenSubTask(task, cloudInfo_.user)();
+    EXPECT_EQ(userId, cloudInfo_.user);
+}
+
+/**
+* @tc.name: ConvertCursor
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ConvertCursor, TestSize.Level0)
+{
+    std::map<std::string, DistributedData::Value> entry;
+    entry.insert_or_assign("test", "entry");
+    auto resultSet = std::make_shared<CursorMock::ResultSet>(1, entry);
+    auto cursor = std::make_shared<CursorMock>(resultSet);
+    auto result = cloudServiceImpl_->ConvertCursor(cursor);
+    EXPECT_TRUE(!result.empty());
+    auto resultSet1 = std::make_shared<CursorMock::ResultSet>();
+    auto cursor1 = std::make_shared<CursorMock>(resultSet1);
+    auto result1 = cloudServiceImpl_->ConvertCursor(cursor1);
+    EXPECT_TRUE(result1.empty());
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
