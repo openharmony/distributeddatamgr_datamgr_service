@@ -242,6 +242,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     }
     int rowCount;
     if (resultSet->GetRowCount(rowCount) == E_SQLITE_ERROR) {
+        ZLOGE("query failed, err:%{public}d, pid:%{public}d", E_SQLITE_ERROR, callingPid);
         EraseStoreCache(tokenId_);
     }
     resultSetCallingPids.Compute(callingPid, [](const uint32_t &, int32_t &value) {
@@ -282,6 +283,7 @@ std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::st
     }
     int rowCount;
     if (resultSet->GetRowCount(rowCount) == E_SQLITE_ERROR) {
+        ZLOGE("query failed, err:%{public}d", E_SQLITE_ERROR);
         EraseStoreCache(tokenId_);
     }
     ResultSetJsonFormatter formatter(std::move(resultSet));
@@ -301,6 +303,7 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
     }
     int rowCount;
     if (resultSet->GetRowCount(rowCount) == E_SQLITE_ERROR) {
+        ZLOGE("query failed, err:%{public}d", E_SQLITE_ERROR);
         EraseStoreCache(tokenId_);
     }
     return resultSet;
@@ -325,7 +328,7 @@ bool RdbDelegate::IsLimit(int count)
         return false;
     }
     std::string logStr;
-    resultSetCallingPids.ForEach([&logStr](const uint32_t &key, int32_t &value) {
+    resultSetCallingPids.ForEach([&logStr](const uint32_t &key, const int32_t &value) {
         logStr += std::to_string(key) + ":" + std::to_string(value) + ";";
         return false;
     });
