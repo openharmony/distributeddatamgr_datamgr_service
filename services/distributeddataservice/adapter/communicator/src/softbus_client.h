@@ -48,8 +48,8 @@ public:
     int32_t GetSocket() const;
     uint32_t GetQoSType() const;
     void UpdateExpireTime();
-    bool isNeedRmv = false;
-    bool isNeedReUse = false;
+    bool needRemove = false;
+    bool isReuse = false;
 
 private:
     Status Open(int32_t socket, const QosTV qos[], const ISocketListener *listener);

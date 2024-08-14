@@ -172,16 +172,14 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     std::shared_ptr<SoftBusClient> conn;
     bool isOHOSType = DmAdapter::GetInstance().isOHOSType(deviceId.deviceId);
     uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
-    bool isNeedReUse = false;
+    bool isReuse = false;
     connects_.Compute(deviceId.deviceId,
-        [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isNeedReUse](const auto &key,
+        [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isReuse](const auto &key,
             std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
             for (auto &connect : connects) {
                 if (connect->GetQoSType() == qosType) {
-                    if (!isOHOSType && connect->isNeedRmv) {
-                        connect->isNeedReUse = true;
-                        connect->isNeedRmv = false;
-                        isNeedReUse = true;
+                    if (!isOHOSType && connect->needRemove) {
+                        isReuse = true;
                         return false;
                     }
                     conn = connect;
@@ -193,13 +191,14 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
             conn = connect;
             return true;
         });
-    if (!isOHOSType && isNeedReUse) {
+    if (!isOHOSType && isReuse) {
         std::vector<std::shared_ptr<SoftBusClient>> connects;
         auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
-        connect->isNeedReUse = true;
+        connect->isReuse = true;
         connects.emplace_back(connect);
         conn = connect;
         connects_.Insert(deviceId.deviceId, connects);
+        ZLOGI("reuse connect");
     }
     if (conn == nullptr) {
         return Status::ERROR;
@@ -233,8 +232,8 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
 void SoftBusAdapter::StartCloseSessionTask(const std::string &deviceId)
 {
     std::shared_ptr<SoftBusClient> conn;
-    bool isReady = DmAdapter::GetInstance().IsDeviceReady(deviceId);
-    uint32_t qosType = isReady ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    bool isOHOSType = DmAdapter::GetInstance().isOHOSType(deviceId.deviceId);
+    uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
     auto connects = connects_.Find(deviceId);
     if (!connects.first) {
         return;
@@ -561,8 +560,8 @@ void SoftBusAdapter::OnBind(int32_t socket, PeerSocketInfo info)
             return;
         }
         for (auto &conn : connects.second) {
-            if (!conn->isNeedReUse) {
-                conn->isNeedRmv = true;
+            if (!conn->isReuse) {
+                conn->needRemove = true;
             }
         }
     }
