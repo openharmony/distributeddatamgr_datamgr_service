@@ -644,7 +644,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
         StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
         if (value.launchInfos.empty()) {
             meta.storeId = "";
-            AutoLaunchMetaData &autoLaunchMetaData = {};
+            AutoLaunchMetaData autoLaunchMetaData = {};
             std::vector<std::string> tempData = {};
             autoLaunchMetaData.datas.emplace(extUri, tempData);
             autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
@@ -653,7 +653,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
             continue;
         }
         for (const auto &launchInfo : value.launchInfos) {
-            AutoLaunchMetaData &autoLaunchMetaData = {};
+            AutoLaunchMetaData autoLaunchMetaData = {};
             autoLaunchMetaData.datas.emplace(extUri, launchInfo.tableNames);
             autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
             meta.storeId = launchInfo.storeId;
@@ -686,7 +686,7 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
             return;
         }
     }
-    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, launchForCleanData)) {
+    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, autoLaunchMetaData.launchForCleanData)) {
         return;
     }
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
