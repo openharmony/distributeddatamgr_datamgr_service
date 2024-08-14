@@ -254,6 +254,45 @@ HWTEST_F(ObjectManagerTest, NotifyAssetsReady001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: NotifyAssetsReady002
+ * @tc.desc: NotifyAssetsReady test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectManagerTest, NotifyAssetsReady002, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::string objectKey="com.example.myapplicaiton123456";
+    std::string srcNetworkId = "654321";
+
+    manager->restoreStatus_.Clear();
+    manager->NotifyAssetsStart(objectKey, srcNetworkId);
+    auto [has0, value0] = manager->restoreStatus_.Find(objectKey);
+    EXPECT_TRUE(has0);
+    EXPECT_EQ(value0, RestoreStatus::NONE);
+
+    manager->restoreStatus_.Clear();
+    manager->NotifyAssetsReady(objectKey, srcNetworkId);
+    auto [has1, value1] = manager->restoreStatus_.Find(objectKey);
+    EXPECT_TRUE(has1);
+    EXPECT_EQ(value1, RestoreStatus::ASSETS_READY);
+
+    manager->restoreStatus_.Clear();
+    manager->restoreStatus_.Insert(objectKey, RestoreStatus::DATA_NOTIFIED);
+    manager->NotifyAssetsReady(objectKey, srcNetworkId);
+    auto [has2, value2] = manager->restoreStatus_.Find(objectKey);
+    EXPECT_TRUE(has2);
+    EXPECT_EQ(value2, RestoreStatus::ALL_READY);
+
+    manager->restoreStatus_.Clear();
+    manager->restoreStatus_.Insert(objectKey, RestoreStatus::DATA_READY);
+    manager->NotifyAssetsReady(objectKey, srcNetworkId);
+    auto [has3, value3] = manager->restoreStatus_.Find(objectKey);
+    EXPECT_TRUE(has3);
+    EXPECT_EQ(value3, RestoreStatus::ALL_READY);
+    manager->restoreStatus_.Clear();
+}
+
+/**
 * @tc.name: NotifyChange001
 * @tc.desc: NotifyChange test.
 * @tc.type: FUNC
@@ -272,6 +311,79 @@ HWTEST_F(ObjectManagerTest, NotifyChange001, TestSize.Level0)
     data1 = {{ "p_###SAVEINFO###001", data1_ }};
     manager->NotifyChange(data1);
     manager->NotifyChange(data);
+}
+
+/**
+ * @tc.name: NotifyChange002
+ * @tc.desc: NotifyChange test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectManagerTest, NotifyChange002, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
+    manager->SetThreadPool(executor);
+    std::map<std::string, std::vector<uint8_t>> data{};
+    std::vector<uint8_t> value{0};
+    std::string bundleName = "com.example.myapplication";
+    std::string sessionId = "123456";
+    std::string source = "source";
+    std::string target = "target";
+    std::string timestamp = "1234567890";
+    ObjectStoreManager::SaveInfo saveInfo(bundleName, sessionId, source, target, timestamp);
+    std::string saveInfoStr = DistributedData::Serializable::Marshall(saveInfo);
+    auto saveInfoValue = std::vector<uint8_t>(saveInfoStr.begin(), saveInfoStr.end());
+    std::string prefix = saveInfo.ToPropertyPrefix();
+    std::string assetPrefix = prefix + "p_asset";
+    data.insert_or_assign(prefix + "p_###SAVEINFO###", saveInfoValue);
+    data.insert_or_assign(prefix + "p_data", value);
+    data.insert_or_assign(assetPrefix + ObjectStore::NAME_SUFFIX, value);
+    data.insert_or_assign(assetPrefix + ObjectStore::URI_SUFFIX, value);
+    data.insert_or_assign(assetPrefix + ObjectStore::PATH_SUFFIX, value);
+    data.insert_or_assign(assetPrefix + ObjectStore::CREATE_TIME_SUFFIX, value);
+    data.insert_or_assign(assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value);
+    data.insert_or_assign(assetPrefix + ObjectStore::SIZE_SUFFIX, value);
+    data.insert_or_assign("testkey", value);
+    manager->NotifyChange(data);
+    EXPECT_TRUE(manager->restoreStatus_.Contains(bundleName+sessionId));
+    auto [has, taskId] = manager->objectTimer_.Find(bundleName+sessionId);
+    EXPECT_TRUE(has);
+    manager->restoreStatus_.Clear();
+    manager->executors_->Remove(taskId);
+    manager->objectTimer_.Clear();
+}
+
+/**
+ * @tc.name: ComputeStatus001
+ * @tc.desc: ComputeStatus.test
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectManagerTest, ComputeStatus001, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
+    manager->SetThreadPool(executor);
+    std::string objectKey="com.example.myapplicaiton123456";
+    std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data{};
+    manager->restoreStatus_.Clear();
+    manager->ComputeStatus(objectKey, data);
+    auto [has0, value0] = manager->restoreStatus_.Find(objectKey);
+    EXPECT_TRUE(has0);
+    EXPECT_EQ(value0, RestoreStatus::DATA_READY);
+    auto [has1, taskId1] = manager->objectTimer_.Find(objectKey);
+    EXPECT_TRUE(has1);
+    manager->executors_->Remove(taskId1);
+    manager->objectTimer_.Clear();
+    manager->restoreStatus_.Clear();
+
+    manager->restoreStatus_.Insert(objectKey, RestoreStatus::ASSETS_READY);
+    manager->ComputeStatus(objectKey, data);
+    auto [has2, value2] = manager->restoreStatus_.Find(objectKey);
+    EXPECT_TRUE(has2);
+    EXPECT_EQ(value2, RestoreStatus::ALL_READY);
+    auto [has3, taskId3] = manager->objectTimer_.Find(objectKey);
+    EXPECT_FALSE(has3);
+    manager->restoreStatus_.Clear();
 }
 
 /**
@@ -489,6 +601,40 @@ HWTEST_F(ObjectManagerTest, SplitEntryKey001, TestSize.Level0)
 }
 
 /**
+* @tc.name: SplitEntryKey002
+* @tc.desc: SplitEntryKey test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, SplitEntryKey002, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::string key1 = "com.example.myapplication_sessionId_source_target_1234567890_p_propertyName";
+    auto res = manager->SplitEntryKey(key1);
+    EXPECT_EQ(res[0], "com.example.myapplication");
+    EXPECT_EQ(res[1], "sessionId");
+    EXPECT_EQ(res[2], "source");
+    EXPECT_EQ(res[3], "target");
+    EXPECT_EQ(res[4], "1234567890");
+    EXPECT_EQ(res[5], "p_propertyName");
+
+    std::string key2 = "com.example.myapplication_sessionId_source_target_000_p_propertyName";
+    res = manager->SplitEntryKey(key2);
+    EXPECT_TRUE(res.empty());
+
+    std::string key3 = "com.example.myapplicationsessionIdsourcetarget_1234567890_p_propertyName";
+    res = manager->SplitEntryKey(key3);
+    EXPECT_TRUE(res.empty());
+
+    std::string key4 = "com.example.myapplicationsessionIdsource_target_1234567890_p_propertyName";
+    res = manager->SplitEntryKey(key4);
+    EXPECT_TRUE(res.empty());
+
+    std::string key5 = "com.example.myapplicationsessionId_source_target_1234567890_p_propertyName";
+    res = manager->SplitEntryKey(key5);
+    EXPECT_TRUE(res.empty());
+}
+
+/**
 * @tc.name: ProcessOldEntry001
 * @tc.desc: ProcessOldEntry test.
 * @tc.type: FUNC
@@ -592,6 +738,70 @@ HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords001, TestSize.Level0)
 }
 
 /**
+* @tc.name: GetAssetsFromDBRecords002
+* @tc.desc: GetAssetsFromDBRecords test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords002, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::map<std::string, std::vector<uint8_t>> result;
+
+    std::vector<uint8_t> value0{0};
+    std::string data0 = "[STRING]test";
+    value0.insert(value0.end(), data0.begin(), data0.end());
+
+    std::vector<uint8_t> value1{0};
+    std::string data1 = "(string)test";
+    value1.insert(value1.end(), data1.begin(), data1.end());
+
+    std::string prefix = "bundleName_sessionId_source_target_timestamp";
+    std::string dataKey = prefix + "_p_data";
+    std::string assetPrefix0 = prefix + "_p_asset0";
+    std::string assetPrefix1 = prefix + "_p_asset1";
+
+    result.insert({dataKey, value0});
+    auto assets = manager->GetAssetsFromDBRecords(result);
+    EXPECT_TRUE(assets.empty());
+    
+    result.clear();
+    result.insert({assetPrefix0 + ObjectStore::URI_SUFFIX, value0});
+    assets = manager->GetAssetsFromDBRecords(result);
+    EXPECT_TRUE(assets.empty());
+
+    result.clear();
+    result.insert({assetPrefix1 + ObjectStore::NAME_SUFFIX, value1});
+    assets = manager->GetAssetsFromDBRecords(result);
+    EXPECT_TRUE(assets.empty());
+
+    result.clear();
+    result.insert({assetPrefix0 + ObjectStore::NAME_SUFFIX, value0});
+    result.insert({assetPrefix0 + ObjectStore::URI_SUFFIX, value0});
+    result.insert({assetPrefix0 + ObjectStore::MODIFY_TIME_SUFFIX, value0});
+    result.insert({assetPrefix0 + ObjectStore::SIZE_SUFFIX, value0});
+    assets = manager->GetAssetsFromDBRecords(result);
+    ASSERT_EQ(assets.size(), 1);
+    EXPECT_EQ(assets[0].name, "test");
+    EXPECT_EQ(assets[0].uri, "test");
+    EXPECT_EQ(assets[0].modifyTime, "test");
+    EXPECT_EQ(assets[0].size, "test");
+    EXPECT_EQ(assets[0].hash, "test_test");
+
+    result.clear();
+    result.insert({assetPrefix1 + ObjectStore::NAME_SUFFIX, value1});
+    result.insert({assetPrefix1 + ObjectStore::URI_SUFFIX, value1});
+    result.insert({assetPrefix1 + ObjectStore::MODIFY_TIME_SUFFIX, value1});
+    result.insert({assetPrefix1 + ObjectStore::SIZE_SUFFIX, value1});
+    assets = manager->GetAssetsFromDBRecords(result);
+    ASSERT_EQ(assets.size(), 1);
+    EXPECT_EQ(assets[0].name, "(string)test");
+    EXPECT_EQ(assets[0].uri, "(string)test");
+    EXPECT_EQ(assets[0].modifyTime, "(string)test");
+    EXPECT_EQ(assets[0].size, "(string)test");
+    EXPECT_EQ(assets[0].hash, "(string)test_(string)test");
+}
+
+/**
 * @tc.name: RegisterAssetsLister001
 * @tc.desc: RegisterAssetsLister test.
 * @tc.type: FUNC
@@ -629,5 +839,18 @@ HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
     data.insert({assetPrefix, completes});
     auto result = manager->PushAssets(100, appId_, sessionId_, data, deviceId_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: ConstructorAndDestructor001
+* @tc.desc: Constructor and destructor test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, ConstructorAndDestructor001, TestSize.Level0)
+{
+    auto manager = new ObjectStoreManager();
+    EXPECT_TRUE(manager->objectAssetsSendListener_ != nullptr);
+    EXPECT_TRUE(manager->objectAssetsRecvListener_ != nullptr);
+    delete manager;
 }
 } // namespace OHOS::Test

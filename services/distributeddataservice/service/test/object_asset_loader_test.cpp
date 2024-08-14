@@ -130,8 +130,12 @@ HWTEST_F(ObjectAssetLoaderTest, FinishTask001, TestSize.Level0)
 HWTEST_F(ObjectAssetLoaderTest, IsDownloading001, TestSize.Level0)
 {
     auto assetLoader = ObjectAssetLoader::GetInstance();
+    assetLoader->downloading_.InsertOrAssign(asset_.uri, asset_.hash);
     auto result = assetLoader->IsDownloading(asset_);
     ASSERT_EQ(result, true);
+    assetLoader->downloading_.Erase(asset_.uri);
+    result = assetLoader->IsDownloading(asset_);
+    ASSERT_EQ(result, false);
 }
 
 /**
