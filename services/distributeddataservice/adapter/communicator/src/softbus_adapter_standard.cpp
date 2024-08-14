@@ -200,14 +200,15 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isReuse](const auto &key,
             std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
             for (auto &connect : connects) {
-                if (connect->GetQoSType() == qosType) {
-                    if (!isOHOSType && connect->needRemove) {
-                        isReuse = true;
-                        return false;
-                    }
-                    conn = connect;
-                    return true;
+                if (connect->GetQoSType() != qosType) {
+                    continue;
                 }
+                if (!isOHOSType && connect->needRemove) {
+                    isReuse = true;
+                    return false;
+                }
+                conn = connect;
+                return true;
             }
             auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
             connects.emplace_back(connect);
