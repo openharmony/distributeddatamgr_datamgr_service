@@ -520,9 +520,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::PreSharing(GenQuery
             return { GeneralError::E_ALREADY_CLOSED, nullptr };
         }
         auto [errCode, ret] = QuerySql(sql, rdbQuery->GetBindArgs());
-        if (errCode != GeneralError::E_OK) {
-            values = std::move(ret);
-        }
+        values = std::move(ret);
     }
     if (rdbCloud_ == nullptr || values.empty()) {
         ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud_ == nullptr ? "nullptr" : "not nullptr",
