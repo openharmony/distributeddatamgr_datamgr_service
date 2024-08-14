@@ -148,19 +148,27 @@ std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
         auto storeInfo = evt.GetStoreInfo();
         auto callback = evt.GetCallback();
         if (callback == nullptr) {
+            ZLOGE("callback is nullptr. bundleName: %{public}s, storeName: %{public}s, user: %{public}d.",
+                storeInfo.bundleName_.c_str(), Anonymous::Change(storeInfo.user).c_str(), storeInfo.user);
             return;
         }
         StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            ZLOGE("not found meta. bundleName: %{public}s, storeName: %{public}s, user: %{public}d.",
+                storeInfo.bundleName_.c_str(), Anonymous::Change(storeInfo.user).c_str(), storeInfo.user);
             return;
         }
         auto store = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
+            ZLOGE("failed to get store. bundleName: %{public}s, storeName: %{public}s, user: %{public}d.",
+                storeInfo.bundleName_.c_str(), Anonymous::Change(storeInfo.user).c_str(), storeInfo.user);
             return;
         }
         auto cloud = store->GetCloudDB();
         if (cloud == nullptr) {
+            ZLOGE("failed to get cloudDB. bundleName: %{public}s, storeName: %{public}s, user: %{public}d."
+                storeInfo.bundleName_.c_str(), Anonymous::Change(storeInfo.user).c_str(), storeInfo.user);
             return;
         }
         if (evt.GetEventId() == CloudEvent::LOCK_CLOUD_CONTAINER) {

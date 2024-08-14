@@ -670,6 +670,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
         const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
+            bool isDownload = false;
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
@@ -682,6 +683,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 table.upload.failed = value.upLoadInfo.failCount;
                 table.upload.untreated = table.upload.total - table.upload.success - table.upload.failed;
                 totalCount += table.upload.total;
+                isDownload = table.download.total > 0;
                 table.download.total = value.downLoadInfo.total;
                 table.download.success = value.downLoadInfo.successCount;
                 table.download.failed = value.downLoadInfo.failCount;
@@ -696,6 +698,10 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode, syncId);
             } else {
                 RdbGeneralStore::OnSyncStart(storeInfo, flag, syncMode, syncId, totalCount);
+            }
+
+            if (isDownload &&(process.process == FINISHED || process.process == PROCESSING) && rdbCloud_ != nullptr) {
+                rdbCloud_->Lock(FLAG::APPLICATION);
             }
         }
         if (async) {
