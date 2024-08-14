@@ -170,13 +170,20 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     uint32_t length, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
-    bool isReady = DmAdapter::GetInstance().IsDeviceReady(deviceId.deviceId);
-    uint32_t qosType = isReady ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    bool isOHOSType = DmAdapter::GetInstance().isOHOSType(deviceId.deviceId);
+    uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    bool isNeedReUse = false;
     connects_.Compute(deviceId.deviceId,
-        [&pipeInfo, &deviceId, &conn, qosType](const auto &key,
+        [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isNeedReUse](const auto &key,
             std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
             for (auto &connect : connects) {
                 if (connect->GetQoSType() == qosType) {
+                    if (!isOHOSType && connect->isNeedRmv) {
+                        connect->isNeedReUse = true;
+                        connect->isNeedRmv = false;
+                        isNeedReUse = true;
+                        return false;
+                    }
                     conn = connect;
                     return true;
                 }
@@ -186,6 +193,14 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
             conn = connect;
             return true;
         });
+    if (!isOHOSType && isNeedReUse) {
+        std::vector<std::shared_ptr<SoftBusClient>> connects;
+        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
+        connect->isNeedReUse = true;
+        connects.emplace_back(connect);
+        conn = connect;
+        connects_.Insert(deviceId.deviceId, connects);
+    }
     if (conn == nullptr) {
         return Status::ERROR;
     }
@@ -539,6 +554,18 @@ void SoftBusAdapter::OnBind(int32_t socket, PeerSocketInfo info)
     socketInfo.networkId = info.networkId;
     socketInfo.pkgName = info.pkgName;
     peerSocketInfos_.Insert(socket, socketInfo);
+    if (!DmAdapter::GetInstance().IsOHOSType(info.networkId)) {
+        auto uuid = DmAdapter::GetInstance().TOUUID(info.networkId);
+        auto connects = connects_.Find(uuid);
+        if (!connects.first) {
+            return;
+        }
+        for (auto &conn : connects.second) {
+            if (!conn->isNeedReUse) {
+                conn->isNeedRmv = true;
+            }
+        }
+    }
 }
 
 void SoftBusAdapter::OnServerShutdown(int32_t socket)
