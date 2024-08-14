@@ -1473,7 +1473,11 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
     CloudData::SyncManager sync;
     auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true);
     auto ret = task();
-    EXPECT_TRUE(ret);
+    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
+        EXPECT_TRUE(ret);
+    } else {
+        EXPECT_FALSE(ret);
+    }
 }
 
 /**
