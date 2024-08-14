@@ -166,11 +166,22 @@ Status SoftBusAdapter::StopWatchDataChange(__attribute__((unused)) const AppData
     return Status::ERROR;
 }
 
+void SoftBusAdapter::Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    uint32_t qosType, std::shared_ptr<SoftBusClient> &conn) {
+    std::vector<std::shared_ptr<SoftBusClient>> connects;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
+    connect->isReuse = true;
+    connects.emplace_back(connect);
+    conn = connect;
+    connects_.Insert(deviceId.deviceId, connects);
+    ZLOGI("reuse connect:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId.deviceId).c_str());
+}
+
 Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
     uint32_t length, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
-    bool isOHOSType = DmAdapter::GetInstance().isOHOSType(deviceId.deviceId);
+    bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
     uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
     bool isReuse = false;
     connects_.Compute(deviceId.deviceId,
@@ -192,13 +203,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
             return true;
         });
     if (!isOHOSType && isReuse) {
-        std::vector<std::shared_ptr<SoftBusClient>> connects;
-        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
-        connect->isReuse = true;
-        connects.emplace_back(connect);
-        conn = connect;
-        connects_.Insert(deviceId.deviceId, connects);
-        ZLOGI("reuse connect");
+        Reuse(pipeInfo, deviceId, qosType, conn);
     }
     if (conn == nullptr) {
         return Status::ERROR;
@@ -206,8 +211,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     auto status = conn->CheckStatus();
     if (status == Status::RATE_LIMIT) {
         return Status::RATE_LIMIT;
-    }
-    if (status != Status::SUCCESS) {
+    } else if (status != Status::SUCCESS) {
         auto task = [this, conn]() {
             conn->OpenConnect(&clientListener_);
         };
@@ -232,7 +236,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
 void SoftBusAdapter::StartCloseSessionTask(const std::string &deviceId)
 {
     std::shared_ptr<SoftBusClient> conn;
-    bool isOHOSType = DmAdapter::GetInstance().isOHOSType(deviceId.deviceId);
+    bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
     uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
     auto connects = connects_.Find(deviceId);
     if (!connects.first) {
@@ -554,7 +558,7 @@ void SoftBusAdapter::OnBind(int32_t socket, PeerSocketInfo info)
     socketInfo.pkgName = info.pkgName;
     peerSocketInfos_.Insert(socket, socketInfo);
     if (!DmAdapter::GetInstance().IsOHOSType(info.networkId)) {
-        auto uuid = DmAdapter::GetInstance().TOUUID(info.networkId);
+        auto uuid = DmAdapter::GetInstance().ToUUID(info.networkId);
         auto connects = connects_.Find(uuid);
         if (!connects.first) {
             return;
