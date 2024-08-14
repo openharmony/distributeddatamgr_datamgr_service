@@ -94,6 +94,7 @@ private:
     bool CloseSession(const std::string &networkId);
     void Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
         uint32_t qosType, std::shared_ptr<SoftBusClient> &conn);
+    void GetExpireTime(std::shared_ptr<SoftBusClient> &conn);
     static constexpr const char *PKG_NAME = "distributeddata-default";
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;

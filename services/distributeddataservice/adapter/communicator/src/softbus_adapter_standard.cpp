@@ -167,7 +167,8 @@ Status SoftBusAdapter::StopWatchDataChange(__attribute__((unused)) const AppData
 }
 
 void SoftBusAdapter::Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
-    uint32_t qosType, std::shared_ptr<SoftBusClient> &conn) {
+    uint32_t qosType, std::shared_ptr<SoftBusClient> &conn)
+{
     std::vector<std::shared_ptr<SoftBusClient>> connects;
     auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
     connect->isReuse = true;
@@ -175,6 +176,17 @@ void SoftBusAdapter::Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
     conn = connect;
     connects_.Insert(deviceId.deviceId, connects);
     ZLOGI("reuse connect:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId.deviceId).c_str());
+}
+
+void SoftBusAdapter::GetExpireTime(std::shared_ptr<SoftBusClient> &conn)
+{
+    Time now = std::chrono::steady_clock::now();
+    auto expireTime = conn->GetExpireTime() > now ? conn->GetExpireTime() : now;
+    lock_guard<decltype(taskMutex_)> lock(taskMutex_);
+    if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
+        taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
+        next_ = expireTime;
+    }
 }
 
 Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
@@ -222,13 +234,7 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
 
     status = conn->SendData(dataInfo, &clientListener_);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
-        Time now = std::chrono::steady_clock::now();
-        auto expireTime = conn->GetExpireTime() > now ? conn->GetExpireTime() : now;
-        lock_guard<decltype(taskMutex_)> lock(taskMutex_);
-        if (taskId_ != ExecutorPool::INVALID_TASK_ID && expireTime < next_) {
-            taskId_ = Context::GetInstance().GetThreadPool()->Reset(taskId_, expireTime - now);
-            next_ = expireTime;
-        }
+        GetExpireTime(conn);
     }
     return status;
 }
