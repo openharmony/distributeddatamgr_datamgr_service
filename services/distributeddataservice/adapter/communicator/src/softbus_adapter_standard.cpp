@@ -223,7 +223,8 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     auto status = conn->CheckStatus();
     if (status == Status::RATE_LIMIT) {
         return Status::RATE_LIMIT;
-    } else if (status != Status::SUCCESS) {
+    }
+    if (status != Status::SUCCESS) {
         auto task = [this, conn]() {
             conn->OpenConnect(&clientListener_);
         };
