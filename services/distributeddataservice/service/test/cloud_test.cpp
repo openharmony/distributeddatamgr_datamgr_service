@@ -181,8 +181,9 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
  */
 HWTEST_F(CloudTest, CloudInfoUpgrade, TestSize.Level0)
 {
+    int32_t defaultUser = 100;
     CloudInfo oldInfo;
-    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto user = defaultUser;
     oldInfo.user = user;
     EXPECT_NE(oldInfo.maxNumber, CloudInfo::DEFAULT_BATCH_NUMBER);
     EXPECT_NE(oldInfo.maxSize, CloudInfo::DEFAULT_BATCH_SIZE);
