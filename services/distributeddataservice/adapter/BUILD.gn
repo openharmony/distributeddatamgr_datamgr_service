@@ -58,9 +58,13 @@ ohos_shared_library("distributeddata_adapter") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
     "${data_service_path}/adapter/dfx:distributeddata_dfx_static",
     "${data_service_path}/adapter/permission:distributeddata_permission_static",
-    "${data_service_path}/adapter/screenlock:distributeddata_screenlock_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
   ]
+
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.theme_screenlock_mgr)) {
+    deps += [ "${data_service_path}/adapter/screenlock:distributeddata_screenlock_static" ]
+  }
 
   external_deps = [
     "c_utils:utils",
