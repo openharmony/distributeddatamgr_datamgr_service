@@ -1427,7 +1427,7 @@ HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
 
 /**
 * @tc.name: DoCloudSync
-* @tc.desc: Test the executor_ uninitialized and initialized scenarios 
+* @tc.desc: Test the executor_ uninitialized and initialized scenarios
 * @tc.type: FUNC
 * @tc.require:
  */
