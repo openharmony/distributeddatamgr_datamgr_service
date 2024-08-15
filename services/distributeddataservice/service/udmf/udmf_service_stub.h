@@ -48,6 +48,8 @@ private:
     int32_t OnSetAppShareOption(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetAppShareOption(MessageParcel &data, MessageParcel &reply);
     int32_t OnRemoveAppShareOption(MessageParcel &data, MessageParcel &reply);
+    int32_t OnObtainAsynProcess(MessageParcel &data, MessageParcel &reply);
+    int32_t OnClearAsynProcess(MessageParcel &data, MessageParcel &reply);
 
     using Handler = int32_t (UdmfServiceStub::*)(MessageParcel &data, MessageParcel &reply);
     static constexpr Handler HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)] = {
@@ -62,7 +64,9 @@ private:
         &UdmfServiceStub::OnIsRemoteData,
         &UdmfServiceStub::OnSetAppShareOption,
         &UdmfServiceStub::OnGetAppShareOption,
-        &UdmfServiceStub::OnRemoveAppShareOption
+        &UdmfServiceStub::OnRemoveAppShareOption,
+        &UdmfServiceStub::OnObtainAsynProcess,
+        &UdmfServiceStub::OnClearAsynProcess
     };
 };
 } // namespace UDMF

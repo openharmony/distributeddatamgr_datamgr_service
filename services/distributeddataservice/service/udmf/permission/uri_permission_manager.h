@@ -30,7 +30,8 @@ class UriPermissionManager {
 public:
     using Time = std::chrono::steady_clock::time_point;
     static UriPermissionManager &GetInstance();
-    Status GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey);
+    Status GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId,
+        const std::string &queryKey, uint32_t &completeCount);
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 
 private:

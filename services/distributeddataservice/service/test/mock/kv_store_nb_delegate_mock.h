@@ -104,6 +104,8 @@ public:
     DBStatus SetReceiveDataInterceptor(const DataInterceptor &interceptor);
     DBStatus SetCloudSyncConfig(const CloudSyncConfig &config);
     DBStatus GetDeviceEntries(const std::string &device, std::vector<Entry> &entries) const;
+    DBStatus Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess);
+    DBStatus CancelSync(uint32_t syncId);
 };
 } // namespace DistributedDB
 #endif // KV_STORE_NB_DELEGATE_H_MOCK
