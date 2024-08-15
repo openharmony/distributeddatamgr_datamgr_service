@@ -264,35 +264,6 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, SyncInf
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
-Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo)
-{
-    if (syncInfo.devices.empty()) {
-        return Status::INVALID_ARGUMENT;
-    }
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    auto device = DMAdapter::GetInstance().ToUUID(syncInfo.devices[0]);
-    if (device.empty()) {
-        ZLOGE("invalid deviceId, appId:%{public}s storeId:%{public}s deviceId:%{public}s",
-            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(),
-            Anonymous::Change(syncInfo.devices[0]).c_str());
-        return Status::INVALID_ARGUMENT;
-    }
-    if (DeviceMatrix::GetInstance().IsSupportMatrix() &&
-        ((!DeviceMatrix::GetInstance().IsStatics(metaData) && !DeviceMatrix::GetInstance().IsDynamic(metaData)) ||
-        !IsRemoteChange(metaData, device))) {
-            ZLOGD("no change, do not need sync, appId:%{public}s storeId:%{public}s",
-                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
-            DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
-            DoComplete(metaData, syncInfo, RefCount(), std::move(dbResult));
-            return SUCCESS;
-    }
-    syncInfo.syncId = ++syncId_;
-    return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
-        std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
-}
-
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId, uint64_t delay)
 {
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
