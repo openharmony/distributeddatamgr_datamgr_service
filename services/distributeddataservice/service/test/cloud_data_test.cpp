@@ -1427,7 +1427,7 @@ HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
 
 /**
 * @tc.name: DoCloudSync
-* @tc.desc:
+* @tc.desc: Test the executor_ uninitialized and initialized scenarios 
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1453,7 +1453,7 @@ HWTEST_F(CloudDataTest, DoCloudSync, TestSize.Level0)
 
 /**
 * @tc.name: GetPostEventTask
-* @tc.desc:
+* @tc.desc: Test the interface to verify the package name and table name
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1482,7 +1482,7 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
 
 /**
 * @tc.name: GetRetryer
-* @tc.desc:
+* @tc.desc: Test the input parameters of different interfaces
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1504,7 +1504,7 @@ HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
 
 /**
 * @tc.name: GetCallback
-* @tc.desc:
+* @tc.desc: Test the processing logic of different progress callbacks
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1538,7 +1538,7 @@ HWTEST_F(CloudDataTest, GetCallback, TestSize.Level0)
 
 /**
 * @tc.name: GetInterval
-* @tc.desc:
+* @tc.desc: Test the Interval transformation logic of the interface
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1556,7 +1556,7 @@ HWTEST_F(CloudDataTest, GetInterval, TestSize.Level0)
 
 /**
 * @tc.name: GetCloudSyncInfo
-* @tc.desc:
+* @tc.desc: Test get cloudInfo
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1575,7 +1575,7 @@ HWTEST_F(CloudDataTest, GetCloudSyncInfo, TestSize.Level0)
 
 /**
 * @tc.name: RetryCallback
-* @tc.desc:
+* @tc.desc: Test the retry logic
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1603,7 +1603,7 @@ HWTEST_F(CloudDataTest, RetryCallback, TestSize.Level0)
 
 /**
 * @tc.name: UpdateCloudInfoFromServer
-* @tc.desc:
+* @tc.desc: Test updating cloudinfo from the server
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1619,7 +1619,7 @@ HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer, TestSize.Level0)
 
 /**
 * @tc.name: GetCloudInfo
-* @tc.desc:
+* @tc.desc: Test get cloudInfo
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1636,7 +1636,7 @@ HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level0)
 
 /**
 * @tc.name: SubTask
-* @tc.desc:
+* @tc.desc: Test the subtask execution logic
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -1654,7 +1654,7 @@ HWTEST_F(CloudDataTest, SubTask, TestSize.Level0)
 
 /**
 * @tc.name: ConvertCursor
-* @tc.desc:
+* @tc.desc: Test the cursor conversion logic when the ResultSet is empty and non-null
 * @tc.type: FUNC
 * @tc.require:
  */
