@@ -257,7 +257,6 @@ bool AutoCache::Delegate::operator<(const AutoCache::Time &time) const
 
 bool AutoCache::Delegate::Close()
 {
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
     if (store_ != nullptr) {
         auto status = store_->Close();
         if (status == Error::E_BUSY) {
