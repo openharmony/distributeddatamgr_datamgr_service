@@ -83,7 +83,8 @@ public:
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
-    std::shared_ptr<DistributedDB::ICloudDb> GetCloudDB() override;
+    std::pair<GeneralError, uint32_t> LockCloudDB() override;
+    GeneralError UnLockCloudDB() override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
@@ -140,6 +141,7 @@ private:
     VBuckets ExtractExtend(VBuckets& values) const;
     size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
     bool IsPrintLog(DistributedDB::DBStatus status);
+    std::shared_ptr<RdbCloud> GetRdbCloud() const;
     
     ObserverProxy observer_;
     RdbManager manager_;
@@ -162,6 +164,7 @@ private:
     uint32_t syncNotifyFlag_ = 0;
     std::atomic<uint32_t> syncTaskId_ = 0;
     std::shared_mutex asyncMutex_ {};
+    mutable std::shared_mutex rdbCloudMutex_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

@@ -36,6 +36,7 @@ public:
     using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
     using DataBucket = DistributedData::VBucket;
     using BindAssets = DistributedData::BindAssets;
+    using GeneralError = DistributedData::GeneralError;
 
     explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets* bindAssets);
     virtual ~RdbCloud() = default;
@@ -52,10 +53,9 @@ public:
     DBStatus Close() override;
     std::pair<DBStatus, std::string> GetEmptyCursor(const std::string &tableName) override;
     static DBStatus ConvertStatus(DistributedData::GeneralError error);
-    std::pair<DBStatus, uint32_t> LockContainer();
-    DBStatus UnLockContainer();
-    std::pair<DBStatus, uint32_t> InnerLock(FLAG flag);
-    DBStatus InnerUnLock(FLAG flag);
+    uint8_t GetLockFlag() const;
+    std::pair<GeneralError, uint32_t> LockCloudDB(FLAG flag);
+    GeneralError UnLockCloudDB(FLAG flag);
 
 private:
     static constexpr const char *TYPE_FIELD = "#_type";
@@ -75,6 +75,8 @@ private:
         DistributedData::AssetEvent eventId);
     void PostEventAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets,
         DistributedData::AssetEvent eventId);
+    std::pair<GeneralError, uint32_t> InnerLock(FLAG flag);
+    GeneralError InnerUnLock(FLAG flag);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H

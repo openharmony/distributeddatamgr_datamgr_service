@@ -20,7 +20,7 @@
 #include <memory>
 #include <set>
 
-#include "cloud/icloud_db.h"
+#include "error/general_error.h"
 #include "snapshot/snapshot.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
@@ -35,6 +35,7 @@ public:
     using Watcher = GeneralWatcher;
     using DetailAsync = GenAsync;
     using Devices = std::vector<std::string>;
+    using GeneralError = DistributedData::GeneralError;
     enum SyncMode {
         NEARBY_BEGIN,
         NEARBY_PUSH = NEARBY_BEGIN,
@@ -174,7 +175,9 @@ public:
 
     virtual void SetConfig(const StoreConfig &storeConfig) {};
 
-    virtual std::shared_ptr<DistributedDB::ICloudDb> GetCloudDB() = 0;
+    virtual std::pair<GeneralError, uint32_t> LockCloudDB() = 0;
+
+    virtual GeneralError UnLockCloudDB() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

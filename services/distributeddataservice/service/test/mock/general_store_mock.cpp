@@ -146,9 +146,14 @@ void GeneralStoreMock::MakeCursor(const std::map<std::string, Value> &entry)
     cursor_ = std::make_shared<CursorMock>(resultSet);
 }
 
-std::shared_ptr<DistributedDB::ICloudDb> GeneralStoreMock::GetCloudDB()
+std::pair<GeneralError, uint32_t> GeneralStoreMock::LockCloudDB()
 {
-    return nullptr;
+    return { E_OK, 0 };
+}
+
+GeneralError GeneralStoreMock::UnLockCloudDB()
+{
+    return E_OK;
 }
 } // namespace DistributedData
 } // namespace OHOS
