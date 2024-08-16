@@ -516,6 +516,9 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         if (asyncProcessInfo_.syncStatus != ASYNC_RUNNING) {
             syncingData_ = false;
         }
+        ZLOGD("store.Sync: name=%{public}s, id=%{public}u, status=%{public}u, total=%{public}u, finish=%{public}u",
+            syncInfo.srcDevName.c_str(), syncInfo.syncId, syncInfo.syncStatus,
+            syncInfo.syncTotal, syncInfo.syncFinished);
     };
     if (store->Sync(devices, callback) != E_OK) {
         syncingData_ = false;
