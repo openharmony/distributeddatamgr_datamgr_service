@@ -338,15 +338,19 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
 
 int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData)
 {
-    ZLOGD("start");
     if (!unifiedData.IsValid()) {
         ZLOGE("UnifiedData is invalid.");
         return E_INVALID_PARAMETERS;
     }
-
     UnifiedKey key(query.key);
     if (!key.IsValid()) {
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    std::string bundleName;
+    PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
+    if (key.bundleName != bundleName) {
+        ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
     auto store = StoreCache::GetInstance().GetStore(key.intention);
@@ -354,7 +358,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
-
     UnifiedData data;
     int32_t res = store->Get(query.key, data);
     if (res != E_OK) {
@@ -368,6 +371,10 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     std::shared_ptr<Runtime> runtime = data.GetRuntime();
     if (runtime == nullptr) {
         return E_DB_ERROR;
+    }
+    if (runtime->tokenId != query.tokenId) {
+        ZLOGE("update data failed, query option tokenId not equals data's tokenId");
+        return E_INVALID_PARAMETERS;
     }
     runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
     unifiedData.SetRuntime(*runtime);
@@ -402,9 +409,16 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
         if (runtime == nullptr) {
             return E_DB_ERROR;
         }
-        unifiedDataSet.push_back(data);
-        deleteKeys.push_back(runtime->key.key);
+        if (runtime->tokenId == query.tokenId) {
+            unifiedDataSet.push_back(data);
+            deleteKeys.push_back(runtime->key.key);
+        }
     }
+    if (deleteKeys.empty()) {
+        ZLOGE("Delete nothing. There is no data belonging to this application");
+        return E_OK;
+    }
+    ZLOGI("Delete data start. size: %{public}zu.", deleteKeys.size());
     if (store->DeleteBatch(deleteKeys) != E_OK) {
         ZLOGE("Remove data failed.");
         return E_DB_ERROR;
