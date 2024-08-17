@@ -648,7 +648,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
             std::vector<std::string> tempData = {};
             autoLaunchMetaData.datas.emplace(extUri, tempData);
             autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
-            MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), value, true);
+            MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), autoLaunchMetaData, true);
             ZLOGI("Without launchInfos, save meta end, bundleName = %{public}s.", bundleName.c_str());
             continue;
         }
@@ -657,7 +657,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
             autoLaunchMetaData.datas.emplace(extUri, launchInfo.tableNames);
             autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
             meta.storeId = launchInfo.storeId;
-            MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), value, true);
+            MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), autoLaunchMetaData, true);
         }
     }
 }
