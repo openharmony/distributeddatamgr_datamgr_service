@@ -49,7 +49,6 @@ public:
     Status Close(const AppId &appId, const StoreId &storeId) override;
     Status CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status Sync(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo) override;
-    Status SyncExt(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo) override;
     Status RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifier> notifier) override;
     Status UnregServiceNotifier(const AppId &appId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;

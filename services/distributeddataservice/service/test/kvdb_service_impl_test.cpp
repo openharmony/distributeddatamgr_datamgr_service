@@ -161,12 +161,6 @@ HWTEST_F(KvdbServiceImplTest, KvdbServiceImpl001, TestSize.Level0)
     SyncInfo syncInfo;
     status = kvdbServiceImpl_->CloudSync(appId, id1, syncInfo);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
-    status = kvdbServiceImpl_->SyncExt(appId, id1, syncInfo);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
-    syncInfo.devices = {"device1", "device2"};
-    syncInfo.query = "query";
-    status = kvdbServiceImpl_->SyncExt(appId, id1, syncInfo);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
 
     DistributedKv::StoreConfig storeConfig;
     status = kvdbServiceImpl_->SetConfig(appId, id1, storeConfig);
