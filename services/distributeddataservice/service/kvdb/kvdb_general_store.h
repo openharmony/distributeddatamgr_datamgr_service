@@ -75,11 +75,11 @@ public:
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
     void SetConfig(const StoreConfig &storeConfig) override;
-
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
     static DBSecurity GetDBSecurity(int32_t secLevel);
-    std::shared_ptr<DistributedDB::ICloudDb> GetCloudDB() override;
+    virtual std::pair<GeneralError, uint32_t> LockCloudDB() override;
+    virtual GeneralError UnLockCloudDB() override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;

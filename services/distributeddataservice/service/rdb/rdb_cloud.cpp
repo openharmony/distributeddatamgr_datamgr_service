@@ -115,12 +115,13 @@ DistributedData::GeneralError RdbCloud::PreSharing(const std::string& tableName,
 
 std::pair<DBStatus, uint32_t> RdbCloud::Lock()
 {
-    return InnerLock(FLAG::SYSTEM_ABILITY);
+    auto result = InnerLock(FLAG::SYSTEM_ABILITY);
+    return { ConvertStatus(result.first), result.second };
 }
 
 DBStatus RdbCloud::UnLock()
 {
-    return InnerUnLock(FLAG::SYSTEM_ABILITY);
+    return ConvertStatus(InnerUnLock(FLAG::SYSTEM_ABILITY));
 }
 
 DBStatus RdbCloud::HeartBeat()
@@ -135,34 +136,32 @@ DBStatus RdbCloud::Close()
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
-std::pair<DBStatus, uint32_t> RdbCloud::LockContainer()
-{
-    return InnerLock(FLAG::APPLICATION);
-}
-
-DBStatus RdbCloud::UnLockContainer()
-{
-    return InnerUnLock(FLAG::APPLICATION);
-}
-
-std::pair<DBStatus, uint32_t> RdbCloud::InnerLock(FLAG flag)
+std::pair<GeneralError, uint32_t> RdbCloud::InnerLock(FLAG flag)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     flag_ |= flag;
-    auto error = cloudDB_->Lock();
-    return std::make_pair(  // int64_t <-> uint32_t, s <-> ms
-        ConvertStatus(static_cast<GeneralError>(error)), cloudDB_->AliveTime() * TO_MS);
+    // int64_t <-> uint32_t, s <-> ms
+    return std::make_pair(static_cast<GeneralError>(cloudDB_->Lock()), cloudDB_->AliveTime() * TO_MS);
 }
 
-DBStatus RdbCloud::InnerUnLock(FLAG flag)
+GeneralError RdbCloud::InnerUnLock(FLAG flag)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     flag_ -= flag;
     if (flag_ == 0) {
-        auto error = cloudDB_->Unlock();
-        return ConvertStatus(static_cast<GeneralError>(error));
+        return static_cast<GeneralError>(cloudDB_->Unlock());
     }
-    return ConvertStatus(static_cast<GeneralError>(E_OK));
+    return GeneralError::E_OK;
+}
+
+std::pair<GeneralError, uint32_t> RdbCloud::LockCloudDB(FLAG flag)
+{
+    return InnerLock(flag);
+}
+
+GeneralError RdbCloud::UnLockCloudDB(FLAG flag)
+{
+    return InnerUnLock(flag);
 }
 
 std::pair<DBStatus, std::string> RdbCloud::GetEmptyCursor(const std::string &tableName)
@@ -318,5 +317,10 @@ void RdbCloud::PostEventAsset(DistributedData::Asset& asset, DataBucket& extend,
         }
         it->second->Uploaded(asset);
     }
+}
+
+uint8_t RdbCloud::GetLockFlag() const
+{
+    return flag_;
 }
 } // namespace OHOS::DistributedRdb
