@@ -147,7 +147,7 @@ std::pair<GeneralError, uint32_t> RdbCloud::InnerLock(FLAG flag)
 GeneralError RdbCloud::InnerUnLock(FLAG flag)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
-    flag_ -= flag;
+    flag_ &= ~flag;
     if (flag_ == 0) {
         return static_cast<GeneralError>(cloudDB_->Unlock());
     }
