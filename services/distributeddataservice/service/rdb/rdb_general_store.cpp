@@ -58,6 +58,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
 constexpr const char *VALUES = " VALUES ";
+constexpr const char *LOGOUT_DELETE_FLAG = "DELETE#ALL_CLOUDDATA";
 constexpr const LockAction LOCK_ACTION = static_cast<LockAction>(static_cast<uint32_t>(LockAction::INSERT) |
     static_cast<uint32_t>(LockAction::UPDATE) | static_cast<uint32_t>(LockAction::DELETE) |
     static_cast<uint32_t>(LockAction::DOWNLOAD));
@@ -978,15 +979,15 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             Convert(std::move(*(priData.begin())), value);
-            info.push_back(std::move(value));
             if (notifyFlag || origin != DBOrigin::ORIGIN_CLOUD || i != DistributedDB::OP_DELETE) {
                 continue;
             }
             auto deleteKey = std::get_if<std::string>(&value);
-            if (deleteKey != nullptr && (*deleteKey == "DELETE#ALL_CLOUDDATA")) {
+            if (deleteKey != nullptr && (*deleteKey == LOGOUT_DELETE_FLAG)) {
                 // notify to start app
                 notifyFlag = true;
             }
+            info.push_back(std::move(value));
         }
     }
     if (notifyFlag) {
