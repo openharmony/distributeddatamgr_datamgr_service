@@ -12,7 +12,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#include <string>
 #define LOG_TAG "DataShareDbConfig"
 
 #include "data_share_db_config.h"

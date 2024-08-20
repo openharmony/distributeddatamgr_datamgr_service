@@ -16,7 +16,6 @@
 #ifndef DATASHARESERVICE_RDB_DELEGATE_H
 #define DATASHARESERVICE_RDB_DELEGATE_H
 
-#include <cstdint>
 #include <mutex>
 #include <string>
 

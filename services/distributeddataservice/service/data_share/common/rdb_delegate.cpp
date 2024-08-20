@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "bundle_mgr_proxy.h"
-#include <string>
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
