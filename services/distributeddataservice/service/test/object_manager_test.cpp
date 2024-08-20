@@ -228,7 +228,7 @@ HWTEST_F(ObjectManagerTest, NotifyDataChanged001, TestSize.Level0)
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3); // executor pool
     manager->SetThreadPool(executors);
     ASSERT_EQ(manager->restoreStatus_.Find(objectKey).first, false);
-    manager->NotifyDataChanged(data);
+    manager->NotifyDataChanged(data, {});
     ASSERT_EQ(manager->restoreStatus_.Find(objectKey).second, RestoreStatus::DATA_READY);
 }
 
@@ -366,7 +366,7 @@ HWTEST_F(ObjectManagerTest, ComputeStatus001, TestSize.Level0)
     std::string objectKey="com.example.myapplicaiton123456";
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data{};
     manager->restoreStatus_.Clear();
-    manager->ComputeStatus(objectKey, data);
+    manager->ComputeStatus(objectKey, {}, data);
     auto [has0, value0] = manager->restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has0);
     EXPECT_EQ(value0, RestoreStatus::DATA_READY);
@@ -377,7 +377,7 @@ HWTEST_F(ObjectManagerTest, ComputeStatus001, TestSize.Level0)
     manager->restoreStatus_.Clear();
 
     manager->restoreStatus_.Insert(objectKey, RestoreStatus::ASSETS_READY);
-    manager->ComputeStatus(objectKey, data);
+    manager->ComputeStatus(objectKey, {}, data);
     auto [has2, value2] = manager->restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has2);
     EXPECT_EQ(value2, RestoreStatus::ALL_READY);
