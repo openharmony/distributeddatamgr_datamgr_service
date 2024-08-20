@@ -105,7 +105,7 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
 
 void RdbDelegate::TryAndSend(int errCode)
 {
-    if (errCode != E_SQLITE_CORRUPT || haMode == 0) {
+    if (errCode != E_SQLITE_CORRUPT || haMode == HAMode::SINGLE) {
         return;
     }
     ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s.",
