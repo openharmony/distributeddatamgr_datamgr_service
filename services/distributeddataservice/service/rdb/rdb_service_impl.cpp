@@ -748,6 +748,7 @@ void RdbServiceImpl::SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &par
     param.isEncrypt_ = metadata.isEncrypt;
     param.isAutoClean_ = !metadata.isManualClean;
     param.isSearchable_ = metadata.isSearchable;
+    param.haMode_ = metadata.haMode;
 }
 
 int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
@@ -842,6 +843,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.isEncrypt = param.isEncrypt_;
     metaData.isManualClean = !param.isAutoClean_;
     metaData.isSearchable = param.isSearchable_;
+    metaData.haMode = param.haMode_;
     return metaData;
 }
 
