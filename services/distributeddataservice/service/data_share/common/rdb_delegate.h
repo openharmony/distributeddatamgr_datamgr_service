@@ -61,11 +61,10 @@ private:
     int errCode_ = E_OK;
     static constexpr int RETRY = 3;
     uint32_t tokenId_;
-    std::string bundleName;
-    std::string storeName;
-    int32_t userId;
-    int32_t haMode;
-    std::string extUri;
+    std::string bundleName_;
+    std::string storeName_;
+    int32_t haMode_;
+    std::string extUri_;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:

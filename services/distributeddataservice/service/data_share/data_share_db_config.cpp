@@ -62,11 +62,11 @@ std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(co
 }
 
 std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbConfig::GetDbConfig(
-    const std::pair<std::string, std::string> &uri_pair, bool hasExtension, const std::string &bundleName,
+    const std::pair<std::string, std::string> &uriPair, bool hasExtension, const std::string &bundleName,
     const std::string &storeName, int32_t userId)
 {
-    auto uri = uri_pair.first;
-    auto extUri = uri_pair.second;
+    auto uri = uriPair.first;
+    auto extUri = uriPair.second;
     auto [errCode, metaData] = GetMetaData(uri, bundleName, storeName, userId, hasExtension);
     if (errCode != E_OK) {
         ZLOGE("DB not exist,bundleName:%{public}s,storeName:%{public}s,user:%{public}d,err:%{public}d,uri:%{public}s",
