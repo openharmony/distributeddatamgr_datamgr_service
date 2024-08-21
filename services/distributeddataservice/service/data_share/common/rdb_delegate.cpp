@@ -95,7 +95,7 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
     RdbStoreConfig config = GetConfig(meta, registerFunction);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
-    ZLOGE("MagicLog RdbDelegate: %{public}s .haMode:%{public}d", bundleName_.c_str(), haMode_);
+    ZLOGE("MagicLog RdbDelegate: %{public}s .haMode:%{public}d. errcode:%{public}d", bundleName_.c_str(), haMode_, errCode_);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
@@ -105,8 +105,8 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
 
 void RdbDelegate::TryAndSend(int errCode)
 {
-    ZLOGE("haMode: %{public}d. BundleName: %{public}s. StoreName: %{public}s.", haMode_,
-        bundleName_.c_str(), storeName_.c_str());
+    ZLOGE("haMode: %{public}d. BundleName: %{public}s. StoreName: %{public}s.errcode: %{public}d", haMode_,
+        bundleName_.c_str(), storeName_.c_str(), errCode);
     if (errCode != E_SQLITE_CORRUPT || haMode_ == HAMode::SINGLE) {
         return;
     }

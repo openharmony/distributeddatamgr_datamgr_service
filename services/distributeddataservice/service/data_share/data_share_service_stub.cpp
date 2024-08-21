@@ -42,12 +42,12 @@ int32_t DataShareServiceStub::OnInsert(MessageParcel &data, MessageParcel &reply
 {
     std::string uri;
     DataShareValuesBucket bucket;
-    ZLOGE("MagicLog OnInsert;uri:%{public}s", uri.c_str());
     if (!ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
         ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             bucket.valuesMap.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    ZLOGE("MagicLog OnInsert;uri:%{public}s", uri.c_str());
     int32_t status = Insert(uri, bucket);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
