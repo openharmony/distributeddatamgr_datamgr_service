@@ -68,7 +68,7 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
     auto objectKey = assetObj->dstBundleName_+assetObj->sessionId_;
     ZLOGI("OnFinished, status:%{public}d objectKey:%{public}s, asset size:%{public}zu", result, objectKey.c_str(),
         assetObj->uris_.size());
-    ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, srcNetworkId);
+    ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, assetObj->dstBundleName_, srcNetworkId);
     return OBJECT_SUCCESS;
 }
 }  // namespace DistributedObject
