@@ -192,7 +192,7 @@ std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
     int64_t rowId = 0;
     ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
     int ret = store_->Insert(rowId, tableName, bucket);
-    ZLOGE("MagicLog InsertEx.bundle:%{public}s", bundleName_.c_str());
+    ZLOGE("MagicLog RdbDelegate InsertEx.bundle:%{public}s. errcode: %{public}d", bundleName_.c_str(), ret);
     if (ret != E_OK) {
         ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
