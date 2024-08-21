@@ -31,7 +31,8 @@ namespace OHOS::DataShare {
 using namespace OHOS::NativeRdb;
 class RdbDelegate final : public DBDelegate {
 public:
-    explicit RdbDelegate(const DistributedData::StoreMetaData &meta, int version, bool registerFunction);
+    explicit RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
+        bool registerFunction, const std::string &extUri);
     int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) override;
     int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) override;
@@ -50,6 +51,7 @@ public:
     bool IsInvalid() override;
 
 private:
+    void TryAndSend(int errCode);
     RdbStoreConfig GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
     bool IsLimit(int count);
     static std::atomic<int32_t> resultSetCount;
@@ -59,6 +61,10 @@ private:
     int errCode_ = E_OK;
     static constexpr int RETRY = 3;
     uint32_t tokenId_;
+    std::string bundleName_;
+    std::string storeName_;
+    int32_t haMode_;
+    std::string extUri_;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:

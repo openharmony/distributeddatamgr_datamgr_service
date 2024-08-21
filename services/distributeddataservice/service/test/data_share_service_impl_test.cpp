@@ -109,19 +109,19 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
     DataShare::DataShareValuesBucket valuesBucket;
     std::string name0 = "";
     valuesBucket.Put("", name0);
-    auto [errCode, result] = dataShareServiceImpl.InsertEx(uri, valuesBucket);
+    auto [errCode, result] = dataShareServiceImpl.InsertEx(uri, "", valuesBucket);
     EXPECT_EQ((errCode != 0), true);
 
     DataShare::DataSharePredicates predicates;
     std::string selections = "";
     predicates.SetWhereClause(selections);
-    auto [errCode1, result1] = dataShareServiceImpl.UpdateEx(uri, predicates, valuesBucket);
+    auto [errCode1, result1] = dataShareServiceImpl.UpdateEx(uri, "", predicates, valuesBucket);
     EXPECT_EQ((errCode1 != 0), true);
 
     predicates.EqualTo("", "");
     std::vector<std::string> columns;
     int errVal = 0;
-    auto resQuery = dataShareServiceImpl.Query(uri, predicates, columns, errVal);
+    auto resQuery = dataShareServiceImpl.Query(uri, "", predicates, columns, errVal);
     int resultSet = 0;
     if (resQuery != nullptr) {
         resQuery->GetRowCount(resultSet);
@@ -129,7 +129,7 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
     EXPECT_EQ(resultSet, 0);
 
     predicates.SetWhereClause(selections);
-    auto [errCode2, result2] = dataShareServiceImpl.DeleteEx(uri, predicates);
+    auto [errCode2, result2] = dataShareServiceImpl.DeleteEx(uri, "", predicates);
     EXPECT_EQ((errCode2 != 0), true);
 }
 
@@ -162,7 +162,7 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl002, TestSize.Level1)
     predicates.EqualTo("", "");
     std::vector<std::string> columns;
     int errCode = 0;
-    auto resQuery = dataShareServiceImpl.Query(uri, predicates, columns, errCode);
+    auto resQuery = dataShareServiceImpl.Query(uri, "", predicates, columns, errCode);
     int resultSet = 0;
     if (resQuery != nullptr) {
         resQuery->GetRowCount(resultSet);

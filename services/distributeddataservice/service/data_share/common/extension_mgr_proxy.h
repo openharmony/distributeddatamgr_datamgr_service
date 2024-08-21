@@ -20,6 +20,7 @@
 #include <string>
 
 #include "extension_manager_proxy.h"
+#include "want.h"
 namespace OHOS::DataShare {
 class ExtensionMgrProxy final : public std::enable_shared_from_this<ExtensionMgrProxy> {
 public:
@@ -27,7 +28,8 @@ public:
     ExtensionMgrProxy() = default;
     ~ExtensionMgrProxy();
     static std::shared_ptr<ExtensionMgrProxy> GetInstance();
-    int Connect(const std::string &uri, const sptr<IRemoteObject> &connect, const sptr<IRemoteObject> &callerToken);
+    int Connect(const std::string &uri, const sptr<IRemoteObject> &connect,
+        const sptr<IRemoteObject> &callerToken, AAFwk::WantParams &wantParams);
     int DisConnect(sptr<IRemoteObject> connect);
 private:
     using Proxy = AAFwk::ExtensionManagerProxy;
