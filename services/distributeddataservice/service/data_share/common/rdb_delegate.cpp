@@ -95,7 +95,6 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
     RdbStoreConfig config = GetConfig(meta, registerFunction);
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
-    ZLOGE("MagicLog RdbDelegate: %{public}s .haMode:%{public}d. errcode:%{public}d", bundleName_.c_str(), haMode_, errCode_);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
@@ -122,7 +121,6 @@ void RdbDelegate::TryAndSend(int errCode)
 
 int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket)
 {
-    ZLOGE("MagicLog RdbDelegate::Insert");
     if (store_ == nullptr) {
         ZLOGE("store is null");
         return 0;
@@ -130,7 +128,6 @@ int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesB
     int64_t rowId = 0;
     ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
     int ret = store_->Insert(rowId, tableName, bucket);
-    ZLOGE("MagicLog Insert.bundle:%{public}s", bundleName_.c_str());
     if (ret != E_OK) {
         ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
@@ -192,7 +189,6 @@ std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
     int64_t rowId = 0;
     ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
     int ret = store_->Insert(rowId, tableName, bucket);
-    ZLOGE("MagicLog RdbDelegate InsertEx.bundle:%{public}s. errcode: %{public}d", bundleName_.c_str(), ret);
     if (ret != E_OK) {
         ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
