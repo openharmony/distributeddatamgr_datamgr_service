@@ -47,7 +47,6 @@ int32_t DataShareServiceStub::OnInsert(MessageParcel &data, MessageParcel &reply
             bucket.valuesMap.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    ZLOGE("MagicLog OnInsert;uri:%{public}s", uri.c_str());
     int32_t status = Insert(uri, bucket);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
@@ -95,7 +94,6 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
     std::string uri;
     std::string extUri;
     DataShareValuesBucket bucket;
-    ZLOGE("MagicLog OnInsertEx;uri:%{public}s", uri.c_str());
     if (!ITypesUtil::Unmarshal(data, uri, extUri, bucket.valuesMap)) {
         ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             bucket.valuesMap.size());
@@ -378,7 +376,6 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
 
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
-    ZLOGE("MagicLog OnRemoteRequest");
     int tryTimes = TRY_TIMES;
     while (!isReady_.load() && tryTimes > 0) {
         tryTimes--;

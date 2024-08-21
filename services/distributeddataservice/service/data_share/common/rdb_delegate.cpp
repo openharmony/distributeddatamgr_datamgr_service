@@ -267,11 +267,11 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     if (resultSet == nullptr) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::QUERY_RDB_ERROR);
+        ZLOGE("Query failed %{public}s, pid: %{public}d", tableName.c_str(), callingPid);
         resultSetCount--;
         return std::make_pair(E_ERROR, nullptr);
     }
-    int rowCount;
-    int err = resultSet->GetRowCount(rowCount);
+    int err = resultSet->GetRowCount(count);
     RdbDelegate::TryAndSend(err);
     if (err == E_SQLITE_ERROR) {
         ZLOGE("query failed, err:%{public}d, pid:%{public}d", E_SQLITE_ERROR, callingPid);
