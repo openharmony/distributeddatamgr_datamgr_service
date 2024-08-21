@@ -99,6 +99,7 @@ DataShareServiceImpl::Factory::~Factory() {}
 int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("Insert enter.");
+    ZLOGE("MagicLog DataShareServiceImpl::Insert");
     XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
         HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
@@ -121,6 +122,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
     const DataShareValuesBucket &valuesBucket)
 {
     ZLOGD("InsertEx enter.");
+    ZLOGE("MagicLog DataShareServiceImpl::InsertEx");
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());

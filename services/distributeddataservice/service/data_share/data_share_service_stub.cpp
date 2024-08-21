@@ -42,6 +42,7 @@ int32_t DataShareServiceStub::OnInsert(MessageParcel &data, MessageParcel &reply
 {
     std::string uri;
     DataShareValuesBucket bucket;
+    ZLOGE("MagicLog OnInsert;uri:%{public}s", uri.c_str());
     if (!ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
         ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             bucket.valuesMap.size());
@@ -60,7 +61,7 @@ int32_t DataShareServiceStub::OnUpdate(MessageParcel &data, MessageParcel &reply
     std::string uri;
     DataSharePredicates predicate;
     DataShareValuesBucket bucket;
-    if (!ITypesUtil::Unmarshal(data, predicate, bucket.valuesMap)) {
+    if (!ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
         ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             bucket.valuesMap.size());
         return IPC_STUB_INVALID_DATA_ERR;
@@ -94,6 +95,7 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
     std::string uri;
     std::string extUri;
     DataShareValuesBucket bucket;
+    ZLOGE("MagicLog OnInsertEx;uri:%{public}s", uri.c_str());
     if (!ITypesUtil::Unmarshal(data, uri, extUri, bucket.valuesMap)) {
         ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
             bucket.valuesMap.size());
@@ -376,6 +378,7 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
 
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
+    ZLOGE("MagicLog OnRemoteRequest");
     int tryTimes = TRY_TIMES;
     while (!isReady_.load() && tryTimes > 0) {
         tryTimes--;
