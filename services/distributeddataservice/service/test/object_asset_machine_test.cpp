@@ -218,17 +218,33 @@ HWTEST_F(ObjectAssetMachineTest, StatusDownload001, TestSize.Level0)
 {
     auto machine = std::make_shared<ObjectAssetMachine>();
     Asset asset{
-        .name = "test_name",
-        .uri = uri_,
-        .modifyTime = "modifyTime1",
-        .size = "size1",
-        .hash = "modifyTime1_size1",
+        .name = "name_006",
+        .uri = "uri_006",
+        .modifyTime = "modifyTime_006",
+        .size = "size_006",
+        .hash = "modifyTime_006_size_006",
     };
-    std::pair<std::string, Asset> changedAsset{ "device_1", asset };
-    machine->DFAPostEvent(DOWNLOAD, changedAssets_[uri_], asset, changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_DOWNLOADING);
+    AssetBindInfo AssetBindInfo{
+        .storeName = "store_006",
+        .tableName = "table_006",
+        .primaryKey = {{ "006", "006" }},
+        .field = "attachment_006",
+        .assetName = "asset_006.jpg",
+    };
+    StoreInfo storeInfo {
+        .tokenId = 600,
+        .bundleName = "bundleName_006",
+        .storeName = "store_006",
+        .instanceId = 600,
+        .user = 600,
+    };
+    ChangedAssetInfo changedAssetInfo(asset, AssetBindInfo, storeInfo);
+    std::pair<std::string, Asset> changedAsset{ "device_006", asset };
 
-    machine->DFAPostEvent(DOWNLOAD_FINISHED, changedAssets_[uri_], asset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+    machine->DFAPostEvent(DOWNLOAD, changedAssetInfo, asset, changedAsset);
+    ASSERT_EQ(changedAssetInfo.status, STATUS_DOWNLOADING);
+
+    machine->DFAPostEvent(DOWNLOAD_FINISHED, changedAssetInfo, asset);
+    ASSERT_EQ(changedAssetInfo.status, STATUS_STABLE);
 }
 } // namespace OHOS::Test

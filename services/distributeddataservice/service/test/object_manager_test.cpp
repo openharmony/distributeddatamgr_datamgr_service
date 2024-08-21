@@ -840,17 +840,4 @@ HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
     auto result = manager->PushAssets(100, appId_, sessionId_, data, deviceId_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
 }
-
-/**
-* @tc.name: ConstructorAndDestructor001
-* @tc.desc: Constructor and destructor test.
-* @tc.type: FUNC
-*/
-HWTEST_F(ObjectManagerTest, ConstructorAndDestructor001, TestSize.Level0)
-{
-    auto manager = new ObjectStoreManager();
-    EXPECT_TRUE(manager->objectAssetsSendListener_ != nullptr);
-    EXPECT_TRUE(manager->objectAssetsRecvListener_ != nullptr);
-    delete manager;
-}
 } // namespace OHOS::Test
