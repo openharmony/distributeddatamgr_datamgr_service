@@ -20,6 +20,7 @@
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "extension_connect_adaptor.h"
+#include "int_wrapper.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/secret_key_meta_data.h"
@@ -104,18 +105,15 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
 
 void RdbDelegate::TryAndSend(int errCode)
 {
-    ZLOGE("haMode: %{public}d. BundleName: %{public}s. StoreName: %{public}s.errcode: %{public}d", haMode_,
-        bundleName_.c_str(), storeName_.c_str(), errCode);
     if (errCode != E_SQLITE_CORRUPT || haMode_ == HAMode::SINGLE) {
         return;
     }
-    ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s.",
-        bundleName_.c_str(), storeName_.c_str());
-    ZLOGE("TryAndSend extUri is %{public}s.", extUri_.c_str());
+    ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s. ExtUri: %{public}s",
+        bundleName_.c_str(), storeName_.c_str(), DistributedData::Anonymous::Change(extUri_).c_str());
     AAFwk::WantParams params;
     params.SetParam("BundleName", AAFwk::String::Box(bundleName_));
     params.SetParam("StoreName", AAFwk::String::Box(storeName_));
-    params.SetParam("StoreStatus", AAFwk::String::Box("Master Database corruption"));
+    params.SetParam("StoreStatus", AAFwk::Integer::Box(1));
     ExtensionConnectAdaptor::TryAndWait(extUri_, bundleName_, params);
 }
 
