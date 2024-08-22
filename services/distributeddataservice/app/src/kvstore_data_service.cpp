@@ -280,6 +280,7 @@ void KvStoreDataService::OnStart()
     Bootstrap::GetInstance().LoadNetworks();
     Bootstrap::GetInstance().LoadBackup(executors_);
     Bootstrap::GetInstance().LoadCloud();
+    Bootstrap::GetInstance().LoadPkgWhiteList();
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {

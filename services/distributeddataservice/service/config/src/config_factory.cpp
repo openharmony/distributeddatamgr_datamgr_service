@@ -82,5 +82,10 @@ CloudConfig *ConfigFactory::GetCloudConfig()
 {
     return config_.cloud;
 }
+
+WhiteListConfig *ConfigFactory::GetWhiteListConfig()
+{
+    return config_.whitelist;
+}
 } // namespace DistributedData
 } // namespace OHOS

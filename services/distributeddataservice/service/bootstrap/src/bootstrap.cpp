@@ -24,6 +24,7 @@
 #include "config_factory.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
+#include "whitelist/whitelist_config_manager.h"
 namespace OHOS {
 namespace DistributedData {
 Bootstrap &Bootstrap::GetInstance()
@@ -166,6 +167,19 @@ void Bootstrap::LoadCloud()
         infos.push_back({ info.localBundle, info.cloudBundle });
     }
     CloudConfigManager::GetInstance().Initialize(infos);
+}
+
+void Bootstrap::LoadPkgWhiteList()
+{
+    auto *config = ConfigFactory::GetInstance().GetWhiteListConfig();
+    if (config == nullptr) {
+        return;
+    }
+    std::vector<WhiteListConfigManager::BundleInfo> infos;
+    for (auto &info : config->mapper) {
+        infos.push_back({ info.srcAppId, info.dstAppId });
+    }
+    WhiteListConfigManager::GetInstance().Initialize(infos);
 }
 } // namespace DistributedData
 } // namespace OHOS

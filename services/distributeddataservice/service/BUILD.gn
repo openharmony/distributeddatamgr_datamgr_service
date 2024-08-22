@@ -88,6 +88,7 @@ ohos_shared_library("distributeddatasvc") {
     "config/src/model/global_config.cpp",
     "config/src/model/network_config.cpp",
     "config/src/model/protocol_config.cpp",
+    "config/src/model/whitelist_config.cpp",
     "crypto/src/crypto_manager.cpp",
     "dumper/src/dump_helper.cpp",
     "kvdb/auth_delegate.cpp",

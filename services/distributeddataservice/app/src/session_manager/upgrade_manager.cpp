@@ -23,6 +23,7 @@
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
+#include "whitelist/whitelist_config_manager.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -119,16 +120,18 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
     GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
     if (!sameAccountDevs.empty()) {
+        auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(tuple.appId, tuple.userId);
         auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(tuple.userId, tuple.appId, tuple.storeId);
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, tuple.storeId);
         ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(tuple.userId).c_str(),
+            Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(trueDualTuple.second).c_str(),
             DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
         storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
+        auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(tuple.appId, defaultAccountId);
         auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(defaultAccountId, tuple.appId, tuple.storeId);
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, tuple.storeId);
         ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
             Anonymous::Change(tuple.storeId).c_str(),
             DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
