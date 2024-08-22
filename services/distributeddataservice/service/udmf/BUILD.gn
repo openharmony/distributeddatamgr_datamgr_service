@@ -85,6 +85,7 @@ ohos_shared_library("udmf_server") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
   cflags_cc = [ "-fvisibility=hidden" ]
   subsystem_name = "distributeddatamgr"
