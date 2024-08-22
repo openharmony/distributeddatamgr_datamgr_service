@@ -116,8 +116,13 @@ HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync002, TestSize.Level0)
 HWTEST_F(ObjectAssetLoaderTest, FinishTask001, TestSize.Level0)
 {
     auto assetLoader = ObjectAssetLoader::GetInstance();
-    assetLoader->FinishTask(asset_.uri, false);
+    ASSERT_NE(assetLoader, nullptr);
+    TransferTask task;
+    task.downloadAssets.insert(uri_);
     assetLoader->FinishTask(asset_.uri, true);
+    ASSERT_TRUE(assetLoader->tasks_.Empty());
+    assetLoader->FinishTask(asset_.uri, false);
+    ASSERT_TRUE(assetLoader->tasks_.Empty());
 }
 
 /**
@@ -165,11 +170,38 @@ HWTEST_F(ObjectAssetLoaderTest, IsDownloaded001, TestSize.Level0)
 HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded001, TestSize.Level0)
 {
     auto assetLoader = ObjectAssetLoader::GetInstance();
+    ASSERT_NE(assetLoader, nullptr);
+    while (!assetLoader->assetQueue_.empty()) {
+        assetLoader->assetQueue_.pop();
+    }
     assetLoader->UpdateDownloaded(asset_);
-    assetLoader->UpdateDownloaded(asset_);
+    auto [success, hash] = assetLoader->downloaded_.Find(asset_.uri);
+    ASSERT_TRUE(success);
+    EXPECT_EQ(hash, asset_.hash);
+}
+
+/**
+* @tc.name: UpdateDownloaded002
+* @tc.desc: UpdateDownloaded test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: wangbin
+*/
+HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded002, TestSize.Level0)
+{
+    auto assetLoader = ObjectAssetLoader::GetInstance();
+    ASSERT_NE(assetLoader, nullptr);
+    while (!assetLoader->assetQueue_.empty()) {
+        assetLoader->assetQueue_.pop();
+    }
     for (int i = 0; i <= assetLoader->LAST_DOWNLOAD_ASSET_SIZE; i++) {
         assetLoader->assetQueue_.push(asset_.uri);
     }
     assetLoader->UpdateDownloaded(asset_);
+    EXPECT_NE(assetLoader->assetQueue_.size(), ObjectAssetLoader::LAST_DOWNLOAD_ASSET_SIZE);
+    EXPECT_EQ(assetLoader->assetQueue_.size(), ObjectAssetLoader::LAST_DOWNLOAD_ASSET_SIZE + 1);
+    auto [success, hash] = assetLoader->downloaded_.Find(asset_.uri);
+    EXPECT_EQ(success, false);
+    EXPECT_EQ(hash, "");
 }
 } // namespace OHOS::Test
