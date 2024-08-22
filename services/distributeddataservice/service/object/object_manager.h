@@ -97,7 +97,8 @@ public:
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
     void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
-    void NotifyAssetsReady(const std::string& objectKey, const std::string& srcNetworkId = "");
+    void NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
+        const std::string& srcNetworkId = "");
     void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");
     void CloseAfterMinute();
     int32_t Open();

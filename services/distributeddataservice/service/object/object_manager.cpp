@@ -418,7 +418,7 @@ void ObjectStoreManager::NotifyChange(std::map<std::string, std::vector<uint8_t>
     auto data = GetObjectData(changedData, saveInfo, hasAsset);
     if (!hasAsset) {
         RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS,
-            ObjectStore::BIZ_STATE, ObjectStore::START);
+            ObjectStore::BIZ_STATE, ObjectStore::START, ObjectStore::APP_CALLER, saveInfo.bundleName);
         callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
             DoNotify(tokenId, value, data, true); // no asset, data ready means all ready
             return false;
@@ -483,7 +483,7 @@ void ObjectStoreManager::ComputeStatus(const std::string& objectKey, const SaveI
         } else {
             value = RestoreStatus::DATA_READY;
             RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS,
-                ObjectStore::BIZ_STATE, ObjectStore::START);
+                ObjectStore::BIZ_STATE, ObjectStore::START, ObjectStore::APP_CALLER, saveInfo.bundleName);
             callbacks_.ForEach([this, &data](uint32_t tokenId, const CallbackInfo& value) {
                 DoNotify(tokenId, value, data, false);
                 return false;
@@ -542,13 +542,14 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, std::map<std::st
     }
 }
 
-void ObjectStoreManager::NotifyAssetsReady(const std::string& objectKey, const std::string& srcNetworkId)
+void ObjectStoreManager::NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
+    const std::string& srcNetworkId)
 {
     restoreStatus_.ComputeIfAbsent(
         objectKey, [](const std::string& key) -> auto {
         return RestoreStatus::NONE;
     });
-    restoreStatus_.Compute(objectKey, [this] (const auto &key, auto &value) {
+    restoreStatus_.Compute(objectKey, [this, &bundleName] (const auto &key, auto &value) {
         if (value == RestoreStatus::DATA_NOTIFIED) {
             value = RestoreStatus::ALL_READY;
             RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_SUCCESS);
@@ -567,7 +568,7 @@ void ObjectStoreManager::NotifyAssetsReady(const std::string& objectKey, const s
         } else {
             value = RestoreStatus::ASSETS_READY;
             RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_SUCCESS,
-                ObjectStore::BIZ_STATE, ObjectStore::START);
+                ObjectStore::BIZ_STATE, ObjectStore::START, ObjectStore::APP_CALLER, bundleName);
         }
         return true;
     });
