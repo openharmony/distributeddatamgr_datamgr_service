@@ -99,6 +99,7 @@ ohos_fuzztest("CustomUtdInstallerFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 }
 
