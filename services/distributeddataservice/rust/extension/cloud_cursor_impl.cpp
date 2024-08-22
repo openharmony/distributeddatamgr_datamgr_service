@@ -271,6 +271,7 @@ int32_t CloudCursorImpl::Get(const std::string &col, DBValue &value)
     auto it = std::find(names_.begin(), names_.end(), col);
     if (it == names_.end()) {
         value = GetExtend(vBucket, EXTEND_TO_KEYS[col]);
+        OhCloudExtValueBucketFree(vBucket);
         return DBErr::E_OK;
     }
     auto pair = GetData(vBucket);
