@@ -191,7 +191,7 @@ HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded002, TestSize.Level0)
 {
     auto assetLoader = ObjectAssetLoader::GetInstance();
     ASSERT_NE(assetLoader, nullptr);
-    while(!assetLoader->assetQueue_.empty()) {
+    while (!assetLoader->assetQueue_.empty()) {
         assetLoader->assetQueue_.pop();
     }
     for (int i = 0; i <= assetLoader->LAST_DOWNLOAD_ASSET_SIZE; i++) {
