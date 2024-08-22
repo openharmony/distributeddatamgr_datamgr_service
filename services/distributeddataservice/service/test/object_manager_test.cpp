@@ -21,6 +21,7 @@
 #include "executor_pool.h"
 #include "object_types.h"
 #include "kv_store_nb_delegate_mock.h"
+#include <ipc_skeleton.h>
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
@@ -839,5 +840,54 @@ HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
     data.insert({assetPrefix, completes});
     auto result = manager->PushAssets(100, appId_, sessionId_, data, deviceId_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: AddNotifier001
+* @tc.desc: AddNotifie and DeleteNotifier test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, AddNotifier001, TestSize.Level0)
+{
+    auto syncManager = SequenceSyncManager::GetInstance();
+    std::function<void(const std::map<std::string, int32_t> &results)> func;
+    func = [](const std::map<std::string, int32_t> &results) {
+        return results;
+    };
+    auto sequenceId_ = syncManager->AddNotifier(userId_, func);
+    auto result = syncManager->DeleteNotifier(sequenceId_, userId_);
+    ASSERT_EQ(result, SequenceSyncManager::SUCCESS_USER_HAS_FINISHED);
+}
+
+/**
+* @tc.name: AddNotifier002
+* @tc.desc: AddNotifie and DeleteNotifier test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, AddNotifier002, TestSize.Level0)
+{
+    auto syncManager = SequenceSyncManager::GetInstance();
+    std::function<void(const std::map<std::string, int32_t> &results)> func;
+    func = [](const std::map<std::string, int32_t> &results) {
+        return results;
+    };
+    auto sequenceId = syncManager->AddNotifier(userId_, func);
+    ASSERT_NE(sequenceId, sequenceId_);
+    auto result = syncManager->DeleteNotifier(sequenceId_, userId_);
+    ASSERT_EQ(result, SequenceSyncManager::ERR_SID_NOT_EXIST);
+}
+
+/**
+* @tc.name: BindAsset 001
+* @tc.desc: BindAsset test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, BindAsset001, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "BindAsset";
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    auto result = manager->BindAsset(tokenId, bundleName, sessionId_, assetValue_, assetBindInfo_);
+    ASSERT_EQ(result, DistributedObject::OBJECT_DBSTATUS_ERROR);
 }
 } // namespace OHOS::Test
