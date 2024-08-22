@@ -21,6 +21,7 @@
 #include "executor_pool.h"
 #include "object_types.h"
 #include "kv_store_nb_delegate_mock.h"
+#include <ipc_skeleton.h>
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
