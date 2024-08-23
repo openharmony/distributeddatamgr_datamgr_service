@@ -170,37 +170,8 @@ private:
     std::atomic<uint32_t> syncTaskId_ = 0;
     std::shared_mutex asyncMutex_ {};
     mutable std::shared_mutex rdbCloudMutex_;
-
-    struct SyncTask {
-    public:
-        SyncTask(uint64_t id, DBProcessCB cb);
-        bool operator<(const Time &time) const;
-        bool operator<(const SyncTask &task) const;
-        uint64_t GetId() const;
-        DBProcessCB GetCB() const;
-
-    private:
-        uint64_t id_ = 0;
-        DBProcessCB cb_;
-        Time time_;
-    };
-
-    class SyncTaskManger {
-    public:
-        void Bind(std::shared_ptr<Executor> executor, std::function<bool(uint64_t)> isFinished);
-        void AddSyncId(uint64_t syncId, DBProcessCB cb);
-        bool RemoveSyncId(uint64_t syncId);
-        bool Contain(uint64_t syncId);
-
-    private:
-        void GarbageCollect(bool isForce = false);
-        std::function<bool(uint64_t)> isFinished_;
-        TaskId taskId_ = Executor::INVALID_TASK_ID;
-        std::shared_ptr<Executor> executor_ = nullptr;
-        std::mutex syncQueueMutex_;
-        std::list<SyncTask> syncTasks_;
-    };
-    const std::shared_ptr<SyncTaskManger> taskManger_;
+    std::shared_ptr<Executor> executor_ = nullptr;
+    std::shared_ptr<ConcurrentMap<uint64_t, TaskId>> tasks_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

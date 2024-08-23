@@ -87,7 +87,7 @@ static DBSchema GetDBSchema(const Database &database)
 }
 
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
-    : manager_(meta.appId, meta.user, meta.instanceId), taskManger_(std::make_shared<SyncTaskManger>())
+    : manager_(meta.appId, meta.user, meta.instanceId), tasks_(std::make_shared<ConcurrentMap<uint64_t, TaskId>>())
 {
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
@@ -506,8 +506,17 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
         dbStatus =
             delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
                                 syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION }, callback);
-        if (dbStatus == DistributedDB::OK && taskManger_ != nullptr) {
-            taskManger_->AddSyncId(syncId, callback);
+        if (tasks_ != nullptr) {
+            auto id = executor_->Schedule(
+                [this, syncId, callback]() {
+                    if (!IsFinished(syncId)) {
+                        return;
+                    }
+                    executor_->Remove(syncId);
+                    //callback
+                },
+                std::chrono::minutes(INTERVAL), std::chrono::minutes(INTERVAL));
+            tasks_->Insert(syncId, id);
         }
     }
     auto status = ConvertStatus(dbStatus);
@@ -684,7 +693,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
 {
     std::shared_lock<std::shared_mutex> lock(asyncMutex_);
     return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode, syncId,
-        rdbCloud = GetRdbCloud(), taskManager = taskManger_](const std::map<std::string, SyncProcess> &processes) {
+        rdbCloud = GetRdbCloud(), tasks = tasks_](const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             bool isDownload = false;
@@ -712,14 +721,14 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 totalCount += table.download.total;
             }
             if (process.process == FINISHED) {
-                if (taskManager != nullptr && !taskManager->RemoveSyncId(syncId)) {
+                if (tasks != nullptr && tasks->Erase(syncId) == 0) {
                     ZLOGW("store:%{public}s, syncId:%{public}" PRIu64 " has been removed",
                         Anonymous::Change(storeInfo.storeName).c_str(), syncId);
                     return;
                 }
                 RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode, syncId);
             } else {
-                if (taskManager != nullptr && !taskManager->Contain(syncId)) {
+                if (tasks != nullptr && !tasks->Contains(syncId)) {
                     ZLOGW("store:%{public}s, syncId:%{public}" PRIu64 " has been removed",
                         Anonymous::Change(storeInfo.storeName).c_str(), syncId);
                     return;
@@ -1151,7 +1160,8 @@ bool RdbGeneralStore::IsFinished(uint64_t syncId) const
         ZLOGE("database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
         return true;
     }
-    return delegate_->GetSyncTaskStatus().isFinished;
+	return false;
+    // return delegate_->GetSyncTaskStatus().isFinished;
 }
 
 RdbGeneralStore::SyncTask::SyncTask(uint64_t id, DBProcessCB cb) : id_(id), cb_(cb)
