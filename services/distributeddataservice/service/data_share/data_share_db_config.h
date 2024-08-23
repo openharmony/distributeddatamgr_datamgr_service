@@ -28,9 +28,16 @@
 namespace OHOS::DataShare {
 class DataShareDbConfig {
 public:
-    std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(
-        const std::pair<std::string, std::string> &uri, bool hasExtension, const std::string &bundleName,
-        const std::string &storeName, int32_t userId);
+    struct DbConfig {
+        std::string uri;
+        std::string extUri;
+        std::string bundleName;
+        std::string storeName;
+        std::string backup;
+        int32_t userId;
+        bool hasExtension;
+    };
+    std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(DbConfig &dbConfig);
     std::pair<int, DistributedData::StoreMetaData> GetMetaData(const std::string &uri,
         const std::string &bundleName, const std::string &storeName, int32_t userId, bool hasExtension);
 private:

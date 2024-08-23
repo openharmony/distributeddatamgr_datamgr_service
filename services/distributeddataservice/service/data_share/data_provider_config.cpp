@@ -110,6 +110,8 @@ int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
     providerInfo_.tableName = profileInfo.tableName;
     providerInfo_.type = profileInfo.type;
     providerInfo_.storeMetaDataFromUri = profileInfo.storeMetaDataFromUri;
+    providerInfo_.backup = profileInfo.backup;
+    providerInfo_.extensionUri = profileInfo.extUri;
     if (profileInfo.tableConfig.empty()) {
         return E_OK;
     }

@@ -972,9 +972,14 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string 
         return ERROR_PERMISSION_DENIED;
     }
     DataShareDbConfig dbConfig;
-    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(std::make_pair(providerInfo.uri, extUri),
-        providerInfo.hasExtension, providerInfo.bundleName, providerInfo.storeName,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId);
+    std::string extensionUri = extUri;
+    if (extensionUri.empty()) {
+        extensionUri = providerInfo.extensionUri;
+    }
+    DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
+        providerInfo.storeName, providerInfo.backup,
+        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             providerInfo.bundleName.c_str(), providerInfo.tableName.c_str(), tokenId,
@@ -1005,9 +1010,14 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
     DataShareDbConfig dbConfig;
-    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(std::make_pair(providerInfo.uri, extUri),
-        providerInfo.hasExtension, providerInfo.bundleName, providerInfo.storeName,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId);
+    std::string extensionUri = extUri;
+    if (extensionUri.empty()) {
+        extensionUri = providerInfo.extensionUri;
+    }
+    DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
+        providerInfo.storeName, providerInfo.backup,
+        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
+    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             providerInfo.bundleName.c_str(), providerInfo.tableName.c_str(), tokenId,

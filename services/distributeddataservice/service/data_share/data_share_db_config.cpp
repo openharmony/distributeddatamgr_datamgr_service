@@ -62,23 +62,22 @@ std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(co
 }
 
 std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> DataShareDbConfig::GetDbConfig(
-    const std::pair<std::string, std::string> &uriPair, bool hasExtension, const std::string &bundleName,
-    const std::string &storeName, int32_t userId)
+    DbConfig &dbConfig)
 {
-    auto uri = uriPair.first;
-    auto extUri = uriPair.second;
-    auto [errCode, metaData] = GetMetaData(uri, bundleName, storeName, userId, hasExtension);
+    auto [errCode, metaData] = GetMetaData(dbConfig.uri, dbConfig.bundleName, dbConfig.storeName,
+        dbConfig.userId, dbConfig.hasExtension);
     if (errCode != E_OK) {
         ZLOGE("DB not exist,bundleName:%{public}s,storeName:%{public}s,user:%{public}d,err:%{public}d,uri:%{public}s",
-            bundleName.c_str(), storeName.c_str(), userId, errCode, URIUtils::Anonymous(uri).c_str());
+            dbConfig.bundleName.c_str(), dbConfig.storeName.c_str(), dbConfig.userId, errCode,
+            URIUtils::Anonymous(dbConfig.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_MATEDATA_EXISTS,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::META_DATA_NOT_EXISTS);
         return std::make_tuple(errCode, metaData, nullptr);
     }
-    auto dbDelegate = DBDelegate::Create(metaData, extUri);
+    auto dbDelegate = DBDelegate::Create(metaData, dbConfig.extUri, dbConfig.backup);
     if (dbDelegate == nullptr) {
         ZLOGE("Create delegate fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
-            bundleName.c_str(), userId, URIUtils::Anonymous(uri).c_str());
+            dbConfig.bundleName.c_str(), dbConfig.userId, URIUtils::Anonymous(dbConfig.uri).c_str());
         return std::make_tuple(E_ERROR, metaData, nullptr);
     }
     return std::make_tuple(E_OK, metaData, dbDelegate);

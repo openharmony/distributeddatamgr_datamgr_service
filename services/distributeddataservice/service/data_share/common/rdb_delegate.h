@@ -32,7 +32,7 @@ using namespace OHOS::NativeRdb;
 class RdbDelegate final : public DBDelegate {
 public:
     explicit RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
-        bool registerFunction, const std::string &extUri);
+        bool registerFunction, const std::string &extUri, const std::string &backup);
     int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) override;
     int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) override;
@@ -60,10 +60,13 @@ private:
     std::shared_ptr<RdbStore> store_;
     int errCode_ = E_OK;
     static constexpr int RETRY = 3;
+    static constexpr const char *DUAL_WRITE = "dualWrite";
+    static constexpr const char *PERIODIC = "periodic";
     std::string bundleName_;
     std::string storeName_;
     int32_t haMode_;
     std::string extUri_;
+    std::string backup_;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:
