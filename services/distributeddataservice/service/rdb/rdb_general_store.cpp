@@ -722,21 +722,8 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 totalCount += table.download.total;
             }
             if (process.process == FINISHED) {
-                if (tasks != nullptr && !tasks->ComputeIfPresent(syncId, [executor](SyncId syncId, FinishTask task) {
-                        executor->Remove(task.taskId);
-                        return false;
-                    })) {
-                    ZLOGW("store:%{public}s, syncId:%{public}" PRIu64 " has been removed",
-                        Anonymous::Change(storeInfo.storeName).c_str(), syncId);
-                    return;
-                }
                 RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode, syncId);
             } else {
-                if (tasks != nullptr && !tasks->Contains(syncId)) {
-                    ZLOGW("store:%{public}s, syncId:%{public}" PRIu64 " has been removed",
-                        Anonymous::Change(storeInfo.storeName).c_str(), syncId);
-                    return;
-                }
                 RdbGeneralStore::OnSyncStart(storeInfo, flag, syncMode, syncId, totalCount);
             }
 
@@ -1114,17 +1101,22 @@ void RdbGeneralStore::RemoveTasks()
     if (tasks_ == nullptr) {
         return;
     }
-    tasks_->ForEach([executor = executor_](SyncId syncId, const FinishTask &task) {
-        if (task.cb != nullptr) {
-            std::map<std::string, SyncProcess> result;
-            result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
-            task.cb(result);
-        }
+    std::list<DBProcessCB> cbs;
+    tasks_->ForEach([&cbs, executor = executor_](SyncId syncId, const FinishTask &task) {
+        cbs.push_back(std::move(task.cb));
         if (executor != nullptr) {
             executor->Remove(task.taskId);
         }
         return false;
     });
+    tasks_->Clear();
+    std::map<std::string, SyncProcess> result;
+    result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
+    for (auto &cb : cbs) {
+        if (cb != nullptr) {
+            cb(result);
+        }
+    }
 }
 
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
