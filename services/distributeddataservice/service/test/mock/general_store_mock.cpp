@@ -155,5 +155,10 @@ GeneralError GeneralStoreMock::UnLockCloudDB()
 {
     return E_OK;
 }
+
+void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor)
+{
+    return;
+}
 } // namespace DistributedData
 } // namespace OHOS

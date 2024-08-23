@@ -87,7 +87,7 @@ static DBSchema GetDBSchema(const Database &database)
 }
 
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
-    : manager_(meta.appId, meta.user, meta.instanceId), tasks_(std::make_shared<ConcurrentMap<uint64_t, FinishTask>>())
+    : manager_(meta.appId, meta.user, meta.instanceId), tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
 {
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
@@ -506,7 +506,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
         dbStatus = delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0);
     } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
-        if (executor_ != nullptr && tasks_!= nullptr) {
+        if (executor_ != nullptr && tasks_ != nullptr) {
             auto id = executor_->Schedule(GetFinishTask(syncId), std::chrono::minutes(INTERVAL),
                 std::chrono::minutes(INTERVAL));
             tasks_->Insert(syncId, { id, callback });
@@ -514,10 +514,12 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
         dbStatus =
             delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
                                 syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
-                GetCB(syncId), syncId);
-        if (dbStatus != DBStatus::OK && tasks_ != nullptr && executor_ != nullptr) {
+                tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
+        if (dbStatus != DBStatus::OK && tasks_ != nullptr) {
             tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
-                executor->Remove(task.taskId);
+                if (executor != nullptr) {
+                    executor->Remove(task.taskId);
+                }
                 return false;
             });
         }
@@ -694,7 +696,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
 {
     std::shared_lock<std::shared_mutex> lock(asyncMutex_);
     return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode, syncId,
-        rdbCloud = GetRdbCloud(), executor = executor_, tasks = tasks_](const std::map<std::string, SyncProcess> &processes) {
+        rdbCloud = GetRdbCloud()](const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             bool isDownload = false;
@@ -1066,7 +1068,7 @@ bool RdbGeneralStore::IsFinished(SyncId syncId) const
         ZLOGE("database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
         return true;
     }
-    return delegate_->GetSyncTaskStatus().isFinished;
+    return delegate_->GetCloudTaskStatus(syncId).process == DistributedDB::FINISHED;
 }
 
 Executor::Task RdbGeneralStore::GetFinishTask(SyncId syncId)
@@ -1076,9 +1078,13 @@ Executor::Task RdbGeneralStore::GetFinishTask(SyncId syncId)
             return;
         }
         DBProcessCB cb;
+        ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
+            Anonymous::Change(storeInfo_.storeName).c_str(), syncId);
         tasks_->ComputeIfPresent(syncId, [&cb, executor = executor_](SyncId syncId, const FinishTask &task) {
             cb = task.cb;
-            executor->Remove(task.taskId);
+            if (executor != nullptr) {
+                executor->Remove(task.taskId);
+            }
             return false;
         });
         if (cb != nullptr) {
@@ -1102,8 +1108,10 @@ void RdbGeneralStore::RemoveTasks()
         return;
     }
     std::list<DBProcessCB> cbs;
-    tasks_->ForEach([&cbs, executor = executor_](SyncId syncId, const FinishTask &task) {
+    tasks_->ForEach([&cbs, executor = executor_, store = storeInfo_.storeName](SyncId syncId, const FinishTask &task) {
         cbs.push_back(std::move(task.cb));
+        ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
+            Anonymous::Change(store).c_str(), syncId);
         if (executor != nullptr) {
             executor->Remove(task.taskId);
         }
