@@ -185,6 +185,9 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
                 BizScene::SET_DATA, SetDataStage::VERIFY_SHARE_PERMISSIONS, StageRes::FAILED, E_NO_PERMISSION);
             return E_NO_PERMISSION;
         }
+        if (!IsNetworkingEnabled()) {
+            return E_OK;
+        }
         int ret = GetDfsUrisFromLocal(uris, userId, data);
         if (ret != E_OK) {
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
@@ -246,6 +249,17 @@ bool PreProcessUtils::GetInstIndex(uint32_t tokenId, int32_t &instIndex)
         return false;
     }
     instIndex = tokenInfo.instIndex;
+    return true;
+}
+
+bool PreProcessUtils::IsNetworkingEnabled()
+{
+    std::vector<AppDistributedKv::DeviceInfo> devInfos =
+        DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
+    ZLOGI("DM remote devices count is %{public}u.", static_cast<uint32_t>(devInfos.size()));
+    if (devInfos.empty()) {
+        return false;
+    }
     return true;
 }
 } // namespace UDMF
