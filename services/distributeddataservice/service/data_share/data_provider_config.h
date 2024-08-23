@@ -44,6 +44,7 @@ public:
         bool hasExtension = false;
         bool allowEmptyPermission = false;
         bool storeMetaDataFromUri = false;
+        int backupDbRule = 0;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
     };
 

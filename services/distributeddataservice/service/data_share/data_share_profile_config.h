@@ -53,6 +53,7 @@ struct ProfileInfo : public DistributedData::Serializable {
     std::vector<LaunchInfo> launchInfos;
     bool storeMetaDataFromUri = false;
     bool launchForCleanData = false;
+    int backupDbRule = 0;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

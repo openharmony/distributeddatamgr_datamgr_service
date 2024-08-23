@@ -33,7 +33,7 @@ class DBDelegate {
 public:
     using Time = std::chrono::steady_clock::time_point;
     static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData,
-        const std::string &extUri = "");
+        const std::string &extUri = "", int32_t backupDbRule = 0);
     virtual int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
         const DataShareValuesBucket &valuesBucket) = 0;
