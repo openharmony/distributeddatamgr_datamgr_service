@@ -19,6 +19,7 @@
 #include <functional>
 #include <shared_mutex>
 
+#include "concurrent_map.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_asset_loader.h"
 #include "rdb_cloud.h"
@@ -52,7 +53,7 @@ public:
         uint32_t traceId, uint32_t syncCount);
     static void OnSyncFinish(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode,
         uint32_t traceId);
-    void SetExecutor(std::shared_ptr<Executor> executor) = 0;
+    void SetExecutor(std::shared_ptr<Executor> executor) override;
     int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) override;
     bool IsBound() override;
@@ -97,6 +98,7 @@ private:
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     using TaskId = ExecutorPool::TaskId;
     using Time = std::chrono::steady_clock::time_point;
+    using SyncId = uint64_t;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
     // GetIntersection and return results in the order of collecter1
     static std::vector<std::string> GetIntersection(std::vector<std::string> &&syncTables,
@@ -134,8 +136,10 @@ private:
         StoreMetaData meta_;
     };
     DBBriefCB GetDBBriefCB(DetailAsync async);
-    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t syncId,
+    DBProcessCB GetCB(SyncId syncId);
+    DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t syncMode, SyncId syncId,
         uint32_t highMode = AUTO_SYNC_MODE);
+    Executor::Task GetFinishTask(SyncId syncId);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
     std::string BuildSql(const std::string& table, const std::string& statement,
@@ -147,6 +151,7 @@ private:
     bool IsPrintLog(DistributedDB::DBStatus status);
     std::shared_ptr<RdbCloud> GetRdbCloud() const;
     bool IsFinished(uint64_t syncId) const;
+    void RemoveTasks();
     
     ObserverProxy observer_;
     RdbManager manager_;
@@ -167,11 +172,15 @@ private:
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
     uint32_t syncNotifyFlag_ = 0;
-    std::atomic<uint32_t> syncTaskId_ = 0;
+    std::atomic<SyncId> syncTaskId_ = 0;
     std::shared_mutex asyncMutex_ {};
     mutable std::shared_mutex rdbCloudMutex_;
+    struct FinishTask {
+        TaskId taskId = Executor::INVALID_TASK_ID;
+        DBProcessCB cb = nullptr;
+    };
     std::shared_ptr<Executor> executor_ = nullptr;
-    std::shared_ptr<ConcurrentMap<uint64_t, TaskId>> tasks_;
+    std::shared_ptr<ConcurrentMap<SyncId, FinishTask>> tasks_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
