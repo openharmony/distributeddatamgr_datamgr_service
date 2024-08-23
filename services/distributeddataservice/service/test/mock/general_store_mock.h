@@ -52,8 +52,8 @@ public:
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void SetExecutor(std::shared_ptr<Executor> executor) override;
     void MakeCursor(const std::map<std::string, Value> &entry);
-    std::pair<GeneralError, uint32_t> LockCloudDB() override;
-    GeneralError UnLockCloudDB() override;
+    std::pair<int32_t, uint32_t> LockCloudDB() override;
+    int32_t UnLockCloudDB() override;
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;

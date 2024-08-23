@@ -515,14 +515,15 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
             delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
                                 syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
                 tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
-        if (dbStatus != DBStatus::OK && tasks_ != nullptr) {
-            tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
-                if (executor != nullptr) {
-                    executor->Remove(task.taskId);
-                }
-                return false;
-            });
+        if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
+            return ConvertStatus(dbStatus);
         }
+        tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
+            if (executor != nullptr) {
+                executor->Remove(task.taskId);
+            }
+            return false;
+        });
     }
     return ConvertStatus(dbStatus);
 }

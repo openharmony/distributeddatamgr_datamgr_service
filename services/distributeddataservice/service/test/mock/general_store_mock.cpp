@@ -146,12 +146,12 @@ void GeneralStoreMock::MakeCursor(const std::map<std::string, Value> &entry)
     cursor_ = std::make_shared<CursorMock>(resultSet);
 }
 
-std::pair<GeneralError, uint32_t> GeneralStoreMock::LockCloudDB()
+std::pair<int32_t, uint32_t> GeneralStoreMock::LockCloudDB()
 {
     return { E_OK, 0 };
 }
 
-GeneralError GeneralStoreMock::UnLockCloudDB()
+int32_t GeneralStoreMock::UnLockCloudDB()
 {
     return E_OK;
 }
