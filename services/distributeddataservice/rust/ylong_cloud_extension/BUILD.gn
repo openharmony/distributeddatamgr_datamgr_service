@@ -22,7 +22,6 @@ ohos_rust_shared_ffi("ylong_cloud_extension") {
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
 
-  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
