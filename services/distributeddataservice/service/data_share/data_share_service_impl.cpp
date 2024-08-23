@@ -129,7 +129,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
     auto callBack = [&uri, &valuesBucket, this](ProviderInfo &providerInfo, DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
         auto [errCode, ret] = dbDelegate->InsertEx(providerInfo.tableName, valuesBucket);
-        if (errCode == E_OK) {
+        if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
         }
@@ -193,7 +193,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
         auto [errCode, ret] = dbDelegate->UpdateEx(providerInfo.tableName, predicate, valuesBucket);
-        if (errCode == E_OK) {
+        if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
         }
@@ -233,7 +233,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
     auto callBack = [&uri, &predicate, this](ProviderInfo &providerInfo, DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
         auto [errCode, ret] = dbDelegate->DeleteEx(providerInfo.tableName, predicate);
-        if (errCode == E_OK) {
+        if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
         }
