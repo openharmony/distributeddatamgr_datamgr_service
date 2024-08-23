@@ -52,6 +52,7 @@ public:
         uint32_t traceId, uint32_t syncCount);
     static void OnSyncFinish(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode,
         uint32_t traceId);
+    void SetExecutor(std::shared_ptr<Executor> executor) = 0;
     int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) override;
     bool IsBound() override;
@@ -83,8 +84,8 @@ public:
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
-    std::pair<GeneralError, uint32_t> LockCloudDB() override;
-    GeneralError UnLockCloudDB() override;
+    std::pair<int32_t, uint32_t> LockCloudDB() override;
+    int32_t UnLockCloudDB() override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
@@ -94,11 +95,14 @@ private:
     using SyncProcess = DistributedDB::SyncProcess;
     using DBBriefCB = DistributedDB::SyncStatusCallback;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
+    using TaskId = ExecutorPool::TaskId;
+    using Time = std::chrono::steady_clock::time_point;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
     // GetIntersection and return results in the order of collecter1
     static std::vector<std::string> GetIntersection(std::vector<std::string> &&syncTables,
         const std::set<std::string> &localTables);
     static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
+    static constexpr int64_t INTERVAL = 1;
     static constexpr const char* CLOUD_GID = "cloud_gid";
     static constexpr const char* DATE_KEY = "data_key";
     static constexpr const char* QUERY_TABLES_SQL = "select name from sqlite_master where type = 'table';";
@@ -142,6 +146,7 @@ private:
     size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
     bool IsPrintLog(DistributedDB::DBStatus status);
     std::shared_ptr<RdbCloud> GetRdbCloud() const;
+    bool IsFinished(uint64_t syncId) const;
     
     ObserverProxy observer_;
     RdbManager manager_;
@@ -165,6 +170,37 @@ private:
     std::atomic<uint32_t> syncTaskId_ = 0;
     std::shared_mutex asyncMutex_ {};
     mutable std::shared_mutex rdbCloudMutex_;
+
+    struct SyncTask {
+    public:
+        SyncTask(uint64_t id, DBProcessCB cb);
+        bool operator<(const Time &time) const;
+        bool operator<(const SyncTask &task) const;
+        uint64_t GetId() const;
+        DBProcessCB GetCB() const;
+
+    private:
+        uint64_t id_ = 0;
+        DBProcessCB cb_;
+        Time time_;
+    };
+
+    class SyncTaskManger {
+    public:
+        void Bind(std::shared_ptr<Executor> executor, std::function<bool(uint64_t)> isFinished);
+        void AddSyncId(uint64_t syncId, DBProcessCB cb);
+        bool RemoveSyncId(uint64_t syncId);
+        bool Contain(uint64_t syncId);
+
+    private:
+        void GarbageCollect(bool isForce = false);
+        std::function<bool(uint64_t)> isFinished_;
+        TaskId taskId_ = Executor::INVALID_TASK_ID;
+        std::shared_ptr<Executor> executor_ = nullptr;
+        std::mutex syncQueueMutex_;
+        std::list<SyncTask> syncTasks_;
+    };
+    const std::shared_ptr<SyncTaskManger> taskManger_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

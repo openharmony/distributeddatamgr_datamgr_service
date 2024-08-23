@@ -86,7 +86,8 @@ static DBSchema GetDBSchema(const Database &database)
     return schema;
 }
 
-RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appId, meta.user, meta.instanceId)
+RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
+    : manager_(meta.appId, meta.user, meta.instanceId), taskManger_(std::make_shared<SyncTaskManger>())
 {
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
@@ -496,13 +497,21 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
     }
     auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
     uint32_t syncId = ++syncTaskId_;
-    auto status = (syncMode < NEARBY_END)
-        ? delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0)
-        : (syncMode > NEARBY_END && syncMode < CLOUD_END)
-        ? delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
-            syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
-            GetDBProcessCB(std::move(async), syncMode, syncId, highMode))
-        : DistributedDB::INVALID_ARGS;
+    auto dbStatus = DistributedDB::INVALID_ARGS;
+    if (syncMode < NEARBY_END) {
+        dbStatus =
+            delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async), syncMode), syncParam.wait != 0);
+    } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
+        auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
+        dbStatus =
+            delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
+                                syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION }, callback);
+        if (dbStatus == DistributedDB::OK && taskManger_ != nullptr) {
+            taskManger_->AddSyncId(syncId, callback);
+        }
+    }
+    auto status = ConvertStatus(dbStatus);
+    OnSyncStart(storeInfo_, syncNotifyFlag_, syncMode, status);
     return status;
 }
 
@@ -675,8 +684,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
 {
     std::shared_lock<std::shared_mutex> lock(asyncMutex_);
     return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode, syncId,
-        rdbCloud = GetRdbCloud()](
-        const std::map<std::string, SyncProcess> &processes) {
+        rdbCloud = GetRdbCloud(), taskManager = taskManger_](const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             bool isDownload = false;
@@ -704,8 +712,18 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 totalCount += table.download.total;
             }
             if (process.process == FINISHED) {
+                if (taskManager != nullptr && !taskManager->RemoveSyncId(syncId)) {
+                    ZLOGW("store:%{public}s, syncId:%{public}" PRIu64 " has been removed",
+                        Anonymous::Change(storeInfo.storeName).c_str(), syncId);
+                    return;
+                }
                 RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode, syncId);
             } else {
+                if (taskManager != nullptr && !taskManager->Contain(syncId)) {
+                    ZLOGW("store:%{public}s, syncId:%{public}" PRIu64 " has been removed",
+                        Anonymous::Change(storeInfo.storeName).c_str(), syncId);
+                    return;
+                }
                 RdbGeneralStore::OnSyncStart(storeInfo, flag, syncMode, syncId, totalCount);
             }
 
@@ -953,6 +971,91 @@ void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta,
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
+void RdbGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
+{
+    if (taskManger_ != nullptr) {
+        taskManger_->Bind(std::move(executor), [this](uint64_t syncId){
+            return IsFinished(syncId);
+        });
+    }
+}
+
+void RdbGeneralStore::SyncTaskManger::AddSyncId(uint64_t syncId, DBProcessCB cb)
+{
+    if (executor_ == nullptr) {
+        return;
+    }
+    std::lock_guard<decltype(syncQueueMutex_)> lock(syncQueueMutex_);
+    syncTasks_.emplace(syncId, cb);
+    if (taskId_ == Executor::INVALID_TASK_ID) {
+        taskId_ = executor_->Schedule(
+            [this]() {
+                GarbageCollect();
+            },
+            std::chrono::minutes(INTERVAL), std::chrono::minutes(INTERVAL));
+    }
+}
+
+bool RdbGeneralStore::SyncTaskManger::RemoveSyncId(uint64_t syncId)
+{
+    if (executor_ == nullptr) {
+        return false;
+    }
+    std::lock_guard<decltype(syncQueueMutex_)> lock(syncQueueMutex_);
+    auto it = std::find_if(syncTasks_.begin(), syncTasks_.end(), [syncId](const auto &task) {
+        return task.GetId() == syncId;
+    });
+    if (it != syncTasks_.end()) {
+        syncTasks_.erase(it);
+        return true;
+    }
+    return false;
+}
+
+void RdbGeneralStore::SyncTaskManger::GarbageCollect(bool isForce)
+{
+    std::list<DBProcessCB> cbs;
+    {
+        std::lock_guard<decltype(syncQueueMutex_)> lock(syncQueueMutex_);
+        auto it = syncTasks_.begin();
+        while (it != syncTasks_.end()) {
+            if (*it < std::chrono::steady_clock::now() && (isFinished_ == nullptr || isFinished_(it->GetId()))) {
+                cbs.push_back(it->GetCB());
+                it = syncTasks_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        if (syncTasks_.empty()) {
+            executor_->Remove(taskId_);
+        }
+    }
+    std::map<std::string, SyncProcess> result;
+    result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
+    for (auto &cb : cbs) {
+        if (cb != nullptr) {
+            cb(result);
+        }
+    }
+}
+
+bool RdbGeneralStore::SyncTaskManger::Contain(uint64_t syncId)
+{
+    std::lock_guard<decltype(syncQueueMutex_)> lock(syncQueueMutex_);
+    return std::find_if(syncTasks_.begin(), syncTasks_.end(), [syncId](const auto &task) {
+        return task.GetId() == syncId;
+    }) != syncTasks_.end();
+}
+
+void RdbGeneralStore::SyncTaskManger::Bind(std::shared_ptr<Executor> executor, std::function<bool(uint64_t)> isFinished)
+{
+    isFinished_ = isFinished;
+    if (executor == nullptr || taskId_ != Executor::INVALID_TASK_ID) {
+        return;
+    }
+    executor_ = std::move(executor);
+}
+
 void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
 {
     if (!HasWatcher()) {
@@ -1017,7 +1120,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
 }
 
-std::pair<GeneralError, uint32_t> RdbGeneralStore::LockCloudDB()
+std::pair<int32_t, uint32_t> RdbGeneralStore::LockCloudDB()
 {
     auto rdbCloud = GetRdbCloud();
     if (rdbCloud == nullptr) {
@@ -1026,7 +1129,7 @@ std::pair<GeneralError, uint32_t> RdbGeneralStore::LockCloudDB()
     return rdbCloud->LockCloudDB(RdbCloud::FLAG::APPLICATION);
 }
 
-GeneralError RdbGeneralStore::UnLockCloudDB()
+int32_t RdbGeneralStore::UnLockCloudDB()
 {
     auto rdbCloud = GetRdbCloud();
     if (rdbCloud == nullptr) {
@@ -1039,5 +1142,40 @@ std::shared_ptr<RdbCloud> RdbGeneralStore::GetRdbCloud() const
 {
     std::shared_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
     return rdbCloud_;
+}
+
+bool RdbGeneralStore::IsFinished(uint64_t syncId) const
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        return true;
+    }
+    return delegate_->GetSyncTaskStatus().isFinished;
+}
+
+RdbGeneralStore::SyncTask::SyncTask(uint64_t id, DBProcessCB cb) : id_(id), cb_(cb)
+{
+    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+}
+
+bool RdbGeneralStore::SyncTask::operator<(const RdbGeneralStore::Time &time) const
+{
+    return time_ < time;
+}
+
+bool RdbGeneralStore::SyncTask::operator<(const SyncTask &task) const
+{
+    return id_ < task.id_;
+}
+
+uint64_t RdbGeneralStore::SyncTask::GetId() const
+{
+    return id_;
+}
+
+RdbGeneralStore::DBProcessCB RdbGeneralStore::SyncTask::GetCB() const
+{
+    return cb_;
 }
 } // namespace OHOS::DistributedRdb

@@ -84,6 +84,7 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
                 ZLOGE("creator failed. storeName:%{public}s", meta.GetStoreAlias().c_str());
                 return !stores.empty();
             }
+            dbStore->SetExecutor(executor_);
             auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(meta.storeId),
                 std::forward_as_tuple(dbStore, watchers, atoi(meta.user.c_str()), meta));
             store = result.first->second;
