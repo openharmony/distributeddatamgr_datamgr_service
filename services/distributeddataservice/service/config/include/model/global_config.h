@@ -37,7 +37,7 @@ public:
     DirectoryConfig *directory = nullptr;
     BackupConfig *backup = nullptr;
     CloudConfig *cloud = nullptr;
-    WhiteListConfig *Whitelist = nullptr;
+    WhiteListConfig *whitelist = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

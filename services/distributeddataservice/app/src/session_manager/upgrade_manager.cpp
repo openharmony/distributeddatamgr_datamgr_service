@@ -131,7 +131,8 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
     if (!defaultAccountDevs.empty()) {
         auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(tuple.appId, defaultAccountId);
         auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, tuple.storeId);
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second,
+            trueDualTuple.first, tuple.storeId);
         ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
             Anonymous::Change(tuple.storeId).c_str(),
             DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());

@@ -30,7 +30,8 @@ void WhiteListConfigManager::Initialize(const std::vector<BundleInfo> &mapper)
     }
 }
 
-std::pair<std::string, std::string> WhiteListConfigManager::FindTrueDualTuple(const std::string &appId, const std::string &accountId)
+std::pair<std::string, std::string> WhiteListConfigManager::FindTrueDualTuple(const std::string &appId,
+    const std::string &accountId)
 {
     auto it = toDstMapper_.find(appId);
     if (it == toDstMapper_.end()) {

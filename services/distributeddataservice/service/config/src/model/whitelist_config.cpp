@@ -31,13 +31,13 @@ bool WhiteListConfig::Unmarshal(const json &node)
 bool WhiteListConfig::BundleInfo::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(srcAppId)], srcAppId);
-    SetValue(node[GET_NAME(DstAppId)], DstAppId);
+    SetValue(node[GET_NAME(dstAppId)], dstAppId);
     return true;
 }
 bool WhiteListConfig::BundleInfo::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(srcAppId), srcAppId);
-    GetValue(node, GET_NAME(DstAppId), DstAppId);
+    GetValue(node, GET_NAME(dstAppId), dstAppId);
     return true;
 }
 } // namespace DistributedData

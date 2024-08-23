@@ -101,7 +101,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/converter.cpp",
     "utils/crypto.cpp",
     "utils/ref_count.cpp",
-    "whitelist/whitelist_config_manager.cpp"
+    "whitelist/whitelist_config_manager.cpp",
   ]
   cflags = [ "-Wno-multichar" ]
 

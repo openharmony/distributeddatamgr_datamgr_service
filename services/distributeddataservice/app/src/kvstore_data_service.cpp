@@ -274,13 +274,7 @@ void KvStoreDataService::OnStart()
         ZLOGW("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
     ZLOGI("Bootstrap configs and plugins.");
-    Bootstrap::GetInstance().LoadComponents();
-    Bootstrap::GetInstance().LoadDirectory();
-    Bootstrap::GetInstance().LoadCheckers();
-    Bootstrap::GetInstance().LoadNetworks();
-    Bootstrap::GetInstance().LoadBackup(executors_);
-    Bootstrap::GetInstance().LoadCloud();
-    Bootstrap::GetInstance().LoadPkgWhiteList();
+    LoadConfigMsg();
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
@@ -307,6 +301,17 @@ void KvStoreDataService::OnStart()
         std::placeholders::_2);
     DumpManager::GetInstance().AddHandler("BUNDLE_INFO", uintptr_t(this), handlerBundleInfo);
     StartService();
+}
+
+void KvStoreDataService::LoadConfigMsg()
+{
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    Bootstrap::GetInstance().LoadNetworks();
+    Bootstrap::GetInstance().LoadBackup(executors_);
+    Bootstrap::GetInstance().LoadCloud();
+    Bootstrap::GetInstance().LoadPkgWhiteList();
 }
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
