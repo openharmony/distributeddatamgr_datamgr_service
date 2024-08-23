@@ -405,17 +405,17 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
         auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
         auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(appId, accountId);
         auto syncIdentifier = KvManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, storeId);
-        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
+        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(), Anonymous::Change(trueDualTuple.second).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), trueDualTuple.first.c_str());
         delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
         auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(appId, defaultAccountId);
         auto syncIdentifier = KvManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, storeId);
-        ZLOGI("no account set compatible identifier store:%{public}s, device:%{public}.10s",
+        ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), trueDualTuple.first.c_str());
         delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }

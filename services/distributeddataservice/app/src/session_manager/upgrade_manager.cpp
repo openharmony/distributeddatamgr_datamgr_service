@@ -124,9 +124,9 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         auto syncIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second,
             trueDualTuple.first, tuple.storeId);
-        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
+        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(trueDualTuple.second).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), trueDualTuple.first.c_str());
         storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
@@ -134,9 +134,9 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         auto syncIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second,
             trueDualTuple.first, tuple.storeId);
-        ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
+        ZLOGI("no account identifier, store:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(tuple.storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), trueDualTuple.first.c_str());
         storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
     }
 }
