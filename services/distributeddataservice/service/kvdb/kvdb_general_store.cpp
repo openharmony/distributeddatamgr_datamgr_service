@@ -757,13 +757,18 @@ void KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
     enableCloud_ = storeConfig.enableCloud_;
 }
 
-std::pair<GeneralError, uint32_t> KVDBGeneralStore::LockCloudDB()
+std::pair<int32_t, uint32_t> KVDBGeneralStore::LockCloudDB()
 {
     return { GeneralError::E_NOT_SUPPORT, 0 };
 }
 
-GeneralError KVDBGeneralStore::UnLockCloudDB()
+int32_t KVDBGeneralStore::UnLockCloudDB()
 {
     return GeneralError::E_NOT_SUPPORT;
+}
+
+void KVDBGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
+{
+    return;
 }
 } // namespace OHOS::DistributedKv
