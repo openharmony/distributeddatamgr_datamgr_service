@@ -385,9 +385,6 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
             ZLOGD("invalid user:%{public}d", user);
             return INVALID_ARGUMENT;
         }
-        if (DoKvCloudSync(cloudInfo.user, exData.info.bundleName, MODE_PUSH)) {
-            continue;
-        }
         auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
         SchemaMeta schemaMeta;
         if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
