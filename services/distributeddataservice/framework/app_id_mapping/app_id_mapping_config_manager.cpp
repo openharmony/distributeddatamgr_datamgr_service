@@ -13,24 +13,24 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "WhiteListConfigManager"
-#include "whitelist/whitelist_config_manager.h"
+#define LOG_TAG "AppIdMappingConfigManager"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedData {
-WhiteListConfigManager &WhiteListConfigManager::GetInstance()
+AppIdMappingConfigManager &AppIdMappingConfigManager::GetInstance()
 {
-    static WhiteListConfigManager instance;
+    static AppIdMappingConfigManager instance;
     return instance;
 }
 
-void WhiteListConfigManager::Initialize(const std::vector<BundleInfo> &mapper)
+void AppIdMappingConfigManager::Initialize(const std::vector<AppMappingInfo> &mapper)
 {
     for (const auto &info : mapper) {
         toDstMapper_.insert_or_assign(info.srcAppId, info.dstAppId);
     }
 }
 
-std::pair<std::string, std::string> WhiteListConfigManager::FindTrueDualTuple(const std::string &appId,
+std::pair<std::string, std::string> AppIdMappingConfigManager::FindTrueDualTuple(const std::string &appId,
     const std::string &accountId)
 {
     auto it = toDstMapper_.find(appId);

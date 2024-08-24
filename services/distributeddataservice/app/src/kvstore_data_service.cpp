@@ -61,6 +61,7 @@
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "water_version_manager.h"
+#include "app_id_mapping/app_id_mapping_config_namager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -303,7 +304,7 @@ void KvStoreDataService::OnStart()
     StartService();
 }
 
-void KvStoreDataService::LoadConfigMsg()
+void KvStoreDataService::LoadConfigs()
 {
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
@@ -311,7 +312,7 @@ void KvStoreDataService::LoadConfigMsg()
     Bootstrap::GetInstance().LoadNetworks();
     Bootstrap::GetInstance().LoadBackup(executors_);
     Bootstrap::GetInstance().LoadCloud();
-    Bootstrap::GetInstance().LoadPkgWhiteList();
+    Bootstrap::GetInstance().LoadAppIdMappingList();
 }
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -394,6 +395,24 @@ void KvStoreDataService::OnStoreMetaChanged(
     ZLOGI("dirty kv store. storeId:%{public}s", Anonymous::Change(metaData.storeId).c_str());
 }
 
+bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
+    const StoreMetaData &storeMeta);
+{
+    std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
+    for (auto &id : accountIds) {
+        auto trueDualTuple = AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(storeMeta.appId, storeMeta.user);
+        const std::string &itemTripleIdentifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, trueDualTuple.first,
+                storeMeta.storeId, false);
+        if (itemTripleIdentifier == identifier) {
+            ZLOGI("find triple identifier,storeId:%{public}s,id:%{public}s",
+            Anonymous::Change(storeMeta.storeId).c_str(), Anonymous::Change(id).c_str());
+            return true;
+        }   
+    }
+    return false;
+}
+
 bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
     const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
@@ -412,15 +431,13 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
             // judge local userid and local meta
             continue;
         }
-        const std::string &itemTripleIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(accountId, storeMeta.appId,
-                storeMeta.storeId, false);
+        bool isEqual = CompareTripleIdentifier(accountId, identifier, storeMeta);
         const std::string &itemDualIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
-        if (identifier == itemTripleIdentifier && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
+        if (isEqual && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
             ResolveAutoLaunchCompatible(storeMeta, identifier, accountId);
         }
-        if (identifier == itemDualIdentifier || identifier == itemTripleIdentifier) {
+        if (identifier == itemDualIdentifier || isEqual) {
             ZLOGI("identifier  find");
             DistributedDB::AutoLaunchOption option;
             option.createIfNecessary = false;

@@ -38,7 +38,7 @@
 #include "water_version_manager.h"
 #include "device_manager_adapter.h"
 #include "utils/anonymous.h"
-#include "whitelist/whitelist_config_manager.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -403,7 +403,7 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
     if (!sameAccountDevs.empty()) {
         auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
-        auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(appId, accountId);
+        auto trueDualTuple = AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(appId, accountId);
         auto syncIdentifier = KvManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, storeId);
         ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(), Anonymous::Change(trueDualTuple.second).c_str(),
@@ -411,7 +411,7 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
         delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
-        auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(appId, defaultAccountId);
+        auto trueDualTuple = AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(appId, defaultAccountId);
         auto syncIdentifier = KvManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, storeId);
         ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(),

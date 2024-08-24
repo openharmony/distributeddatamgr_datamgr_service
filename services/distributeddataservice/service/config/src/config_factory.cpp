@@ -83,9 +83,9 @@ CloudConfig *ConfigFactory::GetCloudConfig()
     return config_.cloud;
 }
 
-WhiteListConfig *ConfigFactory::GetWhiteListConfig()
+std::vector<AppIdMappingConfig> *ConfigFactory::GetAppIdMappingConfig()
 {
-    return config_.whitelist;
+    return config_.appIdMapping;
 }
 } // namespace DistributedData
 } // namespace OHOS

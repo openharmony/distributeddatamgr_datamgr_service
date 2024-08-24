@@ -22,7 +22,7 @@
 #include "model/network_config.h"
 #include "model/directory_config.h"
 #include "model/backup_config.h"
-#include "model/whitelist_config.h"
+#include "model/app_id_mapping_config.h"
 namespace OHOS {
 namespace DistributedData {
 class GlobalConfig final : public Serializable {
@@ -37,7 +37,7 @@ public:
     DirectoryConfig *directory = nullptr;
     BackupConfig *backup = nullptr;
     CloudConfig *cloud = nullptr;
-    WhiteListConfig *whitelist = nullptr;
+    std::vector<AppIdMappingConfig> *appIdMapping = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

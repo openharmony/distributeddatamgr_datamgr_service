@@ -23,7 +23,7 @@
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
-#include "whitelist/whitelist_config_manager.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -120,7 +120,7 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
     GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
     if (!sameAccountDevs.empty()) {
-        auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(tuple.appId, tuple.userId);
+        auto trueDualTuple = AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(tuple.appId, tuple.userId);
         auto syncIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second,
             trueDualTuple.first, tuple.storeId);
@@ -130,7 +130,7 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
         storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
-        auto trueDualTuple = WhiteListConfigManager::GetInstance().FindTrueDualTuple(tuple.appId, defaultAccountId);
+        auto trueDualTuple = AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(tuple.appId, defaultAccountId);
         auto syncIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(trueDualTuple.second,
             trueDualTuple.first, tuple.storeId);

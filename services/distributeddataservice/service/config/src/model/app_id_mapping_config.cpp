@@ -13,28 +13,16 @@
  * limitations under the License.
  */
 
-#include "model/whitelist_config.h"
+#include "model/app_id_mapping_config.h"
 namespace OHOS {
 namespace DistributedData {
-bool WhiteListConfig::Marshal(json &node) const
-{
-    SetValue(node[GET_NAME(mapper)], mapper);
-    return true;
-}
-
-bool WhiteListConfig::Unmarshal(const json &node)
-{
-    GetValue(node, GET_NAME(mapper), mapper);
-    return true;
-}
-
-bool WhiteListConfig::BundleInfo::Marshal(Serializable::json &node) const
+bool AppIdMappingConfig::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(srcAppId)], srcAppId);
     SetValue(node[GET_NAME(dstAppId)], dstAppId);
     return true;
 }
-bool WhiteListConfig::BundleInfo::Unmarshal(const Serializable::json &node)
+bool AppIdMappingConfig::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(srcAppId), srcAppId);
     GetValue(node, GET_NAME(dstAppId), dstAppId);

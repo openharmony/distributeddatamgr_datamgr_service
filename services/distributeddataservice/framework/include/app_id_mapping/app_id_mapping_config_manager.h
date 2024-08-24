@@ -12,22 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_WHITELIST_CONFIG_MANAGER_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_WHITELIST_CONFIG_MANAGER_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_APP_ID_MAPPING_CONFIG_MANAGER_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_APP_ID_MAPPING_CONFIG_MANAGER_H
 #include <string>
 #include <vector>
 #include <map>
 #include "visibility.h"
 namespace OHOS {
 namespace DistributedData {
-class WhiteListConfigManager {
+class AppIdMappingConfigManager {
 public:
-    struct BundleInfo {
+    struct AppMappingInfo {
         std::string srcAppId;
         std::string dstAppId;
     };
-    API_EXPORT static WhiteListConfigManager &GetInstance();
-    API_EXPORT void Initialize(const std::vector<BundleInfo> &mapper);
+    API_EXPORT static AppIdMappingConfigManager &GetInstance();
+    API_EXPORT void Initialize(const std::vector<AppMappingInfo> &mapper);
     API_EXPORT std::pair<std::string, std::string> FindTrueDualTuple(const std::string &appId,
         const std::string &accountId);
 
@@ -37,4 +37,4 @@ private:
 
 } // namespace DistributedData
 } // namespace OHOS
-#endif //OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_WHITELIST_CONFIG_MANAGER_H
+#endif //OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_APP_ID_MAPPING_CONFIG_MANAGER_H

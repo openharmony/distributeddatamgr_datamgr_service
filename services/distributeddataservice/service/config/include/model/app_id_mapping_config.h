@@ -12,24 +12,19 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_WHITELIST_CONFIG_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_WHITELIST_CONFIG_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_APP_ID_MAPPING_CONFIG_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_APP_ID_MAPPING_CONFIG_H
 
 #include "serializable/serializable.h"
 namespace OHOS {
 namespace DistributedData {
-class WhiteListConfig final : public Serializable {
+class AppIdMappingConfig final : public Serializable {
 public:
-    struct BundleInfo final : public Serializable {
-        std::string srcAppId;
-        std::string dstAppId;
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-    };
-    std::vector<BundleInfo> mapper;
+    std::string srcAppId = "";
+    std::string dstAppId = "";
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
 } // namespace DistributedData
 } // namespace OHOS
-#endif //OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_WHITELIST_CONFIG_H
+#endif //OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_APP_ID_MAPPING_CONFIG_H
