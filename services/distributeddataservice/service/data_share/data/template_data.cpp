@@ -132,6 +132,7 @@ bool TemplateData::Delete(const std::string &bundleName, const int32_t userId)
         ZLOGE("db DeleteById failed, %{public}d", status);
         return false;
     }
+    delegate->NotifyBackup();
     return true;
 }
 
@@ -149,6 +150,7 @@ bool TemplateData::Add(const std::string &uri, const int32_t userId, const std::
         ZLOGE("db Upsert failed, %{public}d", status);
         return false;
     }
+    delegate->NotifyBackup();
     return true;
 }
 
@@ -166,6 +168,7 @@ bool TemplateData::Delete(
         ZLOGE("db DeleteById failed, %{public}d", status);
         return false;
     }
+    delegate->NotifyBackup();
     return true;
 }
 

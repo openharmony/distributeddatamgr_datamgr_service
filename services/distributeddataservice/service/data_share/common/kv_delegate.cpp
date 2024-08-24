@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 #define LOG_TAG "KvAdaptor"
+
+#include <cstddef>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+
 #include "kv_delegate.h"
 
 #include "datashare_errno.h"
@@ -24,6 +30,103 @@
 
 namespace OHOS::DataShare {
 constexpr int WAIT_TIME = 30;
+
+// If using multi-process access, back up dataShare.db.map as well. Check config file to see whether
+// using multi-process maccess
+const char* g_backupFiles[] = {
+    "dataShare.db",
+    "dataShare.db.redo",
+    "dataShare.db.safe",
+    "dataShare.db.undo",
+};
+const char* BACKUP_SUFFIX = ".backup";
+
+// If isBackUp is true, remove db backup files. Otherwise remove source db files.
+void KvDelegate::RemoveDbFile(bool isBackUp)
+{
+    for (auto &fileName: g_backupFiles) {
+        std::string dbPath = path_ + "/" + fileName;
+        if (isBackUp) {
+            dbPath += BACKUP_SUFFIX;
+        }
+        if (std::filesystem::exists(dbPath)) {
+            std::error_code ec;
+            bool success = std::filesystem::remove(dbPath, ec);
+            if (!success) {
+                ZLOGE("failed to remove file %{public}s, err: %{public}s", fileName, ec.message().c_str());
+            }
+        }
+    }
+}
+
+bool KvDelegate::CopyFile(bool isBackup)
+{
+    std::filesystem::copy_options options = std::filesystem::copy_options::overwrite_existing;
+    std::error_code code;
+    bool ret = true;
+    for (auto &fileName : g_backupFiles) {
+        std::string src = path_ + "/" + fileName;
+        std::string dst = src;
+        isBackup ? dst.append(BACKUP_SUFFIX) : src.append(BACKUP_SUFFIX);
+        // If src doesn't exist, error will be returned through `std::error_code`
+        bool copyRet = std::filesystem::copy_file(src, dst, options, code);
+        if (!copyRet) {
+            ZLOGE("failed to copy file %{public}s, isBackup %{public}d, err: %{public}s",
+                fileName, isBackup, code.message().c_str());
+            ret = false;
+            RemoveDbFile(isBackup);
+            break;
+        }
+    }
+    return ret;
+}
+
+// Restore database data when it is broken somehow. Some failure of insertion / deletion / updates will be considered
+// as database files damage, and therefore trigger the process of restoration.
+void KvDelegate::Restore()
+{
+    // No need to lock because this inner method will only be called when upper methods lock up
+    CopyFile(false);
+    ZLOGD("finish restoring kv");
+}
+
+// Backup database data by copying its key files. This mechanism might be costly, but acceptable when updating
+// contents of KV database happens not so frequently now.
+void KvDelegate::Backup()
+{
+    // No need to lock because this inner method will only be called when upper methods lock up
+    ZLOGD("backup kv");
+    if (hasChange_) {
+        CopyFile(true);
+        hasChange_ = false;
+    }
+    ZLOGD("finish backing up kv");
+}
+
+// Set hasChange_ to true. Caller can use this to control when to back up db.
+void OHOS::DataShare::KvDelegate::NotifyBackup()
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    hasChange_ = true;
+}
+
+// The return val indicates whether the database has been restored
+bool KvDelegate::RestoreIfNeed(int32_t dbStatus)
+{
+    // No need to lock because this inner method will only be called when upper methods lock up
+    if (dbStatus == GRD_INVALID_FILE_FORMAT || dbStatus == GRD_REBUILD_DATABASE) {
+        if (db_ != NULL) {
+            GRD_DBClose(db_, GRD_DB_CLOSE);
+            db_ = nullptr;
+            isInitDone_ = false;
+        }
+        // If db is NULL, it has been closed.
+        Restore();
+        return true;
+    }
+    return false;
+}
+
 int64_t KvDelegate::Upsert(const std::string &collectionName, const std::string &filter, const std::string &value)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -34,6 +137,7 @@ int64_t KvDelegate::Upsert(const std::string &collectionName, const std::string 
     int count = GRD_UpsertDoc(db_, collectionName.c_str(), filter.c_str(), value.c_str(), 0);
     if (count <= 0) {
         ZLOGE("GRD_UpSertDoc failed,status %{public}d", count);
+        RestoreIfNeed(count);
         return count;
     }
     Flush();
@@ -52,12 +156,16 @@ int32_t KvDelegate::Delete(const std::string &collectionName, const std::string 
     int32_t status = GetBatch(collectionName, filter, "{\"id_\": true}", queryResults);
     if (status != E_OK) {
         ZLOGE("db GetBatch failed, %{public}s %{public}d", filter.c_str(), status);
+        // `GetBatch` should decide whether to restore before errors are returned, so skip restoration here.
         return status;
     }
     for (auto &result : queryResults) {
         auto count = GRD_DeleteDoc(db_, collectionName.c_str(), result.c_str(), 0);
         if (count < 0) {
-            ZLOGE("GRD_UpSertDoc failed,status %{public}d %{public}s", count, result.c_str());
+            ZLOGE("GRD_DeleteDoc failed,status %{public}d %{public}s", count, result.c_str());
+            if (RestoreIfNeed(count)) {
+                return count;
+            }
             continue;
         }
     }
@@ -80,6 +188,7 @@ bool KvDelegate::Init()
         (path_ + "/dataShare.db").c_str(), nullptr, GRD_DB_OPEN_CREATE | GRD_DB_OPEN_CHECK_FOR_ABNORMAL, &db_);
     if (status != GRD_OK || db_ == nullptr) {
         ZLOGE("GRD_DBOpen failed,status %{public}d", status);
+        RestoreIfNeed(status);
         return false;
     }
     if (executors_ != nullptr) {
@@ -89,17 +198,22 @@ bool KvDelegate::Init()
             db_ = nullptr;
             isInitDone_ = false;
             taskId_ = ExecutorPool::INVALID_TASK_ID;
+            Backup();
         });
     }
     status = GRD_CreateCollection(db_, TEMPLATE_TABLE, nullptr, 0);
     if (status != GRD_OK) {
+        // If opeaning db succeeds, it is rare to fail to create tables
         ZLOGE("GRD_CreateCollection template table failed,status %{public}d", status);
+        RestoreIfNeed(status);
         return false;
     }
 
     status = GRD_CreateCollection(db_, DATA_TABLE, nullptr, 0);
     if (status != GRD_OK) {
+        // If opeaning db succeeds, it is rare to fail to create tables
         ZLOGE("GRD_CreateCollection data table failed,status %{public}d", status);
+        RestoreIfNeed(status);
         return false;
     }
     isInitDone_ = true;
@@ -174,12 +288,14 @@ int32_t KvDelegate::Get(
     int status = GRD_FindDoc(db_, collectionName.c_str(), query, 0, &resultSet);
     if (status != GRD_OK || resultSet == nullptr) {
         ZLOGE("GRD_FindDoc failed,status %{public}d", status);
+        RestoreIfNeed(status);
         return status;
     }
     status = GRD_Next(resultSet);
     if (status != GRD_OK) {
         GRD_FreeResultSet(resultSet);
         ZLOGE("GRD_Next failed,status %{public}d", status);
+        RestoreIfNeed(status);
         return status;
     }
     char *value = nullptr;
@@ -187,6 +303,7 @@ int32_t KvDelegate::Get(
     if (status != GRD_OK || value == nullptr) {
         GRD_FreeResultSet(resultSet);
         ZLOGE("GRD_GetValue failed,status %{public}d", status);
+        RestoreIfNeed(status);
         return status;
     }
     result = value;
@@ -200,6 +317,7 @@ void KvDelegate::Flush()
     int status = GRD_Flush(db_, GRD_DB_FLUSH_ASYNC);
     if (status != GRD_OK) {
         ZLOGE("GRD_Flush failed,status %{public}d", status);
+        RestoreIfNeed(status);
     }
 }
 
@@ -217,7 +335,8 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
     GRD_ResultSet *resultSet;
     int status = GRD_FindDoc(db_, collectionName.c_str(), query, GRD_DOC_ID_DISPLAY, &resultSet);
     if (status != GRD_OK || resultSet == nullptr) {
-        ZLOGE("GRD_UpSertDoc failed,status %{public}d", status);
+        ZLOGE("GRD_FindDoc failed,status %{public}d", status);
+        RestoreIfNeed(status);
         return status;
     }
     char *value = nullptr;
@@ -226,6 +345,7 @@ int32_t KvDelegate::GetBatch(const std::string &collectionName, const std::strin
         if (status != GRD_OK || value == nullptr) {
             GRD_FreeResultSet(resultSet);
             ZLOGE("GRD_GetValue failed,status %{public}d", status);
+            RestoreIfNeed(status);
             return status;
         }
         result.emplace_back(value);
