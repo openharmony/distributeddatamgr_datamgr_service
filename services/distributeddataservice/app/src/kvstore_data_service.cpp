@@ -407,7 +407,7 @@ bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, c
                 storeMeta.storeId, false);
         if (itemTripleIdentifier == identifier) {
             ZLOGI("find triple identifier,storeId:%{public}s,id:%{public}s",
-            Anonymous::Change(storeMeta.storeId).c_str(), Anonymous::Change(id).c_str());
+                Anonymous::Change(storeMeta.storeId).c_str(), Anonymous::Change(id).c_str());
             return true;
         }
     }
