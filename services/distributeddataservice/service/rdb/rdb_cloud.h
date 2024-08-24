@@ -77,6 +77,7 @@ private:
         DistributedData::AssetEvent eventId);
     std::pair<GeneralError, uint32_t> InnerLock(FLAG flag);
     GeneralError InnerUnLock(FLAG flag);
+    void ConvertGaussDBStatus(DistributedData::VBuckets& extends);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
