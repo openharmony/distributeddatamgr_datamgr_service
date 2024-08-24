@@ -50,10 +50,10 @@ struct ProfileInfo : public DistributedData::Serializable {
     std::string tableName;
     std::string scope = "module";
     std::string type = "rdb";
+    std::string backup;
     std::vector<LaunchInfo> launchInfos;
     bool storeMetaDataFromUri = false;
     bool launchForCleanData = false;
-    int backupDbRule = 0;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

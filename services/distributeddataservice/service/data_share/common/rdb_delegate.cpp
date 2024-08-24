@@ -85,14 +85,14 @@ RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta
 }
 
 RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
-    bool registerFunction, const std::string &extUriData, int32_t backupDbRule)
+    bool registerFunction, const std::string &extUriData, const std::string &backup)
 {
     tokenId_ = meta.tokenId;
     bundleName_ = meta.bundleName;
     storeName_ = meta.storeId;
     extUri_ = extUriData;
     haMode_ = meta.haMode;
-    backupDbRule_ = backupDbRule;
+    backup_ = backup;
 
     RdbStoreConfig config = GetConfig(meta, registerFunction);
     DefaultOpenCallback callback;
@@ -106,10 +106,7 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
 
 void RdbDelegate::TryAndSend(int errCode)
 {
-    if (errCode != E_SQLITE_CORRUPT) {
-        return;
-    }
-    if (backupDbRule_ != BACKUP_EXTENSION_DB && haMode_ == HAMode::SINGLE) {
+    if (errCode != E_SQLITE_CORRUPT || (haMode_ == HAMode::SINGLE && (backup_ != DUAL_WRITE && backup_ != PERIODIC))) {
         return;
     }
     ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s. ExtUri: %{public}s",

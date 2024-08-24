@@ -40,11 +40,11 @@ public:
         std::string readPermission;
         std::string writePermission;
         std::string type = "rdb";
+        std::string backup;
         bool singleton = false;
         bool hasExtension = false;
         bool allowEmptyPermission = false;
         bool storeMetaDataFromUri = false;
-        int backupDbRule = 0;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
     };
 

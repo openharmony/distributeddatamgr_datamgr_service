@@ -24,22 +24,21 @@ ExecutorPool::TaskId DBDelegate::taskId_ = ExecutorPool::INVALID_TASK_ID;
 ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::stores_ = {};
 std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
-    const std::string &extUri, int32_t backupDbRule)
+    const std::string &extUri, const std::string &backup)
 {
     if (metaData.tokenId == 0) {
-        return std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backupDbRule);
+        return std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backup);
     }
     std::shared_ptr<DBDelegate> store;
     stores_.Compute(metaData.tokenId,
-        [&metaData, &store, extUri, backupDbRule](auto &,
-            std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
+        [&metaData, &store, extUri, &backup](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
             auto it = stores.find(metaData.storeId);
             if (it != stores.end()) {
                 store = it->second->store_;
                 it->second->time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
                 return !stores.empty();
             }
-            store = std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backupDbRule);
+            store = std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backup);
             if (store->IsInvalid()) {
                 store = nullptr;
                 ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
