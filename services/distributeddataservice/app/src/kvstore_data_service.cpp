@@ -61,7 +61,7 @@
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "water_version_manager.h"
-#include "app_id_mapping/app_id_mapping_config_namager.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
