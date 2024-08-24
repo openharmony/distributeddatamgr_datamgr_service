@@ -24,6 +24,7 @@
 #include "cloud/cloud_lock_event.h"
 #include "cloud/make_query_event.h"
 #include "commonevent/data_change_event.h"
+#include "commonevent/set_searchable_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "directory/directory_manager.h"
@@ -1102,6 +1103,31 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
         auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
         EventCenter::GetInstance().PostEvent(std::move(evt));
     }
+
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearchable)
+{
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    StoreInfo storeInfo;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.bundleName = param.bundleName_;
+    storeInfo.storeName = RemoveSuffix(param.storeName_);
+    auto [instanceId,  user]= GetInstIndexAndUser(storeInfo.tokenId, param.bundleName_);
+    storeInfo.instanceId = instanceId;
+    storeInfo.user = user;
+    storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+
+    SetSearchableEvent::EventInfo eventInfo;
+    eventInfo.isSearchable = isSearchable;
+    auto evt = std::make_unique<SetSearchableEvent>(std::move(storeInfo), std::move(eventInfo));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 
     return RDB_OK;
 }

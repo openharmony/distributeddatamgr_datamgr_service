@@ -29,6 +29,7 @@ public:
         LOCAL_CHANGE,
         CLOUD_SYNC,
         DATA_CHANGE,
+        SET_SEARCHABLE,
         CLOUD_SHARE,
         MAKE_QUERY,
         CLOUD_SYNC_FINISHED,

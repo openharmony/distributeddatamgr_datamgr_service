@@ -56,6 +56,8 @@ private:
 
     int32_t OnRemoteNotifyDataChange(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnRemoteSetSearchable(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnRemoteQuerySharingResource(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnBeforeOpen(MessageParcel& data, MessageParcel& reply);
@@ -91,6 +93,8 @@ private:
             &RdbServiceStub::OnRemoteUnregisterDetailProgressObserver,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_NOTIFY_DATA_CHANGE)] =
             &RdbServiceStub::OnRemoteNotifyDataChange,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_SET_SEARCHABLE)] =
+            &RdbServiceStub::OnRemoteSetSearchable,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_QUERY_SHARING_RESOURCE)] =
             &RdbServiceStub::OnRemoteQuerySharingResource,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_DISABLE)] = &RdbServiceStub::OnDisable,
