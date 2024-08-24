@@ -403,20 +403,20 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
     if (!sameAccountDevs.empty()) {
         auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
-        auto trueDualTuple = AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(appId, accountId);
-        auto syncIdentifier = KvManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, storeId);
+        auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, accountId);
+        auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
         ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
-            Anonymous::Change(storeId).c_str(), Anonymous::Change(trueDualTuple.second).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), trueDualTuple.first.c_str());
-        delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
+            Anonymous::Change(storeId).c_str(), Anonymous::Change(convertedIds.second).c_str(),
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), convertedIds.first.c_str());
+        delegate_->SetEqualIdentifier(identifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
-        auto trueDualTuple = AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(appId, defaultAccountId);
-        auto syncIdentifier = KvManager::GetKvStoreIdentifier(trueDualTuple.second, trueDualTuple.first, storeId);
+        auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, defaultAccountId);
+        auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
         ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), trueDualTuple.first.c_str());
-        delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), convertedIds.first.c_str());
+        delegate_->SetEqualIdentifier(identifier, defaultAccountDevs);
     }
 }
 

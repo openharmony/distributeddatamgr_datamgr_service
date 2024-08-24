@@ -28,7 +28,7 @@ public:
     };
     API_EXPORT static AppIdMappingConfigManager &GetInstance();
     API_EXPORT void Initialize(const std::vector<AppMappingInfo> &mapper);
-    API_EXPORT std::pair<std::string, std::string> FindTrueDualTuple(const std::string &appId,
+    API_EXPORT std::pair<std::string, std::string> Convert(const std::string &appId,
         const std::string &accountId);
 
 private:

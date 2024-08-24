@@ -400,12 +400,12 @@ bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, c
 {
     std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
     for (auto &id : accountIds) {
-        auto trueDualTuple =
-            AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(storeMeta.appId, storeMeta.user);
-        const std::string &itemTripleIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, trueDualTuple.first,
+        auto convertedIds =
+            AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId, storeMeta.user);
+        const std::string &tempTripleIdentifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, convertedIds.first,
                 storeMeta.storeId, false);
-        if (itemTripleIdentifier == identifier) {
+        if (tempTripleIdentifier == identifier) {
             ZLOGI("find triple identifier,storeId:%{public}s,id:%{public}s",
                 Anonymous::Change(storeMeta.storeId).c_str(), Anonymous::Change(id).c_str());
             return true;
@@ -432,13 +432,13 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
             // judge local userid and local meta
             continue;
         }
-        bool isEqual = CompareTripleIdentifier(accountId, identifier, storeMeta);
+        bool isTripleIdentifierEqual = CompareTripleIdentifier(accountId, identifier, storeMeta);
         const std::string &itemDualIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
-        if (isEqual && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
+        if (isTripleIdentifierEqual && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
             ResolveAutoLaunchCompatible(storeMeta, identifier, accountId);
         }
-        if (identifier == itemDualIdentifier || isEqual) {
+        if (identifier == itemDualIdentifier || isTripleIdentifierEqual) {
             ZLOGI("identifier  find");
             DistributedDB::AutoLaunchOption option;
             option.createIfNecessary = false;

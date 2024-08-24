@@ -169,7 +169,7 @@ void Bootstrap::LoadCloud()
     CloudConfigManager::GetInstance().Initialize(infos);
 }
 
-void Bootstrap::LoadAppIdMappingList()
+void Bootstrap::LoadAppIdMappings()
 {
     auto *appIdMapping = ConfigFactory::GetInstance().GetAppIdMappingConfig();
     if (appIdMapping == nullptr) {

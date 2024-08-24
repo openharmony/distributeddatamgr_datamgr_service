@@ -30,7 +30,7 @@ void AppIdMappingConfigManager::Initialize(const std::vector<AppMappingInfo> &ma
     }
 }
 
-std::pair<std::string, std::string> AppIdMappingConfigManager::FindTrueDualTuple(const std::string &appId,
+std::pair<std::string, std::string> AppIdMappingConfigManager::Convert(const std::string &appId,
     const std::string &accountId)
 {
     auto it = toDstMapper_.find(appId);
