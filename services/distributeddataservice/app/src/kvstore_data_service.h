@@ -172,7 +172,8 @@ private:
 
     void LoadConfigs();
 
-    bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier, const StoreMetaData &storeMeta);
+    bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
+        const StoreMetaData &storeMeta);
     static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
     static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
                           DistributedDB::KvStoreNbDelegate::Option &dbOption);
