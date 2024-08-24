@@ -396,7 +396,7 @@ void KvStoreDataService::OnStoreMetaChanged(
 }
 
 bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
-    const StoreMetaData &storeMeta);
+    const StoreMetaData &storeMeta)
 {
     std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
     for (auto &id : accountIds) {
