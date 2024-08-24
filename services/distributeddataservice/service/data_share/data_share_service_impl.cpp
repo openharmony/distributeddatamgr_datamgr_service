@@ -1009,7 +1009,11 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string 
         return ERROR_PERMISSION_DENIED;
     }
     DataShareDbConfig dbConfig;
-    DataShareDbConfig::DbConfig config {providerInfo.uri, extUri, providerInfo.bundleName,
+    std::string extensionUri = extUri;
+    if (extensionUri.empty()) {
+        extensionUri = providerInfo.extensionUri;
+    }
+    DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
         providerInfo.storeName, providerInfo.backup,
         providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);

@@ -66,18 +66,12 @@ int DataProviderConfig::GetFromProxyData()
         return errCode;
     }
     providerInfo_.singleton = bundleInfo.singleton;
-    int datashareExtensionCount = 0;
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type != AppExecFwk::ExtensionAbilityType::DATASHARE) {
             continue;
         }
         providerInfo_.hasExtension = true;
-        ++datashareExtensionCount;
-        providerInfo_.extensionUri = item.uri;
-        if (datashareExtensionCount > 1) {
-            providerInfo_.extensionUri = "";
-            break;
-        }
+        break;
     }
     for (auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
         auto &proxyDatas = hapModuleInfo.proxyDatas;
@@ -117,6 +111,7 @@ int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
     providerInfo_.type = profileInfo.type;
     providerInfo_.storeMetaDataFromUri = profileInfo.storeMetaDataFromUri;
     providerInfo_.backup = profileInfo.backup;
+    providerInfo_.extensionUri = profileInfo.extUri;
     if (profileInfo.tableConfig.empty()) {
         return E_OK;
     }

@@ -78,6 +78,7 @@ bool ProfileInfo::Marshal(json &node) const
     SetValue(node[GET_NAME(storeMetaDataFromUri)], storeMetaDataFromUri);
     SetValue(node[GET_NAME(launchForCleanData)], launchForCleanData);
     SetValue(node[GET_NAME(backup)], backup);
+    SetValue(node[GET_NAME(extUri)], extUri);
     return true;
 }
 
@@ -91,6 +92,7 @@ bool ProfileInfo::Unmarshal(const json &node)
     GetValue(node, GET_NAME(storeMetaDataFromUri), storeMetaDataFromUri);
     GetValue(node, GET_NAME(launchForCleanData), launchForCleanData);
     GetValue(node, GET_NAME(backup), backup);
+    GetValue(node, GET_NAME(extUri), extUri);
     std::string path;
     auto ret = GetValue(node, GET_NAME(path), path);
     if (ret) {

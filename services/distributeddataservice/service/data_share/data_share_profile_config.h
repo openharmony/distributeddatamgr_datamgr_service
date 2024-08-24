@@ -51,6 +51,7 @@ struct ProfileInfo : public DistributedData::Serializable {
     std::string scope = "module";
     std::string type = "rdb";
     std::string backup;
+    std::string extUri;
     std::vector<LaunchInfo> launchInfos;
     bool storeMetaDataFromUri = false;
     bool launchForCleanData = false;
