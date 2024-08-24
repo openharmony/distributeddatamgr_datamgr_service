@@ -401,7 +401,7 @@ bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, c
     std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
     for (auto &id : accountIds) {
         auto trueDualTuple =
-            AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(storeMeta.appId,storeMeta.user);
+            AppIdMappingConfigManager::GetInstance().FindTrueDualTuple(storeMeta.appId, storeMeta.user);
         const std::string &itemTripleIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, trueDualTuple.first,
                 storeMeta.storeId, false);
@@ -409,7 +409,7 @@ bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, c
             ZLOGI("find triple identifier,storeId:%{public}s,id:%{public}s",
             Anonymous::Change(storeMeta.storeId).c_str(), Anonymous::Change(id).c_str());
             return true;
-        } 
+        }
     }
     return false;
 }
