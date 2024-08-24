@@ -57,6 +57,8 @@ int32_t CloudDbImpl::BatchInsert(const std::string &table, DBVBuckets &&values, 
     auto valIn = ExtensionUtil::Convert(std::move(inValues));
     auto exdIn = ExtensionUtil::Convert(std::move(extends));
     if (valIn.first == nullptr || exdIn.first == nullptr) {
+        OhCloudExtVectorFree(valIn.first);
+        OhCloudExtVectorFree(exdIn.first);
         return DBErr::E_ERROR;
     }
     auto status = OhCloudExtCloudDbBatchInsert(database_, reinterpret_cast<const unsigned char *>(table.c_str()),
@@ -74,6 +76,8 @@ int32_t CloudDbImpl::BatchUpdate(const std::string &table, DBVBuckets &&values, 
     auto exdIn = ExtensionUtil::Convert(std::move(extends));
     auto valIn = ExtensionUtil::Convert(std::move(values));
     if (valIn.first == nullptr || exdIn.first == nullptr) {
+        OhCloudExtVectorFree(valIn.first);
+        OhCloudExtVectorFree(exdIn.first);
         return DBErr::E_ERROR;
     }
     auto status = OhCloudExtCloudDbBatchUpdate(database_, reinterpret_cast<const unsigned char *>(table.c_str()),
@@ -91,6 +95,8 @@ int32_t CloudDbImpl::BatchUpdate(const std::string &table, DBVBuckets &&values, 
     auto exdIn = ExtensionUtil::Convert(std::move(const_cast<DBVBuckets &>(extends)));
     auto valIn = ExtensionUtil::Convert(std::move(values));
     if (valIn.first == nullptr || exdIn.first == nullptr) {
+        OhCloudExtVectorFree(valIn.first);
+        OhCloudExtVectorFree(exdIn.first);
         return DBErr::E_ERROR;
     }
     auto status = OhCloudExtCloudDbBatchUpdate(database_, reinterpret_cast<const unsigned char *>(table.c_str()),
