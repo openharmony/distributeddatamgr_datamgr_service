@@ -1043,7 +1043,11 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
     DataShareDbConfig dbConfig;
-    DataShareDbConfig::DbConfig config {providerInfo.uri, extUri, providerInfo.bundleName,
+    std::string extensionUri = extUri;
+    if (extensionUri.empty()) {
+        extensionUri = providerInfo.extensionUri;
+    }
+    DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
         providerInfo.storeName, providerInfo.backup,
         providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);

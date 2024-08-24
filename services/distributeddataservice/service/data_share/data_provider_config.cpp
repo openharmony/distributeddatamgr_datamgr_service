@@ -66,12 +66,18 @@ int DataProviderConfig::GetFromProxyData()
         return errCode;
     }
     providerInfo_.singleton = bundleInfo.singleton;
+    int datashareExtensionCount = 0;
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type != AppExecFwk::ExtensionAbilityType::DATASHARE) {
             continue;
         }
         providerInfo_.hasExtension = true;
-        break;
+        ++datashareExtensionCount;
+        providerInfo_.extensionUri = item.uri;
+        if (datashareExtensionCount > 1) {
+            providerInfo_.extensionUri = "";
+            break;
+        }
     }
     for (auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
         auto &proxyDatas = hapModuleInfo.proxyDatas;
