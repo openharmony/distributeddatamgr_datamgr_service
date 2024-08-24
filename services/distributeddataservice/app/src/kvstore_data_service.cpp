@@ -275,7 +275,7 @@ void KvStoreDataService::OnStart()
         ZLOGW("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
     ZLOGI("Bootstrap configs and plugins.");
-    LoadConfigMsg();
+    LoadConfigs();
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
