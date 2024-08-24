@@ -34,6 +34,7 @@ using namespace OHOS::DistributedKv;
 using namespace std::chrono;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
 constexpr const int ALIGN_WIDTH = 8;
+constexpr const char *DEFAULT_USERID = "0";
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
     auto handler = std::make_shared<RouteHeadHandlerImpl>(info);
@@ -57,6 +58,9 @@ void RouteHeadHandlerImpl::Init()
     ZLOGD("begin");
     if (deviceId_.empty()) {
         return;
+    }
+    if (!DmAdapter::GetInstance().IsOHOSType(deviceId_) && userId_ != DEFAULT_USERID) {
+        userId_ = DEFAULT_USERID;
     }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
         static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_ };

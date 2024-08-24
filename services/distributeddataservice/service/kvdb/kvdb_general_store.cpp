@@ -38,6 +38,7 @@
 #include "water_version_manager.h"
 #include "device_manager_adapter.h"
 #include "utils/anonymous.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -402,18 +403,20 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
     if (!sameAccountDevs.empty()) {
         auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
-        auto syncIdentifier = KvManager::GetKvStoreIdentifier(accountId, appId, storeId);
-        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
-            Anonymous::Change(storeId).c_str(), Anonymous::Change(accountId).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
-        delegate_->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
+        auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, accountId);
+        auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
+        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
+            Anonymous::Change(storeId).c_str(), Anonymous::Change(convertedIds.second).c_str(),
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), convertedIds.first.c_str());
+        delegate_->SetEqualIdentifier(identifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
-        auto syncIdentifier = KvManager::GetKvStoreIdentifier(defaultAccountId, appId, storeId);
-        ZLOGI("no account set compatible identifier store:%{public}s, device:%{public}.10s",
+        auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, defaultAccountId);
+        auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
+        ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
-        delegate_->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), convertedIds.first.c_str());
+        delegate_->SetEqualIdentifier(identifier, defaultAccountDevs);
     }
 }
 

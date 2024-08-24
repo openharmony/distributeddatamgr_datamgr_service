@@ -24,6 +24,7 @@
 #include "config_factory.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 namespace OHOS {
 namespace DistributedData {
 Bootstrap &Bootstrap::GetInstance()
@@ -166,6 +167,19 @@ void Bootstrap::LoadCloud()
         infos.push_back({ info.localBundle, info.cloudBundle });
     }
     CloudConfigManager::GetInstance().Initialize(infos);
+}
+
+void Bootstrap::LoadAppIdMappings()
+{
+    auto *appIdMapping = ConfigFactory::GetInstance().GetAppIdMappingConfig();
+    if (appIdMapping == nullptr) {
+        return;
+    }
+    std::vector<AppIdMappingConfigManager::AppMappingInfo> infos;
+    for (auto &info : *appIdMapping) {
+        infos.push_back({ info.srcAppId, info.dstAppId });
+    }
+    AppIdMappingConfigManager::GetInstance().Initialize(infos);
 }
 } // namespace DistributedData
 } // namespace OHOS

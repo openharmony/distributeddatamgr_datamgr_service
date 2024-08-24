@@ -23,6 +23,7 @@
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -119,20 +120,24 @@ void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegat
     GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
     if (!sameAccountDevs.empty()) {
-        auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(tuple.userId, tuple.appId, tuple.storeId);
-        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(tuple.userId).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
-        storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
+        auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(tuple.appId, tuple.userId);
+        auto identifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(convertedIds.second,
+            convertedIds.first, tuple.storeId);
+        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
+            Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(convertedIds.second).c_str(),
+            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), convertedIds.first.c_str());
+        storeDelegate->SetEqualIdentifier(identifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
-        auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(defaultAccountId, tuple.appId, tuple.storeId);
-        ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
+        auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(tuple.appId, defaultAccountId);
+        auto identifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(convertedIds.second,
+            convertedIds.first, tuple.storeId);
+        ZLOGI("no account identifier, store:%{public}s, device:%{public}.10s, appId:%{public}s",
             Anonymous::Change(tuple.storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
-        storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
+            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), convertedIds.first.c_str());
+        storeDelegate->SetEqualIdentifier(identifier, defaultAccountDevs);
     }
 }
 } // namespace OHOS::DistributedData
