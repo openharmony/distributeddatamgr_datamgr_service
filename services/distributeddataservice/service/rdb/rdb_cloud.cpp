@@ -41,9 +41,9 @@ DBStatus RdbCloud::BatchInsert(
     PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
     VBuckets temp = records;
     auto error = cloudDB_->BatchInsert(tableName, std::move(records), extends);
-    ConvertGaussDBStatus(extends);
     PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
     extend = ValueProxy::Convert(std::move(extends));
+    ConvertErrorField(extends);
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
@@ -57,9 +57,9 @@ DBStatus RdbCloud::BatchUpdate(
     PostEvent(records, skipAssets, extends, DistributedData::AssetEvent::UPLOAD);
     VBuckets temp = records;
     auto error = cloudDB_->BatchUpdate(tableName, std::move(records), extends);
-    ConvertGaussDBStatus(extends);
     PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
     extend = ValueProxy::Convert(std::move(extends));
+    ConvertErrorField(extends);
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
@@ -67,8 +67,8 @@ DBStatus RdbCloud::BatchDelete(const std::string &tableName, std::vector<DBVBuck
 {
     VBuckets extends = ValueProxy::Convert(std::move(extend));
     auto error = cloudDB_->BatchDelete(tableName, extends);
-    ConvertGaussDBStatus(extends);
     extend = ValueProxy::Convert(std::move(extends));
+    ConvertErrorField(extends);
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
@@ -327,12 +327,18 @@ uint8_t RdbCloud::GetLockFlag() const
     return flag_;
 }
 
-void RdbCloud::ConvertGaussDBStatus(DistributedData::VBuckets& extends)
+void RdbCloud::ConvertErrorField(DistributedData::VBuckets& extends)
 {
     for (auto& extend : extends) {
-        auto error = static_cast<GeneralError>(std::get<int64_t>(extend[SchemaMeta::ERROR_FIELD]));
-        auto status = ConvertStatus(error);
-        extend[SchemaMeta::ERROR_FIELD] = status == DBStatus::CLOUD_ERROR ? error : status;
+        auto errorField = extend.find(SchemaMeta::ERROR_FIELD);
+        if (errorField == extend.end()) {
+            continue;
+        }
+        auto errCode = Traits::get_if<int64_t>(&(errorField->second));
+        if (errCode == nullptr) {
+            continue;
+        }
+        errorField->second = ConvertStatus(static_cast<GeneralError>(*errCode));
     }
 }
 } // namespace OHOS::DistributedRdb
