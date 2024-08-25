@@ -63,6 +63,7 @@ private:
     using QueryNodes = std::vector<DistributedData::QueryNode>;
     static std::pair<QueryNodes, DistributedData::GeneralError> ConvertQuery(DBVBucket& extend);
     static QueryNodes ConvertQuery(DBQueryNodes&& nodes);
+    static void ConvertErrorField(DistributedData::VBuckets& extends);
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
     BindAssets* snapshots_;
@@ -77,7 +78,6 @@ private:
         DistributedData::AssetEvent eventId);
     std::pair<GeneralError, uint32_t> InnerLock(FLAG flag);
     GeneralError InnerUnLock(FLAG flag);
-    void ConvertGaussDBStatus(DistributedData::VBuckets& extends);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
