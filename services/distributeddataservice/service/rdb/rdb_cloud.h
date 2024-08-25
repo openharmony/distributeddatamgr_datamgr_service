@@ -63,6 +63,7 @@ private:
     using QueryNodes = std::vector<DistributedData::QueryNode>;
     static std::pair<QueryNodes, DistributedData::GeneralError> ConvertQuery(DBVBucket& extend);
     static QueryNodes ConvertQuery(DBQueryNodes&& nodes);
+    static void ConvertErrorField(DistributedData::VBuckets& extends);
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
     BindAssets* snapshots_;
