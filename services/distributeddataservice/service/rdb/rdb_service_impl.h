@@ -87,6 +87,7 @@ public:
 
     int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
         uint32_t delay = 0) override;
+    int32_t SetSearchable(const RdbSyncerParam& param, bool isSearchable) override;
     int32_t Disable(const RdbSyncerParam& param) override;
     int32_t Enable(const RdbSyncerParam& param) override;
 
