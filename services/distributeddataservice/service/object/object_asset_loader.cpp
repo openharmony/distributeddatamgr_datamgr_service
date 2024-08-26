@@ -167,7 +167,8 @@ bool ObjectAssetLoader::IsDownloaded(const DistributedData::Asset& asset)
 int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &assetObj,
     const sptr<ObjectAssetsSendListener> &sendCallback)
 {
-    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::IDLE);
+    ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
+        ObjectStore::PUSH_ASSETS, ObjectStore::IDLE);
     ZLOGI("PushAsset start, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
         assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), assetObj->sessionId_.c_str());
     auto status = Storage::DistributedFile::DistributedFileDaemonManager::GetInstance().PushAsset(userId, assetObj,
@@ -175,8 +176,8 @@ int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &asset
     if (status != OBJECT_SUCCESS) {
         ZLOGE("PushAsset err status: %{public}d, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
             status, assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), assetObj->sessionId_.c_str());
-        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, status, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+        ObjectStore::RadarReporter::ReportFail(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
+            ObjectStore::RADAR_FAILED, status, ObjectStore::FINISHED);
     }
     return status;
 }
@@ -185,16 +186,17 @@ int32_t ObjectAssetsSendListener::OnSendResult(const sptr<AssetObj> &assetObj, i
 {
     if (assetObj == nullptr) {
         ZLOGE("OnSendResult error! status:%{public}d", result);
-        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, result, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+        ObjectStore::RadarReporter::ReportFail(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
+            ObjectStore::RADAR_FAILED, result, ObjectStore::FINISHED);
         return result;
     }
     ZLOGI("OnSendResult, status:%{public}d, asset size:%{public}zu", result, assetObj->uris_.size());
     if (result == OBJECT_SUCCESS) {
-        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_SUCCESS);
+        ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
+            ObjectStore::RADAR_SUCCESS);
     } else {
-        RADAR_REPORT(ObjectStore::SAVE, ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, result, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
+        ObjectStore::RadarReporter::ReportFail(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
+            ObjectStore::RADAR_FAILED, result, ObjectStore::FINISHED);
     }
     return result;
 }

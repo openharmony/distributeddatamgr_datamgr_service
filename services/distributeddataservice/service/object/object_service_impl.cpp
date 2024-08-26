@@ -63,7 +63,8 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
-    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::IDLE);
+    ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
+        ObjectStore::SAVE_TO_STORE, ObjectStore::IDLE);
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
@@ -73,7 +74,8 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
-    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_SUCCESS);
+    ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
+        ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_SUCCESS);
     return status;
 }
 

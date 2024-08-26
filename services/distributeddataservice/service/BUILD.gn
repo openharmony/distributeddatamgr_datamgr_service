@@ -68,6 +68,7 @@ ohos_shared_library("distributeddatasvc") {
     "${kv_store_distributeddb_path}",
   ]
   sources = [
+    "${dataobject_path}/frameworks/innerkitsimpl/src/object_radar_reporter.cpp",
     "backup/src/backup_manager.cpp",
     "bootstrap/src/bootstrap.cpp",
     "cloud/cloud_service_impl.cpp",
@@ -128,6 +129,7 @@ ohos_shared_library("distributeddatasvc") {
     "rdb/rdb_service_stub.cpp",
     "rdb/rdb_watcher.cpp",
     "waterversion/water_version_manager.cpp",
+    "${dataobject_path}/frameworks/innerkitsimpl/include/common/object_event.c",
   ]
   cflags = [
     "-Wno-multichar",
