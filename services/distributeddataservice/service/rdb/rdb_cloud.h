@@ -15,6 +15,9 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
+
+#include <mutex>
+
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/icloud_db.h"
@@ -24,11 +27,16 @@
 namespace OHOS::DistributedRdb {
 class RdbCloud : public DistributedDB::ICloudDb {
 public:
+    enum FLAG : uint8_t {
+        SYSTEM_ABILITY = 1,
+        APPLICATION
+    };
     using DBStatus = DistributedDB::DBStatus;
     using DBVBucket = DistributedDB::VBucket;
     using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
     using DataBucket = DistributedData::VBucket;
     using BindAssets = DistributedData::BindAssets;
+    using GeneralError = DistributedData::GeneralError;
 
     explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets* bindAssets);
     virtual ~RdbCloud() = default;
@@ -45,6 +53,9 @@ public:
     DBStatus Close() override;
     std::pair<DBStatus, std::string> GetEmptyCursor(const std::string &tableName) override;
     static DBStatus ConvertStatus(DistributedData::GeneralError error);
+    uint8_t GetLockFlag() const;
+    std::pair<GeneralError, uint32_t> LockCloudDB(FLAG flag);
+    GeneralError UnLockCloudDB(FLAG flag);
 
 private:
     static constexpr const char *TYPE_FIELD = "#_type";
@@ -55,6 +66,8 @@ private:
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
     BindAssets* snapshots_;
+    uint8_t flag_ = 0;
+    std::mutex mutex_;
 
     void PostEvent(DistributedData::VBuckets& records, std::set<std::string>& skipAssets,
         DistributedData::VBuckets& extend, DistributedData::AssetEvent eventId);
@@ -62,6 +75,8 @@ private:
         DistributedData::AssetEvent eventId);
     void PostEventAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets,
         DistributedData::AssetEvent eventId);
+    std::pair<GeneralError, uint32_t> InnerLock(FLAG flag);
+    GeneralError InnerUnLock(FLAG flag);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H

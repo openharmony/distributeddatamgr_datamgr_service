@@ -177,8 +177,11 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     bindInfo_ = std::move(bindInfo);
-    rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
-    rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
+    {
+        std::unique_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
+        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
+        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
+    }
 
     DistributedDB::CloudSyncConfig dbConfig;
     dbConfig.maxUploadCount = config.maxNumber;
@@ -206,25 +209,30 @@ bool RdbGeneralStore::IsBound()
 
 int32_t RdbGeneralStore::Close(bool isForce)
 {
-    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
-    if (delegate_ == nullptr) {
-        return 0;
+    {
+        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            return 0;
+        }
+        if (!isForce && delegate_->GetCloudSyncTaskCount() > 0) {
+            return GeneralError::E_BUSY;
+        }
+        auto status = manager_.CloseStore(delegate_);
+        if (status != DBStatus::OK) {
+            return status;
+        }
+        delegate_ = nullptr;
     }
-    if (!isForce && delegate_->GetCloudSyncTaskCount() > 0) {
-        return GeneralError::E_BUSY;
-    }
-    auto status = manager_.CloseStore(delegate_);
-    if (status != DBStatus::OK) {
-        return status;
-    }
-    delegate_ = nullptr;
     bindInfo_.loader_ = nullptr;
     if (bindInfo_.db_ != nullptr) {
         bindInfo_.db_->Close();
     }
     bindInfo_.db_ = nullptr;
-    rdbCloud_ = nullptr;
-    rdbLoader_ = nullptr;
+    {
+        std::unique_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
+        rdbCloud_ = nullptr;
+        rdbLoader_ = nullptr;
+    }
     return GeneralError::E_OK;
 }
 
@@ -520,13 +528,14 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::PreSharing(GenQuery
         auto [errCode, ret] = QuerySql(sql, rdbQuery->GetBindArgs());
         values = std::move(ret);
     }
-    if (rdbCloud_ == nullptr || values.empty()) {
-        ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud_ == nullptr ? "nullptr" : "not nullptr",
+    auto rdbCloud = GetRdbCloud();
+    if (rdbCloud == nullptr || values.empty()) {
+        ZLOGW("rdbCloud is %{public}s, values size:%{public}zu", rdbCloud == nullptr ? "nullptr" : "not nullptr",
             values.size());
         return { GeneralError::E_CLOUD_DISABLED, nullptr };
     }
     VBuckets extends = ExtractExtend(values);
-    rdbCloud_->PreSharing(*tables.begin(), extends);
+    rdbCloud->PreSharing(*tables.begin(), extends);
     for (auto value = values.begin(), extend = extends.begin(); value != values.end() && extend != extends.end();
          ++value, ++extend) {
         value->insert_or_assign(DistributedRdb::Field::SHARING_RESOURCE_FIELD, (*extend)[SchemaMeta::SHARING_RESOURCE]);
@@ -661,10 +670,11 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t syncId,
     uint32_t highMode)
 {
-    return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode, syncId](
-        const std::map<std::string, SyncProcess> &processes) {
+    return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode, syncId,
+        rdbCloud = GetRdbCloud()](const std::map<std::string, SyncProcess> &processes) {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
+            bool isDownload = false;
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
@@ -677,6 +687,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 table.upload.failed = value.upLoadInfo.failCount;
                 table.upload.untreated = table.upload.total - table.upload.success - table.upload.failed;
                 totalCount += table.upload.total;
+                isDownload = table.download.total > 0;
                 table.download.total = value.downLoadInfo.total;
                 table.download.success = value.downLoadInfo.successCount;
                 table.download.failed = value.downLoadInfo.failCount;
@@ -691,6 +702,11 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode, syncId);
             } else {
                 RdbGeneralStore::OnSyncStart(storeInfo, flag, syncMode, syncId, totalCount);
+            }
+
+            if (isDownload && (process.process == FINISHED || process.process == PROCESSING) && rdbCloud != nullptr &&
+                (rdbCloud->GetLockFlag() & RdbCloud::FLAG::APPLICATION)) {
+                rdbCloud->LockCloudDB(RdbCloud::FLAG::APPLICATION);
             }
         }
         if (async) {
@@ -965,5 +981,29 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         fields[std::move(data.tableName)] = std::move(*(data.field.begin()));
     }
     watcher_->OnChange(genOrigin, fields, std::move(changeInfo));
+}
+
+std::pair<GeneralError, uint32_t> RdbGeneralStore::LockCloudDB()
+{
+    auto rdbCloud = GetRdbCloud();
+    if (rdbCloud == nullptr) {
+        return { GeneralError::E_ERROR, 0 };
+    }
+    return rdbCloud->LockCloudDB(RdbCloud::FLAG::APPLICATION);
+}
+
+GeneralError RdbGeneralStore::UnLockCloudDB()
+{
+    auto rdbCloud = GetRdbCloud();
+    if (rdbCloud == nullptr) {
+        return GeneralError::E_ERROR;
+    }
+    return rdbCloud->UnLockCloudDB(RdbCloud::FLAG::APPLICATION);
+}
+
+std::shared_ptr<RdbCloud> RdbGeneralStore::GetRdbCloud() const
+{
+    std::shared_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
+    return rdbCloud_;
 }
 } // namespace OHOS::DistributedRdb
