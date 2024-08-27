@@ -325,9 +325,6 @@ std::map<std::string, std::vector<std::string>> CloudServiceImpl::GetDbInfoFromE
 
 bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleName, int32_t triggerMode)
 {
-    if (triggerMode == MODE_UNLOCK && DeviceMatrix::GetInstance().IsConsistent()) {
-        return false;
-    }
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
     stores.insert(stores.end(), staticStores.begin(), staticStores.end());
@@ -646,12 +643,6 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
         default:
             break;
     }
-    return E_OK;
-}
-
-int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
-{
-    DoKvCloudSync(user, "", MODE_UNLOCK);
     return E_OK;
 }
 
