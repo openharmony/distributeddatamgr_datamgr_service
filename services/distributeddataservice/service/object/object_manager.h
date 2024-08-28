@@ -97,7 +97,8 @@ public:
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
     void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
-    void NotifyAssetsReady(const std::string& objectKey, const std::string& srcNetworkId = "");
+    void NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
+        const std::string& srcNetworkId = "");
     void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");
     void CloseAfterMinute();
     int32_t Open();
@@ -175,12 +176,16 @@ private:
         const std::string& assetPrefix);
     Assets GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result);
     bool RegisterAssetsLister();
-    void ComputeStatus(const std::string& objectKey,
+    void ComputeStatus(const std::string& objectKey, const SaveInfo& saveInfo,
         const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
-    void NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
+    void NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data,
+        const SaveInfo& saveInfo);
     int32_t PushAssets(int32_t userId, const std::string &appId, const std::string &sessionId,
         const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId);
     int32_t WaitAssets(const std::string& objectKey);
+    std::map<std::string, std::map<std::string, std::vector<uint8_t>>> GetObjectData(
+        const std::map<std::string, std::vector<uint8_t>>& changedData, SaveInfo& saveInfo, bool& hasAsset);
+
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
