@@ -257,6 +257,7 @@ void CloudDataTest::SetUpTestCase(void)
     InitCloudInfo();
     InitMetaData();
     InitSchemaMeta();
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
 }
 
 void CloudDataTest::TearDownTestCase()
@@ -298,11 +299,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
     auto ret = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
-    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
-        ASSERT_TRUE(ret);
-    } else {
-        ASSERT_FALSE(ret);
-    }
+    ASSERT_TRUE(ret);
 }
 
 /**
@@ -482,12 +479,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
-    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
-        EXPECT_TRUE(!result.empty());
-        EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
-    } else {
-        EXPECT_TRUE(result.empty());
-    }
+    EXPECT_TRUE(!result.empty());
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
 }
 
 /**
@@ -511,12 +504,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
-    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
-        EXPECT_TRUE(!result.empty());
-        EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
-    } else {
-        EXPECT_TRUE(result.empty());
-    }
+    EXPECT_TRUE(!result.empty());
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
 }
 
 /**
@@ -1473,11 +1462,7 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
     CloudData::SyncManager sync;
     auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true);
     auto ret = task();
-    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
-        EXPECT_TRUE(ret);
-    } else {
-        EXPECT_FALSE(ret);
-    }
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -1610,11 +1595,7 @@ HWTEST_F(CloudDataTest, RetryCallback, TestSize.Level0)
 HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer, TestSize.Level0)
 {
     auto ret = cloudServiceImpl_->UpdateCloudInfoFromServer(cloudInfo_.user);
-    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
-        EXPECT_EQ(ret, E_OK);
-    } else {
-        EXPECT_EQ(ret, E_ERROR);
-    }
+    EXPECT_EQ(ret, E_OK);
 }
 
 /**
@@ -1627,11 +1608,7 @@ HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level0)
 {
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     auto ret = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
-    if (DeviceManagerAdapter::GetInstance().IsNetworkAvailable()) {
-        EXPECT_EQ(ret.first, CloudData::SUCCESS);
-    } else {
-        EXPECT_EQ(ret.first, Status::NETWORK_ERROR);
-    }
+    EXPECT_EQ(ret.first, CloudData::SUCCESS);
 }
 
 /**
