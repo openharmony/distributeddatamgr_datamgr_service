@@ -121,6 +121,7 @@ private:
     void InitSubEvent();
     void AutoLaunch(const DistributedData::Event &event);
     void SubscribeChange();
+    bool AllowCleanDataLaunchApp(const DistributedData::Event &event, bool launchForCleanData);
     static void SaveLaunchInfo(const std::string &bundleName, const std::string &userId,
         const std::string &deviceId);
     static DistributedData::StoreMetaData MakeMetaData(const std::string &bundleName, const std::string &userId,
