@@ -38,57 +38,6 @@ bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
     return true;
 }
 
-int32_t DataShareServiceStub::OnInsert(MessageParcel &data, MessageParcel &reply)
-{
-    std::string uri;
-    DataShareValuesBucket bucket;
-    if (!ITypesUtil::Unmarshal(data, uri, bucket.valuesMap)) {
-        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
-            bucket.valuesMap.size());
-        return IPC_STUB_INVALID_DATA_ERR;
-    }
-    int32_t status = Insert(uri, bucket);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status:0x%{public}x", status);
-        return IPC_STUB_WRITE_PARCEL_ERR;
-    }
-    return 0;
-}
-
-int32_t DataShareServiceStub::OnUpdate(MessageParcel &data, MessageParcel &reply)
-{
-    std::string uri;
-    DataSharePredicates predicate;
-    DataShareValuesBucket bucket;
-    if (!ITypesUtil::Unmarshal(data, uri, predicate, bucket.valuesMap)) {
-        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
-            bucket.valuesMap.size());
-        return IPC_STUB_INVALID_DATA_ERR;
-    }
-    int32_t status = Update(uri, predicate, bucket);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status:0x%{public}x", status);
-        return IPC_STUB_WRITE_PARCEL_ERR;
-    }
-    return 0;
-}
-
-int32_t DataShareServiceStub::OnDelete(MessageParcel &data, MessageParcel &reply)
-{
-    std::string uri;
-    DataSharePredicates predicate;
-    if (!ITypesUtil::Unmarshal(data, uri, predicate)) {
-        ZLOGE("Unmarshal uri:%{public}s", DistributedData::Anonymous::Change(uri).c_str());
-        return IPC_STUB_INVALID_DATA_ERR;
-    }
-    int32_t status = Delete(uri, predicate);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status:0x%{public}x", status);
-        return IPC_STUB_WRITE_PARCEL_ERR;
-    }
-    return 0;
-}
-
 int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &reply)
 {
     std::string uri;

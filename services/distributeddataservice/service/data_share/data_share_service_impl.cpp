@@ -96,31 +96,9 @@ DataShareServiceImpl::Factory::Factory()
 
 DataShareServiceImpl::Factory::~Factory() {}
 
-int32_t DataShareServiceImpl::Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket)
-{
-    ZLOGD("Insert enter.");
-    XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
-        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
-    if (GetSilentProxyStatus(uri, false) != E_OK) {
-        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
-        return ERROR;
-    }
-    auto callBack = [&uri, &valuesBucket, this](ProviderInfo &providerInfo,
-            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
-        auto ret = dbDelegate->Insert(providerInfo.tableName, valuesBucket);
-        if (ret > 0) {
-            NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
-        }
-        return ret;
-    };
-    return Execute(uri, "", IPCSkeleton::GetCallingTokenID(), false, callBack);
-}
-
 std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &uri, const std::string &extUri,
     const DataShareValuesBucket &valuesBucket)
 {
-    ZLOGD("InsertEx enter.");
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
@@ -158,32 +136,9 @@ bool DataShareServiceImpl::NotifyChange(const std::string &uri)
     return true;
 }
 
-int32_t DataShareServiceImpl::Update(const std::string &uri,
-    const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
-{
-    ZLOGD("Update enter.");
-    XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
-        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
-    if (GetSilentProxyStatus(uri, false) != E_OK) {
-        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
-        return ERROR;
-    }
-    auto callBack = [&uri, &predicate, &valuesBucket, this](ProviderInfo &providerInfo,
-            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
-        auto ret = dbDelegate->Update(providerInfo.tableName, predicate, valuesBucket);
-        if (ret > 0) {
-            NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
-        }
-        return ret;
-    };
-    return Execute(uri, "", IPCSkeleton::GetCallingTokenID(), false, callBack);
-}
-
 std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
 {
-    ZLOGD("UpdateEx enter.");
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
@@ -200,26 +155,6 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         return std::make_pair(errCode, ret);
     };
     return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
-}
-
-int32_t DataShareServiceImpl::Delete(const std::string &uri, const DataSharePredicates &predicate)
-{
-    XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
-        HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
-    if (GetSilentProxyStatus(uri, false) != E_OK) {
-        ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
-        return ERROR;
-    }
-    auto callBack = [&uri, &predicate, this](ProviderInfo &providerInfo,
-            DistributedData::StoreMetaData &metaData, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
-        auto ret = dbDelegate->Delete(providerInfo.tableName, predicate);
-        if (ret > 0) {
-            NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
-        }
-        return ret;
-    };
-    return Execute(uri, "", IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
 std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &uri, const std::string &extUri,
@@ -245,7 +180,6 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
 std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
-    ZLOGD("Query enter.");
     XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
         HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
@@ -255,13 +189,14 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     std::shared_ptr<DataShareResultSet> resultSet;
     auto callingPid = IPCSkeleton::GetCallingPid();
     auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid](ProviderInfo &providerInfo,
-            DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> int32_t {
+            DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
         auto [err, result] = dbDelegate->Query(providerInfo.tableName,
             predicates, columns, callingPid);
         resultSet = std::move(result);
-        return err;
+        return std::make_pair(err, E_OK);
     };
-    errCode = Execute(uri, extUri, IPCSkeleton::GetCallingTokenID(), true, callBack);
+    auto [errVal, status] = ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), true, callBack);
+    errCode = errVal;
     return resultSet;
 }
 
@@ -988,44 +923,6 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     return obsMgrClient->UnregisterObserver(Uri(uri), obServer);
 }
 
-int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string &extUri, const int32_t tokenId,
-    bool isRead, ExecuteCallback callback)
-{
-    DataProviderConfig providerConfig(uri, tokenId);
-    auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
-    if (errCode != E_OK) {
-        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
-            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
-        return errCode;
-    }
-    std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
-    if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
-        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
-            tokenId, permission.c_str(), URIUtils::Anonymous(providerInfo.uri).c_str());
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
-        return ERROR_PERMISSION_DENIED;
-    }
-    DataShareDbConfig dbConfig;
-    std::string extensionUri = extUri;
-    if (extensionUri.empty()) {
-        extensionUri = providerInfo.extensionUri;
-    }
-    DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
-        providerInfo.storeName, providerInfo.backup,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
-    auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
-    if (code != E_OK) {
-        ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            providerInfo.bundleName.c_str(), providerInfo.tableName.c_str(), tokenId,
-            URIUtils::Anonymous(providerInfo.uri).c_str());
-        return code;
-    }
-    return callback(providerInfo, metaData, dbDelegate);
-}
-
 std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const std::string &extUri,
     const int32_t tokenId, bool isRead, ExecuteCallbackEx callback)
 {
@@ -1036,7 +933,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
-        return std::make_pair(E_DATA_SUPPLIER_ERROR, 0);
+        return std::make_pair(errCode, 0);
     }
     std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {

@@ -118,66 +118,6 @@ void RdbDelegate::TryAndSend(int errCode)
     ExtensionConnectAdaptor::TryAndWait(extUri_, bundleName_, params);
 }
 
-int64_t RdbDelegate::Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket)
-{
-    if (store_ == nullptr) {
-        ZLOGE("store is null");
-        return 0;
-    }
-    int64_t rowId = 0;
-    ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
-    int ret = store_->Insert(rowId, tableName, bucket);
-    if (ret != E_OK) {
-        ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::INSERT_RDB_ERROR);
-        if (ret == E_SQLITE_ERROR) {
-            EraseStoreCache(tokenId_);
-        }
-    }
-    return rowId;
-}
-int64_t RdbDelegate::Update(
-    const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
-{
-    if (store_ == nullptr) {
-        ZLOGE("store is null");
-        return 0;
-    }
-    int changeCount = 0;
-    ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
-    RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
-    int ret = store_->Update(changeCount, bucket, predicates);
-    if (ret != E_OK) {
-        ZLOGE("Update failed  %{public}s %{public}d", tableName.c_str(), ret);
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::UPDATE_RDB_ERROR);
-        if (ret == E_SQLITE_ERROR) {
-            EraseStoreCache(tokenId_);
-        }
-    }
-    return changeCount;
-}
-int64_t RdbDelegate::Delete(const std::string &tableName, const DataSharePredicates &predicate)
-{
-    if (store_ == nullptr) {
-        ZLOGE("store is null");
-        return 0;
-    }
-    int changeCount = 0;
-    RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
-    int ret = store_->Delete(changeCount, predicates);
-    if (ret != E_OK) {
-        ZLOGE("Delete failed  %{public}s %{public}d", tableName.c_str(), ret);
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::DELETE_RDB_ERROR);
-        if (ret == E_SQLITE_ERROR) {
-            EraseStoreCache(tokenId_);
-        }
-    }
-    return changeCount;
-}
-
 std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
     const DataShareValuesBucket &valuesBucket)
 {

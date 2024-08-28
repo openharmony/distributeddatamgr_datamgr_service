@@ -134,47 +134,6 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
 }
 
 /**
-* @tc.name: DataShareServiceImpl002
-* @tc.desc: test Insert Update Query Delete abnormal scene
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl002, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = "";
-    bool enable = true;
-    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
-    EXPECT_EQ(resultA, DataShare::E_OK);
-
-    DataShare::DataShareValuesBucket valuesBucket;
-    std::string name0 = "";
-    valuesBucket.Put("", name0);
-    auto result = dataShareServiceImpl.Insert(uri, valuesBucket);
-    EXPECT_EQ((result > 0), true);
-
-    DataShare::DataSharePredicates predicates;
-    std::string selections = "";
-    predicates.SetWhereClause(selections);
-    result = dataShareServiceImpl.Update(uri, predicates, valuesBucket);
-    EXPECT_EQ((result > 0), true);
-
-    predicates.EqualTo("", "");
-    std::vector<std::string> columns;
-    int errCode = 0;
-    auto resQuery = dataShareServiceImpl.Query(uri, "", predicates, columns, errCode);
-    int resultSet = 0;
-    if (resQuery != nullptr) {
-        resQuery->GetRowCount(resultSet);
-    }
-    EXPECT_EQ(resultSet, 0);
-
-    predicates.SetWhereClause(selections);
-    result = dataShareServiceImpl.Delete(uri, predicates);
-    EXPECT_EQ((result > 0), true);
-}
-
-/**
 * @tc.name: NotifyChange001
 * @tc.desc: test NotifyChange function and abnormal scene
 * @tc.type: FUNC
@@ -326,8 +285,8 @@ HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
     DataShare::DataShareValuesBucket valuesBucket1, valuesBucket2;
     std::string name0 = "wang";
     valuesBucket1.Put(TBL_NAME0, name0);
-    auto result4 = dataShareServiceImpl.Insert(uri, valuesBucket1);
-    EXPECT_EQ((result4 > 0), true);
+    auto [errCode4, result4] = dataShareServiceImpl.InsertEx(uri, "", valuesBucket1);
+    EXPECT_EQ((errCode4 != 0), true);
 
     std::vector<OperationResult> result5 = dataShareServiceImpl.UnsubscribeRdbData(uris, tplId);
     EXPECT_EQ(result5.size(), uris.size());
@@ -337,8 +296,8 @@ HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
 
     std::string name1 = "wu";
     valuesBucket2.Put(TBL_NAME1, name1);
-    auto result6 = dataShareServiceImpl.Insert(uri, valuesBucket2);
-    EXPECT_EQ((result6 > 0), true);
+    auto [errCode6, result6] = dataShareServiceImpl.InsertEx(uri, "", valuesBucket2);
+    EXPECT_EQ((errCode6 != 0), true);
 
     std::vector<OperationResult> result7 = dataShareServiceImpl.DisableRdbSubs(uris, tplId);
     for (auto const &operationResult : result7) {

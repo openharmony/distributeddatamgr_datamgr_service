@@ -33,23 +33,18 @@ class RdbDelegate final : public DBDelegate {
 public:
     explicit RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
         bool registerFunction, const std::string &extUri, const std::string &backup);
-    int64_t Insert(const std::string &tableName, const DataShareValuesBucket &valuesBucket) override;
-    int64_t Update(const std::string &tableName, const DataSharePredicates &predicate,
-        const DataShareValuesBucket &valuesBucket) override;
-    int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate) override;
-    std::pair<int64_t, int64_t> InsertEx(const std::string &tableName,
-        const DataShareValuesBucket &valuesBucket) override;
-    std::pair<int64_t, int64_t> UpdateEx(const std::string &tableName,
-        const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) override;
-    std::pair<int64_t, int64_t> DeleteEx(const std::string &tableName,
-        const DataSharePredicates &predicate) override;
     std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,
         const int32_t callingPid) override;
     std::string Query(const std::string &sql, const std::vector<std::string> &selectionArgs) override;
     std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) override;
     bool IsInvalid() override;
-
+    std::pair<int64_t, int64_t> InsertEx(const std::string &tableName,
+        const DataShareValuesBucket &valuesBucket) override;
+    std::pair<int64_t, int64_t> UpdateEx(const std::string &tableName,
+        const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) override;
+    std::pair<int64_t, int64_t> DeleteEx(const std::string &tableName,
+        const DataSharePredicates &predicate) override;
 private:
     void TryAndSend(int errCode);
     RdbStoreConfig GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);

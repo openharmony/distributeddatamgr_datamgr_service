@@ -58,7 +58,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
     request.RewindRead(0);
     MessageParcel reply;
     auto result = dataShareServiceStub->OnRemoteRequest(code, request, reply);
-    EXPECT_NE(result, IDataShareService::DATA_SHARE_ERROR);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 
     result = dataShareServiceStub->OnNotifyConnectDone(request, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
@@ -86,7 +86,7 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 
 /**
 * @tc.name: OnInsert001
-* @tc.desc: test Insert Update Query Delete function of abnormal scene
+* @tc.desc: test InsertEx UpdateEx Query DeleteEx function of abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
@@ -100,16 +100,16 @@ HWTEST_F(DataShareServiceStubTest, OnInsert001, TestSize.Level1)
     request.WriteBuffer(data, size);
     request.RewindRead(0);
     MessageParcel reply;
-    auto result = dataShareServiceStub->OnInsert(request, reply);
+    auto result = dataShareServiceStub->OnInsertEx(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 
-    result = dataShareServiceStub->OnUpdate(request, reply);
+    result = dataShareServiceStub->OnUpdateEx(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 
     result = dataShareServiceStub->OnQuery(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 
-    result = dataShareServiceStub->OnDelete(request, reply);
+    result = dataShareServiceStub->OnDeleteEx(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 }
 
