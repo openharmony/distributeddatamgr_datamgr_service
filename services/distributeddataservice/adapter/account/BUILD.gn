@@ -22,13 +22,10 @@ ohos_static_library("distributeddata_account_static") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [
-    "src/account_delegate.cpp",
-    "src/account_delegate_impl.cpp",
-  ]
+  sources = [ "src/account_delegate_impl.cpp" ]
 
   include_dirs = [
-    "../include/account",
+    "../../framework/include/account",
     "../include/autils",
     "../include/log",
     "../include/permission",

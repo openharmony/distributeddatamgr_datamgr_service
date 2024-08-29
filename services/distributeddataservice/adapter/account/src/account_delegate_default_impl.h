@@ -21,7 +21,6 @@ namespace OHOS {
 namespace DistributedKv {
 class AccountDelegateDefaultImpl final : public AccountDelegateImpl {
 public:
-    static AccountDelegate *GetBaseInstance();
     std::string GetCurrentAccountId() const override;
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
@@ -31,6 +30,7 @@ public:
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
+    static bool Init();
 
 private:
     ~AccountDelegateDefaultImpl();
