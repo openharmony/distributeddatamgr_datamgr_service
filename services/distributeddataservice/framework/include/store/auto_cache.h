@@ -67,12 +67,14 @@ private:
     void StartTimer();
     struct Delegate : public GeneralWatcher {
         Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta);
+        Delegate(const Delegate& delegate);
         ~Delegate();
         operator Store();
         bool operator<(const Time &time) const;
         bool Close();
         int32_t GetUser() const;
         int32_t GetArea() const;
+        const std::string& GetDataDir() const;
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
         int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
@@ -95,6 +97,7 @@ private:
     ConcurrentMap<uint32_t, std::map<std::string, Delegate>> stores_;
     ConcurrentMap<uint32_t, std::set<std::string>> disables_;
     Creator creators_[MAX_CREATOR_NUM];
+    std::set<std::string> disableStores_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_STORE_AUTO_CACHE_H
