@@ -135,6 +135,7 @@ public:
     virtual ~CloudServerMock() = default;
     static constexpr uint64_t REMAINSPACE = 1000;
     static constexpr uint64_t TATALSPACE = 2000;
+    static constexpr int32_t INVALID_USER_ID = -1;
 };
 
 CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
@@ -158,6 +159,14 @@ CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 
 std::pair<int32_t, SchemaMeta> CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundleName)
 {
+    if (userId == INVALID_USER_ID) {
+        return { E_ERROR, CloudDataTest::schemaMeta_ };
+    }
+
+    if (bundleName.empty()) {
+        SchemaMeta schemaMeta;
+        return { E_OK, schemaMeta };
+    }
     return { E_OK, CloudDataTest::schemaMeta_ };
 }
 
@@ -1647,6 +1656,151 @@ HWTEST_F(CloudDataTest, ConvertCursor, TestSize.Level0)
     auto cursor1 = std::make_shared<CursorMock>(resultSet1);
     auto result1 = cloudServiceImpl_->ConvertCursor(cursor1);
     EXPECT_TRUE(result1.empty());
+}
+
+/**
+* @tc.name: GetDbInfoFromExtraData
+* @tc.desc: Test the GetDbInfoFromExtraData function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetDbInfoFromExtraData, TestSize.Level0)
+{
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
+
+    SchemaMeta schemaMeta;
+    schemaMeta.databases.push_back(database);
+
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    database.tables.push_back(table);
+    SchemaMeta::Table table1;
+    table1.name = "test_cloud_table_name1";
+    table1.alias = "test_cloud_table_alias1";
+    table1.sharedTableName = "test_share_table_name1";
+    database.tables.emplace_back(table1);
+
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_2;
+    schemaMeta.databases.push_back(database);
+
+    ExtraData extraData;
+    extraData.info.containerName = TEST_CLOUD_DATABASE_ALIAS_2;
+    auto result = cloudServiceImpl_->GetDbInfoFromExtraData(extraData, schemaMeta);
+    EXPECT_EQ(result.begin()->first, TEST_CLOUD_STORE);
+
+    std::string tableName = "test_cloud_table_alias2";
+    extraData.info.tables.emplace_back(tableName);
+    result = cloudServiceImpl_->GetDbInfoFromExtraData(extraData, schemaMeta);
+    EXPECT_EQ(result.begin()->first, TEST_CLOUD_STORE);
+
+    std::string tableName1 = "test_cloud_table_alias1";
+    extraData.info.tables.emplace_back(tableName1);
+    extraData.info.scopes.emplace_back(DistributedData::ExtraData::SHARED_TABLE);
+    result = cloudServiceImpl_->GetDbInfoFromExtraData(extraData, schemaMeta);
+    EXPECT_EQ(result.begin()->first, TEST_CLOUD_STORE);
+}
+
+/**
+* @tc.name: QueryTableStatistic
+* @tc.desc: Test the QueryTableStatistic function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryTableStatistic, TestSize.Level0)
+{
+    auto store = std::make_shared<GeneralStoreMock>();
+    if (store != nullptr) {
+        std::map<std::string, Value> entry = { { "inserted", "TEST" }, { "updated", "TEST" }, { "normal", "TEST" } };
+        store->MakeCursor(entry);
+    }
+    auto [ret, result] = cloudServiceImpl_->QueryTableStatistic("test", store);
+    EXPECT_TRUE(ret);
+    if (store != nullptr) {
+        std::map<std::string, Value> entry = { { "Test", 1 } };
+        store->MakeCursor(entry);
+    }
+    std::tie(ret, result) = cloudServiceImpl_->QueryTableStatistic("test", store);
+    EXPECT_TRUE(ret);
+
+    if (store != nullptr) {
+        store->cursor_ = nullptr;
+    }
+    std::tie(ret, result) = cloudServiceImpl_->QueryTableStatistic("test", store);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name: GetSchemaMeta
+* @tc.desc: Test the GetSchemaMeta function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetSchemaMeta, TestSize.Level0)
+{
+    int32_t userId = 101;
+    int32_t instanceId = 0;
+    CloudInfo cloudInfo;
+    cloudInfo.user = userId;
+    cloudInfo.id = TEST_CLOUD_ID;
+    cloudInfo.enableCloud = true;
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.appId = TEST_CLOUD_APPID;
+    appInfo.version = 1;
+    appInfo.cloudSwitch = true;
+
+    cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    std::string bundleName = "testName";
+    auto [status, meta] = cloudServiceImpl_->GetSchemaMeta(userId, bundleName, instanceId);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    bundleName = TEST_CLOUD_BUNDLE;
+    DistributedData::SchemaMeta schemeMeta;
+    schemeMeta.bundleName = TEST_CLOUD_BUNDLE;
+    schemeMeta.metaVersion = DistributedData::SchemaMeta::CURRENT_VERSION + 1;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE, instanceId), schemeMeta, true);
+    std::tie(status, meta) = cloudServiceImpl_->GetSchemaMeta(userId, bundleName, instanceId);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    schemeMeta.metaVersion = DistributedData::SchemaMeta::CURRENT_VERSION;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE, instanceId), schemeMeta, true);
+    std::tie(status, meta) = cloudServiceImpl_->GetSchemaMeta(userId, bundleName, instanceId);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(meta.metaVersion, DistributedData::SchemaMeta::CURRENT_VERSION);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE, instanceId), true);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+}
+
+/**
+* @tc.name: GetAppSchemaFromServer
+* @tc.desc: Test the GetAppSchemaFromServer function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
+{
+    int32_t userId = CloudServerMock::INVALID_USER_ID;
+    std::string bundleName;
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::NONE);
+    DeviceManagerAdapter::GetInstance().expireTime_ =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count() +
+        1000;
+    auto [status, meta] = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::NETWORK_ERROR);
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
+    std::tie(status, meta) = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::SCHEMA_INVALID);
+    userId = 100;
+    std::tie(status, meta) = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::SCHEMA_INVALID);
+    bundleName = TEST_CLOUD_BUNDLE;
+    std::tie(status, meta) = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(meta.bundleName, schemaMeta_.bundleName);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
