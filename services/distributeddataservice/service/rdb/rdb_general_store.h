@@ -119,9 +119,15 @@ private:
             return watcher_ != nullptr;
         }
     private:
+        enum ChangeType {
+            CLOUD_DATA_CHANGE = 0,
+            CLOUD_DATA_CLEAN
+        };
+        void PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables, ChangeType type);
         friend RdbGeneralStore;
         Watcher *watcher_ = nullptr;
         std::string storeId_;
+        StoreMetaData meta_;
     };
     DBBriefCB GetDBBriefCB(DetailAsync async);
     DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t syncMode, uint32_t syncId,

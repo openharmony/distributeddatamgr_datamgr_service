@@ -540,16 +540,36 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
         }
         std::string extUri = uri;
         extUri.insert(strlen(EXT_URI_SCHEMA), "/");
+        StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
+        if (value.launchInfos.empty()) {
+            meta.storeId = "";
+            AutoLaunchMetaData autoLaunchMetaData = {};
+            std::vector<std::string> tempData = {};
+            autoLaunchMetaData.datas.emplace(extUri, tempData);
+            autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
+            MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), autoLaunchMetaData, true);
+            ZLOGI("Without launchInfos, save meta end, bundleName = %{public}s.", bundleName.c_str());
+            continue;
+        }
         for (const auto &launchInfo : value.launchInfos) {
-            AutoLaunchMetaData &autoLaunchMetaData = maps[launchInfo.storeId];
+            AutoLaunchMetaData autoLaunchMetaData = {};
             autoLaunchMetaData.datas.emplace(extUri, launchInfo.tableNames);
+            autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
+            meta.storeId = launchInfo.storeId;
+            MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), autoLaunchMetaData, true);
         }
     }
-    StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
-    for (const auto &[storeId, value] : maps) {
-        meta.storeId = storeId;
-        MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), value, true);
+}
+
+bool DataShareServiceImpl::AllowCleanDataLaunchApp(const Event &event, bool launchForCleanData)
+{
+    auto &evt = static_cast<const RemoteChangeEvent &>(event);
+    auto dataInfo = evt.GetDataInfo();
+    // 1 means CLOUD_DATA_CLEAN
+    if (dataInfo.changeType == 1) {
+        return launchForCleanData; // Applications can be started by default
     }
+    return true;
 }
 
 void DataShareServiceImpl::AutoLaunch(const Event &event)
@@ -561,19 +581,27 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
         return;
     }
-    if (autoLaunchMetaData.datas.empty()) {
+    if (autoLaunchMetaData.datas.empty() || !AllowCleanDataLaunchApp(event, autoLaunchMetaData.launchForCleanData)) {
         return;
-    }
-    std::vector<std::string> uris;
-    for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
-        for (const auto &table : dataInfo.tables)
-        if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
-            uris.emplace_back(uri);
-            break;
+        meta.storeId = "";
+        if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
+            ZLOGE("No launch meta without storeId, bundleName = %{public}s.", dataInfo.bundleName.c_str());
+            return;
         }
     }
-    for (const auto &uri : uris) {
-        ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+    for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
+        if (dataInfo.tables.empty() && dataInfo.changeType == 1) {
+            ZLOGI("Start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
+            ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+            return;
+        }
+        for (const auto &table : dataInfo.tables) {
+            if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
+                ZLOGI("Find table, start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
+                ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName);
+                break;
+            }
+        }
     }
 }
 
