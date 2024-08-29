@@ -115,15 +115,13 @@ DistributedData::GeneralError RdbCloud::PreSharing(const std::string& tableName,
 
 std::pair<DBStatus, uint32_t> RdbCloud::Lock()
 {
-    auto error = cloudDB_->Lock();
-    return std::make_pair(  // int64_t <-> uint32_t, s <-> ms
-        ConvertStatus(static_cast<GeneralError>(error)), cloudDB_->AliveTime() * TO_MS);
+    auto result = InnerLock(FLAG::SYSTEM_ABILITY);
+    return { ConvertStatus(result.first), result.second };
 }
 
 DBStatus RdbCloud::UnLock()
 {
-    auto error = cloudDB_->Unlock();
-    return ConvertStatus(static_cast<GeneralError>(error));
+    return ConvertStatus(InnerUnLock(FLAG::SYSTEM_ABILITY));
 }
 
 DBStatus RdbCloud::HeartBeat()
@@ -136,6 +134,34 @@ DBStatus RdbCloud::Close()
 {
     auto error = cloudDB_->Close();
     return ConvertStatus(static_cast<GeneralError>(error));
+}
+
+std::pair<GeneralError, uint32_t> RdbCloud::InnerLock(FLAG flag)
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    flag_ |= flag;
+    // int64_t <-> uint32_t, s <-> ms
+    return std::make_pair(static_cast<GeneralError>(cloudDB_->Lock()), cloudDB_->AliveTime() * TO_MS);
+}
+
+GeneralError RdbCloud::InnerUnLock(FLAG flag)
+{
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    flag_ &= ~flag;
+    if (flag_ == 0) {
+        return static_cast<GeneralError>(cloudDB_->Unlock());
+    }
+    return GeneralError::E_OK;
+}
+
+std::pair<GeneralError, uint32_t> RdbCloud::LockCloudDB(FLAG flag)
+{
+    return InnerLock(flag);
+}
+
+GeneralError RdbCloud::UnLockCloudDB(FLAG flag)
+{
+    return InnerUnLock(flag);
 }
 
 std::pair<DBStatus, std::string> RdbCloud::GetEmptyCursor(const std::string &tableName)
@@ -287,5 +313,10 @@ void RdbCloud::PostEventAsset(DistributedData::Asset& asset, DataBucket& extend,
         }
         it->second->Uploaded(asset);
     }
+}
+
+uint8_t RdbCloud::GetLockFlag() const
+{
+    return flag_;
 }
 } // namespace OHOS::DistributedRdb

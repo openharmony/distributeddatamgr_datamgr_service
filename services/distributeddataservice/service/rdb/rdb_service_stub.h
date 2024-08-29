@@ -68,6 +68,10 @@ private:
 
     int32_t OnEnable(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnLockCloudContainer(MessageParcel& data, MessageParcel& reply);
+
+    int32_t OnUnlockCloudContainer(MessageParcel& data, MessageParcel& reply);
+
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)] = {
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_TABLE)] =
@@ -94,7 +98,11 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_DISABLE)] = &RdbServiceStub::OnDisable,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_ENABLE)] = &RdbServiceStub::OnEnable,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_BEFORE_OPEN)] = &RdbServiceStub::OnBeforeOpen,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_AFTER_OPEN)] = &RdbServiceStub::OnAfterOpen
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_AFTER_OPEN)] = &RdbServiceStub::OnAfterOpen,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_LOCK_CLOUD_CONTAINER)] =
+            &RdbServiceStub::OnLockCloudContainer,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNLOCK_CLOUD_CONTAINER)] =
+            &RdbServiceStub::OnUnlockCloudContainer
     };
 };
 } // namespace OHOS::DistributedRdb

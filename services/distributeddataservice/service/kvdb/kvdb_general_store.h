@@ -75,6 +75,8 @@ public:
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
     void SetConfig(const StoreConfig &storeConfig) override;
+    virtual std::pair<GeneralError, uint32_t> LockCloudDB() override;
+    virtual GeneralError UnLockCloudDB() override;
 
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);

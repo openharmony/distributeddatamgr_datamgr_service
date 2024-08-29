@@ -370,4 +370,33 @@ int32_t RdbServiceStub::OnEnable(MessageParcel& data, MessageParcel& reply)
     }
     return RDB_OK;
 }
+
+int32_t RdbServiceStub::OnLockCloudContainer(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    uint32_t expiredTime = 0;
+    if (!ITypesUtil::Unmarshal(data, param, expiredTime)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto result = LockCloudContainer(param);
+    return ITypesUtil::Marshal(reply, result.first, result.second) ? RDB_OK : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t RdbServiceStub::OnUnlockCloudContainer(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto status = UnlockCloudContainer(param);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

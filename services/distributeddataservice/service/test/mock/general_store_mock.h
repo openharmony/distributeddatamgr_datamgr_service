@@ -51,6 +51,8 @@ public:
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void MakeCursor(const std::map<std::string, Value> &entry);
+    std::pair<GeneralError, uint32_t> LockCloudDB() override;
+    GeneralError UnLockCloudDB() override;
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;

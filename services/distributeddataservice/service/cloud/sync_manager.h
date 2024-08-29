@@ -135,6 +135,7 @@ private:
         const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
     void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
     bool NeedSaveSyncInfo(const QueryKey &queryKey);
+    std::function<void(const Event &)> GetLockChangeHandler();
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;

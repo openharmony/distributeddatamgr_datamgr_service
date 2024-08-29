@@ -95,6 +95,10 @@ public:
 
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
+    std::pair<int32_t, uint32_t> LockCloudContainer(const RdbSyncerParam &param) override;
+
+    int32_t UnlockCloudContainer(const RdbSyncerParam &param) override;
+
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
@@ -187,6 +191,8 @@ private:
     bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
 
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
+
+    StoreInfo GetStoreInfo(const RdbSyncerParam &param);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

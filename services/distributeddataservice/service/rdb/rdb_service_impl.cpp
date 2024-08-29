@@ -21,6 +21,7 @@
 #include "changeevent/remote_change_event.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_share_event.h"
+#include "cloud/cloud_lock_event.h"
 #include "cloud/make_query_event.h"
 #include "commonevent/data_change_event.h"
 #include "commonevent/set_searchable_event.h"
@@ -1142,5 +1143,55 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam& param)
     auto storeId = RemoveSuffix(param.storeName_);
     AutoCache::GetInstance().Enable(tokenId, storeId);
     return E_OK;
+}
+
+StoreInfo RdbServiceImpl::GetStoreInfo(const RdbSyncerParam &param)
+{
+    StoreInfo storeInfo;
+    storeInfo.bundleName = param.bundleName_;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.storeName = RemoveSuffix(param.storeName_);
+    return storeInfo;
+}
+
+std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerParam &param)
+{
+    std::pair<int32_t, uint32_t> result { RDB_ERROR, 0 };
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+              Anonymous::Change(param.storeName_).c_str());
+        return result;
+    }
+
+    auto storeInfo = GetStoreInfo(param);
+
+    CloudLockEvent::Callback callback = [&result](int32_t status, uint32_t expiredTime) {
+        result.first = status;
+        result.second = expiredTime;
+    };
+    auto evt = std::make_unique<CloudLockEvent>(CloudEvent::LOCK_CLOUD_CONTAINER, std::move(storeInfo), callback);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return result;
+}
+
+int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
+{
+    int32_t result = RDB_ERROR;
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+              Anonymous::Change(param.storeName_).c_str());
+        return result;
+    }
+
+    auto storeInfo = GetStoreInfo(param);
+
+    CloudLockEvent::Callback callback = [&result](int32_t status, uint32_t expiredTime) {
+        (void)expiredTime;
+        result = status;
+    };
+    auto evt = std::make_unique<CloudLockEvent>(CloudEvent::UNLOCK_CLOUD_CONTAINER, std::move(storeInfo), callback);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return result;
 }
 } // namespace OHOS::DistributedRdb

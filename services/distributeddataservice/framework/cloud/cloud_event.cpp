@@ -17,12 +17,17 @@
 
 namespace OHOS::DistributedData {
 CloudEvent::CloudEvent(int32_t evtId, StoreInfo storeInfo)
-    : Event(evtId), storeInfo_(std::move(storeInfo))
+    : Event(evtId), eventId_(evtId), storeInfo_(std::move(storeInfo))
 {
 }
 
 const StoreInfo& CloudEvent::GetStoreInfo() const
 {
     return storeInfo_;
+}
+
+int32_t CloudEvent::GetEventId() const
+{
+    return eventId_;
 }
 }
