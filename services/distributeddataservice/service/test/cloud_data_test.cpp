@@ -1802,5 +1802,107 @@ HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_EQ(meta.bundleName, schemaMeta_.bundleName);
 }
+
+/**
+* @tc.name: OnAppUninstall
+* @tc.desc: Test the OnAppUninstall function delete the subscription data
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
+{
+    ZLOGI("weisx test OnAppUninstall 111");
+    CloudData::CloudServiceImpl::CloudStatic cloudStatic;
+    int32_t userId = 1001;
+    Subscription sub;
+    sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, 0);
+    MetaDataManager::GetInstance().SaveMeta(Subscription::GetKey(userId), sub, true);
+    CloudInfo cloudInfo;
+    cloudInfo.user = userId;
+    CloudInfo::AppInfo appInfo;
+    cloudInfo.apps.insert_or_assign(TEST_CLOUD_BUNDLE, appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    int32_t index = 1;
+    auto ret = cloudStatic.OnAppUninstall(TEST_CLOUD_BUNDLE, userId, index);
+    EXPECT_EQ(ret, E_OK);
+    Subscription sub1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(userId), sub1, true));
+    EXPECT_EQ(sub1.expiresTime.size(), 0);
+}
+
+/**
+* @tc.name: GetCloudInfo
+* @tc.desc: Test the GetCloudInfo with invalid parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCloudInfo001, TestSize.Level0)
+{
+    ZLOGI("weisx test OnAppUninstall 111");
+    int32_t userId = 1000;
+    auto [status, cloudInfo] = cloudServiceImpl_->GetCloudInfo(userId);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::NONE);
+    DeviceManagerAdapter::GetInstance().expireTime_ =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count() +
+        1000;
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    std::tie(status, cloudInfo) = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
+    EXPECT_EQ(status, CloudData::CloudService::NETWORK_ERROR);
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
+}
+
+/**
+* @tc.name: PreShare
+* @tc.desc: Test the PreShare with invalid parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, PreShare, TestSize.Level0)
+{
+    int32_t userId = 1000;
+    StoreInfo info;
+    info.instanceId = 0;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    info.storeName = TEST_CLOUD_BUNDLE;
+    info.user = userId;
+    StoreMetaData meta(info);
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+    DistributedRdb::RdbQuery query;
+    auto [status, cursor] = cloudServiceImpl_->PreShare(info, query);
+    EXPECT_EQ(status, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: InitSubTask
+* @tc.desc: Test the InitSubTask with invalid parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, InitSubTask, TestSize.Level0)
+{
+    uint64_t minInterval = 0;
+    uint64_t expire = 24 * 60 * 60 * 1000; // 24hours, ms
+    ExecutorPool::TaskId taskId = 100;
+    Subscription sub;
+    sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, expire);
+    std::shared_ptr<ExecutorPool> executor = std::move(cloudServiceImpl_->executor_);
+    cloudServiceImpl_->executor_ = nullptr;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_EQ(sub.GetMinExpireTime(), expire);
+    cloudServiceImpl_->executor_ = std::move(executor);
+    cloudServiceImpl_->subTask_ = taskId;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_NE(cloudServiceImpl_->subTask_, taskId);
+    cloudServiceImpl_->subTask_ = taskId;
+    cloudServiceImpl_->expireTime_ = 0;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_EQ(cloudServiceImpl_->subTask_, taskId);
+    cloudServiceImpl_->subTask_ = ExecutorPool::INVALID_TASK_ID;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_NE(cloudServiceImpl_->subTask_, ExecutorPool::INVALID_TASK_ID);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
