@@ -544,6 +544,36 @@ ohos_unittest("ObjectAssetMachineTest") {
   ]
 }
 
+ohos_unittest("ObjectDmsHandlerTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../object/object_dms_handler.cpp",
+    "object_dms_handler_test.cpp",
+  ]
+
+  include_dirs = []
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dmsfwk:distributed_sdk",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "//third_party/googletest:gtest_main",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
 ohos_unittest("ObjectManagerTest") {
   module_out_path = module_output_path
   sources = [
@@ -1024,6 +1054,7 @@ group("unittest") {
     ":MetaDataTest",
     ":ObjectAssetLoaderTest",
     ":ObjectAssetMachineTest",
+    ":ObjectDmsHandlerTest",
     ":ObjectManagerTest",
     ":ObjectSnapshotTest",
     ":RdbResultSetImplTest",

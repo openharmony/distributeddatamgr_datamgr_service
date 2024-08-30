@@ -19,6 +19,7 @@
 
 #include <ipc_skeleton.h>
 
+#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
@@ -31,6 +32,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "object_asset_loader.h"
+#include "object_dms_handler.h"
 #include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
@@ -42,6 +44,7 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
+constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 ObjectServiceImpl::Factory::Factory()
 {
     FeatureSystem::GetInstance().RegisterCreator(
@@ -108,6 +111,22 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
     return status;
 }
 
+int32_t ObjectServiceImpl::IsContinue(bool &result)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    Security::AccessToken::HapTokenInfo tokenInfo;
+    auto status = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (status != 0) {
+        ZLOGE("Get hap token info failed, tokenId: %{public}u, status: %{public}d", tokenId, status);
+        return status;
+    }
+    DistributedHardware::DmDeviceInfo info;
+    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, info);
+    std::string networkId = info.networkId;
+    result = ObjectDmsHandler::GetInstance().IsContinue(networkId, tokenInfo.bundleName);
+    return OBJECT_SUCCESS;
+}
+
 int32_t ObjectServiceImpl::OnInitialize()
 {
     ZLOGI("Initialize");
@@ -155,6 +174,7 @@ int32_t ObjectServiceImpl::OnInitialize()
         saveMeta.appId.c_str(), saveMeta.GetStoreAlias().c_str());
     RegisterObjectServiceInfo();
     RegisterHandler();
+    ObjectDmsHandler::GetInstance().RegisterDmsEvent();
     return OBJECT_SUCCESS;
 }
 
