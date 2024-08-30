@@ -17,6 +17,7 @@
 #include "rdb_general_store.h"
 
 #include <random>
+#include <thread>
 
 #include "bootstrap.h"
 #include "cloud/schema_meta.h"
@@ -402,6 +403,29 @@ HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
     store->delegate_ = &mockDelegate;
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_BUSY);
+}
+
+/**
+* @tc.name: Close
+* @tc.desc: RdbGeneralStore Close test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: shaoyuanzhao
+*/
+HWTEST_F(RdbGeneralStoreTest, BusyClose, TestSize.Level1)
+{
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::thread thread([store]() {
+        std::unique_lock<decltype(store->rwMutex_)> lock(store->rwMutex_);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_BUSY);
+    thread.join();
+    ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**
