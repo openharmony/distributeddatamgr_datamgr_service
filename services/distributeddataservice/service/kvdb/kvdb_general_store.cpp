@@ -37,7 +37,6 @@
 #include "utils/anonymous.h"
 #include "water_version_manager.h"
 #include "device_manager_adapter.h"
-#include "utils/anonymous.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -765,5 +764,25 @@ std::pair<GeneralError, uint32_t> KVDBGeneralStore::LockCloudDB()
 GeneralError KVDBGeneralStore::UnLockCloudDB()
 {
     return GeneralError::E_NOT_SUPPORT;
+}
+
+int32_t KVDBGeneralStore::RemoveDeviceData(const std::string &device)
+{
+    if (delegate_ == nullptr) {
+        ZLOGE("store already closed!");
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    DBStatus dbStatus;
+    if (device.empty()) {
+        dbStatus = delegate_->RemoveDeviceData();
+    } else {
+        dbStatus = delegate_->RemoveDeviceData(DMAdapter::GetInstance().ToUUID(device));
+    }
+
+    if (dbStatus != DBStatus::OK) {
+        ZLOGE("remove deviceData failed, status:%{public}d, device:%{public}s", dbStatus,
+            Anonymous::Change(device).c_str());
+    }
+    return dbStatus;
 }
 } // namespace OHOS::DistributedKv

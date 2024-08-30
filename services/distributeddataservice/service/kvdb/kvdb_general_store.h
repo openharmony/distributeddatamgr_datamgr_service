@@ -81,6 +81,7 @@ public:
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
     static DBSecurity GetDBSecurity(int32_t secLevel);
+    int32_t RemoveDeviceData(const std::string &device) override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;

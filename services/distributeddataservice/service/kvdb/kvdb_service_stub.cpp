@@ -50,6 +50,7 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnSubscribeSwitchData,
     &KVDBServiceStub::OnUnsubscribeSwitchData,
     &KVDBServiceStub::OnClose,
+    &KVDBServiceStub::OnRemoveDeviceData,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
@@ -108,7 +109,7 @@ std::pair<int32_t, KVDBServiceStub::StoreInfo> KVDBServiceStub::GetStoreInfo(uin
 bool KVDBServiceStub::CheckPermission(uint32_t code, const StoreInfo &storeInfo)
 {
     if (code >= static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_PUT_SWITCH) &&
-        code < static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)) {
+        code <= static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_UNSUBSCRIBE_SWITCH_DATA)) {
         return CheckerManager::GetInstance().IsSwitches(storeInfo);
     }
     return CheckerManager::GetInstance().IsValid(storeInfo);
@@ -519,6 +520,23 @@ int32_t KVDBServiceStub::OnSetConfig(const AppId &appId, const StoreId &storeId,
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = SetConfig(appId, storeId, storeConfig);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnRemoveDeviceData(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+    MessageParcel &reply)
+{
+    std::string device;
+    if (!ITypesUtil::Unmarshal(data, device)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = RemoveDeviceData(appId, storeId, device);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
