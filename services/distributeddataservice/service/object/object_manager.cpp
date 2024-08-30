@@ -171,7 +171,8 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
         proxy->Completed(results);
         ProcessSyncCallback(results, appId, sessionId, deviceId);
     };
-    ZLOGD("start SyncOnStore");
+    ZLOGI("Sync data, bundleName: %{public}s, sessionId: %{public}s, deviceId: %{public}s", appId.c_str(),
+        sessionId.c_str(), Anonymous::Change(deviceId).c_str());
     std::vector<std::string> deviceList = {deviceId};
     result = SyncOnStore(GetPropertyPrefix(appId, sessionId, deviceId), deviceList, tmp);
     if (result != OBJECT_SUCCESS) {
@@ -767,9 +768,11 @@ void ObjectStoreManager::SyncCompleted(
     }
     for (const auto &item : results) {
         if (item.second == DistributedDB::DBStatus::OK) {
+            ZLOGI("Sync success, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
             RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SYNC_DATA, ObjectStore::RADAR_SUCCESS,
                 ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         } else {
+            ZLOGE("Sync failed, sequenceId: 0x%{public}" PRIx64 ", status: %{public}d", sequenceId, item.second);
             RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SYNC_DATA, ObjectStore::RADAR_FAILED,
                 ObjectStore::ERROR_CODE, item.second, ObjectStore::BIZ_STATE, ObjectStore::FINISHED);
         }
@@ -885,7 +888,7 @@ int32_t ObjectStoreManager::SyncOnStore(
         uint64_t sequenceId = SequenceSyncManager::GetInstance()->AddNotifier(userId_, callback);
         DistributedDB::Query dbQuery = DistributedDB::Query::Select();
         dbQuery.PrefixKey(std::vector<uint8_t>(prefix.begin(), prefix.end()));
-        ZLOGD("start sync");
+        ZLOGI("Start sync, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
         auto status = delegate_->Sync(
             syncDevices, DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY,
             [this, sequenceId](const std::map<std::string, DistributedDB::DBStatus> &devicesMap) {
