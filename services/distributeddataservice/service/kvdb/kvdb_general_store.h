@@ -81,6 +81,7 @@ public:
     static DBSecurity GetDBSecurity(int32_t secLevel);
     virtual std::pair<int32_t, uint32_t> LockCloudDB() override;
     virtual int32_t UnLockCloudDB() override;
+    int32_t RemoveDeviceData(const std::string &device) override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;

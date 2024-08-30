@@ -87,7 +87,7 @@ public:
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
-
+    int32_t RemoveDeviceData(const std::string &device) override;
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
     RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore);

@@ -1334,4 +1334,19 @@ bool KVDBServiceImpl::IsOHOSType(const std::vector<std::string> &ids)
     }
     return isOHOSType;
 }
+
+Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device)
+{
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    auto watcher = GetWatchers(metaData.tokenId, metaData.storeId);
+    auto store = AutoCache::GetInstance().GetStore(metaData, watcher);
+    if (store == nullptr) {
+        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", metaData.bundleName.c_str(),
+            Anonymous::Change(metaData.storeId).c_str(), metaData.dataDir.c_str());
+        return Status::ERROR;
+    }
+    auto ret = store->RemoveDeviceData(device);
+    return ConvertDbStatus(DBStatus(ret));
+}
 } // namespace OHOS::DistributedKv

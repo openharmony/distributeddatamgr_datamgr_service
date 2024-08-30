@@ -1149,4 +1149,9 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
         return;
     };
 }
+
+int32_t RdbGeneralStore::RemoveDeviceData(const std::string &device)
+{
+    return GeneralError::E_NOT_SUPPORT;
+}
 } // namespace OHOS::DistributedRdb

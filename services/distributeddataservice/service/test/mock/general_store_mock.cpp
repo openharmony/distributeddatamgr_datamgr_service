@@ -160,5 +160,10 @@ void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor)
 {
     return;
 }
+
+int32_t GeneralStoreMock::RemoveDeviceData(const std::string &device)
+{
+    return E_OK;
+}
 } // namespace DistributedData
 } // namespace OHOS

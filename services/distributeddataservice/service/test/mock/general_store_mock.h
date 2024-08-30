@@ -54,6 +54,7 @@ public:
     void MakeCursor(const std::map<std::string, Value> &entry);
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
+    int32_t RemoveDeviceData(const std::string &device) override;
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;

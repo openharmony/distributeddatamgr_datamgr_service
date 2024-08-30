@@ -73,6 +73,7 @@ public:
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device) override;
 
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
