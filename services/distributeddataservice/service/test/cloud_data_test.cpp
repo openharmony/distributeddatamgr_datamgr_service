@@ -1884,11 +1884,9 @@ HWTEST_F(CloudDataTest, PreShare, TestSize.Level0)
 HWTEST_F(CloudDataTest, InitSubTask, TestSize.Level0)
 {
     uint64_t minInterval = 0;
+    uint64_t expire = 24 * 60 * 60 * 1000; // 24hours, ms
     ExecutorPool::TaskId taskId = 100;
     Subscription sub;
-    auto expire =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
-            .count();
     sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, expire);
     std::shared_ptr<ExecutorPool> executor = std::move(cloudServiceImpl_->executor_);
     cloudServiceImpl_->executor_ = nullptr;
@@ -1898,9 +1896,10 @@ HWTEST_F(CloudDataTest, InitSubTask, TestSize.Level0)
     cloudServiceImpl_->subTask_ = taskId;
     cloudServiceImpl_->InitSubTask(sub, minInterval);
     EXPECT_NE(cloudServiceImpl_->subTask_, taskId);
+    cloudServiceImpl_->subTask_ = taskId;
     cloudServiceImpl_->expireTime_ = 0;
     cloudServiceImpl_->InitSubTask(sub, minInterval);
-    EXPECT_NE(cloudServiceImpl_->subTask_, taskId);
+    EXPECT_EQ(cloudServiceImpl_->subTask_, taskId);
     cloudServiceImpl_->subTask_ = ExecutorPool::INVALID_TASK_ID;
     cloudServiceImpl_->InitSubTask(sub, minInterval);
     EXPECT_NE(cloudServiceImpl_->subTask_, ExecutorPool::INVALID_TASK_ID);
