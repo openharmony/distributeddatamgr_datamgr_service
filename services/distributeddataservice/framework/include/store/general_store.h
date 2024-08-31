@@ -181,8 +181,6 @@ public:
     virtual std::pair<int32_t, uint32_t> LockCloudDB() = 0;
 
     virtual int32_t UnLockCloudDB() = 0;
-
-    virtual int32_t RemoveDeviceData(const std::string &device);
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

@@ -49,6 +49,30 @@ using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
 constexpr int UUID_WIDTH = 4;
+const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap_ = {
+    { DBStatus::OK, GenErr::E_OK },
+    { DBStatus::CLOUD_NETWORK_ERROR, GenErr::E_NETWORK_ERROR },
+    { DBStatus::CLOUD_LOCK_ERROR, GenErr::E_LOCKED_BY_OTHERS },
+    { DBStatus::CLOUD_FULL_RECORDS, GenErr::E_RECODE_LIMIT_EXCEEDED },
+    { DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT, GenErr::E_NO_SPACE_FOR_ASSET },
+    { DBStatus::CLOUD_SYNC_TASK_MERGED, GenErr::E_SYNC_TASK_MERGED },
+    { DBStatus::BUSY, GenErr::E_DB_ERROR },
+    { DBStatus::DB_ERROR, GenErr::E_DB_ERROR },
+    { DBStatus::INVALID_ARGS, GenErr::E_INVALID_ARGS },
+    { DBStatus::NOT_FOUND, GenErr::E_RECORD_NOT_FOUND },
+    { DBStatus::INVALID_VALUE_FIELDS, GenErr::E_INVALID_VALUE_FIELDS },
+    { DBStatus::INVALID_FIELD_TYPE, GenErr::E_INVALID_FIELD_TYPE },
+    { DBStatus::CONSTRAIN_VIOLATION, GenErr::E_CONSTRAIN_VIOLATION },
+    { DBStatus::INVALID_FORMAT, GenErr::E_INVALID_FORMAT },
+    { DBStatus::INVALID_QUERY_FORMAT, GenErr::E_INVALID_QUERY_FORMAT },
+    { DBStatus::INVALID_QUERY_FIELD, GenErr::E_INVALID_QUERY_FIELD },
+    { DBStatus::NOT_SUPPORT, GenErr::E_NOT_SUPPORT },
+    { DBStatus::TIME_OUT, GenErr::E_TIME_OUT },
+    { DBStatus::OVER_MAX_LIMITS, GenErr::E_OVER_MAX_LIMITS },
+    { DBStatus::EKEYREVOKED_ERROR, GenErr::E_SECURITY_LEVEL_ERROR },
+    { DBStatus::SECURITY_OPTION_CHECK_ERROR, GenErr::E_SECURITY_LEVEL_ERROR },
+};
+
 static DBSchema GetDBSchema(const Database &database)
 {
     DBSchema schema;
@@ -471,7 +495,7 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
         default:
             return GeneralError::E_ERROR;
     }
-    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+    return ConvertStatus(status);
 }
 
 int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
@@ -534,23 +558,11 @@ int32_t KVDBGeneralStore::SetTrackerTable(
 
 KVDBGeneralStore::GenErr KVDBGeneralStore::ConvertStatus(DistributedDB::DBStatus status)
 {
-    switch (status) {
-        case DBStatus::OK:
-            return GenErr::E_OK;
-        case DBStatus::CLOUD_NETWORK_ERROR:
-            return GenErr::E_NETWORK_ERROR;
-        case DBStatus::CLOUD_LOCK_ERROR:
-            return GenErr::E_LOCKED_BY_OTHERS;
-        case DBStatus::CLOUD_FULL_RECORDS:
-            return GenErr::E_RECODE_LIMIT_EXCEEDED;
-        case DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT:
-            return GenErr::E_NO_SPACE_FOR_ASSET;
-        case DBStatus::CLOUD_SYNC_TASK_MERGED:
-            return GenErr::E_SYNC_TASK_MERGED;
-        default:
-            ZLOGI("status:0x%{public}x", status);
-            break;
+    auto it = dbStatusMap_.find(status);
+    if (it != dbStatusMap_.end()) {
+        return it->second;
     }
+    ZLOGI("status:0x%{public}x", status);
     return GenErr::E_ERROR;
 }
 
@@ -772,25 +784,5 @@ int32_t KVDBGeneralStore::UnLockCloudDB()
 void KVDBGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
 {
     return;
-}
-
-int32_t KVDBGeneralStore::RemoveDeviceData(const std::string &device)
-{
-    if (delegate_ == nullptr) {
-        ZLOGE("store already closed!");
-        return GeneralError::E_ALREADY_CLOSED;
-    }
-    DBStatus dbStatus;
-    if (device.empty()) {
-        dbStatus = delegate_->RemoveDeviceData();
-    } else {
-        dbStatus = delegate_->RemoveDeviceData(DMAdapter::GetInstance().ToUUID(device));
-    }
-
-    if (dbStatus != DBStatus::OK) {
-        ZLOGE("remove deviceData failed, status:%{public}d, device:%{public}s", dbStatus,
-            Anonymous::Change(device).c_str());
-    }
-    return dbStatus;
 }
 } // namespace OHOS::DistributedKv
