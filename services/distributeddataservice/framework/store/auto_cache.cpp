@@ -144,6 +144,7 @@ void AutoCache::StartTimer()
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
 {
+    ZLOGD("close store start: %{public}s", Anonymous::Change(storeId).c_str());
     std::set<std::string> storeIds;
     std::list<Delegate> closeStores;
     bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();

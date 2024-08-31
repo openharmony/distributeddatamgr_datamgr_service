@@ -1037,6 +1037,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         }
     }
     if (notifyFlag) {
+        ZLOGI("post data change for cleaning cloud data");
         PostDataChange(meta_, {}, CLOUD_DATA_CLEAN);
     }
     if (!data.field.empty()) {
