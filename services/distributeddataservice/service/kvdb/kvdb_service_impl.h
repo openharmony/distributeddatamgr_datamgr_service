@@ -73,6 +73,7 @@ public:
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device) override;
 
 private:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -86,6 +87,7 @@ private:
     using DBStatus = DistributedDB::DBStatus;
     using DBMode = DistributedDB::SyncMode;
     using Action = OHOS::DistributedData::MetaDataManager::Action;
+    using GeneralError = DistributedData::GeneralError;
     enum SyncAction {
         ACTION_SYNC,
         ACTION_SUBSCRIBE,
@@ -126,6 +128,7 @@ private:
     Status DoComplete(const StoreMetaData &meta, const SyncInfo &info, RefCount refCount, const DBResult &dbResult);
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
+    Status ConvertGeneralErr(GeneralError error) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
     ChangeType ConvertType(SyncMode syncMode) const;
     SwitchState ConvertAction(Action action) const;

@@ -135,6 +135,7 @@ private:
     static constexpr const char *defaultAccountId = "ohosAnonymousUid";
     bool enableCloud_ = false;
     bool isPublic_ = false;
+    static const std::map<DBStatus, GenErr> dbStatusMap_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

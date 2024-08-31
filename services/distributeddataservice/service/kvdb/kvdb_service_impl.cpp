@@ -1195,6 +1195,43 @@ Status KVDBServiceImpl::ConvertDbStatus(DBStatus status) const
     return Status::ERROR;
 }
 
+Status KVDBServiceImpl::ConvertGeneralErr(GeneralError error) const
+{
+    switch (error) {
+        case GeneralError::E_DB_ERROR:
+            return Status::DB_ERROR;
+        case GeneralError::E_OK:
+            return Status::SUCCESS;
+        case GeneralError::E_INVALID_ARGS:
+            return Status::INVALID_ARGUMENT;
+        case GeneralError::E_RECORD_NOT_FOUND:
+            return Status::KEY_NOT_FOUND;
+        case GeneralError::E_INVALID_VALUE_FIELDS:
+            return Status::INVALID_VALUE_FIELDS;
+        case GeneralError::E_INVALID_FIELD_TYPE:
+            return Status::INVALID_FIELD_TYPE;
+        case GeneralError::E_CONSTRAIN_VIOLATION:
+            return Status::CONSTRAIN_VIOLATION;
+        case GeneralError::E_INVALID_FORMAT:
+            return Status::INVALID_FORMAT;
+        case GeneralError::E_INVALID_QUERY_FORMAT:
+            return Status::INVALID_QUERY_FORMAT;
+        case GeneralError::E_INVALID_QUERY_FIELD:
+            return Status::INVALID_QUERY_FIELD;
+        case GeneralError::E_NOT_SUPPORT:
+            return Status::NOT_SUPPORT;
+        case GeneralError::E_TIME_OUT:
+            return Status::TIME_OUT;
+        case GeneralError::E_OVER_MAX_LIMITS:
+            return Status::OVER_MAX_LIMITS;
+        case GeneralError::E_SECURITY_LEVEL_ERROR:
+            return Status::SECURITY_LEVEL_ERROR;
+        default:
+            break;
+    }
+    return Status::ERROR;
+}
+
 KVDBServiceImpl::DBMode KVDBServiceImpl::ConvertDBMode(SyncMode syncMode) const
 {
     DBMode dbMode;
@@ -1333,5 +1370,26 @@ bool KVDBServiceImpl::IsOHOSType(const std::vector<std::string> &ids)
         }
     }
     return isOHOSType;
+}
+
+Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device)
+{
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    auto watcher = GetWatchers(metaData.tokenId, metaData.storeId);
+    auto store = AutoCache::GetInstance().GetStore(metaData, watcher);
+    if (store == nullptr) {
+        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", metaData.bundleName.c_str(),
+            Anonymous::Change(metaData.storeId).c_str(), metaData.dataDir.c_str());
+        return Status::ERROR;
+    }
+
+    int32_t ret;
+    if (device.empty()) {
+        ret = store->Clean({}, KVDBGeneralStore::NEARBY_DATA, "");
+    } else {
+        ret = store->Clean({ DMAdapter::GetInstance().ToUUID(device) }, KVDBGeneralStore::NEARBY_DATA, "");
+    }
+    return ConvertGeneralErr(GeneralError(ret));
 }
 } // namespace OHOS::DistributedKv
