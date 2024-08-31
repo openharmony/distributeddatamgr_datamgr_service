@@ -171,3 +171,35 @@ HWTEST_F(CheckerManagerTest, BundleChecker, TestSize.Level0)
     ASSERT_EQ(Crypto::Sha256(tokenInfo.appID), CheckerManager::GetInstance().GetAppId(storeInfo));
     ASSERT_TRUE(CheckerManager::GetInstance().IsValid(storeInfo));
 }
+
+/**
+* @tc.name: IsDynamic
+* @tc.desc: checker data type.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CheckerManagerTest, IsDynamic, TestSize.Level0)
+{
+    CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = 2000000;
+    storeInfo.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    storeInfo.bundleName = "ohos.test.demo";
+    ASSERT_FALSE(CheckerManager::GetInstance().IsDynamic(storeInfo));
+}
+
+/**
+* @tc.name: IsStatic
+* @tc.desc: checker data type.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CheckerManagerTest, IsStatic, TestSize.Level0)
+{
+    CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = 2000000;
+    storeInfo.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    storeInfo.bundleName = "ohos.test.demo";
+    ASSERT_FALSE(CheckerManager::GetInstance().IsStatic(storeInfo));
+}
