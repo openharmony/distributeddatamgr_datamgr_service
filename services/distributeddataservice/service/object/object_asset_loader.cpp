@@ -176,8 +176,8 @@ int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &asset
     if (status != OBJECT_SUCCESS) {
         ZLOGE("PushAsset err status: %{public}d, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
             status, assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), assetObj->sessionId_.c_str());
-        ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
-            ObjectStore::RADAR_FAILED, status, ObjectStore::FINISHED);
+        ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
+            ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED, status, ObjectStore::FINISHED);
     }
     return status;
 }
@@ -195,8 +195,8 @@ int32_t ObjectAssetsSendListener::OnSendResult(const sptr<AssetObj> &assetObj, i
         ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
             ObjectStore::RADAR_SUCCESS);
     } else {
-        ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
-            ObjectStore::RADAR_FAILED, result, ObjectStore::FINISHED);
+        ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
+            ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED, result, ObjectStore::FINISHED);
     }
     return result;
 }
