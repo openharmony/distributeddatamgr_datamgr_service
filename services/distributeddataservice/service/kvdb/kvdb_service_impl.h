@@ -88,6 +88,7 @@ private:
     using DBStatus = DistributedDB::DBStatus;
     using DBMode = DistributedDB::SyncMode;
     using Action = OHOS::DistributedData::MetaDataManager::Action;
+    using GeneralError = DistributedData::GeneralError;
     enum SyncAction {
         ACTION_SYNC,
         ACTION_SUBSCRIBE,
@@ -128,6 +129,7 @@ private:
     Status DoComplete(const StoreMetaData &meta, const SyncInfo &info, RefCount refCount, const DBResult &dbResult);
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;
+    Status ConvertGeneralErr(GeneralError error) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;
     ChangeType ConvertType(SyncMode syncMode) const;
     SwitchState ConvertAction(Action action) const;

@@ -81,7 +81,6 @@ public:
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
     static DBSecurity GetDBSecurity(int32_t secLevel);
-    int32_t RemoveDeviceData(const std::string &device) override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;
@@ -136,6 +135,7 @@ private:
     static constexpr const char *defaultAccountId = "default";
     bool enableCloud_ = false;
     bool isPublic_ = false;
+    static const std::map<DBStatus, GenErr> dbStatusMap_;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H
