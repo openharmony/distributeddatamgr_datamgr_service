@@ -178,7 +178,7 @@ private:
     bool RegisterAssetsLister();
     void ComputeStatus(const std::string& objectKey, const SaveInfo& saveInfo,
         const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
-    void NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data,
+    void NotifyDataChanged(const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data,
         const SaveInfo& saveInfo);
     int32_t PushAssets(int32_t userId, const std::string &appId, const std::string &sessionId,
         const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId);

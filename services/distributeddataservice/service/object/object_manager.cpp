@@ -497,8 +497,8 @@ void ObjectStoreManager::ComputeStatus(const std::string& objectKey, const SaveI
     });
 }
 
-void ObjectStoreManager::NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data,
-    const SaveInfo& saveInfo)
+void ObjectStoreManager::NotifyDataChanged(const std::map<std::string, std::map<std::string,
+    std::vector<uint8_t>>>& data, const SaveInfo& saveInfo)
 {
     for (auto const& [objectKey, results] : data) {
         restoreStatus_.ComputeIfAbsent(
@@ -1217,7 +1217,7 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
     auto snapshotKey = appId + SEPERATOR + sessionId;
     int32_t res = OBJECT_SUCCESS;
     bool exist = snapshots_.ComputeIfPresent(snapshotKey,
-        [&res, &dataAsset, &deviceId](std::string key, std::shared_ptr<Snapshot> snapshot) {
+        [&res, &dataAsset, &deviceId](const std::string key, std::shared_ptr<Snapshot> snapshot) {
             if (snapshot != nullptr) {
                 res = snapshot->OnDataChanged(dataAsset, deviceId); // needChange
             }
