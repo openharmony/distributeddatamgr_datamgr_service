@@ -119,7 +119,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         return ERROR;
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
-    ZLOGI("EnableCloud success");
+    ZLOGI("EnableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
 
@@ -142,7 +142,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
         return ERROR;
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE, WORK_SUB }));
-    ZLOGI("DisableCloud success");
+    ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
 
@@ -708,7 +708,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
     }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        ZLOGD("cloud server is nullptr");
+        ZLOGD("cloud server is nullptr, user%{public}d", userId);
         return { SERVER_UNAVAILABLE, cloudInfo };
     }
     cloudInfo = instance->GetServerInfo(cloudInfo.user);
