@@ -708,12 +708,12 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
     }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
-        ZLOGD("cloud server is nullptr, user%{public}d", userId);
+        ZLOGD("cloud server is nullptr, user:%{public}d", userId);
         return { SERVER_UNAVAILABLE, cloudInfo };
     }
     cloudInfo = instance->GetServerInfo(cloudInfo.user);
     if (!cloudInfo.IsValid()) {
-        ZLOGE("cloud is empty, user%{public}d", cloudInfo.user);
+        ZLOGE("cloud is empty, user:%{public}d", cloudInfo.user);
         return { CLOUD_INFO_INVALID, cloudInfo };
     }
     return { SUCCESS, cloudInfo };
