@@ -27,6 +27,7 @@ public:
     using TableProperties = std::map<std::string, TableChangeProperties>;
     struct EventInfo {
         TableProperties tableProperties;
+        bool isFull;
     };
 
     DataChangeEvent(StoreInfo storeInfo, EventInfo evtInfo)
@@ -39,6 +40,11 @@ public:
     TableProperties GetTableProperties() const
     {
         return info_.tableProperties;
+    }
+
+    bool IsFull() const
+    {
+        return info_.isFull;
     }
 private:
     EventInfo info_;

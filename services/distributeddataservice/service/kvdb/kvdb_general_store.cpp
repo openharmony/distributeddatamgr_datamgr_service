@@ -73,6 +73,7 @@ const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap
     { DBStatus::SECURITY_OPTION_CHECK_ERROR, GenErr::E_SECURITY_LEVEL_ERROR },
 };
 
+constexpr uint32_t LOCK_TIMEOUT = 3600; // second
 static DBSchema GetDBSchema(const Database &database)
 {
     DBSchema schema;
@@ -266,7 +267,11 @@ bool KVDBGeneralStore::IsBound()
 
 int32_t KVDBGeneralStore::Close(bool isForce)
 {
-    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_, std::chrono::seconds(isForce ? LOCK_TIMEOUT : 0));
+    if (!lock) {
+        return GeneralError::E_BUSY;
+    }
+
     if (delegate_ == nullptr) {
         return GeneralError::E_OK;
     }
