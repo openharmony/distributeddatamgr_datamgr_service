@@ -186,14 +186,14 @@ int32_t ObjectAssetsSendListener::OnSendResult(const sptr<AssetObj> &assetObj, i
 {
     if (assetObj == nullptr) {
         ZLOGE("OnSendResult error! status:%{public}d", result);
-        ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
-            ObjectStore::RADAR_FAILED, result, ObjectStore::FINISHED);
+        ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
+            ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED, result, ObjectStore::FINISHED);
         return result;
     }
     ZLOGI("OnSendResult, status:%{public}d, asset size:%{public}zu", result, assetObj->uris_.size());
     if (result == OBJECT_SUCCESS) {
-        ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE, ObjectStore::PUSH_ASSETS,
-            ObjectStore::RADAR_SUCCESS);
+        ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
+            ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_SUCCESS);
     } else {
         ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
             ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED, result, ObjectStore::FINISHED);
