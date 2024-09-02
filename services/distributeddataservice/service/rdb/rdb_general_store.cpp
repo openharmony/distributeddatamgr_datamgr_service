@@ -64,6 +64,7 @@ constexpr const LockAction LOCK_ACTION = static_cast<LockAction>(static_cast<uin
     static_cast<uint32_t>(LockAction::DOWNLOAD));
 constexpr uint32_t CLOUD_SYNC_FLAG = 1;
 constexpr uint32_t SEARCHABLE_FLAG = 2;
+constexpr uint32_t LOCK_TIMEOUT = 3600; // second
 
 static DBSchema GetDBSchema(const Database &database)
 {
@@ -109,11 +110,13 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta) : manager_(meta.appI
                 break;
             }
             manager_.CloseStore(delegate_);
+            delegate_ = nullptr;
         }
     } else {
         auto ret = manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
         if (ret != DBStatus::OK || delegate_ == nullptr) {
             manager_.CloseStore(delegate_);
+            delegate_ = nullptr;
         }
     }
 
@@ -213,7 +216,10 @@ bool RdbGeneralStore::IsBound()
 int32_t RdbGeneralStore::Close(bool isForce)
 {
     {
-        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_, std::chrono::seconds(isForce ? LOCK_TIMEOUT : 0));
+        if (!lock) {
+            return GeneralError::E_BUSY;
+        }
         if (delegate_ == nullptr) {
             return 0;
         }
