@@ -42,6 +42,7 @@ public:
     Status PutLocal(const std::string &key, const std::string &value) override;
     Status GetLocal(const std::string &key, std::string &value) override;
     Status DeleteLocal(const std::string &key) override;
+    bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void Close() override;
     bool Init() override;
 
@@ -62,7 +63,6 @@ private:
         const std::string &key, std::vector<DistributedDB::Entry> &entries, UnifiedData &unifiedData);
     bool GetDetailsFromUData(UnifiedData &data, UDDetails &details);
     Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
-    bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
 };

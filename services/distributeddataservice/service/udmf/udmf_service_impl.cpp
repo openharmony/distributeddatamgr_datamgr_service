@@ -36,6 +36,8 @@
 #include "securec.h"
 #include "unified_types.h"
 #include "device_manager_adapter.h"
+#include "store_account_observer.h"
+
 
 namespace OHOS {
 namespace UDMF {
@@ -44,6 +46,7 @@ using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
 using namespace RadarReporter;
+using namespace DistributedKv;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *FILE_SCHEME = "file";
@@ -60,6 +63,8 @@ UdmfServiceImpl::Factory::Factory()
     }, FeatureSystem::BIND_NOW);
     staticActs_ = std::make_shared<UdmfStatic>();
     FeatureSystem::GetInstance().RegisterStaticActs("udmf", staticActs_);
+    auto observer = std::make_shared<RuntimeStoreAccountObserver>();
+    DistributedKv::AccountDelegate::GetInstance()->Subscribe(observer);
 }
 
 UdmfServiceImpl::Factory::~Factory()
