@@ -33,6 +33,7 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
+    "${data_service_path}/framework/include/account",
     "${kv_store_common_path}",
   ]
 }
@@ -47,6 +48,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     debug = false
   }
   sources = [
+    "account/account_delegate.cpp",
     "backuprule/backup_rule_manager.cpp",
     "changeevent/remote_change_event.cpp",
     "checker/checker_manager.cpp",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,16 +13,24 @@
  * limitations under the License.
  */
 
-#include "account_delegate_impl.h"
+#include "account_delegate.h"
 
 namespace OHOS {
 namespace DistributedKv {
+AccountDelegate *AccountDelegate::instance_ = nullptr;
+
+bool AccountDelegate::RegisterAccountInstance(AccountDelegate *instance)
+{
+    if (instance_ != nullptr) {
+        return false;
+    }
+    instance_ = instance;
+    return true;
+}
+
 AccountDelegate *AccountDelegate::GetInstance()
 {
-    if (getInstance_ == nullptr) {
-        return nullptr;
-    }
-    return getInstance_();
+    return instance_;
 }
-}  // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedKv
+} // namespace OHOS
