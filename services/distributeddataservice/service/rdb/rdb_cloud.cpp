@@ -194,6 +194,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::CLOUD_RECORD_NOT_FOUND;
         case GeneralError::E_RECORD_ALREADY_EXISTED:
             return DBStatus::CLOUD_RECORD_ALREADY_EXISTED;
+        case GeneralError::E_FILE_NOT_EXIST:
+            return DBStatus::LOCAL_ASSET_NOT_FOUND;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;
