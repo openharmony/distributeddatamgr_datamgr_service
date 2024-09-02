@@ -153,7 +153,6 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
         proxy->Completed(std::map<std::string, int32_t>());
         ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
             ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_FAILED, ObjectStore::GETKV_FAILED, ObjectStore::FINISHED);
-        return result;
         return STORE_NOT_OPEN;
     }
 
