@@ -20,6 +20,7 @@
 #include "directory/directory_manager.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -27,26 +28,20 @@ using namespace DistributedKv;
 using namespace DistributedData;
 void RuntimeStoreAccountObserver::OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo)
 {
-     ZLOGI("account event begin. userId is %{public}s, status is %{public}d.", eventInfo.userId.c_str(), eventInfo.status);
+     ZLOGI("account event begin. status is %{public}d.", eventInfo.status);
      if (eventInfo.status == DistributedKv::AccountStatus::DEVICE_ACCOUNT_DELETE) {
           DistributedData::StoreMetaData metaData;
-
-          metaData.appType = "harmony";
-          // metaData.storeId = storeId_;
-          metaData.isAutoSync = false;
-          metaData.isBackup = false;
-          metaData.isEncrypt = false;
+          uint32_t token = IPCSkeleton::GetSelfTokenID();
           metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
           metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
           metaData.user = eventInfo.userId;
+          metaData.tokenId = token;
           metaData.securityLevel = DistributedKv::SecurityLevel::S1;
           metaData.area = DistributedKv::Area::EL1;
           metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
-          metaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
           metaData.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(metaData);
 
           std::string userPath = metaData.dataDir.append("/").append(eventInfo.userId);
-          ZLOGI("userPath is %{public}s", userPath.c_str());
           DistributedData::DirectoryManager::GetInstance().DeleteDirectory(userPath.c_str());
      }
 }
