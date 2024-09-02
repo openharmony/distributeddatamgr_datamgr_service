@@ -119,6 +119,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         return ERROR;
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+    ZLOGI("EnableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
 
@@ -141,6 +142,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
         return ERROR;
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE, WORK_SUB }));
+    ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
 
@@ -170,6 +172,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
         SyncManager::SyncInfo info(cloudInfo.user, bundleName);
         syncManager_.DoCloudSync(info);
     }
+    ZLOGD("ChangeAppSwitch success");
     return SUCCESS;
 }
 
@@ -213,6 +216,9 @@ void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32
             ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
                   "storeId:%{public}s",
                 status, static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        } else {
+            ZLOGD("clean success, user:%{public}d, bundleName:%{public}s, storeId:%{public}s",
+                static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         }
     }
 }
@@ -268,6 +274,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
         return INVALID_ARGUMENT;
     }
     if (!cloudInfo.enableCloud) {
+        ZLOGD("cloud is disabled");
         return CLOUD_DISABLE;
     }
     if (!cloudInfo.Exist(bundleName)) {
@@ -275,6 +282,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
         return INVALID_ARGUMENT;
     }
     if (!cloudInfo.apps[bundleName].cloudSwitch) {
+        ZLOGD("cloud switch is disabled");
         return CLOUD_DISABLE_SWITCH;
     }
     return SUCCESS;
@@ -695,15 +703,17 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+        ZLOGD("network is not available");
         return { NETWORK_ERROR, cloudInfo };
     }
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
+        ZLOGD("cloud server is nullptr, user:%{public}d", userId);
         return { SERVER_UNAVAILABLE, cloudInfo };
     }
     cloudInfo = instance->GetServerInfo(cloudInfo.user);
     if (!cloudInfo.IsValid()) {
-        ZLOGE("cloud is empty, user%{public}d", cloudInfo.user);
+        ZLOGE("cloud is empty, user:%{public}d", cloudInfo.user);
         return { CLOUD_INFO_INVALID, cloudInfo };
     }
     return { SUCCESS, cloudInfo };
@@ -753,7 +763,6 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -781,6 +790,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t 
 {
     SchemaMeta schemaMeta;
     if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+        ZLOGD("network is not available");
         return { NETWORK_ERROR, schemaMeta };
     }
     auto instance = CloudServer::GetInstance();
@@ -818,6 +828,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
             return;
         }
         if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+            ZLOGD("network is not available");
             return;
         }
         bool finished = true;

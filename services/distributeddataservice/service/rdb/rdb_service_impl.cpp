@@ -1189,6 +1189,8 @@ std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerP
               Anonymous::Change(param.storeName_).c_str());
         return result;
     }
+    ZLOGI("start to lock cloud db: bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+        Anonymous::Change(param.storeName_).c_str());
 
     auto storeInfo = GetStoreInfo(param);
 
@@ -1209,6 +1211,8 @@ int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
               Anonymous::Change(param.storeName_).c_str());
         return result;
     }
+    ZLOGI("start to unlock cloud db: bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
+        Anonymous::Change(param.storeName_).c_str());
 
     auto storeInfo = GetStoreInfo(param);
 

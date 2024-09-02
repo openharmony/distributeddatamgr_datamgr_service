@@ -696,6 +696,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
 
         auto id = GetAccountId(storeInfo.user);
         if (id.empty()) {
+            ZLOGD("account id is empty");
             return;
         }
         QueryKey queryKey{
