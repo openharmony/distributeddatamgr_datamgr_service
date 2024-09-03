@@ -204,13 +204,13 @@ HWTEST_F(CloudServiceImplTest, QueryStatistics001, TestSize.Level0)
 
 /**
 * @tc.name: QueryLastSyncInfo001
-* @tc.desc: 
+* @tc.desc: Test QueryLastSyncInfo functions with invalid parameter.
 * @tc.type: FUNC
 * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, QueryLastSyncInfo001, TestSize.Level0)
 {
-    ZLOGI("CloudServiceImplTest QueryStatistics start");
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfo start");
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
