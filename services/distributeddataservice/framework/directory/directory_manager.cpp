@@ -285,7 +285,9 @@ bool DirectoryManager::DeleteDirectory(const char* path)
     if ((dir = opendir(path)) == nullptr) {
         return true;
     }
-    chdir(path);
+    if (chdir(path) == -1) {
+        return false;
+    }
     while ((dirEntry = readdir(dir))) {
         if ((strcmp(dirEntry->d_name, ".") == 0) || (strcmp(dirEntry->d_name, "..") == 0)) {
             continue;
@@ -302,8 +304,7 @@ bool DirectoryManager::DeleteDirectory(const char* path)
         }
     }
     closedir(dir);
-    chdir(curWorkDir);
-    if (rmdir(path) == -1) {
+    if (chdir(curWorkDir) == -1 || rmdir(path) == -1) {
         return false;
     }
     return true;
