@@ -29,9 +29,6 @@ public:
 private:
     static constexpr std::chrono::milliseconds TIME_THRESHOLD = std::chrono::milliseconds(500);
     static bool CheckInterfaceToken(MessageParcel& data);
-    int32_t OnInsert(MessageParcel& data, MessageParcel& reply);
-    int32_t OnUpdate(MessageParcel& data, MessageParcel& reply);
-    int32_t OnDelete(MessageParcel& data, MessageParcel& reply);
     int32_t OnQuery(MessageParcel& data, MessageParcel& reply);
     int32_t OnAddTemplate(MessageParcel& data, MessageParcel& reply);
     int32_t OnDelTemplate(MessageParcel& data, MessageParcel& reply);
@@ -56,9 +53,6 @@ private:
     int32_t OnDeleteEx(MessageParcel& data, MessageParcel& reply);
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[DATA_SHARE_SERVICE_CMD_MAX] = {
-        &DataShareServiceStub::OnInsert,
-        &DataShareServiceStub::OnDelete,
-        &DataShareServiceStub::OnUpdate,
         &DataShareServiceStub::OnQuery,
         &DataShareServiceStub::OnAddTemplate,
         &DataShareServiceStub::OnDelTemplate,
