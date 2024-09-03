@@ -283,7 +283,7 @@ bool DirectoryManager::DeleteDirectory(const char* path)
         return true;
     }
     chdir(path);
-    while((dirp = readdir(dir))) {
+    while ((dirp = readdir(dir))) {
         if ((strcmp(dirp->d_name, ".") == 0) || (strcmp(dirp->d_name, "..") == 0)) {
             continue;
         }

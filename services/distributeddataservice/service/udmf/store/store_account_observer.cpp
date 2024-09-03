@@ -28,22 +28,21 @@ using namespace DistributedKv;
 using namespace DistributedData;
 void RuntimeStoreAccountObserver::OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo)
 {
-     ZLOGI("account event begin. status is %{public}d.", eventInfo.status);
-     if (eventInfo.status == DistributedKv::AccountStatus::DEVICE_ACCOUNT_DELETE) {
-          DistributedData::StoreMetaData metaData;
-          uint32_t token = IPCSkeleton::GetSelfTokenID();
-          metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-          metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-          metaData.user = eventInfo.userId;
-          metaData.tokenId = token;
-          metaData.securityLevel = DistributedKv::SecurityLevel::S1;
-          metaData.area = DistributedKv::Area::EL1;
-          metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
-          metaData.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(metaData);
-
-          std::string userPath = metaData.dataDir.append("/").append(eventInfo.userId);
-          DistributedData::DirectoryManager::GetInstance().DeleteDirectory(userPath.c_str());
-     }
+    ZLOGI("account event begin. status is %{public}d.", eventInfo.status);
+    if (eventInfo.status == DistributedKv::AccountStatus::DEVICE_ACCOUNT_DELETE) {
+        DistributedData::StoreMetaData metaData;
+        uint32_t token = IPCSkeleton::GetSelfTokenID();
+        metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+        metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+        metaData.user = eventInfo.userId;
+        metaData.tokenId = token;
+        metaData.securityLevel = DistributedKv::SecurityLevel::S1;
+        metaData.area = DistributedKv::Area::EL1;
+        metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
+        metaData.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(metaData);
+        std::string userPath = metaData.dataDir.append("/").append(eventInfo.userId);
+        DistributedData::DirectoryManager::GetInstance().DeleteDirectory(userPath.c_str());
+    }
 }
 
 } // namespace UDMF

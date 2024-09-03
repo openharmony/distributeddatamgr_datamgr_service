@@ -18,8 +18,7 @@
 #include "account_delegate.h"
 namespace OHOS {
 namespace UDMF {
-class RuntimeStoreAccountObserver : public DistributedKv::AccountDelegate::Observer
-{
+class RuntimeStoreAccountObserver : public DistributedKv::AccountDelegate::Observer {
     void OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo) override;
     // must specify unique name for observer
     std::string Name() override
