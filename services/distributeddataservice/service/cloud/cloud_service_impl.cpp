@@ -114,12 +114,13 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
             continue;
         }
         cloudInfo.apps[bundle].cloudSwitch = (value == SWITCH_ON);
+        ZLOGI("EnableCloud: change app[%{public}s] switch to %{public}d", bundle.c_str(), value);
     }
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
     Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
-    ZLOGI("EnableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
+    ZLOGI("EnableCloud success, id:%{public}s, count:%{public}zu", Anonymous::Change(id).c_str(), switches.size());
     return SUCCESS;
 }
 
@@ -172,7 +173,8 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
         SyncManager::SyncInfo info(cloudInfo.user, bundleName);
         syncManager_.DoCloudSync(info);
     }
-    ZLOGD("ChangeAppSwitch success");
+    ZLOGI("ChangeAppSwitch success, id:%{public}s app:%{public}s, switch:%{public}d", Anonymous::Change(id).c_str(),
+        bundleName.c_str(), appSwitch);
     return SUCCESS;
 }
 
@@ -279,7 +281,7 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
         return INVALID_ARGUMENT;
     }
     if (!cloudInfo.enableCloud) {
-        ZLOGD("cloud is disabled");
+        ZLOGD("cloud is disabled, id:%{public}s, app:%{public}s ", Anonymous::Change(id).c_str(), bundleName.c_str());
         return CLOUD_DISABLE;
     }
     if (!cloudInfo.Exist(bundleName)) {
@@ -287,7 +289,8 @@ int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std
         return INVALID_ARGUMENT;
     }
     if (!cloudInfo.apps[bundleName].cloudSwitch) {
-        ZLOGD("cloud switch is disabled");
+        ZLOGD("cloud switch is disabled, id:%{public}s, app:%{public}s ", Anonymous::Change(id).c_str(),
+            bundleName.c_str());
         return CLOUD_DISABLE_SWITCH;
     }
     return SUCCESS;
@@ -658,7 +661,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
     return E_OK;
 }
 
-int32_t CloudServiceImpl::OnReady(const std::string& device)
+int32_t CloudServiceImpl::OnReady(const std::string &device)
 {
     if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         return SUCCESS;
@@ -979,7 +982,7 @@ void CloudServiceImpl::CloudShare(const Event &event)
 }
 
 std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::PreShare(
-    const StoreInfo& storeInfo, GenQuery& query)
+    const StoreInfo &storeInfo, GenQuery &query)
 {
     StoreMetaData meta(storeInfo);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
@@ -1113,8 +1116,8 @@ std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<st
 }
 
 std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::AllocResourceAndShare(
-    const std::string& storeId, const DistributedRdb::PredicatesMemo& predicates,
-    const std::vector<std::string>& columns, const Participants& participants)
+    const std::string &storeId, const DistributedRdb::PredicatesMemo &predicates,
+    const std::vector<std::string> &columns, const Participants &participants)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto hapInfo = GetHapInfo(tokenId);
@@ -1402,7 +1405,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub, uint64_t minInterval
     if (executor == nullptr) {
         return;
     }
-    ZLOGI("Subscription Info, subTask:%{public}" PRIu64", user:%{public}d", subTask_, sub.userId);
+    ZLOGI("Subscription Info, subTask:%{public}" PRIu64 ", user:%{public}d", subTask_, sub.userId);
     expire = expire - TIME_BEFORE_SUB; // before 12 hours
     auto now = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     Duration delay = milliseconds(std::max(expire > now ? expire - now : 0, minInterval));
