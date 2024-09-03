@@ -275,31 +275,34 @@ bool DirectoryManager::CreateDirectory(const std::string &path) const
 
 bool DirectoryManager::DeleteDirectory(const char* path)
 {
+    if (path == nullptr) {
+        return false;
+    }
     DIR* dir;
-    struct dirent* dirp;
+    struct dirent* dirEntry;
     struct stat buf;
-    char* p = getcwd(nullptr, 0);
+    char* curWorkDir = getcwd(nullptr, 0);
     if ((dir = opendir(path)) == nullptr) {
         return true;
     }
     chdir(path);
-    while ((dirp = readdir(dir))) {
-        if ((strcmp(dirp->d_name, ".") == 0) || (strcmp(dirp->d_name, "..") == 0)) {
+    while ((dirEntry = readdir(dir))) {
+        if ((strcmp(dirEntry->d_name, ".") == 0) || (strcmp(dirEntry->d_name, "..") == 0)) {
             continue;
         }
-        if (stat(dirp->d_name, &buf) == -1) {
+        if (stat(dirEntry->d_name, &buf) == -1) {
             return false;
         }
         if (S_ISDIR(buf.st_mode)) {
-            DeleteDirectory(dirp->d_name);
+            DeleteDirectory(dirEntry->d_name);
             continue;
         }
-        if (remove(dirp->d_name) == -1) {
+        if (remove(dirEntry->d_name) == -1) {
             return false;
         }
     }
     closedir(dir);
-    chdir(p);
+    chdir(curWorkDir);
     if (rmdir(path) == -1) {
         return false;
     }
