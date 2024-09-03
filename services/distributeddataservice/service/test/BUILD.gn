@@ -140,6 +140,88 @@ ohos_unittest("CloudDataTest") {
   cflags_cc = cflags
 }
 
+ohos_unittest("CloudServiceImplTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/backup/src/backup_manager.cpp",
+    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_types_util.cpp",
+    "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
+    "${data_service_path}/service/common/common_types_utils.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
+    "${data_service_path}/service/config/src/model/backup_config.cpp",
+    "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
+    "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/directory_config.cpp",
+    "${data_service_path}/service/config/src/model/global_config.cpp",
+    "${data_service_path}/service/config/src/model/network_config.cpp",
+    "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/crypto/src/crypto_manager.cpp",
+    "${data_service_path}/service/matrix/src/device_matrix.cpp",
+    "${data_service_path}/service/matrix/src/matrix_event.cpp",
+    "${data_service_path}/service/rdb/cache_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
+    "${data_service_path}/service/rdb/rdb_cursor.cpp",
+    "${data_service_path}/service/rdb/rdb_general_store.cpp",
+    "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_service_impl.cpp",
+    "${data_service_path}/service/rdb/rdb_service_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_watcher.cpp",
+    "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "${data_service_path}/service/waterversion/water_version_manager.cpp",
+    "cloud_service_impl_test.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "huks:libhukssdk",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  deps = [
+    "../../adapter:distributeddata_adapter",
+    "../../framework:distributeddatasvcfwk",
+    "mock:distributeddata_mock_static",
+    "//third_party/googletest:gtest_main",
+  ]
+
+  cflags = [
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
+
+  cflags_cc = cflags
+}
+
 ohos_unittest("CloudTest") {
   module_out_path = module_output_path
   sources = [ "cloud_test.cpp" ]
@@ -1013,6 +1095,7 @@ group("unittest") {
 
   deps += [
     ":CloudDataTest",
+    ":CloudServiceImplTest",
     ":CloudTest",
     ":CryptoManagerTest",
     ":DataShareServiceImplTest",

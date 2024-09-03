@@ -24,6 +24,7 @@
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
 #include "cloud/cloud_share_event.h"
+#include "cloud/make_query_event.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service_impl.h"
 #include "cloud_types.h"
@@ -518,6 +519,29 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
 }
 
 /**
+* @tc.name: QueryLastSyncInfo006
+* @tc.desc: The query last sync info interface failed when schema is invalid.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo006, TestSize.Level0)
+{
+    ZLOGI("CloudDataTest QueryLastSyncInfo006 start");
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
+    auto [status, result] =
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_TRUE(result.empty());
+    SchemaMeta meta;
+    meta.bundleName = "test";
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), meta, true);
+    std::tie(status, result) =
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
 * @tc.name: Share
 * @tc.desc:
 * @tc.type: FUNC
@@ -647,6 +671,20 @@ HWTEST_F(CloudDataTest, AllocResourceAndShare001, TestSize.Level0)
     std::vector<std::string> columns;
     CloudData::Participants participants;
     auto [ret, _] = cloudServiceImpl_->AllocResourceAndShare(TEST_CLOUD_STORE, predicates, columns, participants);
+    EXPECT_EQ(ret, E_ERROR);
+    EventCenter::GetInstance().Subscribe(CloudEvent::MAKE_QUERY, [](const Event& event) {
+        auto& evt = static_cast<const DistributedData::MakeQueryEvent&>(event);
+        auto callback = evt.GetCallback();
+        if (!callback) {
+            return;
+        }
+        auto predicate = evt.GetPredicates();
+        auto rdbQuery = std::make_shared<DistributedRdb::RdbQuery>();
+        rdbQuery->MakeQuery(*predicate);
+        rdbQuery->SetColumns(evt.GetColumns());
+        callback(rdbQuery);
+    });
+    std::tie(ret, _) = cloudServiceImpl_->AllocResourceAndShare(TEST_CLOUD_STORE, predicates, columns, participants);
     EXPECT_EQ(ret, E_ERROR);
 }
 
@@ -1903,6 +1941,34 @@ HWTEST_F(CloudDataTest, InitSubTask, TestSize.Level0)
     cloudServiceImpl_->subTask_ = ExecutorPool::INVALID_TASK_ID;
     cloudServiceImpl_->InitSubTask(sub, minInterval);
     EXPECT_NE(cloudServiceImpl_->subTask_, ExecutorPool::INVALID_TASK_ID);
+}
+
+/**
+* @tc.name: DoSubscribe
+* @tc.desc: Test DoSubscribe functions with invalid parameter.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, DoSubscribe, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest DoSubscribe start");
+    Subscription sub;
+    sub.userId = cloudInfo_.user;
+    MetaDataManager::GetInstance().SaveMeta(sub.GetKey(), sub, true);
+    int user = cloudInfo_.user;
+    auto status = cloudServiceImpl_->DoSubscribe(user);
+    EXPECT_FALSE(status);
+    sub.id = "testId";
+    MetaDataManager::GetInstance().SaveMeta(sub.GetKey(), sub, true);
+    status = cloudServiceImpl_->DoSubscribe(user);
+    EXPECT_FALSE(status);
+    sub.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(sub.GetKey(), sub, true);
+    status = cloudServiceImpl_->DoSubscribe(user);
+    EXPECT_FALSE(status);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    status = cloudServiceImpl_->DoSubscribe(user);
+    EXPECT_FALSE(status);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
