@@ -486,7 +486,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync, TestSize.Level0)
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
 }
 
 /**
@@ -606,7 +606,7 @@ HWTEST_F(KVDBGeneralStoreTest, ConvertStatus, TestSize.Level0)
     ret = store->ConvertStatus(DBStatus::CLOUD_SYNC_TASK_MERGED);
     EXPECT_EQ(ret, GeneralError::E_SYNC_TASK_MERGED);
     ret = store->ConvertStatus(DBStatus::DB_ERROR);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_DB_ERROR);
 }
 
 /**
