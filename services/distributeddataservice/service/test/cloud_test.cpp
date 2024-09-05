@@ -178,8 +178,7 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
 HWTEST_F(CloudTest, CloudInfoUpgrade, TestSize.Level0)
 {
     CloudInfo oldInfo;
-    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    oldInfo.user = user;
+    oldInfo.user = 100;
     EXPECT_NE(oldInfo.maxNumber, CloudInfo::DEFAULT_BATCH_NUMBER);
     EXPECT_NE(oldInfo.maxSize, CloudInfo::DEFAULT_BATCH_SIZE);
     ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(oldInfo.GetKey(), oldInfo, true));
