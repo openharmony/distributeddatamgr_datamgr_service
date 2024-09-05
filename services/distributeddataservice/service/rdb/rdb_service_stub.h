@@ -68,6 +68,8 @@ private:
 
     int32_t OnEnable(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnGetPassword(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnLockCloudContainer(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnUnlockCloudContainer(MessageParcel& data, MessageParcel& reply);
@@ -99,6 +101,7 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_ENABLE)] = &RdbServiceStub::OnEnable,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_BEFORE_OPEN)] = &RdbServiceStub::OnBeforeOpen,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_AFTER_OPEN)] = &RdbServiceStub::OnAfterOpen,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_PASSWORD)] = &RdbServiceStub::OnGetPassword,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_LOCK_CLOUD_CONTAINER)] =
             &RdbServiceStub::OnLockCloudContainer,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNLOCK_CLOUD_CONTAINER)] =
