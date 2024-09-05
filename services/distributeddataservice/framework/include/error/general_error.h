@@ -51,6 +51,7 @@ enum GeneralError : int32_t {
     E_TIME_OUT,
     E_OVER_MAX_LIMITS,
     E_SECURITY_LEVEL_ERROR,
+    E_FILE_NOT_EXIST,
     E_BUTT,
 };
 }
