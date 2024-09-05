@@ -153,7 +153,7 @@ private:
     std::atomic<bool> isBound_ = false;
     std::mutex mutex_;
     int32_t ref_ = 1;
-    mutable std::shared_mutex rwMutex_;
+    mutable std::shared_timed_mutex rwMutex_;
 
     BindAssets snapshots_;
     DistributedData::StoreInfo storeInfo_;

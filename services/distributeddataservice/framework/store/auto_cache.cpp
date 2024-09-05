@@ -71,6 +71,12 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
 
     stores_.Compute(
         meta.tokenId, [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
+            if (disableStores_.count(meta.dataDir) != 0) {
+                ZLOGW("store is closing, tokenId:0x%{public}x user:%{public}s"
+                    "bundleName:%{public}s storeName:%{public}s",
+                    meta.tokenId, meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+                return !stores.empty();
+            }
             auto it = stores.find(meta.storeId);
             if (it != stores.end()) {
                 if (!watchers.empty()) {
@@ -137,13 +143,30 @@ void AutoCache::StartTimer()
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
 {
+    std::set<std::string> storeIds;
+    std::list<Delegate> closeStores;
     bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
-    stores_.ComputeIfPresent(tokenId, [&storeId, isScreenLocked](auto &key, auto &delegates) {
-        auto it = delegates.begin();
-        while (it != delegates.end()) {
-            if ((storeId == it->first || storeId.empty()) &&
-                (!isScreenLocked || it->second.GetArea() < GeneralStore::EL4)) {
-                it->second.Close();
+    stores_.ComputeIfPresent(tokenId,
+        [this, &storeId, isScreenLocked, &storeIds, &closeStores](auto &key, auto &delegates) {
+            auto it = delegates.begin();
+            while (it != delegates.end()) {
+                if ((storeId == it->first || storeId.empty()) &&
+                    (!isScreenLocked || it->second.GetArea() < GeneralStore::EL4) &&
+                    disableStores_.count(it->second.GetDataDir()) == 0) {
+                    disableStores_.insert(it->second.GetDataDir());
+                    storeIds.insert(it->first);
+                    closeStores.emplace(closeStores.end(), it->second);
+                } else {
+                    ++it;
+                }
+            }
+            return !delegates.empty();
+        });
+    closeStores.clear();
+    stores_.ComputeIfPresent(tokenId, [this, &storeIds](auto &key, auto &delegates) {
+        for (auto it = delegates.begin(); it != delegates.end();) {
+            if (storeIds.count(it->first) != 0) {
+                disableStores_.erase(it->second.GetDataDir());
                 it = delegates.erase(it);
             } else {
                 ++it;
@@ -230,6 +253,14 @@ AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, 
     }
 }
 
+AutoCache::Delegate::Delegate(const Delegate& delegate)
+{
+    store_ = delegate.store_;
+    if (store_ != nullptr) {
+        store_->AddRef();
+    }
+}
+
 AutoCache::Delegate::~Delegate()
 {
     if (store_ != nullptr) {
@@ -281,6 +312,11 @@ int32_t AutoCache::Delegate::GetUser() const
 int32_t AutoCache::Delegate::GetArea() const
 {
     return meta_.area;
+}
+
+const std::string& AutoCache::Delegate::GetDataDir() const
+{
+    return meta_.dataDir;
 }
 
 int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
