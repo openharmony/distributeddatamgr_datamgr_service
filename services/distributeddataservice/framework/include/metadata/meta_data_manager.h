@@ -85,6 +85,7 @@ private:
     ~MetaDataManager();
 
     API_EXPORT bool GetEntries(const std::string &prefix, std::vector<Bytes> &entries, bool isLocal);
+    void StopSA();
 
     bool inited_ = false;
     std::mutex mutex_;
