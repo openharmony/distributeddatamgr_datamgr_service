@@ -99,10 +99,7 @@ void KVDBServiceImpl::Init()
     auto process = [this](const Event &event) {
         const auto &evt = static_cast<const CloudEvent &>(event);
         const auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta;
-        meta.storeId = storeInfo.storeName;
-        meta.bundleName = storeInfo.bundleName;
-        meta.user = std::to_string(storeInfo.user);
+        StoreMetaData meta(storeInfo);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             if (meta.user == "0") {
@@ -132,6 +129,7 @@ void KVDBServiceImpl::Init()
         store->RegisterDetailProgressObserver(nullptr);
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLEAN_DATA, process);
 }
 
 void KVDBServiceImpl::RegisterKvServiceInfo()

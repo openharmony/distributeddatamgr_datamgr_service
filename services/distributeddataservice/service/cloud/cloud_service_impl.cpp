@@ -208,6 +208,11 @@ void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             continue;
         }
+        DistributedData::StoreInfo storeInfo;
+        storeInfo.bundleName = meta.bundleName;
+        storeInfo.user = atoi(meta.user.c_str());
+        storeInfo.storeName = meta.storeId;
+        EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
         auto status = store->Clean({}, action, "");
         if (status != E_OK) {
             ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
