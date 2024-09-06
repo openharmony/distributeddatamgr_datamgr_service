@@ -25,4 +25,8 @@ int32_t AssetLoader::RemoveLocalAssets(const std::string &tableName, const std::
 {
     return E_NOT_SUPPORT;
 }
+int32_t AssetLoader::Cancel()
+{
+    return E_NOT_SUPPORT;
+}
 } // namespace OHOS::DistributedData
