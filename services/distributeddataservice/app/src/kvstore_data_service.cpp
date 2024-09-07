@@ -548,6 +548,7 @@ Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vec
     dbOption.createIfNecessary = options.createIfMissing;
     dbOption.isMemoryDb = (!options.persistent);
     dbOption.isEncryptedDb = options.encrypt;
+    dbOption.isNeedCompressOnSync = options.isNeedCompress;
     if (options.encrypt) {
         dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
         dbOption.passwd = password;
