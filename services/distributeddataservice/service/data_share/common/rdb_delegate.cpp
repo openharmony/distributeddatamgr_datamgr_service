@@ -28,7 +28,7 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-constexpr static int32_t MAX_RESULTSET_COUNT = 16;
+constexpr static int32_t MAX_RESULTSET_COUNT = 32;
 constexpr static int64_t TIMEOUT_TIME = 500;
 std::atomic<int32_t> RdbDelegate::resultSetCount = 0;
 ConcurrentMap<uint32_t, int32_t> RdbDelegate::resultSetCallingPids;
@@ -148,9 +148,9 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     }
     int count = resultSetCount.fetch_add(1);
     ZLOGD("start query %{public}d", count);
-    if (count > MAX_RESULTSET_COUNT && IsLimit(count)) {
+    if (count > MAX_RESULTSET_COUNT && IsLimit(count, callingPid)) {
         resultSetCount--;
-        return std::make_pair(E_ERROR, nullptr);
+        return std::make_pair(E_RESULTSET_BUSY, nullptr);
     }
     RdbPredicates rdbPredicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicates, tableName);
     std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(rdbPredicates, columns);
@@ -215,7 +215,7 @@ bool RdbDelegate::IsInvalid()
     return store_ == nullptr;
 }
 
-bool RdbDelegate::IsLimit(int count)
+bool RdbDelegate::IsLimit(int count, const int32_t callingPid)
 {
     bool isFull = true;
     for (int32_t retryCount = 0; retryCount < RETRY; retryCount++) {
@@ -233,7 +233,7 @@ bool RdbDelegate::IsLimit(int count)
         logStr += std::to_string(key) + ":" + std::to_string(value) + ";";
         return false;
     });
-    ZLOGE("resultSetCount is full, owner is %{public}s", logStr.c_str());
+    ZLOGE("resultSetCount is full, pid: %{public}d, owner is %{public}s", callingPid, logStr.c_str());
     return true;
 }
 } // namespace OHOS::DataShare
