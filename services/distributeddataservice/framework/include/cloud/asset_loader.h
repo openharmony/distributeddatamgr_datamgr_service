@@ -26,6 +26,7 @@ public:
         VBucket &assets);
     virtual int32_t RemoveLocalAssets(const std::string &tableName, const std::string &gid,
         const Value &prefix, VBucket &assets);
+    virtual int32_t Cancel();
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_ASSET_LOADER_H
