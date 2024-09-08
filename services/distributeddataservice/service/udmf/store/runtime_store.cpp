@@ -23,6 +23,10 @@
 
 #include "log_print.h"
 #include "ipc_skeleton.h"
+#include "file.h"
+#include "udmf_conversion.h"
+#include "udmf_radar_reporter.h"
+#include "unified_meta.h"
 #include "tlv_util.h"
 #include "account/account_delegate.h"
 #include "metadata/store_meta_data.h"
@@ -32,7 +36,7 @@
 #include "bootstrap.h"
 #include "directory/directory_manager.h"
 #include "utils/anonymous.h"
-#include "udmf_radar_reporter.h"
+
 namespace OHOS {
 namespace UDMF {
 using namespace RadarReporter;
@@ -107,7 +111,7 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     // add runtime info
     std::vector<uint8_t> runtimeBytes;
     auto runtimeTlv = TLVObject(runtimeBytes);
-    if (!TLVUtil::Writing(*unifiedData.GetRuntime(), runtimeTlv)) {
+    if (!TLVUtil::Writing(*unifiedData.GetRuntime(), runtimeTlv, TAG::TAG_RUNTIME)) {
         ZLOGE("Marshall runtime info failed, dataPrefix: %{public}s.", unifiedKey.c_str());
         return E_WRITE_PARCEL_ERROR;
     }
@@ -119,7 +123,7 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     for (const auto &record : unifiedData.GetRecords()) {
         std::vector<uint8_t> recordBytes;
         auto recordTlv = TLVObject(recordBytes);
-        if (!TLVUtil::Writing(record, recordTlv)) {
+        if (!TLVUtil::Writing(record, recordTlv, TAG::TAG_UNIFIED_RECORD)) {
             ZLOGI("Marshall unified record failed.");
             return E_WRITE_PARCEL_ERROR;
         }
@@ -590,7 +594,7 @@ Status RuntimeStore::UnmarshalEntries(const std::string &key, std::vector<Entry>
         if (keyStr == key) {
             Runtime runtime;
             auto runtimeTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
-            if (!TLVUtil::Reading(runtime, runtimeTlv)) {
+            if (!TLVUtil::ReadTlv(runtime, runtimeTlv, TAG::TAG_RUNTIME)) {
                 ZLOGE("Unmarshall runtime info failed.");
                 return E_READ_PARCEL_ERROR;
             }
@@ -598,13 +602,14 @@ Status RuntimeStore::UnmarshalEntries(const std::string &key, std::vector<Entry>
         } else if (keyStr.find(key) == 0) {
             std::shared_ptr<UnifiedRecord> record;
             auto recordTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
-            if (!TLVUtil::Reading(record, recordTlv)) {
+            if (!TLVUtil::ReadTlv(record, recordTlv, TAG::TAG_UNIFIED_RECORD)) {
                 ZLOGE("Unmarshall unified record failed.");
                 return E_READ_PARCEL_ERROR;
             }
             unifiedData.AddRecord(record);
         }
     }
+    UdmfConversion::ConvertRecordToSubclass(unifiedData);
     return E_OK;
 }
 } // namespace UDMF
