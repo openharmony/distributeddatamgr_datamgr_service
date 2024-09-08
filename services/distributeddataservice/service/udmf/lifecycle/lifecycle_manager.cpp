@@ -26,6 +26,7 @@ namespace UDMF {
 using CleanAfterGet = LifeCyclePolicy;
 std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> LifeCycleManager::intentionPolicy_ = {
     { UD_INTENTION_MAP.at(UD_INTENTION_DRAG), std::make_shared<CleanAfterGet>() },
+    { UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB), std::make_shared<CleanAfterGet>() }
 };
 
 LifeCycleManager &LifeCycleManager::GetInstance()
