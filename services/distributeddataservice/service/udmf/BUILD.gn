@@ -80,7 +80,6 @@ ohos_shared_library("udmf_server") {
     "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
