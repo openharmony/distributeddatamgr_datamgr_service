@@ -244,7 +244,8 @@ HWTEST_F(DirectoryManagerTest, DeleteDirectory, TestSize.Level0)
     std::string path = "/data/service/el1/public/database/bundle_manager_service/kvdb/100/data";
     bool ret = DirectoryManager::GetInstance().CreateDirectory(path);
     EXPECT_TRUE(ret);
-    std::ofstream file("/data/service/el1/public/database/bundle_manager_service/kvdb/100/data/test.txt", std::ios::out);
+    std::ofstream file(
+        "/data/service/el1/public/database/bundle_manager_service/kvdb/100/data/test.txt", std::ios::out);
     if (file.is_open()) {
         file << "test content" << std::endl;
         file.close();
