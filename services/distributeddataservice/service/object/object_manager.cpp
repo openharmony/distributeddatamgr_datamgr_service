@@ -58,16 +58,14 @@ ObjectStoreManager::~ObjectStoreManager()
 {
     ZLOGI("ObjectStoreManager destroy");
     if (objectAssetsSendListener_ != nullptr) {
-        delete objectAssetsSendListener_;
-        objectAssetsSendListener_ = nullptr;
+        objectAssetsSendListener_.clear();
     }
     if (objectAssetsRecvListener_ != nullptr) {
         auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("UnRegister assetsRecvListener err %{public}d", status);
         }
-        delete objectAssetsRecvListener_;
-        objectAssetsRecvListener_ = nullptr;
+        objectAssetsRecvListener_.clear();
     }
 }
 
@@ -798,8 +796,7 @@ void ObjectStoreManager::FlushClosedStore()
         }
         delegate_ = nullptr;
         if (objectDataListener_ != nullptr) {
-            delete objectDataListener_;
-            objectDataListener_ = nullptr;
+            objectDataListener_.clear();
         }
     }
 }
