@@ -57,17 +57,11 @@ ObjectStoreManager::ObjectStoreManager()
 ObjectStoreManager::~ObjectStoreManager()
 {
     ZLOGI("ObjectStoreManager destroy");
-    if (objectAssetsSendListener_ != nullptr) {
-        delete objectAssetsSendListener_;
-        objectAssetsSendListener_ = nullptr;
-    }
     if (objectAssetsRecvListener_ != nullptr) {
         auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("UnRegister assetsRecvListener err %{public}d", status);
         }
-        delete objectAssetsRecvListener_;
-        objectAssetsRecvListener_ = nullptr;
     }
 }
 
