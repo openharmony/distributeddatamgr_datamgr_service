@@ -796,7 +796,8 @@ void ObjectStoreManager::FlushClosedStore()
         }
         delegate_ = nullptr;
         if (objectDataListener_ != nullptr) {
-            objectDataListener_.clear();
+            delete objectDataListener_;
+            objectDataListener_ = nullptr;
         }
     }
 }
