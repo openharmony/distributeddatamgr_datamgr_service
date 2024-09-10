@@ -1507,7 +1507,8 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
     info.tables_.insert_or_assign(TEST_CLOUD_STORE, value);
 
     CloudData::SyncManager sync;
-    auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true);
+    std::map<std::string, std::string> traceIds;
+    auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true, traceIds);
     auto ret = task();
     EXPECT_TRUE(ret);
 }
@@ -1524,13 +1525,15 @@ HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
     CloudData::SyncManager::SyncInfo info(user);
     CloudData::SyncManager sync;
     CloudData::SyncManager::Duration duration;
-    auto ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info)(duration, E_OK, E_OK);
+    std::string prepareTraceId;
+    auto ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_OK, E_OK, prepareTraceId);
     EXPECT_TRUE(ret);
-    ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED);
+    ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_SYNC_TASK_MERGED,
+        E_SYNC_TASK_MERGED, prepareTraceId);
     EXPECT_TRUE(ret);
-    ret = sync.GetRetryer(0, info)(duration, E_OK, E_OK);
+    ret = sync.GetRetryer(0, info, user)(duration, E_OK, E_OK, prepareTraceId);
     EXPECT_TRUE(ret);
-    ret = sync.GetRetryer(0, info)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED);
+    ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
     EXPECT_TRUE(ret);
 }
 
@@ -1550,21 +1553,22 @@ HWTEST_F(CloudDataTest, GetCallback, TestSize.Level0)
     storeInfo.user = user;
     storeInfo.bundleName = "testBundleName";
     int32_t triggerMode = MODE_DEFAULT;
+    std::string prepareTraceId;
     GenAsync async = nullptr;
-    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
     int32_t process = 0;
     async = [&process](const GenDetails &details) { process = details.begin()->second.progress; };
     GenProgressDetail detail;
     detail.progress = GenProgress::SYNC_IN_PROGRESS;
     result.insert_or_assign("test", detail);
-    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
     EXPECT_EQ(process, GenProgress::SYNC_IN_PROGRESS);
     detail.progress = GenProgress::SYNC_FINISH;
     result.insert_or_assign("test", detail);
     storeInfo.user = -1;
-    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
     storeInfo.user = user;
-    sync.GetCallback(async, storeInfo, triggerMode)(result);
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
     EXPECT_EQ(process, GenProgress::SYNC_FINISH);
 }
 
@@ -1613,22 +1617,24 @@ HWTEST_F(CloudDataTest, GetCloudSyncInfo, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, RetryCallback, TestSize.Level0)
 {
+    int32_t user = 100;
+    std::string prepareTraceId;
     CloudData::SyncManager sync;
     StoreInfo storeInfo;
     int32_t retCode = -1;
     CloudData::SyncManager::Retryer retry = [&retCode](CloudData::SyncManager::Duration interval, int32_t code,
-                                                int32_t dbCode) {
+                                                int32_t dbCode, const std::string &prepareTraceId) {
         retCode = code;
         return true;
     };
     DistributedData::GenDetails result;
-    auto task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT);
+    auto task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT, prepareTraceId, user);
     task(result);
     GenProgressDetail detail;
     detail.progress = GenProgress::SYNC_IN_PROGRESS;
     detail.code = 100;
     result.insert_or_assign("test", detail);
-    task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT);
+    task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT, prepareTraceId, user);
     task(result);
     EXPECT_EQ(retCode, detail.code);
 }

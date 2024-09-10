@@ -56,6 +56,7 @@ public:
     uint8_t GetLockFlag() const;
     std::pair<GeneralError, uint32_t> LockCloudDB(FLAG flag);
     GeneralError UnLockCloudDB(FLAG flag);
+    void SetPrepareTraceId(const std::string &traceId) override;
 
 private:
     static constexpr const char *TYPE_FIELD = "#_type";

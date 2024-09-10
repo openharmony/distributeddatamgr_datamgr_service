@@ -396,25 +396,30 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         if (user == DEFAULT_USER) {
             continue;
         }
+        auto &bundleName = exData.info.bundleName;
+        auto &prepareTraceId = exData.info.context.prepareTraceId;
         auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
-        if (CheckNotifyConditions(exData.info.accountId, exData.info.bundleName, cloudInfo) != E_OK) {
-            ZLOGD("invalid user:%{public}d", user);
+        if (CheckNotifyConditions(exData.info.accountId, bundleName, cloudInfo) != E_OK) {
+            ZLOGD("invalid user:%{public}d, traceId:%{public}s", user, prepareTraceId.c_str());
+            syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
             return INVALID_ARGUMENT;
         }
-        auto schemaKey = CloudInfo::GetSchemaKey(user, exData.info.bundleName);
+        auto schemaKey = CloudInfo::GetSchemaKey(user, bundleName);
         SchemaMeta schemaMeta;
         if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
-            ZLOGE("no exist meta, user:%{public}d", user);
+            ZLOGE("no exist meta, user:%{public}d, traceId:%{public}s", user, prepareTraceId.c_str());
+            syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
             return INVALID_ARGUMENT;
         }
         auto dbInfos = GetDbInfoFromExtraData(exData, schemaMeta);
         if (dbInfos.empty()) {
-            ZLOGE("GetDbInfoFromExtraData failed, empty database info.");
+            ZLOGE("GetDbInfoFromExtraData failed, empty database info. traceId:%{public}s.", prepareTraceId.c_str());
+            syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
             return INVALID_ARGUMENT;
         }
         for (const auto &dbInfo : dbInfos) {
-            syncManager_.DoCloudSync(
-                SyncManager::SyncInfo(cloudInfo.user, exData.info.bundleName, dbInfo.first, dbInfo.second, MODE_PUSH));
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(
+                { cloudInfo.user, bundleName, dbInfo.first, dbInfo.second, MODE_PUSH, prepareTraceId }));
         }
     }
     return SUCCESS;

@@ -97,6 +97,22 @@ struct SyncParam {
     int32_t wait;
     bool isCompensation = false;
     int32_t triggerMode = MODE_DEFAULT;
+    std::string prepareTraceId;
+    int32_t user;
+};
+
+enum SyncStage : int8_t {
+    PREPARE = 0,
+    START,
+    END
+};
+
+struct ReportParam {
+    int32_t user = 0;
+    std::string bundleName;
+    std::string prepareTraceId;
+    SyncStage syncStage = SyncStage::PREPARE;
+    int32_t errCode = 0;
 };
 
 using Assets = std::vector<Asset>;
