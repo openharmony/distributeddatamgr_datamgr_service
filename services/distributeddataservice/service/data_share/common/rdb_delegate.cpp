@@ -67,6 +67,7 @@ RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta
 {
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);
+    config.SetHaMode(meta.haMode);
     config.SetBundleName(meta.bundleName);
     if (meta.isEncrypt) {
         DistributedData::SecretKeyMetaData secretKeyMeta;
@@ -85,7 +86,6 @@ RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta
 RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
     bool registerFunction, const std::string &extUriData)
 {
-    tokenId_ = meta.tokenId;
     bundleName_ = meta.bundleName;
     storeName_ = meta.storeId;
     extUri_ = extUriData;
