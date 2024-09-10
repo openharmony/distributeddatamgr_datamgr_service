@@ -52,6 +52,9 @@ public:
         DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS,
         DATA_SHARE_SERVICE_CMD_REGISTER_OBSERVER,
         DATA_SHARE_SERVICE_CMD_UNREGISTER_OBSERVER,
+        DATA_SHARE_SERVICE_CMD_INSERTEX,
+        DATA_SHARE_SERVICE_CMD_DELETEEX,
+        DATA_SHARE_SERVICE_CMD_UPDATEEX,
         DATA_SHARE_SERVICE_CMD_MAX
     };
 
@@ -62,6 +65,11 @@ public:
     virtual int32_t Update(
         const std::string &uri, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) = 0;
     virtual int32_t Delete(const std::string &uri, const DataSharePredicates &predicate) = 0;
+    virtual std::pair<int32_t, int32_t> InsertEx(
+        const std::string &uri, const DataShareValuesBucket &valuesBucket) = 0;
+    virtual std::pair<int32_t, int32_t> UpdateEx(
+        const std::string &uri, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) = 0;
+    virtual std::pair<int32_t, int32_t> DeleteEx(const std::string &uri, const DataSharePredicates &predicate) = 0;
     virtual std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const DataSharePredicates &predicates,
         const std::vector<std::string> &columns, int &errCode) = 0;
     virtual int32_t AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt) = 0;

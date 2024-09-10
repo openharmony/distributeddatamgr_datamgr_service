@@ -94,11 +94,52 @@ void DataShareServiceImplTest::TearDown(void)
 
 /**
 * @tc.name: DataShareServiceImpl001
-* @tc.desc: test Insert Update Query Delete abnormal scene
+* @tc.desc: test InsertEx UpdateEx Query DeleteEx abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
 HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "";
+    bool enable = true;
+    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
+    EXPECT_EQ(resultA, DataShare::E_OK);
+
+    DataShare::DataShareValuesBucket valuesBucket;
+    std::string name0 = "";
+    valuesBucket.Put("", name0);
+    auto [errCode, result] = dataShareServiceImpl.InsertEx(uri, valuesBucket);
+    EXPECT_EQ((errCode != 0), true);
+
+    DataShare::DataSharePredicates predicates;
+    std::string selections = "";
+    predicates.SetWhereClause(selections);
+    auto [errCode1, result1] = dataShareServiceImpl.UpdateEx(uri, predicates, valuesBucket);
+    EXPECT_EQ((errCode1 != 0), true);
+
+    predicates.EqualTo("", "");
+    std::vector<std::string> columns;
+    int errVal = 0;
+    auto resQuery = dataShareServiceImpl.Query(uri, predicates, columns, errVal);
+    int resultSet = 0;
+    if (resQuery != nullptr) {
+        resQuery->GetRowCount(resultSet);
+    }
+    EXPECT_EQ(resultSet, 0);
+
+    predicates.SetWhereClause(selections);
+    auto [errCode2, result2] = dataShareServiceImpl.DeleteEx(uri, predicates);
+    EXPECT_EQ((errCode2 != 0), true);
+}
+
+/**
+* @tc.name: DataShareServiceImpl002
+* @tc.desc: test Insert Update Query Delete abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl002, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = "";
