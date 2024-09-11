@@ -20,7 +20,7 @@
 #include <memory>
 #include <set>
 
-#include "error/general_error.h"
+#include "executor_pool.h"
 #include "snapshot/snapshot.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
@@ -34,7 +34,7 @@ public:
     using Watcher = GeneralWatcher;
     using DetailAsync = GenAsync;
     using Devices = std::vector<std::string>;
-    using GeneralError = DistributedData::GeneralError;
+    using Executor = ExecutorPool;
     enum SyncMode {
         NEARBY_BEGIN,
         NEARBY_PUSH = NEARBY_BEGIN,
@@ -63,6 +63,7 @@ public:
     };
 
     enum Area : int32_t {
+        EL0,
         EL1,
         EL2,
         EL3,
@@ -116,6 +117,8 @@ public:
     static const int32_t DB_ERR_OFFSET = ErrCodeOffset(SUBSYS_DISTRIBUTEDDATAMNG, DB_MODE_ID);
 
     virtual ~GeneralStore() = default;
+
+    virtual void SetExecutor(std::shared_ptr<Executor> executor) = 0;
 
     virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) = 0;
@@ -174,9 +177,9 @@ public:
 
     virtual void SetConfig(const StoreConfig &storeConfig) {};
 
-    virtual std::pair<GeneralError, uint32_t> LockCloudDB() = 0;
+    virtual std::pair<int32_t, uint32_t> LockCloudDB() = 0;
 
-    virtual GeneralError UnLockCloudDB() = 0;
+    virtual int32_t UnLockCloudDB() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
