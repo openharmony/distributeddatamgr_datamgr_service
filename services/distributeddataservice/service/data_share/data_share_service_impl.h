@@ -55,10 +55,6 @@ public:
     int32_t Update(const std::string &uri, const DataSharePredicates &predicate,
                    const DataShareValuesBucket &valuesBucket) override;
     int32_t Delete(const std::string &uri, const DataSharePredicates &predicate) override;
-    std::pair<int32_t, int32_t> InsertEx(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;
-    std::pair<int32_t, int32_t> UpdateEx(const std::string &uri, const DataSharePredicates &predicate,
-                   const DataShareValuesBucket &valuesBucket) override;
-    std::pair<int32_t, int32_t> DeleteEx(const std::string &uri, const DataSharePredicates &predicate) override;
     std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const DataSharePredicates &predicates,
                                               const std::vector<std::string> &columns, int &errCode) override;
     int32_t AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt) override;
@@ -93,6 +89,10 @@ public:
     int32_t GetSilentProxyStatus(const std::string &uri, bool isCreateHelper) override;
     int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
     int32_t UnregisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
+    std::pair<int32_t, int32_t> InsertEx(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;
+    std::pair<int32_t, int32_t> UpdateEx(const std::string &uri, const DataSharePredicates &predicate,
+                   const DataShareValuesBucket &valuesBucket) override;
+    std::pair<int32_t, int32_t> DeleteEx(const std::string &uri, const DataSharePredicates &predicate) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
