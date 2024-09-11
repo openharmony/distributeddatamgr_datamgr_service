@@ -43,6 +43,7 @@ using Reporter = OHOS::DistributedDataDfx::Reporter;
 using namespace RadarReporter;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
+constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
@@ -277,8 +278,10 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
                 continue;
             }
             Uri uri(file->GetUri());
-            if (uri.GetAuthority().empty()) {
-                ZLOGW("Get authority is empty, key=%{public}s.", query.key.c_str());
+            std::string scheme = uri.GetScheme();
+            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+                ZLOGW("Get authority is empty or uri scheme not equals to file, key=%{public}s.", query.key.c_str());
                 continue;
             }
             allUri.push_back(uri);
