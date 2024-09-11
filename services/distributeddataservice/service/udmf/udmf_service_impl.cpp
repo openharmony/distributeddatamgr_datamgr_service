@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #define LOG_TAG "UdmfServiceImpl"
 
 #include "udmf_service_impl.h"
@@ -32,6 +33,7 @@
 #include "uri_permission_manager.h"
 #include "uri.h"
 #include "utd/custom_utd_installer.h"
+#include "udmf_conversion.h"
 #include "udmf_radar_reporter.h"
 #include "securec.h"
 #include "unified_types.h"
@@ -144,6 +146,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_DB_ERROR;
     }
 
+    UdmfConversion::InitValueObject(unifiedData);
     if (store->Put(unifiedData) != E_OK) {
         ZLOGE("Put unified data failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
@@ -346,13 +349,9 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
 
 int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData)
 {
-    if (!unifiedData.IsValid()) {
-        ZLOGE("UnifiedData is invalid.");
-        return E_INVALID_PARAMETERS;
-    }
     UnifiedKey key(query.key);
-    if (!key.IsValid()) {
-        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+    if (!unifiedData.IsValid() || !key.IsValid()) {
+        ZLOGE("data is invalid, or key is invalid. key=%{public}s.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
@@ -389,6 +388,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     for (auto &record : unifiedData.GetRecords()) {
         record->SetUid(PreProcessUtils::GenerateId());
     }
+    UdmfConversion::InitValueObject(unifiedData);
     if (store->Update(unifiedData) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -502,6 +502,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         return E_DB_ERROR;
     }
     data.GetRuntime()->privileges.emplace_back(privilege);
+    UdmfConversion::InitValueObject(data);
     if (store->Update(data) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
