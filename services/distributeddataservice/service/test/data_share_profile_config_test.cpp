@@ -47,18 +47,19 @@ public:
 HWTEST_F(DataShareProfileConfigTest, GetDbConfig, TestSize.Level1)
 {
     DataShareDbConfig dbConfig;
-    auto result = dbConfig.GetDbConfig("", false, "", "", 0);
+    DataShareDbConfig::DbConfig config {"", "", "", "", "", 0, false};
+    auto result = dbConfig.GetDbConfig(config);
     EXPECT_EQ(std::get<0>(result), NativeRdb::E_DB_NOT_EXIST);
 
-    bool hasExtension = true;
-    result = dbConfig.GetDbConfig("", hasExtension, "", "", 0);
+    config.hasExtension = true;
+    result = dbConfig.GetDbConfig(config);
     EXPECT_EQ(std::get<0>(result), NativeRdb::E_DB_NOT_EXIST);
 
-    std::string uri = DATA_SHARE_URI;
-    std::string bundleName = "bundleName";
-    std::string storeName = "storeName";
-    int32_t userId = USER_TEST;
-    result = dbConfig.GetDbConfig(uri, hasExtension, bundleName, storeName, userId);
+    config.uri = DATA_SHARE_URI;
+    config.bundleName = "bundleName";
+    config.storeName = "storeName";
+    config.userId = USER_TEST;
+    result = dbConfig.GetDbConfig(config);
     EXPECT_NE(std::get<0>(result), DataShare::E_OK);
 }
 

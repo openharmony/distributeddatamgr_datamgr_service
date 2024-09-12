@@ -49,10 +49,12 @@ std::shared_ptr<ExtensionMgrProxy> ExtensionMgrProxy::GetInstance()
 }
 
 int ExtensionMgrProxy::Connect(
-    const std::string &uri, const sptr<IRemoteObject> &connect, const sptr<IRemoteObject> &callerToken)
+    const std::string &uri, const sptr<IRemoteObject> &connect, const sptr<IRemoteObject> &callerToken,
+    AAFwk::WantParams &wantParams)
 {
     AAFwk::Want want;
     want.SetUri(uri);
+    want.SetParams(wantParams);
     std::lock_guard<std::mutex> lock(mutex_);
     if (ConnectSA()) {
         int ret = proxy_->ConnectAbilityCommon(want, connect, callerToken, AppExecFwk::ExtensionAbilityType::DATASHARE);

@@ -54,7 +54,8 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
     DistributedData::StoreMetaData metaData;
     if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, context->currentUserId)) {
         // connect extension and retry
-        ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName);
+        AAFwk::WantParams wantParams;
+        ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
         if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, context->currentUserId)) {
             ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
@@ -74,7 +75,8 @@ bool LoadConfigSingleDataInfoStrategy::operator()(std::shared_ptr<Context> conte
     DistributedData::StoreMetaData metaData;
     if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0)) {
         // connect extension and retry
-        ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName);
+        AAFwk::WantParams wantParams;
+        ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
         if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0)) {
             ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;

@@ -53,10 +53,16 @@ public:
     virtual ~DataShareServiceImpl();
     int32_t Insert(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;
     int32_t Update(const std::string &uri, const DataSharePredicates &predicate,
-                   const DataShareValuesBucket &valuesBucket) override;
+        const DataShareValuesBucket &valuesBucket) override;
     int32_t Delete(const std::string &uri, const DataSharePredicates &predicate) override;
-    std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const DataSharePredicates &predicates,
-                                              const std::vector<std::string> &columns, int &errCode) override;
+    std::pair<int32_t, int32_t> InsertEx(const std::string &uri, const std::string &extUri,
+        const DataShareValuesBucket &valuesBucket) override;
+    std::pair<int32_t, int32_t> UpdateEx(const std::string &uri, const std::string &extUri,
+        const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) override;
+    std::pair<int32_t, int32_t> DeleteEx(const std::string &uri, const std::string &extUri,
+        const DataSharePredicates &predicate) override;
+    std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const std::string &extUri,
+        const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode) override;
     int32_t AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt) override;
     int32_t DelTemplate(const std::string &uri, const int64_t subscriberId) override;
     std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) override;
@@ -89,10 +95,6 @@ public:
     int32_t GetSilentProxyStatus(const std::string &uri, bool isCreateHelper) override;
     int32_t RegisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
     int32_t UnregisterObserver(const std::string &uri, const sptr<OHOS::IRemoteObject> &remoteObj) override;
-    std::pair<int32_t, int32_t> InsertEx(const std::string &uri, const DataShareValuesBucket &valuesBucket) override;
-    std::pair<int32_t, int32_t> UpdateEx(const std::string &uri, const DataSharePredicates &predicate,
-                   const DataShareValuesBucket &valuesBucket) override;
-    std::pair<int32_t, int32_t> DeleteEx(const std::string &uri, const DataSharePredicates &predicate) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;
@@ -122,8 +124,9 @@ private:
     bool SubscribeTimeChanged();
     bool NotifyChange(const std::string &uri);
     bool GetCallerBundleName(std::string &bundleName);
-    int32_t Execute(const std::string &uri, const int32_t tokenId, bool isRead, ExecuteCallback callback);
-    std::pair<int32_t, int32_t> ExecuteEx(const std::string &uri, const int32_t tokenId,
+    int32_t Execute(const std::string &uri, const std::string &extUri, const int32_t tokenId,
+        bool isRead, ExecuteCallback callback);
+    std::pair<int32_t, int32_t> ExecuteEx(const std::string &uri, const std::string &extUri, const int32_t tokenId,
         bool isRead, ExecuteCallbackEx callback);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     void InitSubEvent();

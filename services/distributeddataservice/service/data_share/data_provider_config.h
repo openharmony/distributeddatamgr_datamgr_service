@@ -40,6 +40,8 @@ public:
         std::string readPermission;
         std::string writePermission;
         std::string type = "rdb";
+        std::string backup;
+        std::string extensionUri;
         bool singleton = false;
         bool hasExtension = false;
         bool allowEmptyPermission = false;

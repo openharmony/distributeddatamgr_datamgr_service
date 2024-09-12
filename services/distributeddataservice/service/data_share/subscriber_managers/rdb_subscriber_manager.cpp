@@ -321,7 +321,7 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
     DistributedData::StoreMetaData meta;
     meta.dataDir = rdbDir;
     meta.bundleName = key.bundleName;
-    auto delegate = DBDelegate::Create(meta);
+    auto delegate = DBDelegate::Create(meta, key.uri);
     if (delegate == nullptr) {
         ZLOGE("Create fail %{public}s %{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
             key.bundleName.c_str());
