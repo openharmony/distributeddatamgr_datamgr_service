@@ -48,7 +48,6 @@ using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
 constexpr int UUID_WIDTH = 4;
-constexpr uint32_t LOCK_TIMEOUT = 3600; // second
 const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap_ = {
     { DBStatus::OK, GenErr::E_OK },
     { DBStatus::CLOUD_NETWORK_ERROR, GenErr::E_NETWORK_ERROR },
@@ -73,6 +72,7 @@ const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap
     { DBStatus::SECURITY_OPTION_CHECK_ERROR, GenErr::E_SECURITY_LEVEL_ERROR },
 };
 
+constexpr uint32_t LOCK_TIMEOUT = 3600; // second
 static DBSchema GetDBSchema(const Database &database)
 {
     DBSchema schema;
@@ -773,13 +773,18 @@ void KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
     enableCloud_ = storeConfig.enableCloud_;
 }
 
-std::pair<GeneralError, uint32_t> KVDBGeneralStore::LockCloudDB()
+std::pair<int32_t, uint32_t> KVDBGeneralStore::LockCloudDB()
 {
     return { GeneralError::E_NOT_SUPPORT, 0 };
 }
 
-GeneralError KVDBGeneralStore::UnLockCloudDB()
+int32_t KVDBGeneralStore::UnLockCloudDB()
 {
     return GeneralError::E_NOT_SUPPORT;
+}
+
+void KVDBGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
+{
+    return;
 }
 } // namespace OHOS::DistributedKv
