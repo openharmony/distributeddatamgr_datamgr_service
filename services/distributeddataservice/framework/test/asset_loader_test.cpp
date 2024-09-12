@@ -53,3 +53,15 @@ HWTEST_F(AssetLoaderTest, RemoveLocalAssets, TestSize.Level1)
     auto ret = loader.RemoveLocalAssets(tableName, gid, prefix, assets);
     ASSERT_EQ(ret, E_NOT_SUPPORT);
 }
+
+/**
+* @tc.name: Cancel
+* @tc.desc: cancel.
+* @tc.type: FUNC
+*/
+HWTEST_F(AssetLoaderTest, Cancel, TestSize.Level1)
+{
+    AssetLoader loader;
+    auto ret = loader.Cancel();
+    ASSERT_EQ(ret, E_NOT_SUPPORT);
+}
