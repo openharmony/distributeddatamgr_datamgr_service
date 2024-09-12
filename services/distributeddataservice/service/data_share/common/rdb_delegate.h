@@ -51,10 +51,10 @@ public:
 
 private:
     RdbStoreConfig GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
-    bool IsLimit(int count);
+    bool IsLimit(int count, const int32_t callingPid);
     static std::atomic<int32_t> resultSetCount;
     static ConcurrentMap<uint32_t, int32_t> resultSetCallingPids;
-    static constexpr std::chrono::milliseconds WAIT_TIME = std::chrono::milliseconds(100);
+    static constexpr std::chrono::milliseconds WAIT_TIME = std::chrono::milliseconds(50);
     std::shared_ptr<RdbStore> store_;
     int errCode_ = E_OK;
     static constexpr int RETRY = 3;
