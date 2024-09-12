@@ -38,6 +38,7 @@ static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
 constexpr char SPECIAL = '^';
+constexpr const char *FILE_SCHEME = "file";
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
@@ -170,8 +171,10 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
                 continue;
             }
             Uri uri(file->GetUri());
-            if (uri.GetAuthority().empty()) {
-                ZLOGW("Get uri authority empty.");
+            std::string scheme = uri.GetScheme();
+            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+                ZLOGW("Get uri authority empty or uri scheme not equals to file.");
                 continue;
             }
             uris.push_back(file->GetUri());
