@@ -42,6 +42,7 @@ DBStatus RdbCloud::BatchInsert(
     VBuckets temp = records;
     auto error = cloudDB_->BatchInsert(tableName, std::move(records), extends);
     PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
+    ConvertErrorField(extends);
     extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
@@ -57,6 +58,7 @@ DBStatus RdbCloud::BatchUpdate(
     VBuckets temp = records;
     auto error = cloudDB_->BatchUpdate(tableName, std::move(records), extends);
     PostEvent(temp, skipAssets, extends, DistributedData::AssetEvent::UPLOAD_FINISHED);
+    ConvertErrorField(extends);
     extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
@@ -65,6 +67,7 @@ DBStatus RdbCloud::BatchDelete(const std::string &tableName, std::vector<DBVBuck
 {
     VBuckets extends = ValueProxy::Convert(std::move(extend));
     auto error = cloudDB_->BatchDelete(tableName, extends);
+    ConvertErrorField(extends);
     extend = ValueProxy::Convert(std::move(extends));
     return ConvertStatus(static_cast<GeneralError>(error));
 }
@@ -187,6 +190,10 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::CLOUD_VERSION_CONFLICT;
         case GeneralError::E_RECORD_EXIST_CONFLICT:
             return DBStatus::CLOUD_RECORD_EXIST_CONFLICT;
+        case GeneralError::E_RECORD_NOT_FOUND:
+            return DBStatus::CLOUD_RECORD_NOT_FOUND;
+        case GeneralError::E_RECORD_ALREADY_EXISTED:
+            return DBStatus::CLOUD_RECORD_ALREADY_EXISTED;
         case GeneralError::E_FILE_NOT_EXIST:
             return DBStatus::LOCAL_ASSET_NOT_FOUND;
         case GeneralError::E_TIME_OUT:
@@ -322,5 +329,20 @@ void RdbCloud::PostEventAsset(DistributedData::Asset& asset, DataBucket& extend,
 uint8_t RdbCloud::GetLockFlag() const
 {
     return flag_;
+}
+
+void RdbCloud::ConvertErrorField(DistributedData::VBuckets& extends)
+{
+    for (auto& extend : extends) {
+        auto errorField = extend.find(SchemaMeta::ERROR_FIELD);
+        if (errorField == extend.end()) {
+            continue;
+        }
+        auto errCode = Traits::get_if<int64_t>(&(errorField->second));
+        if (errCode == nullptr) {
+            continue;
+        }
+        errorField->second = ConvertStatus(static_cast<GeneralError>(*errCode));
+    }
 }
 } // namespace OHOS::DistributedRdb
