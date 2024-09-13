@@ -133,7 +133,7 @@ private:
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
-    static constexpr const char *defaultAccountId = "default";
+    static constexpr const char *defaultAccountId = "ohosAnonymousUid";
     bool enableCloud_ = false;
     bool isPublic_ = false;
     static const std::map<DBStatus, GenErr> dbStatusMap_;
