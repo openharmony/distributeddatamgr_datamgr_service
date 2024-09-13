@@ -230,6 +230,9 @@ int32_t RdbGeneralStore::Close(bool isForce)
         if (!isForce && delegate_->GetCloudSyncTaskCount() > 0) {
             return GeneralError::E_BUSY;
         }
+        if (isForce && bindInfo_.loader_ != nullptr) {
+            bindInfo_.loader_->Cancel();
+        }
         auto status = manager_.CloseStore(delegate_);
         if (status != DBStatus::OK) {
             return status;
