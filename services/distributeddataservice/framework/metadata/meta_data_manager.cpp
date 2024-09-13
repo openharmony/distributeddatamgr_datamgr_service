@@ -86,6 +86,10 @@ MetaDataManager::Filter::Filter(const std::string &pattern) : pattern_(pattern)
 
 void MetaObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
+    if (filter_ == nullptr) {
+        ZLOGE("filter_ is nullptr!");
+        return;
+    }
     auto values = { &data.GetEntriesInserted(), &data.GetEntriesUpdated(), &data.GetEntriesDeleted() };
     int32_t next = MetaDataManager::INSERT;
     for (auto value : values) {
@@ -115,6 +119,10 @@ void MetaObserver::OnChange(DBOrigin origin, const std::string &originalId, DBCh
 void MetaObserver::HandleChanges(int32_t flag, std::vector<std::vector<Type>> &priData)
 {
     if (priData.empty()) {
+        return;
+    }
+    if (filter_ == nullptr) {
+        ZLOGE("filter_ is nullptr!");
         return;
     }
     for (const auto &priKey : priData) {
