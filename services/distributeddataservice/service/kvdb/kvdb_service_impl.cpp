@@ -731,14 +731,14 @@ int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
             MetaDataManager::GetInstance().Unsubscribe(SwitchesMetaData::GetPrefix({}));
         }
         agent.watchers_.clear();
-        auto stores = AutoCache::GetInstance().GetStoresIfPresent(key);
-        for (auto store : stores) {
-            if (store != nullptr) {
-                store->UnregisterDetailProgressObserver();
-            }
-        }
         return true;
     });
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId);
+    for (auto store : stores) {
+        if (store != nullptr) {
+            store->UnregisterDetailProgressObserver();
+        }
+    }
     return SUCCESS;
 }
 

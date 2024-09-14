@@ -963,7 +963,8 @@ std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::strin
 {
     std::vector<std::string> res;
     for (auto &it : syncTables) {
-        if (localTables.count(it)) {
+        if (localTables.count(it) &&
+            localTables.count(RelationalStoreManager::GetDistributedLogTableName(it))) {
             res.push_back(std::move(it));
         }
     }
