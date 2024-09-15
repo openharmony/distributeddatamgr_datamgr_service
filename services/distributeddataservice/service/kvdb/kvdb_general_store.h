@@ -76,12 +76,11 @@ public:
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
     void SetConfig(const StoreConfig &storeConfig) override;
     void SetExecutor(std::shared_ptr<Executor> executor) override;
-    virtual std::pair<int32_t, uint32_t> LockCloudDB() override;
-    virtual int32_t UnLockCloudDB() override;
-
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
     static DBSecurity GetDBSecurity(int32_t secLevel);
+    std::pair<int32_t, uint32_t> LockCloudDB() override;
+    int32_t UnLockCloudDB() override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;

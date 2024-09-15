@@ -620,10 +620,7 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     if (queryKey.accountId.empty()) {
         return false;
     }
-    if (std::find(kvApps_.begin(), kvApps_.end(), queryKey.bundleName) != kvApps_.end()) {
-        return false;
-    }
-    return true;
+    return kvApps_.find(queryKey.bundleName) == kvApps_.end();
 }
 
 int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)
