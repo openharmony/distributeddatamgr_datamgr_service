@@ -419,4 +419,20 @@ int32_t RdbServiceStub::OnUnlockCloudContainer(MessageParcel &data, MessageParce
     }
     return RDB_OK;
 }
+
+int32_t RdbServiceStub::OnGetDebugInfo(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::map<std::string, RdbDebugInfo> debugInfo;
+    auto status = GetDebugInfo(param, debugInfo);
+    if (!ITypesUtil::Marshal(reply, status, debugInfo)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

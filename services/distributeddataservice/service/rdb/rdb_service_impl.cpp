@@ -14,19 +14,22 @@
  */
 #define LOG_TAG "RdbServiceImpl"
 #include "rdb_service_impl.h"
+
+#include "abs_rdb_predicates.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "checker/checker_manager.h"
-#include "abs_rdb_predicates.h"
 #include "changeevent/remote_change_event.h"
+#include "checker/checker_manager.h"
 #include "cloud/change_event.h"
-#include "cloud/cloud_share_event.h"
 #include "cloud/cloud_lock_event.h"
+#include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
+#include "cloud/schema_meta.h"
 #include "commonevent/data_change_event.h"
 #include "commonevent/set_searchable_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
+#include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
@@ -34,23 +37,22 @@
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/auto_launch_meta_data.h"
+#include "metadata/capability_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/store_debug_info.h"
 #include "metadata/store_meta_data.h"
-#include "rdb_watcher.h"
+#include "rdb_general_store.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
+#include "rdb_result_set_impl.h"
+#include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "tokenid_kit.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
-#include "cloud/schema_meta.h"
-#include "rdb_general_store.h"
-#include "rdb_result_set_impl.h"
 #include "xcollie.h"
-#include "device_matrix.h"
-#include "metadata/capability_meta_data.h"
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -676,9 +678,12 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     auto storeMeta = GetStoreMetaData(tmpParam);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey());
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetStrategyKey());
-    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetBackupSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetAutoLaunchKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetDebugInfoKey(), true);
     return RDB_OK;
 }
 
@@ -781,6 +786,9 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
             EventCenter::GetInstance().PostEvent(std::move(evt));
         }
     }
+
+    SaveDebugInfo(meta, param);
+
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
@@ -1224,5 +1232,58 @@ int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
     auto evt = std::make_unique<CloudLockEvent>(CloudEvent::UNLOCK_CLOUD_CONTAINER, std::move(storeInfo), callback);
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return result;
+}
+
+int32_t RdbServiceImpl::GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo)
+{
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto metaData = GetStoreMetaData(param);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
+    if (!isCreated) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. no meta data", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_OK;
+    }
+    DistributedData::StoreDebugInfo debugMeta;
+    isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    if (!isCreated) {
+        return RDB_OK;
+    }
+
+    for (auto &[name, fileDebug] : debugMeta.fileInfos) {
+        RdbDebugInfo rdbInfo;
+        rdbInfo.inode_ = fileDebug.inode;
+        rdbInfo.size_ = fileDebug.size;
+        rdbInfo.dev_ = fileDebug.dev;
+        rdbInfo.mode_ = fileDebug.mode;
+        rdbInfo.uid_ = fileDebug.uid;
+        rdbInfo.gid_ = fileDebug.gid;
+        debugInfo.insert(std::pair{ name, rdbInfo });
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param)
+{
+    if (param.infos_.empty()) {
+        return RDB_OK;
+    }
+    DistributedData::StoreDebugInfo debugMeta;
+    for (auto &[name, info] : param.infos_) {
+        DistributedData::StoreDebugInfo::FileInfo fileInfo;
+        fileInfo.inode = info.inode_;
+        fileInfo.size = info.size_;
+        fileInfo.dev = info.dev_;
+        fileInfo.mode = info.mode_;
+        fileInfo.uid = info.uid_;
+        fileInfo.gid = info.gid_;
+        debugMeta.fileInfos.insert(std::pair{name, fileInfo});
+    }
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb
