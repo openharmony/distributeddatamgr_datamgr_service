@@ -256,12 +256,7 @@ HWTEST_F(ValueProxyServiceTest, AssetConvertToDataStatus, TestSize.Level0)
 {
     DistributedDB::Asset asset;
     asset.status = static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING);
-    asset.flag = static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE);
     auto result = ValueProxy::Asset::ConvertToDataStatus(asset);
-    EXPECT_EQ(result, DistributedData::Asset::STATUS_DELETE);
-
-    asset.flag = static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE);
-    result = ValueProxy::Asset::ConvertToDataStatus(asset);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_DOWNLOADING);
 
     asset.status = static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
@@ -269,19 +264,23 @@ HWTEST_F(ValueProxyServiceTest, AssetConvertToDataStatus, TestSize.Level0)
     EXPECT_EQ(result, DistributedData::Asset::STATUS_ABNORMAL);
 
     asset.status = static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
-    asset.flag = static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT);
     result = ValueProxy::Asset::ConvertToDataStatus(asset);
-    EXPECT_EQ(result, DistributedData::Asset::STATUS_INSERT);
+    EXPECT_EQ(result, DistributedData::Asset::STATUS_NORMAL);
 
-    asset.flag = static_cast<uint32_t>(DistributedDB::AssetOpType::UPDATE);
+    asset.status = static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE);
     result = ValueProxy::Asset::ConvertToDataStatus(asset);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_UPDATE);
 
-    asset.flag = static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE);
+    asset.status = static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE);
     result = ValueProxy::Asset::ConvertToDataStatus(asset);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_DELETE);
 
-    asset.flag = static_cast<uint32_t>(DistributedDB::AssetOpType::NO_CHANGE);
+    asset.status = static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT);
+    result = ValueProxy::Asset::ConvertToDataStatus(asset);
+    EXPECT_EQ(result, DistributedData::Asset::STATUS_INSERT);
+
+    asset.status = static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE) +
+        static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
     result = ValueProxy::Asset::ConvertToDataStatus(asset);
     EXPECT_EQ(result, DistributedData::Asset::STATUS_NORMAL);
 }

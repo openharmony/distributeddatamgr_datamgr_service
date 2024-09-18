@@ -298,28 +298,27 @@ uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asse
 {
     auto highStatus = GetHighStatus(asset.status);
     auto lowStatus = GetLowStatus(asset.status);
-    if (lowStatus == DistributedDB::AssetStatus::DOWNLOADING) {
-        if (asset.flag == static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE)) {
-            lowStatus = DistributedData::Asset::STATUS_DELETE;
-        } else {
+    switch (lowStatus) {
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL):
+            lowStatus = DistributedData::Asset::STATUS_NORMAL;
+            break;
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING):
             lowStatus = DistributedData::Asset::STATUS_DOWNLOADING;
-        }
-    } else if (lowStatus == DistributedDB::AssetStatus::ABNORMAL) {
-        lowStatus = DistributedData::Asset::STATUS_ABNORMAL;
-    } else {
-        switch (asset.flag) {
-            case static_cast<uint32_t>(DistributedDB::AssetOpType::INSERT):
-                lowStatus = DistributedData::Asset::STATUS_INSERT;
-                break;
-            case static_cast<uint32_t>(DistributedDB::AssetOpType::UPDATE):
-                lowStatus = DistributedData::Asset::STATUS_UPDATE;
-                break;
-            case static_cast<uint32_t>(DistributedDB::AssetOpType::DELETE):
-                lowStatus = DistributedData::Asset::STATUS_DELETE;
-                break;
-            default:
-                lowStatus = DistributedData::Asset::STATUS_NORMAL;
-        }
+            break;
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL):
+            lowStatus = DistributedData::Asset::STATUS_ABNORMAL;
+            break;
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::INSERT):
+            lowStatus = DistributedData::Asset::STATUS_INSERT;
+            break;
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::UPDATE):
+            lowStatus = DistributedData::Asset::STATUS_UPDATE;
+            break;
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::DELETE):
+            lowStatus = DistributedData::Asset::STATUS_DELETE;
+            break;
+        default:
+            lowStatus = DistributedData::Asset::STATUS_NORMAL;
     }
     return lowStatus | highStatus;
 }
