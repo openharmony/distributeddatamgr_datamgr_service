@@ -95,11 +95,11 @@ public:
 
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
-    int32_t GetPassword(const RdbSyncerParam &param, std::vector<uint8_t> &password) override;
-
     std::pair<int32_t, uint32_t> LockCloudContainer(const RdbSyncerParam &param) override;
-
+ 
     int32_t UnlockCloudContainer(const RdbSyncerParam &param) override;
+
+    int32_t GetPassword(const RdbSyncerParam &param, std::vector<uint8_t> &password) override;
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;

@@ -1140,6 +1140,7 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam& param)
     AutoCache::GetInstance().Disable(tokenId, storeId);
     return RDB_OK;
 }
+
 int32_t RdbServiceImpl::Enable(const RdbSyncerParam& param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -1180,7 +1181,7 @@ StoreInfo RdbServiceImpl::GetStoreInfo(const RdbSyncerParam &param)
     storeInfo.storeName = RemoveSuffix(param.storeName_);
     return storeInfo;
 }
-
+ 
 std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerParam &param)
 {
     std::pair<int32_t, uint32_t> result { RDB_ERROR, 0 };
@@ -1189,9 +1190,9 @@ std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerP
               Anonymous::Change(param.storeName_).c_str());
         return result;
     }
-
+ 
     auto storeInfo = GetStoreInfo(param);
-
+ 
     CloudLockEvent::Callback callback = [&result](int32_t status, uint32_t expiredTime) {
         result.first = status;
         result.second = expiredTime;
@@ -1200,7 +1201,7 @@ std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerP
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return result;
 }
-
+ 
 int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
 {
     int32_t result = RDB_ERROR;
@@ -1209,9 +1210,9 @@ int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
               Anonymous::Change(param.storeName_).c_str());
         return result;
     }
-
+ 
     auto storeInfo = GetStoreInfo(param);
-
+ 
     CloudLockEvent::Callback callback = [&result](int32_t status, uint32_t expiredTime) {
         (void)expiredTime;
         result = status;
