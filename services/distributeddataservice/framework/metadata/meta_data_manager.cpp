@@ -14,6 +14,7 @@
  */
 
 #include "metadata/meta_data_manager.h"
+#include <csignal>
 #define LOG_TAG "MetaDataManager"
 
 #include "kv_store_nb_delegate.h"
@@ -184,6 +185,12 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
     auto data = Serializable::Marshall(value);
     auto status = isLocal ? metaStore_->PutLocal({ key.begin(), key.end() }, { data.begin(), data.end() })
                           : metaStore_->Put({ key.begin(), key.end() }, { data.begin(), data.end() });
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
+            status, isLocal, Anonymous::Change(key).c_str());
+        StopSA();
+        return false;
+    }
     if (status == DistributedDB::DBStatus::OK && backup_) {
         backup_(metaStore_);
     }
@@ -206,6 +213,12 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
     DistributedDB::Value data;
     auto status = isLocal ? metaStore_->GetLocal({ key.begin(), key.end() }, data)
                           : metaStore_->Get({ key.begin(), key.end() }, data);
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
+            status, isLocal, Anonymous::Change(key).c_str());
+        StopSA();
+        return false;
+    }
     if (status != DistributedDB::DBStatus::OK) {
         return false;
     }
@@ -221,6 +234,11 @@ bool MetaDataManager::GetEntries(const std::string &prefix, std::vector<Bytes> &
     std::vector<DistributedDB::Entry> dbEntries;
     auto status = isLocal ? metaStore_->GetLocalEntries({ prefix.begin(), prefix.end() }, dbEntries)
                           : metaStore_->GetEntries({ prefix.begin(), prefix.end() }, dbEntries);
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d", status, isLocal);
+        StopSA();
+        return false;
+    }
     if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGE("failed! prefix:%{public}s status:%{public}d isLocal:%{public}d", Anonymous::Change(prefix).c_str(),
             status, isLocal);
@@ -242,6 +260,12 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
     DistributedDB::Value data;
     auto status = isLocal ? metaStore_->DeleteLocal({ key.begin(), key.end() })
                           : metaStore_->Delete({ key.begin(), key.end() });
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
+            status, isLocal, Anonymous::Change(key).c_str());
+        StopSA();
+        return false;
+    }
     if (status == DistributedDB::DBStatus::OK && backup_) {
         backup_(metaStore_);
     }
@@ -263,6 +287,11 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
         }
         complete(results);
     });
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("db corrupted! status:%{public}d", status);
+        StopSA();
+        return false;
+    }
     if (status != DistributedDB::OK) {
         ZLOGW("meta data sync error %{public}d.", status);
     }
@@ -298,5 +327,14 @@ bool MetaDataManager::Unsubscribe(std::string filter)
     }
 
     return metaObservers_.Erase(filter);
+}
+
+void MetaDataManager::StopSA()
+{
+    ZLOGI("stop distributeddata");
+    int err = raise(SIGKILL);
+    if (err < 0) {
+        ZLOGE("stop distributeddata failed, errCode: %{public}d", err);
+    }
 }
 } // namespace OHOS::DistributedData
