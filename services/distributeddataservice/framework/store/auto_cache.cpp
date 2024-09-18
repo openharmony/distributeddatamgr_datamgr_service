@@ -43,7 +43,7 @@ void AutoCache::Bind(std::shared_ptr<Executor> executor)
     if (executor == nullptr || taskId_ != Executor::INVALID_TASK_ID) {
         return;
     }
-    executor_ = std::move(executor);
+    executor_ = executor;
 }
 
 AutoCache::AutoCache()

@@ -803,8 +803,9 @@ int32_t KvStoreDataService::OnScreenUnlocked(int32_t user)
 int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
     int32_t tokenId)
 {
+    auto callerToken = IPCSkeleton::GetCallingTokenID();
     NativeTokenInfo nativeTokenInfo;
-    if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS ||
+    if (AccessTokenKit::GetNativeTokenInfo(callerToken, nativeTokenInfo) != RET_SUCCESS ||
         nativeTokenInfo.processName != FOUNDATION_PROCESS_NAME) {
         ZLOGE("passed wrong, tokenId: %{public}u, bundleName:%{public}s, user:%{public}d, appIndex:%{public}d",
             tokenId, bundleName.c_str(), userId, appIndex);
