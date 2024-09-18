@@ -646,6 +646,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "//third_party/googletest:gtest_main",
   ]
@@ -685,6 +686,7 @@ ohos_unittest("ObjectManagerTest") {
     "c_utils:utils",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "dmsfwk:distributed_sdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",

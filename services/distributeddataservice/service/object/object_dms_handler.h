@@ -38,7 +38,8 @@ public:
     }
 
     void ReceiveDmsEvent(DistributedSchedule::EventNotify &event);
-    bool IsContinue(const std::string &networkId, const std::string &bundleName);
+    bool IsContinue(const std::string &bundleName);
+    std::string GetDstBundleName(const std::string &srcBundleName, const std::string &dstNetworkId);
     void RegisterDmsEvent();
 
 private:
