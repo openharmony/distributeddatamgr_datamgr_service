@@ -1120,16 +1120,19 @@ void RdbGeneralStore::RemoveTasks()
         return;
     }
     std::list<DBProcessCB> cbs;
-    tasks_->ForEach([&cbs, executor = executor_, store = storeInfo_.storeName](SyncId syncId, const FinishTask &task) {
+    std::list<TaskId> taskIds;
+    tasks_->ForEach([&cbs, &taskIds, store = storeInfo_.storeName](SyncId syncId, const FinishTask &task) {
         cbs.push_back(std::move(task.cb));
         ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
             Anonymous::Change(store).c_str(), syncId);
-        if (executor != nullptr) {
-            executor->Remove(task.taskId);
-        }
-        return false;
+        taskIds.push_back(task.taskId);
+        return true;
     });
-    tasks_->Clear();
+    if (executor_ != nullptr) {
+        for (auto taskId : taskIds) {
+            executor_->Remove(taskId, true);
+        }
+    }
     std::map<std::string, SyncProcess> result;
     result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
     for (auto &cb : cbs) {
