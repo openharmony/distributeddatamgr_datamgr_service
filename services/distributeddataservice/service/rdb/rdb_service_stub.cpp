@@ -186,7 +186,7 @@ int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel
 {
     RdbSyncerParam param;
     SubscribeOption option;
-    if (!ITypesUtil::Unmarshal(data, param)) {
+    if (!ITypesUtil::Unmarshal(data, param, option)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
