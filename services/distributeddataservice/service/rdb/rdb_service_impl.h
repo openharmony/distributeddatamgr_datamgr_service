@@ -101,6 +101,8 @@ public:
 
     int32_t UnlockCloudContainer(const RdbSyncerParam &param) override;
 
+    int32_t GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo) override;
+
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
@@ -195,6 +197,8 @@ private:
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
 
     StoreInfo GetStoreInfo(const RdbSyncerParam &param);
+
+    int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

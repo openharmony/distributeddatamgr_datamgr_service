@@ -194,9 +194,12 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     });
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
-    MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetBackupSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetAutoLaunchKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetDebugInfoKey(), true);
     PermitDelegate::GetInstance().DelCache(metaData.GetKey());
     AutoCache::GetInstance().CloseStore(tokenId, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),

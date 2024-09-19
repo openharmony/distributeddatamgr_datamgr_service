@@ -186,7 +186,7 @@ int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel
 {
     RdbSyncerParam param;
     SubscribeOption option;
-    if (!ITypesUtil::Unmarshal(data, param)) {
+    if (!ITypesUtil::Unmarshal(data, param, option)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
@@ -414,6 +414,22 @@ int32_t RdbServiceStub::OnUnlockCloudContainer(MessageParcel &data, MessageParce
 
     auto status = UnlockCloudContainer(param);
     if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceStub::OnGetDebugInfo(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::map<std::string, RdbDebugInfo> debugInfo;
+    auto status = GetDebugInfo(param, debugInfo);
+    if (!ITypesUtil::Marshal(reply, status, debugInfo)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

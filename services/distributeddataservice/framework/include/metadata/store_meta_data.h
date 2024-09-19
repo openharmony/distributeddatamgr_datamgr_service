@@ -84,6 +84,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     API_EXPORT std::string GetStrategyKey() const;
     API_EXPORT std::string GetBackupSecretKey() const;
     API_EXPORT std::string GetAutoLaunchKey() const;
+    API_EXPORT std::string GetDebugInfoKey() const;
     API_EXPORT std::string GetStoreAlias() const;
     API_EXPORT StoreInfo GetStoreInfo() const;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
