@@ -285,17 +285,11 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     if (dbStatusTmp == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("meta data corrupted!");
         option.isNeedRmCorruptedDb = true;
-        auto fullName = GetBackupPath();
         delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
-            [&delegate, &dbStatusTmp, &fullName](DistributedDB::DBStatus dbStatus,
+            [&delegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus,
                 DistributedDB::KvStoreNbDelegate *nbDelegate) {
                 delegate = nbDelegate;
                 dbStatusTmp = dbStatus;
-                if (dbStatusTmp == DistributedDB::DBStatus::OK && delegate != nullptr) {
-                    ZLOGI("start to recover meta data");
-                    DistributedDB::CipherPassword password;
-                    delegate->Import(fullName, password);
-                }
             });
     }
 
