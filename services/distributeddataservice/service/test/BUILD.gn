@@ -741,6 +741,7 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 
   external_deps = [
+    "ability_base:base",
     "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:dataobs_manager",
@@ -783,7 +784,6 @@ ohos_unittest("KvdbServiceImplTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/kvdb/auth_delegate.cpp",
     "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
     "${data_service_path}/service/kvdb/kvdb_notifier_proxy.cpp",
@@ -791,9 +791,6 @@ ohos_unittest("KvdbServiceImplTest") {
     "${data_service_path}/service/kvdb/query_helper.cpp",
     "${data_service_path}/service/kvdb/upgrade.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_query.cpp",
-    "${data_service_path}/service/waterversion/water_version_manager.cpp",
     "kvdb_service_impl_test.cpp",
     "kvdb_service_test.cpp",
   ]
@@ -825,7 +822,6 @@ ohos_unittest("KvdbServiceImplTest") {
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "relational_store:native_rdb",
   ]
 
   deps = [

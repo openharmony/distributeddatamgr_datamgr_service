@@ -28,6 +28,7 @@
 #include "app_data_change_listener.h"
 #include "app_device_change_listener.h"
 #include "block_data.h"
+#include "session.h"
 #include "socket.h"
 #include "softbus_bus_center.h"
 #include "softbus_client.h"

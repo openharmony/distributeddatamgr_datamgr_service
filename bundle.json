@@ -70,7 +70,6 @@
                 "hitrace",
                 "huks",
                 "kv_store",
-                "image_framework",
                 "ipc",
                 "memmgr",
                 "napi",
