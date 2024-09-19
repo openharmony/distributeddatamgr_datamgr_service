@@ -62,6 +62,7 @@ private:
     static constexpr int RETRY = 3;
     static constexpr const char *DUAL_WRITE = "dualWrite";
     static constexpr const char *PERIODIC = "periodic";
+    uint32_t tokenId_;
     std::string bundleName_;
     std::string storeName_;
     int32_t haMode_;
