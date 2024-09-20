@@ -104,7 +104,10 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/crypto.cpp",
     "utils/ref_count.cpp",
   ]
-  cflags = [ "-Wno-multichar" ]
+  cflags = [
+    "-Wno-multichar",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+  ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 

@@ -51,7 +51,7 @@ ohos_shared_library("distributeddata_adapter") {
     ubsan = true
   }
   sources = []
-
+  cflags = [ "-D_LIBCPP_HAS_COND_CLOCKWAIT" ]
   configs = [ ":distributeddata_adapter_private_config" ]
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account_static",
