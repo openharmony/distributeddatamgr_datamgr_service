@@ -153,16 +153,25 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
-    if (status != SUCCESS) {
+    if (status != SUCCESS || !cloudInfo.enableCloud) {
         return status;
     }
-    if (!cloudInfo.enableCloud) {
-        return SUCCESS;
-    }
-    if (cloudInfo.id != id || !cloudInfo.Exist(bundleName)) {
-        ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
+    if (cloudInfo.id != id) {
+        ZLOGW("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
             Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
+        Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB,
+            WORK_DO_CLOUD_SYNC }));
         return INVALID_ARGUMENT;
+    }
+    if (!cloudInfo.Exist(bundleName)) {
+        std::tie(status, cloudInfo) = GetCloudInfoFromServer(user);
+        if (status != SUCCESS || !cloudInfo.enableCloud || cloudInfo.id != id || !cloudInfo.Exist(bundleName)) {
+            ZLOGE("invalid args, status:%{public}d, enableCloud:%{public}d, [input] id:%{public}s,"
+                  "[exist] id:%{public}s, bundleName:%{public}s", status, cloudInfo.enableCloud,
+                  Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
+            return INVALID_ARGUMENT;
+        }
+        ZLOGI("add app switch, bundleName:%{public}s", bundleName.c_str());
     }
     cloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
