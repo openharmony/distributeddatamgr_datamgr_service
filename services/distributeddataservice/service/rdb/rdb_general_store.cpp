@@ -1121,7 +1121,7 @@ void RdbGeneralStore::RemoveTasks()
     }
     std::list<DBProcessCB> cbs;
     std::list<TaskId> taskIds;
-    tasks_->ForEach([&cbs, &taskIds, store = storeInfo_.storeName](SyncId syncId, const FinishTask &task) {
+    tasks_->EraseIf([&cbs, &taskIds, store = storeInfo_.storeName](SyncId syncId, const FinishTask &task) {
         cbs.push_back(std::move(task.cb));
         ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
             Anonymous::Change(store).c_str(), syncId);
