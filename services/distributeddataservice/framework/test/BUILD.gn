@@ -258,23 +258,23 @@ ohos_unittest("MetaDataManagerTest") {
   ]
 }
 
+ohos_unittest("GeneralStoreTest") {
+  module_out_path = module_output_path
+  sources = [ "general_store_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
+ohos_unittest("SubscriptionTest") {
+  module_out_path = module_output_path
+  sources = [ "subscription_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
 ohos_unittest("StoreMetaDataLocalTest") {
   module_out_path = module_output_path
   sources = [ "store_meta_data_local_test.cpp" ]
-  configs = [ ":module_private_config" ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-}
-
-ohos_unittest("ConstantTest") {
-  module_out_path = module_output_path
-  sources = [ "constant_test.cpp" ]
-  configs = [ ":module_private_config" ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-}
-
-ohos_unittest("CryptoTest") {
-  module_out_path = module_output_path
-  sources = [ "crypto_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
