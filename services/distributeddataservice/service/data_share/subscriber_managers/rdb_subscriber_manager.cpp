@@ -339,7 +339,8 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
 
-    ZLOGI("emit, size %{public}zu %{private}s", val.size(), changeNode.uri_.c_str());
+    ZLOGI("emit, valSize: %{public}zu, dataSize:%{public}zu, uri:%{public}s,",
+        val.size(), changeNode.data_.size(), DistributedData::Anonymous::Change(changeNode.uri_).c_str());
     for (const auto &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             callback.observer->OnChangeFromRdb(changeNode);
