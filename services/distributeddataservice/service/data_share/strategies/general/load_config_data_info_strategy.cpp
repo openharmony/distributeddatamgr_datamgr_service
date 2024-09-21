@@ -31,7 +31,7 @@ LoadConfigDataInfoStrategy::LoadConfigDataInfoStrategy()
 {
 }
 static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
-    DistributedData::StoreMetaData &metaData, const int32_t userId)
+    DistributedData::StoreMetaData &metaData, const int32_t userId, const int32_t appIndex)
 {
     DistributedData::StoreMetaData meta;
     meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
@@ -52,11 +52,13 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
         return true;
     }
     DistributedData::StoreMetaData metaData;
-    if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, context->currentUserId)) {
+    if (!QueryMetaData(
+        context->calledBundleName, context->calledStoreName, metaData, context->currentUserId, context->appIndex)) {
         // connect extension and retry
         AAFwk::WantParams wantParams;
         ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
-        if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, context->currentUserId)) {
+        if (!QueryMetaData(
+            context->calledBundleName, context->calledStoreName, metaData, context->currentUserId, context->appIndex)) {
             ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
             return false;
@@ -73,11 +75,11 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
 bool LoadConfigSingleDataInfoStrategy::operator()(std::shared_ptr<Context> context)
 {
     DistributedData::StoreMetaData metaData;
-    if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0)) {
+    if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0, context->appIndex)) {
         // connect extension and retry
         AAFwk::WantParams wantParams;
         ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
-        if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0)) {
+        if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0, context->appIndex)) {
             ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
             return false;

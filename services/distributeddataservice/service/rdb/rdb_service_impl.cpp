@@ -220,10 +220,6 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = bundleName;
     storeInfo.storeId = RemoveSuffix(storeName);
-    auto [instanceId, user] = GetInstIndexAndUser(storeInfo.tokenId, storeInfo.bundleName);
-    if (instanceId != 0) {
-        return false;
-    }
     return !CheckerManager::GetInstance().GetAppId(storeInfo).empty();
 }
 

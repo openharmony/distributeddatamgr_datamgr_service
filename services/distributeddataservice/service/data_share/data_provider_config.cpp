@@ -33,9 +33,14 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
 {
     providerInfo_.uri = uri;
     providerInfo_.currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    int32_t tempCurrentUserId;
+    uint32_t tempCallerTokenId;
+    std::string tempBundleName;
+    LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, tempCurrentUserId,
+        tempCallerTokenId, tempBundleName, providerInfo_.appIndex);
     if (providerInfo_.currentUserId == 0) {
         LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.currentUserId,
-            callerTokenId, providerInfo_.bundleName);
+            callerTokenId, providerInfo_.bundleName, providerInfo_.appIndex);
         URIUtils::FormatUri(providerInfo_.uri);
     }
     uriConfig_ = URIUtils::GetUriConfig(providerInfo_.uri);
@@ -52,7 +57,7 @@ std::pair<int, BundleConfig> DataProviderConfig::GetBundleInfo()
         providerInfo_.bundleName = uriConfig_.pathSegments[0];
     }
     auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo);
+        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo, providerInfo_.appIndex);
     return std::make_pair(ret, bundleInfo);
 }
 
@@ -144,7 +149,7 @@ int DataProviderConfig::GetFromExtension()
     }
     BundleConfig bundleInfo;
     auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo);
+        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo, providerInfo_.appIndex);
     if (ret != E_OK) {
         ZLOGE("BundleInfo failed! bundleName: %{public}s", providerInfo_.bundleName.c_str());
         return ret;

@@ -950,7 +950,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     }
     DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
         providerInfo.storeName, providerInfo.backup,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
+        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.appIndex, providerInfo.hasExtension};
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
@@ -967,7 +967,7 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
     auto [errCode, calledInfo] = calledConfig.GetProviderInfo();
     if (errCode == E_URI_NOT_EXIST) {
         ZLOGE("Create helper invalid uri, token:0x%{public}x, uri:%{public}s", tokenId,
-            URIUtils::Anonymous(calledInfo.uri).c_str());
+              URIUtils::Anonymous(calledInfo.uri).c_str());
         return E_OK;
     }
     if (errCode != E_OK) {
@@ -976,8 +976,14 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
         return errCode;
     }
     DataShareDbConfig dbConfig;
-    auto [code, metaData] = dbConfig.GetMetaData(calledInfo.uri, calledInfo.bundleName,
-        calledInfo.storeName, calledInfo.singleton ? 0 : calledInfo.currentUserId, calledInfo.hasExtension);
+    DataShareDbConfig::DbConfig dbArg;
+    dbArg.uri = calledInfo.uri;
+    dbArg.bundleName = calledInfo.bundleName;
+    dbArg.storeName = calledInfo.storeName;
+    dbArg.userId = calledInfo.singleton ? 0 : calledInfo.currentUserId;
+    dbArg.hasExtension = calledInfo.hasExtension;
+    dbArg.appIndex = calledInfo.appIndex;
+    auto [code, metaData] = dbConfig.GetMetaData(dbArg);
     if (code != E_OK) {
         ZLOGE("Get metaData fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             calledInfo.bundleName.c_str(), calledInfo.tableName.c_str(), tokenId,

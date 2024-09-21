@@ -169,7 +169,7 @@ std::string DirectoryManager::GetBundleName(const StoreMetaData &metaData) const
     if (metaData.instanceId == 0) {
         return metaData.bundleName;
     }
-    return metaData.bundleName + "_" + std::to_string(metaData.instanceId);
+    return "+clone-" + std::to_string(metaData.instanceId) + "+" + metaData.bundleName;
 }
 
 std::string DirectoryManager::GetHapName(const StoreMetaData &metaData) const
