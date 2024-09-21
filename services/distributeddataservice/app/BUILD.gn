@@ -69,7 +69,10 @@ config("module_private_config") {
     "src/backup_rule/include",
   ]
 
-  cflags = [ "-Wno-multichar" ]
+  cflags = [
+    "-Wno-multichar",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+  ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 }
