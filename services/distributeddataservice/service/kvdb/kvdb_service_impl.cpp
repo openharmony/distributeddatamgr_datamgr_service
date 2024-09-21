@@ -102,8 +102,8 @@ void KVDBServiceImpl::Init()
         StoreMetaData meta(storeInfo);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
-                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
+            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str(), meta.user.c_str());
             if (meta.user == "0") {
                 return;
             }
@@ -1118,8 +1118,9 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId, DATA_TYPE, meta.dataType);
     auto store = AutoCache::GetInstance().GetStore(meta, watcher);
     if (store == nullptr) {
-        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", meta.bundleName.c_str(),
-            Anonymous::Change(meta.storeId).c_str(), meta.dataDir.c_str());
+        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s storeId length:%{public}zu dir:%{public}s",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
+              meta.storeId.size(), meta.dataDir.c_str());
         RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_FAILED, ERROR_CODE, Status::ERROR, BIZ_STATE, END,
             SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
             std::to_string(info.syncId), DATA_TYPE, meta.dataType);
