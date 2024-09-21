@@ -62,9 +62,12 @@ sptr<IRemoteObject> BundleMgrProxy::CheckBMS()
 }
 
 int BundleMgrProxy::GetBundleInfoFromBMS(
-    const std::string &bundleName, int32_t userId, BundleConfig &bundleConfig)
+    const std::string &bundleName, int32_t userId, BundleConfig &bundleConfig, int32_t appIndex)
 {
-    auto bundleKey = bundleName + std::to_string(userId);
+    std::string bundleKey = bundleName + std::to_string(userId);
+    if (appIndex != 0) {
+        bundleKey += "appIndex" + std::to_string(appIndex);
+    }
     auto it = bundleCache_.Find(bundleKey);
     if (it.first) {
         bundleConfig = it.second;
@@ -78,8 +81,24 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
         return E_BMS_NOT_READY;
     }
     AppExecFwk::BundleInfo bundleInfo;
-    bool ret = bmsClient->GetBundleInfo(
-        bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo, userId);
+    bool ret;
+    if (appIndex == 0) {
+        ret = bmsClient->GetBundleInfo(
+            bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo, userId);
+    } else {
+        ret = bmsClient->GetCloneBundleInfo(
+            bundleName, static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_EXTENSION_ABILITY) |
+            static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE),
+            appIndex, bundleInfo, userId);
+        // when there is no error, the former function returns 1 while the new function returns 0
+        ret = !ret;
+        for (auto &item : bundleInfo.hapModuleInfos) {
+            for (auto &item2 : item.extensionInfos) {
+                bundleInfo.extensionInfos.push_back(item2);
+            }
+        }
+    }
+    
     if (!ret) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
@@ -115,9 +134,13 @@ BundleMgrProxy::~BundleMgrProxy()
     }
 }
 
-void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId)
+void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
-    bundleCache_.Erase(bundleName + std::to_string(userId));
+    if (appIndex != 0) {
+        bundleCache_.Erase(bundleName + std::to_string(userId) + "appIndex" + std::to_string(appIndex));
+    } else {
+        bundleCache_.Erase(bundleName + std::to_string(userId));
+    }
     return;
 }
 

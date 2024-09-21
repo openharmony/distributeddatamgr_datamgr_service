@@ -251,6 +251,7 @@ bool DataShareProfileConfig::GetProfileInfo(const std::string &calledBundleName,
     std::map<std::string, ProfileInfo> &profileInfos)
 {
     BundleConfig bundleInfo;
+    // profile is the same when app clone
     if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(calledBundleName,
         currentUserId, bundleInfo) != E_OK) {
         ZLOGE("data share GetBundleInfoFromBMS failed! bundleName: %{public}s, currentUserId = %{public}d",

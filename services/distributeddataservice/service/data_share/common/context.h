@@ -37,6 +37,7 @@ public:
     virtual ~Context() = default;
     std::string uri;
     int32_t currentUserId = -1;
+    int32_t appIndex = 0;
     std::string permission;
     uint32_t callerTokenId = 0;
     std::string callerBundleName;

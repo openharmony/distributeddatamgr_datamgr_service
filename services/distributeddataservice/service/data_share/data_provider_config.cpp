@@ -33,6 +33,7 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
 {
     providerInfo_.uri = uri;
     providerInfo_.currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    URIUtils::GetAppIndexFromProxyURI(providerInfo_.uri, providerInfo_.appIndex);
     if (providerInfo_.currentUserId == 0) {
         LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.currentUserId,
             callerTokenId, providerInfo_.bundleName);
@@ -52,7 +53,7 @@ std::pair<int, BundleConfig> DataProviderConfig::GetBundleInfo()
         providerInfo_.bundleName = uriConfig_.pathSegments[0];
     }
     auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo);
+        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo, providerInfo_.appIndex);
     return std::make_pair(ret, bundleInfo);
 }
 
@@ -144,7 +145,7 @@ int DataProviderConfig::GetFromExtension()
     }
     BundleConfig bundleInfo;
     auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo);
+        providerInfo_.bundleName, providerInfo_.currentUserId, bundleInfo, providerInfo_.appIndex);
     if (ret != E_OK) {
         ZLOGE("BundleInfo failed! bundleName: %{public}s", providerInfo_.bundleName.c_str());
         return ret;
@@ -202,6 +203,9 @@ void DataProviderConfig::GetMetaDataFromUri()
 
 std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProviderInfo()
 {
+    if (providerInfo_.appIndex == -1) {
+        return std::make_pair(E_APPINDEX_INVALID, providerInfo_);
+    }
     auto ret = GetFromProxyData();
     if (ret == E_OK) {
         GetMetaDataFromUri();
