@@ -44,7 +44,6 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
-constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 ObjectServiceImpl::Factory::Factory()
 {
     FeatureSystem::GetInstance().RegisterCreator(
@@ -122,10 +121,7 @@ int32_t ObjectServiceImpl::IsContinue(bool &result)
         ZLOGE("Get hap token info failed, tokenId: %{public}u, status: %{public}d", tokenId, status);
         return status;
     }
-    DistributedHardware::DmDeviceInfo info;
-    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, info);
-    std::string networkId = info.networkId;
-    result = ObjectDmsHandler::GetInstance().IsContinue(networkId, tokenInfo.bundleName);
+    result = ObjectDmsHandler::GetInstance().IsContinue(tokenInfo.bundleName);
     return OBJECT_SUCCESS;
 }
 

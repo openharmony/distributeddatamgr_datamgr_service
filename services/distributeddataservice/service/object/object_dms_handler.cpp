@@ -17,11 +17,13 @@
 
 #include "object_dms_handler.h"
 
+#include "device_manager_adapter.h"
 #include "dms_handler.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
+constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 void DmsEventListener::DSchedEventNotify(DistributedSchedule::EventNotify &notify)
 {
     ObjectDmsHandler::GetInstance().ReceiveDmsEvent(notify);
@@ -41,10 +43,12 @@ void ObjectDmsHandler::ReceiveDmsEvent(DistributedSchedule::EventNotify &event)
         DistributedData::Anonymous::Change(event.dstNetworkId_).c_str(), event.destBundleName_.c_str());
 }
 
-bool ObjectDmsHandler::IsContinue(const std::string &networkId, const std::string &bundleName)
+bool ObjectDmsHandler::IsContinue(const std::string &bundleName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto validityTime = std::chrono::steady_clock::now() - std::chrono::seconds(VALIDITY);
+    DistributedHardware::DmDeviceInfo localDeviceInfo;
+    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, localDeviceInfo);
     for (auto it = dmsEvents_.rbegin(); it != dmsEvents_.rend(); ++it) {
         if (it->second < validityTime) {
             continue;
@@ -52,20 +56,45 @@ bool ObjectDmsHandler::IsContinue(const std::string &networkId, const std::strin
         if (it->first.dSchedEventType_ != DistributedSchedule::DMS_CONTINUE) {
             continue;
         }
-        if (it->first.srcNetworkId_ == networkId && it->first.srcBundleName_ == bundleName) {
+        if (it->first.srcNetworkId_ == localDeviceInfo.networkId && it->first.srcBundleName_ == bundleName) {
             ZLOGI("Continue source, networkId: %{public}s, bundleName: %{public}s",
-                DistributedData::Anonymous::Change(networkId).c_str(), bundleName.c_str());
+                DistributedData::Anonymous::Change(localDeviceInfo.networkId).c_str(), bundleName.c_str());
             return true;
         }
-        if (it->first.dstNetworkId_ == networkId && it->first.destBundleName_ == bundleName) {
+        if (it->first.dstNetworkId_ == localDeviceInfo.networkId && it->first.destBundleName_ == bundleName) {
             ZLOGI("Continue destination, networkId: %{public}s, bundleName: %{public}s",
-                DistributedData::Anonymous::Change(networkId).c_str(), bundleName.c_str());
+                DistributedData::Anonymous::Change(localDeviceInfo.networkId).c_str(), bundleName.c_str());
             return true;
         }
     }
     ZLOGW("Not in continue, networkId: %{public}s, bundleName: %{public}s",
-        DistributedData::Anonymous::Change(networkId).c_str(), bundleName.c_str());
+        DistributedData::Anonymous::Change(localDeviceInfo.networkId).c_str(), bundleName.c_str());
     return false;
+}
+
+std::string ObjectDmsHandler::GetDstBundleName(const std::string &srcBundleName, const std::string &dstNetworkId)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto validityTime = std::chrono::steady_clock::now() - std::chrono::seconds(VALIDITY);
+    DistributedHardware::DmDeviceInfo localDeviceInfo;
+    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, localDeviceInfo);
+    for (auto it = dmsEvents_.rbegin(); it != dmsEvents_.rend(); ++it) {
+        if (it->second < validityTime) {
+            continue;
+        }
+        if (it->first.dSchedEventType_ != DistributedSchedule::DMS_CONTINUE) {
+            continue;
+        }
+        if (it->first.srcNetworkId_ == localDeviceInfo.networkId && it->first.srcBundleName_ == srcBundleName &&
+            it->first.dstNetworkId_ == dstNetworkId) {
+            ZLOGI("In continue, srcBundleName: %{public}s, dstBundleName: %{public}s",
+                srcBundleName.c_str(), it->first.destBundleName_.c_str());
+            return it->first.destBundleName_;
+        }
+    }
+    ZLOGW("Not in continue, srcBundleName: %{public}s, srcNetworkId: %{public}s",
+        srcBundleName.c_str(), DistributedData::Anonymous::Change(localDeviceInfo.networkId).c_str());
+    return srcBundleName;
 }
 
 void ObjectDmsHandler::RegisterDmsEvent()

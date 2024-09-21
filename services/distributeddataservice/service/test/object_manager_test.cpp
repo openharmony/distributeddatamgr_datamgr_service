@@ -838,7 +838,7 @@ HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
     completes.push_back(1); // for testing
     completes.push_back(2); // for testing
     data.insert({assetPrefix, completes});
-    auto result = manager->PushAssets(100, appId_, sessionId_, data, deviceId_);
+    auto result = manager->PushAssets(appId_, appId_, sessionId_, data, deviceId_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
 }
 
