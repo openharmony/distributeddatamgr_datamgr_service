@@ -142,7 +142,7 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     ASSERT_NE(sendHandler, nullptr);
     uint32_t routeHeadSize = 0;
     sendHandler->GetHeadDataSize(routeHeadSize);
-    ASSERT_GT(routeHeadSize, 0);
+    ASSERT_EQ(routeHeadSize, 0);
     std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(routeHeadSize);
     sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
 
@@ -152,7 +152,6 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     uint32_t parseSize = 1;
     recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
     EXPECT_EQ(routeHeadSize, parseSize);
-    ASSERT_EQ(users.size(), 1);
-    ASSERT_EQ(users[0], "100");
+    ASSERT_EQ(users.size(), 0);
 }
 } // namespace

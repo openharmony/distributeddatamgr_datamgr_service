@@ -36,6 +36,7 @@ SoftBusClient::SoftBusClient(const PipeInfo& pipeInfo, const DeviceId& deviceId,
 
 SoftBusClient::~SoftBusClient()
 {
+    ZLOGI("Shutdown socket:%{public}d", socket_);
     if (socket_ > 0) {
         Shutdown(socket_);
     }
@@ -111,7 +112,8 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
             ZLOGE("OpenSessionByAsync client is nullptr.");
             return;
         }
-        ZLOGI("Bind Start, socket:%{public}d type:%{public}u", clientSocket, type);
+        ZLOGI("Bind Start, device:%{public}s socket:%{public}d type:%{public}u",
+            KvStoreUtils::ToBeAnonymous(client->device_.deviceId).c_str(), clientSocket, type);
         auto status = client->Open(clientSocket, QOS_INFOS[type % QOS_BUTT], listener);
         if (status == Status::SUCCESS) {
             Context::GetInstance().NotifySessionReady(client->device_.deviceId);
