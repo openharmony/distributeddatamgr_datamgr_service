@@ -87,7 +87,10 @@ ohos_shared_library("data_share_service") {
     "subscriber_managers/rdb_subscriber_manager.cpp",
     "sys_event_subscriber.cpp",
   ]
-  cflags = [ "-Wno-multichar" ]
+  cflags = [
+    "-Wno-multichar",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+  ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
