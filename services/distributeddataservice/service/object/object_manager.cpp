@@ -325,26 +325,26 @@ int32_t ObjectStoreManager::Clear()
     return result;
 }
 
-int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId)
+int32_t ObjectStoreManager::DeleteByAppId(const std::string &bundleName, int32_t user)
 {
-    ZLOGI("enter, %{public}s", appId.c_str());
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
-        ZLOGE("Open failed, errCode = %{public}d", result);
+        ZLOGE("Open store failed, result: %{public}d, bundleName: %{public}s, user: %{public}d", result,
+            bundleName.c_str(), user);
         return STORE_NOT_OPEN;
     }
-    result = RevokeSaveToStore(appId);
+    result = RevokeSaveToStore(bundleName);
     if (result != OBJECT_SUCCESS) {
-        ZLOGE("RevokeSaveToStore failed");
+        ZLOGE("Revoke save failed, result: %{public}d, bundleName: %{public}s, user: %{public}d", result,
+            bundleName.c_str(), user);
     }
     Close();
-
-    std::string userId = GetCurrentUser();
-    if (userId.empty()) {
-        return OBJECT_INNER_ERROR;
+    std::string userId = std::to_string(user);
+    std::string metaKey = GetMetaUserIdKey(userId, bundleName);
+    auto status = DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true);
+    if (!status) {
+        ZLOGE("Delete meta failed, userId: %{public}s, bundleName: %{public}s", userId.c_str(), bundleName.c_str());
     }
-    std::string metaKey = GetMetaUserIdKey(userId, appId);
-    DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true);
     return result;
 }
 
