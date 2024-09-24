@@ -284,13 +284,14 @@ void ObjectServiceImpl::Clear()
 
 int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    ZLOGI("begin. %{public}s", bundleName.c_str());
-    int32_t result = ObjectStoreManager::GetInstance()->DeleteByAppId(bundleName);
+    int32_t result = ObjectStoreManager::GetInstance()->DeleteByAppId(bundleName, user);
     if (result != OBJECT_SUCCESS) {
-        pid_t uid = IPCSkeleton::GetCallingUid();
-        ZLOGE("Delete fail %{public}d, bundleName = %{public}s, uid = %{public}d",
-            result, bundleName.c_str(), uid);
+        ZLOGE("Delete object data failed, result:%{public}d, bundleName:%{public}s, user:%{public}d, index:%{public}d",
+            result, bundleName.c_str(), user, index);
+        return result;
     }
+    ZLOGI("Delete object data, bundleName:%{public}s, userId:%{public}d, index:%{public}d", bundleName.c_str(), user,
+        index);
     return result;
 }
 
