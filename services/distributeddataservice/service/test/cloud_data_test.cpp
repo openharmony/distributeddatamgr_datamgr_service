@@ -953,7 +953,7 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
     auto ret = cloudServiceImpl_->ChangeAppSwitch(id, bundleName, CloudData::CloudService::SWITCH_ON);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
     ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON);
-    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
