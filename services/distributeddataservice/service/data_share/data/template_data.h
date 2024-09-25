@@ -50,7 +50,7 @@ struct TemplateRootNode final: public DistributedData::Serializable {
 private:
     std::string uri;
     std::string bundleName;
-    int64_t subscriberId;
+    std::string subscriberId;
     int32_t userId;
     TemplateNode tpl;
 };
