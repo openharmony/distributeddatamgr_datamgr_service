@@ -20,9 +20,11 @@ SyncEvent::EventInfo::EventInfo(int32_t mode, int32_t wait, bool retry, std::sha
     : retry_(retry), mode_(mode), wait_(wait), query_(std::move(query)), asyncDetail_(std::move(async))
 {
 }
+
 SyncEvent::EventInfo::EventInfo(const SyncParam &syncParam, bool retry, std::shared_ptr<GenQuery> query, GenAsync async)
     : retry_(retry), mode_(syncParam.mode), wait_(syncParam.wait), query_(std::move(query)),
-      asyncDetail_(std::move(async)), isCompensation_(syncParam.isCompensation), triggerMode_(syncParam.triggerMode)
+      asyncDetail_(std::move(async)), isCompensation_(syncParam.isCompensation), triggerMode_(syncParam.triggerMode),
+      prepareTraceId_(syncParam.prepareTraceId), user_(syncParam.user)
 {
 }
 
@@ -43,6 +45,8 @@ SyncEvent::EventInfo &SyncEvent::EventInfo::operator=(SyncEvent::EventInfo &&inf
     asyncDetail_ = std::move(info.asyncDetail_);
     isCompensation_ = info.isCompensation_;
     triggerMode_ = info.triggerMode_;
+    prepareTraceId_ = info.prepareTraceId_;
+    user_ = info.user_;
     return *this;
 }
 
@@ -89,5 +93,15 @@ bool SyncEvent::IsCompensation() const
 int32_t SyncEvent::GetTriggerMode() const
 {
     return info_.triggerMode_;
+}
+
+std::string SyncEvent::GetPrepareTraceId() const
+{
+    return info_.prepareTraceId_;
+}
+
+int32_t SyncEvent::GetUser() const
+{
+    return info_.user_;
 }
 } // namespace OHOS::DistributedData

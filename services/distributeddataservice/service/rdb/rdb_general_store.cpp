@@ -521,10 +521,10 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
                 std::chrono::minutes(INTERVAL));
             tasks_->Insert(syncId, { id, callback });
         }
-        dbStatus =
-            delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait, (isPriority || highMode == MANUAL_SYNC_MODE),
-                                syncParam.isCompensation, {}, highMode == AUTO_SYNC_MODE, LOCK_ACTION },
-                tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
+        dbStatus = delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait,
+                                       (isPriority || highMode == MANUAL_SYNC_MODE), syncParam.isCompensation, {},
+                                       highMode == AUTO_SYNC_MODE, LOCK_ACTION, syncParam.prepareTraceId },
+            tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
         if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
             return ConvertStatus(dbStatus);
         }

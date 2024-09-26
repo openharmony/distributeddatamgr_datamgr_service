@@ -345,4 +345,12 @@ void RdbCloud::ConvertErrorField(DistributedData::VBuckets& extends)
         errorField->second = ConvertStatus(static_cast<GeneralError>(*errCode));
     }
 }
+
+void RdbCloud::SetPrepareTraceId(const std::string &traceId)
+{
+    if (cloudDB_ == nullptr) {
+        return;
+    }
+    cloudDB_->SetPrepareTraceId(traceId);
+}
 } // namespace OHOS::DistributedRdb

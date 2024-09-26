@@ -350,13 +350,14 @@ KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsy
     };
 }
 
-DBStatus KVDBGeneralStore::CloudSync(
-    const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait)
+DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async,
+    int64_t wait, const std::string &prepareTraceId)
 {
     DistributedDB::CloudSyncOption syncOption;
     syncOption.devices = devices;
     syncOption.mode = cloudSyncMode;
     syncOption.waitTime = wait;
+    syncOption.prepareTraceId = prepareTraceId;
     syncOption.lockAction = DistributedDB::LockAction::NONE;
     if (storeInfo_.user == 0) {
         std::vector<int32_t> users;
@@ -368,13 +369,13 @@ DBStatus KVDBGeneralStore::CloudSync(
     return delegate_->Sync(syncOption, GetDBProcessCB(async));
 }
 
-int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
+int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParam)
 {
-    auto syncMode = GeneralStore::GetSyncMode(syncParm.mode);
+    auto syncMode = GeneralStore::GetSyncMode(syncParam.mode);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d", devices.size(),
-            devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParm.mode);
+            devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode);
         return GeneralError::E_ALREADY_CLOSED;
     }
     DBStatus dbStatus;
@@ -383,10 +384,10 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
         if (!enableCloud_) {
             return GeneralError::E_NOT_SUPPORT;
         }
-        dbStatus = CloudSync(devices, dbMode, async, syncParm.wait);
+        dbStatus = CloudSync(devices, dbMode, async, syncParam.wait, syncParam.prepareTraceId);
     } else {
         if (devices.empty()) {
-            ZLOGE("Devices is empty! mode:%{public}d", syncParm.mode);
+            ZLOGE("Devices is empty! mode:%{public}d", syncParam.mode);
             return GeneralError::E_INVALID_ARGS;
         }
         KVDBQuery *kvQuery = nullptr;

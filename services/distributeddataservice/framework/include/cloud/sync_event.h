@@ -38,6 +38,8 @@ public:
         GenAsync asyncDetail_;
         bool isCompensation_ = false;
         int32_t triggerMode_ = MODE_DEFAULT;
+        std::string prepareTraceId_;
+        int32_t user_ = 0;
     };
     SyncEvent(StoreInfo storeInfo, EventInfo info);
     ~SyncEvent() override = default;
@@ -48,6 +50,8 @@ public:
     GenAsync GetAsyncDetail() const;
     bool IsCompensation() const;
     int32_t GetTriggerMode() const;
+    std::string GetPrepareTraceId() const;
+    int32_t GetUser() const;
 protected:
     SyncEvent(int32_t evtId, StoreInfo storeInfo, EventInfo info);
 

@@ -39,17 +39,29 @@ public:
     using AutoCache = DistributedData::AutoCache;
     using StoreMetaData = DistributedData::StoreMetaData;
     using SchemaMeta = DistributedData::SchemaMeta;
+    using TraceIds = std::map<std::string, std::string>;
+    using SyncStage = DistributedData::SyncStage;
+    using ReportParam = DistributedData::ReportParam;
     static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     class SyncInfo final {
     public:
         using Store = std::string;
         using Stores = std::vector<Store>;
         using Tables = std::vector<std::string>;
+        struct Param {
+            int32_t user;
+            std::string bundleName;
+            Store store;
+            Tables tables;
+            int32_t triggerMode = 0;
+            std::string prepareTraceId;
+        };
         using MutliStoreTables = std::map<Store, Tables>;
         explicit SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "",
             const Tables &tables = {}, int32_t triggerMode = 0);
         SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores);
         SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables);
+        explicit SyncInfo(const Param &param);
         void SetMode(int32_t mode);
         void SetWait(int32_t wait);
         void SetAsyncDetail(GenAsync asyncDetail);
@@ -57,6 +69,7 @@ public:
         void SetError(int32_t code) const;
         void SetCompensation(bool isCompensation);
         void SetTriggerMode(int32_t triggerMode);
+        void SetPrepareTraceId(const std::string &prepareTraceId);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string &storeName);
         inline static constexpr const char *DEFAULT_ID = "default";
@@ -74,6 +87,7 @@ public:
         std::shared_ptr<GenQuery> query_;
         bool isCompensation_ = false;
         int32_t triggerMode_ = 0;
+        std::string prepareTraceId_;
     };
     SyncManager();
     ~SyncManager();
@@ -81,13 +95,15 @@ public:
     int32_t DoCloudSync(SyncInfo syncInfo);
     int32_t StopCloudSync(int32_t user = 0);
     int32_t QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results);
+    void Report(const ReportParam &reportParam);
 
 private:
     using Event = DistributedData::Event;
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
-    using Retryer = std::function<bool(Duration interval, int32_t status, int32_t dbCode)>;
+    using Retryer =
+        std::function<bool(Duration interval, int32_t status, int32_t dbCode, const std::string &prepareTraceId)>;
     using CloudInfo = DistributedData::CloudInfo;
     using StoreInfo = DistributedData::StoreInfo;
     using SyncStrategy = DistributedData::SyncStrategy;
@@ -117,25 +133,29 @@ private:
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
     std::function<void(const Event &)> GetClientChangeHandler();
-    Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo);
+    Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
     GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
     void UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
-        const StoreInfo &storeInfo, int32_t triggerMode);
+        const StoreInfo &storeInfo, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
     std::function<bool()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
-        bool retry);
-    void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo);
+        bool retry, const TraceIds &traceIds);
+    void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo,
+        const std::string &prepareTraceId);
     bool InitDefaultUser(int32_t &user);
-    std::function<void(const DistributedData::GenDetails &result)> RetryCallback(
-        const StoreInfo &storeInfo, Retryer retryer, int32_t triggerMode);
+    std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
+        Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
     static void GetLastResults(
         const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
     void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
     bool NeedSaveSyncInfo(const QueryKey &queryKey);
     std::function<void(const Event &)> GetLockChangeHandler();
+    void BatchReport(int32_t userId, const TraceIds &traceIds, SyncStage syncStage, int32_t errCode);
+    TraceIds GetPrepareTraceId(const SyncInfo &info, const CloudInfo &cloud);
+    std::pair<bool, StoreMetaData> GetMetaData(const StoreInfo &storeInfo);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
