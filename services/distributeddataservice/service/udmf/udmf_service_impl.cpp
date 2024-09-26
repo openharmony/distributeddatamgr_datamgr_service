@@ -32,7 +32,6 @@
 #include "reporter.h"
 #include "uri_permission_manager.h"
 #include "uri.h"
-#include "utd/custom_utd_installer.h"
 #include "udmf_conversion.h"
 #include "udmf_radar_reporter.h"
 #include "securec.h"
