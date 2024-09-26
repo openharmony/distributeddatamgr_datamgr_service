@@ -21,7 +21,7 @@ namespace OHOS {
 namespace DistributedData {
 class Anonymous {
 public:
-    API_EXPORT static std::string Change(const std::string &name, bool end = false);
+    API_EXPORT static std::string Change(const std::string &name);
 };
 } // namespace DistributedData
 } // namespace OHOS

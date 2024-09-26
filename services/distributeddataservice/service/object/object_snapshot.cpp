@@ -85,7 +85,7 @@ int32_t ObjectSnapshot::BindAsset(const Asset& asset, const DistributedData::Ass
     const StoreInfo& storeInfo)
 {
     if (IsBoundAsset(asset)) {
-        ZLOGD("Asset is bound. asset.uri:%{public}s :", Anonymous::Change(asset.uri, true).c_str());
+        ZLOGD("Asset is bound. asset.uri:%{public}s :", Anonymous::Change(asset.uri).c_str());
         return E_OK;
     }
     changedAssets_[asset.uri] = ChangedAssetInfo(asset, bindInfo, storeInfo);

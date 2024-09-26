@@ -303,7 +303,7 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData003, TestSize.Level1)
     StoreMetaData storeMeta;
 
     auto storealias = storeMetaData.GetStoreAlias();
-    EXPECT_EQ(storealias, "tes***ore");
+    EXPECT_EQ(storealias, "test_store");
     std::string strategykey = storeMetaData.GetStrategyKey();
     EXPECT_EQ(strategykey, "StrategyMetaData######100###default######test_store");
     std::initializer_list<std::string> fields = {"100", "appid", "test_store"};

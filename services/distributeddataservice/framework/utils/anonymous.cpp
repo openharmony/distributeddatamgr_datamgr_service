@@ -16,26 +16,64 @@
 #include "utils/anonymous.h"
 namespace OHOS {
 namespace DistributedData {
-constexpr int32_t HEAD_SIZE = 3;
-constexpr int32_t END_SIZE = 3;
-constexpr int32_t MIN_SIZE = HEAD_SIZE + END_SIZE + 3;
-constexpr int32_t TAIL_SIZE = 6;
-constexpr const char *REPLACE_CHAIN = "***";
-constexpr const char *DEFAULT_ANONYMOUS = "******";
-std::string Anonymous::Change(const std::string &name, bool end)
+
+constexpr int32_t CONTINUOUS_DIGITS_MINI_SIZE = 6;
+
+std::string AnonyDigits(const std::string &fileName)
 {
-    if (name.length() <= HEAD_SIZE) {
-        return DEFAULT_ANONYMOUS;
+    std::string::size_type digitsNum = fileName.size();
+    if (digitsNum < CONTINUOUS_DIGITS_MINI_SIZE) {
+        return fileName;
+    }
+    std::string::size_type endDigitsNum = 4;
+    std::string::size_type shortEndDigitsNum = 3;
+    std::string name = fileName;
+    std::string last = "";
+    if (digitsNum == CONTINUOUS_DIGITS_MINI_SIZE) {
+        last = name.substr(name.size() - shortEndDigitsNum);
+    } else {
+        last = name.substr(name.size() - endDigitsNum);
     }
 
-    if (name.length() < MIN_SIZE) {
-        return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN);
-    }
+    return "***" + last;
+}
 
-    if (!end) {
-        return (name.substr(0, HEAD_SIZE) + REPLACE_CHAIN + name.substr(name.length() - END_SIZE, END_SIZE));
+std::string Anonymous::Change(const std::string &name)
+{
+    std::vector<std::string> alnum;
+    std::vector<std::string> noAlnum;
+    std::string alnumStr;
+    std::string noAlnumStr;
+    for (const auto &letter : name) {
+        if (isxdigit(letter)) {
+            if (!noAlnumStr.empty()) {
+                noAlnum.push_back(noAlnumStr);
+                noAlnumStr.clear();
+                alnum.push_back("");
+            }
+            alnumStr += letter;
+        } else {
+            if (!alnumStr.empty()) {
+                alnum.push_back(alnumStr);
+                alnumStr.clear();
+                noAlnum.push_back("");
+            }
+            noAlnumStr += letter;
+        }
     }
-    return (REPLACE_CHAIN + name.substr(name.length() - TAIL_SIZE, TAIL_SIZE));
+    if (!alnumStr.empty()) {
+        alnum.push_back(alnumStr);
+        noAlnum.push_back("");
+    }
+    if (!noAlnumStr.empty()) {
+        noAlnum.push_back(alnumStr);
+        alnum.push_back("");
+    }
+    std::string res = "";
+    for (size_t i = 0; i < alnum.size(); ++i) {
+        res += (AnonyDigits(alnum[i]) + noAlnum[i]);
+    }
+    return res;
 }
 } // namespace DistributedData
 } // namespace OHOS
