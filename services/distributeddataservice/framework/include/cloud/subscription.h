@@ -38,6 +38,7 @@ struct API_EXPORT Subscription final : public Serializable {
     static std::string GetKey(int32_t userId);
     static std::string GetRelationKey(int32_t userId, const std::string &bundleName);
     static std::string GetPrefix(const std::initializer_list<std::string> &fields);
+
 private:
     static constexpr const char *PREFIX = "CLOUD_SUBSCRIPTION";
     static constexpr const char *RELATION_PREFIX = "CLOUD_RELATION";

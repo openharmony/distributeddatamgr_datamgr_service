@@ -24,9 +24,7 @@
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using Error = DistributedData::GeneralError;
-RdbWatcher::RdbWatcher()
-{
-}
+RdbWatcher::RdbWatcher() {}
 
 int32_t RdbWatcher::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {

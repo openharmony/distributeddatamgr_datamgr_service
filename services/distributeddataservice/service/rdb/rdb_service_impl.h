@@ -16,25 +16,25 @@
 #ifndef DISTRIBUTEDDATASERVICE_RDB_SERVICE_H
 #define DISTRIBUTEDDATASERVICE_RDB_SERVICE_H
 
-#include "rdb_service_stub.h"
-
 #include <map>
 #include <mutex>
 #include <string>
+
 #include "cloud/cloud_event.h"
 #include "concurrent_map.h"
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_notifier_proxy.h"
-#include "rdb_watcher.h"
 #include "rdb_query.h"
+#include "rdb_service_stub.h"
+#include "rdb_watcher.h"
+#include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
+#include "store/general_value.h"
 #include "store_observer.h"
 #include "visibility.h"
-#include "store/general_value.h"
-#include "snapshot/bind_event.h"
 
 namespace OHOS::DistributedRdb {
 class RdbServiceImpl : public RdbServiceStub {

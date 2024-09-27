@@ -19,9 +19,9 @@
 
 #include <gtest/gtest.h>
 
-#include "snapshot/machine_status.h"
-#include "object_asset_loader.h"
 #include "executor_pool.h"
+#include "object_asset_loader.h"
+#include "snapshot/machine_status.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;

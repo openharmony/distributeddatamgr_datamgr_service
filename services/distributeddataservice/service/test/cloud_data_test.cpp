@@ -240,8 +240,9 @@ void CloudDataTest::InitCloudInfo()
 void CloudDataTest::SetUpTestCase(void)
 {
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
-    MetaDataManager::GetInstance().SetSyncer(
-        [](const auto &, auto) { DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK); });
+    MetaDataManager::GetInstance().SetSyncer([](const auto &, auto) {
+        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
+    });
 
     auto cloudServerMock = new CloudServerMock();
     CloudServer::RegisterCloudInstance(cloudServerMock);
@@ -366,7 +367,7 @@ HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
 {
     ZLOGI("CloudDataTest QueryStatistics003 start");
     // Construct the statisticInfo data
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore * {
+    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
         auto store = new (std::nothrow) GeneralStoreMock();
         if (store != nullptr) {
             std::map<std::string, Value> entry = { { "inserted", 1 }, { "updated", 2 }, { "normal", 3 } };
@@ -403,7 +404,7 @@ HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
     ZLOGI("CloudDataTest QueryStatistics004 start");
 
     // Construct the statisticInfo data
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore * {
+    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
         auto store = new (std::nothrow) GeneralStoreMock();
         if (store != nullptr) {
             std::map<std::string, Value> entry = { { "inserted", 1 }, { "updated", 2 }, { "normal", 3 } };
@@ -672,8 +673,8 @@ HWTEST_F(CloudDataTest, AllocResourceAndShare001, TestSize.Level0)
     CloudData::Participants participants;
     auto [ret, _] = cloudServiceImpl_->AllocResourceAndShare(TEST_CLOUD_STORE, predicates, columns, participants);
     EXPECT_EQ(ret, E_ERROR);
-    EventCenter::GetInstance().Subscribe(CloudEvent::MAKE_QUERY, [](const Event& event) {
-        auto& evt = static_cast<const DistributedData::MakeQueryEvent&>(event);
+    EventCenter::GetInstance().Subscribe(CloudEvent::MAKE_QUERY, [](const Event &event) {
+        auto &evt = static_cast<const DistributedData::MakeQueryEvent &>(event);
         auto callback = evt.GetCallback();
         if (!callback) {
             return;
@@ -1173,7 +1174,8 @@ HWTEST_F(CloudDataTest, OnAllocResourceAndShare, TestSize.Level0)
     MessageParcel reply;
     MessageParcel data;
     data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
-    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_ALLOC_RESOURCE_AND_SHARE, data, reply);
+    auto ret = cloudServiceImpl_->OnRemoteRequest(
+        CloudData::CloudService::TRANS_ALLOC_RESOURCE_AND_SHARE, data, reply);
     EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
     data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
     std::string storeId = "storeId";
@@ -1528,8 +1530,8 @@ HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
     std::string prepareTraceId;
     auto ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_OK, E_OK, prepareTraceId);
     EXPECT_TRUE(ret);
-    ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_SYNC_TASK_MERGED,
-        E_SYNC_TASK_MERGED, prepareTraceId);
+    ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(
+        duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
     EXPECT_TRUE(ret);
     ret = sync.GetRetryer(0, info, user)(duration, E_OK, E_OK, prepareTraceId);
     EXPECT_TRUE(ret);
@@ -1557,7 +1559,9 @@ HWTEST_F(CloudDataTest, GetCallback, TestSize.Level0)
     GenAsync async = nullptr;
     sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
     int32_t process = 0;
-    async = [&process](const GenDetails &details) { process = details.begin()->second.progress; };
+    async = [&process](const GenDetails &details) {
+        process = details.begin()->second.progress;
+    };
     GenProgressDetail detail;
     detail.progress = GenProgress::SYNC_IN_PROGRESS;
     result.insert_or_assign("test", detail);
@@ -1677,7 +1681,9 @@ HWTEST_F(CloudDataTest, SubTask, TestSize.Level0)
     MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(cloudInfo_.user), sub, true);
     cloudServiceImpl_->InitSubTask(sub, 0);
     int32_t userId = 0;
-    CloudData::CloudServiceImpl::Task task = [&userId]() { userId = cloudInfo_.user; };
+    CloudData::CloudServiceImpl::Task task = [&userId]() {
+        userId = cloudInfo_.user;
+    };
     cloudServiceImpl_->GenSubTask(task, cloudInfo_.user)();
     EXPECT_EQ(userId, cloudInfo_.user);
 }

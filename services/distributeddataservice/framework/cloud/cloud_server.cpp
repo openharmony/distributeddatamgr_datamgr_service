@@ -77,17 +77,11 @@ std::shared_ptr<SharingCenter> CloudServer::ConnectSharingCenter(int32_t userId,
     return nullptr;
 }
 
-void CloudServer::Clean(int32_t userId)
-{
-}
+void CloudServer::Clean(int32_t userId) {}
 
-void CloudServer::ReleaseUserInfo(int32_t userId)
-{
-}
+void CloudServer::ReleaseUserInfo(int32_t userId) {}
 
-void CloudServer::Bind(std::shared_ptr<ExecutorPool> executor)
-{
-}
+void CloudServer::Bind(std::shared_ptr<ExecutorPool> executor) {}
 
 bool CloudServer::IsSupportCloud(int32_t userId)
 {

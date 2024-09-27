@@ -22,10 +22,10 @@ namespace OHOS::DistributedData {
 class API_EXPORT AssetLoader {
 public:
     virtual ~AssetLoader() = default;
-    virtual int32_t Download(const std::string &tableName, const std::string &gid, const Value &prefix,
-        VBucket &assets);
-    virtual int32_t RemoveLocalAssets(const std::string &tableName, const std::string &gid,
-        const Value &prefix, VBucket &assets);
+    virtual int32_t Download(
+        const std::string &tableName, const std::string &gid, const Value &prefix, VBucket &assets);
+    virtual int32_t RemoveLocalAssets(
+        const std::string &tableName, const std::string &gid, const Value &prefix, VBucket &assets);
     virtual int32_t Cancel();
 };
 } // namespace OHOS::DistributedData

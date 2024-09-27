@@ -16,15 +16,12 @@
 #include "rdb_cursor.h"
 
 #include "result_set.h"
-#include "value_proxy.h"
 #include "store_types.h"
+#include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
 using namespace DistributedDB;
-RdbCursor::RdbCursor(std::shared_ptr<DistributedDB::ResultSet> resultSet)
-    : resultSet_(std::move(resultSet))
-{
-}
+RdbCursor::RdbCursor(std::shared_ptr<DistributedDB::ResultSet> resultSet) : resultSet_(std::move(resultSet)) {}
 
 RdbCursor::~RdbCursor()
 {

@@ -16,12 +16,14 @@
 #define LOG_TAG "ObjectManagerTest"
 
 #include "object_manager.h"
+
 #include <gtest/gtest.h>
-#include "snapshot/machine_status.h"
-#include "executor_pool.h"
-#include "object_types.h"
-#include "kv_store_nb_delegate_mock.h"
 #include <ipc_skeleton.h>
+
+#include "executor_pool.h"
+#include "kv_store_nb_delegate_mock.h"
+#include "object_types.h"
+#include "snapshot/machine_status.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;

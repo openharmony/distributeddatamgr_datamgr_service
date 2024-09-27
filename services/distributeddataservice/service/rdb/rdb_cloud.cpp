@@ -20,8 +20,8 @@
 #include "log_print.h"
 #include "rdb_query.h"
 #include "relational_store_manager.h"
-#include "value_proxy.h"
 #include "utils/anonymous.h"
+#include "value_proxy.h"
 
 namespace OHOS::DistributedRdb {
 using namespace DistributedDB;

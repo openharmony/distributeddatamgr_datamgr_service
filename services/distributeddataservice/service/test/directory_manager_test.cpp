@@ -13,13 +13,15 @@
  * limitations under the License.
  */
 
+#include "directory/directory_manager.h"
+
+#include <fstream>
 #include <gtest/gtest.h>
+
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
-#include "directory/directory_manager.h"
 #include "nativetoken_kit.h"
 #include "types.h"
-#include <fstream>
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;

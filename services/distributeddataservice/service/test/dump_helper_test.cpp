@@ -14,10 +14,11 @@
  */
 #define LOG_TAG "DumpHelperTest "
 
+#include "dump_helper.h"
+
+#include "dump/dump_manager.h"
 #include "gtest/gtest.h"
 #include "log_print.h"
-#include "dump_helper.h"
-#include "dump/dump_manager.h"
 #include "types.h"
 
 using namespace OHOS;
@@ -26,7 +27,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
 namespace DistributedDataTest {
-class DumpHelperTest  : public testing::Test {
+class DumpHelperTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};

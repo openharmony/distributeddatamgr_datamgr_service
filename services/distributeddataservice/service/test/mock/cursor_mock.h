@@ -17,6 +17,7 @@
 #include <map>
 #include <string>
 #include <vector>
+
 #include "store/cursor.h"
 #include "store/general_value.h"
 namespace OHOS {

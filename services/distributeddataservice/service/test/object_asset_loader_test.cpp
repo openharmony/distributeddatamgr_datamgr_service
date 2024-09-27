@@ -16,9 +16,11 @@
 #define LOG_TAG "ObjectAssetLoaderTest"
 
 #include "object_asset_loader.h"
+
 #include <gtest/gtest.h>
-#include "snapshot/machine_status.h"
+
 #include "executor_pool.h"
+#include "snapshot/machine_status.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;

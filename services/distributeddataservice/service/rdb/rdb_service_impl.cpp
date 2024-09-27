@@ -53,11 +53,11 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "xcollie.h"
-using OHOS::DistributedKv::AccountDelegate;
+using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
 using OHOS::DistributedData::StoreMetaData;
-using OHOS::DistributedData::Anonymous;
+using OHOS::DistributedKv::AccountDelegate;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DistributedDB::RelationalStoreManager;

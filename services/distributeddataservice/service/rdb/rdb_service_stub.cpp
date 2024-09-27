@@ -16,11 +16,13 @@
 #define LOG_TAG "RdbServiceStub"
 
 #include "rdb_service_stub.h"
+
 #include <ipc_skeleton.h>
-#include "log_print.h"
+
 #include "itypes_util.h"
-#include "utils/anonymous.h"
+#include "log_print.h"
 #include "rdb_result_set_stub.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedRdb {
 using Anonymous = DistributedData::Anonymous;

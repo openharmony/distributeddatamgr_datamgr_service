@@ -33,9 +33,9 @@
 #include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
+#include "kv_radar_reporter.h"
 #include "kvdb_general_store.h"
 #include "kvdb_query.h"
-#include "kv_radar_reporter.h"
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/appid_meta_data.h"
@@ -85,9 +85,7 @@ KVDBServiceImpl::Factory::~Factory()
     product_ = nullptr;
 }
 
-KVDBServiceImpl::KVDBServiceImpl()
-{
-}
+KVDBServiceImpl::KVDBServiceImpl() {}
 
 KVDBServiceImpl::~KVDBServiceImpl()
 {
@@ -153,8 +151,7 @@ void KVDBServiceImpl::DumpKvServiceInfo(int fd, std::map<std::string, std::vecto
 {
     (void)params;
     std::string info;
-    dprintf(fd, "-------------------------------------KVDBServiceInfo------------------------------\n%s\n",
-        info.c_str());
+    dprintf(fd, "-----------------------------------KVDBServiceInfo----------------------------\n%s\n", info.c_str());
 }
 
 Status KVDBServiceImpl::GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds)
@@ -224,8 +221,8 @@ Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, co
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
-        ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        ZLOGE("invalid, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
     return DoCloudSync(metaData, syncInfo);
@@ -269,8 +266,8 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
 {
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
-        ZLOGE("invalid, appId:%{public}s storeId:%{public}s",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        ZLOGE("invalid, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
     }
     if (DeviceMatrix::GetInstance().IsSupportMatrix() &&
@@ -675,8 +672,8 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     return dbStatus == DBStatus::OK ? SUCCESS : DB_ERROR;
 }
 
-Status KVDBServiceImpl::AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
-    const std::vector<uint8_t> &password)
+Status KVDBServiceImpl::AfterCreate(
+    const AppId &appId, const StoreId &storeId, const Options &options, const std::vector<uint8_t> &password)
 {
     if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
         ZLOGE("failed please check type:%{public}d appId:%{public}s storeId:%{public}s dataType:%{public}d",
@@ -1333,8 +1330,8 @@ AutoCache::Watchers KVDBServiceImpl::GetWatchers(uint32_t tokenId, const std::st
 
 void KVDBServiceImpl::SyncAgent::ReInit(pid_t pid, const AppId &appId)
 {
-    ZLOGW("pid:%{public}d->%{public}d appId:%{public}s notifier:%{public}d", pid, pid_,
-        appId_.appId.c_str(), notifier_ == nullptr);
+    ZLOGW("pid:%{public}d->%{public}d appId:%{public}s notifier:%{public}d", pid, pid_, appId_.appId.c_str(),
+        notifier_ == nullptr);
     pid_ = pid;
     appId_ = appId;
     notifier_ = nullptr;

@@ -14,6 +14,7 @@
  */
 
 #include "cache_cursor.h"
+
 #include "value_proxy.h"
 
 namespace OHOS::DistributedRdb {

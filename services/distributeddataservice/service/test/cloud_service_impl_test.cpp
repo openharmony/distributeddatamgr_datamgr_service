@@ -81,17 +81,11 @@ void CloudServiceImplTest::SetUpTestCase(void)
     DeviceManagerAdapter::GetInstance().Init(executor);
 }
 
-void CloudServiceImplTest::TearDownTestCase()
-{
-}
+void CloudServiceImplTest::TearDownTestCase() {}
 
-void CloudServiceImplTest::SetUp()
-{
-}
+void CloudServiceImplTest::SetUp() {}
 
-void CloudServiceImplTest::TearDown()
-{
-}
+void CloudServiceImplTest::TearDown() {}
 
 /**
 * @tc.name: EnableCloud001

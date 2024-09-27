@@ -1394,7 +1394,7 @@ std::shared_ptr<SharingCenter> CloudServiceImpl::GetSharingHandle(const HapInfo 
 
 ExecutorPool::Task CloudServiceImpl::GenSubTask(Task task, int32_t user)
 {
-    return [this, user, work = std::move(task)] () {
+    return [this, user, work = std::move(task)]() {
         {
             std::lock_guard<decltype(mutex_)> lock(mutex_);
             subTask_ = ExecutorPool::INVALID_TASK_ID;

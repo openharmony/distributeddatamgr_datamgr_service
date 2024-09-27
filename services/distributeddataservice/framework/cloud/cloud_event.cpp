@@ -21,7 +21,7 @@ CloudEvent::CloudEvent(int32_t evtId, StoreInfo storeInfo)
 {
 }
 
-const StoreInfo& CloudEvent::GetStoreInfo() const
+const StoreInfo &CloudEvent::GetStoreInfo() const
 {
     return storeInfo_;
 }
@@ -30,4 +30,4 @@ int32_t CloudEvent::GetEventId() const
 {
     return eventId_;
 }
-}
+} // namespace OHOS::DistributedData

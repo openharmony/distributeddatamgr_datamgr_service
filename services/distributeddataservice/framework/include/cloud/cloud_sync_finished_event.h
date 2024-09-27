@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_SYNC_FINISHED_EVENT_H
 
 #include <string>
+
 #include "cloud_event.h"
 #include "metadata/store_meta_data.h"
 

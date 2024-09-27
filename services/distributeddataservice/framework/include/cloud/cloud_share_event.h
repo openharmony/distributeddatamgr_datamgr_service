@@ -16,8 +16,8 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SHARE_EVENT_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SHARE_EVENT_H
 #include "cloud/cloud_event.h"
-#include "store/general_value.h"
 #include "store/cursor.h"
+#include "store/general_value.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
 class API_EXPORT CloudShareEvent : public CloudEvent {

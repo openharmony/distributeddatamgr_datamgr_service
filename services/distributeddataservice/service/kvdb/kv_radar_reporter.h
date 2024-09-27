@@ -76,11 +76,11 @@ constexpr const char* DATA_TYPE = "DATA_TYPE";
 constexpr const char* WATER_VERSION = "WATER_VERSION";
 constexpr const char* SCREEN_STATUS = "SCREEN_STATUS";
 
-#define RADAR_REPORT(bizScene, bizStage, stageRes, ...)                                            \
-({                                                                                                 \
-    HiSysEventWrite(DistributedKv::DOMAIN, DistributedKv::EVENT_NAME, DistributedKv::TYPE,         \
-        "ORG_PKG", DistributedKv::ORG_PKG, "FUNC", __FUNCTION__,                                   \
-        "BIZ_SCENE", bizScene, "BIZ_STAGE", bizStage, "STAGE_RES", stageRes, ##__VA_ARGS__);       \
-})
+#define RADAR_REPORT(bizScene, bizStage, stageRes, ...)                                                              \
+    ({                                                                                                               \
+        HiSysEventWrite(DistributedKv::DOMAIN, DistributedKv::EVENT_NAME, DistributedKv::TYPE, "ORG_PKG",            \
+            DistributedKv::ORG_PKG, "FUNC", __FUNCTION__, "BIZ_SCENE", bizScene, "BIZ_STAGE", bizStage, "STAGE_RES", \
+            stageRes, ##__VA_ARGS__);                                                                                \
+    })
 } // namespace OHOS::DistributedKv
 #endif // KV_RADAR_REPORTER_H

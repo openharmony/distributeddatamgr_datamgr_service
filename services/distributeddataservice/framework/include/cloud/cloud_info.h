@@ -62,5 +62,5 @@ private:
 
     static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);
 };
-}
+} // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_INFO_H

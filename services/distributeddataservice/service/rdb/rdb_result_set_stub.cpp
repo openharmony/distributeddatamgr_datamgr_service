@@ -15,17 +15,19 @@
 
 #define LOG_TAG "RdbResultSetStub"
 
+#include "rdb_result_set_stub.h"
+
 #include <ipc_skeleton.h>
+
 #include "itypes_util.h"
 #include "log_print.h"
-#include "rdb_result_set_stub.h"
 
 namespace OHOS::DistributedRdb {
 RdbResultSetStub::RdbResultSetStub(std::shared_ptr<NativeRdb::ResultSet> resultSet) : resultSet_(std::move(resultSet))
 {
 }
 
-int RdbResultSetStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
+int RdbResultSetStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data) || resultSet_ == nullptr) {

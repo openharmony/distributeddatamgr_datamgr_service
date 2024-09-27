@@ -14,9 +14,10 @@
  */
 #define LOG_TAG "RdbCursorTest"
 
+#include "rdb_cursor.h"
+
 #include "gtest/gtest.h"
 #include "log_print.h"
-#include "rdb_cursor.h"
 #include "result_set.h"
 #include "store/general_value.h"
 
@@ -34,9 +35,7 @@ public:
     MockResultSet() {}
     virtual ~MockResultSet() {}
 
-    void Close() override
-    {
-    }
+    void Close() override {}
 
     int GetCount() const override
     {
@@ -110,7 +109,7 @@ public:
 
     void GetColumnNames(std::vector<std::string> &columnNames) const override
     {
-        columnNames = {"age", "identifier", "name", "phoneNumber"};
+        columnNames = { "age", "identifier", "name", "phoneNumber" };
     }
 
     DBStatus GetColumnType(int columnIndex, DistributedDB::ResultSet::ColumnType &columnType) const override
@@ -189,6 +188,7 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
+
 protected:
     static std::shared_ptr<MockResultSet> resultSet;
     static std::shared_ptr<RdbCursor> rdbCursor;

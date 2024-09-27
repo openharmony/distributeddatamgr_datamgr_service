@@ -16,17 +16,18 @@
 #include "cloud/make_query_event.h"
 
 namespace OHOS::DistributedData {
-MakeQueryEvent::MakeQueryEvent(StoreInfo storeInfo,
-    std::shared_ptr<DistributedRdb::PredicatesMemo> predicates, const std::vector<std::string>& columns,
-    Callback callback)
+MakeQueryEvent::MakeQueryEvent(StoreInfo storeInfo, std::shared_ptr<DistributedRdb::PredicatesMemo> predicates,
+    const std::vector<std::string> &columns, Callback callback)
     : CloudEvent(MAKE_QUERY, std::move(storeInfo)), predicates_(std::move(predicates)), columns_(columns),
       callback_(std::move(callback))
 {
 }
+
 std::shared_ptr<DistributedRdb::PredicatesMemo> MakeQueryEvent::GetPredicates() const
 {
     return predicates_;
 }
+
 std::vector<std::string> MakeQueryEvent::GetColumns() const
 {
     return columns_;

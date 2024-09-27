@@ -14,6 +14,7 @@
  */
 #define LOG_TAG "RdbQuery"
 #include "rdb_query.h"
+
 #include "log_print.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
@@ -29,7 +30,7 @@ std::vector<std::string> RdbQuery::GetTables()
     return tables_;
 }
 
-void RdbQuery::MakeRemoteQuery(const std::string& devices, const std::string& sql, Values&& args)
+void RdbQuery::MakeRemoteQuery(const std::string &devices, const std::string &sql, Values &&args)
 {
     isRemote_ = true;
     devices_ = { devices };

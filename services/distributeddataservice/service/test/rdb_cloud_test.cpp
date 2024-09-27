@@ -25,16 +25,9 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedRdb;
 using DBVBucket = DistributedDB::VBucket;
 using DBStatus = DistributedDB::DBStatus;
-std::vector<DBVBucket> g_DBVBucket = {
-    {
-        {"#gid", {"0000000"}},
-        {"#flag", {true}},
-        {"#value", {int64_t(100)}},
-        {"#float", {double(100)}},
-        {"#_type", {int64_t(1)}},
-        {"#_query", {Bytes({ 1, 2, 3, 4 })}}
-    }
-};
+std::vector<DBVBucket> g_DBVBucket = { { { "#gid", { "0000000" } }, { "#flag", { true } },
+    { "#value", { int64_t(100) } }, { "#float", { double(100) } }, { "#_type", { int64_t(1) } },
+    { "#_query", { Bytes({ 1, 2, 3, 4 }) } } } };
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 class RdbCloudTest : public testing::Test {
@@ -43,7 +36,6 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
-protected:
 };
 
 /**

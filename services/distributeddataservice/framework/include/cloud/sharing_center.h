@@ -17,19 +17,15 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SHARING_CENTER_H
 
 #include <errors.h>
-#include <vector>
 #include <string>
 #include <tuple>
+#include <vector>
+
 #include "visibility.h"
 namespace OHOS::DistributedData {
 class API_EXPORT SharingCenter {
 public:
-    enum Role {
-        ROLE_NIL = -1,
-        ROLE_INVITER,
-        ROLE_INVITEE,
-        ROLE_BUTT
-    };
+    enum Role { ROLE_NIL = -1, ROLE_INVITER, ROLE_INVITEE, ROLE_BUTT };
 
     enum Confirmation {
         CFM_NIL = -1,
@@ -87,17 +83,17 @@ public:
         const Participants &participants);
     virtual Results Unshare(int32_t userId, const std::string &bundleName, const std::string &sharingRes,
         const Participants &participants);
-    virtual std::pair<int32_t, std::string> Exit(int32_t userId, const std::string &bundleName,
-        const std::string &sharingRes);
+    virtual std::pair<int32_t, std::string> Exit(
+        int32_t userId, const std::string &bundleName, const std::string &sharingRes);
     virtual Results ChangePrivilege(int32_t userId, const std::string &bundleName, const std::string &sharingRes,
         const Participants &participants);
     virtual QueryResults Query(int32_t userId, const std::string &bundleName, const std::string &sharingRes);
-    virtual QueryResults QueryByInvitation(int32_t userId, const std::string &bundleName,
-        const std::string &invitation);
-    virtual std::tuple<int32_t, std::string, std::string> ConfirmInvitation(int32_t userId,
-        const std::string &bundleName, const std::string &invitation, int32_t confirmation);
-    virtual std::pair<int32_t, std::string> ChangeConfirmation(int32_t userId,
-        const std::string &bundleName, const std::string &sharingRes, int32_t confirmation);
+    virtual QueryResults QueryByInvitation(
+        int32_t userId, const std::string &bundleName, const std::string &invitation);
+    virtual std::tuple<int32_t, std::string, std::string> ConfirmInvitation(
+        int32_t userId, const std::string &bundleName, const std::string &invitation, int32_t confirmation);
+    virtual std::pair<int32_t, std::string> ChangeConfirmation(
+        int32_t userId, const std::string &bundleName, const std::string &sharingRes, int32_t confirmation);
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SHARING_CENTER_H

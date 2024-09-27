@@ -18,6 +18,7 @@
 
 #include <atomic>
 #include <shared_mutex>
+
 #include "result_set.h"
 #include "rdb_errno.h"
 #include "store/cursor.h"

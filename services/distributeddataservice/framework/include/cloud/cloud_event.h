@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_EVENT_H
 
 #include <string>
+
 #include "eventcenter/event.h"
 #include "store/store_info.h"
 
@@ -42,7 +43,7 @@ public:
 
     CloudEvent(int32_t evtId, StoreInfo storeInfo);
     ~CloudEvent() = default;
-    const StoreInfo& GetStoreInfo() const;
+    const StoreInfo &GetStoreInfo() const;
     int32_t GetEventId() const;
 
 private:

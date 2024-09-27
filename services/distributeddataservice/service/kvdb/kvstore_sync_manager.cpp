@@ -69,11 +69,9 @@ uint32_t KvStoreSyncManager::GetExpireTimeRange(uint32_t delayMs) const
 Status KvStoreSyncManager::RemoveSyncOperation(uintptr_t syncId)
 {
     auto pred = [syncId](const KvSyncOperation &op) -> bool { return syncId == op.syncId; };
-
     std::lock_guard<std::mutex> lock(syncOpsMutex_);
     uint32_t count = DoRemoveSyncingOp(pred, realtimeSyncingOps_);
     count += DoRemoveSyncingOp(pred, delaySyncingOps_);
-
     auto &syncOps = scheduleSyncOps_;
     for (auto it = syncOps.begin(); it != syncOps.end();) {
         if (pred(it->second)) {
@@ -102,9 +100,8 @@ uint32_t KvStoreSyncManager::DoRemoveSyncingOp(OpPred pred, std::list<KvSyncOper
 
 Status KvStoreSyncManager::RemoveSyncingOp(uint32_t opSeq, std::list<KvSyncOperation> &syncingOps)
 {
-    auto pred = [opSeq](const KvSyncOperation &op) -> bool { return opSeq == op.opSeq; };
-
     ZLOGD("remove op %u", opSeq);
+    auto pred = [opSeq](const KvSyncOperation &op) -> bool { return opSeq == op.opSeq; };
     std::lock_guard<std::mutex> lock(syncOpsMutex_);
     uint32_t count = DoRemoveSyncingOp(pred, syncingOps);
     return (count == 1) ? Status::SUCCESS : Status::ERROR;
@@ -138,7 +135,6 @@ bool KvStoreSyncManager::GetTimeoutSyncOps(const TimePoint &currentTime, std::li
         if (currentTime + std::chrono::milliseconds(GetExpireTimeRange(op.delayMs)) < expireTime) {
             break;
         }
-
         syncOps.push_back(op);
         if (op.syncEnd != nullptr) {
             delaySyncingOps_.push_back(op);
@@ -153,7 +149,6 @@ void KvStoreSyncManager::DoCheckSyncingTimeout(std::list<KvSyncOperation> &synci
     auto syncingTimeoutPred = [](const KvSyncOperation &op) -> bool {
         return op.beginTime + std::chrono::milliseconds(SYNCING_TIMEOUT_MS) < std::chrono::steady_clock::now();
     };
-
     uint32_t count = DoRemoveSyncingOp(syncingTimeoutPred, syncingOps);
     if (count > 0) {
         ZLOGI("remove %u syncing ops by timeout", count);
@@ -181,6 +176,7 @@ void KvStoreSyncManager::Schedule(const TimePoint &time)
         AddTimer(nextTime);
     }
 }
+
 void KvStoreSyncManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;

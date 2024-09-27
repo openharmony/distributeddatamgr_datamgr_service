@@ -21,11 +21,12 @@ namespace OHOS::DistributedData {
 class API_EXPORT SyncStrategy {
 public:
     virtual ~SyncStrategy() = default;
-    virtual int32_t CheckSyncAction(const StoreInfo& storeInfo);
+    virtual int32_t CheckSyncAction(const StoreInfo &storeInfo);
     virtual std::shared_ptr<SyncStrategy> SetNext(std::shared_ptr<SyncStrategy> next);
     static constexpr const char *GLOBAL_BUNDLE = "GLOBAL";
+
 private:
     std::shared_ptr<SyncStrategy> next_;
 };
-}
+} // namespace OHOS::DistributedData
 #endif //OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SYNC_STRATEGY_H

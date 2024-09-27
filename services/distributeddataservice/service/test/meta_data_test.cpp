@@ -14,20 +14,21 @@
 */
 #define LOG_TAG "MetaDataTest"
 #include <gtest/gtest.h>
-#include "log_print.h"
-#include "ipc_skeleton.h"
-#include "device_matrix.h"
-#include "executor_pool.h"
+
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
-#include "token_setproc.h"
-#include "nativetoken_kit.h"
-#include "kvstore_meta_manager.h"
 #include "device_manager_adapter.h"
+#include "device_matrix.h"
+#include "executor_pool.h"
+#include "ipc_skeleton.h"
+#include "kvdb_service_impl.h"
+#include "kvstore_meta_manager.h"
+#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
-#include "kvdb_service_impl.h"
 #include "metadata/store_meta_data_local.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;

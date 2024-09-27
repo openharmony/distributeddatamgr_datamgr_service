@@ -14,18 +14,20 @@
 */
 #define LOG_TAG "DataShareServiceImplTest"
 
+#include "data_share_service_impl.h"
+
 #include <gtest/gtest.h>
 #include <unistd.h>
-#include "log_print.h"
-#include "ipc_skeleton.h"
+
+#include "accesstoken_kit.h"
 #include "data_share_service_stub.h"
 #include "dump/dump_manager.h"
-#include "accesstoken_kit.h"
 #include "hap_token_info.h"
+#include "ipc_skeleton.h"
 #include "iservice_registry.h"
+#include "log_print.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
-#include "data_share_service_impl.h"
 
 using namespace testing::ext;
 using namespace OHOS::DataShare;
@@ -34,7 +36,7 @@ using namespace OHOS::Security::AccessToken;
 std::string SLIENT_ACCESS_URI = "datashareproxy://com.acts.ohos.data.datasharetest/test";
 std::string TBL_NAME0 = "name0";
 std::string TBL_NAME1 = "name1";
-std::string  BUNDLE_NAME = "ohos.datasharetest.demo";
+std::string BUNDLE_NAME = "ohos.datasharetest.demo";
 namespace OHOS::Test {
 class DataShareServiceImplTest : public testing::Test {
 public:

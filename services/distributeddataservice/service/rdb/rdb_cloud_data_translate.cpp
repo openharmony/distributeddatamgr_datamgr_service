@@ -23,7 +23,7 @@ using Asset = DistributedDB::Asset;
 using Assets = DistributedDB::Assets;
 using DataAsset = NativeRdb::ValueObject::Asset;
 using DataAssets = NativeRdb::ValueObject::Assets;
-using  ValueProxy = DistributedData::ValueProxy;
+using ValueProxy = DistributedData::ValueProxy;
 std::vector<uint8_t> RdbCloudDataTranslate::AssetToBlob(const Asset &asset)
 {
     std::vector<uint8_t> rawData;

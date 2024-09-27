@@ -14,9 +14,10 @@
  */
 #define LOG_TAG "RdbAssetLoaderTest"
 
+#include "rdb_asset_loader.h"
+
 #include "gtest/gtest.h"
 #include "log_print.h"
-#include "rdb_asset_loader.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_watcher.h"
 #include "store/cursor.h"
@@ -28,8 +29,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
 using Type = DistributedDB::Type;
-const DistributedDB::Asset g_rdbAsset = {
-    .version = 1,
+const DistributedDB::Asset g_rdbAsset = { .version = 1,
     .name = "Phone",
     .assetId = "0",
     .subpath = "/local/sync",
@@ -37,8 +37,7 @@ const DistributedDB::Asset g_rdbAsset = {
     .modifyTime = "123456",
     .createTime = "createTime",
     .size = "256",
-    .hash = "ASE"
-};
+    .hash = "ASE" };
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 class RdbAssetLoaderTest : public testing::Test {

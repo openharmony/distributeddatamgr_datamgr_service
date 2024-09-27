@@ -14,9 +14,11 @@
  */
 
 #define LOG_TAG "ValueProxyServiceTest"
-#include <gtest/gtest.h>
-#include "log_print.h"
 #include "value_proxy.h"
+
+#include <gtest/gtest.h>
+
+#include "log_print.h"
 namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::DistributedData;

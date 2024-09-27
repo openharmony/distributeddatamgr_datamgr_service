@@ -45,12 +45,12 @@ std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, const VBucket &
     return nullptr;
 }
 
-std::shared_ptr<Cursor> CloudDB::Query(GenQuery& query, const VBucket& extend)
+std::shared_ptr<Cursor> CloudDB::Query(GenQuery &query, const VBucket &extend)
 {
     return nullptr;
 }
 
-int32_t CloudDB::PreSharing(const std::string& table, VBuckets& extend)
+int32_t CloudDB::PreSharing(const std::string &table, VBuckets &extend)
 {
     return E_NOT_SUPPORT;
 }
@@ -103,6 +103,5 @@ std::pair<int32_t, std::string> CloudDB::GetEmptyCursor(const std::string &table
 void CloudDB::SetPrepareTraceId(const std::string &prepareTraceId)
 {
     (void)prepareTraceId;
-    return;
 }
 } // namespace OHOS::DistributedData

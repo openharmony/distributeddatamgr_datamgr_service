@@ -123,8 +123,8 @@ private:
 
     static uint64_t GenerateId(int32_t user);
     static ExecutorPool::Duration GetInterval(int32_t code);
-    static std::map<uint32_t, GenStore::BindInfo> GetBindInfos(const StoreMetaData &meta,
-        const std::vector<int32_t> &users, const DistributedData::Database &schemaDatabase);
+    static std::map<uint32_t, GenStore::BindInfo> GetBindInfos(
+        const StoreMetaData &meta, const std::vector<int32_t> &users, const DistributedData::Database &schemaDatabase);
     static std::string GetAccountId(int32_t user);
     static std::vector<std::tuple<QueryKey, uint64_t>> GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud);
     static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
@@ -143,8 +143,8 @@ private:
         const StoreInfo &storeInfo, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
     std::function<bool()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry, const TraceIds &traceIds);
-    void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo,
-        const std::string &prepareTraceId);
+    void DoExceptionalCallback(
+        const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo, const std::string &prepareTraceId);
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
         Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);

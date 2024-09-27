@@ -14,10 +14,11 @@
  */
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_CONFIG_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_CONFIG_MANAGER_H
-#include <string>
-#include <vector>
 #include <map>
 #include <shared_mutex>
+#include <string>
+#include <vector>
+
 #include "visibility.h"
 namespace OHOS {
 namespace DistributedData {

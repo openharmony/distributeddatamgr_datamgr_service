@@ -59,9 +59,9 @@ constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
 constexpr const char *VALUES = " VALUES ";
 constexpr const char *LOGOUT_DELETE_FLAG = "DELETE#ALL_CLOUDDATA";
-constexpr const LockAction LOCK_ACTION = static_cast<LockAction>(static_cast<uint32_t>(LockAction::INSERT) |
-    static_cast<uint32_t>(LockAction::UPDATE) | static_cast<uint32_t>(LockAction::DELETE) |
-    static_cast<uint32_t>(LockAction::DOWNLOAD));
+constexpr const LockAction LOCK_ACTION =
+    static_cast<LockAction>(static_cast<uint32_t>(LockAction::INSERT) | static_cast<uint32_t>(LockAction::UPDATE) |
+                            static_cast<uint32_t>(LockAction::DELETE) | static_cast<uint32_t>(LockAction::DOWNLOAD));
 constexpr uint32_t CLOUD_SYNC_FLAG = 1;
 constexpr uint32_t SEARCHABLE_FLAG = 2;
 constexpr uint32_t LOCK_TIMEOUT = 3600; // second

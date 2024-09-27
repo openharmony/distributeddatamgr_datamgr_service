@@ -14,13 +14,19 @@
 */
 
 #include <gtest/gtest.h>
-#include "log_print.h"
+
 #include "accesstoken_kit.h"
 #include "auth_delegate.h"
 #include "bootstrap.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
+#include "kvdb_general_store.h"
+#include "kvdb_notifier_proxy.h"
+#include "kvdb_watcher.h"
+#include "kvstore_meta_manager.h"
+#include "kvstore_sync_manager.h"
+#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -28,11 +34,6 @@
 #include "query_helper.h"
 #include "upgrade.h"
 #include "user_delegate.h"
-#include "kvdb_general_store.h"
-#include "kvdb_watcher.h"
-#include "kvdb_notifier_proxy.h"
-#include "kvstore_sync_manager.h"
-#include "kvstore_meta_manager.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;

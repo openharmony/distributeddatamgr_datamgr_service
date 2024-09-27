@@ -15,9 +15,11 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SERVICE_STUB_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SERVICE_STUB_H
+
 #include "cloud_service.h"
 #include "feature/feature_system.h"
 #include "iremote_broker.h"
+
 namespace OHOS::CloudData {
 class CloudServiceStub : public CloudService, public DistributedData::FeatureSystem::Feature {
 public:

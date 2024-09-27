@@ -156,9 +156,6 @@ int32_t GeneralStoreMock::UnLockCloudDB()
     return E_OK;
 }
 
-void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor)
-{
-    return;
-}
+void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor) {}
 } // namespace DistributedData
 } // namespace OHOS

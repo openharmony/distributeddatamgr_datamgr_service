@@ -29,6 +29,7 @@ public:
         EventInfo(const EventInfo &info) = default;
         API_EXPORT EventInfo &operator=(EventInfo &&info) noexcept;
         EventInfo &operator=(const EventInfo &info) = default;
+
     private:
         friend SyncEvent;
         bool retry_ = false;
@@ -52,6 +53,7 @@ public:
     int32_t GetTriggerMode() const;
     std::string GetPrepareTraceId() const;
     int32_t GetUser() const;
+
 protected:
     SyncEvent(int32_t evtId, StoreInfo storeInfo, EventInfo info);
 

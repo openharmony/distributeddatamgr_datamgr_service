@@ -21,12 +21,12 @@
 #include <thread>
 
 #include "bootstrap.h"
-#include "cloud/schema_meta.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
+#include "cloud/schema_meta.h"
 #include "crypto_manager.h"
-#include "kvdb_query.h"
 #include "kv_store_nb_delegate_mock.h"
+#include "kvdb_query.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
@@ -50,6 +50,7 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
+
 protected:
     static constexpr const char *bundleName = "test_distributeddata";
     static constexpr const char *storeName = "test_service_meta";
@@ -89,9 +90,7 @@ std::vector<uint8_t> KVDBGeneralStoreTest::Random(uint32_t len)
     return key;
 }
 
-void KVDBGeneralStoreTest::SetUpTestCase(void)
-{
-}
+void KVDBGeneralStoreTest::SetUpTestCase(void) {}
 
 void KVDBGeneralStoreTest::TearDownTestCase() {}
 
@@ -124,17 +123,17 @@ public:
     std::list<DistributedDB::Entry> entriesUpdated = {};
     std::list<DistributedDB::Entry> entriesDeleted = {};
     bool isCleared = true;
-    const std::list<DistributedDB::Entry>& GetEntriesInserted() const override
+    const std::list<DistributedDB::Entry> &GetEntriesInserted() const override
     {
         return entriesInserted;
     }
 
-    const std::list<DistributedDB::Entry>& GetEntriesUpdated() const override
+    const std::list<DistributedDB::Entry> &GetEntriesUpdated() const override
     {
         return entriesUpdated;
     }
 
-    const std::list<Entry>& GetEntriesDeleted() const override
+    const std::list<Entry> &GetEntriesDeleted() const override
     {
         return entriesDeleted;
     }
@@ -325,8 +324,7 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
     DistributedKv::KVDBQuery query(kvQuery);
     SyncParam syncParam{};
     syncParam.mode = mixMode;
-    auto ret = store->Sync(
-        {}, query, [](const GenDetails &result) {}, syncParam);
+    auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_NE(ret, GeneralError::E_OK);
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_OK);
@@ -413,7 +411,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync, TestSize.Level0)
     store->SetEqualIdentifier(bundleName, storeName);
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
-    std::vector<std::string> devices = {"device1", "device2"};
+    std::vector<std::string> devices = { "device1", "device2" };
     auto asyncs = [](const GenDetails &result) {};
     store->storeInfo_.user = 0;
     auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
@@ -464,7 +462,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync, TestSize.Level0)
     ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
 
-    std::vector<std::string> devices = {"device1", "device2"};
+    std::vector<std::string> devices = { "device1", "device2" };
     syncMode = GeneralStore::SyncMode::NEARBY_SUBSCRIBE_REMOTE;
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
@@ -501,7 +499,7 @@ HWTEST_F(KVDBGeneralStoreTest, Clean, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
-    std::vector<std::string> devices = {"device1", "device2"};
+    std::vector<std::string> devices = { "device1", "device2" };
     std::string tableName = "tableName";
     auto ret = store->Clean(devices, -1, tableName);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
@@ -633,7 +631,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetWaterVersion, TestSize.Level0)
     EXPECT_EQ(ret, res);
     ret = store->GetWaterVersion("device");
     EXPECT_EQ(ret, res);
-    res = {"deviceId"};
+    res = { "deviceId" };
     ret = store->GetWaterVersion(deviceId);
     EXPECT_EQ(ret, res);
 }

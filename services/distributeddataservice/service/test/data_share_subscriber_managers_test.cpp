@@ -18,8 +18,8 @@
 #include <unistd.h>
 
 #include "accesstoken_kit.h"
-#include "datashare_errno.h"
 #include "data_share_service_impl.h"
+#include "datashare_errno.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"

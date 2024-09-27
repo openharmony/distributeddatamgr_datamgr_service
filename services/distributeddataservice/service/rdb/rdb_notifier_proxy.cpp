@@ -14,19 +14,16 @@
  */
 #define LOG_TAG "RdbNotifierProxy"
 #include "rdb_notifier_proxy.h"
+
 #include "itypes_util.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 namespace OHOS::DistributedRdb {
 using NotifierIFCode = RelationalStore::IRdbNotifierInterfaceCode;
 
-RdbNotifierProxy::RdbNotifierProxy(const sptr<IRemoteObject> &object) : IRemoteProxy<RdbNotifierProxyBroker>(object)
-{
-}
+RdbNotifierProxy::RdbNotifierProxy(const sptr<IRemoteObject> &object) : IRemoteProxy<RdbNotifierProxyBroker>(object) {}
 
-RdbNotifierProxy::~RdbNotifierProxy() noexcept
-{
-}
+RdbNotifierProxy::~RdbNotifierProxy() noexcept {}
 
 int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, Details &&result)
 {

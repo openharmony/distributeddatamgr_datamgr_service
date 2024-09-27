@@ -40,6 +40,7 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
+
 protected:
     struct Result {
         uint16_t mask_ = DeviceMatrix::INVALID_LEVEL;
