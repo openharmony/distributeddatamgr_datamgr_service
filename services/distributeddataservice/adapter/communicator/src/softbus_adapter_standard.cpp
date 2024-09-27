@@ -196,25 +196,24 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
     bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
     uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
     bool isReuse = false;
-    connects_.Compute(deviceId.deviceId,
-        [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isReuse](const auto &key,
-            std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
-            for (auto &connect : connects) {
-                if (connect->GetQoSType() != qosType) {
-                    continue;
-                }
-                if (!isOHOSType && connect->needRemove) {
-                    isReuse = true;
-                    return false;
-                }
-                conn = connect;
-                return true;
+    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isReuse](const auto &key,
+        std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
+        for (auto &connect : connects) {
+            if (connect->GetQoSType() != qosType) {
+                continue;
             }
-            auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
-            connects.emplace_back(connect);
+            if (!isOHOSType && connect->needRemove) {
+                isReuse = true;
+                return false;
+            }
             conn = connect;
             return true;
-        });
+        }
+        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
+        connects.emplace_back(connect);
+        conn = connect;
+        return true;
+    });
     if (!isOHOSType && isReuse) {
         Reuse(pipeInfo, deviceId, qosType, conn);
     }
@@ -226,8 +225,11 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         return Status::RATE_LIMIT;
     }
     if (status != Status::SUCCESS) {
-        auto task = [this, conn]() {
-            conn->OpenConnect(&clientListener_);
+        auto task = [this, connect = std::weak_ptr<SoftBusClient>(conn)]() {
+            auto conn = connect.lock();
+            if (conn != nullptr) {
+                conn->OpenConnect(&clientListener_);
+            }
         };
         auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
         ConnectManager::GetInstance()->ApplyConnect(networkId, task);
