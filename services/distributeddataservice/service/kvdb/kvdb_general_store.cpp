@@ -16,11 +16,14 @@
 #include "kvdb_general_store.h"
 
 #include <endian.h>
+
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
 #include "crypto_manager.h"
+#include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
@@ -36,8 +39,6 @@
 #include "user_delegate.h"
 #include "utils/anonymous.h"
 #include "water_version_manager.h"
-#include "device_manager_adapter.h"
-#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -223,8 +224,8 @@ int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, st
     return GenErr::E_NOT_SUPPORT;
 }
 
-int32_t KVDBGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
-    const CloudConfig &config)
+int32_t KVDBGeneralStore::Bind(
+    Database &database, const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config)
 {
     if (bindInfos.empty()) {
         ZLOGW("No cloudDB!");
@@ -425,8 +426,8 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
             Anonymous::Change(storeId).c_str());
         return;
     }
-    std::vector<std::string> sameAccountDevs {};
-    std::vector<std::string> defaultAccountDevs {};
+    std::vector<std::string> sameAccountDevs{};
+    std::vector<std::string> defaultAccountDevs{};
     auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
     GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
@@ -442,15 +443,14 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     if (!defaultAccountDevs.empty()) {
         auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, defaultAccountId);
         auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
-        ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s",
-            Anonymous::Change(storeId).c_str(),
+        ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s", Anonymous::Change(storeId).c_str(),
             DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), convertedIds.first.c_str());
         delegate_->SetEqualIdentifier(identifier, defaultAccountDevs);
     }
 }
 
-void KVDBGeneralStore::GetIdentifierParams(std::vector<std::string> &devices,
-    const std::vector<std::string> &uuids, int32_t authType)
+void KVDBGeneralStore::GetIdentifierParams(
+    std::vector<std::string> &devices, const std::vector<std::string> &uuids, int32_t authType)
 {
     for (const auto &devId : uuids) {
         if (DMAdapter::GetInstance().IsOHOSType(devId)) {
@@ -677,9 +677,9 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
                 detail.changeCount = (process.process == FINISHED)
-                                        ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
-                                              value.downLoadInfo.deleteCount
-                                        : 0;
+                                         ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
+                                               value.downLoadInfo.deleteCount
+                                         : 0;
             }
         }
         if (async) {
@@ -714,8 +714,7 @@ void KVDBGeneralStore::SetDBPushDataInterceptor(int32_t storeType)
                 }
             }
             return errCode;
-        }
-    );
+        });
 }
 
 void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
@@ -752,8 +751,7 @@ void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
                 }
             }
             return errCode;
-        }
-    );
+        });
 }
 
 std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, const std::string &uuid)

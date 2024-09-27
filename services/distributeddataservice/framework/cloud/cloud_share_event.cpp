@@ -20,10 +20,12 @@ CloudShareEvent::CloudShareEvent(StoreInfo storeInfo, std::shared_ptr<GenQuery> 
     : CloudEvent(CLOUD_SHARE, std::move(storeInfo)), query_(std::move(query)), callback_(std::move(callback))
 {
 }
+
 std::shared_ptr<GenQuery> CloudShareEvent::GetQuery() const
 {
     return query_;
 }
+
 CloudShareEvent::Callback CloudShareEvent::GetCallback() const
 {
     return callback_;

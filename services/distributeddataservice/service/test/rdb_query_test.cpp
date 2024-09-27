@@ -14,9 +14,10 @@
  */
 #define LOG_TAG "RdbQueryTest"
 
+#include "rdb_query.h"
+
 #include "gtest/gtest.h"
 #include "log_print.h"
-#include "rdb_query.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
 
@@ -32,7 +33,6 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
-protected:
 };
 
 /**

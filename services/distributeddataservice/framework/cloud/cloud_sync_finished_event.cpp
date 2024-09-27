@@ -25,4 +25,4 @@ StoreMetaData CloudSyncFinishedEvent::GetStoreMeta() const
 {
     return metaData_;
 }
-}
+} // namespace OHOS::DistributedData

@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <set>
+
 #include "account/account_delegate.h"
 #include "concurrent_map.h"
 #include "executor_pool.h"
@@ -35,13 +36,14 @@ public:
     };
     API_EXPORT static UserDelegate &GetInstance();
 
-    API_EXPORT void Init(const std::shared_ptr<ExecutorPool>& executors);
+    API_EXPORT void Init(const std::shared_ptr<ExecutorPool> &executors);
     API_EXPORT std::vector<UserStatus> GetLocalUserStatus();
     API_EXPORT std::set<std::string> GetLocalUsers();
     API_EXPORT std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);
     API_EXPORT bool InitLocalUserMeta();
 
     API_EXPORT static constexpr const int SYSTEM_USER = 0;
+
 private:
     class LocalUserObserver : public AccountDelegate::Observer {
     public:

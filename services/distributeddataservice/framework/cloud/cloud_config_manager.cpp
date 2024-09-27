@@ -14,8 +14,9 @@
 */
 
 #define LOG_TAG "CloudConfigManager"
-#include <mutex>
 #include "cloud/cloud_config_manager.h"
+
+#include <mutex>
 
 namespace OHOS::DistributedData {
 CloudConfigManager &CloudConfigManager::GetInstance()

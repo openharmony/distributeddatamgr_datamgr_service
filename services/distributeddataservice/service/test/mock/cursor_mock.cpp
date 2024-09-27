@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "cursor_mock.h"
+
 #include "store/general_value.h"
 namespace OHOS {
 namespace DistributedData {

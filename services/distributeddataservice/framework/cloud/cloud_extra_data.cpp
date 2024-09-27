@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "cloud/cloud_extra_data.h"
+
 #include "cloud/cloud_config_manager.h"
 
 namespace OHOS::DistributedData {

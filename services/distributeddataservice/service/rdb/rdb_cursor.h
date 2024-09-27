@@ -15,8 +15,8 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
-#include "store/cursor.h"
 #include "distributeddb/result_set.h"
+#include "store/cursor.h"
 namespace OHOS::DistributedRdb {
 class RdbCursor : public DistributedData::Cursor {
 public:

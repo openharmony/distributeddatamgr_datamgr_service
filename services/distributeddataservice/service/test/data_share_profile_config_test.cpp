@@ -14,13 +14,14 @@
 */
 #define LOG_TAG "DataShareProfileConfigTest"
 
+#include "data_share_profile_config.h"
+
 #include <gtest/gtest.h>
 #include <unistd.h>
 
-#include "datashare_errno.h"
 #include "data_share_db_config.h"
-#include "data_share_profile_config.h"
 #include "data_share_service_impl.h"
+#include "datashare_errno.h"
 #include "log_print.h"
 
 namespace OHOS::Test {

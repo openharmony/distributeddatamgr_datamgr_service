@@ -43,8 +43,7 @@ public:
 
     explicit KVDBGeneralStore(const StoreMetaData &meta);
     ~KVDBGeneralStore();
-    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
-        const CloudConfig &config) override;
+    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config) override;
     bool IsBound() override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
@@ -57,8 +56,8 @@ public:
         Values &&conditions) override;
     int32_t Replace(const std::string &table, VBucket &&value) override;
     int32_t Delete(const std::string &table, const std::string &sql, Values &&args) override;
-    std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, const std::string &sql,
-        Values &&args) override;
+    std::pair<int32_t, std::shared_ptr<Cursor>> Query(
+        const std::string &table, const std::string &sql, Values &&args) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) override;
     int32_t Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
@@ -96,8 +95,8 @@ private:
     DBProcessCB GetDBProcessCB(DetailAsync async);
     DBStatus CloudSync(const Devices &devices, DistributedDB::SyncMode cloudSyncMode, DetailAsync async, int64_t wait,
         const std::string &prepareTraceId);
-    void GetIdentifierParams(std::vector<std::string> &devices,
-        const std::vector<std::string> &uuids, int32_t authType);
+    void GetIdentifierParams(
+        std::vector<std::string> &devices, const std::vector<std::string> &uuids, int32_t authType);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;

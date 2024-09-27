@@ -18,11 +18,11 @@
 #include <functional>
 #include <memory>
 
+#include "concurrent_map.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "metadata/store_meta_data.h"
 #include "types.h"
-#include "concurrent_map.h"
 
 namespace OHOS::DistributedKv {
 class Upgrade {

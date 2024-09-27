@@ -108,6 +108,7 @@ private:
     public:
         Factory();
         ~Factory();
+
     private:
         std::shared_ptr<KVDBServiceImpl> product_;
     };
@@ -123,8 +124,8 @@ private:
     void DoCloudSync(bool statics, bool dynamic);
     Status DoSync(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
     Status DoSyncInOrder(const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type);
-    Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,
-        const SyncInfo &info, const SyncEnd &complete, int32_t type);
+    Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta, const SyncInfo &info,
+        const SyncEnd &complete, int32_t type);
     Status DoComplete(const StoreMetaData &meta, const SyncInfo &info, RefCount refCount, const DBResult &dbResult);
     uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
     Status ConvertDbStatus(DBStatus status) const;

@@ -14,8 +14,8 @@
  */
 #ifndef OHOS_DISTRIBUTEDDATA_SERVICE_TEST_DB_STORE_MOCK_H
 #define OHOS_DISTRIBUTEDDATA_SERVICE_TEST_DB_STORE_MOCK_H
-#include "kv_store_nb_delegate.h"
 #include "concurrent_map.h"
+#include "kv_store_nb_delegate.h"
 #include "store_types.h"
 namespace OHOS {
 namespace DistributedData {

@@ -56,5 +56,5 @@ public:
     static constexpr const char *PRIVATE_TABLE = "private";
     static constexpr const char *SHARED_TABLE = "shared";
 };
-}
+} // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE5_CLOUD_EXTRA_DATA_H

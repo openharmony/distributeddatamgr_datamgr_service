@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_WATCHER_H
 #include <mutex>
 #include <shared_mutex>
+
 #include "rdb_notifier_proxy.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"

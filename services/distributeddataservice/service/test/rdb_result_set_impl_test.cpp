@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
+#include "rdb_result_set_impl.h"
+
 #include "gtest/gtest.h"
 #include "mock/cursor_mock.h"
-#include "rdb_result_set_impl.h"
 #include "store/cursor.h"
 using namespace testing::ext;
 using namespace OHOS;

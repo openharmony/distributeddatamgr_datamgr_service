@@ -16,8 +16,8 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_LOCK_EVENT_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_LOCK_EVENT_H
 #include "cloud/cloud_event.h"
-#include "store/general_value.h"
 #include "store/general_store.h"
+#include "store/general_value.h"
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
@@ -27,6 +27,7 @@ public:
     CloudLockEvent(int32_t evtId, StoreInfo storeInfo, Callback callback);
     ~CloudLockEvent() override = default;
     Callback GetCallback() const;
+
 private:
     Callback callback_;
 };

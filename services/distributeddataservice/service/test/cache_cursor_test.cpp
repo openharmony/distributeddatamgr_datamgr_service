@@ -15,6 +15,7 @@
 #define LOG_TAG "CacheCursorTest"
 
 #include "cache_cursor.h"
+
 #include "gtest/gtest.h"
 #include "log_print.h"
 #include "store/cursor.h"
@@ -38,6 +39,7 @@ public:
     void SetUp(){};
     void TearDown(){};
     static std::shared_ptr<CacheCursor> GetCursor();
+
 protected:
     CacheCursorTest();
     static std::shared_ptr<CacheCursor> cursor_;
@@ -77,7 +79,7 @@ HWTEST_F(CacheCursorTest, CacheCursorTest001, TestSize.Level1)
 {
     auto cursor = CacheCursorTest::GetCursor();
     EXPECT_NE(cursor, nullptr);
-    std::vector<std::string> expectedNames = {"age", "identifier", "name", "phoneNumber"};
+    std::vector<std::string> expectedNames = { "age", "identifier", "name", "phoneNumber" };
     std::vector<std::string> names;
     auto result = cursor->GetColumnNames(names);
     EXPECT_EQ(result, GeneralError::E_OK);
@@ -127,7 +129,7 @@ HWTEST_F(CacheCursorTest, UnCacheCursorTest001, TestSize.Level1)
 {
     auto cursor = CacheCursorTest::GetCursor();
     EXPECT_NE(cursor, nullptr);
-    std::vector<std::string> expectedNames = {"age", "identifier", "name", "phoneNumber"};
+    std::vector<std::string> expectedNames = { "age", "identifier", "name", "phoneNumber" };
     std::vector<std::string> names;
     auto result = cursor->GetColumnNames(names);
     EXPECT_EQ(result, GeneralError::E_OK);

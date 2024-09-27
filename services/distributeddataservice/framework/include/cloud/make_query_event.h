@@ -16,8 +16,8 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_RDB_SHARE_EVENT_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_RDB_SHARE_EVENT_H
 #include "cloud/cloud_event.h"
-#include "store/general_value.h"
 #include "store/cursor.h"
+#include "store/general_value.h"
 #include "visibility.h"
 namespace OHOS {
 namespace DistributedRdb {
@@ -28,7 +28,7 @@ class API_EXPORT MakeQueryEvent : public CloudEvent {
 public:
     using Callback = std::function<void(std::shared_ptr<GenQuery>)>;
     MakeQueryEvent(StoreInfo storeInfo, std::shared_ptr<DistributedRdb::PredicatesMemo> predicates,
-        const std::vector<std::string>& columns, Callback callback);
+        const std::vector<std::string> &columns, Callback callback);
     ~MakeQueryEvent() override = default;
     std::shared_ptr<DistributedRdb::PredicatesMemo> GetPredicates() const;
     std::vector<std::string> GetColumns() const;

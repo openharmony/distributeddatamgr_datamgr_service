@@ -14,13 +14,14 @@
  */
 #define LOG_TAG "RdbResultSetStubTest"
 
+#include "rdb_result_set_stub.h"
+
 #include "gtest/gtest.h"
 #include "log_print.h"
 #include "message_parcel.h"
 #include "rdb_result_set_impl.h"
-#include "rdb_result_set_stub.h"
-#include "store/cursor.h"
 #include "securec.h"
+#include "store/cursor.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -35,7 +36,6 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
-protected:
 };
 
 /**

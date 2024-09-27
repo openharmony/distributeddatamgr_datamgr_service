@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_KV_STORE_FRAMEWORKS_INNERKITSIMPL_RDB_RDB_NOTIFIER_PROXY_H
 #include <iremote_broker.h>
 #include <iremote_proxy.h>
+
 #include "rdb_notifier.h"
 namespace OHOS::DistributedRdb {
 class RdbNotifierProxyBroker : public IRdbNotifier, public IRemoteBroker {

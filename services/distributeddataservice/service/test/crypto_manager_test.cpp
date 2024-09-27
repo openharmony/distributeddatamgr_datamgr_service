@@ -16,6 +16,7 @@
 #include "crypto_manager.h"
 
 #include <random>
+
 #include "gtest/gtest.h"
 #include "types.h"
 using namespace testing::ext;
@@ -24,8 +25,8 @@ class CryptoManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp() {};
-    void TearDown() {};
+    void SetUp(){};
+    void TearDown(){};
 
 protected:
     static std::vector<uint8_t> randomKey;

@@ -14,6 +14,7 @@
  */
 
 #include "kv_store_nb_delegate_mock.h"
+
 #include "store_types.h"
 namespace DistributedDB {
 DBStatus KvStoreNbDelegateMock::Get(const Key &key, Value &value) const

@@ -41,21 +41,20 @@ public:
     int32_t ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch) override;
     int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
-    int32_t NotifyDataChange(const std::string& eventId, const std::string& extraData, int32_t userId) override;
-    std::pair<int32_t, std::map<std::string, StatisticInfos>> QueryStatistics(const std::string &id,
-        const std::string &bundleName, const std::string &storeId) override;
-    std::pair<int32_t, QueryLastResults> QueryLastSyncInfo(const std::string &id, const std::string &bundleName,
-                                                           const std::string &storeId) override;
-    int32_t SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value>& values) override;
+    int32_t NotifyDataChange(const std::string &eventId, const std::string &extraData, int32_t userId) override;
+    std::pair<int32_t, std::map<std::string, StatisticInfos>> QueryStatistics(
+        const std::string &id, const std::string &bundleName, const std::string &storeId) override;
+    std::pair<int32_t, QueryLastResults> QueryLastSyncInfo(
+        const std::string &id, const std::string &bundleName, const std::string &storeId) override;
+    int32_t SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values) override;
 
-    std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string& storeId,
-        const DistributedRdb::PredicatesMemo& predicates, const std::vector<std::string>& columns,
-        const Participants& participants) override;
+    std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string &storeId,
+        const DistributedRdb::PredicatesMemo &predicates, const std::vector<std::string> &columns,
+        const Participants &participants) override;
     int32_t Share(const std::string &sharingRes, const Participants &participants, Results &results) override;
     int32_t Unshare(const std::string &sharingRes, const Participants &participants, Results &results) override;
     int32_t Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result) override;
-    int32_t ChangePrivilege(
-        const std::string &sharingRes, const Participants &participants, Results &results) override;
+    int32_t ChangePrivilege(const std::string &sharingRes, const Participants &participants, Results &results) override;
     int32_t Query(const std::string &sharingRes, QueryResults &results) override;
     int32_t QueryByInvitation(const std::string &invitation, QueryResults &results) override;
     int32_t ConfirmInvitation(const std::string &invitation, int32_t confirmation,
@@ -63,7 +62,7 @@ public:
     int32_t ChangeConfirmation(
         const std::string &sharingRes, int32_t confirmation, std::pair<int32_t, std::string> &result) override;
 
-    int32_t SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value>& values) override;
+    int32_t SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values) override;
 
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &info) override;
@@ -75,7 +74,7 @@ private:
     using StaticActs = DistributedData::StaticActs;
     class CloudStatic : public StaticActs {
     public:
-        ~CloudStatic() override {};
+        ~CloudStatic() override{};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
     };
@@ -83,6 +82,7 @@ private:
     public:
         Factory() noexcept;
         ~Factory();
+
     private:
         std::shared_ptr<CloudServiceImpl> product_;
         std::shared_ptr<CloudStatic> staticActs_;
@@ -114,9 +114,9 @@ private:
     static constexpr int32_t RETRY_TIMES = 3;
     static constexpr int32_t RETRY_INTERVAL = 60;
     static constexpr int32_t EXPIRE_INTERVAL = 2 * 24; // 2 day
-    static constexpr int32_t WAIT_TIME = 30; // 30 seconds
+    static constexpr int32_t WAIT_TIME = 30;           // 30 seconds
     static constexpr int32_t DEFAULT_USER = 0;
-    static constexpr int32_t TIME_BEFORE_SUB = 12 * 60 * 60 * 1000; // 12hours, ms
+    static constexpr int32_t TIME_BEFORE_SUB = 12 * 60 * 60 * 1000;  // 12hours, ms
     static constexpr int32_t SUBSCRIPTION_INTERVAL = 60 * 60 * 1000; // 1hours
 
     bool UpdateCloudInfo(int32_t user);
@@ -134,8 +134,8 @@ private:
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
     void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
-    std::map<std::string, StatisticInfos> ExecuteStatistics(const std::string &storeId, const CloudInfo &cloudInfo,
-        const SchemaMeta &schemaMeta);
+    std::map<std::string, StatisticInfos> ExecuteStatistics(
+        const std::string &storeId, const CloudInfo &cloudInfo, const SchemaMeta &schemaMeta);
     StatisticInfos QueryStatistics(const StoreMetaData &storeMetaData, const DistributedData::Database &database);
     std::pair<bool, StatisticInfo> QueryTableStatistic(const std::string &tableName, AutoCache::Store store);
     std::string BuildStatisticSql(const std::string &tableName);
@@ -150,13 +150,13 @@ private:
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
     void DoClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action);
-    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(const StoreInfo& storeInfo,
-        DistributedData::GenQuery& query);
+    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(
+        const StoreInfo &storeInfo, DistributedData::GenQuery &query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
     int32_t CheckNotifyConditions(const std::string &id, const std::string &bundleName, CloudInfo &cloudInfo);
     std::map<std::string, std::vector<std::string>> GetDbInfoFromExtraData(
         const DistributedData::ExtraData &extraData, const SchemaMeta &schemaMeta);
-    std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo& hapInfo);
+    std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo &hapInfo);
     bool GetStoreMetaData(StoreMetaData &meta);
     bool DoKvCloudSync(int32_t userId, const std::string &bundleName = "", int32_t triggerMode = 0);
 
@@ -169,8 +169,9 @@ private:
     std::mutex mutex_;
     std::mutex rwMetaMutex_;
     TaskId subTask_ = ExecutorPool::INVALID_TASK_ID;
-    uint64_t expireTime_ = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count());
+    uint64_t expireTime_ = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+            .count());
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
@@ -179,6 +180,6 @@ private:
     static constexpr Handle WORK_DO_CLOUD_SYNC = &CloudServiceImpl::DoCloudSync;
     static constexpr Handle WORK_STOP_CLOUD_SYNC = &CloudServiceImpl::StopCloudSync;
 };
-} // namespace OHOS::DistributedData
+} // namespace OHOS::CloudData
 
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_SERVICE_IMPL_H

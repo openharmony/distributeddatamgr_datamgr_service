@@ -46,4 +46,3 @@ private:
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_CACHE_CURSOR_H
-

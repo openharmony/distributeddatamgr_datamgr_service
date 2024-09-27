@@ -13,23 +13,16 @@
 * limitations under the License.
 */
 #include "config_factory.h"
+
 #include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 class ConfigFactoryTest : public testing::Test {
 public:
-    static void SetUpTestCase(void)
-    {
-    }
-    static void TearDownTestCase(void)
-    {
-    }
-    void SetUp()
-    {
-    }
-    void TearDown()
-    {
-    }
+    static void SetUpTestCase(void) {}
+    static void TearDownTestCase(void) {}
+    void SetUp() {}
+    void TearDown() {}
 };
 
 /**

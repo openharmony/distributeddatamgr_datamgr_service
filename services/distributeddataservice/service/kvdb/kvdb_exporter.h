@@ -27,6 +27,7 @@ public:
     KVDBExporter() noexcept;
     ~KVDBExporter() {}
     static void Exporter(const StoreMetaData &meta, const std::string &backupPath, bool &result);
+
 private:
     static KVDBExporter instance_;
 };

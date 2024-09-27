@@ -13,24 +13,26 @@
 * limitations under the License.
 */
 #define LOG_TAG "KvdbServiceImplTest"
+#include "kvdb_service_impl.h"
+
 #include <gtest/gtest.h>
-#include "log_print.h"
+#include <vector>
+
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
-#include "distributed_kv_data_manager.h"
 #include "device_manager_adapter.h"
+#include "distributed_kv_data_manager.h"
 #include "ipc_skeleton.h"
-#include "nativetoken_kit.h"
-#include "kvdb_service_impl.h"
 #include "kvdb_service_stub.h"
 #include "kvstore_death_recipient.h"
 #include "kvstore_meta_manager.h"
-#include "utils/constant.h"
-#include "utils/anonymous.h"
+#include "log_print.h"
+#include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "types.h"
-#include <vector>
+#include "utils/anonymous.h"
+#include "utils/constant.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -76,6 +78,7 @@ public:
     void TearDown();
 
     KvdbServiceImplTest();
+
 protected:
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
 };
@@ -132,8 +135,7 @@ void KvdbServiceImplTest::TearDown(void)
     RemoveAllStore(manager);
 }
 
-KvdbServiceImplTest::KvdbServiceImplTest(void)
-{}
+KvdbServiceImplTest::KvdbServiceImplTest(void) {}
 
 /**
 * @tc.name: KvdbServiceImpl001
@@ -667,7 +669,7 @@ HWTEST_F(KvdbServiceImplTest, DoCloudSync, TestSize.Level0)
     SyncInfo syncInfo;
     status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
     EXPECT_EQ(status, Status::NOT_SUPPORT);
-    syncInfo.devices = {"device1", "device2"};
+    syncInfo.devices = { "device1", "device2" };
     syncInfo.query = "query";
     metaData.enableCloud = true;
     status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);

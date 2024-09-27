@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "db_store_mock.h"
+
 #include "db_change_data_mock.h"
 namespace OHOS {
 namespace DistributedData {

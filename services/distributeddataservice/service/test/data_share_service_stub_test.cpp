@@ -14,12 +14,14 @@
 */
 #define LOG_TAG "DataShareServiceStubTest"
 
+#include "data_share_service_stub.h"
+
 #include <gtest/gtest.h>
 #include <unistd.h>
-#include "log_print.h"
-#include "ipc_skeleton.h"
+
 #include "data_share_service_impl.h"
-#include "data_share_service_stub.h"
+#include "ipc_skeleton.h"
+#include "log_print.h"
 
 using namespace testing::ext;
 using namespace OHOS::DataShare;

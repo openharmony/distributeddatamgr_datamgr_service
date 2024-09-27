@@ -17,9 +17,9 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H
 #include "checker/checker_manager.h"
 #include "distributeddata_kvdb_ipc_interface_code.h"
+#include "feature/feature_system.h"
 #include "iremote_stub.h"
 #include "kvdb_service.h"
-#include "feature/feature_system.h"
 namespace OHOS::DistributedKv {
 class KVDBServiceStub : public KVDBService, public DistributedData::FeatureSystem::Feature {
 public:
@@ -36,8 +36,7 @@ private:
     int32_t OnClose(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnSync(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnCloudSync(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnRegServiceNotifier(
-        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnRegServiceNotifier(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnUnregServiceNotifier(
         const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnSetSyncParam(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
@@ -53,10 +52,10 @@ private:
     int32_t OnNotifyDataChange(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnPutSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnSubscribeSwitchData(const AppId &appId, const StoreId &storeId, MessageParcel &data,
-        MessageParcel &reply);
-    int32_t OnUnsubscribeSwitchData(const AppId &appId, const StoreId &storeId, MessageParcel &data,
-        MessageParcel &reply);
+    int32_t OnSubscribeSwitchData(
+        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnsubscribeSwitchData(
+        const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnSetConfig(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnRemoveDeviceData(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)];

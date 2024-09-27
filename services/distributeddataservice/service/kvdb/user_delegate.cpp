@@ -15,9 +15,11 @@
 
 #define LOG_TAG "UserDelegate"
 #include "user_delegate.h"
+
 #include <chrono>
 #include <cinttypes>
 #include <thread>
+
 #include "communicator/device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -91,8 +93,7 @@ std::vector<UserStatus> UserDelegate::GetUsers(const std::string &deviceId)
         }
         return !users.empty();
     });
-    auto time =
-        static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    auto time = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     ZLOGI("device:%{public}s, users:%{public}s times %{public}" PRIu64 ".", Anonymous::Change(deviceId).c_str(),
         Serializable::Marshall(userStatus).c_str(), time);
     return userStatus;
@@ -147,7 +148,7 @@ UserDelegate &UserDelegate::GetInstance()
     return instance;
 }
 
-void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
+void UserDelegate::Init(const std::shared_ptr<ExecutorPool> &executors)
 {
     auto ret = AccountDelegate::GetInstance()->Subscribe(std::make_shared<LocalUserObserver>(*this));
     MetaDataManager::GetInstance().Subscribe(
@@ -171,7 +172,7 @@ void UserDelegate::Init(const std::shared_ptr<ExecutorPool>& executors)
                 ZLOGD("ignored operation");
             }
             return true;
-    });
+        });
     if (!executors_) {
         executors_ = executors;
     }
@@ -193,13 +194,11 @@ ExecutorPool::Task UserDelegate::GeTask()
 bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)
 {
     // update all local user status
-    (void) userEvent;
+    (void)userEvent;
     return InitLocalUserMeta();
 }
 
-UserDelegate::LocalUserObserver::LocalUserObserver(UserDelegate &userDelegate) : userDelegate_(userDelegate)
-{
-}
+UserDelegate::LocalUserObserver::LocalUserObserver(UserDelegate &userDelegate) : userDelegate_(userDelegate) {}
 
 void UserDelegate::LocalUserObserver::OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo)
 {

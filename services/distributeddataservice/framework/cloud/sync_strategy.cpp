@@ -15,7 +15,7 @@
 
 #include "cloud/sync_strategy.h"
 namespace OHOS::DistributedData {
-int32_t SyncStrategy::CheckSyncAction(const StoreInfo& storeInfo)
+int32_t SyncStrategy::CheckSyncAction(const StoreInfo &storeInfo)
 {
     return 0;
 }
@@ -25,4 +25,4 @@ std::shared_ptr<SyncStrategy> SyncStrategy::SetNext(std::shared_ptr<SyncStrategy
     next_ = next;
     return next_;
 }
-}
+} // namespace OHOS::DistributedData

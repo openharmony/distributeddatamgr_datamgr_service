@@ -16,11 +16,11 @@
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H
 
-#include "snapshot/snapshot.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/iAssetLoader.h"
 #include "error/general_error.h"
+#include "snapshot/snapshot.h"
 
 namespace OHOS::DistributedRdb {
 class RdbAssetLoader : public DistributedDB::IAssetLoader {

@@ -20,45 +20,56 @@ CheckerMock::CheckerMock() noexcept
     CheckerManager::GetInstance().RegisterPlugin(
         "SystemChecker", [this]() -> auto { return this; });
 }
+
 CheckerMock::~CheckerMock() {}
+
 void CheckerMock::SetDynamic(const std::vector<CheckerManager::StoreInfo> &dynamicStores)
 {
     dynamicInfos_ = dynamicStores;
 }
+
 void CheckerMock::SetStatic(const std::vector<CheckerManager::StoreInfo> &staticStores)
 {
     staticInfos_ = staticStores;
 }
+
 void CheckerMock::Initialize() {}
+
 bool CheckerMock::SetTrustInfo(const CheckerManager::Trust &trust)
 {
     return true;
 }
+
 std::string CheckerMock::GetAppId(const CheckerManager::StoreInfo &info)
 {
     return info.bundleName;
 }
+
 bool CheckerMock::IsValid(const CheckerManager::StoreInfo &info)
 {
     return true;
 }
+
 bool CheckerMock::SetDistrustInfo(const CheckerManager::Distrust &distrust)
 {
     return true;
-};
+}
 
 bool CheckerMock::IsDistrust(const CheckerManager::StoreInfo &info)
 {
     return true;
 }
+
 std::vector<CheckerManager::StoreInfo> CheckerMock::GetDynamicStores()
 {
     return dynamicInfos_;
 }
+
 std::vector<CheckerManager::StoreInfo> CheckerMock::GetStaticStores()
 {
     return staticInfos_;
 }
+
 bool CheckerMock::IsDynamic(const CheckerManager::StoreInfo &info)
 {
     for (const auto &store : dynamicInfos_) {
@@ -68,6 +79,7 @@ bool CheckerMock::IsDynamic(const CheckerManager::StoreInfo &info)
     }
     return false;
 }
+
 bool CheckerMock::IsStatic(const CheckerManager::StoreInfo &info)
 {
     for (const auto &store : staticInfos_) {
@@ -77,18 +89,22 @@ bool CheckerMock::IsStatic(const CheckerManager::StoreInfo &info)
     }
     return false;
 }
+
 bool CheckerMock::AddDynamicStore(const CheckerManager::StoreInfo &storeInfo)
 {
     return false;
 }
+
 bool CheckerMock::AddStaticStore(const CheckerManager::StoreInfo &storeInfo)
 {
     return false;
 }
+
 bool CheckerMock::IsSwitches(const CheckerManager::StoreInfo &info)
 {
     return false;
 }
+
 bool CheckerMock::SetSwitchesInfo(const CheckerManager::Switches &switches)
 {
     return true;

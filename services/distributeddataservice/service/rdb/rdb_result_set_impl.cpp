@@ -15,11 +15,13 @@
 
 #define LOG_TAG "RdbResultSetImpl"
 
-#include <mutex>
-#include "log_print.h"
-#include "store_types.h"
-#include "store/cursor.h"
 #include "rdb_result_set_impl.h"
+
+#include <mutex>
+
+#include "log_print.h"
+#include "store/cursor.h"
+#include "store_types.h"
 
 using DistributedDB::DBStatus;
 using OHOS::NativeRdb::ColumnType;
