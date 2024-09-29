@@ -90,7 +90,7 @@ public:
         sptr<IRemoteObject> callback, uint32_t tokenId);
     void SetData(const std::string &dataDir, const std::string &userId);
     int32_t Clear();
-    int32_t DeleteByAppId(const std::string &appId);
+    int32_t DeleteByAppId(const std::string &appId, int32_t user);
     void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
                                 pid_t pid, uint32_t tokenId,
                                 sptr<IRemoteObject> callback);
