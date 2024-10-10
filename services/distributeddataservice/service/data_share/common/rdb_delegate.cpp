@@ -64,7 +64,8 @@ std::string RemindTimerFunc(const std::vector<std::string> &args)
     return args[ARG_TIME];
 }
 
-RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction)
+std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta,
+    bool registerFunction)
 {
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);
@@ -72,16 +73,20 @@ RdbStoreConfig RdbDelegate::GetConfig(const DistributedData::StoreMetaData &meta
     config.SetBundleName(meta.bundleName);
     if (meta.isEncrypt) {
         DistributedData::SecretKeyMetaData secretKeyMeta;
-        DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKeyMeta, true);
+        if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKeyMeta, true)) {
+            return std::make_pair(E_DB_NOT_EXIST, config);
+        }
         std::vector<uint8_t> decryptKey;
-        DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        if (!DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey)) {
+            return std::make_pair(E_ERROR, config);
+        };
         config.SetEncryptKey(decryptKey);
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
     }
     if (registerFunction) {
         config.SetScalarFunction("remindTimer", ARGS_SIZE, RemindTimerFunc);
     }
-    return config;
+    return std::make_pair(E_OK, config);
 }
 
 RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
@@ -94,7 +99,12 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
     haMode_ = meta.haMode;
     backup_ = backup;
 
-    RdbStoreConfig config = GetConfig(meta, registerFunction);
+    auto [err, config] = GetConfig(meta, registerFunction);
+    if (err != E_OK) {
+        ZLOGW("Get rdbConfig failed, errCode is %{public}d, dir is %{public}s", err,
+            DistributedData::Anonymous::Change(meta.dataDir).c_str());
+        return;
+    }
     DefaultOpenCallback callback;
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
     if (errCode_ != E_OK) {

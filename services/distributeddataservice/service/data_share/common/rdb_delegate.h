@@ -47,7 +47,7 @@ public:
         const DataSharePredicates &predicate) override;
 private:
     void TryAndSend(int errCode);
-    RdbStoreConfig GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
+    std::pair<int, RdbStoreConfig> GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
     bool IsLimit(int count, const int32_t callingPid);
     static std::atomic<int32_t> resultSetCount;
     static ConcurrentMap<uint32_t, int32_t> resultSetCallingPids;
