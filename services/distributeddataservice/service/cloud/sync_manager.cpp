@@ -751,7 +751,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
         RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, triggerMode,
                                   result.begin()->second.changeCount, dbCode },
             "GetCallback", BizState::END);
-        Report({ storeInfo.user, storeInfo.bundleName, prepareTraceId, SyncStage::END, dbCode });
+        Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, dbCode });
 
         auto id = GetAccountId(storeInfo.user);
         if (id.empty()) {
