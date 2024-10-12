@@ -150,6 +150,7 @@ RdbGeneralStore::~RdbGeneralStore()
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
     RemoveTasks();
+    ZLOGW("destructor");
     tasks_ = nullptr;
     executor_ = nullptr;
 }
@@ -1086,7 +1087,14 @@ bool RdbGeneralStore::IsFinished(SyncId syncId) const
 
 Executor::Task RdbGeneralStore::GetFinishTask(SyncId syncId)
 {
-    return [this, syncId]() {
+    if (AddRef() == 0) {
+        return []() {};
+    }
+    auto ref = std::shared_ptr<const char>("RdbCount", [this](const char*) {
+        Release();
+    });
+    return [this, refCount = std::move(ref), syncId]() {
+        ZLOGW("syncId:%{public}" PRIu64 " miss finished.", syncId);
         if (!IsFinished(syncId)) {
             return;
         }
