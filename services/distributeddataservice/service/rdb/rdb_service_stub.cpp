@@ -113,13 +113,14 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
     std::vector<std::string> tables;
     std::vector<Reference> references;
     int32_t type;
-    if (!ITypesUtil::Unmarshal(data, param, tables, references, type)) {
+    bool isRebuild;
+    if (!ITypesUtil::Unmarshal(data, param, tables, references, type, isRebuild)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables size:%{public}zu type:%{public}d",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), tables.size(), type);
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = SetDistributedTables(param, tables, references, type);
+    auto status = SetDistributedTables(param, tables, references, isRebuild, type);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

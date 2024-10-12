@@ -26,7 +26,6 @@
 #include "cloud/make_query_event.h"
 #include "cloud/schema_meta.h"
 #include "commonevent/data_change_event.h"
-#include "commonevent/set_searchable_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "device_matrix.h"
@@ -279,12 +278,17 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
 }
 
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
-    const std::vector<Reference> &references, int32_t type)
+    const std::vector<Reference> &references, bool isRebuild, int32_t type)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
+    }
+    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_SEARCH) {
+        DistributedData::SetSearchableEvent::EventInfo eventInfo;
+        eventInfo.isRebuild = isRebuild;
+        return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, param, eventInfo);
     }
     auto meta = GetStoreMetaData(param);
 
@@ -1124,6 +1128,14 @@ int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearch
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
+    SetSearchableEvent::EventInfo eventInfo;
+    eventInfo.isSearchable = isSearchable;
+    return PostSearchEvent(CloudEvent::SET_SEARCHABLE, param, eventInfo);
+}
+
+int32_t RdbServiceImpl::PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
+    SetSearchableEvent::EventInfo &eventInfo)
+{
     StoreInfo storeInfo;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = param.bundleName_;
@@ -1133,11 +1145,8 @@ int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearch
     storeInfo.user = user;
     storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
 
-    SetSearchableEvent::EventInfo eventInfo;
-    eventInfo.isSearchable = isSearchable;
-    auto evt = std::make_unique<SetSearchableEvent>(std::move(storeInfo), std::move(eventInfo));
+    auto evt = std::make_unique<SetSearchableEvent>(std::move(storeInfo), std::move(eventInfo), evtId);
     EventCenter::GetInstance().PostEvent(std::move(evt));
-
     return RDB_OK;
 }
 
