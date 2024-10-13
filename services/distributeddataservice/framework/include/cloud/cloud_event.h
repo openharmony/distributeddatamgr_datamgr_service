@@ -38,6 +38,7 @@ public:
         DATA_SYNC,
         LOCK_CLOUD_CONTAINER,
         UNLOCK_CLOUD_CONTAINER,
+        SET_SEARCH_TRIGGER,
         CLOUD_BUTT
     };
 

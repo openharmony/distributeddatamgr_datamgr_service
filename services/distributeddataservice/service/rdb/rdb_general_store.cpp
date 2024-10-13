@@ -812,8 +812,8 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::SetTrackerTable(
-    const std::string &tableName, const std::set<std::string> &trackerColNames, const std::string &extendColName)
+int32_t RdbGeneralStore::SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
+    const std::string &extendColName, bool isForceUpgrade)
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -821,7 +821,7 @@ int32_t RdbGeneralStore::SetTrackerTable(
             Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
-    auto status = delegate_->SetTrackerTable({ tableName, extendColName, trackerColNames });
+    auto status = delegate_->SetTrackerTable({ tableName, extendColName, trackerColNames, isForceUpgrade });
     if (status == DBStatus::WITH_INVENTORY_DATA) {
         ZLOGI("Set tracker table with inventory data, database:%{public}s, tables name:%{public}s",
             Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());

@@ -21,6 +21,7 @@
 #include <string>
 
 #include "cloud/cloud_event.h"
+#include "commonevent/set_searchable_event.h"
 #include "concurrent_map.h"
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
@@ -53,7 +54,7 @@ public:
     int32_t InitNotifier(const RdbSyncerParam &param, sptr<IRemoteObject> notifier) override;
 
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
-        const std::vector<Reference> &references, int32_t type = DISTRIBUTED_DEVICE) override;
+        const std::vector<Reference> &references, bool isRebuild, int32_t type = DISTRIBUTED_DEVICE) override;
 
     std::pair<int32_t, std::shared_ptr<ResultSet>> RemoteQuery(const RdbSyncerParam& param, const std::string& device,
         const std::string& sql, const std::vector<std::string>& selectionArgs) override;
@@ -199,6 +200,9 @@ private:
     StoreInfo GetStoreInfo(const RdbSyncerParam &param);
 
     int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+
+    int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
+        DistributedData::SetSearchableEvent::EventInfo &eventInfo);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

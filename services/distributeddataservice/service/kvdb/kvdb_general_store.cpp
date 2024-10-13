@@ -556,8 +556,8 @@ int32_t KVDBGeneralStore::SetDistributedTables(
     return GeneralError::E_OK;
 }
 
-int32_t KVDBGeneralStore::SetTrackerTable(
-    const std::string &tableName, const std::set<std::string> &trackerColNames, const std::string &extendColName)
+int32_t KVDBGeneralStore::SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
+    const std::string &extendColName, bool isForceUpgrade)
 {
     return GeneralError::E_OK;
 }
