@@ -141,7 +141,7 @@ private:
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
         const StoreInfo &storeInfo, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
-    std::function<bool()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
+    std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry, const TraceIds &traceIds);
     void DoExceptionalCallback(
         const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo, const std::string &prepareTraceId);

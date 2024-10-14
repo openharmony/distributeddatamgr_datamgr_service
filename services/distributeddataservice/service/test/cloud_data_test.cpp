@@ -1511,8 +1511,8 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
     CloudData::SyncManager sync;
     std::map<std::string, std::string> traceIds;
     auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true, traceIds);
-    auto ret = task();
-    EXPECT_TRUE(ret);
+    task();
+    EXPECT_TRUE(sync.lastSyncInfos_.Empty());
 }
 
 /**
