@@ -264,35 +264,6 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, SyncInf
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
-Status KVDBServiceImpl::SyncExt(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo)
-{
-    if (syncInfo.devices.empty()) {
-        return Status::INVALID_ARGUMENT;
-    }
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    auto device = DMAdapter::GetInstance().ToUUID(syncInfo.devices[0]);
-    if (device.empty()) {
-        ZLOGE("invalid deviceId, appId:%{public}s storeId:%{public}s deviceId:%{public}s",
-            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(),
-            Anonymous::Change(syncInfo.devices[0]).c_str());
-        return Status::INVALID_ARGUMENT;
-    }
-    if (DeviceMatrix::GetInstance().IsSupportMatrix() &&
-        ((!DeviceMatrix::GetInstance().IsStatics(metaData) && !DeviceMatrix::GetInstance().IsDynamic(metaData)) ||
-        !IsRemoteChange(metaData, device))) {
-            ZLOGD("no change, do not need sync, appId:%{public}s storeId:%{public}s",
-                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
-            DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
-            DoComplete(metaData, syncInfo, RefCount(), std::move(dbResult));
-            return SUCCESS;
-    }
-    syncInfo.syncId = ++syncId_;
-    return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), 0,
-        std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SYNC),
-        std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
-}
-
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId, uint64_t delay)
 {
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
@@ -683,16 +654,16 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     StoreMetaDataLocal oldLocal;
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), oldLocal, true);
     // when user is 0, old store no "isPublic" attr, as well as new store's "isPublic" is true, do not intercept.
-    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) ||
-        old.area != meta.area || !options.persistent ||
+    if (old.storeType != meta.storeType || Constant::NotEqual(old.isEncrypt, meta.isEncrypt) || old.area != meta.area ||
+        !options.persistent || (meta.securityLevel != NO_LABEL && (old.securityLevel > meta.securityLevel)) ||
         (Constant::NotEqual(oldLocal.isPublic, options.isPublic) &&
             (old.user != DEFAULT_USER_ID || !options.isPublic))) {
         ZLOGE("meta appId:%{public}s storeId:%{public}s user:%{public}s type:%{public}d->%{public}d "
-              "encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d persistent:%{public}d isPublic:%{public}d->%{public}d",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.user.c_str(), old.storeType,
-            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent, oldLocal.isPublic,
-            options.isPublic);
+              "encrypt:%{public}d->%{public}d area:%{public}d->%{public}d persistent:%{public}d "
+              "securityLevel:%{public}d->%{public}d isPublic:%{public}d->%{public}d",
+              appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), old.user.c_str(), old.storeType,
+              meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area, options.persistent,
+              old.securityLevel, meta.securityLevel, oldLocal.isPublic, options.isPublic);
         return Status::STORE_META_CHANGED;
     }
 
