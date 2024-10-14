@@ -91,7 +91,7 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
             static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE),
             appIndex, bundleInfo, userId);
         // when there is no error, the former function returns 1 while the new function returns 0
-        ret = (!ret) ? true : false;
+        ret = !ret;
         for (auto &item : bundleInfo.hapModuleInfos) {
             for (auto &item2 : item.extensionInfos) {
                 bundleInfo.extensionInfos.push_back(item2);
@@ -134,13 +134,13 @@ BundleMgrProxy::~BundleMgrProxy()
     }
 }
 
-void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId)
+void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
-    // if include substr, erase BundleConfig
-    auto substr = bundleName + std::to_string(userId);
-    bundleCache_.EraseIf([&substr](const std::string &key, BundleConfig &value) {
-        return key.find(substr) != std::string::npos;
-    });
+    if (appIndex != 0) {
+        bundleCache_.Erase(bundleName + std::to_string(userId) + "appIndex" + std::to_string(appIndex));
+    } else {
+        bundleCache_.Erase(bundleName + std::to_string(userId));
+    }
     return;
 }
 

@@ -26,17 +26,18 @@ namespace OHOS::DataShare {
 constexpr const char USER_PARAM[] = "user";
 constexpr const char TOKEN_ID_PARAM[] = "srcToken";
 constexpr const char DST_BUNDLE_NAME_PARAM[] = "dstBundleName";
-constexpr const char APP_INDEX[] = "appIndex";  // for Application Doppelganger
+constexpr const char APP_INDEX[] = "appIndex";  // for Application Clone
 bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
 {
     if (context->callerTokenId == 0) {
         context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     }
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
+    GetAppIndexFromProxyURI(context->uri, context->appIndex);
     // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
         GetInfoFromProxyURI(
-            context->uri, context->currentUserId, context->callerTokenId, context->calledBundleName, context->appIndex);
+            context->uri, context->currentUserId, context->callerTokenId, context->calledBundleName);
         URIUtils::FormatUri(context->uri);
     }
     if (context->needAutoLoadCallerBundleName && context->callerBundleName.empty()) {
@@ -52,7 +53,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
 }
 
 bool LoadConfigCommonStrategy::GetInfoFromProxyURI(
-    const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName, int32_t &appIndex)
+    const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName)
 {
     auto queryParams = URIUtils::GetQueryParams(uri);
     if (!queryParams[USER_PARAM].empty()) {
@@ -72,6 +73,12 @@ bool LoadConfigCommonStrategy::GetInfoFromProxyURI(
     if (!queryParams[DST_BUNDLE_NAME_PARAM].empty()) {
         calledBundleName = queryParams[DST_BUNDLE_NAME_PARAM];
     }
+    return true;
+}
+
+bool LoadConfigCommonStrategy::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex)
+{
+    auto queryParams = URIUtils::GetQueryParams(uri);
     if (!queryParams[APP_INDEX].empty()) {
         auto [success, data] = URIUtils::Strtoul(queryParams[APP_INDEX]);
         if (!success) {

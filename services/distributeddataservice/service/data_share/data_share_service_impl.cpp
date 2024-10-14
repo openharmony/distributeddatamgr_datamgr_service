@@ -671,7 +671,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string 
     PublishedData::ClearAging();
     TemplateData::Delete(bundleName, user);
     NativeRdb::RdbHelper::ClearCache();
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     uint32_t tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(user, bundleName, index);
     DBDelegate::EraseStoreCache(tokenId);
     return E_OK;
@@ -690,7 +690,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUpdate(const std::string &bu
     int32_t index)
 {
     ZLOGI("%{public}s updated", bundleName.c_str());
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
@@ -715,7 +715,7 @@ int32_t DataShareServiceImpl::OnAppUninstall(const std::string &bundleName, int3
 {
     ZLOGI("AppUninstall user=%{public}d, index=%{public}d, bundleName=%{public}s",
         user, index, bundleName.c_str());
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     return E_OK;
 }
 
@@ -723,7 +723,7 @@ int32_t DataShareServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t
 {
     ZLOGI("AppUpdate user=%{public}d, index=%{public}d, bundleName=%{public}s",
         user, index, bundleName.c_str());
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     return E_OK;
 }
 
