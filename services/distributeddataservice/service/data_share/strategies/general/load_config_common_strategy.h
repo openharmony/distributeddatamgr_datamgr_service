@@ -23,6 +23,7 @@ public:
     bool operator()(std::shared_ptr<Context> context) override;
     static bool GetInfoFromProxyURI(
         const std::string &uri, int32_t &user, uint32_t &callerTokenId, std::string &calledBundleName);
+    static bool GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex);
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_LOAD_CONFIG_COMMON_STRAGETY_H
