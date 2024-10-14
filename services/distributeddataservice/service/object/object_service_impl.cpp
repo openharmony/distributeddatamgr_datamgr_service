@@ -19,6 +19,7 @@
 
 #include <ipc_skeleton.h>
 
+#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
@@ -31,6 +32,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "object_asset_loader.h"
+#include "object_dms_handler.h"
 #include "snapshot/bind_event.h"
 #include "store/auto_cache.h"
 #include "utils/anonymous.h"
@@ -63,7 +65,8 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     sptr<IRemoteObject> callback)
 {
     ZLOGI("begin.");
-    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::IDLE);
+    ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
+        ObjectStore::SAVE_TO_STORE, ObjectStore::IDLE);
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
     if (status != OBJECT_SUCCESS) {
@@ -73,7 +76,8 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
-    RADAR_REPORT(ObjectStore::SAVE, ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_SUCCESS);
+    ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
+        ObjectStore::SAVE_TO_STORE, ObjectStore::RADAR_SUCCESS);
     return status;
 }
 
@@ -106,6 +110,19 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
             bundleName.c_str(), sessionId.c_str(), asset.name.c_str());
     }
     return status;
+}
+
+int32_t ObjectServiceImpl::IsContinue(bool &result)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    Security::AccessToken::HapTokenInfo tokenInfo;
+    auto status = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (status != 0) {
+        ZLOGE("Get hap token info failed, tokenId: %{public}u, status: %{public}d", tokenId, status);
+        return status;
+    }
+    result = ObjectDmsHandler::GetInstance().IsContinue(tokenInfo.bundleName);
+    return OBJECT_SUCCESS;
 }
 
 int32_t ObjectServiceImpl::OnInitialize()
@@ -155,6 +172,7 @@ int32_t ObjectServiceImpl::OnInitialize()
         saveMeta.appId.c_str(), saveMeta.GetStoreAlias().c_str());
     RegisterObjectServiceInfo();
     RegisterHandler();
+    ObjectDmsHandler::GetInstance().RegisterDmsEvent();
     return OBJECT_SUCCESS;
 }
 

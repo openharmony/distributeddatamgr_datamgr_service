@@ -34,7 +34,7 @@
 namespace OHOS {
 namespace DistributedObject {
 using SyncCallBack = std::function<void(const std::map<std::string, int32_t> &results)>;
-
+using ObjectRecord = std::map<std::string, std::vector<uint8_t>>;
 class SequenceSyncManager {
 public:
     enum Result {
@@ -81,9 +81,8 @@ public:
         static ObjectStoreManager *manager = new ObjectStoreManager();
         return manager;
     }
-    int32_t Save(const std::string &appId, const std::string &sessionId,
-        const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId,
-        sptr<IRemoteObject> callback);
+    int32_t Save(const std::string &appId, const std::string &sessionId, const ObjectRecord &data,
+        const std::string &deviceId, sptr<IRemoteObject> callback);
     int32_t RevokeSave(
         const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback);
     int32_t Retrieve(const std::string &bundleName, const std::string &sessionId,
@@ -96,7 +95,7 @@ public:
                                 sptr<IRemoteObject> callback);
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
-    void NotifyChange(std::map<std::string, std::vector<uint8_t>> &changedData);
+    void NotifyChange(ObjectRecord &changedData);
     void NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
         const std::string& srcNetworkId = "");
     void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");
@@ -153,11 +152,10 @@ private:
     void Close();
     int32_t SetSyncStatus(bool status);
     int32_t SaveToStore(const std::string &appId, const std::string &sessionId, const std::string &toDeviceId,
-                        const std::map<std::string, std::vector<uint8_t>> &data);
+        const ObjectRecord &data);
     int32_t SyncOnStore(const std::string &prefix, const std::vector<std::string> &deviceList, SyncCallBack &callback);
     int32_t RevokeSaveToStore(const std::string &prefix);
-    int32_t RetrieveFromStore(
-        const std::string &appId, const std::string &sessionId, std::map<std::string, std::vector<uint8_t>> &results);
+    int32_t RetrieveFromStore(const std::string &appId, const std::string &sessionId, ObjectRecord &results);
     void SyncCompleted(const std::map<std::string, DistributedDB::DBStatus> &results, uint64_t sequenceId);
     std::vector<std::string> SplitEntryKey(const std::string &key);
     void ProcessOldEntry(const std::string &appId);
@@ -165,27 +163,25 @@ private:
         const std::string &sessionId, const std::string &deviceId);
     void SaveUserToMeta();
     std::string GetCurrentUser();
-    void DoNotify(uint32_t tokenId, const CallbackInfo& value,
-        const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data, bool allReady);
+    void DoNotify(uint32_t tokenId, const CallbackInfo& value, const std::map<std::string, ObjectRecord>& data,
+        bool allReady);
     void DoNotifyAssetsReady(uint32_t tokenId, const CallbackInfo& value, const std::string& objectKey, bool allReady);
     void DoNotifyWaitAssetTimeout(const std::string &objectKey);
-    std::map<std::string, std::map<std::string, Assets>> GetAssetsFromStore(
-        const std::map<std::string, std::vector<uint8_t>>& changedData);
+    std::map<std::string, std::map<std::string, Assets>> GetAssetsFromStore(const ObjectRecord& changedData);
     static bool IsAssetKey(const std::string& key);
-    static bool IsAssetComplete(const std::map<std::string, std::vector<uint8_t>>& result,
-        const std::string& assetPrefix);
-    Assets GetAssetsFromDBRecords(const std::map<std::string, std::vector<uint8_t>>& result);
+    static bool IsAssetComplete(const ObjectRecord& result, const std::string& assetPrefix);
+    Assets GetAssetsFromDBRecords(const ObjectRecord& result);
     bool RegisterAssetsLister();
     void ComputeStatus(const std::string& objectKey, const SaveInfo& saveInfo,
-        const std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data);
-    void NotifyDataChanged(std::map<std::string, std::map<std::string, std::vector<uint8_t>>>& data,
-        const SaveInfo& saveInfo);
-    int32_t PushAssets(int32_t userId, const std::string &appId, const std::string &sessionId,
-        const std::map<std::string, std::vector<uint8_t>> &data, const std::string &deviceId);
-    int32_t WaitAssets(const std::string& objectKey);
-    std::map<std::string, std::map<std::string, std::vector<uint8_t>>> GetObjectData(
-        const std::map<std::string, std::vector<uint8_t>>& changedData, SaveInfo& saveInfo, bool& hasAsset);
-
+        const std::map<std::string, ObjectRecord>& data);
+    void NotifyDataChanged(const std::map<std::string, ObjectRecord>& data, const SaveInfo& saveInfo);
+    int32_t PushAssets(const std::string &srcBundleName, const std::string &dstBundleName, const std::string &sessionId,
+        const ObjectRecord &data, const std::string &deviceId);
+    int32_t WaitAssets(const std::string& objectKey, const SaveInfo& saveInfo,
+        const std::map<std::string, ObjectRecord>& data);
+    void PullAssets(const std::map<std::string, ObjectRecord>& data, const SaveInfo& saveInfo);
+    std::map<std::string, ObjectRecord> GetObjectData(const ObjectRecord& changedData, SaveInfo& saveInfo,
+        bool& hasAsset);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;

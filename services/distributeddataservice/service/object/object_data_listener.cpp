@@ -61,8 +61,8 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
     if (assetObj == nullptr) {
         ZLOGE("OnFinished error! status:%{public}d, srcNetworkId:%{public}s", result,
             DistributedData::Anonymous::Change(srcNetworkId).c_str());
-        RADAR_REPORT(ObjectStore::DATA_RESTORE, ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED,
-            ObjectStore::ERROR_CODE, result);
+        ObjectStore::RadarReporter::ReportStageError(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
+            ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED, result);
         return result;
     }
     auto objectKey = assetObj->dstBundleName_+assetObj->sessionId_;
