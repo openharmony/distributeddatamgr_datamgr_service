@@ -86,7 +86,8 @@
                 "app_file_service",
                 "file_api",
                 "openssl",
-                "json"
+                "json",
+                "dmsfwk"
             ],
             "third_party": [
                 "libuv",

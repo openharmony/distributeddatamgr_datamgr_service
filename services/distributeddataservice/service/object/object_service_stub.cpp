@@ -181,6 +181,17 @@ int32_t ObjectServiceStub::OnDeleteSnapshot(MessageParcel &data, MessageParcel &
     return 0;
 }
 
+int32_t ObjectServiceStub::OnIsContinue(MessageParcel &data, MessageParcel &reply)
+{
+    bool isContinue = false;
+    int32_t status = IsContinue(isContinue);
+    if (!ITypesUtil::Marshal(reply, isContinue)) {
+        ZLOGE("Marshal isContinue failed, isContinue: %{public}d, status: %{public}d", isContinue, status);
+        return -1;
+    }
+    return 0;
+}
+
 bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
 {
     auto localDescriptor = IObjectService::GetDescriptor();

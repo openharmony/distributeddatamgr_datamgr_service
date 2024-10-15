@@ -51,6 +51,7 @@ public:
         const std::string &deviceId, const ObjectStore::Asset &assetValue) override;
     int32_t BindAssetStore(const std::string &bundleName, const std::string &sessionId,
         ObjectStore::Asset &asset, ObjectStore::AssetBindInfo &bindInfo) override;
+    int32_t IsContinue(bool &result) override;
 private:
     using StaticActs = DistributedData::StaticActs;
     class ObjectStatic : public StaticActs {
