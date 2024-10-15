@@ -284,28 +284,33 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     return E_OK;
 }
 
-std::function<bool()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud,
+std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud,
     SyncInfo &info, bool retry, const TraceIds &traceIds)
 {
     return [this, &cloud, &info, &schemas, retry, &traceIds]() {
         bool isPostEvent = false;
         for (auto &schema : schemas) {
+            auto it = traceIds.find(schema.bundleName);
             if (!cloud.IsOn(schema.bundleName)) {
+                UpdateFinishSyncInfo({ cloud.id, schema.bundleName, "" }, info.syncId_, E_ERROR);
+                Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second, SyncStage::END,
+                         E_ERROR });
                 continue;
             }
             for (const auto &database : schema.databases) {
                 if (!info.Contains(database.name)) {
+                    UpdateFinishSyncInfo({ cloud.id, schema.bundleName, "" }, info.syncId_, E_ERROR);
+                    Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second, SyncStage::END,
+                             E_ERROR });
                     continue;
                 }
                 StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
                     info.user_, "", info.syncId_ };
-                auto it = traceIds.find(schema.bundleName);
                 auto status = syncStrategy_->CheckSyncAction(storeInfo);
                 if (status != SUCCESS) {
                     ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
                         storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
-                    QueryKey queryKey{ cloud.id, schema.bundleName, "" };
-                    UpdateFinishSyncInfo(queryKey, info.syncId_, status);
+                    UpdateFinishSyncInfo({ cloud.id, schema.bundleName, "" }, info.syncId_, status);
                     Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second, SyncStage::END,
                         status });
                     info.SetError(status);
@@ -324,7 +329,6 @@ std::function<bool()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
             ZLOGE("schema is invalid, user: %{public}d", cloud.user);
             info.SetError(E_ERROR);
         }
-        return isPostEvent;
     };
 }
 
@@ -371,10 +375,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             info.user_ = 0;
         }
         auto task = GetPostEventTask(schemas, cloud, info, retry, traceIds);
-        if (task == nullptr || !task()) {
-            BatchUpdateFinishState(cloudSyncInfos, E_ERROR);
-            BatchReport(cloud.user, traceIds, SyncStage::END, E_ERROR);
-        }
+        task();
     };
 }
 
