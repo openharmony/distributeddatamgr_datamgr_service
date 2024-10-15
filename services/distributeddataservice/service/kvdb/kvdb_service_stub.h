@@ -50,7 +50,6 @@ private:
     int32_t OnSubscribe(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnUnsubscribe(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetBackupPassword(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
-    int32_t OnSyncExt(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnNotifyDataChange(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnPutSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
     int32_t OnGetSwitch(const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply);
