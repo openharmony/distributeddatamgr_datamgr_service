@@ -21,7 +21,7 @@ namespace OHOS::DistributedData {
 struct API_EXPORT StoreDebugInfo final : public Serializable {
     struct FileInfo final : public Serializable {
         uint64_t inode = 0;
-        uint64_t size = 0;
+        int64_t size = 0;
         uint32_t dev = 0;
         uint32_t mode = 0;
         uint32_t uid = 0;
