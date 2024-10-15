@@ -591,10 +591,21 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password)
+Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password,
+    int32_t passwordType)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    return (BackupManager::GetInstance().GetPassWord(metaData, password)) ? SUCCESS : ERROR;
+    if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
+        return BackupManager::GetInstance().GetPassWord(metaData, password) ? SUCCESS : ERROR;
+    }
+    if (passwordType == KVDBService::PasswordType::SECRET_KEY) {
+        SecretKeyMetaData secretKey;
+        MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true);
+        return CryptoManager::GetInstance().Decrypt(secretKey.sKey, password) ? SUCCESS : ERROR;
+    }
+    ZLOGE("passwordType is invalid, appId:%{public}s, storeId:%{public}s, passwordType:%{public}d",
+        appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), passwordType);
+    return ERROR;
 }
 
 Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig)

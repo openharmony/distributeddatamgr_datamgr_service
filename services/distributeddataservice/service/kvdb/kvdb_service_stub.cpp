@@ -421,8 +421,14 @@ int32_t KVDBServiceStub::OnUnsubscribe(
 int32_t KVDBServiceStub::OnGetBackupPassword(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
+    int32_t passwordType;
+    if (!ITypesUtil::Unmarshal(data, passwordType)) {
+        ZLOGE("Unmarshal type failed, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     std::vector<uint8_t> password;
-    int32_t status = GetBackupPassword(appId, storeId, password);
+    int32_t status = GetBackupPassword(appId, storeId, password, passwordType);
     if (!ITypesUtil::Marshal(reply, status, password)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
