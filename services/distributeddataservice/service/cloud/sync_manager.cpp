@@ -154,7 +154,7 @@ bool SyncManager::SyncInfo::Contains(const std::string &storeName)
 
 std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
 {
-    return [](const Event &event) {
+    return [this](const Event &event) {
         auto &evt = static_cast<const CloudLockEvent &>(event);
         auto storeInfo = evt.GetStoreInfo();
         auto callback = evt.GetCallback();
@@ -163,6 +163,14 @@ std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
                 storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
             return;
         }
+        CloudInfo cloud;
+        cloud.user = storeInfo.user;
+        SyncInfo info(storeInfo.user, storeInfo.bundleName);
+        auto code = IsValid(info, cloud);
+        if (code != E_OK) {
+            return;
+        }
+
         StoreMetaData meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
