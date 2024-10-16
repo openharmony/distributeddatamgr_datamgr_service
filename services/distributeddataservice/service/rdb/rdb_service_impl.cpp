@@ -25,7 +25,6 @@
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
 #include "cloud/schema_meta.h"
-#include "commonevent/data_change_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
 #include "device_matrix.h"
@@ -1087,15 +1086,32 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
         eventInfo.tableProperties.insert_or_assign(key, std::move(tableChangeProperties));
     }
 
+    if (IsPostImmediately(IPCSkeleton::GetCallingPid(), rdbNotifyConfig, storeInfo, eventInfo, param.storeName_)) {
+        auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+    }
+
+    return RDB_OK;
+}
+
+bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig,
+    StoreInfo &storeInfo, DataChangeEvent::EventInfo &eventInfo, const std::string &storeName)
+{
     bool postImmediately = false;
-    heartbeatTaskIds_.Compute(param.storeName_, [this, &postImmediately, &rdbNotifyConfig, &storeInfo, &eventInfo]
-        (const std::string &key, ExecutorPool::TaskId &value) {
+    heartbeatTaskIds_.Compute(callingPid, [this, &postImmediately, &rdbNotifyConfig, &storeInfo, &eventInfo,
+        &storeName](const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
+        auto iter = tasks.find(storeName);
+        ExecutorPool::TaskId taskId;
+        if (iter != tasks.end()) {
+            taskId = iter->second;
+        }
         if (rdbNotifyConfig.delay_ == 0) {
-            if (value != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
-                executors_->Remove(value);
+            if (taskId != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
+                executors_->Remove(taskId);
             }
             postImmediately = true;
-            return false;
+            tasks.erase(storeName);
+            return !tasks.empty();
         }
 
         if (executors_ != nullptr) {
@@ -1103,21 +1119,16 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
                 auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfoInner), std::move(eventInfoInner));
                 EventCenter::GetInstance().PostEvent(std::move(evt));
             };
-            if (value == ExecutorPool::INVALID_TASK_ID) {
-                value = executors_->Schedule(std::chrono::milliseconds(rdbNotifyConfig.delay_), task);
+            if (taskId == ExecutorPool::INVALID_TASK_ID) {
+                taskId = executors_->Schedule(std::chrono::milliseconds(rdbNotifyConfig.delay_), task);
             } else {
-                value = executors_->Reset(value, std::chrono::milliseconds(rdbNotifyConfig.delay_));
+                taskId = executors_->Reset(taskId, std::chrono::milliseconds(rdbNotifyConfig.delay_));
             }
         }
+        tasks.insert_or_assign(storeName, taskId);
         return true;
     });
-
-    if (postImmediately) {
-        auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
-        EventCenter::GetInstance().PostEvent(std::move(evt));
-    }
-
-    return RDB_OK;
+    return postImmediately;
 }
 
 int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearchable)
