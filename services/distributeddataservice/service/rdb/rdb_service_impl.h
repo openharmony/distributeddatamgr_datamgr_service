@@ -21,6 +21,7 @@
 #include <string>
 
 #include "cloud/cloud_event.h"
+#include "commonevent/data_change_event.h"
 #include "commonevent/set_searchable_event.h"
 #include "concurrent_map.h"
 #include "feature/static_acts.h"
@@ -203,11 +204,14 @@ private:
 
     int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
+    
+    bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
+        DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
-    ConcurrentMap<std::string, ExecutorPool::TaskId> heartbeatTaskIds_;
+    ConcurrentMap<int32_t, std::map<std::string, ExecutorPool::TaskId>> heartbeatTaskIds_;
 };
 } // namespace OHOS::DistributedRdb
 #endif
