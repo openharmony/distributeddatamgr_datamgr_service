@@ -25,8 +25,8 @@ public:
     using ReportParam = DistributedData::ReportParam;
     API_EXPORT static CloudReport *GetInstance();
     API_EXPORT static bool RegisterCloudReportInstance(CloudReport *instance);
-    virtual std::string GetPrepareTraceId(int32_t userId, const std::string &bundleName);
-    virtual std::string GetRequestTraceId(int32_t userId, const std::string &bundleName);
+    virtual std::string GetPrepareTraceId(int32_t userId);
+    virtual std::string GetRequestTraceId(int32_t userId);
     virtual bool Report(const ReportParam &reportParam);
 
 private:

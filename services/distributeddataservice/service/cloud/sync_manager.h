@@ -129,6 +129,7 @@ private:
     static std::vector<std::tuple<QueryKey, uint64_t>> GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud);
     static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
     static bool NeedGetCloudInfo(CloudInfo &cloud);
+    static GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
@@ -136,7 +137,6 @@ private:
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
-    GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
     void UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,

@@ -154,7 +154,7 @@ bool SyncManager::SyncInfo::Contains(const std::string &storeName)
 
 std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
 {
-    return [this](const Event &event) {
+    return [](const Event &event) {
         auto &evt = static_cast<const CloudLockEvent &>(event);
         auto storeInfo = evt.GetStoreInfo();
         auto callback = evt.GetCallback();
@@ -623,10 +623,10 @@ SyncManager::TraceIds SyncManager::GetPrepareTraceId(const SyncInfo &info, const
     }
     if (info.bundleName_.empty()) {
         for (const auto &it : cloud.apps) {
-            traceIds.emplace(it.first, cloudReport->GetPrepareTraceId(info.user_, it.first));
+            traceIds.emplace(it.first, cloudReport->GetPrepareTraceId(info.user_));
         }
     } else {
-        traceIds.emplace(info.bundleName_, cloudReport->GetPrepareTraceId(info.user_, info.bundleName_));
+        traceIds.emplace(info.bundleName_, cloudReport->GetPrepareTraceId(info.user_));
     }
     return traceIds;
 }
