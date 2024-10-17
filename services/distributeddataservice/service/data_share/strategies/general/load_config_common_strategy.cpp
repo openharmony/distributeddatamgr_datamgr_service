@@ -33,7 +33,9 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
         context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     }
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
-    GetAppIndexFromProxyURI(context->uri, context->appIndex);
+    if (!GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
+        return false;
+    }
     // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
         GetInfoFromProxyURI(
@@ -82,6 +84,8 @@ bool LoadConfigCommonStrategy::GetAppIndexFromProxyURI(const std::string &uri, i
     if (!queryParams[APP_INDEX].empty()) {
         auto [success, data] = URIUtils::Strtoul(queryParams[APP_INDEX]);
         if (!success) {
+            appIndex = -1;
+            ZLOGE("appIndex is invalid! appIndex: %{public}s", queryParams[APP_INDEX].c_str());
             return false;
         }
         appIndex = data;

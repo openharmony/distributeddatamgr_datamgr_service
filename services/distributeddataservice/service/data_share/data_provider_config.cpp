@@ -203,6 +203,9 @@ void DataProviderConfig::GetMetaDataFromUri()
 
 std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProviderInfo()
 {
+    if (providerInfo_.appIndex == -1) {
+        return std::make_pair(E_APPINDEX_INVALID, providerInfo_);
+    }
     auto ret = GetFromProxyData();
     if (ret == E_OK) {
         GetMetaDataFromUri();
