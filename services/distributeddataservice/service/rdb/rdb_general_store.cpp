@@ -150,7 +150,6 @@ RdbGeneralStore::~RdbGeneralStore()
     rdbCloud_ = nullptr;
     rdbLoader_ = nullptr;
     RemoveTasks();
-    ZLOGW("destructor");
     tasks_ = nullptr;
     executor_ = nullptr;
 }
@@ -518,8 +517,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
     } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
         if (executor_ != nullptr && tasks_ != nullptr) {
-            auto id = executor_->Schedule(GetFinishTask(syncId), std::chrono::minutes(INTERVAL),
-                std::chrono::minutes(INTERVAL));
+            auto id = executor_->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
             tasks_->Insert(syncId, { id, callback });
         }
         dbStatus =
@@ -1087,28 +1085,27 @@ bool RdbGeneralStore::IsFinished(SyncId syncId) const
 
 Executor::Task RdbGeneralStore::GetFinishTask(SyncId syncId)
 {
-    if (AddRef() == 0) {
-        return []() {};
-    }
-    auto ref = std::shared_ptr<const char>("RdbCount", [this](const char*) {
-        Release();
-    });
-    return [this, refCount = std::move(ref), syncId]() {
-        ZLOGW("syncId:%{public}" PRIu64 " miss finished.", syncId);
+    return [this, executor = executor_, task = tasks_, syncId]() {
+        auto [exist, finishTask] = task->Find(syncId);
+        if (!exist || finishTask.cb == nullptr) {
+            task->Erase(syncId);
+            return;
+        }
         if (!IsFinished(syncId)) {
+            task->ComputeIfPresent(syncId, [executor = executor_, this](SyncId syncId, FinishTask &task) {
+                task.taskId = executor->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
+                return true;
+            });
             return;
         }
         DBProcessCB cb;
-        ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
-            Anonymous::Change(storeInfo_.storeName).c_str(), syncId);
-        tasks_->ComputeIfPresent(syncId, [&cb, executor = executor_](SyncId syncId, const FinishTask &task) {
+        task->ComputeIfPresent(syncId, [&cb, executor = executor_](SyncId syncId, const FinishTask &task) {
             cb = task.cb;
-            if (executor != nullptr) {
-                executor->Remove(task.taskId);
-            }
             return false;
         });
         if (cb != nullptr) {
+            ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
+                  Anonymous::Change(storeInfo_.storeName).c_str(), syncId);
             std::map<std::string, SyncProcess> result;
             result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
             cb(result);
@@ -1131,9 +1128,11 @@ void RdbGeneralStore::RemoveTasks()
     std::list<DBProcessCB> cbs;
     std::list<TaskId> taskIds;
     tasks_->EraseIf([&cbs, &taskIds, store = storeInfo_.storeName](SyncId syncId, const FinishTask &task) {
+        if (task.cb != nullptr) {
+            ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ", Anonymous::Change(store).c_str(),
+                  syncId);
+        }
         cbs.push_back(std::move(task.cb));
-        ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
-            Anonymous::Change(store).c_str(), syncId);
         taskIds.push_back(task.taskId);
         return true;
     });
@@ -1158,13 +1157,13 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
             return;
         }
         DBProcessCB cb;
-        task->ComputeIfPresent(syncId, [&cb, &progress, executor](SyncId syncId, const FinishTask &finishTask) {
+        task->ComputeIfPresent(syncId, [&cb, &progress, executor](SyncId syncId, FinishTask &finishTask) {
             cb = finishTask.cb;
             bool isFinished = !progress.empty() && progress.begin()->second.process == DistributedDB::FINISHED;
-            if (isFinished && executor != nullptr) {
-                executor->Remove(finishTask.taskId);
+            if (isFinished) {
+                finishTask.cb = nullptr;
             }
-            return !isFinished;
+            return true;
         });
         if (cb != nullptr) {
             cb(progress);
