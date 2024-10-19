@@ -32,12 +32,12 @@ bool CloudReport::RegisterCloudReportInstance(CloudReport *instance)
     return true;
 }
 
-std::string CloudReport::GetPrepareTraceId(int32_t userId, const std::string &bundleName)
+std::string CloudReport::GetPrepareTraceId(int32_t userId)
 {
     return "";
 }
 
-std::string CloudReport::GetRequestTraceId(int32_t userId, const std::string &bundleName)
+std::string CloudReport::GetRequestTraceId(int32_t userId)
 {
     return "";
 }
