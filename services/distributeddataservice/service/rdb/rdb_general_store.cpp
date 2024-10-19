@@ -198,7 +198,7 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     dbConfig.maxUploadSize = config.maxSize;
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
     DBSchema schema = GetDBSchema(database);
-    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("database:%{public}s already closed!", Anonymous::Change(database.name).c_str());
         return GeneralError::E_ALREADY_CLOSED;
