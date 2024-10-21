@@ -418,12 +418,13 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync, TestSize.Level0)
     store->storeInfo_.user = 0;
     auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
     store->SetEqualIdentifier(bundleName, storeName);
-    auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0);
+    std::string prepareTraceId;
+    auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
 
     store->storeInfo_.user = 1;
     cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_CLOUD_FORCE_PUSH;
-    ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0);
+    ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
 }
 

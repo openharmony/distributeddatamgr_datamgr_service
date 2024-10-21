@@ -12,11 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "cloud/cloud_extra_data.h"
 #include "cloud/cloud_config_manager.h"
 
 namespace OHOS::DistributedData {
+bool Context::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(traceId)], traceId);
+    SetValue(node[GET_NAME(prepareTraceId)], prepareTraceId);
+    return true;
+}
+
+bool Context::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(traceId), traceId);
+    GetValue(node, GET_NAME(prepareTraceId), prepareTraceId);
+    return true;
+}
+
 bool ExtensionInfo::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(accountId)], accountId);
@@ -38,7 +51,15 @@ bool ExtensionInfo::Unmarshal(const Serializable::json &node)
         return false;
     }
     GetValue(node, GET_NAME(recordTypes), recordTypes);
-    return Unmarshall(recordTypes, tables);
+    if (!Unmarshall(recordTypes, tables)) {
+        return false;
+    }
+    std::string data;
+    GetValue(node, GET_NAME(context), data);
+    if (data.empty()) {
+        return true;
+    }
+    return context.Unmarshall(data);
 }
 
 bool ExtraData::Marshal(Serializable::json &node) const

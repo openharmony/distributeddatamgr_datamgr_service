@@ -117,6 +117,7 @@
                             "cloud/cloud_db.h",
                             "cloud/cloud_event.h",
                             "cloud/cloud_info.h",
+                            "cloud/cloud_report.h",
                             "cloud/cloud_server.h",
                             "cloud/schema_meta.h",
                             "cloud/subscription.h",
