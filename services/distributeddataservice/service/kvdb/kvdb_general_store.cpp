@@ -332,6 +332,11 @@ int32_t KVDBGeneralStore::MergeMigratedData(const std::string &tableName, VBucke
     return GeneralError::E_NOT_SUPPORT;
 }
 
+int32_t KVDBGeneralStore::CleanTrackerData(const std::string &tableName, int64_t cursor)
+{
+    return GeneralError::E_NOT_SUPPORT;
+}
+
 KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsync async)
 {
     if (!async) {
