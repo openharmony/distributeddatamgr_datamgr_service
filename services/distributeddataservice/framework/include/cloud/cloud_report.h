@@ -23,6 +23,7 @@ namespace OHOS::DistributedData {
 class API_EXPORT CloudReport {
 public:
     using ReportParam = DistributedData::ReportParam;
+    virtual ~CloudReport() = default;
     API_EXPORT static CloudReport *GetInstance();
     API_EXPORT static bool RegisterCloudReportInstance(CloudReport *instance);
     virtual std::string GetPrepareTraceId(int32_t userId);

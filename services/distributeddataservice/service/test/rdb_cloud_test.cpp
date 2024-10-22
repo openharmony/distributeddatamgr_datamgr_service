@@ -74,6 +74,8 @@ HWTEST_F(RdbCloudTest, RdbCloudTest002, TestSize.Level1)
     RdbCloud rdbCloud(cloudDB, &bindAssets);
     std::string tableName = "testTable";
     rdbCloud.Lock();
+    std::string traceId = "id";
+    rdbCloud.SetPrepareTraceId(traceId);
     auto result = rdbCloud.BatchInsert(tableName, std::move(g_DBVBucket), g_DBVBucket);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
     DBVBucket extends = {
