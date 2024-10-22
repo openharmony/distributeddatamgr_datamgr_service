@@ -209,6 +209,7 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
         }
         AutoCache::GetInstance().Enable(tokenId);
     }
+    heartbeatTaskIds_.Erase(pid);
     return E_OK;
 }
 
