@@ -129,6 +129,11 @@ int32_t GeneralStoreMock::MergeMigratedData(const std::string &tableName, VBucke
     return 0;
 }
 
+int32_t GeneralStoreMock::CleanTrackerData(const std::string &tableName, int64_t cursor)
+{
+    return 0;
+}
+
 std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::string &table, const std::string &sql,
     Values &&args)
 {

@@ -71,6 +71,7 @@ public:
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
+    int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
     void SetConfig(const StoreConfig &storeConfig) override;
