@@ -81,6 +81,7 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     ZLOGD("start");
     int32_t res = E_OK;
     UdmfBehaviourMsg msg;
+    std::string types;
     auto find = UD_INTENTION_MAP.find(option.intention);
     msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
     msg.operation = "insert";
@@ -94,7 +95,13 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     }
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
-    msg.dataType = unifiedData.GetTypes();
+
+    for (const auto &record : unifiedData.GetRecords()) {
+        for (const auto &type : record->GetUtdIds()) {
+            types.append("-").append(type);
+        }
+    }
+    msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
     return res;
@@ -158,6 +165,7 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     ZLOGD("start");
     int32_t res = E_OK;
     UdmfBehaviourMsg msg;
+    std::string types;
     auto find = UD_INTENTION_MAP.find(query.intention);
     msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
     msg.operation = "insert";
@@ -171,7 +179,12 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     }
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
-    msg.dataType = unifiedData.GetTypes();
+    for (const auto &record : unifiedData.GetRecords()) {
+        for (const auto &type : record->GetUtdIds()) {
+            types.append("-").append(type);
+        }
+    }
+    msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
     return res;
