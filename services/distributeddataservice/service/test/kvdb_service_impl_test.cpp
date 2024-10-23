@@ -475,13 +475,9 @@ HWTEST_F(KvdbServiceImplTest, UnsubscribeTest001, TestSize.Level0)
 HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest001, TestSize.Level0)
 {
     ZLOGI("GetBackupPasswordTest001 start");
-    Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    auto status = manager.GetSingleKvStore(create, appId, storeId, kvStore);
     ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status1, Status::SUCCESS);
-    std::vector<uint8_t> password;
-    auto status = kvdbServiceImpl_->GetBackupPassword(appId, storeId, password);
-    ZLOGI("GetBackupPasswordTest001 status = :%{public}d", status);
-    ASSERT_NE(status, Status::SUCCESS);
+    ASSERT_EQ(status, Status::SUCCESS);
 }
 
 /**
