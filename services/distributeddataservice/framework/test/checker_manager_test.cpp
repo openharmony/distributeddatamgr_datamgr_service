@@ -13,21 +13,13 @@
 * limitations under the License.
 */
 
-#include <iservice_registry.h>
 #include <gtest/gtest.h>
-#include <system_ability_definition.h>
 #include "checker/checker_manager.h"
 #include "accesstoken_kit.h"
-#include "bundlemgr/bundle_mgr_proxy.h"
 #include "bootstrap.h"
 #include "hap_token_info.h"
-#include "ipc_skeleton.h"
 #include "nativetoken_kit.h"
-#include "ohos_account_kits.h"
-#include "os_account_manager.h"
-#include "tokenid_kit.h"
 #include "utils/crypto.h"
-
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
