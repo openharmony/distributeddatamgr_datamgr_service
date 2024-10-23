@@ -15,11 +15,18 @@
 #define LOG_TAG "BundleChecker"
 
 #include "bundle_checker.h"
+#include <iservice_registry.h>
 #include <memory>
+#include <system_ability_definition.h>
 #include "accesstoken_kit.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "hap_token_info.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
+#include "ohos_account_kits.h"
+#include "os_account_manager.h"
 #include "utils/crypto.h"
+
 namespace OHOS {
 namespace DistributedData {
 using namespace Security::AccessToken;
@@ -56,27 +63,54 @@ bool BundleChecker::SetSwitchesInfo(const CheckerManager::Switches &switches)
     return true;
 }
 
+std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
+{
+    auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgrProxy == nullptr) {
+        ZLOGE("Failed to get system ability mgr.");
+        return "";
+    }
+    auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (bundleMgrProxy == nullptr) {
+        ZLOGE("Failed to GetSystemAbility.");
+        return "";
+    }
+    auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
+    if (bundleManager == nullptr) {
+        ZLOGE("Failed to get bundle manager");
+        return "";
+    }
+    int userId;
+    auto result = AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userId);
+    if (result != 0) {
+        ZLOGE("GetForegroundOsAccountLocalId failed result:%{public}d, bundleName:%{public}s",
+            result, info.bundleName.c_str());
+        return "";
+    }
+    AppExecFwk::BundleInfo bundleInfo;
+    result = bundleManager->GetBundleInfoV9(info.bundleName,
+        static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_SIGNATURE_INFO),
+        bundleInfo, userId);
+    if (result != 0) {
+        ZLOGE("GetBundleInfoV9 failed result:%{public}d, bundleName:%{public}s, uid:%{public}d",
+            result, info.bundleName.c_str(), userId);
+        return "";
+    }
+    return bundleInfo.appId;
+}
+
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
-    if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
-        return "";
-    }
-    HapTokenInfo tokenInfo;
-    auto result = AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
-    if (result != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", info.tokenId, result);
-        return "";
-    }
-    if (!info.bundleName.empty() && tokenInfo.bundleName != info.bundleName) {
-        ZLOGE("bundlename:%{public}s <-> %{public}s", info.bundleName.c_str(), tokenInfo.bundleName.c_str());
+    auto appId = GetBundleAppId(info);
+    if (appId.empty()) {
         return "";
     }
     auto it = trusts_.find(info.bundleName);
-    if (it != trusts_.end() && (it->second == tokenInfo.appID)) {
+    if (it != trusts_.end() && (it->second == appId)) {
         return info.bundleName;
     }
-    ZLOGD("bundleName:%{public}s, appId:%{public}s", info.bundleName.c_str(), tokenInfo.appID.c_str());
-    return Crypto::Sha256(tokenInfo.appID);
+    ZLOGD("bundleName:%{public}s, appId:%{public}s", info.bundleName.c_str(), appId.c_str());
+    return Crypto::Sha256(appId);
 }
 
 bool BundleChecker::IsValid(const CheckerManager::StoreInfo &info)
@@ -95,21 +129,12 @@ bool BundleChecker::IsValid(const CheckerManager::StoreInfo &info)
 
 bool BundleChecker::IsDistrust(const CheckerManager::StoreInfo &info)
 {
-    if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
-        return false;
-    }
-    HapTokenInfo tokenInfo;
-    auto result = AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
-    if (result != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", info.tokenId, result);
-        return false;
-    }
-    if (!info.bundleName.empty() && tokenInfo.bundleName != info.bundleName) {
-        ZLOGE("bundlename:%{public}s <-> %{public}s", info.bundleName.c_str(), tokenInfo.bundleName.c_str());
+    auto appId = GetBundleAppId(info);
+    if (appId.empty()) {
         return false;
     }
     auto it = distrusts_.find(info.bundleName);
-    if (it != distrusts_.end() && (it->second == tokenInfo.appID)) {
+    if (it != distrusts_.end() && (it->second == appId)) {
         return true;
     }
     return false;

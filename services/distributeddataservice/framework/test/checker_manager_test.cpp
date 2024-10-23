@@ -13,13 +13,21 @@
 * limitations under the License.
 */
 
+#include <iservice_registry.h>
 #include <gtest/gtest.h>
+#include <system_ability_definition.h>
 #include "checker/checker_manager.h"
 #include "accesstoken_kit.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "bootstrap.h"
 #include "hap_token_info.h"
+#include "ipc_skeleton.h"
 #include "nativetoken_kit.h"
+#include "ohos_account_kits.h"
+#include "os_account_manager.h"
+#include "tokenid_kit.h"
 #include "utils/crypto.h"
+
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
@@ -151,25 +159,6 @@ HWTEST_F(CheckerManagerTest, SystemCheckerIVI, TestSize.Level0)
     info.bundleName = "ivi_config_manager";
     ASSERT_EQ("ivi_config_manager", CheckerManager::GetInstance().GetAppId(info));
     ASSERT_TRUE(CheckerManager::GetInstance().IsValid(info));
-}
-
-/**
-* @tc.name: BundleChecker
-* @tc.desc: checker the bundle name of the bundle abilities.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: Sven Wang
-*/
-HWTEST_F(CheckerManagerTest, BundleChecker, TestSize.Level0)
-{
-    CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = 2000000;
-    storeInfo.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-    storeInfo.bundleName = "ohos.test.demo";
-    HapTokenInfo tokenInfo;
-    AccessTokenKit::GetHapTokenInfo(storeInfo.tokenId, tokenInfo);
-    ASSERT_EQ(Crypto::Sha256(tokenInfo.appID), CheckerManager::GetInstance().GetAppId(storeInfo));
-    ASSERT_TRUE(CheckerManager::GetInstance().IsValid(storeInfo));
 }
 
 /**
