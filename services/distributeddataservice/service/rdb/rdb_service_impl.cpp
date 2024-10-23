@@ -1102,7 +1102,7 @@ bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotify
     heartbeatTaskIds_.Compute(callingPid, [this, &postImmediately, &rdbNotifyConfig, &storeInfo, &eventInfo,
         &storeName](const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
         auto iter = tasks.find(storeName);
-        ExecutorPool::TaskId taskId;
+        ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
         if (iter != tasks.end()) {
             taskId = iter->second;
         }
