@@ -47,7 +47,9 @@ void SysEventSubscriber::NotifyDataShareReady()
     AAFwk::Want want;
     want.SetAction("usual.event.DATA_SHARE_READY");
     EventFwk::CommonEventData CommonEventData { want };
-    if (!EventFwk::CommonEventManager::PublishCommonEvent(CommonEventData)) {
+    EventFwk::CommonEventPublishInfo publishInfo;
+    publishInfo.SetSticky(true);
+    if (!EventFwk::CommonEventManager::PublishCommonEvent(CommonEventData, publishInfo)) {
         ZLOGE("Notify dataShare ready failed.");
         return;
     }

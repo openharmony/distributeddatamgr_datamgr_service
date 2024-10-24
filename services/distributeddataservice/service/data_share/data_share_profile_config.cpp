@@ -59,7 +59,7 @@ bool LaunchInfo::Marshal(json &node) const
     SetValue(node[GET_NAME(tableNames)], tableNames);
     return true;
 }
-
+ 
 bool LaunchInfo::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(storeId), storeId);

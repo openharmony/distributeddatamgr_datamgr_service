@@ -35,7 +35,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
             auto it = stores.find(metaData.storeId);
             if (it != stores.end()) {
                 store = it->second->store_;
-                it->second->time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+                it->second->time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
                 return !stores.empty();
             }
             store = std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backup);
@@ -90,14 +90,14 @@ void DBDelegate::StartTimer()
                 taskId_ = Executor::INVALID_TASK_ID;
             });
         },
-        std::chrono::minutes(INTERVAL), std::chrono::minutes(INTERVAL));
+        std::chrono::seconds(INTERVAL), std::chrono::seconds(INTERVAL));
     ZLOGD("start timer, taskId: %{public}" PRIu64, taskId_);
 }
 
 DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store)
 {
     store_ = std::move(store);
-    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+    time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
 }
 
 void DBDelegate::EraseStoreCache(const int32_t tokenId)
