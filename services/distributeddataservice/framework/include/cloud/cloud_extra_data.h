@@ -20,6 +20,14 @@
 #include "serializable/serializable.h"
 
 namespace OHOS::DistributedData {
+class API_EXPORT Context final : public Serializable {
+public:
+    std::string traceId;
+    std::string prepareTraceId;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
 class API_EXPORT ExtensionInfo final : public Serializable {
 public:
     std::string accountId;
@@ -29,6 +37,7 @@ public:
     std::vector<std::string> scopes;
     std::string recordTypes;
     std::vector<std::string> tables;
+    Context context;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
