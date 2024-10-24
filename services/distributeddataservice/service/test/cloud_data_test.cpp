@@ -22,6 +22,7 @@
 #include "checker_mock.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
+#include "cloud/cloud_report.h"
 #include "cloud/cloud_server.h"
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
@@ -46,6 +47,7 @@
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "store/auto_cache.h"
+#include "store/general_value.h"
 #include "store/store_info.h"
 #include "token_setproc.h"
 
@@ -1981,6 +1983,24 @@ HWTEST_F(CloudDataTest, DoSubscribe, TestSize.Level0)
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     status = cloudServiceImpl_->DoSubscribe(user);
     EXPECT_FALSE(status);
+}
+
+/**
+* @tc.name: Report
+* @tc.desc: Test Report.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Report, TestSize.Level0)
+{
+    auto cloudReport = std::make_shared<DistributedData::CloudReport>();
+    auto prepareTraceId = cloudReport->GetPrepareTraceId(100);
+    EXPECT_EQ(prepareTraceId, "");
+    auto requestTraceId = cloudReport->GetRequestTraceId(100);
+    EXPECT_EQ(requestTraceId, "");
+    ReportParam reportParam{ 100, TEST_CLOUD_BUNDLE };
+    auto ret = cloudReport->Report(reportParam);
+    EXPECT_TRUE(ret);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
