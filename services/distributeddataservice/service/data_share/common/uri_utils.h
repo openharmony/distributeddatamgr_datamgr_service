@@ -39,6 +39,7 @@ class URIUtils {
 public:
     static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo);
     static bool GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName);
+    static bool GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex);
     static bool IsDataProxyURI(const std::string &uri);
     static void FormatUri(std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);
@@ -50,6 +51,7 @@ public:
     static constexpr const char *PARAM_URI_SEPARATOR = ":///";
     static constexpr const char *SCHEME_SEPARATOR = "://";
     static constexpr const char *URI_SEPARATOR = "/";
+    static constexpr const char APP_INDEX[] = "appIndex";  // for Application Clone
     static constexpr int DATA_PROXY_SCHEMA_LEN = sizeof(DATA_PROXY_SCHEMA) - 1;
     static constexpr uint32_t PARAM_URI_SEPARATOR_LEN = 4;
 

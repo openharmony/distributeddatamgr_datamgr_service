@@ -33,7 +33,7 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
 {
     providerInfo_.uri = uri;
     providerInfo_.currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
-    LoadConfigCommonStrategy::GetAppIndexFromProxyURI(providerInfo_.uri, providerInfo_.appIndex);
+    URIUtils::GetAppIndexFromProxyURI(providerInfo_.uri, providerInfo_.appIndex);
     if (providerInfo_.currentUserId == 0) {
         LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.currentUserId,
             callerTokenId, providerInfo_.bundleName);

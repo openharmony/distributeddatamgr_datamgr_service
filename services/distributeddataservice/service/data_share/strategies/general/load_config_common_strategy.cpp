@@ -26,14 +26,13 @@ namespace OHOS::DataShare {
 constexpr const char USER_PARAM[] = "user";
 constexpr const char TOKEN_ID_PARAM[] = "srcToken";
 constexpr const char DST_BUNDLE_NAME_PARAM[] = "dstBundleName";
-constexpr const char APP_INDEX[] = "appIndex";  // for Application Clone
 bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
 {
     if (context->callerTokenId == 0) {
         context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     }
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
-    if (!GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
+    if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
         return false;
     }
     // sa, userId is in uri, caller token id is from first caller tokenId
@@ -74,21 +73,6 @@ bool LoadConfigCommonStrategy::GetInfoFromProxyURI(
     }
     if (!queryParams[DST_BUNDLE_NAME_PARAM].empty()) {
         calledBundleName = queryParams[DST_BUNDLE_NAME_PARAM];
-    }
-    return true;
-}
-
-bool LoadConfigCommonStrategy::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex)
-{
-    auto queryParams = URIUtils::GetQueryParams(uri);
-    if (!queryParams[APP_INDEX].empty()) {
-        auto [success, data] = URIUtils::Strtoul(queryParams[APP_INDEX]);
-        if (!success) {
-            appIndex = -1;
-            ZLOGE("appIndex is invalid! appIndex: %{public}s", queryParams[APP_INDEX].c_str());
-            return false;
-        }
-        appIndex = data;
     }
     return true;
 }
