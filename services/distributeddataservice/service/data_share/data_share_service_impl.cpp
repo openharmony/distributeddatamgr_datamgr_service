@@ -42,6 +42,7 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
+#include "strategies/general/load_config_common_strategy.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "matching_skills.h"
@@ -843,7 +844,12 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
         return E_OK;
     }
     std::string calledBundleName = uriInfo.bundleName;
-    uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(currentUserId, calledBundleName, 0);
+    int32_t appIndex = 0;
+    if (!LoadConfigCommonStrategy::GetAppIndexFromProxyURI(uri, appIndex)) {
+        return E_APPINDEX_INVALID;
+    }
+    uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
+        currentUserId, calledBundleName, appIndex);
     if (calledTokenId == 0) {
         calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(0, calledBundleName, 0);
     }
