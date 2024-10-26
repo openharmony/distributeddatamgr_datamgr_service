@@ -44,7 +44,6 @@ private:
     std::map<std::string, std::string> switches_;
     std::vector<CheckerManager::StoreInfo> dynamicStores_;
     std::vector<CheckerManager::StoreInfo> staticStores_;
-    std::string GetBundleAppId(const CheckerManager::StoreInfo &info);
 };
 } // namespace DistributedData
 } // namespace OHOS
