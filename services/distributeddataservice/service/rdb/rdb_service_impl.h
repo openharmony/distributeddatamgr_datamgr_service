@@ -105,6 +105,8 @@ public:
 
     int32_t GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo) override;
 
+    int32_t GetPromiseInfo(const RdbSyncerParam &param) override;
+
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
@@ -201,6 +203,8 @@ private:
     StoreInfo GetStoreInfo(const RdbSyncerParam &param);
 
     int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+
+    int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
     int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);

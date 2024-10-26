@@ -31,6 +31,19 @@ struct API_EXPORT PolicyValue final : public Serializable {
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
 };
+
+struct API_EXPORT PromiseInfo final : public Serializable {
+    // User authorization can access the tokenIds of the database
+    std::vector<uint32_t> tokenIds = {};
+    // User authorization can access the uids of the database
+    std::vector<int32_t> uids = {};
+    std::vector<std::string> permissionNames = {};
+    API_EXPORT PromiseInfo() = default;
+    API_EXPORT ~PromiseInfo() = default;
+    API_EXPORT bool Marshal(json &node) const override;
+    API_EXPORT bool Unmarshal(const json &node) override;
+};
+
 struct API_EXPORT StoreMetaDataLocal final : public Serializable {
     bool isAutoSync = false;
     bool isBackup = false;
@@ -40,6 +53,7 @@ struct API_EXPORT StoreMetaDataLocal final : public Serializable {
     std::string dataDir = "";
     std::string schema = "";
     std::vector<PolicyValue> policies {};
+    PromiseInfo promiseInfo;
 
     API_EXPORT StoreMetaDataLocal();
     API_EXPORT ~StoreMetaDataLocal();

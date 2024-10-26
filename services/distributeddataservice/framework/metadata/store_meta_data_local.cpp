@@ -58,6 +58,22 @@ PolicyValue StoreMetaDataLocal::GetPolicy(uint32_t type)
     return PolicyValue();
 }
 
+bool PromiseInfo::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(tokenIds)], tokenIds);
+    SetValue(node[GET_NAME(uids)], uids);
+    SetValue(node[GET_NAME(permissionNames)], permissionNames);
+    return true;
+}
+
+bool PromiseInfo::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(tokenIds), tokenIds);
+    GetValue(node, GET_NAME(uids), uids);
+    GetValue(node, GET_NAME(permissionNames), permissionNames);
+    return true;
+}
+
 bool StoreMetaDataLocal::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(isAutoSync)], isAutoSync);
@@ -68,6 +84,7 @@ bool StoreMetaDataLocal::Marshal(json &node) const
     SetValue(node[GET_NAME(schema)], schema);
     SetValue(node[GET_NAME(policies)], policies);
     SetValue(node[GET_NAME(isPublic)], isPublic);
+    SetValue(node[GET_NAME(promiseInfo)], promiseInfo);
     return true;
 }
 
@@ -81,6 +98,7 @@ bool StoreMetaDataLocal::Unmarshal(const json &node)
     GetValue(node, GET_NAME(schema), schema);
     GetValue(node, GET_NAME(policies), policies);
     GetValue(node, GET_NAME(isPublic), isPublic);
+    GetValue(node, GET_NAME(promiseInfo), promiseInfo);
     return true;
 }
 
