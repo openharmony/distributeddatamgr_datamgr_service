@@ -115,6 +115,7 @@ public:
     DBStatus GetDeviceEntries(const std::string &device, std::vector<Entry> &entries) const override;
     DBStatus Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess) override;
     DBStatus CancelSync(uint32_t syncId) override;
+    DatabaseStatus GetDatabaseStatus() const override;
 private:
     static const uint32_t DEFAULT_SIZE = 0;
     DBStatus Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const;

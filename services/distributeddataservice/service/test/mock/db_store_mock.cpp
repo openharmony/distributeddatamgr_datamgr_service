@@ -382,5 +382,10 @@ DBStatus DBStoreMock::CancelSync(uint32_t syncId)
 {
     return NOT_SUPPORT;
 };
+
+KvStoreNbDelegate::DatabaseStatus DBStoreMock::GetDatabaseStatus() const
+{
+    return {};
+}
 } // namespace DistributedData
 } // namespace OHOS

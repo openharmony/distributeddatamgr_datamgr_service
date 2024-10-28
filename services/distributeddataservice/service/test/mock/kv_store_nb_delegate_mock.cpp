@@ -332,4 +332,9 @@ DBStatus KvStoreNbDelegateMock::CancelSync(uint32_t syncId)
 {
     return DBStatus::OK;
 }
+
+KvStoreNbDelegate::DatabaseStatus KvStoreNbDelegateMock::GetDatabaseStatus() const
+{
+    return {};
+}
 } // namespace DistributedDB
