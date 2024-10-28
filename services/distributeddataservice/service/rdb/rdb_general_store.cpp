@@ -470,7 +470,8 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(const std::st
             ZLOGE("RemoteQuery: devices size error! size:%{public}zu", rdbQuery->GetDevices().size());
             return { GeneralError::E_ERROR, nullptr };
         }
-        return { GeneralError::E_OK, RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition()) };
+        auto cursor = RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition());
+        return { cursor != nullptr ? GeneralError::E_OK : GeneralError::E_ERROR, cursor};
     }
     return { GeneralError::E_ERROR, nullptr };
 }
