@@ -153,7 +153,8 @@ DBStatus KvStoreNbDelegateMock::Export(const std::string &filePath,
     return DBStatus::OK;
 }
 
-DBStatus KvStoreNbDelegateMock::Import(const std::string &filePath, const CipherPassword &passwd)
+DBStatus KvStoreNbDelegateMock::Import(const std::string &filePath, const CipherPassword &passwd,
+    bool isNeedIntegrityCheck)
 {
     return DBStatus::OK;
 }

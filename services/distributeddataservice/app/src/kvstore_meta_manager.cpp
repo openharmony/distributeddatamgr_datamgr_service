@@ -244,6 +244,11 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
     auto backup = [executors = executors_, queue = std::make_shared<SafeBlockQueue<Backup>>(MAX_TASK_COUNT), fullName](
                       const auto &store) -> int32_t {
         auto result = queue->PushNoWait([fullName](const auto &store) -> int32_t {
+            auto dbStatus = store->CheckIntegrity();
+            if (dbStatus != DistributedDB::DBStatus::OK) {
+                ZLOGE("meta store check integrity fail, dbStatus:%{public}d", dbStatus);
+                return dbStatus;
+            }
             return store->Export(fullName, {}, true);
         });
         if (!result) {
@@ -285,11 +290,17 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     if (dbStatusTmp == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("meta data corrupted!");
         option.isNeedRmCorruptedDb = true;
+        auto fullName = GetBackupPath();
         delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
-            [&delegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus,
+            [&delegate, &dbStatusTmp, &fullName](DistributedDB::DBStatus dbStatus,
                 DistributedDB::KvStoreNbDelegate *nbDelegate) {
                 delegate = nbDelegate;
                 dbStatusTmp = dbStatus;
+                if (dbStatusTmp == DistributedDB::DBStatus::OK && delegate != nullptr) {
+                    ZLOGI("start import meta data");
+                    DistributedDB::CipherPassword password;
+                    delegate->Import(fullName, password, true);
+                }
             });
     }
 

@@ -164,7 +164,7 @@ DBStatus DBStoreMock::Export(const std::string &filePath, const CipherPassword &
     return NOT_SUPPORT;
 }
 
-DBStatus DBStoreMock::Import(const std::string &filePath, const CipherPassword &passwd)
+DBStatus DBStoreMock::Import(const std::string &filePath, const CipherPassword &passwd, bool isNeedIntegrityCheck)
 {
     return NOT_SUPPORT;
 }

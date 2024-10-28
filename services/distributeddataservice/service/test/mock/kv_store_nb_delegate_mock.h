@@ -66,7 +66,7 @@ public:
         const KvStoreNbConflictNotifier &notifier);
     DBStatus Rekey(const CipherPassword &password);
     DBStatus Export(const std::string &filePath, const CipherPassword &passwd, bool force = false);
-    DBStatus Import(const std::string &filePath, const CipherPassword &passwd);
+    DBStatus Import(const std::string &filePath, const CipherPassword &passwd, bool isNeedIntegrityCheck = false);
     DBStatus StartTransaction();
     DBStatus Commit();
     DBStatus Rollback();

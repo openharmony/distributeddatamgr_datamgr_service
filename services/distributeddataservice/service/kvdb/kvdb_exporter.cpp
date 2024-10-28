@@ -34,14 +34,20 @@ void KVDBExporter::Exporter(const StoreMetaData &meta, const std::string &backup
     auto dbOption = KVDBGeneralStore::GetDBOption(meta, dbPassword);
 
     manager.GetKvStore(meta.storeId, dbOption, [&manager, &backupPath, &dbPassword, &result]
-        (DistributedDB::DBStatus dbstatus, DistributedDB::KvStoreNbDelegate *delegate) {
+        (DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *delegate) {
         if (delegate == nullptr) {
             ZLOGE("Auto backup delegate is null");
             result = false;
             return;
         }
-        dbstatus = delegate->Export(backupPath, dbPassword);
-        result = (dbstatus == DistributedDB::DBStatus::OK) ? true : false;
+        dbStatus = delegate->CheckIntegrity();
+        if (dbStatus != DistributedDB::DBStatus::OK) {
+            ZLOGE("CheckIntegrity fail, dbStatus:%{public}d, backupPath:%{public}s", dbStatus, backupPath.c_str());
+            result = false;
+            return;
+        }
+        dbStatus = delegate->Export(backupPath, dbPassword);
+        result = (dbStatus == DistributedDB::DBStatus::OK) ? true : false;
         manager.CloseKvStore(delegate);
     });
     std::string message;

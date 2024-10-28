@@ -77,7 +77,7 @@ public:
     DBStatus SetConflictNotifier(int conflictType, const KvStoreNbConflictNotifier &notifier) override;
     DBStatus Rekey(const CipherPassword &password) override;
     DBStatus Export(const std::string &filePath, const CipherPassword &passwd, bool force) override;
-    DBStatus Import(const std::string &filePath, const CipherPassword &passwd) override;
+    DBStatus Import(const std::string &filePath, const CipherPassword &passwd, bool isNeedIntegrityCheck) override;
     DBStatus StartTransaction() override;
     DBStatus Commit() override;
     DBStatus Rollback() override;
