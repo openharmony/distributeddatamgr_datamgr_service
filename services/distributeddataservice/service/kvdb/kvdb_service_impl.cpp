@@ -99,23 +99,19 @@ void KVDBServiceImpl::Init()
     auto process = [this](const Event &event) {
         const auto &evt = static_cast<const CloudEvent &>(event);
         const auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta;
-        meta.storeId = storeInfo.storeName;
-        meta.bundleName = storeInfo.bundleName;
-        meta.user = std::to_string(storeInfo.user);
+        StoreMetaData meta(storeInfo);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str(), meta.user.c_str());
             if (meta.user == "0") {
-                ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
-                    meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
                 return;
             }
             meta.user = "0";
             StoreMetaDataLocal localMeta;
             if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) || !localMeta.isPublic ||
                 !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-                ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
-                    meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
+                ZLOGE("meta empty, not public store.");
                 return;
             }
         }
@@ -132,6 +128,7 @@ void KVDBServiceImpl::Init()
         store->RegisterDetailProgressObserver(nullptr);
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLEAN_DATA, process);
 }
 
 void KVDBServiceImpl::RegisterKvServiceInfo()
@@ -347,17 +344,6 @@ Status KVDBServiceImpl::RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifie
         return true;
     });
     return Status::SUCCESS;
-}
-
-void KVDBServiceImpl::RegisterMatrixChange()
-{
-    if (!DeviceMatrix::GetInstance().IsSupportMatrix()) {
-        ZLOGD("not support matrix");
-        return;
-    }
-    DeviceMatrix::GetInstance().RegRemoteChange([this](bool statics, bool dynamic) {
-        DoCloudSync(statics, dynamic);
-    });
 }
 
 Status KVDBServiceImpl::UnregServiceNotifier(const AppId &appId)
@@ -917,26 +903,6 @@ KVDBServiceImpl::DBResult KVDBServiceImpl::HandleGenBriefDetails(const GenDetail
     return dbResults;
 }
 
-void KVDBServiceImpl::DoCloudSync(bool statics, bool dynamic)
-{
-    std::vector<CheckerManager::StoreInfo> stores;
-    if (statics) {
-        auto staticStores = CheckerManager::GetInstance().GetStaticStores();
-        stores.insert(stores.end(), staticStores.begin(), staticStores.end());
-    }
-    if (dynamic) {
-        auto dynamicStores = CheckerManager::GetInstance().GetDynamicStores();
-        stores.insert(stores.end(), dynamicStores.begin(), dynamicStores.end());
-    }
-    for (const auto &store : stores) {
-        auto status = CloudSync({ store.bundleName }, { store.storeId }, { .triggerMode = MODE_BROADCASTER });
-        if (status != SUCCESS) {
-            ZLOGW("cloud sync failed:%{public}d, appId:%{public}s storeId:%{public}s", status,
-                  store.bundleName.c_str(), Anonymous::Change(store.storeId).c_str());
-        }
-    }
-}
-
 Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo)
 {
     if (!meta.enableCloud) {
@@ -1103,8 +1069,9 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId, DATA_TYPE, meta.dataType);
     auto store = AutoCache::GetInstance().GetStore(meta, watcher);
     if (store == nullptr) {
-        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", meta.bundleName.c_str(),
-            Anonymous::Change(meta.storeId).c_str(), meta.dataDir.c_str());
+        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s storeId length:%{public}zu dir:%{public}s",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
+            meta.storeId.size(), meta.dataDir.c_str());
         RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_FAILED, ERROR_CODE, Status::ERROR, BIZ_STATE, END,
             SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
             std::to_string(info.syncId), DATA_TYPE, meta.dataType);
@@ -1395,7 +1362,6 @@ int32_t KVDBServiceImpl::OnInitialize()
     RegisterKvServiceInfo();
     RegisterHandler();
     Init();
-    RegisterMatrixChange();
     return SUCCESS;
 }
 

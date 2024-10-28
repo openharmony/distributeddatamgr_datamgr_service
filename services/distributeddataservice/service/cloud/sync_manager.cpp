@@ -321,6 +321,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
             ZLOGE("schema is invalid, user: %{public}d", cloud.user);
             info.SetError(E_ERROR);
         }
+        return isPostEvent;
     };
 }
 
@@ -674,10 +675,7 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     if (queryKey.accountId.empty()) {
         return false;
     }
-    if (std::find(kvApps_.begin(), kvApps_.end(), queryKey.bundleName) != kvApps_.end()) {
-        return false;
-    }
-    return true;
+    return kvApps_.find(queryKey.bundleName) == kvApps_.end();
 }
 
 int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)
@@ -750,12 +748,13 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
 
         int32_t dbCode = (result.begin()->second.dbCode == GenStore::DB_ERR_OFFSET) ? 0 : result.begin()->second.dbCode;
         RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, triggerMode,
-                                  result.begin()->second.dataChange, dbCode },
+                                  result.begin()->second.changeCount, dbCode },
             "GetCallback", BizState::END);
         Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, dbCode });
 
         auto id = GetAccountId(storeInfo.user);
         if (id.empty()) {
+            ZLOGD("account id is empty");
             return;
         }
         QueryKey queryKey{
@@ -840,7 +839,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
             UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
             if (code == E_OK) {
                 RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                          triggerMode, details.begin()->second.dataChange },
+                                          triggerMode, details.begin()->second.changeCount },
                     "RetryCallback", BizState::END);
                 Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END,
                     dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode });

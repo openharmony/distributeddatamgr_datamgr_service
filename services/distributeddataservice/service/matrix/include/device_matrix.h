@@ -16,6 +16,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICE_MATRIX_DEVICE_MATRIX_H
 #include <map>
 #include <mutex>
+
 #include "eventcenter/event.h"
 #include "executor_pool.h"
 #include "lru_bucket.h"
@@ -24,6 +25,7 @@
 #include "metadata/store_meta_data.h"
 #include "utils/ref_count.h"
 #include "visibility.h"
+
 namespace OHOS::DistributedData {
 class API_EXPORT DeviceMatrix {
 public:
@@ -74,7 +76,6 @@ public:
         const StoreMetaData &metaData, ChangeType type = ChangeType::CHANGE_ALL);
     void UpdateLevel(const std::string &device, uint16_t level, LevelType type, bool isConsistent = false);
     void Clear();
-    void RegRemoteChange(std::function<void(bool, bool)> observer);
     void SetExecutor(std::shared_ptr<ExecutorPool> executors);
     uint16_t GetCode(const StoreMetaData &metaData);
     std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
@@ -141,7 +142,6 @@ private:
     uint16_t ConvertStatics(const MatrixMetaData &meta, uint16_t mask);
     MatrixMetaData GetMatrixInfo(const std::string &device);
     MatrixMetaData GetMatrixMetaData(const std::string &device, const Mask &mask);
-    std::pair<bool, bool> NeedCloudSync(const std::string &device, const MatrixMetaData &newMeta);
     static inline uint16_t ConvertIndex(uint16_t code);
 
     MatrixEvent::MatrixData lasts_;
