@@ -1344,7 +1344,6 @@ int32_t RdbServiceImpl::GetPromiseInfo(const RdbSyncerParam &param)
         });
         if (tokenIdRet == localMeta.promiseInfo.tokenIds.end() && uidRet == localMeta.promiseInfo.uids.end() &&
             !isPromise) {
-            ZLOGE("Permission denied! tokenId:0x%{public}x, uid:%{public}d", tokenId, uid);
             return RDB_ERROR;
         }
     }
