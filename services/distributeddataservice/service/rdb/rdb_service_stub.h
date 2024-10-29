@@ -76,7 +76,7 @@ private:
 
     int32_t OnGetDebugInfo(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnGetPromiseInfo(MessageParcel& data, MessageParcel& reply);
+    int32_t OnVerifyPromiseInfo(MessageParcel& data, MessageParcel& reply);
 
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)] = {
@@ -111,7 +111,7 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNLOCK_CLOUD_CONTAINER)] =
             &RdbServiceStub::OnUnlockCloudContainer,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DEBUG_INFO)] = &RdbServiceStub::OnGetDebugInfo,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_PROMISE_INFO)] = &RdbServiceStub::OnGetPromiseInfo
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_VERIFY_PROMISE_INFO)] = &RdbServiceStub::OnVerifyPromiseInfo
     };
 };
 } // namespace OHOS::DistributedRdb
