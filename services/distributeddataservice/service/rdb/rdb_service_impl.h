@@ -105,7 +105,7 @@ public:
 
     int32_t GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo) override;
 
-    int32_t GetPromiseInfo(const RdbSyncerParam &param) override;
+    int32_t VerifyPromiseInfo(const RdbSyncerParam &param) override;
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
