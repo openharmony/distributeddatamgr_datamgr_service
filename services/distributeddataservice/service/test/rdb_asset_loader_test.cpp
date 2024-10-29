@@ -29,6 +29,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
 using Type = DistributedDB::Type;
+using AssetsRecord = DistributedData::AssetRecord;
 const DistributedDB::Asset g_rdbAsset = { .version = 1,
     .name = "Phone",
     .assetId = "0",
@@ -90,6 +91,74 @@ HWTEST_F(RdbAssetLoaderTest, Download, TestSize.Level0)
     assets["asset1"].push_back(g_rdbAsset);
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::OK);
+}
+
+/**
+* @tc.name: BatchDownload
+* @tc.desc: RdbAssetLoader batch download test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbAssetLoaderTest, BatchDownload, TestSize.Level0)
+{
+    BindAssets bindAssets;
+    auto cloudAssetLoader = std::make_shared<AssetLoader>();
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    std::string tableName = "testTable";
+    Type prefix;
+    std::map<std::string, DistributedDB::Assets> assets;
+    assets["asset1"].push_back(g_rdbAsset);
+    std::vector<DistributedDB::IAssetLoader::AssetRecord> assetRecords;
+    DistributedDB::IAssetLoader::AssetRecord assetRecord { .gid = "gid", .prefix = prefix, .assets = assets };
+    assetRecords.emplace_back(assetRecord);
+    rdbAssetLoader.BatchDownload(tableName, assetRecords);
+    ASSERT_TRUE(!assetRecords.empty());
+    EXPECT_EQ(assetRecords[0].status, DistributedDB::DBStatus::OK);
+}
+
+/**
+* @tc.name: Convert001
+* @tc.desc: Convert test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbAssetLoaderTest, Convert001, TestSize.Level0)
+{
+    BindAssets bindAssets;
+    auto cloudAssetLoader = std::make_shared<AssetLoader>();
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    Type prefix;
+    std::map<std::string, DistributedDB::Assets> assets;
+    assets["asset1"].push_back(g_rdbAsset);
+    std::vector<DistributedDB::IAssetLoader::AssetRecord> assetRecords;
+    DistributedDB::IAssetLoader::AssetRecord assetRecord { .gid = "gid", .prefix = prefix, .assets = assets };
+    assetRecords.emplace_back(assetRecord);
+    assetRecords.emplace_back(assetRecord);
+    auto assetsRecords = rdbAssetLoader.Convert(std::move(assetRecords));
+    EXPECT_TRUE(!assetsRecords.empty());
+}
+
+/**
+* @tc.name: Convert002
+* @tc.desc: Convert test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbAssetLoaderTest, Convert002, TestSize.Level0)
+{
+    BindAssets bindAssets;
+    auto cloudAssetLoader = std::make_shared<AssetLoader>();
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    Value prefix;
+    VBucket assets;
+    std::vector<AssetsRecord> assetsRecords;
+    AssetRecord assetsRecord { .gid = "gid", .prefix = prefix, .assets = assets };
+    assetsRecords.emplace_back(assetsRecord);
+    auto assetRecords = rdbAssetLoader.Convert(std::move(assetsRecords));
+    EXPECT_TRUE(!assetRecords.empty());
 }
 
 /**

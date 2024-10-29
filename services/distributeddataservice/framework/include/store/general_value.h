@@ -129,6 +129,12 @@ inline constexpr size_t TYPE_INDEX = Traits::variant_index_of_v<T, Value>;
 
 inline constexpr size_t TYPE_MAX = Traits::variant_size_of_v<Value>;
 
+struct AssetRecord {
+    std::string gid;
+    Value prefix;
+    VBucket assets;
+};
+
 enum class QueryOperation : uint32_t {
     ILLEGAL = 0,
     IN = 1,

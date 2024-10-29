@@ -21,6 +21,12 @@ int32_t AssetLoader::Download(
     return E_NOT_SUPPORT;
 }
 
+void AssetLoader::Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords)
+{
+    (void)assetsRecords;
+    return;
+}
+
 int32_t AssetLoader::RemoveLocalAssets(
     const std::string &tableName, const std::string &gid, const Value &prefix, VBucket &assets)
 {

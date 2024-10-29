@@ -21,9 +21,11 @@
 namespace OHOS::DistributedData {
 class API_EXPORT AssetLoader {
 public:
+    using AssetsRecord = DistributedData::AssetRecord;
     virtual ~AssetLoader() = default;
     virtual int32_t Download(
         const std::string &tableName, const std::string &gid, const Value &prefix, VBucket &assets);
+    virtual void Download(const std::string &tableName, std::vector<AssetsRecord> &assetsRecords);
     virtual int32_t RemoveLocalAssets(
         const std::string &tableName, const std::string &gid, const Value &prefix, VBucket &assets);
     virtual int32_t Cancel();
