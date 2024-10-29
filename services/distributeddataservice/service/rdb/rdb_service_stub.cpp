@@ -439,7 +439,7 @@ int32_t RdbServiceStub::OnGetDebugInfo(MessageParcel &data, MessageParcel &reply
     return RDB_OK;
 }
 
-int32_t RdbServiceStub::OnGetPromiseInfo(MessageParcel &data, MessageParcel &reply)
+int32_t RdbServiceStub::OnVerifyPromiseInfo(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
     if (!ITypesUtil::Unmarshal(data, param)) {
@@ -447,7 +447,7 @@ int32_t RdbServiceStub::OnGetPromiseInfo(MessageParcel &data, MessageParcel &rep
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto status = GetPromiseInfo(param);
+    auto status = VerifyPromiseInfo(param);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
