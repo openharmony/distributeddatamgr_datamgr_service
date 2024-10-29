@@ -105,6 +105,10 @@ HWTEST_F(CloudTest, Serializable_Marshal, TestSize.Level1)
     EXPECT_EQ(schemaMeta.bundleName, schemaMeta2.bundleName);
     Database database2 = schemaMeta2.GetDataBase(TEST_CLOUD_STORE);
     EXPECT_EQ(database.alias, database2.alias);
+
+    std::string storeId = "storeId";
+    Database database3 = schemaMeta2.GetDataBase(storeId);
+    EXPECT_NE(database.alias, database3.alias);
 }
 
 /**
@@ -177,8 +181,10 @@ HWTEST_F(CloudTest, Database_Marshal, TestSize.Level1)
  */
 HWTEST_F(CloudTest, CloudInfoUpgrade, TestSize.Level0)
 {
+    int32_t defaultUser = 100;
     CloudInfo oldInfo;
-    oldInfo.user = 100;
+    auto user = defaultUser;
+    oldInfo.user = user;
     EXPECT_NE(oldInfo.maxNumber, CloudInfo::DEFAULT_BATCH_NUMBER);
     EXPECT_NE(oldInfo.maxSize, CloudInfo::DEFAULT_BATCH_SIZE);
     ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(oldInfo.GetKey(), oldInfo, true));

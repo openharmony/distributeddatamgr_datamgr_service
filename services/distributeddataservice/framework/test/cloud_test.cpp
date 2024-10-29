@@ -18,11 +18,13 @@
 
 #include "serializable/serializable.h"
 #include "cloud/cloud_db.h"
+#include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "nlohmann/json.hpp"
 #include "utils/crypto.h"
+#include "screen/screen_manager.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
@@ -47,6 +49,22 @@ public:
 };
 
 class ServicesCloudDBTest : public testing::Test {
+public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
+};
+
+class CloudEventTest : public testing::Test {
+public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
+};
+
+class ScreenManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
@@ -207,13 +225,13 @@ HWTEST_F(CloudInfoTest, GetPrefix, TestSize.Level0)
 }
 
 /**
-* @tc.name: CloudInfoTest
+* @tc.name: CloudInfoTest001
 * @tc.desc: Marshal and Unmarshal of CloudInfo.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: Anvette
 */
-HWTEST_F(CloudInfoTest, CloudInfoTest, TestSize.Level0)
+HWTEST_F(CloudInfoTest, CloudInfoTest001, TestSize.Level0)
 {
     CloudInfo cloudInfo1;
     cloudInfo1.user = 111;
@@ -221,6 +239,33 @@ HWTEST_F(CloudInfoTest, CloudInfoTest, TestSize.Level0)
     cloudInfo1.totalSpace = 0;
     cloudInfo1.remainSpace = 0;
     cloudInfo1.enableCloud = false;
+
+    Serializable::json node1;
+    cloudInfo1.Marshal(node1);
+    EXPECT_EQ(Serializable::Marshall(cloudInfo1), to_string(node1));
+
+    CloudInfo cloudInfo2;
+    cloudInfo2.Unmarshal(node1);
+    EXPECT_EQ(Serializable::Marshall(cloudInfo1), Serializable::Marshall(cloudInfo1));
+}
+
+/**
+* @tc.name: CloudInfoTest002
+* @tc.desc: Marshal and Unmarshal of CloudInfo.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(CloudInfoTest, CloudInfoTest002, TestSize.Level0)
+{
+    CloudInfo cloudInfo1;
+    cloudInfo1.user = 111;
+    cloudInfo1.id = "test1_id";
+    cloudInfo1.totalSpace = 0;
+    cloudInfo1.remainSpace = 0;
+    cloudInfo1.enableCloud = false;
+    cloudInfo1.maxNumber = CloudInfo::DEFAULT_BATCH_NUMBER;
+    cloudInfo1.maxSize = CloudInfo::DEFAULT_BATCH_SIZE;
 
     Serializable::json node1;
     cloudInfo1.Marshal(node1);
@@ -505,5 +550,33 @@ HWTEST_F(CloudInfoTest, SchemaMeta, TestSize.Level0)
     metaVersion = SchemaMeta::CURRENT_VERSION & ~0xFFFF;
     auto result2 = schemaMeta.GetHighVersion();
     EXPECT_EQ(result2, metaVersion);
+}
+
+/**
+* @tc.name: GetEventId
+* @tc.desc: test GetEventId function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, GetEventId, TestSize.Level0)
+{
+    int32_t evtId = 1;
+    StoreInfo info;
+    CloudEvent event(evtId, info);
+    auto ret = event.GetEventId();
+    EXPECT_EQ(ret, evtId);
+}
+
+/**
+* @tc.name: IsLocked
+* @tc.desc: test IsLocked function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ScreenManagerTest, IsLocked, TestSize.Level0)
+{
+    ASSERT_FALSE(ScreenManager::GetInstance()->IsLocked());
 }
 } // namespace OHOS::Test

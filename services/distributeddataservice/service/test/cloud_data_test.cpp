@@ -23,9 +23,12 @@
 #include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
+#include "cloud/cloud_share_event.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service_impl.h"
 #include "cloud_types.h"
+#include "cloud_types_util.h"
+#include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
@@ -51,7 +54,11 @@ using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Querykey = OHOS::CloudData::QueryKey;
 using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
-
+using SharingCfm = OHOS::CloudData::SharingUtil::SharingCfm;
+using Confirmation = OHOS::CloudData::Confirmation;
+using CenterCode = OHOS::DistributedData::SharingCenter::SharingCode;
+using Status = OHOS::CloudData::CloudService::Status;
+using GenErr = OHOS::DistributedData::GeneralError;
 uint64_t g_selfTokenID = 0;
 
 void AllocHapToken(const HapPolicyParams &policy)
@@ -75,6 +82,32 @@ static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
+static constexpr const char *PERMISSION_CLOUDDATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
+static constexpr const char *PERMISSION_GET_NETWORK_INFO = "ohos.permission.GET_NETWORK_INFO";
+static constexpr const char *PERMISSION_DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
+static constexpr const char *PERMISSION_ACCESS_SERVICE_DM = "ohos.permission.ACCESS_SERVICE_DM";
+PermissionDef GetPermissionDef(const std::string &permission)
+{
+    PermissionDef def = { .permissionName = permission,
+        .bundleName = "test_cloud_bundleName",
+        .grantMode = 1,
+        .availableLevel = APL_SYSTEM_BASIC,
+        .label = "label",
+        .labelId = 1,
+        .description = "test_cloud_bundleName",
+        .descriptionId = 1 };
+    return def;
+}
+
+PermissionStateFull GetPermissionStateFull(const std::string &permission)
+{
+    PermissionStateFull stateFull = { .permissionName = permission,
+        .isGeneral = true,
+        .resDeviceID = { "local" },
+        .grantStatus = { PermissionState::PERMISSION_GRANTED },
+        .grantFlags = { 1 } };
+    return stateFull;
+}
 class CloudDataTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -102,6 +135,7 @@ public:
     virtual ~CloudServerMock() = default;
     static constexpr uint64_t REMAINSPACE = 1000;
     static constexpr uint64_t TATALSPACE = 2000;
+    static constexpr int32_t INVALID_USER_ID = -1;
 };
 
 CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
@@ -125,6 +159,14 @@ CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 
 std::pair<int32_t, SchemaMeta> CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundleName)
 {
+    if (userId == INVALID_USER_ID) {
+        return { E_ERROR, CloudDataTest::schemaMeta_ };
+    }
+
+    if (bundleName.empty()) {
+        SchemaMeta schemaMeta;
+        return { E_OK, schemaMeta };
+    }
     return { E_OK, CloudDataTest::schemaMeta_ };
 }
 
@@ -202,46 +244,29 @@ void CloudDataTest::SetUpTestCase(void)
 
     auto cloudServerMock = new CloudServerMock();
     CloudServer::RegisterCloudInstance(cloudServerMock);
-
     HapPolicyParams policy = { .apl = APL_SYSTEM_BASIC,
         .domain = "test.domain",
-        .permList = {
-            {
-                .permissionName = "ohos.permission.CLOUDDATA_CONFIG",
-                .bundleName = "test_cloud_bundleName",
-                .grantMode = 1,
-                .availableLevel = APL_SYSTEM_BASIC,
-                .label = "label",
-                .labelId = 1,
-                .description = "test_cloud_bundleName",
-                .descriptionId = 1
-            }
-        },
-        .permStateList = {
-            {
-                .permissionName = "ohos.permission.CLOUDDATA_CONFIG",
-                .isGeneral = true,
-                .resDeviceID = { "local" },
-                .grantStatus = { PermissionState::PERMISSION_GRANTED },
-                .grantFlags = { 1 }
-            }
-        }
-    };
+        .permList = { GetPermissionDef(PERMISSION_CLOUDDATA_CONFIG), GetPermissionDef(PERMISSION_GET_NETWORK_INFO),
+            GetPermissionDef(PERMISSION_DISTRIBUTED_DATASYNC), GetPermissionDef(PERMISSION_ACCESS_SERVICE_DM) },
+        .permStateList = { GetPermissionStateFull(PERMISSION_CLOUDDATA_CONFIG),
+            GetPermissionStateFull(PERMISSION_GET_NETWORK_INFO),
+            GetPermissionStateFull(PERMISSION_DISTRIBUTED_DATASYNC),
+            GetPermissionStateFull(PERMISSION_ACCESS_SERVICE_DM) } };
     g_selfTokenID = GetSelfTokenID();
     AllocHapToken(policy);
-
-    InitCloudInfo();
-    InitMetaData();
-    InitSchemaMeta();
-
     size_t max = 12;
     size_t min = 5;
 
     auto executor = std::make_shared<ExecutorPool>(max, min);
     cloudServiceImpl_->OnBind(
         { "CloudDataTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-
     Bootstrap::GetInstance().LoadCheckers();
+    auto dmExecutor = std::make_shared<ExecutorPool>(max, min);
+    DeviceManagerAdapter::GetInstance().Init(dmExecutor);
+    InitCloudInfo();
+    InitMetaData();
+    InitSchemaMeta();
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
 }
 
 void CloudDataTest::TearDownTestCase()
@@ -282,7 +307,8 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
     StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
-    ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
+    auto ret = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
+    ASSERT_TRUE(ret);
 }
 
 /**
@@ -455,17 +481,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
     ZLOGI("CloudDataTest QueryLastSyncInfo004 start");
     auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-
-    auto rdbServiceImpl = std::make_shared<DistributedRdb::RdbServiceImpl>();
-    DistributedRdb::RdbSyncerParam param;
-    param.bundleName_ = TEST_CLOUD_BUNDLE;
-    param.storeName_ = TEST_CLOUD_DATABASE_ALIAS_1;
-    DistributedRdb::RdbService::Option option;
-    option.mode = DistributedRdb::SyncMode::CLOUD_FIRST;
-    option.isAutoSync = true;
-    option.isAsync = false;
-    DistributedRdb::PredicatesMemo memo;
-    rdbServiceImpl->Sync(param, option, memo, nullptr);
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
 
     sleep(1);
 
@@ -487,23 +503,11 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
     ZLOGI("CloudDataTest QueryLastSyncInfo005 start");
     std::map<std::string, int32_t> switches;
     switches.emplace(TEST_CLOUD_ID, true);
-    auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-
-    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, false);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-
-    auto rdbServiceImpl = std::make_shared<DistributedRdb::RdbServiceImpl>();
-    DistributedRdb::RdbSyncerParam param;
-    param.bundleName_ = TEST_CLOUD_BUNDLE;
-    param.storeName_ = TEST_CLOUD_DATABASE_ALIAS_1;
-    DistributedRdb::RdbService::Option option;
-    option.mode = DistributedRdb::SyncMode::CLOUD_FIRST;
-    option.isAutoSync = true;
-    option.isAsync = false;
-    DistributedRdb::PredicatesMemo memo;
-    rdbServiceImpl->Sync(param, option, memo, nullptr);
-
+    CloudInfo info;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
+    info.apps[TEST_CLOUD_BUNDLE].cloudSwitch = false;
+    MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     sleep(1);
 
     auto [status, result] =
@@ -655,10 +659,12 @@ HWTEST_F(CloudDataTest, AllocResourceAndShare001, TestSize.Level0)
 HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level0)
 {
     std::vector<CommonType::Value> values;
-    const int64_t wifi = 0x01;
-    values.push_back(wifi);
-    CloudData::Strategy strategy = CloudData::STRATEGY_NETWORK;
+    values.push_back(CloudData::NetWorkStrategy::WIFI);
+    CloudData::Strategy strategy = CloudData::Strategy::STRATEGY_BUTT;
     auto ret = cloudServiceImpl_->SetGlobalCloudStrategy(strategy, values);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    strategy = CloudData::Strategy::STRATEGY_NETWORK;
+    ret = cloudServiceImpl_->SetGlobalCloudStrategy(strategy, values);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -671,10 +677,12 @@ HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level0)
 HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level0)
 {
     std::vector<CommonType::Value> values;
-    const int64_t wifi = 0x01;
-    values.push_back(wifi);
-    CloudData::Strategy strategy = CloudData::STRATEGY_NETWORK;
+    values.push_back(CloudData::NetWorkStrategy::WIFI);
+    CloudData::Strategy strategy = CloudData::Strategy::STRATEGY_BUTT;
     auto ret = cloudServiceImpl_->SetCloudStrategy(strategy, values);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    strategy = CloudData::Strategy::STRATEGY_NETWORK;
+    ret = cloudServiceImpl_->SetCloudStrategy(strategy, values);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -687,9 +695,48 @@ HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level0)
 HWTEST_F(CloudDataTest, Clean001, TestSize.Level0)
 {
     std::map<std::string, int32_t> actions;
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_BUTT);
+    std::string id = "testId";
+    std::string bundleName = "testBundleName";
+    auto ret = cloudServiceImpl_->Clean(id, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::ERROR);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::ERROR);
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+    actions.insert_or_assign(bundleName, CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: Clean
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, Clean002, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    std::map<std::string, int32_t> actions;
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
     auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    StoreMetaDataLocal localMeta;
+    localMeta.isPublic = false;
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    localMeta.isPublic = true;
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    metaData_.user = "0";
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    metaData_.user = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyLocal(), true);
 }
 
 /**
@@ -712,19 +759,53 @@ HWTEST_F(CloudDataTest, NotifyDataChange001, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, NotifyDataChange002, TestSize.Level0)
 {
-    constexpr const int32_t userId = 100;
+    constexpr const int32_t invalidUserId = -1;
     std::string extraData;
-    auto ret = cloudServiceImpl_->NotifyDataChange("", extraData, userId);
+    auto ret = cloudServiceImpl_->NotifyDataChange("", extraData, invalidUserId);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
-                "bundleName\\\",\\\"containerName\\\":\\\"alias\\\", \\\"databaseScopes\\\": "
+    extraData = "{data:test}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                "bundleName\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", \\\"databaseScopes\\\": "
                 "\\\"[\\\\\\\"private\\\\\\\", "
-                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"xxx\\\\\\\",\\\\\\\"yyy\\\\\\\","
-                "\\\\\\\"zzz\\\\\\\"]\\\"}\"}";
-    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"cloud_"
+                "bundleName_test\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", "
+                "\\\"databaseScopes\\\": "
+                "\\\"[\\\\\\\"private\\\\\\\", "
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, invalidUserId);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: NotifyDataChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level0)
+{
+    constexpr const int32_t userId = 100;
+    constexpr const int32_t defaultUserId = 0;
+    std::string extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                            "bundleName\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", "
+                            "\\\"databaseScopes\\\": "
+                            "\\\"[\\\\\\\"private\\\\\\\", "
+                            "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"\\\\\\\"]\\\"}\"}";
+    auto ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, defaultUserId);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                "bundleName\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", \\\"databaseScopes\\\": "
+                "\\\"[\\\\\\\"private\\\\\\\", "
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
+    ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
 /**
@@ -755,6 +836,1079 @@ HWTEST_F(CloudDataTest, Offline001, TestSize.Level0)
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     ret = cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudShare
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudShare001, TestSize.Level0)
+{
+    ZLOGI("weisx CloudShare start");
+    StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
+    std::pair<int32_t, std::shared_ptr<Cursor>> result;
+    CloudShareEvent::Callback asyncCallback = [&result](int32_t status, std::shared_ptr<Cursor> cursor) {
+        result.first = status;
+        result.second = cursor;
+    };
+    auto event = std::make_unique<CloudShareEvent>(storeInfo, nullptr, nullptr);
+    EventCenter::GetInstance().PostEvent(std::move(event));
+    auto event1 = std::make_unique<CloudShareEvent>(storeInfo, nullptr, asyncCallback);
+    EventCenter::GetInstance().PostEvent(std::move(event1));
+    EXPECT_EQ(result.first, GeneralError::E_ERROR);
+    auto rdbQuery = std::make_shared<DistributedRdb::RdbQuery>();
+    auto event2 = std::make_unique<CloudShareEvent>(storeInfo, rdbQuery, nullptr);
+    EventCenter::GetInstance().PostEvent(std::move(event2));
+    auto event3 = std::make_unique<CloudShareEvent>(storeInfo, rdbQuery, asyncCallback);
+    EventCenter::GetInstance().PostEvent(std::move(event3));
+    EXPECT_EQ(result.first, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: OnUserChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnUserChange001, TestSize.Level0)
+{
+    constexpr const uint32_t ACCOUNT_DEFAULT = 2;
+    constexpr const uint32_t ACCOUNT_DELETE = 3;
+    constexpr const uint32_t ACCOUNT_SWITCHED = 4;
+    constexpr const uint32_t ACCOUNT_UNLOCKED = 5;
+    auto ret = cloudServiceImpl_->OnUserChange(ACCOUNT_DEFAULT, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = cloudServiceImpl_->OnUserChange(ACCOUNT_DELETE, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = cloudServiceImpl_->OnUserChange(ACCOUNT_SWITCHED, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = cloudServiceImpl_->OnUserChange(ACCOUNT_UNLOCKED, "0", "test");
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: DisableCloud
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, DisableCloud001, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->DisableCloud("test");
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: ChangeAppSwitch
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
+{
+    std::string id = "testId";
+    std::string bundleName = "testName";
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(id, bundleName, CloudData::CloudService::SWITCH_ON);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: EnableCloud
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, EnableCloud, TestSize.Level0)
+{
+    std::string bundleName = "testName";
+    std::map<std::string, int32_t> switches;
+    switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
+    switches.insert_or_assign(bundleName, CloudData::CloudService::SWITCH_ON);
+    auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: OnEnableCloud
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnEnableCloud, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_ENABLE_CLOUD, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string id = "testId";
+    std::map<std::string, int32_t> switches;
+    ITypesUtil::Marshal(data, id, switches);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_ENABLE_CLOUD, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnDisableCloud
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnDisableCloud, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_DISABLE_CLOUD, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    data.WriteString(TEST_CLOUD_ID);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_DISABLE_CLOUD, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnChangeAppSwitch
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnChangeAppSwitch, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_APP_SWITCH, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    data.WriteString(TEST_CLOUD_ID);
+    data.WriteString(TEST_CLOUD_BUNDLE);
+    data.WriteInt32(CloudData::CloudService::SWITCH_ON);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_APP_SWITCH, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnClean
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnClean, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CLEAN, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string id = TEST_CLOUD_ID;
+    std::map<std::string, int32_t> actions;
+    ITypesUtil::Marshal(data, id, actions);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CLEAN, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnNotifyDataChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnNotifyDataChange, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_NOTIFY_DATA_CHANGE, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    data.WriteString(TEST_CLOUD_ID);
+    data.WriteString(TEST_CLOUD_BUNDLE);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_NOTIFY_DATA_CHANGE, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnNotifyChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnNotifyChange, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_NOTIFY_DATA_CHANGE_EXT, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    data.WriteString(TEST_CLOUD_ID);
+    data.WriteString(TEST_CLOUD_BUNDLE);
+    int32_t userId = 100;
+    data.WriteInt32(userId);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_NOTIFY_DATA_CHANGE_EXT, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnQueryStatistics
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnQueryStatistics, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY_STATISTICS, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    data.WriteString(TEST_CLOUD_ID);
+    data.WriteString(TEST_CLOUD_BUNDLE);
+    data.WriteString(TEST_CLOUD_STORE);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY_STATISTICS, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnQueryLastSyncInfo
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnQueryLastSyncInfo, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY_LAST_SYNC_INFO, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    data.WriteString(TEST_CLOUD_ID);
+    data.WriteString(TEST_CLOUD_BUNDLE);
+    data.WriteString(TEST_CLOUD_STORE);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY_LAST_SYNC_INFO, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnSetGlobalCloudStrategy
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnSetGlobalCloudStrategy, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret =
+        cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SET_GLOBAL_CLOUD_STRATEGY, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    uint32_t strategy = 0;
+    std::vector<CommonType::Value> values;
+    ITypesUtil::Marshal(data, strategy, values);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SET_GLOBAL_CLOUD_STRATEGY, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnAllocResourceAndShare
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAllocResourceAndShare, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_ALLOC_RESOURCE_AND_SHARE, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string storeId = "storeId";
+    DistributedRdb::PredicatesMemo predicates;
+    std::vector<std::string> columns;
+    std::vector<CloudData::Participant> participants;
+    ITypesUtil::Marshal(data, storeId, predicates, columns, participants);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_ALLOC_RESOURCE_AND_SHARE, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnShare
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnShare, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SHARE, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string sharingRes;
+    CloudData::Participants participants;
+    CloudData::Results results;
+    ITypesUtil::Marshal(data, sharingRes, participants, results);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SHARE, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnUnshare
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnUnshare, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_UNSHARE, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string sharingRes;
+    CloudData::Participants participants;
+    CloudData::Results results;
+    ITypesUtil::Marshal(data, sharingRes, participants, results);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_UNSHARE, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnExit
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnExit, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_EXIT, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string sharingRes;
+    std::pair<int32_t, std::string> result;
+    ITypesUtil::Marshal(data, sharingRes, result);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_EXIT, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnChangePrivilege
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnChangePrivilege, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_PRIVILEGE, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string sharingRes;
+    CloudData::Participants participants;
+    CloudData::Results results;
+    ITypesUtil::Marshal(data, sharingRes, participants, results);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_PRIVILEGE, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnQuery
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnQuery, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string sharingRes;
+    CloudData::QueryResults results;
+    ITypesUtil::Marshal(data, sharingRes, results);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnQueryByInvitation
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnQueryByInvitation, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY_BY_INVITATION, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string invitation;
+    CloudData::QueryResults results;
+    ITypesUtil::Marshal(data, invitation, results);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_QUERY_BY_INVITATION, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnConfirmInvitation
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnConfirmInvitation, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CONFIRM_INVITATION, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string invitation;
+    int32_t confirmation = 0;
+    std::tuple<int32_t, std::string, std::string> result;
+    ITypesUtil::Marshal(data, invitation, confirmation, result);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CONFIRM_INVITATION, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnChangeConfirmation
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnChangeConfirmation, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_CONFIRMATION, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string sharingRes;
+    int32_t confirmation = 0;
+    std::pair<int32_t, std::string> result;
+    ITypesUtil::Marshal(data, sharingRes, confirmation, result);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_CONFIRMATION, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnSetCloudStrategy
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnSetCloudStrategy, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SET_CLOUD_STRATEGY, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    uint32_t strategy = 0;
+    std::vector<CommonType::Value> values;
+    ITypesUtil::Marshal(data, strategy, values);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SET_CLOUD_STRATEGY, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: SharingUtil001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil001, TestSize.Level0)
+{
+    auto cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_UNKNOWN);
+    EXPECT_EQ(cfm, SharingCfm::CFM_UNKNOWN);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_ACCEPTED);
+    EXPECT_EQ(cfm, SharingCfm::CFM_ACCEPTED);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_REJECTED);
+    EXPECT_EQ(cfm, SharingCfm::CFM_REJECTED);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_SUSPENDED);
+    EXPECT_EQ(cfm, SharingCfm::CFM_SUSPENDED);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_UNAVAILABLE);
+    EXPECT_EQ(cfm, SharingCfm::CFM_UNAVAILABLE);
+    cfm = CloudData::SharingUtil::Convert(Confirmation::CFM_BUTT);
+    EXPECT_EQ(cfm, SharingCfm::CFM_UNKNOWN);
+}
+
+/**
+* @tc.name: SharingUtil002
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil002, TestSize.Level0)
+{
+    auto cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_UNKNOWN);
+    EXPECT_EQ(cfm, Confirmation::CFM_UNKNOWN);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_ACCEPTED);
+    EXPECT_EQ(cfm, Confirmation::CFM_ACCEPTED);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_REJECTED);
+    EXPECT_EQ(cfm, Confirmation::CFM_REJECTED);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_SUSPENDED);
+    EXPECT_EQ(cfm, Confirmation::CFM_SUSPENDED);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_UNAVAILABLE);
+    EXPECT_EQ(cfm, Confirmation::CFM_UNAVAILABLE);
+    cfm = CloudData::SharingUtil::Convert(SharingCfm::CFM_BUTT);
+    EXPECT_EQ(cfm, Confirmation::CFM_UNKNOWN);
+}
+
+/**
+* @tc.name: SharingUtil003
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil003, TestSize.Level0)
+{
+    auto status = CloudData::SharingUtil::Convert(CenterCode::IPC_ERROR);
+    EXPECT_EQ(status, Status::IPC_ERROR);
+    status = CloudData::SharingUtil::Convert(CenterCode::NOT_SUPPORT);
+    EXPECT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: SharingUtil004
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
+{
+    auto status = CloudData::SharingUtil::Convert(GenErr::E_OK);
+    EXPECT_EQ(status, Status::SUCCESS);
+    status = CloudData::SharingUtil::Convert(GenErr::E_ERROR);
+    EXPECT_EQ(status, Status::ERROR);
+    status = CloudData::SharingUtil::Convert(GenErr::E_INVALID_ARGS);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    status = CloudData::SharingUtil::Convert(GenErr::E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_EQ(status, Status::STRATEGY_BLOCKING);
+    status = CloudData::SharingUtil::Convert(GenErr::E_CLOUD_DISABLED);
+    EXPECT_EQ(status, Status::CLOUD_DISABLE);
+    status = CloudData::SharingUtil::Convert(GenErr::E_NETWORK_ERROR);
+    EXPECT_EQ(status, Status::NETWORK_ERROR);
+    status = CloudData::SharingUtil::Convert(GenErr::E_BUSY);
+    EXPECT_EQ(status, Status::ERROR);
+}
+
+/**
+* @tc.name: DoCloudSync
+* @tc.desc: Test the executor_ uninitialized and initialized scenarios
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, DoCloudSync, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user);
+    auto ret = sync.DoCloudSync(info);
+    EXPECT_EQ(ret, GenErr::E_NOT_INIT);
+    ret = sync.StopCloudSync(user);
+    EXPECT_EQ(ret, GenErr::E_NOT_INIT);
+    size_t max = 12;
+    size_t min = 5;
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
+    ret = sync.DoCloudSync(info);
+    EXPECT_EQ(ret, GenErr::E_OK);
+    int32_t invalidUser = -1;
+    sync.StopCloudSync(invalidUser);
+    ret = sync.StopCloudSync(user);
+    EXPECT_EQ(ret, GenErr::E_OK);
+}
+
+/**
+* @tc.name: GetPostEventTask
+* @tc.desc: Test the interface to verify the package name and table name
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
+{
+    std::vector<SchemaMeta> schemas;
+    schemaMeta_.databases[0].name = "test";
+    schemas.push_back(schemaMeta_);
+    schemaMeta_.bundleName = "test";
+    schemas.push_back(schemaMeta_);
+
+    int32_t user = 100;
+    CloudData::SyncManager::SyncInfo info(user);
+    std::vector<std::string> value;
+    info.tables_.insert_or_assign(TEST_CLOUD_STORE, value);
+
+    CloudData::SyncManager sync;
+    std::map<std::string, std::string> traceIds;
+    auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true, traceIds);
+    task();
+    EXPECT_TRUE(sync.lastSyncInfos_.Empty());
+}
+
+/**
+* @tc.name: GetRetryer
+* @tc.desc: Test the input parameters of different interfaces
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager::SyncInfo info(user);
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::Duration duration;
+    std::string prepareTraceId;
+    auto ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_OK, E_OK, prepareTraceId);
+    EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_SYNC_TASK_MERGED,
+        E_SYNC_TASK_MERGED, prepareTraceId);
+    EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(0, info, user)(duration, E_OK, E_OK, prepareTraceId);
+    EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: GetCallback
+* @tc.desc: Test the processing logic of different progress callbacks
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCallback, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager::SyncInfo info(user);
+    CloudData::SyncManager sync;
+    DistributedData::GenDetails result;
+    StoreInfo storeInfo;
+    storeInfo.user = user;
+    storeInfo.bundleName = "testBundleName";
+    int32_t triggerMode = MODE_DEFAULT;
+    std::string prepareTraceId;
+    GenAsync async = nullptr;
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
+    int32_t process = 0;
+    async = [&process](const GenDetails &details) { process = details.begin()->second.progress; };
+    GenProgressDetail detail;
+    detail.progress = GenProgress::SYNC_IN_PROGRESS;
+    result.insert_or_assign("test", detail);
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
+    EXPECT_EQ(process, GenProgress::SYNC_IN_PROGRESS);
+    detail.progress = GenProgress::SYNC_FINISH;
+    result.insert_or_assign("test", detail);
+    storeInfo.user = -1;
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
+    storeInfo.user = user;
+    sync.GetCallback(async, storeInfo, triggerMode, prepareTraceId, user)(result);
+    EXPECT_EQ(process, GenProgress::SYNC_FINISH);
+}
+
+/**
+* @tc.name: GetInterval
+* @tc.desc: Test the Interval transformation logic of the interface
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetInterval, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+
+    auto ret = sync.GetInterval(E_LOCKED_BY_OTHERS);
+    EXPECT_EQ(ret, CloudData::SyncManager::LOCKED_INTERVAL);
+    ret = sync.GetInterval(E_BUSY);
+    EXPECT_EQ(ret, CloudData::SyncManager::BUSY_INTERVAL);
+    ret = sync.GetInterval(E_OK);
+    EXPECT_EQ(ret, CloudData::SyncManager::RETRY_INTERVAL);
+}
+
+/**
+* @tc.name: GetCloudSyncInfo
+* @tc.desc: Test get cloudInfo
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCloudSyncInfo, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = false;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    info.bundleName_ = "test";
+    auto ret = sync.GetCloudSyncInfo(info, cloud);
+    EXPECT_TRUE(!ret.empty());
+}
+
+/**
+* @tc.name: RetryCallback
+* @tc.desc: Test the retry logic
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, RetryCallback, TestSize.Level0)
+{
+    int32_t user = 100;
+    std::string prepareTraceId;
+    CloudData::SyncManager sync;
+    StoreInfo storeInfo;
+    int32_t retCode = -1;
+    CloudData::SyncManager::Retryer retry = [&retCode](CloudData::SyncManager::Duration interval, int32_t code,
+                                                int32_t dbCode, const std::string &prepareTraceId) {
+        retCode = code;
+        return true;
+    };
+    DistributedData::GenDetails result;
+    auto task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT, prepareTraceId, user);
+    task(result);
+    GenProgressDetail detail;
+    detail.progress = GenProgress::SYNC_IN_PROGRESS;
+    detail.code = 100;
+    result.insert_or_assign("test", detail);
+    task = sync.RetryCallback(storeInfo, retry, MODE_DEFAULT, prepareTraceId, user);
+    task(result);
+    EXPECT_EQ(retCode, detail.code);
+}
+
+/**
+* @tc.name: UpdateCloudInfoFromServer
+* @tc.desc: Test updating cloudinfo from the server
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->UpdateCloudInfoFromServer(cloudInfo_.user);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: GetCloudInfo
+* @tc.desc: Test get cloudInfo
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    auto ret = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
+    EXPECT_EQ(ret.first, CloudData::SUCCESS);
+}
+
+/**
+* @tc.name: SubTask
+* @tc.desc: Test the subtask execution logic
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SubTask, TestSize.Level0)
+{
+    DistributedData::Subscription sub;
+    cloudServiceImpl_->InitSubTask(sub, 0);
+    MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(cloudInfo_.user), sub, true);
+    cloudServiceImpl_->InitSubTask(sub, 0);
+    int32_t userId = 0;
+    CloudData::CloudServiceImpl::Task task = [&userId]() { userId = cloudInfo_.user; };
+    cloudServiceImpl_->GenSubTask(task, cloudInfo_.user)();
+    EXPECT_EQ(userId, cloudInfo_.user);
+}
+
+/**
+* @tc.name: ConvertCursor
+* @tc.desc: Test the cursor conversion logic when the ResultSet is empty and non-null
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ConvertCursor, TestSize.Level0)
+{
+    std::map<std::string, DistributedData::Value> entry;
+    entry.insert_or_assign("test", "entry");
+    auto resultSet = std::make_shared<CursorMock::ResultSet>(1, entry);
+    auto cursor = std::make_shared<CursorMock>(resultSet);
+    auto result = cloudServiceImpl_->ConvertCursor(cursor);
+    EXPECT_TRUE(!result.empty());
+    auto resultSet1 = std::make_shared<CursorMock::ResultSet>();
+    auto cursor1 = std::make_shared<CursorMock>(resultSet1);
+    auto result1 = cloudServiceImpl_->ConvertCursor(cursor1);
+    EXPECT_TRUE(result1.empty());
+}
+
+/**
+* @tc.name: GetDbInfoFromExtraData
+* @tc.desc: Test the GetDbInfoFromExtraData function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetDbInfoFromExtraData, TestSize.Level0)
+{
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
+
+    SchemaMeta schemaMeta;
+    schemaMeta.databases.push_back(database);
+
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    database.tables.push_back(table);
+    SchemaMeta::Table table1;
+    table1.name = "test_cloud_table_name1";
+    table1.alias = "test_cloud_table_alias1";
+    table1.sharedTableName = "test_share_table_name1";
+    database.tables.emplace_back(table1);
+
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_2;
+    schemaMeta.databases.push_back(database);
+
+    ExtraData extraData;
+    extraData.info.containerName = TEST_CLOUD_DATABASE_ALIAS_2;
+    auto result = cloudServiceImpl_->GetDbInfoFromExtraData(extraData, schemaMeta);
+    EXPECT_EQ(result.begin()->first, TEST_CLOUD_STORE);
+
+    std::string tableName = "test_cloud_table_alias2";
+    extraData.info.tables.emplace_back(tableName);
+    result = cloudServiceImpl_->GetDbInfoFromExtraData(extraData, schemaMeta);
+    EXPECT_EQ(result.begin()->first, TEST_CLOUD_STORE);
+
+    std::string tableName1 = "test_cloud_table_alias1";
+    extraData.info.tables.emplace_back(tableName1);
+    extraData.info.scopes.emplace_back(DistributedData::ExtraData::SHARED_TABLE);
+    result = cloudServiceImpl_->GetDbInfoFromExtraData(extraData, schemaMeta);
+    EXPECT_EQ(result.begin()->first, TEST_CLOUD_STORE);
+}
+
+/**
+* @tc.name: QueryTableStatistic
+* @tc.desc: Test the QueryTableStatistic function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryTableStatistic, TestSize.Level0)
+{
+    auto store = std::make_shared<GeneralStoreMock>();
+    if (store != nullptr) {
+        std::map<std::string, Value> entry = { { "inserted", "TEST" }, { "updated", "TEST" }, { "normal", "TEST" } };
+        store->MakeCursor(entry);
+    }
+    auto [ret, result] = cloudServiceImpl_->QueryTableStatistic("test", store);
+    EXPECT_TRUE(ret);
+    if (store != nullptr) {
+        std::map<std::string, Value> entry = { { "Test", 1 } };
+        store->MakeCursor(entry);
+    }
+    std::tie(ret, result) = cloudServiceImpl_->QueryTableStatistic("test", store);
+    EXPECT_TRUE(ret);
+
+    if (store != nullptr) {
+        store->cursor_ = nullptr;
+    }
+    std::tie(ret, result) = cloudServiceImpl_->QueryTableStatistic("test", store);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name: GetSchemaMeta
+* @tc.desc: Test the GetSchemaMeta function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetSchemaMeta, TestSize.Level0)
+{
+    int32_t userId = 101;
+    int32_t instanceId = 0;
+    CloudInfo cloudInfo;
+    cloudInfo.user = userId;
+    cloudInfo.id = TEST_CLOUD_ID;
+    cloudInfo.enableCloud = true;
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.appId = TEST_CLOUD_APPID;
+    appInfo.version = 1;
+    appInfo.cloudSwitch = true;
+
+    cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    std::string bundleName = "testName";
+    auto [status, meta] = cloudServiceImpl_->GetSchemaMeta(userId, bundleName, instanceId);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    bundleName = TEST_CLOUD_BUNDLE;
+    DistributedData::SchemaMeta schemeMeta;
+    schemeMeta.bundleName = TEST_CLOUD_BUNDLE;
+    schemeMeta.metaVersion = DistributedData::SchemaMeta::CURRENT_VERSION + 1;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE, instanceId), schemeMeta, true);
+    std::tie(status, meta) = cloudServiceImpl_->GetSchemaMeta(userId, bundleName, instanceId);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    schemeMeta.metaVersion = DistributedData::SchemaMeta::CURRENT_VERSION;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE, instanceId), schemeMeta, true);
+    std::tie(status, meta) = cloudServiceImpl_->GetSchemaMeta(userId, bundleName, instanceId);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(meta.metaVersion, DistributedData::SchemaMeta::CURRENT_VERSION);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE, instanceId), true);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+}
+
+/**
+* @tc.name: GetAppSchemaFromServer
+* @tc.desc: Test the GetAppSchemaFromServer function input parameters of different parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
+{
+    int32_t userId = CloudServerMock::INVALID_USER_ID;
+    std::string bundleName;
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::NONE);
+    DeviceManagerAdapter::GetInstance().expireTime_ =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count() +
+        1000;
+    auto [status, meta] = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::NETWORK_ERROR);
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
+    std::tie(status, meta) = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::SCHEMA_INVALID);
+    userId = 100;
+    std::tie(status, meta) = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::SCHEMA_INVALID);
+    bundleName = TEST_CLOUD_BUNDLE;
+    std::tie(status, meta) = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(meta.bundleName, schemaMeta_.bundleName);
+}
+
+/**
+* @tc.name: OnAppUninstall
+* @tc.desc: Test the OnAppUninstall function delete the subscription data
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
+{
+    ZLOGI("weisx test OnAppUninstall 111");
+    CloudData::CloudServiceImpl::CloudStatic cloudStatic;
+    int32_t userId = 1001;
+    Subscription sub;
+    sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, 0);
+    MetaDataManager::GetInstance().SaveMeta(Subscription::GetKey(userId), sub, true);
+    CloudInfo cloudInfo;
+    cloudInfo.user = userId;
+    CloudInfo::AppInfo appInfo;
+    cloudInfo.apps.insert_or_assign(TEST_CLOUD_BUNDLE, appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    int32_t index = 1;
+    auto ret = cloudStatic.OnAppUninstall(TEST_CLOUD_BUNDLE, userId, index);
+    EXPECT_EQ(ret, E_OK);
+    Subscription sub1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(userId), sub1, true));
+    EXPECT_EQ(sub1.expiresTime.size(), 0);
+}
+
+/**
+* @tc.name: GetCloudInfo
+* @tc.desc: Test the GetCloudInfo with invalid parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetCloudInfo001, TestSize.Level0)
+{
+    ZLOGI("weisx test OnAppUninstall 111");
+    int32_t userId = 1000;
+    auto [status, cloudInfo] = cloudServiceImpl_->GetCloudInfo(userId);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::NONE);
+    DeviceManagerAdapter::GetInstance().expireTime_ =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count() +
+        1000;
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    std::tie(status, cloudInfo) = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
+    EXPECT_EQ(status, CloudData::CloudService::NETWORK_ERROR);
+    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
+}
+
+/**
+* @tc.name: PreShare
+* @tc.desc: Test the PreShare with invalid parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, PreShare, TestSize.Level0)
+{
+    int32_t userId = 1000;
+    StoreInfo info;
+    info.instanceId = 0;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    info.storeName = TEST_CLOUD_BUNDLE;
+    info.user = userId;
+    StoreMetaData meta(info);
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+    DistributedRdb::RdbQuery query;
+    auto [status, cursor] = cloudServiceImpl_->PreShare(info, query);
+    EXPECT_EQ(status, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: InitSubTask
+* @tc.desc: Test the InitSubTask with invalid parameters
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, InitSubTask, TestSize.Level0)
+{
+    uint64_t minInterval = 0;
+    uint64_t expire = 24 * 60 * 60 * 1000; // 24hours, ms
+    ExecutorPool::TaskId taskId = 100;
+    Subscription sub;
+    sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, expire);
+    std::shared_ptr<ExecutorPool> executor = std::move(cloudServiceImpl_->executor_);
+    cloudServiceImpl_->executor_ = nullptr;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_EQ(sub.GetMinExpireTime(), expire);
+    cloudServiceImpl_->executor_ = std::move(executor);
+    cloudServiceImpl_->subTask_ = taskId;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_NE(cloudServiceImpl_->subTask_, taskId);
+    cloudServiceImpl_->subTask_ = taskId;
+    cloudServiceImpl_->expireTime_ = 0;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_EQ(cloudServiceImpl_->subTask_, taskId);
+    cloudServiceImpl_->subTask_ = ExecutorPool::INVALID_TASK_ID;
+    cloudServiceImpl_->InitSubTask(sub, minInterval);
+    EXPECT_NE(cloudServiceImpl_->subTask_, ExecutorPool::INVALID_TASK_ID);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

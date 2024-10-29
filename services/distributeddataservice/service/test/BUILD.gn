@@ -131,6 +131,12 @@ ohos_unittest("CloudDataTest") {
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
   ]
+
+  cflags = [
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
+
+  cflags_cc = cflags
 }
 
 ohos_unittest("CloudTest") {

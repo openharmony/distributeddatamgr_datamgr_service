@@ -150,16 +150,25 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
-    if (status != SUCCESS) {
+    if (status != SUCCESS || !cloudInfo.enableCloud) {
         return status;
     }
-    if (!cloudInfo.enableCloud) {
-        return SUCCESS;
-    }
-    if (cloudInfo.id != id || !cloudInfo.Exist(bundleName)) {
-        ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
+    if (cloudInfo.id != id) {
+        ZLOGW("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
             Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
+        Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB,
+            WORK_DO_CLOUD_SYNC }));
         return INVALID_ARGUMENT;
+    }
+    if (!cloudInfo.Exist(bundleName)) {
+        std::tie(status, cloudInfo) = GetCloudInfoFromServer(user);
+        if (status != SUCCESS || !cloudInfo.enableCloud || cloudInfo.id != id || !cloudInfo.Exist(bundleName)) {
+            ZLOGE("invalid args, status:%{public}d, enableCloud:%{public}d, [input] id:%{public}s,"
+                  "[exist] id:%{public}s, bundleName:%{public}s", status, cloudInfo.enableCloud,
+                  Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
+            return INVALID_ARGUMENT;
+        }
+        ZLOGI("add app switch, bundleName:%{public}s", bundleName.c_str());
     }
     cloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
@@ -208,6 +217,11 @@ void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             continue;
         }
+        DistributedData::StoreInfo storeInfo;
+        storeInfo.bundleName = meta.bundleName;
+        storeInfo.user = atoi(meta.user.c_str());
+        storeInfo.storeName = meta.storeId;
+        EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
         auto status = store->Clean({}, action, "");
         if (status != E_OK) {
             ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
@@ -342,7 +356,9 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
     }
     for (auto user : users) {
         for (const auto &store : stores) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId, {}, triggerMode));
+            int32_t mode = (store.bundleName != bundleName && triggerMode == MODE_PUSH) ? MODE_CONSISTENCY
+                                                                                        : triggerMode;
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, store.bundleName, store.storeId, {}, mode));
         }
     }
     return found;
@@ -523,7 +539,7 @@ std::pair<int32_t, std::map<std::string, StatisticInfos>> CloudServiceImpl::Quer
 
 int32_t CloudServiceImpl::SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
-    if (strategy < Strategy::STRATEGY_HEAD || strategy >= Strategy::STRATEGY_BUTT) {
+    if (strategy >= Strategy::STRATEGY_BUTT) {
         ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
         return INVALID_ARGUMENT;
     }
@@ -706,7 +722,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
     }
     cloudInfo = instance->GetServerInfo(cloudInfo.user);
     if (!cloudInfo.IsValid()) {
-        ZLOGE("cloud is empty, user%{public}d", cloudInfo.user);
+        ZLOGE("cloud is empty, user:%{public}d", cloudInfo.user);
         return { CLOUD_INFO_INVALID, cloudInfo };
     }
     return { SUCCESS, cloudInfo };
@@ -756,7 +772,6 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        ZLOGE("user:%{public}d, status:%{public}d", user, status);
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -1407,7 +1422,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub, uint64_t minInterval
 
 int32_t CloudServiceImpl::SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values)
 {
-    if (strategy < 0 || strategy >= Strategy::STRATEGY_BUTT) {
+    if (strategy >= Strategy::STRATEGY_BUTT) {
         ZLOGE("invalid strategy:%{public}d, size:%{public}zu", strategy, values.size());
         return INVALID_ARGUMENT;
     }

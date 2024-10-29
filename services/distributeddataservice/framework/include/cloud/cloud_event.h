@@ -27,6 +27,7 @@ public:
         FEATURE_INIT = EVT_CLOUD,
         GET_SCHEMA,
         LOCAL_CHANGE,
+        CLEAN_DATA,
         CLOUD_SYNC,
         DATA_CHANGE,
         SET_SEARCHABLE,
