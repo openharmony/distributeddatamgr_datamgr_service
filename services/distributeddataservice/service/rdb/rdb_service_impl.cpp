@@ -39,6 +39,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_debug_info.h"
 #include "metadata/store_meta_data.h"
+#include "metadata/store_meta_data_local.h"
 #include "rdb_general_store.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
@@ -51,6 +52,7 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "xcollie.h"
+#include "permit_delegate.h"
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -788,6 +790,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     }
 
     SaveDebugInfo(meta, param);
+    SavePromiseInfo(meta, param);
 
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
@@ -1301,6 +1304,59 @@ int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSy
         debugMeta.fileInfos.insert(std::pair{name, fileInfo});
     }
     MetaDataManager::GetInstance().SaveMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param)
+{
+    if (param.tokenIds_.empty() && param.uids_.empty()) {
+        return RDB_OK;
+    }
+    StoreMetaDataLocal localMeta;
+    localMeta.promiseInfo.tokenIds = param.tokenIds_;
+    localMeta.promiseInfo.uids = param.uids_;
+    localMeta.promiseInfo.permissionNames = param.permissionNames_;
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMeta, true);
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
+{
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    auto meta = GetStoreMetaData(param);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto uid = IPCSkeleton::GetCallingUid();
+    meta.user = param.user_;
+    StoreMetaDataLocal localMeta;
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true);
+    if (!isCreated) {
+        ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
+            meta.storeId.c_str());
+        return RDB_ERROR;
+    }
+    ATokenTypeEnum type = AccessTokenKit::GetTokenType(tokenId);
+    if (type == ATokenTypeEnum::TOKEN_NATIVE) {
+        auto tokenIdRet =
+            std::find(localMeta.promiseInfo.tokenIds.begin(), localMeta.promiseInfo.tokenIds.end(), tokenId);
+        auto uidRet = std::find(localMeta.promiseInfo.uids.begin(), localMeta.promiseInfo.uids.end(), uid);
+        bool isPromise = std::any_of(localMeta.promiseInfo.permissionNames.begin(),
+            localMeta.promiseInfo.permissionNames.end(), [tokenId](const std::string &permissionName) {
+                return PermitDelegate::VerifyPermission(permissionName, tokenId);
+        });
+        if (tokenIdRet == localMeta.promiseInfo.tokenIds.end() && uidRet == localMeta.promiseInfo.uids.end() &&
+            !isPromise) {
+            return RDB_ERROR;
+        }
+    }
+    if (type == ATokenTypeEnum::TOKEN_HAP) {
+        for (const auto& permissionName : localMeta.promiseInfo.permissionNames) {
+            if (PermitDelegate::VerifyPermission(permissionName, tokenId)) {
+                return RDB_OK;
+            }
+        }
+        ZLOGE("Permission denied! tokenId:0x%{public}x", tokenId);
+        return RDB_ERROR;
+    }
     return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb
