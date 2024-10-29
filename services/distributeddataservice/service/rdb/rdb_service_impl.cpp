@@ -1319,7 +1319,7 @@ int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const Rdb
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::GetPromiseInfo(const RdbSyncerParam &param)
+int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     auto meta = GetStoreMetaData(param);
