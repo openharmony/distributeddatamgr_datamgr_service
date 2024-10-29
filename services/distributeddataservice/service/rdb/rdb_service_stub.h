@@ -111,7 +111,8 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNLOCK_CLOUD_CONTAINER)] =
             &RdbServiceStub::OnUnlockCloudContainer,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DEBUG_INFO)] = &RdbServiceStub::OnGetDebugInfo,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_VERIFY_PROMISE_INFO)] = &RdbServiceStub::OnVerifyPromiseInfo
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_VERIFY_PROMISE_INFO)] =
+            &RdbServiceStub::OnVerifyPromiseInfo
     };
 };
 } // namespace OHOS::DistributedRdb
