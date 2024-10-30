@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #define LOG_TAG "UdmfServiceStub"
 
 #include "udmf_service_stub.h"
@@ -22,6 +23,7 @@
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "udmf_conversion.h"
 #include "udmf_types_util.h"
 #include "unified_data.h"
 #include "unified_meta.h"
@@ -61,6 +63,7 @@ int32_t UdmfServiceStub::OnSetData(MessageParcel &data, MessageParcel &reply)
     customOption.tokenId = token;
     std::string key;
     int32_t status = SetData(customOption, unifiedData, key);
+    UdmfConversion::InitValueObject(unifiedData);
     if (!ITypesUtil::Marshal(reply, status, key)) {
         ZLOGE("Marshal status or key failed, status: %{public}d, key: %{public}s", status, key.c_str());
         return E_WRITE_PARCEL_ERROR;
@@ -80,6 +83,7 @@ int32_t UdmfServiceStub::OnGetData(MessageParcel &data, MessageParcel &reply)
     query.tokenId = token;
     UnifiedData unifiedData;
     int32_t status = GetData(query, unifiedData);
+    UdmfConversion::InitValueObject(unifiedData);
     if (!ITypesUtil::Marshal(reply, status, unifiedData)) {
         ZLOGE("Marshal status or unifiedData failed, status: %{public}d", status);
         return E_WRITE_PARCEL_ERROR;
@@ -99,6 +103,7 @@ int32_t UdmfServiceStub::OnGetBatchData(MessageParcel &data, MessageParcel &repl
     query.tokenId = token;
     std::vector<UnifiedData> unifiedDataSet;
     int32_t status = GetBatchData(query, unifiedDataSet);
+    UdmfConversion::InitValueObject(unifiedDataSet);
     if (!ITypesUtil::Marshal(reply, status, unifiedDataSet)) {
         ZLOGE("Marshal status or unifiedDataSet failed, status: %{public}d", status);
         return E_WRITE_PARCEL_ERROR;
@@ -137,6 +142,7 @@ int32_t UdmfServiceStub::OnDeleteData(MessageParcel &data, MessageParcel &reply)
     query.tokenId = token;
     std::vector<UnifiedData> unifiedDataSet;
     int32_t status = DeleteData(query, unifiedDataSet);
+    UdmfConversion::InitValueObject(unifiedDataSet);
     if (!ITypesUtil::Marshal(reply, status, unifiedDataSet)) {
         ZLOGE("Marshal status or unifiedDataSet failed, status: %{public}d", status);
         return E_WRITE_PARCEL_ERROR;

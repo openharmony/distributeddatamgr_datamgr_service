@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #define LOG_TAG "UdmfServiceImpl"
 
 #include "udmf_service_impl.h"
@@ -32,6 +33,7 @@
 #include "uri_permission_manager.h"
 #include "uri.h"
 #include "utd/custom_utd_installer.h"
+#include "udmf_conversion.h"
 #include "udmf_radar_reporter.h"
 
 namespace OHOS {
@@ -136,6 +138,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_DB_ERROR;
     }
 
+    UdmfConversion::InitValueObject(unifiedData);
     if (store->Put(unifiedData) != E_OK) {
         ZLOGE("Put unified data failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
@@ -335,15 +338,15 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
 
 int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData)
 {
-    ZLOGD("start");
-    if (!unifiedData.IsValid()) {
-        ZLOGE("UnifiedData is invalid.");
+    UnifiedKey key(query.key);
+    if (!unifiedData.IsValid() || !key.IsValid()) {
+        ZLOGE("data is invalid, or key is invalid. key=%{public}s.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
-
-    UnifiedKey key(query.key);
-    if (!key.IsValid()) {
-        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+    std::string bundleName;
+    PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
+    if (key.bundleName != bundleName) {
+        ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
     auto store = StoreCache::GetInstance().GetStore(key.intention);
@@ -351,7 +354,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
-
     UnifiedData data;
     int32_t res = store->Get(query.key, data);
     if (res != E_OK) {
@@ -366,11 +368,16 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     if (runtime == nullptr) {
         return E_DB_ERROR;
     }
+    if (runtime->tokenId != query.tokenId) {
+        ZLOGE("update data failed, query option tokenId not equals data's tokenId");
+        return E_INVALID_PARAMETERS;
+    }
     runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
     unifiedData.SetRuntime(*runtime);
     for (auto &record : unifiedData.GetRecords()) {
         record->SetUid(PreProcessUtils::GenerateId());
     }
+    UdmfConversion::InitValueObject(unifiedData);
     if (store->Update(unifiedData) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -399,9 +406,16 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
         if (runtime == nullptr) {
             return E_DB_ERROR;
         }
-        unifiedDataSet.push_back(data);
-        deleteKeys.push_back(runtime->key.key);
+        if (runtime->tokenId == query.tokenId) {
+            unifiedDataSet.push_back(data);
+            deleteKeys.push_back(runtime->key.key);
+        }
     }
+    if (deleteKeys.empty()) {
+        ZLOGE("Delete nothing. There is no data belonging to this application");
+        return E_OK;
+    }
+    ZLOGI("Delete data start. size: %{public}zu.", deleteKeys.size());
     if (store->DeleteBatch(deleteKeys) != E_OK) {
         ZLOGE("Remove data failed.");
         return E_DB_ERROR;
@@ -477,6 +491,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         return E_DB_ERROR;
     }
     data.GetRuntime()->privileges.emplace_back(privilege);
+    UdmfConversion::InitValueObject(data);
     if (store->Update(data) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
