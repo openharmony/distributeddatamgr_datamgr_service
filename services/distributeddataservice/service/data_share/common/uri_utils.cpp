@@ -72,7 +72,7 @@ bool URIUtils::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex
             ZLOGE("appIndex is invalid! appIndex: %{public}s", queryParams[APP_INDEX].c_str());
             return false;
         }
-        appIndex = data;
+        appIndex = static_cast<int32_t>(data);
     }
     return true;
 }
