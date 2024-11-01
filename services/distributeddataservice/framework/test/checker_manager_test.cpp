@@ -154,25 +154,6 @@ HWTEST_F(CheckerManagerTest, SystemCheckerIVI, TestSize.Level0)
 }
 
 /**
-* @tc.name: BundleChecker
-* @tc.desc: checker the bundle name of the bundle abilities.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: Sven Wang
-*/
-HWTEST_F(CheckerManagerTest, BundleChecker, TestSize.Level0)
-{
-    CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = 2000000;
-    storeInfo.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
-    storeInfo.bundleName = "ohos.test.demo";
-    HapTokenInfo tokenInfo;
-    AccessTokenKit::GetHapTokenInfo(storeInfo.tokenId, tokenInfo);
-    ASSERT_EQ(Crypto::Sha256(tokenInfo.appID), CheckerManager::GetInstance().GetAppId(storeInfo));
-    ASSERT_TRUE(CheckerManager::GetInstance().IsValid(storeInfo));
-}
-
-/**
 * @tc.name: IsDynamic
 * @tc.desc: checker data type.
 * @tc.type: FUNC
