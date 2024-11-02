@@ -20,7 +20,9 @@
 
 #include "metadata/user_meta_data.h"
 #include "serializable/serializable.h"
+#include "commu_types.h"
 namespace OHOS::DistributedData {
+using AclParams = OHOS::AppDistributedKv::AclParams;
 enum AUTH_GROUP_TYPE {
     ALL_GROUP = 0,
     IDENTICAL_ACCOUNT_GROUP = 1,
@@ -32,7 +34,8 @@ enum AUTH_GROUP_TYPE {
 class AuthHandler {
 public:
     virtual bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &peerDeviceId, int32_t authType, bool isSend = true);
+        int localUserId, int peerUserId, const std::string &peerDeviceId,
+            const std::string &peerDeviceId, const AclParams &aclParams);
 };
 
 class AuthDelegate {

@@ -28,8 +28,10 @@
 #include "utils/anonymous.h"
 #include "utils/converter.h"
 #include "types.h"
+#include "device_manager_adapter.h"
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 SessionManager &SessionManager::GetInstance()
 {
     static SessionManager instance;
@@ -58,17 +60,15 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
         }
     }
     
-    std::string bundleName = "";
-    int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if (!GetAuthParams(from, bundleName, authType)) {
-        ZLOGE("GetAuthParams failed");
+    AclParams aclParams;
+    if (!GetAuthParams(from, targetDeviceId, aclParams)) {
         return session;
     }
 
     for (const auto &user : users) {
         bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id,
-            targetDeviceId, authType);
-        ZLOGD("access to peer user %{public}d is %{public}d", user.id, isPermitted);
+            targetDeviceId, aclParams);
+        ZLOGI("access to peer user %{public}d is %{public}d", user.id, isPermitted);
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
             if (it == session.targetUserIds.end()) {
@@ -80,36 +80,64 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     return session;
 }
 
-bool SessionManager::GetAuthParams(const SessionPoint &from, std::string &bundleName, int32_t &auth) const
+bool SessionManager::GetAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+    AclParams &aclParams, int32_t peerUser) const
 {
     std::vector<StoreMetaData> metaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
-        ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(from.deviceId).c_str());
-        return false;
-    }
-    for (const auto &storeMeta : metaData) {
-        if (storeMeta.appId == from.appId) {
-            bundleName = storeMeta.bundleName;
-            auth = storeMeta.authType;
-            break;
+    if (aclParams.isSendStatus) {
+        if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
+            ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(from.deviceId).c_str());
+            return false;
+        }
+        for (const auto &storeMeta : metaData) {
+            if (storeMeta.appId == from.appId && storeMeta.storeId == from.storeId) {
+                aclParams.accCaller.bundleName = storeMeta.bundleName;
+                aclParams.accCaller.accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
+                aclParams.accCaller.userId = from.userId;
+                aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(from.deviceId);
+
+                aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
+                aclParams.authType = storeMeta.authType;
+                break;
+            }
+        }
+    } else {
+        if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ targetDeviceId }), metaData)) {
+            ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(ftargetDeviceId).c_str());
+            return false;
+        }
+        for (const auto &storeMeta : metaData) {
+            if (storeMeta.appId == from.appId) {
+                auto accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
+                aclParams.accCaller.bundleName = storeMeta.bundleName;
+                aclParams.accCaller.accountId = accountId;
+                aclParams.accCaller.userId = from.userId;
+                aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(from.deviceId);
+
+                aclParams.accCallee.accountId = accountId;
+                aclParams.accCallee.userId = peerUser;
+                aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(ftargetDeviceId);
+                aclParams.authType = storeMeta.authType;
+                break;
+            }
         }
     }
-    if (bundleName.empty()) {
-        ZLOGE("not find bundleName");
-        return false;
+
+    if (aclParams.accCaller.bundleName.empty() || metaData.empty()) {
+        ZLOGE("none bundleName or metadata, appId:%{public}s, isSendStatus:%{public}d, metaData size:%{public}zu",
+            from.appId.c_str, aclParams.isSendStatus, metaData.size());
     }
     return true;
 }
 
 bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &to) const
 {
-    std::string bundleName = "";
-    int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if (!GetAuthParams(from, bundleName, authType)) {
-        ZLOGE("GetAuthParams failed");
+    AclParams aclParams;
+    aclParams.isSendStatus = false
+    if (!GetAuthParams(from, to.deviceId, aclParams, to.userId)) {
         return false;
     }
-    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, authType, false);
+    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, aclParams);
 }
 
 bool Session::Marshal(json &node) const

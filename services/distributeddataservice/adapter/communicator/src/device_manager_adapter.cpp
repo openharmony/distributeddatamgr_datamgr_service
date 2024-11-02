@@ -757,4 +757,13 @@ bool DeviceManagerAdapter::IsSameAccount(const std::string &id)
     auto networkId = DeviceManagerAdapter::GetInstance().ToNetworkID(id);
     return DeviceManager::GetInstance().IsSameAccount(networkId);
 }
+
+bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    DmAccessCaller dmAccessCaller = { .accountId = accCaller.accountId, .pkgName = accCaller.bundleName,
+        .networkId = accCaller.networkId, .userId = accCaller.userId };
+    DmAccessCallee dmAccessCallee = { .userId = accCallee.userId, .accountId = accCallee.accountId,
+        .networkId = accCallee.networkId };
+    return DeviceManager::GetInstance().CheckAccessControl(dmAccessCaller, dmAccessCallee);
+}
 } // namespace OHOS::DistributedData

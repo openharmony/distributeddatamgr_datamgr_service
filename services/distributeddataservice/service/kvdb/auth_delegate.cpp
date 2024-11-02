@@ -32,13 +32,19 @@ public:
     // override for mock auth in current version, need remove in the future
     bool CheckAccess(
         int localUserId, int peerUserId, const std::string &peerDeviceId,
-        int32_t authType, bool isSend = true) override;
+        const AclParams &aclParams) override;
 private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
+    bool IsSystemUser(int localUserId, int peerUserId);
     static constexpr pid_t UID_CAPACITY = 10000;
     static constexpr int SYSTEM_USER = 0;
 };
+
+bool AuthHandlerStub::IsSystemUser(int localUserId, int peerUserId)
+{
+    return localUserId == SYSTEM_USER && peerUserId == SYSTEM_USER;
+}
 
 bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId)
 {
@@ -51,12 +57,33 @@ bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::str
     return peerUserId != SYSTEM_USER && IsUserActive(localUsers, localUserId) && IsUserActive(peerUsers, peerUserId);
 }
 
-bool AuthHandlerStub::CheckAccess(
-    int localUserId, int peerUserId, const std::string &peerDeviceId, int32_t authType, bool isSend)
+bool AuthHandlerStub::CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
+    const AclParams &aclParams)
 {
-    if (authType == static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT) &&
+    if (!DmAdapter::GetInstance().IsOHOSType(peerDeviceId)) {
+        return CheckUsers(localUserId, peerUserId, peerDeviceId);
+    }
+    if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::DEFAULT)) {
+        if (IsSystemUser(localUserId, peerUserId)) {
+            return true;
+        }
+        if (!CheckUsers(localUserId, peerUserId, peerDeviceId)) {
+            return false;
+        }
+        if (DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
+            return true;
+        }
+        if (DmAdapter::GetInstance().CheckAccessControl(aclParams.accCaller, aclParams.accCallee)) {
+            return true;
+        }
+        ZLOGE("CheckAccess failed. bundleName:%{public}s, localUser:%{public}d, peerUser:%{public}d",
+            aclParams.accCaller.bundleName.c_str(), localUserId, peerUserId);
+        return false;
+    }
+
+    if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT) &&
         !DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
-        ZLOGE("CheckAccess failed.");
+        ZLOGE("CheckAccess failed. not same");
         return false;
     }
     return CheckUsers(localUserId, peerUserId, peerDeviceId);

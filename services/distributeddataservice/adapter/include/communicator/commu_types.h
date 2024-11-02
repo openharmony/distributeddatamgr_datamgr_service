@@ -30,6 +30,26 @@ struct API_EXPORT DeviceInfo {
     int32_t authForm;
 };
 
+struct API_EXPORT AccessCaller {
+    std::string accountId;
+    std::string bundleName;
+    std::string networkId;
+    int32_t userId;
+};
+
+struct API_EXPORT AccessCallee {
+    std::string accountId;
+    std::string networkId;
+    int32_t userId;
+};
+
+struct API_EXPORT AclParams {
+    AccessCaller accCaller;
+    AccessCallee accCallee;
+    bool isSendStatus = true;
+    int32_t authType = 0;
+};
+
 enum RouteType : int32_t {
     INVALID_ROUTE_TYPE = -1,
     ROUTE_TYPE_ALL = 0,
