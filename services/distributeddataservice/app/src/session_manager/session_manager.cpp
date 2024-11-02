@@ -103,7 +103,7 @@ bool SessionManager::GetAuthParams(const SessionPoint &from, const std::string &
         }
     } else {
         if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ targetDeviceId }), metaData)) {
-            ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(ftargetDeviceId).c_str());
+            ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(targetDeviceId).c_str());
             return false;
         }
         for (const auto &storeMeta : metaData) {
@@ -125,7 +125,7 @@ bool SessionManager::GetAuthParams(const SessionPoint &from, const std::string &
 
     if (aclParams.accCaller.bundleName.empty() || metaData.empty()) {
         ZLOGE("none bundleName or metadata, appId:%{public}s, isSendStatus:%{public}d, metaData size:%{public}zu",
-            from.appId.c_str, aclParams.isSendStatus, metaData.size());
+            from.appId.c_str(), aclParams.isSendStatus, metaData.size());
     }
     return true;
 }
@@ -133,7 +133,7 @@ bool SessionManager::GetAuthParams(const SessionPoint &from, const std::string &
 bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &to) const
 {
     AclParams aclParams;
-    aclParams.isSendStatus = false
+    aclParams.isSendStatus = false;
     if (!GetAuthParams(from, to.deviceId, aclParams, to.userId)) {
         return false;
     }
