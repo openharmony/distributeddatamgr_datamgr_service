@@ -116,7 +116,7 @@ bool SessionManager::GetAuthParams(const SessionPoint &from, const std::string &
 
                 aclParams.accCallee.accountId = accountId;
                 aclParams.accCallee.userId = peerUser;
-                aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(ftargetDeviceId);
+                aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
                 aclParams.authType = storeMeta.authType;
                 break;
             }
