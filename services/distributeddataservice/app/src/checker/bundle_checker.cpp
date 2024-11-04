@@ -78,7 +78,7 @@ std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
         ZLOGE("Failed to get bundle manager");
         return "";
     }
-    int32_t userId = IPCSkeleton::GetCallingUid() / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
+    int32_t userId = info.uid / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
     std::string appId = bundleManager->GetAppIdByBundleName(info.bundleName, userId);
     if (appId.empty()) {
         ZLOGE("GetAppIdByBundleName failed appId:%{public}s, bundleName:%{public}s, uid:%{public}d",
