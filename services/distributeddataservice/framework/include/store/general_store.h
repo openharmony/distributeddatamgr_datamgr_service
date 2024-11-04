@@ -171,6 +171,8 @@ public:
 
     virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) = 0;
 
+    virtual int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) = 0;
+
     virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId) {};

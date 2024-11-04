@@ -487,6 +487,19 @@ int32_t RdbGeneralStore::MergeMigratedData(const std::string &tableName, VBucket
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
+int32_t RdbGeneralStore::CleanTrackerData(const std::string &tableName, int64_t cursor)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
+              Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ERROR;
+    }
+
+    auto status = delegate_->CleanTrackerData(tableName, cursor);
+    return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+}
+
 int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParam)
 {
     DistributedDB::Query dbQuery;
