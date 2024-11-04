@@ -28,6 +28,10 @@ public:
     void OnChangeFromRdb(RdbChangeNode &changeNode) override;
 
 private:
+    int PrepareRdbChangeNodeData(RdbChangeNode &changeNode);
+    int CreateAshmem(RdbChangeNode &changeNode);
+    int WriteAshmem(RdbChangeNode &changeNode, void *data, int len, int &offset);
+    int SerializeDataIntoAshmem(RdbChangeNode &changeNode);
     static inline BrokerDelegator<RdbObserverProxy> delegator_;
 };
 

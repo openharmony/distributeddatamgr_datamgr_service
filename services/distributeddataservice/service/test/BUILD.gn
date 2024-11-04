@@ -970,6 +970,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
+    "data_share_obs_proxy_test.cpp",
     "data_share_profile_config_test.cpp",
     "data_share_service_impl_test.cpp",
     "data_share_service_stub_test.cpp",
