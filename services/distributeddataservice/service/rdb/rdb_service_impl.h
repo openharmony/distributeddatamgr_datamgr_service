@@ -22,6 +22,8 @@
 #include <mutex>
 #include <string>
 #include "cloud/cloud_event.h"
+#include "commonevent/data_change_event.h"
+#include "commonevent/set_searchable_event.h"
 #include "concurrent_map.h"
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
@@ -53,7 +55,7 @@ public:
     int32_t InitNotifier(const RdbSyncerParam &param, sptr<IRemoteObject> notifier) override;
 
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
-        const std::vector<Reference> &references, int32_t type = DISTRIBUTED_DEVICE) override;
+        const std::vector<Reference> &references, bool isRebuild, int32_t type = DISTRIBUTED_DEVICE) override;
 
     std::pair<int32_t, std::shared_ptr<ResultSet>> RemoteQuery(const RdbSyncerParam& param, const std::string& device,
         const std::string& sql, const std::vector<std::string>& selectionArgs) override;
@@ -86,7 +88,7 @@ public:
     int32_t OnInitialize() override;
 
     int32_t NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
-        uint32_t delay = 0) override;
+        const RdbNotifyConfig &rdbNotifyConfig) override;
     int32_t SetSearchable(const RdbSyncerParam& param, bool isSearchable) override;
     int32_t Disable(const RdbSyncerParam& param) override;
     int32_t Enable(const RdbSyncerParam& param) override;
@@ -100,6 +102,8 @@ public:
     std::pair<int32_t, uint32_t> LockCloudContainer(const RdbSyncerParam &param) override;
 
     int32_t UnlockCloudContainer(const RdbSyncerParam &param) override;
+
+    int32_t GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo) override;
 
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
@@ -196,10 +200,18 @@ private:
 
     StoreInfo GetStoreInfo(const RdbSyncerParam &param);
 
+    int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+
+    int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
+        DistributedData::SetSearchableEvent::EventInfo &eventInfo);
+    
+    bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
+        DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
+
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
-    ConcurrentMap<std::string, ExecutorPool::TaskId> heartbeatTaskIds_;
+    ConcurrentMap<int32_t, std::map<std::string, ExecutorPool::TaskId>> heartbeatTaskIds_;
 };
 } // namespace OHOS::DistributedRdb
 #endif

@@ -25,6 +25,7 @@
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
+
 namespace OHOS::DistributedData {
 class CloudDB;
 class AssetLoader;
@@ -131,7 +132,7 @@ public:
         const std::vector<std::string> &tables, int type, const std::vector<Reference> &references) = 0;
 
     virtual int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
-        const std::string &extendColName) = 0;
+        const std::string &extendColName, bool isForceUpgrade) = 0;
 
     virtual int32_t Insert(const std::string &table, VBuckets &&values) = 0;
 
@@ -171,6 +172,8 @@ public:
 
     virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) = 0;
 
+    virtual int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) = 0;
+
     virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId) {};
@@ -178,7 +181,7 @@ public:
     virtual void SetConfig(const StoreConfig &storeConfig) {};
 
     virtual std::pair<int32_t, uint32_t> LockCloudDB() = 0;
-
+ 
     virtual int32_t UnLockCloudDB() = 0;
 };
 } // namespace OHOS::DistributedData

@@ -330,6 +330,11 @@ int32_t KVDBGeneralStore::MergeMigratedData(const std::string &tableName, VBucke
     return GeneralError::E_NOT_SUPPORT;
 }
 
+int32_t KVDBGeneralStore::CleanTrackerData(const std::string &tableName, int64_t cursor)
+{
+    return GeneralError::E_NOT_SUPPORT;
+}
+
 KVDBGeneralStore::DBSyncCallback KVDBGeneralStore::GetDBSyncCompleteCB(DetailAsync async)
 {
     if (!async) {
@@ -553,8 +558,8 @@ int32_t KVDBGeneralStore::SetDistributedTables(
     return GeneralError::E_OK;
 }
 
-int32_t KVDBGeneralStore::SetTrackerTable(
-    const std::string &tableName, const std::set<std::string> &trackerColNames, const std::string &extendColName)
+int32_t KVDBGeneralStore::SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
+    const std::string &extendColName, bool isForceUpgrade)
 {
     return GeneralError::E_OK;
 }
@@ -674,9 +679,9 @@ KVDBGeneralStore::DBProcessCB KVDBGeneralStore::GetDBProcessCB(DetailAsync async
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
                 detail.changeCount = (process.process == FINISHED)
-                                         ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
-                                               value.downLoadInfo.deleteCount
-                                         : 0;
+                                        ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
+                                              value.downLoadInfo.deleteCount
+                                        : 0;
             }
         }
         if (async) {
@@ -778,7 +783,7 @@ std::pair<int32_t, uint32_t> KVDBGeneralStore::LockCloudDB()
 {
     return { GeneralError::E_NOT_SUPPORT, 0 };
 }
-
+ 
 int32_t KVDBGeneralStore::UnLockCloudDB()
 {
     return GeneralError::E_NOT_SUPPORT;

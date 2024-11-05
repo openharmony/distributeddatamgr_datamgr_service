@@ -37,8 +37,8 @@ int32_t GeneralStoreMock::SetDistributedTables(
     return 0;
 }
 
-int32_t GeneralStoreMock::SetTrackerTable(
-    const std::string &tableName, const std::set<std::string> &trackerColNames, const std::string &extendColName)
+int32_t GeneralStoreMock::SetTrackerTable(const std::string &tableName,
+    const std::set<std::string> &trackerColNames, const std::string &extendColName, bool isForceUpgrade)
 {
     return 0;
 }
@@ -129,6 +129,11 @@ int32_t GeneralStoreMock::MergeMigratedData(const std::string &tableName, VBucke
     return 0;
 }
 
+int32_t GeneralStoreMock::CleanTrackerData(const std::string &tableName, int64_t cursor)
+{
+    return 0;
+}
+
 std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::string &table, const std::string &sql,
     Values &&args)
 {
@@ -150,7 +155,7 @@ std::pair<int32_t, uint32_t> GeneralStoreMock::LockCloudDB()
 {
     return { E_OK, 0 };
 }
-
+ 
 int32_t GeneralStoreMock::UnLockCloudDB()
 {
     return E_OK;

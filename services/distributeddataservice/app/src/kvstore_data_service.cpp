@@ -663,10 +663,13 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 ZLOGI("bundleName:%{public}s, user:%{public}s", meta.bundleName.c_str(), meta.user.c_str());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
-                MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
-                MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
-                MetaDataManager::GetInstance().DelMeta(meta.appId, true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+                MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
+                MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
+                MetaDataManager::GetInstance().DelMeta(meta.GetBackupSecretKey(), true);
+                MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
+                MetaDataManager::GetInstance().DelMeta(meta.appId, true);
+                MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
                 PermitDelegate::GetInstance().DelCache(meta.GetKey());
             }
             g_kvStoreAccountEventStatus = 0;
@@ -832,10 +835,13 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
                 Anonymous::Change(meta.storeId).c_str(), appIndex);
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetBackupSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.appId, true);
-            MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
             PermitDelegate::GetInstance().DelCache(meta.GetKey());
         }
     }

@@ -62,7 +62,7 @@ public:
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
 	    const std::vector<Reference> &references) override;
     int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
-        const std::string& extendColName) override;
+        const std::string& extendColName, bool isForceUpgrade = false) override;
     int32_t Insert(const std::string &table, VBuckets &&values) override;
     int32_t Update(const std::string &table, const std::string &setSql, Values &&values, const std::string &whereSql,
         Values &&conditions) override;
@@ -84,6 +84,7 @@ public:
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
+    int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
@@ -173,6 +174,7 @@ private:
     uint32_t lastErrCnt_ = 0;
     uint32_t syncNotifyFlag_ = 0;
     std::atomic<SyncId> syncTaskId_ = 0;
+    std::shared_mutex asyncMutex_ {};
     mutable std::shared_mutex rdbCloudMutex_;
     struct FinishTask {
         TaskId taskId = Executor::INVALID_TASK_ID;

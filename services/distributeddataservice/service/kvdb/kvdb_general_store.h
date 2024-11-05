@@ -51,7 +51,7 @@ public:
     int32_t SetDistributedTables(
         const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references) override;
     int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
-        const std::string &extendColName) override;
+        const std::string &extendColName, bool isForceUpgrade = false) override;
     int32_t Insert(const std::string &table, VBuckets &&values) override;
     int32_t Update(const std::string &table, const std::string &setSql, Values &&values, const std::string &whereSql,
         Values &&conditions) override;
@@ -72,16 +72,16 @@ public:
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
+    int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId) override;
     void SetConfig(const StoreConfig &storeConfig) override;
     void SetExecutor(std::shared_ptr<Executor> executor) override;
-    virtual std::pair<int32_t, uint32_t> LockCloudDB() override;
-    virtual int32_t UnLockCloudDB() override;
-
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
     static DBSecurity GetDBSecurity(int32_t secLevel);
+    std::pair<int32_t, uint32_t> LockCloudDB() override;
+    int32_t UnLockCloudDB() override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;
@@ -134,7 +134,7 @@ private:
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
-    static constexpr const char *defaultAccountId = "default";
+    static constexpr const char *defaultAccountId = "ohosAnonymousUid";
     bool enableCloud_ = false;
     bool isPublic_ = false;
     static const std::map<DBStatus, GenErr> dbStatusMap_;
