@@ -15,14 +15,14 @@
 #define LOG_TAG "BundleChecker"
 
 #include "bundle_checker.h"
-#include <iservice_registry.h>
 #include <memory>
-#include <system_ability_definition.h>
 #include "accesstoken_kit.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "log_print.h"
+#include "system_ability_definition.h"
 #include "utils/crypto.h"
 
 namespace OHOS {
@@ -70,7 +70,7 @@ std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
     }
     auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (bundleMgrProxy == nullptr) {
-        ZLOGE("Failed to GetSystemAbility.");
+        ZLOGE("Failed to Get BMS SA.");
         return "";
     }
     auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
@@ -83,13 +83,15 @@ std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
     if (appId.empty()) {
         ZLOGE("GetAppIdByBundleName failed appId:%{public}s, bundleName:%{public}s, uid:%{public}d",
             appId.c_str(), info.bundleName.c_str(), userId);
-        return "";
     }
     return appId;
 }
 
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
+    if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
+        return "";
+    }
     auto appId = GetBundleAppId(info);
     if (appId.empty()) {
         return "";
@@ -118,6 +120,9 @@ bool BundleChecker::IsValid(const CheckerManager::StoreInfo &info)
 
 bool BundleChecker::IsDistrust(const CheckerManager::StoreInfo &info)
 {
+    if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
+        return false;
+    }
     auto appId = GetBundleAppId(info);
     if (appId.empty()) {
         return false;
