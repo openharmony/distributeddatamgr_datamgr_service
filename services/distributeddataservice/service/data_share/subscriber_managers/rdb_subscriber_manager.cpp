@@ -343,6 +343,13 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         }
         changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
+    if (!tpl.update_.empty()) {
+        auto [errCode, rowCount] = delegate->UpdateSql(tpl.update_);
+        if (errCode != E_OK) {
+            ZLOGE("Update failed, err:%{public}d", errCode);
+        }
+        ZLOGI("Update finished, data changed:%{public}ld", rowCount);
+    }
 
     ZLOGI("emit, valSize: %{public}zu, dataSize:%{public}zu, uri:%{public}s,",
         val.size(), changeNode.data_.size(), DistributedData::Anonymous::Change(changeNode.uri_).c_str());

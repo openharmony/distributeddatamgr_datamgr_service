@@ -38,6 +38,7 @@ public:
         const int32_t callingPid) override;
     std::string Query(const std::string &sql, const std::vector<std::string> &selectionArgs) override;
     std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) override;
+    std::pair<int, int64_t> UpdateSql(const std::string &sql) override;
     bool IsInvalid() override;
     std::pair<int64_t, int64_t> InsertEx(const std::string &tableName,
         const DataShareValuesBucket &valuesBucket) override;
