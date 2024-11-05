@@ -136,6 +136,10 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
             static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
         delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
     }
+    ZLOGI("Get rdb store, tokenId:%{public}u, bundleName:%{public}s, storeName:%{public}s, user:%{public}s,"
+          "isEncrypt:%{public}d, isManualClean:%{public}d, isSearchable:%{public}d",
+          meta.tokenId, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.user.c_str(),
+          meta.isEncrypt, meta.isManualClean, meta.isSearchable);
 }
 
 RdbGeneralStore::~RdbGeneralStore()
