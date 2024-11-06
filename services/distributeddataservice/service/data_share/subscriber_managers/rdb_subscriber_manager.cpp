@@ -348,7 +348,7 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         if (errCode != E_OK) {
             ZLOGE("Update failed, err:%{public}d", errCode);
         }
-        ZLOGI("Update finished, data changed:%{public}ld", rowCount);
+        ZLOGI("Update finished, data changed:%{public}lld", rowCount);
     }
 
     ZLOGI("emit, valSize: %{public}zu, dataSize:%{public}zu, uri:%{public}s,",

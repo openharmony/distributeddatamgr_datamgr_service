@@ -290,7 +290,7 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
     return resultSet;
 }
 
-std::pair<int, int64_t> UpdateSql(const std::string &sql)
+std::pair<int, int64_t> RdbDelegate::UpdateSql(const std::string &sql)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
