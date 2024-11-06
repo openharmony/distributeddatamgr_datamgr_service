@@ -88,7 +88,6 @@ public:
     bool IsDynamic(const StoreMetaData &metaData);
     bool IsStatics(const StoreMetaData &metaData);
     bool IsSupportMatrix();
-    bool IsConsistent();
 
 private:
     static constexpr uint32_t RESET_MASK_DELAY = 10; // min
