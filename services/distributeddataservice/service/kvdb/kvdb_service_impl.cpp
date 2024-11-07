@@ -975,7 +975,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
     if (uuids.empty()) {
         ZLOGW("no device seqId:0x%{public}" PRIx64 " remote:%{public}zu appId:%{public}s storeId:%{public}s",
             info.seqId, info.devices.size(), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
-        return Status::ERROR;
+        return Status::DEVICE_NOT_ONLINE;
     }
     if (IsNeedMetaSync(meta, uuids)) {
         auto recv = DeviceMatrix::GetInstance().GetRecvLevel(uuids[0],
@@ -1124,7 +1124,18 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
         std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     std::map<std::string, Status> result;
     for (auto &[key, status] : dbResult) {
-        result[key] = ConvertDbStatus(status);
+        if (status < 0) { // pass on softbus error code
+            result[key] = static_cast<Status>(status);
+        } else {
+            if (status == DBStatus::COMM_FAILURE) {
+                if (DMAdapter::GetInstance().ToUUID(key).empty()) {
+                    result[key] = Status::DEVICE_NOT_ONLINE;
+                } else {
+                    result[key] = Status::PEER_DATABASE_NOT_EXIST;
+                }
+            }
+            result[key] = ConvertDbStatus(status);
+        }
     }
     for (const auto &device : info.devices) {
         auto it = result.find(device);

@@ -34,8 +34,9 @@ void KvStoreDeviceListener::OnDeviceChanged(
     ZLOGI("device is %{public}d", type);
 }
 
-void KvStoreDeviceListener::OnSessionReady(const AppDistributedKv::DeviceInfo &info) const
+void KvStoreDeviceListener::OnSessionReady(const AppDistributedKv::DeviceInfo &info, const int &errCode) const
 {
+    (void)errCode;
     kvStoreDataService_.OnSessionReady(info);
 }
 
