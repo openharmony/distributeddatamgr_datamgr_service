@@ -82,11 +82,12 @@ bool AuthHandlerStub::CheckAccess(int localUserId, int peerUserId, const std::st
     }
 
     if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT) &&
-        !DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
-        ZLOGE("CheckAccess failed. not same");
-        return false;
+        DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
+        return CheckUsers(localUserId, peerDeviceId, peerDeviceId);
     }
-    return CheckUsers(localUserId, peerUserId, peerDeviceId);
+    ZLOGE("CheckAccess failed.bundleName:%{public}s,peerDeviceId:%{public}s,authtype:%{public}d",
+        aclParams.accCaller.bundleName.c_str(), Anonymous::Change(peerDeviceId).c_str(), aclParams.authType);
+    return false;
 }
 
 bool AuthHandlerStub::IsUserActive(const std::vector<UserStatus> &users, int32_t userId)

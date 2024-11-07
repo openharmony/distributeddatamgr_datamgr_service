@@ -123,9 +123,10 @@ bool SessionManager::GetAuthParams(const SessionPoint &from, const std::string &
         }
     }
 
-    if (aclParams.accCaller.bundleName.empty() || metaData.empty()) {
-        ZLOGE("none bundleName or metadata, appId:%{public}s, isSendStatus:%{public}d, metaData size:%{public}zu",
-            from.appId.c_str(), aclParams.isSendStatus, metaData.size());
+    if (metaData.empty()) {
+        ZLOGE("not find metadata,appId:%{public}s,isSendStatus:%{public}d,localDevId:%{public}d,tarDevid:%{public}d",
+            from.appId.c_str(), aclParams.isSendStatus, Anonymous::Change(from.deviceId).c_str(),
+            Anonymous::Change(targetDeviceId).c_str());
     }
     return true;
 }
