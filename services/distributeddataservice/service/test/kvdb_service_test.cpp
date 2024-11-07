@@ -660,7 +660,6 @@ HWTEST_F(AuthHandlerTest, AuthHandler, TestSize.Level0)
     AclParams aclParams;
     aclParams.isSendStatus = false;
     aclParams.authType = static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT);
-    bool isSend = false;
     auto result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
     EXPECT_TRUE(result);
     
