@@ -221,7 +221,7 @@ void ProcessCommunicatorImpl::OnDeviceChanged(const DeviceInfo &info, const Devi
     onDeviceChangeHandler_(devInfo, (type == DeviceChangeType::DEVICE_ONLINE));
 }
 
-void ProcessCommunicatorImpl::OnSessionReady(const DeviceInfo &info) const
+void ProcessCommunicatorImpl::OnSessionReady(const DeviceInfo &info, const int &errCode) const
 {
     std::lock_guard<decltype(sessionMutex_)> lock(sessionMutex_);
     if (sessionListener_ == nullptr) {
@@ -229,7 +229,7 @@ void ProcessCommunicatorImpl::OnSessionReady(const DeviceInfo &info) const
     }
     DeviceInfos devInfos;
     devInfos.identifier = info.uuid;
-    sessionListener_(devInfos);
+    sessionListener_(devInfos, errCode);
 }
 
 std::shared_ptr<ExtendHeaderHandle> ProcessCommunicatorImpl::GetExtendHeaderHandle(const ExtendInfo &info)

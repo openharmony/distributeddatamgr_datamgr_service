@@ -52,7 +52,7 @@ public:
     bool isReuse = false;
 
 private:
-    Status Open(int32_t socket, const QosTV qos[], const ISocketListener *listener);
+    int32_t Open(int32_t socket, const QosTV qos[], const ISocketListener *listener);
     std::pair<int32_t, uint32_t> GetMtu(int32_t socket);
     Time CalcExpireTime() const;
 

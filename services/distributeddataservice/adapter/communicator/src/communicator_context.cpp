@@ -17,6 +17,7 @@
 #include "communicator_context.h"
 #include "log_print.h"
 #include "kvstore_utils.h"
+#include "softbus_error_code.h"
 
 namespace OHOS::DistributedData {
 using KvUtils = OHOS::DistributedKv::KvStoreUtils;
@@ -72,28 +73,32 @@ Status CommunicatorContext::UnRegSessionListener(const DevChangeListener *observ
     return Status::SUCCESS;
 }
 
-void CommunicatorContext::NotifySessionReady(const std::string &deviceId)
+void CommunicatorContext::NotifySessionReady(const std::string &deviceId, const int &errCode)
 {
     if (deviceId.empty()) {
         ZLOGE("deviceId empty");
         return;
     }
-    devices_.Insert(deviceId, deviceId);
+    if (errCode == SOFTBUS_OK) {
+        devices_.Insert(deviceId, deviceId);
+    }
     DeviceInfo devInfo;
     devInfo.uuid = deviceId;
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         for (const auto &observer : observers_) {
             if (observer != nullptr) {
-                observer->OnSessionReady(devInfo);
+                observer->OnSessionReady(devInfo, errCode);
             }
         }
         ZLOGI("Notify session begin, deviceId:%{public}s, observer count:%{public}zu",
             KvUtils::ToBeAnonymous(deviceId).c_str(), observers_.size());
     }
-    std::lock_guard<decltype(sessionMutex_)> sessionLockGard(sessionMutex_);
-    if (closeListener_) {
-        closeListener_(deviceId);
+    if (errCode == SOFTBUS_OK) {
+        std::lock_guard<decltype(sessionMutex_)> sessionLockGard(sessionMutex_);
+        if (closeListener_) {
+            closeListener_(deviceId);
+        }
     }
 }
 

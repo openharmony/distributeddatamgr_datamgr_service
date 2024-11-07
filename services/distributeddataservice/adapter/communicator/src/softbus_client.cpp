@@ -114,10 +114,8 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
         }
         ZLOGI("Bind Start, device:%{public}s socket:%{public}d type:%{public}u",
             KvStoreUtils::ToBeAnonymous(client->device_.deviceId).c_str(), clientSocket, type);
-        auto status = client->Open(clientSocket, QOS_INFOS[type % QOS_BUTT], listener);
-        if (status == Status::SUCCESS) {
-            Context::GetInstance().NotifySessionReady(client->device_.deviceId);
-        }
+        int32_t status = client->Open(clientSocket, QOS_INFOS[type % QOS_BUTT], listener);
+        Context::GetInstance().NotifySessionReady(client->device_.deviceId, status);
         client->isOpening_.store(false);
     };
     Context::GetInstance().GetThreadPool()->Execute(task);
@@ -138,7 +136,7 @@ Status SoftBusClient::CheckStatus()
     return Status::ERROR;
 }
 
-Status SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListener *listener)
+int32_t SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListener *listener)
 {
     int32_t status = ::Bind(socket, qos, QOS_COUNT, listener);
     ZLOGI("Bind %{public}s,session:%{public}s,socketId:%{public}d",
@@ -148,14 +146,15 @@ Status SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListe
         ZLOGE("[Bind] device:%{public}s socket failed, session:%{public}s,result:%{public}d",
             KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), status);
         ::Shutdown(socket);
-        return Status::NETWORK_ERROR;
+        return status;
     }
     UpdateExpireTime();
     uint32_t mtu = 0;
     std::tie(status, mtu) = GetMtu(socket);
     if (status != SOFTBUS_OK) {
-        ZLOGE("GetMtu failed, session:%{public}s, socket:%{public}d", pipe_.pipeId.c_str(), socket_);
-        return Status::NETWORK_ERROR;
+        ZLOGE("GetMtu failed, session:%{public}s, socket:%{public}d, status:%{public}d", pipe_.pipeId.c_str(), socket_,
+            status);
+        return status;
     }
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -166,7 +165,7 @@ Status SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListe
     ZLOGI("open %{public}s, session:%{public}s success, socket:%{public}d",
         KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket_);
     ConnectManager::GetInstance()->OnSessionOpen(DmAdapter::GetInstance().GetDeviceInfo(device_.deviceId).networkId);
-    return Status::SUCCESS;
+    return status;
 }
 
 SoftBusClient::Time SoftBusClient::GetExpireTime() const
