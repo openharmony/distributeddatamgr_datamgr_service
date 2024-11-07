@@ -46,7 +46,7 @@ private:
     bool RestoreIfNeed(int32_t dbStatus);
     void Backup();
     void Restore();
-    void RemoveDbFile(bool isBackUp);
+    void RemoveDbFile(bool isBackUp) const;
     bool CopyFile(bool isBackup);
     std::recursive_mutex mutex_;
     std::string path_;

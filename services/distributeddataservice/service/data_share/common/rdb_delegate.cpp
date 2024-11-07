@@ -90,15 +90,10 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
 }
 
 RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
-    bool registerFunction, const std::string &extUriData, const std::string &backup)
+    bool registerFunction, const std::string &extUri, const std::string &backup)
+    : tokenId_(meta.tokenId), bundleName_(meta.bundleName), storeName_(meta.storeId),
+    haMode_(meta.haMode), extUri_(extUri), backup_(backup)
 {
-    tokenId_ = meta.tokenId;
-    bundleName_ = meta.bundleName;
-    storeName_ = meta.storeId;
-    extUri_ = extUriData;
-    haMode_ = meta.haMode;
-    backup_ = backup;
-
     auto [err, config] = GetConfig(meta, registerFunction);
     if (err != E_OK) {
         ZLOGW("Get rdbConfig failed, errCode is %{public}d, dir is %{public}s", err,

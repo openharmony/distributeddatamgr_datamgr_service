@@ -42,7 +42,7 @@ const char* g_backupFiles[] = {
 const char* BACKUP_SUFFIX = ".backup";
 
 // If isBackUp is true, remove db backup files. Otherwise remove source db files.
-void KvDelegate::RemoveDbFile(bool isBackUp)
+void KvDelegate::RemoveDbFile(bool isBackUp) const
 {
     for (auto &fileName: g_backupFiles) {
         std::string dbPath = path_ + "/" + fileName;
