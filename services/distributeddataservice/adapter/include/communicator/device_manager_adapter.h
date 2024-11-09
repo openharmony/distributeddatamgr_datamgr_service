@@ -80,8 +80,8 @@ public:
     NetworkType GetNetworkType(bool retrieve = false);
     int32_t GetAuthType(const std::string& id);
     bool IsSameAccount(const std::string &id);
+    bool IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
-    bool CheckIsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 

@@ -767,7 +767,7 @@ bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, con
     return DeviceManager::GetInstance().CheckAccessControl(dmAccessCaller, dmAccessCallee);
 }
 
-bool DeviceManagerAdapter::CheckIsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
+bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
 {
     DmAccessCaller dmAccessCaller = { .accountId = accCaller.accountId, .networkId = accCaller.networkId,
         .userId = accCaller.userId };
