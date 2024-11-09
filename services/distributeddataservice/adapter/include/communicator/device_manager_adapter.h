@@ -81,6 +81,7 @@ public:
     int32_t GetAuthType(const std::string& id);
     bool IsSameAccount(const std::string &id);
     bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
+    bool CheckIsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 

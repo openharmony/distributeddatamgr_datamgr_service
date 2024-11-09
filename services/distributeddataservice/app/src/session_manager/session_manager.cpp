@@ -64,15 +64,32 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     if (!GetAuthParams(from, targetDeviceId, aclParams)) {
         return session;
     }
+    return GetTrustUsers(from, targetDeviceId, users, session, aclParams);
+}
 
+Session SessionManager::GetTrustUsers(const SessionPoint &from, const std::string &targetDeviceId,
+    const std::vector<DistributedData::UserStatus> &users, const AclParams) const
+{
+    std::vector<uint32_t> noAccountUsers {};
     for (const auto &user : users) {
+        bool isSameAccountUser = true;
         bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id,
-            targetDeviceId, aclParams);
+            targetDeviceId, aclParams, isSameAccountUser);
         ZLOGI("access to peer user %{public}d is %{public}d", user.id, isPermitted);
         if (isPermitted) {
-            auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
-            if (it == session.targetUserIds.end()) {
-                session.targetUserIds.push_back(user.id);
+            if (!isSameAccountUser) {
+                auto it = std::find(noAccountUsers.begin(), noAccountUsers.end(), user.id);
+                if (it == noAccountUsers.end()) {
+                    noAccountUsers.push_back(user.id);
+                }
+            } else {
+                auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
+                if (it == session.targetUserIds.end()) {
+                    session.targetUserIds.push_back(user.id);
+                }
+            }
+            if (!noAccountUsers.empty()) {
+                session.targetUserIds.insert(session.targetUserIds.end(), noAccountUsers.begin(), noAccountUsers.end());
             }
         }
     }
@@ -138,7 +155,8 @@ bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &
     if (!GetAuthParams(from, to.deviceId, aclParams, to.userId)) {
         return false;
     }
-    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, aclParams);
+    bool isSameAccountUser = true;
+    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, aclParams, isSameAccountUser);
 }
 
 bool Session::Marshal(json &node) const

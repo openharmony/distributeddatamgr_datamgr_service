@@ -32,7 +32,7 @@ public:
     // override for mock auth in current version, need remove in the future
     bool CheckAccess(
         int localUserId, int peerUserId, const std::string &peerDeviceId,
-        const AclParams &aclParams) override;
+        const AclParams &aclParams, bool &isSameAccountUser) override;
 private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
@@ -58,7 +58,7 @@ bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::str
 }
 
 bool AuthHandlerStub::CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
-    const AclParams &aclParams)
+    const AclParams &aclParams, bool &isSameAccountUser)
 {
     if (!DmAdapter::GetInstance().IsOHOSType(peerDeviceId)) {
         return CheckUsers(localUserId, peerUserId, peerDeviceId);
@@ -70,10 +70,11 @@ bool AuthHandlerStub::CheckAccess(int localUserId, int peerUserId, const std::st
         if (!CheckUsers(localUserId, peerUserId, peerDeviceId)) {
             return false;
         }
-        if (DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
+        if (DmAdapter::GetInstance().CheckIsSameAccount(aclParams.accCaller, aclParams.accCallee)) {
             return true;
         }
         if (DmAdapter::GetInstance().CheckAccessControl(aclParams.accCaller, aclParams.accCallee)) {
+            isSameAccountUser = false;
             return true;
         }
         ZLOGE("CheckAccess failed. bundleName:%{public}s, localUser:%{public}d, peerUser:%{public}d",

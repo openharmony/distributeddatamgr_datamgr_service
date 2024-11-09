@@ -766,4 +766,13 @@ bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, con
         .networkId = accCallee.networkId };
     return DeviceManager::GetInstance().CheckAccessControl(dmAccessCaller, dmAccessCallee);
 }
+
+bool DeviceManagerAdapter::CheckIsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    DmAccessCaller dmAccessCaller = { .accountId = accCaller.accountId, .networkId = accCaller.networkId,
+        .userId = accCaller.userId };
+    DmAccessCallee dmAccessCallee = { .userId = accCallee.userId, .accountId = accCallee.accountId,
+        .networkId = accCallee.networkId };
+    return DeviceManager::GetInstance().CheckIsSameAccount(dmAccessCaller, dmAccessCallee);
+}
 } // namespace OHOS::DistributedData
