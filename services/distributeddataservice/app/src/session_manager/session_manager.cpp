@@ -66,7 +66,8 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
         return session;
     }
     for (const auto &user : users) {
-        auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id, targetDeviceId, aclParams);
+        auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id,
+            targetDeviceId, aclParams);
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
             if (it == session.targetUserIds.end() && isSameAccount) {
