@@ -142,6 +142,7 @@ bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &
 {
     AclParams aclParams;
     if (!GetRecvAuthParams(from, to.deviceId, aclParams, to.userId)) {
+        ZLOGE("get recv auth params failed:%{public}s", Anonymous::Change(to.deviceId).c_str());
         return false;
     }
     auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId,
