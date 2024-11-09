@@ -62,21 +62,22 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
     
     AclParams aclParams;
     if (!GetSendAuthParams(from, targetDeviceId, aclParams)) {
+        ZLOGE("get send auth params failed:%{public}s", Anonymous::Change(targetDeviceId).c_str());
         return session;
     }
     for (const auto &user : users) {
-        auto permittedPair = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id, targetDeviceId, aclParams);
-        if (permittedPair.first) {
+        auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id, targetDeviceId, aclParams);
+        if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
-            if (it == session.targetUserIds.end() && permittedPair.second) {
+            if (it == session.targetUserIds.end() && isSameAccount) {
                 session.targetUserIds.insert(session.targetUserIds.begin(), user.id);
             }
-            if (it == session.targetUserIds.end() && !permittedPair.second) {
+            if (it == session.targetUserIds.end() && !isSameAccount) {
                 session.targetUserIds.push_back(user.id);
             }
         }
     }
-    ZLOGI("access to peer user:%{public}d", session.targetUserIds[0]);
+    ZLOGD("access to peer user:%{public}d", session.targetUserIds[0]);
     return session;
 }
 
@@ -98,15 +99,13 @@ bool SessionManager::GetSendAuthParams(const SessionPoint &from, const std::stri
 
             aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
             aclParams.authType = storeMeta.authType;
-            break;
+            return true;
         }
     }
-    if (metaData.empty()) {
-        ZLOGE("not find metadata,appId:%{public}s,localDevId:%{public}s,tarDevid:%{public}s,user:%{public}d,",
-            from.appId.c_str(), Anonymous::Change(from.deviceId).c_str(),
-            Anonymous::Change(targetDeviceId).c_str(), from.userId);
-    }
-    return true;
+    ZLOGE("get params failed,appId:%{public}s,localDevId:%{public}s,tarDevid:%{public}s,user:%{public}d,",
+        from.appId.c_str(), Anonymous::Change(from.deviceId).c_str(),
+        Anonymous::Change(targetDeviceId).c_str(), from.userId);
+    return false;
 }
 
 bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
@@ -130,15 +129,13 @@ bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::stri
             aclParams.accCallee.userId = peerUser;
             aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
             aclParams.authType = storeMeta.authType;
-            break;
+            return true;
         }
     }
 
-    if (metaData.empty()) {
-        ZLOGE("not find metadata,appId:%{public}s,tarDevid:%{public}s,user:%{public}d,peer:%{public}d",
-            from.appId.c_str(), Anonymous::Change(targetDeviceId).c_str(), from.userId, peerUser);
-    }
-    return true;
+    ZLOGE("get params failed,appId:%{public}s,tarDevid:%{public}s,user:%{public}d,peer:%{public}d",
+        from.appId.c_str(), Anonymous::Change(targetDeviceId).c_str(), from.userId, peerUser);
+    return false;
 }
 
 bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &to) const
@@ -147,8 +144,9 @@ bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &
     if (!GetRecvAuthParams(from, to.deviceId, aclParams, to.userId)) {
         return false;
     }
-    auto permittedPair = AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, aclParams);
-    return permittedPair.first;
+    auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId,
+        to.userId, to.deviceId, aclParams);
+    return isPermitted;
 }
 
 bool Session::Marshal(json &node) const
