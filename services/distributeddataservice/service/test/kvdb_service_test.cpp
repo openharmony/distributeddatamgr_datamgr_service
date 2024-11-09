@@ -658,31 +658,30 @@ HWTEST_F(AuthHandlerTest, AuthHandler, TestSize.Level0)
     int peerUserId = 0;
     std::string peerDeviceId = "";
     AclParams aclParams;
-    aclParams.isSendStatus = false;
     aclParams.authType = static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT);
     auto result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
-    EXPECT_TRUE(result);
+    EXPECT_TRUE(result.first);
     
     aclParams.authType = static_cast<int32_t>(DistributedKv::AuthType::DEFAULT);
     result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
-    EXPECT_TRUE(result);
+    EXPECT_TRUE(result.first);
 
     aclParams.authType = static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT);
     peerDeviceId = "peerDeviceId";
     result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
-    EXPECT_TRUE(result);
+    EXPECT_TRUE(result.first);
 
     aclParams.authType = static_cast<int32_t>(DistributedKv::AuthType::DEFAULT);
     result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
-    EXPECT_TRUE(result);
+    EXPECT_TRUE(result.first);
 
     localUserId = 1;
     result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result.first);
 
     peerUserId = 1;
     result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result.first);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

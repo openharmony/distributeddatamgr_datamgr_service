@@ -53,10 +53,10 @@ public:
     Session GetSession(const SessionPoint &from, const std::string &targetDeviceId) const;
     bool CheckSession(const SessionPoint &from, const SessionPoint &to) const;
 private:
-    bool GetAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
-        AclParams &aclParams, int peerUser = 0) const;
-    Session SessionManager::GetTrustUsers(const SessionPoint &from, const std::string &targetDeviceId,
-        const std::vector<DistributedData::UserStatus> &users, const AclParams) const;
+    bool GetSendAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+        AclParams &aclParams) const;
+    bool GetRecvAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+        AclParams &aclParams, int peerUser) const;
 };
 } // namespace OHOS::DistributedData
 

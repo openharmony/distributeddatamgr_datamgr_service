@@ -46,7 +46,6 @@ struct API_EXPORT AccessCallee {
 struct API_EXPORT AclParams {
     AccessCaller accCaller;
     AccessCallee accCallee;
-    bool isSendStatus = true;
     int32_t authType = 0;
 };
 
