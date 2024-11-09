@@ -84,10 +84,9 @@ bool SessionManager::GetSendAuthParams(const SessionPoint &from, const std::stri
     AclParams &aclParams) const
 {
     std::vector<StoreMetaData> metaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId,
-        std::to_string(from.userId) }), metaData)) {
-        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d",
-        Anonymous::Change(from.deviceId).c_str(), from.userId);
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
+        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d", Anonymous::Change(from.deviceId).c_str(),
+            from.userId);
         return false;
     }
     for (const auto &storeMeta : metaData) {
@@ -103,7 +102,7 @@ bool SessionManager::GetSendAuthParams(const SessionPoint &from, const std::stri
         }
     }
     if (metaData.empty()) {
-        ZLOGE("not find metadata,appId:%{public}s,localDevId:%{public}d,tarDevid:%{public}d,user:%{public}d,",
+        ZLOGE("not find metadata,appId:%{public}s,localDevId:%{public}s,tarDevid:%{public}s,user:%{public}d,",
             from.appId.c_str(), Anonymous::Change(from.deviceId).c_str(),
             Anonymous::Change(targetDeviceId).c_str(), from.userId);
     }
@@ -114,10 +113,9 @@ bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::stri
     AclParams &aclParams, int32_t peerUser) const
 {
     std::vector<StoreMetaData> metaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ targetDeviceId,
-        std::to_string(peerUser) }), metaData)) {
-        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d",
-        Anonymous::Change(targetDeviceId).c_str(), peerUser);
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ targetDeviceId }), metaData)) {
+        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d", Anonymous::Change(targetDeviceId).c_str(),
+            peerUser);
         return false;
     }
     for (const auto &storeMeta : metaData) {
@@ -137,7 +135,7 @@ bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::stri
     }
 
     if (metaData.empty()) {
-        ZLOGE("not find metadata,appId:%{public}s,tarDevid:%{public}d,user:%{public}d,peer:%{public}d",
+        ZLOGE("not find metadata,appId:%{public}s,tarDevid:%{public}s,user:%{public}s,peer:%{public}d",
             from.appId.c_str(), Anonymous::Change(from.deviceId).c_str(),
             Anonymous::Change(targetDeviceId).c_str(), from.userId, peerUser);
     }
@@ -147,7 +145,6 @@ bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::stri
 bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &to) const
 {
     AclParams aclParams;
-    aclParams.isSendStatus = false;
     if (!GetRecvAuthParams(from, to.deviceId, aclParams, to.userId)) {
         return false;
     }
