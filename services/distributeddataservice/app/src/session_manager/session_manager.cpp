@@ -135,9 +135,8 @@ bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::stri
     }
 
     if (metaData.empty()) {
-        ZLOGE("not find metadata,appId:%{public}s,tarDevid:%{public}s,user:%{public}s,peer:%{public}d",
-            from.appId.c_str(), Anonymous::Change(from.deviceId).c_str(),
-            Anonymous::Change(targetDeviceId).c_str(), from.userId, peerUser);
+        ZLOGE("not find metadata,appId:%{public}s,tarDevid:%{public}s,user:%{public}d,peer:%{public}d",
+            from.appId.c_str(), Anonymous::Change(targetDeviceId).c_str(), from.userId, peerUser);
     }
     return true;
 }
