@@ -30,15 +30,20 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 class AuthHandlerStub : public AuthHandler {
 public:
     // override for mock auth in current version, need remove in the future
-    bool CheckAccess(
-        int localUserId, int peerUserId, const std::string &peerDeviceId,
-        int32_t authType, bool isSend = true) override;
+    std::pair<bool, bool> CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
+        const AclParams &aclParams) override;
 private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
+    bool IsSystemUser(int localUserId, int peerUserId);
     static constexpr pid_t UID_CAPACITY = 10000;
     static constexpr int SYSTEM_USER = 0;
 };
+
+bool AuthHandlerStub::IsSystemUser(int localUserId, int peerUserId)
+{
+    return localUserId == SYSTEM_USER && peerUserId == SYSTEM_USER;
+}
 
 bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId)
 {
@@ -51,15 +56,37 @@ bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::str
     return peerUserId != SYSTEM_USER && IsUserActive(localUsers, localUserId) && IsUserActive(peerUsers, peerUserId);
 }
 
-bool AuthHandlerStub::CheckAccess(
-    int localUserId, int peerUserId, const std::string &peerDeviceId, int32_t authType, bool isSend)
+std::pair<bool, bool> AuthHandlerStub::CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
+    const AclParams &aclParams)
 {
-    if (authType == static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT) &&
-        !DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
-        ZLOGE("CheckAccess failed.");
-        return false;
+    if (IsSystemUser(localUserId, peerUserId)) {
+        return std::make_pair(true, false);
     }
-    return CheckUsers(localUserId, peerUserId, peerDeviceId);
+    if (!CheckUsers(localUserId, peerUserId, peerDeviceId)) {
+        return std::make_pair(false, false);
+    }
+    if (!DmAdapter::GetInstance().IsOHOSType(peerDeviceId)) {
+        return std::make_pair(true, false);
+    }
+    if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::DEFAULT)) {
+        if (DmAdapter::GetInstance().IsSameAccount(aclParams.accCaller, aclParams.accCallee)) {
+            return std::make_pair(true, true);
+        }
+        if (DmAdapter::GetInstance().CheckAccessControl(aclParams.accCaller, aclParams.accCallee)) {
+            return std::make_pair(true, false);
+        }
+        ZLOGE("CheckAccess failed. bundleName:%{public}s, localUser:%{public}d, peerUser:%{public}d",
+            aclParams.accCaller.bundleName.c_str(), localUserId, peerUserId);
+        return std::make_pair(false, false);
+    }
+
+    if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT)) {
+        auto isSameAccount = DmAdapter::GetInstance().IsSameAccount(aclParams.accCaller, aclParams.accCallee);
+        return std::make_pair(isSameAccount, isSameAccount);
+    }
+    ZLOGE("CheckAccess failed.bundleName:%{public}s,peerDeviceId:%{public}s,authtype:%{public}d",
+        aclParams.accCaller.bundleName.c_str(), Anonymous::Change(peerDeviceId).c_str(), aclParams.authType);
+    return std::make_pair(false, false);
 }
 
 bool AuthHandlerStub::IsUserActive(const std::vector<UserStatus> &users, int32_t userId)

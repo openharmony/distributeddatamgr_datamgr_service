@@ -50,6 +50,8 @@ public:
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
     using Status = OHOS::DistributedKv::Status;
     using Time = std::chrono::steady_clock::time_point;
+    using AccessCaller = OHOS::AppDistributedKv::AccessCaller;
+    using AccessCallee = OHOS::AppDistributedKv::AccessCallee;
     static DeviceManagerAdapter &GetInstance();
     static constexpr const char *CLOUD_DEVICE_UUID = "cloudDeviceUuid";
     static constexpr const char *CLOUD_DEVICE_UDID = "cloudDeviceUdid";
@@ -78,6 +80,8 @@ public:
     NetworkType GetNetworkType(bool retrieve = false);
     int32_t GetAuthType(const std::string& id);
     bool IsSameAccount(const std::string &id);
+    bool IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
+    bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 

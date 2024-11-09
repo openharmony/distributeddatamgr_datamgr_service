@@ -28,8 +28,10 @@
 #include "utils/anonymous.h"
 #include "utils/converter.h"
 #include "types.h"
+#include "device_manager_adapter.h"
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 SessionManager &SessionManager::GetInstance()
 {
     static SessionManager instance;
@@ -58,58 +60,95 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
         }
     }
     
-    std::string bundleName = "";
-    int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if (!GetAuthParams(from, bundleName, authType)) {
-        ZLOGE("GetAuthParams failed");
+    AclParams aclParams;
+    if (!GetSendAuthParams(from, targetDeviceId, aclParams)) {
+        ZLOGE("get send auth params failed:%{public}s", Anonymous::Change(targetDeviceId).c_str());
         return session;
     }
-
     for (const auto &user : users) {
-        bool isPermitted = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id,
-            targetDeviceId, authType);
-        ZLOGD("access to peer user %{public}d is %{public}d", user.id, isPermitted);
+        auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id,
+            targetDeviceId, aclParams);
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
-            if (it == session.targetUserIds.end()) {
+            if (it == session.targetUserIds.end() && isSameAccount) {
+                session.targetUserIds.insert(session.targetUserIds.begin(), user.id);
+            }
+            if (it == session.targetUserIds.end() && !isSameAccount) {
                 session.targetUserIds.push_back(user.id);
             }
         }
     }
-    ZLOGD("end");
+    ZLOGD("access to peer user:%{public}d", session.targetUserIds[0]);
     return session;
 }
 
-bool SessionManager::GetAuthParams(const SessionPoint &from, std::string &bundleName, int32_t &auth) const
+bool SessionManager::GetSendAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+    AclParams &aclParams) const
 {
     std::vector<StoreMetaData> metaData;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ from.deviceId }), metaData)) {
-        ZLOGW("load meta failed, deviceId:%{public}s", Anonymous::Change(from.deviceId).c_str());
+        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d", Anonymous::Change(from.deviceId).c_str(),
+            from.userId);
+        return false;
+    }
+    for (const auto &storeMeta : metaData) {
+        if (storeMeta.appId == from.appId && storeMeta.storeId == from.storeId) {
+            aclParams.accCaller.bundleName = storeMeta.bundleName;
+            aclParams.accCaller.accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
+            aclParams.accCaller.userId = from.userId;
+            aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(from.deviceId);
+
+            aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
+            aclParams.authType = storeMeta.authType;
+            return true;
+        }
+    }
+    ZLOGE("get params failed,appId:%{public}s,localDevId:%{public}s,tarDevid:%{public}s,user:%{public}d,",
+        from.appId.c_str(), Anonymous::Change(from.deviceId).c_str(),
+        Anonymous::Change(targetDeviceId).c_str(), from.userId);
+    return false;
+}
+
+bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+    AclParams &aclParams, int32_t peerUser) const
+{
+    std::vector<StoreMetaData> metaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ targetDeviceId }), metaData)) {
+        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d", Anonymous::Change(targetDeviceId).c_str(),
+            peerUser);
         return false;
     }
     for (const auto &storeMeta : metaData) {
         if (storeMeta.appId == from.appId) {
-            bundleName = storeMeta.bundleName;
-            auth = storeMeta.authType;
-            break;
+            auto accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
+            aclParams.accCaller.bundleName = storeMeta.bundleName;
+            aclParams.accCaller.accountId = accountId;
+            aclParams.accCaller.userId = from.userId;
+            aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(from.deviceId);
+
+            aclParams.accCallee.accountId = accountId;
+            aclParams.accCallee.userId = peerUser;
+            aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
+            aclParams.authType = storeMeta.authType;
+            return true;
         }
     }
-    if (bundleName.empty()) {
-        ZLOGE("not find bundleName");
-        return false;
-    }
-    return true;
+
+    ZLOGE("get params failed,appId:%{public}s,tarDevid:%{public}s,user:%{public}d,peer:%{public}d",
+        from.appId.c_str(), Anonymous::Change(targetDeviceId).c_str(), from.userId, peerUser);
+    return false;
 }
 
 bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &to) const
 {
-    std::string bundleName = "";
-    int32_t authType = static_cast<int32_t>(AuthType::DEFAULT);
-    if (!GetAuthParams(from, bundleName, authType)) {
-        ZLOGE("GetAuthParams failed");
+    AclParams aclParams;
+    if (!GetRecvAuthParams(from, to.deviceId, aclParams, to.userId)) {
+        ZLOGE("get recv auth params failed:%{public}s", Anonymous::Change(to.deviceId).c_str());
         return false;
     }
-    return AuthDelegate::GetInstance()->CheckAccess(from.userId, to.userId, to.deviceId, authType, false);
+    auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId,
+        to.userId, to.deviceId, aclParams);
+    return isPermitted;
 }
 
 bool Session::Marshal(json &node) const

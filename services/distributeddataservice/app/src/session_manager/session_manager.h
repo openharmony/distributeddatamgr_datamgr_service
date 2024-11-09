@@ -20,8 +20,11 @@
 #include <vector>
 
 #include "serializable/serializable.h"
-
+#include "commu_types.h"
+#include "metadata/user_meta_data.h"
 namespace OHOS::DistributedData {
+using AclParams = OHOS::AppDistributedKv::AclParams;
+using DistributedData::UserStatus;
 struct SessionPoint {
     std::string deviceId;
     uint32_t userId;
@@ -50,7 +53,10 @@ public:
     Session GetSession(const SessionPoint &from, const std::string &targetDeviceId) const;
     bool CheckSession(const SessionPoint &from, const SessionPoint &to) const;
 private:
-    bool GetAuthParams(const SessionPoint &from, std::string &bundleName, int32_t &auth) const;
+    bool GetSendAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+        AclParams &aclParams) const;
+    bool GetRecvAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+        AclParams &aclParams, int peerUser) const;
 };
 } // namespace OHOS::DistributedData
 
