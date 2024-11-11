@@ -77,6 +77,7 @@ void RdbAssetLoader::UpdateStatus(AssetRecord &assetRecord, const VBucket &asset
     for (const auto &[key, value] : assets) {
         auto downloadAssets = std::get_if<DistributedData::Assets>(&value);
         if (downloadAssets == nullptr) {
+            assetRecord.status = DBStatus::CLOUD_ERROR;
             continue;
         }
         for (const auto &asset : *downloadAssets) {
