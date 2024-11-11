@@ -1124,16 +1124,13 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
         std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     std::map<std::string, Status> result;
     for (auto &[key, status] : dbResult) {
-        if (status < 0) { // pass on softbus error code
-            result[key] = static_cast<Status>(status);
-        } else {
-            if (status == DBStatus::COMM_FAILURE) {
-                if (DMAdapter::GetInstance().ToUUID(key).empty()) {
-                    result[key] = Status::DEVICE_NOT_ONLINE;
-                } else {
-                    result[key] = Status::PEER_DATABASE_NOT_EXIST;
-                }
+        if (status == DBStatus::COMM_FAILURE) {
+            if (DMAdapter::GetInstance().ToUUID(key).empty()) {
+                result[key] = Status::DEVICE_NOT_ONLINE;
+            } else {
+                result[key] = Status::PEER_DATABASE_NOT_EXIST;
             }
+        } else {
             result[key] = ConvertDbStatus(status);
         }
     }
@@ -1181,6 +1178,12 @@ uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeI
 
 Status KVDBServiceImpl::ConvertDbStatus(DBStatus status) const
 {
+    auto innerStatus = static_cast<int32_t>(status);
+    if (innerStatus < 0) {
+        ZLOGW("passthrough error code:%{public}d", innerStatus);
+        return static_cast<Status>(status);
+    }
+
     switch (status) {
         case DBStatus::BUSY: // fallthrough
         case DBStatus::DB_ERROR:

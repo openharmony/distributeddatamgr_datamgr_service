@@ -57,7 +57,7 @@ public:
     std::vector<DeviceInfos> GetRemoteOnlineDeviceInfosList() override;
     bool IsSameProcessLabelStartedOnPeerDevice(const DeviceInfos &peerDevInfo) override;
     void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
-    void OnSessionReady(const DeviceInfo &info, const int &errCode) const override;
+    void OnSessionReady(const DeviceInfo &info, int32_t errCode) const override;
 
     API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;

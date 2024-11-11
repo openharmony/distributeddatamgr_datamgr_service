@@ -73,7 +73,7 @@ Status CommunicatorContext::UnRegSessionListener(const DevChangeListener *observ
     return Status::SUCCESS;
 }
 
-void CommunicatorContext::NotifySessionReady(const std::string &deviceId, const int &errCode)
+void CommunicatorContext::NotifySessionReady(const std::string &deviceId, int32_t errCode)
 {
     if (deviceId.empty()) {
         ZLOGE("deviceId empty");

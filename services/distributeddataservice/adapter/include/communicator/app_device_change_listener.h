@@ -32,7 +32,7 @@ public:
     {
         return ChangeLevelType::HIGH;
     }
-    API_EXPORT virtual void OnSessionReady(const DeviceInfo &info, const int &errCode) const {}
+    API_EXPORT virtual void OnSessionReady(const DeviceInfo &info, int32_t errCode) const {}
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS

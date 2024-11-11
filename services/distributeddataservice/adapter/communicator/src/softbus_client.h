@@ -49,6 +49,7 @@ public:
     int32_t GetSocket() const;
     uint32_t GetQoSType() const;
     void UpdateExpireTime();
+    int32_t GetInnerStatus();
     bool needRemove = false;
     bool isReuse = false;
 
@@ -86,6 +87,7 @@ private:
 
     int32_t socket_ = INVALID_SOCKET_ID;
     int32_t bindState_ = -1;
+    int32_t innerError_ = 0;
 };
 } // namespace OHOS::AppDistributedKv
 

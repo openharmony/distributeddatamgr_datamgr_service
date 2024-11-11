@@ -189,40 +189,46 @@ void SoftBusAdapter::GetExpireTime(std::shared_ptr<SoftBusClient> &conn)
     }
 }
 
-Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-    uint32_t length, const MessageInfo &info)
+std::pair<uint32_t, bool> SoftBusAdapter::GetParams(const std::string &deviceId)
+{
+    bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId);
+    uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    return std::make_pair(qosType, isOHOSType);
+}
+
+std::pair<Status, int32_t> SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    const DataInfo &dataInfo, uint32_t length, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
-    bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
-    uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    auto param = GetParams(deviceId.deviceId);
     bool isReuse = false;
-    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isReuse](const auto &key,
+    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, &param, &isReuse](const auto &key,
         std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
         for (auto &connect : connects) {
-            if (connect->GetQoSType() != qosType) {
+            if (connect->GetQoSType() != param.first) {
                 continue;
             }
-            if (!isOHOSType && connect->needRemove) {
+            if (!param.second && connect->needRemove) {
                 isReuse = true;
                 return false;
             }
             conn = connect;
             return true;
         }
-        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
+        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, param.first);
         connects.emplace_back(connect);
         conn = connect;
         return true;
     });
-    if (!isOHOSType && isReuse) {
-        Reuse(pipeInfo, deviceId, qosType, conn);
+    if (!param.second && isReuse) {
+        Reuse(pipeInfo, deviceId, param.first, conn);
     }
     if (conn == nullptr) {
-        return Status::ERROR;
+        return std::make_pair(Status::ERROR, 0);
     }
     auto status = conn->CheckStatus();
     if (status == Status::RATE_LIMIT) {
-        return Status::RATE_LIMIT;
+        return std::make_pair(Status::RATE_LIMIT, 0);
     }
     if (status != Status::SUCCESS) {
         auto task = [this, connect = std::weak_ptr<SoftBusClient>(conn)]() {
@@ -233,14 +239,14 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         };
         auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
         ConnectManager::GetInstance()->ApplyConnect(networkId, task);
-        return Status::RATE_LIMIT;
+        return std::make_pair(Status::RATE_LIMIT, 0);
     }
-
     status = conn->SendData(dataInfo, &clientListener_);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
         GetExpireTime(conn);
     }
-    return status;
+    auto errCode = conn->GetInnerStatus();
+    return std::make_pair(status, errCode);
 }
 
 void SoftBusAdapter::StartCloseSessionTask(const std::string &deviceId)
