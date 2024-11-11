@@ -111,13 +111,14 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
     std::vector<std::string> tables;
     std::vector<Reference> references;
     int32_t type;
-    if (!ITypesUtil::Unmarshal(data, param, tables, references, type)) {
+    bool isRebuild;
+    if (!ITypesUtil::Unmarshal(data, param, tables, references, type, isRebuild)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables size:%{public}zu type:%{public}d",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), tables.size(), type);
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = SetDistributedTables(param, tables, references, type);
+    auto status = SetDistributedTables(param, tables, references, isRebuild, type);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -186,7 +187,7 @@ int32_t RdbServiceStub::OnRemoteDoUnSubscribe(MessageParcel &data, MessageParcel
 {
     RdbSyncerParam param;
     SubscribeOption option;
-    if (!ITypesUtil::Unmarshal(data, param)) {
+    if (!ITypesUtil::Unmarshal(data, param, option)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
@@ -284,14 +285,14 @@ int32_t RdbServiceStub::OnRemoteNotifyDataChange(MessageParcel &data, MessagePar
 {
     RdbSyncerParam param;
     RdbChangedData rdbChangedData;
-    uint32_t delay = 0;
-    if (!ITypesUtil::Unmarshal(data, param, rdbChangedData, delay)) {
+    RdbNotifyConfig rdbNotifyConfig;
+    if (!ITypesUtil::Unmarshal(data, param, rdbChangedData, rdbNotifyConfig)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s ", param.bundleName_.c_str(),
               Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = NotifyDataChange(param, rdbChangedData, delay);
+    auto status = NotifyDataChange(param, rdbChangedData, rdbNotifyConfig);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -414,6 +415,22 @@ int32_t RdbServiceStub::OnUnlockCloudContainer(MessageParcel &data, MessageParce
 
     auto status = UnlockCloudContainer(param);
     if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceStub::OnGetDebugInfo(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::map<std::string, RdbDebugInfo> debugInfo;
+    auto status = GetDebugInfo(param, debugInfo);
+    if (!ITypesUtil::Marshal(reply, status, debugInfo)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

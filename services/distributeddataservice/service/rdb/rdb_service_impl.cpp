@@ -14,19 +14,20 @@
  */
 #define LOG_TAG "RdbServiceImpl"
 #include "rdb_service_impl.h"
+
+#include "abs_rdb_predicates.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "checker/checker_manager.h"
-#include "abs_rdb_predicates.h"
 #include "changeevent/remote_change_event.h"
+#include "checker/checker_manager.h"
 #include "cloud/change_event.h"
-#include "cloud/cloud_share_event.h"
 #include "cloud/cloud_lock_event.h"
+#include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
-#include "commonevent/data_change_event.h"
-#include "commonevent/set_searchable_event.h"
+#include "cloud/schema_meta.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
+#include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
@@ -34,23 +35,22 @@
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/auto_launch_meta_data.h"
+#include "metadata/capability_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/store_debug_info.h"
 #include "metadata/store_meta_data.h"
-#include "rdb_watcher.h"
+#include "rdb_general_store.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
+#include "rdb_result_set_impl.h"
+#include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "tokenid_kit.h"
 #include "types_export.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
-#include "cloud/schema_meta.h"
-#include "rdb_general_store.h"
-#include "rdb_result_set_impl.h"
 #include "xcollie.h"
-#include "device_matrix.h"
-#include "metadata/capability_meta_data.h"
 using OHOS::DistributedKv::AccountDelegate;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -209,6 +209,7 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
         }
         AutoCache::GetInstance().Enable(tokenId);
     }
+    heartbeatTaskIds_.Erase(pid);
     return E_OK;
 }
 
@@ -277,12 +278,17 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
 }
 
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
-    const std::vector<Reference> &references, int32_t type)
+    const std::vector<Reference> &references, bool isRebuild, int32_t type)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
+    }
+    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_SEARCH) {
+        DistributedData::SetSearchableEvent::EventInfo eventInfo;
+        eventInfo.isRebuild = isRebuild;
+        return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, param, eventInfo);
     }
     auto meta = GetStoreMetaData(param);
 
@@ -676,9 +682,12 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     auto storeMeta = GetStoreMetaData(tmpParam);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey());
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetStrategyKey());
-    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetBackupSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetAutoLaunchKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetDebugInfoKey(), true);
     return RDB_OK;
 }
 
@@ -781,6 +790,9 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
             EventCenter::GetInstance().PostEvent(std::move(evt));
         }
     }
+
+    SaveDebugInfo(meta, param);
+
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
@@ -1051,7 +1063,7 @@ RdbServiceImpl::~RdbServiceImpl()
 }
 
 int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
-    uint32_t delay)
+    const RdbNotifyConfig &rdbNotifyConfig)
 {
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
@@ -1069,43 +1081,55 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
     storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
 
     DataChangeEvent::EventInfo eventInfo;
+    eventInfo.isFull = rdbNotifyConfig.isFull_;
     for (const auto& [key, value] : rdbChangedData.tableData) {
         DataChangeEvent::TableChangeProperties tableChangeProperties = {value.isTrackedDataChange};
         eventInfo.tableProperties.insert_or_assign(key, std::move(tableChangeProperties));
     }
 
-    bool postImmediately = false;
-    heartbeatTaskIds_.Compute(param.storeName_,
-        [this, &postImmediately, delay, storeInfo, eventInfo] (const std::string &key, ExecutorPool::TaskId &value) {
-        if (delay == 0) {
-            if (value != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
-                executors_->Remove(value);
-            }
-            postImmediately = true;
-            return false;
-        }
-
-        if (executors_ != nullptr) {
-            auto task = [storeInfoInner = storeInfo, eventInfoInner = eventInfo]() -> int {
-                auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfoInner), std::move(eventInfoInner));
-                EventCenter::GetInstance().PostEvent(std::move(evt));
-                return RDB_OK;
-            };
-            if (value == ExecutorPool::INVALID_TASK_ID) {
-                value = executors_->Schedule(std::chrono::milliseconds(delay), task);
-            } else {
-                value = executors_->Reset(value, std::chrono::milliseconds(delay));
-            }
-        }
-        return true;
-    });
-
-    if (postImmediately) {
+    if (IsPostImmediately(IPCSkeleton::GetCallingPid(), rdbNotifyConfig, storeInfo, eventInfo, param.storeName_)) {
         auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
         EventCenter::GetInstance().PostEvent(std::move(evt));
     }
 
     return RDB_OK;
+}
+
+bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig,
+    StoreInfo &storeInfo, DataChangeEvent::EventInfo &eventInfo, const std::string &storeName)
+{
+    bool postImmediately = false;
+    heartbeatTaskIds_.Compute(callingPid, [this, &postImmediately, &rdbNotifyConfig, &storeInfo, &eventInfo,
+        &storeName](const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
+        auto iter = tasks.find(storeName);
+        ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
+        if (iter != tasks.end()) {
+            taskId = iter->second;
+        }
+        if (rdbNotifyConfig.delay_ == 0) {
+            if (taskId != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
+                executors_->Remove(taskId);
+            }
+            postImmediately = true;
+            tasks.erase(storeName);
+            return !tasks.empty();
+        }
+
+        if (executors_ != nullptr) {
+            auto task = [storeInfoInner = storeInfo, eventInfoInner = eventInfo]() {
+                auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfoInner), std::move(eventInfoInner));
+                EventCenter::GetInstance().PostEvent(std::move(evt));
+            };
+            if (taskId == ExecutorPool::INVALID_TASK_ID) {
+                taskId = executors_->Schedule(std::chrono::milliseconds(rdbNotifyConfig.delay_), task);
+            } else {
+                taskId = executors_->Reset(taskId, std::chrono::milliseconds(rdbNotifyConfig.delay_));
+            }
+        }
+        tasks.insert_or_assign(storeName, taskId);
+        return true;
+    });
+    return postImmediately;
 }
 
 int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearchable)
@@ -1116,6 +1140,14 @@ int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearch
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
+    SetSearchableEvent::EventInfo eventInfo;
+    eventInfo.isSearchable = isSearchable;
+    return PostSearchEvent(CloudEvent::SET_SEARCHABLE, param, eventInfo);
+}
+
+int32_t RdbServiceImpl::PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
+    SetSearchableEvent::EventInfo &eventInfo)
+{
     StoreInfo storeInfo;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = param.bundleName_;
@@ -1125,11 +1157,8 @@ int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearch
     storeInfo.user = user;
     storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
 
-    SetSearchableEvent::EventInfo eventInfo;
-    eventInfo.isSearchable = isSearchable;
-    auto evt = std::make_unique<SetSearchableEvent>(std::move(storeInfo), std::move(eventInfo));
+    auto evt = std::make_unique<SetSearchableEvent>(std::move(storeInfo), std::move(eventInfo), evtId);
     EventCenter::GetInstance().PostEvent(std::move(evt));
-
     return RDB_OK;
 }
 
@@ -1140,6 +1169,7 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam& param)
     AutoCache::GetInstance().Disable(tokenId, storeId);
     return RDB_OK;
 }
+
 int32_t RdbServiceImpl::Enable(const RdbSyncerParam& param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -1219,5 +1249,58 @@ int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
     auto evt = std::make_unique<CloudLockEvent>(CloudEvent::UNLOCK_CLOUD_CONTAINER, std::move(storeInfo), callback);
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return result;
+}
+
+int32_t RdbServiceImpl::GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo)
+{
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto metaData = GetStoreMetaData(param);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
+    if (!isCreated) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. no meta data", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_OK;
+    }
+    DistributedData::StoreDebugInfo debugMeta;
+    isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    if (!isCreated) {
+        return RDB_OK;
+    }
+
+    for (auto &[name, fileDebug] : debugMeta.fileInfos) {
+        RdbDebugInfo rdbInfo;
+        rdbInfo.inode_ = fileDebug.inode;
+        rdbInfo.size_ = fileDebug.size;
+        rdbInfo.dev_ = fileDebug.dev;
+        rdbInfo.mode_ = fileDebug.mode;
+        rdbInfo.uid_ = fileDebug.uid;
+        rdbInfo.gid_ = fileDebug.gid;
+        debugInfo.insert(std::pair{ name, rdbInfo });
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param)
+{
+    if (param.infos_.empty()) {
+        return RDB_OK;
+    }
+    DistributedData::StoreDebugInfo debugMeta;
+    for (auto &[name, info] : param.infos_) {
+        DistributedData::StoreDebugInfo::FileInfo fileInfo;
+        fileInfo.inode = info.inode_;
+        fileInfo.size = info.size_;
+        fileInfo.dev = info.dev_;
+        fileInfo.mode = info.mode_;
+        fileInfo.uid = info.uid_;
+        fileInfo.gid = info.gid_;
+        debugMeta.fileInfos.insert(std::pair{name, fileInfo});
+    }
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

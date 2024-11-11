@@ -23,10 +23,11 @@ class API_EXPORT SetSearchableEvent : public CloudEvent {
 public:
     struct EventInfo {
         bool isSearchable;
+        bool isRebuild;
     };
 
-    SetSearchableEvent(StoreInfo storeInfo, EventInfo evtInfo)
-        : CloudEvent(SET_SEARCHABLE, std::move(storeInfo)), info_(std::move(evtInfo))
+    SetSearchableEvent(StoreInfo storeInfo, EventInfo evtInfo, int32_t evtId = SET_SEARCHABLE)
+        : CloudEvent(evtId, std::move(storeInfo)), info_(std::move(evtInfo))
     {
     }
 
@@ -35,6 +36,11 @@ public:
     bool GetIsSearchabl() const
     {
         return info_.isSearchable;
+    }
+
+    bool GetIsRebuild() const
+    {
+        return info_.isRebuild;
     }
 private:
     EventInfo info_;

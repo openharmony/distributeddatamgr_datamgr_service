@@ -79,13 +79,14 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
             ZLOGI("uninstalled bundleName:%{public}s storeId:%{public}s, userId:%{public}d, appIndex:%{public}d",
                 bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
-            MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
             MetaDataManager::GetInstance().DelMeta(meta.appId, true);
-            MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
-            PermitDelegate::GetInstance().DelCache(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(meta.GetBackupSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
+            PermitDelegate::GetInstance().DelCache(meta.GetKey());
         }
     }
 }

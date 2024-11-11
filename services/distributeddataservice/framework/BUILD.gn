@@ -85,6 +85,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/meta_data.cpp",
     "metadata/meta_data_manager.cpp",
     "metadata/secret_key_meta_data.cpp",
+    "metadata/store_debug_info.cpp",
     "metadata/store_meta_data.cpp",
     "metadata/store_meta_data_local.cpp",
     "metadata/strategy_meta_data.cpp",

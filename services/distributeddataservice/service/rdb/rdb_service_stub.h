@@ -67,12 +67,14 @@ private:
     int32_t OnDisable(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnEnable(MessageParcel& data, MessageParcel& reply);
-
+	
     int32_t OnGetPassword(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnLockCloudContainer(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnUnlockCloudContainer(MessageParcel& data, MessageParcel& reply);
+
+    int32_t OnGetDebugInfo(MessageParcel& data, MessageParcel& reply);
 
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)] = {
@@ -105,7 +107,8 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_LOCK_CLOUD_CONTAINER)] =
             &RdbServiceStub::OnLockCloudContainer,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_UNLOCK_CLOUD_CONTAINER)] =
-            &RdbServiceStub::OnUnlockCloudContainer
+            &RdbServiceStub::OnUnlockCloudContainer,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DEBUG_INFO)] = &RdbServiceStub::OnGetDebugInfo
     };
 };
 } // namespace OHOS::DistributedRdb
