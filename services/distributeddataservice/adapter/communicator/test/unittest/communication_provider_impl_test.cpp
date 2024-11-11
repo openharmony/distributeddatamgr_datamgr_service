@@ -133,8 +133,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider005, TestSize.Level
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
     DeviceId di17 = {"127.0.0.2"};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
-    Status status = CommunicationProvider::GetInstance().SendData(id17, di17, data, 0);
-    EXPECT_NE(status, Status::SUCCESS);
+    auto status = CommunicationProvider::GetInstance().SendData(id17, di17, data, 0);
+    EXPECT_NE(status.first, Status::SUCCESS);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener17, id17);
     CommunicationProvider::GetInstance().Stop(id17);
     delete dataListener17;
@@ -234,8 +234,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider011, TestSize.Level
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
     DeviceId di = {"DeviceId"};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
-    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
-    EXPECT_EQ(status, Status::ERROR);
+    auto status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status.first, Status::ERROR);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
@@ -259,8 +259,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider012, TestSize.Level
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
     DeviceId di = {""};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
-    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
-    EXPECT_EQ(status, Status::ERROR);
+    auto status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status.first, Status::ERROR);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
@@ -282,8 +282,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider013, TestSize.Level
     CommunicationProvider::GetInstance().Start(id);
     DeviceId di = {"DeviceId"};
     DataInfo data = {nullptr, 0};
-    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
-    EXPECT_EQ(status, Status::ERROR);
+    auto status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status.first, Status::ERROR);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;
@@ -307,8 +307,8 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider014, TestSize.Level
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
     DeviceId di = {"DeviceId"};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
-    Status status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
-    EXPECT_EQ(status, Status::ERROR);
+    auto status = CommunicationProvider::GetInstance().SendData(id, di, data, 0);
+    EXPECT_EQ(status.first, Status::ERROR);
     CommunicationProvider::GetInstance().StopWatchDataChange(dataListener, id);
     CommunicationProvider::GetInstance().Stop(id);
     delete dataListener;

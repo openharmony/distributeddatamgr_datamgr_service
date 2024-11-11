@@ -139,14 +139,17 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     const DataInfo dataInfo = { const_cast<uint8_t *>(data), length};
     DeviceId destination;
     destination.deviceId = dstDevInfo.identifier;
-    Status errCode = CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
-    if (errCode == Status::RATE_LIMIT) {
-        ZLOGD("commProvider_ opening session, status:%{public}d.", static_cast<int>(errCode));
+    auto errCode = CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
+    if (errCode.first == Status::RATE_LIMIT) {
+        ZLOGD("commProvider_ opening session, status:%{public}d.", static_cast<int>(errCode.second));
         return DBStatus::RATE_LIMIT;
     }
-    if (errCode != Status::SUCCESS) {
-        ZLOGE("commProvider_ SendData Fail.");
-        return DBStatus::DB_ERROR;
+    if (errCode.first != Status::SUCCESS) {
+        ZLOGE("commProvider_ SendData Fail. code:%{public}d", errCode.second);
+        if (errCode.second == 0) {
+            return DBStatus::DB_ERROR;
+        }
+        return static_cast<DBStatus>(errCode.second);
     }
     return DBStatus::OK;
 }
@@ -221,7 +224,7 @@ void ProcessCommunicatorImpl::OnDeviceChanged(const DeviceInfo &info, const Devi
     onDeviceChangeHandler_(devInfo, (type == DeviceChangeType::DEVICE_ONLINE));
 }
 
-void ProcessCommunicatorImpl::OnSessionReady(const DeviceInfo &info, const int &errCode) const
+void ProcessCommunicatorImpl::OnSessionReady(const DeviceInfo &info, int32_t errCode) const
 {
     std::lock_guard<decltype(sessionMutex_)> lock(sessionMutex_);
     if (sessionListener_ == nullptr) {

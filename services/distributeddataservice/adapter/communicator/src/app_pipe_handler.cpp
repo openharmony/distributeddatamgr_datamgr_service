@@ -43,8 +43,8 @@ AppPipeHandler::AppPipeHandler(const PipeInfo &pipeInfo)
     softbusAdapter_ = SoftBusAdapter::GetInstance();
 }
 
-Status AppPipeHandler::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-    uint32_t totalLength, const MessageInfo &info)
+std::pair<Status, int32_t> AppPipeHandler::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    const DataInfo &dataInfo, uint32_t totalLength, const MessageInfo &info)
 {
     return softbusAdapter_->SendData(pipeInfo, deviceId, dataInfo, totalLength, info);
 }

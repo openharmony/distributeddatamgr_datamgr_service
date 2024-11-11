@@ -45,8 +45,9 @@ public:
     virtual Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) = 0;
 
     // Send data to other device, function will be called back after sent to notify send result
-    virtual Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-        uint32_t totalLength, const MessageInfo &info = { MessageType::DEFAULT }) = 0;
+    virtual std::pair<Status, int32_t> SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+        const DataInfo &dataInfo, uint32_t totalLength,
+        const MessageInfo &info = { MessageType::DEFAULT }) = 0;
 
     // start one server to listen data from other devices;
     virtual Status Start(const PipeInfo &pipeInfo) = 0;
