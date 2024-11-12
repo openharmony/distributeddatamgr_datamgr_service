@@ -435,7 +435,7 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     std::vector<std::string> defaultAccountDevs{};
     auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
     if (uuids.empty()) {
-        ZLOGI("no remote device to sync.appId:%{public}s",appId.c_str());
+        ZLOGI("no remote device to sync.appId:%{public}s", appId.c_str());
         return;
     }
     GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);

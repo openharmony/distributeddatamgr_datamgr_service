@@ -365,7 +365,8 @@ void KvStoreDataService::StartService()
         StoreMetaData metaData;
         bool isTriple = false;
         auto status = ResolveAutoLaunchParamByIdentifier(identifier, param, metaData, isTriple);
-        features_.ForEachCopies([&identifier, &param, &metaData, &isTriple](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+        features_.ForEachCopies([&identifier, &param, &metaData, &isTriple](const auto &,
+        sptr<DistributedData::FeatureStubImpl> &value) {
             value->ResolveAutoLaunch(identifier, param, metaData, isTriple);
             return false;
         });

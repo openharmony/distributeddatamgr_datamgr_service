@@ -768,7 +768,7 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
             ZLOGE("store null, storeId:%{public}s", Anonymous::Change(meta.storeId).c_str());
             return STORE_NOT_OPEN;
         }
-        store->SetEqualIdentifier(meta.appId, meta.stordId, meta.account);
+        store->SetEqualIdentifier(meta.appId, meta.storeId, meta.account);
         return SUCCESS;
     }
     
