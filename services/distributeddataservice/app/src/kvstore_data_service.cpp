@@ -417,7 +417,7 @@ bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, c
 }
 
 bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
-    const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &metaDate, bool isTriple)
+    const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &metaDate, bool &isTriple)
 {
     std::vector<StoreMetaData> entries;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
