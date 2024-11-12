@@ -95,7 +95,7 @@ private:
     void Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
         uint32_t qosType, std::shared_ptr<SoftBusClient> &conn);
     void GetExpireTime(std::shared_ptr<SoftBusClient> &conn);
-    std::pair<uint32_t, bool> GetParams(const std::string &deviceId);
+    std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId);
     static constexpr const char *PKG_NAME = "distributeddata-default";
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;

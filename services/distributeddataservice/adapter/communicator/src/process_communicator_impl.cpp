@@ -139,17 +139,18 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     const DataInfo dataInfo = { const_cast<uint8_t *>(data), length};
     DeviceId destination;
     destination.deviceId = dstDevInfo.identifier;
-    auto errCode = CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
-    if (errCode.first == Status::RATE_LIMIT) {
-        ZLOGD("commProvider_ opening session, status:%{public}d.", static_cast<int>(errCode.second));
+    auto [errCode, softBusErrCode] =
+        CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
+    if (errCode == Status::RATE_LIMIT) {
+        ZLOGD("commProvider_ opening session, status:%{public}d.", static_cast<int>(softBusErrCode));
         return DBStatus::RATE_LIMIT;
     }
-    if (errCode.first != Status::SUCCESS) {
-        ZLOGE("commProvider_ SendData Fail. code:%{public}d", errCode.second);
-        if (errCode.second == 0) {
+    if (errCode != Status::SUCCESS) {
+        ZLOGE("commProvider_ SendData Fail. code:%{public}d", softBusErrCode);
+        if (softBusErrCode == 0) {
             return DBStatus::DB_ERROR;
         }
-        return static_cast<DBStatus>(errCode.second);
+        return static_cast<DBStatus>(softBusErrCode);
     }
     return DBStatus::OK;
 }

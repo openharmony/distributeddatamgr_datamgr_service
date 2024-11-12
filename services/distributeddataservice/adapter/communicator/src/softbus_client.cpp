@@ -75,17 +75,18 @@ Status SoftBusClient::SendData(const DataInfo &dataInfo, const ISocketListener *
     if (ret != SOFTBUS_OK) {
         expireTime_ = std::chrono::steady_clock::now();
         ZLOGE("send data to socket%{public}d failed, ret:%{public}d.", socket_, ret);
-        innerError_ = ret;
+        softBusError_ = ret;
         return Status::ERROR;
     }
-    innerError_ = 0;
+    softBusError_ = 0;
     expireTime_ = CalcExpireTime();
     return Status::SUCCESS;
 }
 
-int32_t SoftBusClient::GetInnerStatus()
+int32_t SoftBusClient::GetSoftBusError()
 {
-    return innerError_;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return softBusError_;
 }
 
 Status SoftBusClient::OpenConnect(const ISocketListener *listener)
