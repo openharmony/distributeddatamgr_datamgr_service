@@ -22,6 +22,7 @@
 
 #include "commu_types.h"
 #include "executor_pool.h"
+#include "session.h"
 #include "socket.h"
 #include "softbus_bus_center.h"
 namespace OHOS::AppDistributedKv {

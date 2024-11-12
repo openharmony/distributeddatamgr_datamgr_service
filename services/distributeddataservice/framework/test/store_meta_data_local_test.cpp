@@ -37,22 +37,45 @@ public:
 HWTEST_F(StoreMetaDataLocalTest, EqualityOperatorTest, TestSize.Level1)
 {
     StoreMetaDataLocal metaData1;
-    metaData1.isAutoSync = true;
-    metaData1.isBackup = true;
     StoreMetaDataLocal metaData2;
-    metaData2.isAutoSync = true;
-    metaData2.isBackup = false;
     StoreMetaDataLocal metaData3;
+
+    ASSERT_TRUE(metaData1 == metaData2);
     metaData3.isAutoSync = true;
+    ASSERT_FALSE(metaData1 == metaData3);
     metaData3.isBackup = true;
+    ASSERT_FALSE(metaData1 == metaData3);
+    ASSERT_TRUE(metaData1 != metaData3);
+    ASSERT_FALSE(metaData1 != metaData2);
+    metaData3.isDirty = true;
+    ASSERT_FALSE(metaData1 == metaData3);
+    metaData3.isEncrypt = true;
+    ASSERT_FALSE(metaData1 == metaData3);
+    metaData3.isPublic = true;
+    ASSERT_FALSE(metaData1 == metaData3);
 
-    ASSERT_FALSE(metaData1 == metaData2);
-    ASSERT_TRUE(metaData1 == metaData3);
+    metaData2.isAutoSync = true;
     ASSERT_FALSE(metaData2 == metaData3);
+    metaData2.isBackup = true;
+    ASSERT_FALSE(metaData2 == metaData3);
+    metaData2.isDirty = true;
+    ASSERT_FALSE(metaData2 == metaData3);
+    metaData2.isEncrypt = true;
+    ASSERT_FALSE(metaData2 == metaData3);
+    metaData2.isPublic = true;
+    ASSERT_TRUE(metaData2 == metaData3);
 
-    ASSERT_TRUE(metaData1 != metaData2);
-    ASSERT_FALSE(metaData1 != metaData3);
-    ASSERT_TRUE(metaData2 != metaData3);
+    metaData2.isBackup = false;
+    ASSERT_FALSE(metaData2 == metaData3);
+    metaData2.isBackup = true;
+    metaData2.isDirty = false;
+    ASSERT_FALSE(metaData2 == metaData3);
+    metaData2.isBackup = true;
+    metaData2.isEncrypt = false;
+    ASSERT_FALSE(metaData2 == metaData3);
+    metaData2.isBackup = true;
+    metaData2.isPublic = false;
+    ASSERT_FALSE(metaData2 == metaData3);
 }
 
 /**
@@ -95,5 +118,8 @@ HWTEST_F(StoreMetaDataLocalTest, GetPolicy, TestSize.Level1)
     policy.index = 1;
     EXPECT_FALSE(metaData.HasPolicy(type));
     EXPECT_TRUE(policy.IsValueEffect());
+    type = UINT32_MAX;
+    policy = metaData.GetPolicy(type);
+    EXPECT_EQ(policy.type, type);
 }
 } // namespace OHOS::Test

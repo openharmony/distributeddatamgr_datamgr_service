@@ -21,6 +21,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "utils/block_integer.h"
+#include "utils/constant.h"
 #include "utils/converter.h"
 #include "utils/ref_count.h"
 #include "utils/endian_converter.h"
@@ -130,6 +131,10 @@ HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
     std::function<void()> action = []() { };
     RefCount refCountWithAction(action);
     EXPECT_TRUE(refCountWithAction);
+
+    std::function<void()> actions;
+    RefCount refCountWithActions(actions);
+    EXPECT_TRUE(refCountWithActions);
     int num = 0;
     {
         RefCount refCount([&num]() {
@@ -158,6 +163,8 @@ HWTEST_F(RefCountTest, Constructortest, TestSize.Level2)
         RefCount refCount6 = std::move(refCount2);
         refCount6 = std::move(refCount4);
         ASSERT_TRUE(refCount6);
+
+        EXPECT_TRUE(refCount5 = refCount5);
     }
     ASSERT_EQ(num, 10);
 }
@@ -188,5 +195,35 @@ HWTEST_F(ServiceUtilsTest, HostToNet, TestSize.Level1)
 
     uint64_t hostValue64 = NetToHost(NET_VALUE64);
     EXPECT_EQ(hostValue64, le64toh(NET_VALUE64));
+}
+
+/**
+* @tc.name: DCopy
+* @tc.desc: test Constant::DCopy function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(ServiceUtilsTest, DCopy, TestSize.Level1)
+{
+    Constant constant;
+    uint8_t *tag = nullptr;
+    size_t tagLen = 1;
+    uint8_t *src = nullptr;
+    size_t srcLen = 0;
+
+    uint8_t tags[10];
+    size_t tagsLen = 10;
+    uint8_t srcs[10];
+    size_t srcsLen = 10;
+
+    EXPECT_FALSE(constant.DCopy(tag, tagLen, src, srcLen));
+    EXPECT_FALSE(constant.DCopy(tag, tagsLen, src, srcsLen));
+    EXPECT_FALSE(constant.DCopy(tags, tagLen, src, srcLen));
+    EXPECT_FALSE(constant.DCopy(tag, tagLen, srcs, srcLen));
+    EXPECT_FALSE(constant.DCopy(tags, tagsLen, src, srcsLen));
+    EXPECT_FALSE(constant.DCopy(tag, tagsLen, srcs, srcsLen));
+    EXPECT_FALSE(constant.DCopy(tags, tagLen, srcs, srcLen));
+    EXPECT_TRUE(constant.DCopy(tags, tagsLen, srcs, srcsLen));
 }
 } // namespace OHOS::Test
