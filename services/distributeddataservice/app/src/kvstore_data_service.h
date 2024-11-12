@@ -166,7 +166,7 @@ private:
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
     
-    bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
+    bool ResolveAutoLaunchParamByIdentifier(
         const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &metaDate, bool &isTriple);
 
     void LoadConfigs();
