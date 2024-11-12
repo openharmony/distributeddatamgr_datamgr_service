@@ -16,11 +16,9 @@
 #define LOG_TAG "ObjectSnapshotTest"
 
 #include "object_snapshot.h"
-
 #include <gtest/gtest.h>
-
-#include "executor_pool.h"
 #include "snapshot/machine_status.h"
+#include "executor_pool.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;

@@ -257,4 +257,20 @@ HWTEST_F(FeatureSystemTest, FeatureTest002, TestSize.Level1)
     ret = mockFeature.OnSessionReady(device);
     EXPECT_EQ(ret, E_OK);
 }
+
+
+/**
+* @tc.name: OnScreenUnlockedTest
+* @tc.desc: test OnScreenUnlocked
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(FeatureSystemTest, OnScreenUnlockedTest, TestSize.Level1)
+{
+    MockFeature mockFeature;
+    int32_t user = 0;
+    int32_t ret = mockFeature.OnScreenUnlocked(user);
+    EXPECT_EQ(ret, E_OK);
+}
 } // namespace OHOS::Test

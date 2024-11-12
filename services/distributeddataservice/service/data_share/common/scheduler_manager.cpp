@@ -178,11 +178,6 @@ void SchedulerManager::ExecuteSchedulerSQL(const std::string &rdbDir, const int3
             count);
         return;
     }
-    errCode = resultSet->GoToFirstRow();
-    if (errCode != E_OK) {
-        ZLOGE("GoToFirstRow error, %{public}s, %{public}" PRId64 ", %{public}s, errCode is %{public}d",
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str(), errCode);
-    }
 }
 
 void SchedulerManager::GenRemindTimerFuncParams(

@@ -259,7 +259,7 @@ static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBi
         auto* asset = Traits::get_if<DistributedData::Asset>(&value);
         if (asset->name != newAsset.name) {
             ZLOGD("Asset not same, old uri: %{public}s, new uri: %{public}s",
-                Anonymous::Change(asset->uri).c_str(), Anonymous::Change(newAsset.uri).c_str());
+                Anonymous::Change(asset->uri, true).c_str(), Anonymous::Change(newAsset.uri, true).c_str());
             return;
         }
     }
