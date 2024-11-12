@@ -1122,7 +1122,9 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
         std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     std::map<std::string, Status> result;
     if (AccessTokenKit::GetTokenTypeFlag(meta.tokenId) != TOKEN_HAP) {
-        result = ConvertSyncStatusForNative(dbResult);
+        for (auto &[key, status] : dbResult) {
+            result[key] = ConvertDbStatusNative(status);
+        }
     } else {
         for (auto &[key, status] : dbResult) {
             result[key] = ConvertDbStatus(status);
@@ -1149,21 +1151,16 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
     return SUCCESS;
 }
 
-std::map<std::string, Status> KVDBServiceImpl::ConvertSyncStatusForNative(const DBResult &dbResult)
+Status KVDBServiceImpl::ConvertDbStatusNative(DBStatus status)
 {
-    std::map<std::string, Status> result;
-    for (auto &[key, status] : dbResult) {
-        auto innerStatus = static_cast<int32_t>(status);
-        if (innerStatus < 0) {
-            ZLOGW("Directly transmit error code. code:%{public}d", innerStatus);
-            result[key] = static_cast<Status>(status);
-        } else if (status == DBStatus::COMM_FAILURE) {
-            result[key] = Status::DEVICE_NOT_ONLINE;
-        } else {
-            result[key] = ConvertDbStatus(status);
-        }
+    auto innerStatus = static_cast<int32_t>(status);
+    if (innerStatus < 0) {
+        return static_cast<Status>(status);
+    } else if (status == DBStatus::COMM_FAILURE) {
+        return Status::DEVICE_NOT_ONLINE;
+    } else {
+        return ConvertDbStatus(status);
     }
-    return result;
 }
 
 uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeId)
