@@ -149,6 +149,7 @@ private:
     void TryToSync(const StoreMetaData &metaData, bool force = false);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     bool IsOHOSType(const std::vector<std::string> &ids);
+    std::map<std::string, Status> ConvertSyncStatusForNative(const DBResult &dbResult);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

@@ -1123,14 +1123,10 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
         SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
         std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     std::map<std::string, Status> result;
-    for (auto &[key, status] : dbResult) {
-        if (status == DBStatus::COMM_FAILURE) {
-            if (DMAdapter::GetInstance().ToUUID(key).empty()) {
-                result[key] = Status::DEVICE_NOT_ONLINE;
-            } else {
-                result[key] = Status::PEER_DATABASE_NOT_EXIST;
-            }
-        } else {
+    if (AccessTokenKit::GetTokenTypeFlag(meta.tokenId) != TOKEN_HAP) {
+        result = ConvertSyncStatusForNative(dbResult);
+    } else {
+        for (auto &[key, status] : dbResult) {
             result[key] = ConvertDbStatus(status);
         }
     }
@@ -1153,6 +1149,23 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
     }
     notifier->SyncCompleted(result, info.seqId);
     return SUCCESS;
+}
+
+std::map<std::string, Status> KVDBServiceImpl::ConvertSyncStatusForNative(const DBResult &dbResult)
+{
+    std::map<std::string, Status> result;
+    for (auto &[key, status] : dbResult) {
+        auto innerStatus = static_cast<int32_t>(status);
+        if (innerStatus < 0) {
+            ZLOGW("Directly transmit error code. code:%{public}d", innerStatus);
+            result[key] = static_cast<Status>(status);
+        } else if (status == DBStatus::COMM_FAILURE) {
+            result[key] = Status::DEVICE_NOT_ONLINE;
+        } else {
+            result[key] = ConvertDbStatus(status);
+        }
+    }
+    return result;
 }
 
 uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeId)
@@ -1178,12 +1191,6 @@ uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeI
 
 Status KVDBServiceImpl::ConvertDbStatus(DBStatus status) const
 {
-    auto innerStatus = static_cast<int32_t>(status);
-    if (innerStatus < 0) {
-        ZLOGW("passthrough error code:%{public}d", innerStatus);
-        return static_cast<Status>(status);
-    }
-
     switch (status) {
         case DBStatus::BUSY: // fallthrough
         case DBStatus::DB_ERROR:
