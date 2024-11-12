@@ -165,10 +165,9 @@ private:
     void OnStoreMetaChanged(const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag);
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
-
-    bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
-    void ResolveAutoLaunchCompatible(const StoreMetaData &storeMeta, const std::string &identifier,
-        const std::string &accountId);
+    
+    bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
+        const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &metaDate, bool isTriple);
 
     void LoadConfigs();
 

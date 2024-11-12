@@ -77,12 +77,13 @@ int32_t FeatureStubImpl::OnAppInstall(const std::string &bundleName, int32_t use
     return featureImpl_->OnAppInstall(bundleName, user, index);
 }
 
-int32_t FeatureStubImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
+int32_t FeatureStubImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
+    StoreMetaData meta, bool isTriple)
 {
     if (featureImpl_ == nullptr) {
         return -1;
     }
-    return featureImpl_->ResolveAutoLaunch(identifier, param);
+    return featureImpl_->ResolveAutoLaunch(identifier, param, meta, isTriple);
 }
 
 int32_t FeatureStubImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)

@@ -74,7 +74,8 @@ public:
     int32_t UnregisterAutoSyncCallback(const RdbSyncerParam& param,
         std::shared_ptr<DetailProgressObserver> observer) override;
 
-    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
+    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
+        StoreMetaData meta = StoreMetaData(), bool isTriple) override;
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 

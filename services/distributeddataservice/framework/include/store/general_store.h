@@ -176,7 +176,7 @@ public:
 
     virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 
-    virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId) {};
+    virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account = "") {};
 
     virtual void SetConfig(const StoreConfig &storeConfig) {};
 

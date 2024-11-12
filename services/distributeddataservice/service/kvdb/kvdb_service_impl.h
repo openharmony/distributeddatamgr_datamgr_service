@@ -39,6 +39,7 @@ public:
     using DBLaunchParam = DistributedDB::AutoLaunchParam;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using RefCount = DistributedData::RefCount;
+    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     API_EXPORT KVDBServiceImpl();
     virtual ~KVDBServiceImpl();
     Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) override;
@@ -72,7 +73,8 @@ public:
     int32_t OnBind(const BindInfo &bindInfo) override;
     int32_t OnInitialize() override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
-    int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
+    int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param,
+        StoreMetaData meta = StoreMetaData(), bool isTriple = false) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device) override;
 

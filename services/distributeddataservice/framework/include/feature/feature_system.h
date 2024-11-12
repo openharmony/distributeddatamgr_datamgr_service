@@ -21,6 +21,7 @@
 #include "executor_pool.h"
 #include "static_acts.h"
 #include "visibility.h"
+#include "metadata/store_meta_data.h"
 namespace DistributedDB {
 struct AutoLaunchParam;
 }
@@ -50,7 +51,8 @@ public:
         virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
         virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
         virtual int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index);
-        virtual int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
+        virtual int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
+            StoreMetaData meta = StoreMetaData(), bool isTriple = false);
         virtual int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account);
         virtual int32_t Online(const std::string &device);
         virtual int32_t Offline(const std::string &device);

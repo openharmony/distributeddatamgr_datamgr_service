@@ -35,7 +35,8 @@ public:
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
     int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
     int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index);
-    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
+    int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
+        StoreMetaData meta = StoreMetaData(), bool isTriple = false);
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account);
     int32_t Online(const std::string &device);
     int32_t Offline(const std::string &device);

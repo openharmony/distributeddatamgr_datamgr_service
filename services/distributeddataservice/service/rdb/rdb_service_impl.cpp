@@ -144,7 +144,8 @@ RdbServiceImpl::RdbServiceImpl()
     EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
 }
 
-int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
+int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
+    StoreMetaData meta, bool isTriple)
 {
     std::string identifierHex = TransferStringToHex(identifier);
     ZLOGI("%{public}.6s", identifierHex.c_str());

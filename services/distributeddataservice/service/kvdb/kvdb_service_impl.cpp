@@ -49,6 +49,7 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "water_version_manager.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -753,10 +754,24 @@ int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
     return SUCCESS;
 }
 
-int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
+int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param,
+    StoreMetaData meta, bool isTriple)
 {
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
         param.appId.c_str(), Anonymous::Change(param.storeId).c_str(), Anonymous::Change(identifier).c_str());
+    if (isTriple) {
+        auto watchers = GetWatchers(meta.tokenId, meta.storeId);
+        ZLOGI("triple autolaunch.appId:%{public}s storeId:%{public}s tokenid:0x%{public}x size:%{public}zu",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.tokenId, watchers.size());
+        auto store = AutoCache::GetInstance().GetStore(meta, watchers);
+        if (store == nullptr) {
+            ZLOGE("store null, storeId:%{public}s", Anonymous::Change(meta.storeId).c_str());
+            return STORE_NOT_OPEN;
+        }
+        store->SetEqualIdentifier(meta.appId, meta.stordId, meta.account);
+        return SUCCESS;
+    }
+    
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid, param.userId });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {

@@ -295,7 +295,8 @@ int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundl
     return result;
 }
 
-int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
+int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
+    StoreMetaData meta, bool isTriple)
 {
     ZLOGI("start, user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
         param.appId.c_str(), DistributedData::Anonymous::Change(param.storeId).c_str(),

@@ -423,7 +423,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
     return ConvertStatus(dbStatus);
 }
 
-void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId)
+void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account)
 {
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -434,10 +434,14 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
     std::vector<std::string> sameAccountDevs{};
     std::vector<std::string> defaultAccountDevs{};
     auto uuids = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
+    if (uuids.empty()) {
+        ZLOGI("no remote device to sync.appId:%{public}s",appId.c_str());
+        return;
+    }
     GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
     GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
     if (!sameAccountDevs.empty()) {
-        auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
+        auto accountId = account.empty() ? AccountDelegate::GetInstance()->GetUnencryptedAccountId() : account;
         auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, accountId);
         auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
         ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
