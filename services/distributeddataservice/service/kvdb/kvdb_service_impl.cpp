@@ -973,7 +973,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
     if (uuids.empty()) {
         ZLOGW("no device seqId:0x%{public}" PRIx64 " remote:%{public}zu appId:%{public}s storeId:%{public}s",
             info.seqId, info.devices.size(), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
-        return Status::ERROR;
+        return Status::DEVICE_NOT_ONLINE;
     }
     if (IsNeedMetaSync(meta, uuids)) {
         auto recv = DeviceMatrix::GetInstance().GetRecvLevel(uuids[0],
@@ -1121,8 +1121,14 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
         SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
         std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     std::map<std::string, Status> result;
-    for (auto &[key, status] : dbResult) {
-        result[key] = ConvertDbStatus(status);
+    if (AccessTokenKit::GetTokenTypeFlag(meta.tokenId) != TOKEN_HAP) {
+        for (auto &[key, status] : dbResult) {
+            result[key] = ConvertDbStatusNative(status);
+        }
+    } else {
+        for (auto &[key, status] : dbResult) {
+            result[key] = ConvertDbStatus(status);
+        }
     }
     for (const auto &device : info.devices) {
         auto it = result.find(device);
@@ -1143,6 +1149,18 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
     }
     notifier->SyncCompleted(result, info.seqId);
     return SUCCESS;
+}
+
+Status KVDBServiceImpl::ConvertDbStatusNative(DBStatus status)
+{
+    auto innerStatus = static_cast<int32_t>(status);
+    if (innerStatus < 0) {
+        return static_cast<Status>(status);
+    } else if (status == DBStatus::COMM_FAILURE) {
+        return Status::DEVICE_NOT_ONLINE;
+    } else {
+        return ConvertDbStatus(status);
+    }
 }
 
 uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeId)

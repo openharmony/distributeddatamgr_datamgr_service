@@ -155,8 +155,8 @@ HWTEST_F(SoftbusAdapterStandardTest, SendData, TestSize.Level1)
     const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
     DeviceId di = {"DeviceId"};
     DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
-    Status status = SoftBusAdapter::GetInstance()->SendData(id, di, data, 11, { MessageType::DEFAULT });
-    EXPECT_NE(status, Status::SUCCESS);
+    auto status = SoftBusAdapter::GetInstance()->SendData(id, di, data, 11, { MessageType::DEFAULT });
+    EXPECT_NE(status.first, Status::SUCCESS);
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
     delete dataListener;
 }

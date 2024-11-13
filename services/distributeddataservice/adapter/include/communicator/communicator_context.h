@@ -36,7 +36,7 @@ public:
     std::shared_ptr<ExecutorPool> GetThreadPool();
     Status RegSessionListener(const DevChangeListener *observer);
     Status UnRegSessionListener(const DevChangeListener *observer);
-    void NotifySessionReady(const std::string &deviceId);
+    void NotifySessionReady(const std::string &deviceId, int32_t errCode);
     void NotifySessionClose(const std::string &deviceId);
     void SetSessionListener(const OnCloseAble &closeAbleCallback);
     bool IsSessionReady(const std::string &deviceId);

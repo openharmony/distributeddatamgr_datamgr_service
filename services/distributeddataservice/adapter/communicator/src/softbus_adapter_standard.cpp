@@ -189,8 +189,8 @@ void SoftBusAdapter::GetExpireTime(std::shared_ptr<SoftBusClient> &conn)
     }
 }
 
-Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-    uint32_t length, const MessageInfo &info)
+std::pair<Status, int32_t> SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    const DataInfo &dataInfo, uint32_t length, const MessageInfo &info)
 {
     std::shared_ptr<SoftBusClient> conn;
     bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
@@ -218,29 +218,35 @@ Status SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &device
         Reuse(pipeInfo, deviceId, qosType, conn);
     }
     if (conn == nullptr) {
-        return Status::ERROR;
+        return std::make_pair(Status::ERROR, 0);
     }
     auto status = conn->CheckStatus();
     if (status == Status::RATE_LIMIT) {
-        return Status::RATE_LIMIT;
+        return std::make_pair(Status::RATE_LIMIT, 0);
     }
     if (status != Status::SUCCESS) {
-        auto task = [this, connect = std::weak_ptr<SoftBusClient>(conn)]() {
-            auto conn = connect.lock();
-            if (conn != nullptr) {
-                conn->OpenConnect(&clientListener_);
-            }
-        };
-        auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
-        ConnectManager::GetInstance()->ApplyConnect(networkId, task);
-        return Status::RATE_LIMIT;
+        return OpenConnect(conn, deviceId);
     }
-
     status = conn->SendData(dataInfo, &clientListener_);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
         GetExpireTime(conn);
     }
-    return status;
+    auto errCode = conn->GetSoftBusError();
+    return std::make_pair(status, errCode);
+}
+
+std::pair<Status, int32_t> SoftBusAdapter::OpenConnect(const std::shared_ptr<SoftBusClient> &conn,
+    const DeviceId &deviceId)
+{
+    auto task = [this, connect = std::weak_ptr<SoftBusClient>(conn)]() {
+        auto conn = connect.lock();
+        if (conn != nullptr) {
+            conn->OpenConnect(&clientListener_);
+        }
+    };
+    auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
+    ConnectManager::GetInstance()->ApplyConnect(networkId, task);
+    return std::make_pair(Status::RATE_LIMIT, 0);
 }
 
 void SoftBusAdapter::StartCloseSessionTask(const std::string &deviceId)
