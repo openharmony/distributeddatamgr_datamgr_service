@@ -91,7 +91,7 @@ void SchedulerManager::DestoryTimerTask(int64_t timerId)
 
 void SchedulerManager::ResetTimerTask(int64_t timerId, int64_t reminderTime)
 {
-    TimeServiceClient::GetInstance()->StopTimer(timerId);
+    // This start also means reset, new one will replace old one
     TimeServiceClient::GetInstance()->StartTimer(timerId, static_cast<uint64_t>(reminderTime));
 }
 
