@@ -418,7 +418,7 @@ bool KvStoreDataService::CompareTripleIdentifier(const std::string &accountId, c
 }
 
 bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
-    const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &metaDate, bool &isTriple)
+    const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &metaData, bool &isTriple)
 {
     std::vector<StoreMetaData> entries;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
@@ -440,8 +440,8 @@ bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
         if (isTripleIdentifierEqual && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
             isTriple = isTripleIdentifierEqual;
-            metaDate = storeMeta;
-            metaDate.account = accountId;
+            metaData = storeMeta;
+            metaData.account = accountId;
         }
         if (identifier == itemDualIdentifier || isTripleIdentifierEqual) {
             ZLOGI("identifier  find");

@@ -192,7 +192,6 @@ HWTEST_F(KvStoreDataServiceTest, ResolveAutoLaunchParamByIdentifier001, TestSize
     std::string identifier = "kvstoredataservicetest";
     DistributedDB::AutoLaunchParam param;
     StoreMetaData meta;
-    bool isTriple = false;
     auto status = kvStoreDataServiceTest.ResolveAutoLaunchParamByIdentifier(identifier, param, meta, false);
     EXPECT_EQ(status, SUCCESS);
 }
