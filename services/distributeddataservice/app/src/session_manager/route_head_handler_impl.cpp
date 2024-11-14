@@ -80,7 +80,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     }
     auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
     if (devInfo.osType != OH_OS_TYPE) {
-        ZLOGI("devicdId:%{public} is not oh type",
+        ZLOGI("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
         return DistributedDB::OK;
     }
