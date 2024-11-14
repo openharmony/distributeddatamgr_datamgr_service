@@ -1416,7 +1416,15 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     if (device.empty()) {
         ret = store->Clean({}, KVDBGeneralStore::NEARBY_DATA, "");
     } else {
-        ret = store->Clean({ DMAdapter::GetInstance().ToUUID(device) }, KVDBGeneralStore::NEARBY_DATA, "");
+        auto uuid = DMAdapter::GetInstance().ToUUID(device);
+        if (uuid.empty()) {
+            auto tokenId = IPCSkeleton::GetCallingTokenID();
+            if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+                ZLOGW("uuid convert empty! device:%{public}s", Anonymous::Change(device).c_str());
+                uuid = device;
+            }
+        }
+        ret = store->Clean({ uuid }, KVDBGeneralStore::NEARBY_DATA, "");
     }
     return ConvertGeneralErr(GeneralError(ret));
 }
