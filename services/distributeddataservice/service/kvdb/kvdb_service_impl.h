@@ -79,7 +79,6 @@ public:
     Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device) override;
 
 private:
-    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
     using StoreMetaDataLocal = OHOS::DistributedData::StoreMetaDataLocal;
     using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
