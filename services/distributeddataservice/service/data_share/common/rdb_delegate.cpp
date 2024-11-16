@@ -285,6 +285,22 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
     return resultSet;
 }
 
+std::pair<int, int64_t> RdbDelegate::UpdateSql(const std::string &sql)
+{
+    if (store_ == nullptr) {
+        ZLOGE("store is null");
+        return std::make_pair(E_ERROR, 0);
+    }
+    auto[ret, outValue] = store_->Execute(sql);
+    if (ret != E_OK) {
+        ZLOGE("execute update sql failed, err:%{public}d", ret);
+        return std::make_pair(ret, 0);
+    }
+    int64_t rowCount = 0;
+    outValue.GetLong(rowCount);
+    return std::make_pair(ret, rowCount);
+}
+
 bool RdbDelegate::IsInvalid()
 {
     return store_ == nullptr;

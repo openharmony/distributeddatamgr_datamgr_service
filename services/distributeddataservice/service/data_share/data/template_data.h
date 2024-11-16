@@ -36,6 +36,7 @@ struct TemplateNode final: public DistributedData::Serializable {
     bool Unmarshal(const json &node) override;
     Template ToTemplate() const;
 private:
+    std::string update;
     std::vector<PredicatesNode> predicates;
     std::string scheduler;
 };

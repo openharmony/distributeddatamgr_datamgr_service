@@ -27,6 +27,7 @@
 #include "metadata/store_meta_data.h"
 #include "result_set.h"
 #include "serializable/serializable.h"
+#include "value_object.h"
 
 namespace OHOS::DataShare {
 class DBDelegate {
@@ -40,6 +41,7 @@ public:
     virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
     virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
+    virtual std::pair<int, int64_t> UpdateSql(const std::string &sql) = 0;
     virtual bool IsInvalid() = 0;
     static void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
     static void EraseStoreCache(const int32_t tokenId);
