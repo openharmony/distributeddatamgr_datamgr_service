@@ -279,7 +279,10 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     }
     std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
     if (localDeviceId != sourceDeviceId) {
-        SetRemoteUri(query, records);
+        if (SetRemoteUri(query, records)) {
+            ZLOGE("when cross devices, remote uri is required!");
+            return E_ERROR;
+        }
     }
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
@@ -321,19 +324,20 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     return E_OK;
 }
 
-void UdmfServiceImpl::SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records)
+bool UdmfServiceImpl::SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records)
 {
     for (auto record : records) {
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             std::string remoteUri = file->GetRemoteUri();
             if (remoteUri.empty()) {
-                ZLOGW("Get remoteUri is empyt, key=%{public}s.", query.key.c_str());
-                continue;
+                ZLOGE("Get remoteUri is empyt, key=%{public}s.", query.key.c_str());
+                return false;
             }
             file->SetUri(remoteUri); // cross dev, need dis path.
         }
     }
+    return true;
 }
 
 int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)
