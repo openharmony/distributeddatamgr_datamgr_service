@@ -279,7 +279,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     }
     std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
     if (localDeviceId != sourceDeviceId) {
-        if (SetRemoteUri(query, records)) {
+        if (!SetRemoteUri(query, records)) {
             ZLOGE("when cross devices, remote uri is required!");
             return E_ERROR;
         }
