@@ -359,7 +359,8 @@ void RdbSubscriberManager::Clear()
     rdbCache_.Clear();
 }
 
-void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId, const std::string &bundleName, std::shared_ptr<Context> context)
+void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
+    const std::string &bundleName, std::shared_ptr<Context> context)
 {
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
