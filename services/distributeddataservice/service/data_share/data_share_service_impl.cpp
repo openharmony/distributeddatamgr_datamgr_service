@@ -216,7 +216,7 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
     return templateStrategy_.Execute(context, [&uri, &tpltId, &tplt, &context]() -> int32_t {
         auto result = TemplateManager::GetInstance().Add(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId, tplt);
-        RdbSubscriberManager::GetInstance().Emit(context->uri, tpltId.subscriberId_, context);
+        RdbSubscriberManager::GetInstance().Emit(context->uri, tpltId.subscriberId_, tpltId.bundleName_, context);
         return result;
     });
 }
