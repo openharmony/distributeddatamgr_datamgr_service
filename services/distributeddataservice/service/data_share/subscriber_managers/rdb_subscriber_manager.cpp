@@ -343,6 +343,13 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         }
         changeNode.data_.emplace_back("{\"" + predicate.key_ + "\":" + result + "}");
     }
+    if (!tpl.update_.empty()) {
+        auto [errCode, rowCount] = delegate->UpdateSql(tpl.update_);
+        if (errCode != E_OK) {
+            ZLOGE("Update failed, err:%{public}d, %{public}s, %{public}" PRId64 ", %{public}s",
+            errCode, DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+        }
+    }
 
     ZLOGI("emit, valSize: %{public}zu, dataSize:%{public}zu, uri:%{public}s,",
         val.size(), changeNode.data_.size(), DistributedData::Anonymous::Change(changeNode.uri_).c_str());
@@ -359,7 +366,8 @@ void RdbSubscriberManager::Clear()
     rdbCache_.Clear();
 }
 
-void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId, std::shared_ptr<Context> context)
+void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
+    const std::string &bundleName, std::shared_ptr<Context> context)
 {
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
@@ -376,8 +384,9 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId, st
         SetObserverNotifyOnEnabled(val);
         return false;
     });
-    SchedulerManager::GetInstance().Execute(
-        uri, context->currentUserId, context->calledSourceDir, context->version, context->calledBundleName);
+    Key executeKey(uri, subscriberId, bundleName);
+    SchedulerManager::GetInstance().Execute(executeKey, context->currentUserId,
+        context->calledSourceDir, context->version);
 }
 RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer,
     uint32_t firstCallerTokenId, uint32_t callerTokenId)

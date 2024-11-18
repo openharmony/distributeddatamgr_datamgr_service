@@ -196,6 +196,7 @@ int32_t CloudServiceImpl::DoClean(const CloudInfo &cloudInfo, const std::map<std
     syncManager_.StopCloudSync(cloudInfo.user);
     for (const auto &[bundle, action] : actions) {
         if (!cloudInfo.Exist(bundle)) {
+            ZLOGW("user:%{public}d, bundleName:%{public}s is not exist", cloudInfo.user, bundle.c_str());
             continue;
         }
         SchemaMeta schemaMeta;

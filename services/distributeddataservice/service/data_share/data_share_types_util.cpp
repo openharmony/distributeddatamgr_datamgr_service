@@ -85,7 +85,21 @@ bool Unmarshalling(PredicateTemplateNode &predicateTemplateNode, MessageParcel &
 template<>
 bool Marshalling(const RdbChangeNode &changeNode, MessageParcel &parcel)
 {
-    return ITypesUtil::Marshal(parcel, changeNode.uri_, changeNode.templateId_, changeNode.data_);
+    bool firstPart = ITypesUtil::Marshal(
+        parcel, changeNode.uri_, changeNode.templateId_, changeNode.data_, changeNode.isSharedMemory_);
+    if (!firstPart) {
+        return false;
+    }
+    if (changeNode.isSharedMemory_) {
+        if (changeNode.memory_ == nullptr) {
+            ZLOGE("Used shared memory but ashmem is nullptr.");
+            return false;
+        }
+        if (!parcel.WriteAshmem(changeNode.memory_)) {
+            return false;
+        }
+    }
+    return ITypesUtil::Marshal(parcel, changeNode.size_);
 }
 
 template<>

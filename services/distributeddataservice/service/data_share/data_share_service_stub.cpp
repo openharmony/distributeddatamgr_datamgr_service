@@ -117,7 +117,7 @@ int32_t DataShareServiceStub::OnAddTemplate(MessageParcel &data, MessageParcel &
     std::string uri;
     int64_t subscriberId;
     Template tpl;
-    if (!ITypesUtil::Unmarshal(data, uri, subscriberId, tpl.predicates_,  tpl.scheduler_)) {
+    if (!ITypesUtil::Unmarshal(data, uri, subscriberId, tpl.update_, tpl.predicates_,  tpl.scheduler_)) {
         ZLOGW("read device list failed.");
         return -1;
     }

@@ -90,15 +90,10 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
 }
 
 RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
-    bool registerFunction, const std::string &extUriData, const std::string &backup)
+    bool registerFunction, const std::string &extUri, const std::string &backup)
+    : tokenId_(meta.tokenId), bundleName_(meta.bundleName), storeName_(meta.storeId),
+    haMode_(meta.haMode), extUri_(extUri), backup_(backup)
 {
-    tokenId_ = meta.tokenId;
-    bundleName_ = meta.bundleName;
-    storeName_ = meta.storeId;
-    extUri_ = extUriData;
-    haMode_ = meta.haMode;
-    backup_ = backup;
-
     auto [err, config] = GetConfig(meta, registerFunction);
     if (err != E_OK) {
         ZLOGW("Get rdbConfig failed, errCode is %{public}d, dir is %{public}s", err,
@@ -288,6 +283,22 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
         EraseStoreCache(tokenId_);
     }
     return resultSet;
+}
+
+std::pair<int, int64_t> RdbDelegate::UpdateSql(const std::string &sql)
+{
+    if (store_ == nullptr) {
+        ZLOGE("store is null");
+        return std::make_pair(E_ERROR, 0);
+    }
+    auto[ret, outValue] = store_->Execute(sql);
+    if (ret != E_OK) {
+        ZLOGE("execute update sql failed, err:%{public}d", ret);
+        return std::make_pair(ret, 0);
+    }
+    int64_t rowCount = 0;
+    outValue.GetLong(rowCount);
+    return std::make_pair(ret, rowCount);
 }
 
 bool RdbDelegate::IsInvalid()

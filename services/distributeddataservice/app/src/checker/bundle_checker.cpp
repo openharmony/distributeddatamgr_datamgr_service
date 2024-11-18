@@ -17,9 +17,14 @@
 #include "bundle_checker.h"
 #include <memory>
 #include "accesstoken_kit.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "hap_token_info.h"
+#include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "log_print.h"
+#include "system_ability_definition.h"
 #include "utils/crypto.h"
+
 namespace OHOS {
 namespace DistributedData {
 using namespace Security::AccessToken;
@@ -56,27 +61,47 @@ bool BundleChecker::SetSwitchesInfo(const CheckerManager::Switches &switches)
     return true;
 }
 
+std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
+{
+    auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgrProxy == nullptr) {
+        ZLOGE("Failed to get system ability mgr.");
+        return "";
+    }
+    auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (bundleMgrProxy == nullptr) {
+        ZLOGE("Failed to Get BMS SA.");
+        return "";
+    }
+    auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
+    if (bundleManager == nullptr) {
+        ZLOGE("Failed to get bundle manager");
+        return "";
+    }
+    int32_t userId = info.uid / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
+    std::string appId = bundleManager->GetAppIdByBundleName(info.bundleName, userId);
+    if (appId.empty()) {
+        ZLOGE("GetAppIdByBundleName failed appId:%{public}s, bundleName:%{public}s, uid:%{public}d",
+            appId.c_str(), info.bundleName.c_str(), userId);
+    }
+    return appId;
+}
+
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
 {
     if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
         return "";
     }
-    HapTokenInfo tokenInfo;
-    auto result = AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
-    if (result != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", info.tokenId, result);
-        return "";
-    }
-    if (!info.bundleName.empty() && tokenInfo.bundleName != info.bundleName) {
-        ZLOGE("bundlename:%{public}s <-> %{public}s", info.bundleName.c_str(), tokenInfo.bundleName.c_str());
+    auto appId = GetBundleAppId(info);
+    if (appId.empty()) {
         return "";
     }
     auto it = trusts_.find(info.bundleName);
-    if (it != trusts_.end() && (it->second == tokenInfo.appID)) {
+    if (it != trusts_.end() && (it->second == appId)) {
         return info.bundleName;
     }
-    ZLOGD("bundleName:%{public}s, appId:%{public}s", info.bundleName.c_str(), tokenInfo.appID.c_str());
-    return Crypto::Sha256(tokenInfo.appID);
+    ZLOGD("bundleName:%{public}s, appId:%{public}s", info.bundleName.c_str(), appId.c_str());
+    return Crypto::Sha256(appId);
 }
 
 bool BundleChecker::IsValid(const CheckerManager::StoreInfo &info)
@@ -98,18 +123,12 @@ bool BundleChecker::IsDistrust(const CheckerManager::StoreInfo &info)
     if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {
         return false;
     }
-    HapTokenInfo tokenInfo;
-    auto result = AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo);
-    if (result != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", info.tokenId, result);
-        return false;
-    }
-    if (!info.bundleName.empty() && tokenInfo.bundleName != info.bundleName) {
-        ZLOGE("bundlename:%{public}s <-> %{public}s", info.bundleName.c_str(), tokenInfo.bundleName.c_str());
+    auto appId = GetBundleAppId(info);
+    if (appId.empty()) {
         return false;
     }
     auto it = distrusts_.find(info.bundleName);
-    if (it != distrusts_.end() && (it->second == tokenInfo.appID)) {
+    if (it != distrusts_.end() && (it->second == appId)) {
         return true;
     }
     return false;

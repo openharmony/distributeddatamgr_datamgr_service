@@ -156,6 +156,7 @@ private:
         StoreMetaData &meta, bool &isFindIdentifier);
     int32_t DoTripleAutoLaunch(StoreMetaData &meta);
     DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
+    Status ConvertDbStatusNative(DBStatus status);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

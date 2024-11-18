@@ -78,15 +78,14 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
+    auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
+    if (devInfo.osType != OH_OS_TYPE) {
+        ZLOGD("devicdId:%{public}s is not oh type",
+            Anonymous::Change(session_.targetDeviceId).c_str());
+        return DistributedDB::OK;
+    }
     bool flag = false;
     auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
-    auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
-    if (devInfo.osType != OH_OS_TYPE && devInfo.deviceType ==
-        static_cast<uint32_t>(DistributedHardware::DmDeviceType::DEVICE_TYPE_CAR)) {
-        ZLOGI("type car set version. devicdId:%{public}s", Anonymous::Change(session_.targetDeviceId).c_str());
-        flag = true;
-        peerCap.version = CapMetaData::CURRENT_VERSION;
-    }
     if (!flag) {
         ZLOGI("get peer cap failed");
         return DistributedDB::DB_ERROR;

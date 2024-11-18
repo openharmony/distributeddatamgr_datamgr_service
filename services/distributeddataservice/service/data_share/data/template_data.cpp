@@ -18,18 +18,20 @@
 namespace OHOS::DataShare {
 bool TemplateNode::Marshal(DistributedData::Serializable::json &node) const
 {
-    bool ret = SetValue(node[GET_NAME(predicates)], predicates);
+    bool ret = SetValue(node[GET_NAME(update)], update);
+    ret = SetValue(node[GET_NAME(predicates)], predicates);
     ret = ret && SetValue(node[GET_NAME(scheduler)], scheduler);
     return ret;
 }
 
 bool TemplateNode::Unmarshal(const DistributedData::Serializable::json &node)
 {
-    bool ret = GetValue(node, GET_NAME(predicates), predicates);
+    bool ret = GetValue(node, GET_NAME(update), update);
+    ret = GetValue(node, GET_NAME(predicates), predicates);
     return ret && GetValue(node, GET_NAME(scheduler), scheduler);
 }
 
-TemplateNode::TemplateNode(const Template &tpl) : scheduler(tpl.scheduler_)
+TemplateNode::TemplateNode(const Template &tpl) : update(tpl.update_), scheduler(tpl.scheduler_)
 {
     for (auto &item:tpl.predicates_) {
         predicates.emplace_back(item.key_, item.selectSql_);
@@ -42,7 +44,7 @@ Template TemplateNode::ToTemplate() const
     for (const auto &predicate: predicates) {
         nodes.emplace_back(predicate.key, predicate.selectSql);
     }
-    return Template(nodes, scheduler);
+    return Template(update, nodes, scheduler);
 }
 
 bool TemplateRootNode::Marshal(DistributedData::Serializable::json &node) const

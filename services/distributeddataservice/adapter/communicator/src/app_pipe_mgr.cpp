@@ -58,13 +58,13 @@ Status AppPipeMgr::StopWatchDataChange(const AppDataChangeListener *observer, co
 }
 
 // Send data to other device, function will be called back after sent to notify send result.
-Status AppPipeMgr::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-    uint32_t totalLength, const MessageInfo &info)
+std::pair<Status, int32_t> AppPipeMgr::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    const DataInfo &dataInfo,  uint32_t totalLength, const MessageInfo &info)
 {
     if (dataInfo.length > DataBuffer::MAX_TRANSFER_SIZE || dataInfo.length == 0 || dataInfo.data == nullptr ||
         pipeInfo.pipeId.empty() || deviceId.deviceId.empty()) {
         ZLOGW("Input is invalid, maxSize:%u, current size:%u", DataBuffer::MAX_TRANSFER_SIZE, dataInfo.length);
-        return Status::ERROR;
+        return std::make_pair(Status::ERROR, 0);
     }
     ZLOGD("pipeInfo:%s ,size:%u, total length:%u", pipeInfo.pipeId.c_str(), dataInfo.length, totalLength);
     std::shared_ptr<AppPipeHandler> appPipeHandler;
@@ -73,7 +73,7 @@ Status AppPipeMgr::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, 
         auto it = dataBusMap_.find(pipeInfo.pipeId);
         if (it == dataBusMap_.end()) {
             ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
-            return Status::KEY_NOT_FOUND;
+            return std::make_pair(Status::KEY_NOT_FOUND, 0);
         }
         appPipeHandler = it->second;
     }
