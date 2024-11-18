@@ -79,7 +79,7 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
             }
         }
     }
-    ZLOGD("access to peer user:%{public}d", session.targetUserIds[0]);
+    ZLOGD("access to peer user count:%{public}zu", session.targetUserIds.size());
     return session;
 }
 
