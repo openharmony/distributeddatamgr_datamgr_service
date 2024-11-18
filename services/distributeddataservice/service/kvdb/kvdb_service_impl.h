@@ -73,8 +73,7 @@ public:
     int32_t OnBind(const BindInfo &bindInfo) override;
     int32_t OnInitialize() override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
-    int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param,
-        StoreMetaData meta = StoreMetaData(), bool isTriple = false) override;
+    int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param, bool &isFindIdentifier) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device) override;
 
@@ -151,6 +150,12 @@ private:
     void TryToSync(const StoreMetaData &metaData, bool force = false);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     bool IsOHOSType(const std::vector<std::string> &ids);
+    bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
+        const StoreMetaData &storeMeta);
+    bool IsTripleAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
+        StoreMetaData &meta, bool &isFindIdentifier);
+    int32_t DoTripleAutoLaunch(StoreMetaData &meta);
+    DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

@@ -171,12 +171,6 @@ private:
 
     void LoadConfigs();
 
-    bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
-        const StoreMetaData &storeMeta);
-    static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
-    static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
-                          DistributedDB::KvStoreNbDelegate::Option &dbOption);
-
     static constexpr int TEN_SEC = 10;
 
     ConcurrentMap<uint32_t, std::map<int32_t, KvStoreClientDeathObserverImpl>> clients_;

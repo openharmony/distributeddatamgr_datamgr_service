@@ -92,7 +92,7 @@ int32_t FeatureSystem::Feature::OnAppInstall(const std::string &bundleName, int3
 }
 
 int32_t FeatureSystem::Feature::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
-    StoreMetaData meta, bool isTriple)
+    bool &isFindIdentifier)
 {
     return E_OK;
 }

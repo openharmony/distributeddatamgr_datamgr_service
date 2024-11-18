@@ -75,7 +75,7 @@ public:
         std::shared_ptr<DetailProgressObserver> observer) override;
 
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
-        StoreMetaData meta = StoreMetaData(), bool isTriple = false) override;
+        bool &isFindIdentifier) override;
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
