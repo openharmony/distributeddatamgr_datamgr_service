@@ -816,7 +816,7 @@ bool KVDBServiceImpl::IsTripleAutoLaunch(
             if (storeMeta.bundleName == Bootstrap::GetInstance().GetProcessLabel()) {
                 param.userId = storeMeta.user;
             }
-            SetAutoLaunchParam(option, param, );
+            SetAutoLaunchParam(option, param, storeMeta);
             isFindIdentifier = true;
             return isTripleIdentifierEqual;
         }
