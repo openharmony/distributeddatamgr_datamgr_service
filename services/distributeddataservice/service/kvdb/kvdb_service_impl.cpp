@@ -816,7 +816,7 @@ bool KVDBServiceImpl::IsTripleAutoLaunch(
             if (storeMeta.bundleName == Bootstrap::GetInstance().GetProcessLabel()) {
                 param.userId = storeMeta.user;
             }
-            SetAutoLaunchParam(option, param);
+            SetAutoLaunchParam(option, param, );
             isFindIdentifier = true;
             return isTripleIdentifierEqual;
         }
@@ -825,7 +825,8 @@ bool KVDBServiceImpl::IsTripleAutoLaunch(
     return false;
 }
 
-void KVDBServiceImpl::SetAutoLaunchParam(DistributedDB::AutoLaunchOption &option, DistributedDB::AutoLaunchParam &param)
+void KVDBServiceImpl::SetAutoLaunchParam(DistributedDB::AutoLaunchOption &option,
+    DistributedDB::AutoLaunchParam &param, StoreMetaData &storeMeta)
 {
     option.schema = storeMeta.schema;
     option.createDirByStoreIdOnly = true;
