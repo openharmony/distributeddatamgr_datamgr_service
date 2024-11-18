@@ -778,7 +778,7 @@ bool KVDBServiceImpl::IsTripleAutoLaunch(
     const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &meta, bool &isFindIdentifier)
 {
     std::vector<StoreMetaData> entries;
-    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    std::string localDeviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), entries)) {
         ZLOGE("get full meta failed");
         return false;
