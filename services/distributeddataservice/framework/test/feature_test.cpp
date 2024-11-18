@@ -206,7 +206,8 @@ HWTEST_F(FeatureSystemTest, ResolveAutoLaunchTest, TestSize.Level1)
     DistributedDB::AutoLaunchParam param;
 
     MockFeature mockFeature;
-    int32_t ret = mockFeature.ResolveAutoLaunch(identifier, param);
+    bool status = false;
+    int32_t ret = mockFeature.ResolveAutoLaunch(identifier, param, status);
 
     EXPECT_EQ(ret, E_OK);
 }
