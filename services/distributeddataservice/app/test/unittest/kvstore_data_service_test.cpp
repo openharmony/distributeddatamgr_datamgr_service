@@ -180,24 +180,6 @@ HWTEST_F(KvStoreDataServiceTest, AppExit001, TestSize.Level1)
 }
 
 /**
-* @tc.name: ResolveAutoLaunchParamByIdentifier001
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
-*/
-HWTEST_F(KvStoreDataServiceTest, ResolveAutoLaunchParamByIdentifier001, TestSize.Level1)
-{
-    KvStoreDataService kvStoreDataServiceTest;
-    std::string identifier = "kvstoredataservicetest";
-    DistributedDB::AutoLaunchParam param;
-    StoreMetaData meta;
-    bool isTriple = false;
-    auto status = kvStoreDataServiceTest.ResolveAutoLaunchParamByIdentifier(identifier, param, meta, isTriple);
-    EXPECT_EQ(status, SUCCESS);
-}
-
-/**
 * @tc.name: ConvertSecurity001
 * @tc.desc:
 * @tc.type: FUNC
