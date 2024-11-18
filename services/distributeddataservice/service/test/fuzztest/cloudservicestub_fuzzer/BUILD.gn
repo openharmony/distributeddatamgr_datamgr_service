@@ -128,6 +128,8 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 }
 
