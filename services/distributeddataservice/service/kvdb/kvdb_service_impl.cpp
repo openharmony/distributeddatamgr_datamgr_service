@@ -59,7 +59,7 @@ using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using CommContext = OHOS::DistributedData::CommunicatorContext;
-using SecretKeyMeta = DistributedData::SecretKeyMetaData; 
+using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
@@ -816,21 +816,26 @@ bool KVDBServiceImpl::IsTripleAutoLaunch(
             if (storeMeta.bundleName == Bootstrap::GetInstance().GetProcessLabel()) {
                 param.userId = storeMeta.user;
             }
-            option.schema = storeMeta.schema;
-            option.createDirByStoreIdOnly = true;
-            option.dataDir = storeMeta.dataDir;
-            option.secOption = ConvertSecurity(storeMeta.securityLevel);
-            option.isAutoSync = storeMeta.isAutoSync;
-            option.syncDualTupleMode = true; // dual tuple flag
-            param.appId = storeMeta.appId;
-            param.storeId = storeMeta.storeId;
-            param.option = option;
+            SetAutoLaunchParam(option, param);
             isFindIdentifier = true;
             return isTripleIdentifierEqual;
         }
     }
     ZLOGI("not find identifier");
     return false;
+}
+
+void KVDBServiceImpl::SetAutoLaunchParam(DistributedDB::AutoLaunchOption &option, DistributedDB::AutoLaunchParam &param)
+{
+    option.schema = storeMeta.schema;
+    option.createDirByStoreIdOnly = true;
+    option.dataDir = storeMeta.dataDir;
+    option.secOption = ConvertSecurity(storeMeta.securityLevel);
+    option.isAutoSync = storeMeta.isAutoSync;
+    option.syncDualTupleMode = true; // dual tuple flag
+    param.appId = storeMeta.appId;
+    param.storeId = storeMeta.storeId;
+    param.option = option;
 }
 
 int32_t KVDBServiceImpl::DoTripleAutoLaunch(StoreMetaData &meta)
