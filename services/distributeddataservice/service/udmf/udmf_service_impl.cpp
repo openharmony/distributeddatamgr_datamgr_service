@@ -345,22 +345,6 @@ int32_t UdmfServiceImpl::VerifyUnifiedData(UnifiedData &unifiedData)
     return E_OK;
 }
 
-// bool UdmfServiceImpl::SetRemoteUri(std::vector<std::shared_ptr<UnifiedRecord>> &records)
-// {
-//     for (auto record : records) {
-//         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-//             auto file = static_cast<File *>(record.get());
-//             std::string remoteUri = file->GetRemoteUri();
-//             if (remoteUri.empty()) {
-//                 ZLOGE("Get remoteUri is empyt!");
-//                 return false;
-//             }
-//             file->SetUri(remoteUri); // cross dev, need dis path.
-//         }
-//     }
-//     return true;
-// }
-
 int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)
 {
     ZLOGD("start");
