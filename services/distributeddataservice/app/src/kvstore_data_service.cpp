@@ -362,7 +362,6 @@ void KvStoreDataService::StartService()
 
     // subscribe account event listener to EventNotificationMgr
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
-        StoreMetaData metaData;
         bool isFindIdentifier = false;
         features_.ForEachCopies([&identifier, &param, &isFindIdentifier](const auto &,
         sptr<DistributedData::FeatureStubImpl> &value) {
