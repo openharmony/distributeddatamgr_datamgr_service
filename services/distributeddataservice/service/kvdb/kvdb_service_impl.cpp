@@ -826,7 +826,7 @@ bool KVDBServiceImpl::IsTripleAutoLaunch(
 }
 
 void KVDBServiceImpl::SetAutoLaunchParam(DistributedDB::AutoLaunchOption &option,
-    DistributedDB::AutoLaunchParam &param, StoreMetaData &storeMeta)
+    DistributedDB::AutoLaunchParam &param, const StoreMetaData &storeMeta)
 {
     option.schema = storeMeta.schema;
     option.createDirByStoreIdOnly = true;

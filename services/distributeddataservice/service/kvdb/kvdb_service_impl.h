@@ -157,7 +157,7 @@ private:
     int32_t DoTripleAutoLaunch(StoreMetaData &meta);
     DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
     void SetAutoLaunchParam(DistributedDB::AutoLaunchOption &option, DistributedDB::AutoLaunchParam &param,
-        StoreMetaData &storeMeta);
+        const StoreMetaData &storeMeta);
     Status ConvertDbStatusNative(DBStatus status);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
