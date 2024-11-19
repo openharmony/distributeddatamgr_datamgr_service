@@ -17,6 +17,7 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
     "../../../framework/include/",
     "../../../service/rdb/",
   ]
