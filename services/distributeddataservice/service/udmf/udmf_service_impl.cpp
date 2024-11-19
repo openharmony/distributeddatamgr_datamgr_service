@@ -273,7 +273,7 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
 int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifiedData)
 {
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-    int32_t verifyRes = VerifyUnifiedData(unifiedData);
+    int32_t verifyRes = ProcessCrossDeviceData(unifiedData);
     if (verifyRes != E_OK) {
         ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
         return verifyRes;
@@ -320,10 +320,10 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::VerifyUnifiedData(UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData)
 {
     if (unifiedData.GetRuntime() == nullptr) {
-        ZLOGE("get runtime empty!");
+        ZLOGE("Get runtime empty!");
         return E_DB_ERROR;
     }
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
