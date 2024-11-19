@@ -61,7 +61,7 @@ private:
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
-    int32_t VerifyUnifiedData(UnifiedData &unifiedData);
+    int32_t ProcessCrossDeviceData(UnifiedData &unifiedData);
 
     class Factory {
     public:
