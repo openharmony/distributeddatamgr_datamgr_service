@@ -21,7 +21,6 @@
 #include "executor_pool.h"
 #include "static_acts.h"
 #include "visibility.h"
-#include "metadata/store_meta_data.h"
 namespace DistributedDB {
 struct AutoLaunchParam;
 }
