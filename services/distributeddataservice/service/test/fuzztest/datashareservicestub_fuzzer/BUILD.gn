@@ -104,6 +104,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
   ]
 
   external_deps = [
+    "ability_base:base",
     "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:dataobs_manager",
