@@ -804,8 +804,8 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
             store->SetEqualIdentifier(storeMeta.appId, storeMeta.storeId, accountId);
         }
         ZLOGI("isTriple:%{public}d,storeId:%{public}s,tokenid:0x%{public}x,size:%{public}zu,user:%{public}s",
-           isTripleIdentifierEqual, Anonymous::Change(meta.storeId).c_str(),
-           meta.tokenId, watchers.size(), storeMeta.user.c_str());
+            isTripleIdentifierEqual, Anonymous::Change(meta.storeId).c_str(),
+            meta.tokenId, watchers.size(), storeMeta.user.c_str());
     }
     return SUCCESS;
 }
