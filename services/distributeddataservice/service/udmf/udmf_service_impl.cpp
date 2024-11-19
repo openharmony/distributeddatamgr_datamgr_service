@@ -328,18 +328,19 @@ int32_t UdmfServiceImpl::VerifyUnifiedData(UnifiedData &unifiedData)
     }
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
     std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
-    if (localDeviceId != sourceDeviceId) {
-        auto records = unifiedData.GetRecords();
-        for (auto record : records) {
-            if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-                auto file = static_cast<File *>(record.get());
-                std::string remoteUri = file->GetRemoteUri();
-                if (remoteUri.empty()) {
-                    ZLOGE("when cross devices, remote uri is required!");
-                    return E_ERROR;
-                }
-                file->SetUri(remoteUri); // cross dev, need dis path.
+    if (localDeviceId == sourceDeviceId) {
+        return E_OK;
+    }
+    auto records = unifiedData.GetRecords();
+    for (auto record : records) {
+        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
+            auto file = static_cast<File *>(record.get());
+            std::string remoteUri = file->GetRemoteUri();
+            if (remoteUri.empty()) {
+                ZLOGE("when cross devices, remote uri is required!");
+                return E_ERROR;
             }
+            file->SetUri(remoteUri); // cross dev, need dis path.
         }
     }
     return E_OK;
