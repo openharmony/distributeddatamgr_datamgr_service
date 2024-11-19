@@ -166,9 +166,6 @@ private:
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
     
-    bool ResolveAutoLaunchParamByIdentifier(
-        const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &metaData, bool &isTriple);
-
     void LoadConfigs();
 
     static constexpr int TEN_SEC = 10;
