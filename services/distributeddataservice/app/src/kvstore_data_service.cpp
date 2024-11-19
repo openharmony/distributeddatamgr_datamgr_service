@@ -362,13 +362,11 @@ void KvStoreDataService::StartService()
 
     // subscribe account event listener to EventNotificationMgr
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
-        bool isFindIdentifier = false;
-        features_.ForEachCopies([&identifier, &param, &isFindIdentifier](const auto &,
-        sptr<DistributedData::FeatureStubImpl> &value) {
-            value->ResolveAutoLaunch(identifier, param, isFindIdentifier);
+        features_.ForEachCopies([&identifier, &param](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
+            value->ResolveAutoLaunch(identifier, param);
             return false;
         });
-        return isFindIdentifier;
+        return false;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
     ZLOGI("Start distributedata Success, Publish ret: %{public}d", static_cast<int>(ret));

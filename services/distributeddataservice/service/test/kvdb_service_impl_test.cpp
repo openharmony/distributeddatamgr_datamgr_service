@@ -598,9 +598,8 @@ HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch, TestSize.Level0)
     EXPECT_NE(kvStore, nullptr);
     EXPECT_EQ(status, Status::SUCCESS);
     std::string identifier = "identifier";
-    bool isFind = false;
     DistributedKv::KVDBServiceImpl::DBLaunchParam launchParam;
-    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam, isFind);
+    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
     EXPECT_EQ(result, Status::STORE_NOT_FOUND);
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
     Bootstrap::GetInstance().LoadDirectory();
@@ -608,7 +607,7 @@ HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch, TestSize.Level0)
     DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
     DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
     DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
-    result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam, isFind);
+    result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
     EXPECT_EQ(result, Status::SUCCESS);
 }
 

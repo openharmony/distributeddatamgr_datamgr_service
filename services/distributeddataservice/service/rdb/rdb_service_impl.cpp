@@ -97,8 +97,7 @@ RdbServiceImpl::RdbServiceImpl()
     ZLOGI("construct");
     DistributedDB::RelationalStoreManager::SetAutoLaunchRequestCallback(
         [this](const std::string& identifier, DistributedDB::AutoLaunchParam &param) {
-            bool isFindIdentifier = false;
-            return ResolveAutoLaunch(identifier, param, isFindIdentifier);
+            return ResolveAutoLaunch(identifier, param);
         });
     auto process = [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
@@ -145,8 +144,7 @@ RdbServiceImpl::RdbServiceImpl()
     EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
 }
 
-int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param,
-    bool &isFindIdentifier)
+int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
 {
     std::string identifierHex = TransferStringToHex(identifier);
     ZLOGI("%{public}.6s", identifierHex.c_str());

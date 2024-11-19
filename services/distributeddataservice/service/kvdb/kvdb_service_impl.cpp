@@ -774,134 +774,40 @@ bool KVDBServiceImpl::CompareTripleIdentifier(const std::string &accountId, cons
     return false;
 }
 
-bool KVDBServiceImpl::IsTripleAutoLaunch(
-    const std::string &identifier, DistributedDB::AutoLaunchParam &param, StoreMetaData &meta, bool &isFindIdentifier)
-{
-    std::vector<StoreMetaData> entries;
-    std::string localDeviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), entries)) {
-        ZLOGE("get full meta failed");
-        return false;
-    }
-
-    auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
-    for (const auto &storeMeta : entries) {
-        if ((!param.userId.empty() && (param.userId != storeMeta.user)) || (localDeviceId != storeMeta.deviceId) ||
-            ((StoreMetaData::STORE_RELATIONAL_BEGIN <= storeMeta.storeType) &&
-             (StoreMetaData::STORE_RELATIONAL_END >= storeMeta.storeType))) {
-            // judge local userid and local meta
-            continue;
-        }
-        bool isTripleIdentifierEqual = CompareTripleIdentifier(accountId, identifier, storeMeta);
-        const std::string &itemDualIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
-        if (isTripleIdentifierEqual && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
-            meta = storeMeta;
-            meta.account = accountId;
-        }
-        if (identifier == itemDualIdentifier || isTripleIdentifierEqual) {
-            ZLOGI("identifier find:%{public}d", isTripleIdentifierEqual);
-            DistributedDB::AutoLaunchOption option;
-            option.createIfNecessary = false;
-            option.isEncryptedDb = storeMeta.isEncrypt;
-
-            SecretKeyMeta secretKey;
-            if (storeMeta.isEncrypt && MetaDataManager::GetInstance().LoadMeta(storeMeta.GetSecretKey(), secretKey)) {
-                std::vector<uint8_t> decryptKey;
-                CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptKey);
-                option.passwd.SetValue(decryptKey.data(), decryptKey.size());
-                std::fill(decryptKey.begin(), decryptKey.end(), 0);
-            }
-
-            if (storeMeta.bundleName == Bootstrap::GetInstance().GetProcessLabel()) {
-                param.userId = storeMeta.user;
-            }
-            SetAutoLaunchParam(option, param, storeMeta);
-            isFindIdentifier = true;
-            return isTripleIdentifierEqual;
-        }
-    }
-    ZLOGI("not find identifier");
-    return false;
-}
-
-void KVDBServiceImpl::SetAutoLaunchParam(DistributedDB::AutoLaunchOption &option,
-    DistributedDB::AutoLaunchParam &param, const StoreMetaData &storeMeta)
-{
-    option.schema = storeMeta.schema;
-    option.createDirByStoreIdOnly = true;
-    option.dataDir = storeMeta.dataDir;
-    option.secOption = ConvertSecurity(storeMeta.securityLevel);
-    option.isAutoSync = storeMeta.isAutoSync;
-    option.syncDualTupleMode = true; // dual tuple flag
-    param.appId = storeMeta.appId;
-    param.storeId = storeMeta.storeId;
-    param.option = option;
-}
-
-int32_t KVDBServiceImpl::DoTripleAutoLaunch(StoreMetaData &meta)
-{
-    auto watchers = GetWatchers(meta.tokenId, meta.storeId);
-    ZLOGI("triple autolaunch.appId:%{public}s storeId:%{public}s tokenid:0x%{public}x size:%{public}zu",
-        meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.tokenId, watchers.size());
-    auto store = AutoCache::GetInstance().GetStore(meta, watchers);
-    if (store == nullptr) {
-        ZLOGE("store null, storeId:%{public}s", Anonymous::Change(meta.storeId).c_str());
-        return STORE_NOT_OPEN;
-    }
-    store->SetEqualIdentifier(meta.appId, meta.storeId, meta.account);
-    return SUCCESS;
-}
-
-int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param, bool &isFindIdentifier)
+int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
 {
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
         param.appId.c_str(), Anonymous::Change(param.storeId).c_str(), Anonymous::Change(identifier).c_str());
     
-    StoreMetaData meta;
-    if (IsTripleAutoLaunch(identifier, param, meta, isFindIdentifier)) {
-        ZLOGI("do triple autolaunch. storeId:%{public}s", Anonymous::Change(meta.storeId).c_str());
-        return DoTripleAutoLaunch(meta);
-    }
-
     std::vector<StoreMetaData> metaData;
-    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid, param.userId });
+    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
         ZLOGE("no store in user:%{public}s", param.userId.c_str());
         return STORE_NOT_FOUND;
     }
 
+    auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
     for (const auto &storeMeta : metaData) {
         if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
-            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
+            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
+            (!param.userId.empty() && (param.userId != storeMeta.user))) {
             continue;
         }
         auto identifierTag = DBManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
-        if (identifier != identifierTag) {
+        bool isTripleIdentifierEqual = CompareTripleIdentifier(accountId, identifier, storeMeta);
+        if (identifier != identifierTag && !isTripleIdentifierEqual) {
             continue;
         }
         auto watchers = GetWatchers(storeMeta.tokenId, storeMeta.storeId);
-        AutoCache::GetInstance().GetStore(storeMeta, watchers);
-
-        ZLOGD("user:%{public}s appId:%{public}s storeId:%{public}s", storeMeta.user.c_str(),
-            storeMeta.bundleName.c_str(), Anonymous::Change(storeMeta.storeId).c_str());
+        auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers);
+        if (isTripleIdentifierEqual && store != nullptr) {
+            store->SetEqualIdentifier(storeMeta.appId, storeMeta.storeId, accountId);
+        }
+        ZLOGI("isTriple:%{public}d,storeId:%{public}s,tokenid:0x%{public}x,size:%{public}zu,user:%{public}s",
+           isTripleIdentifierEqual, Anonymous::Change(meta.storeId).c_str(),
+           meta.tokenId, watchers.size(), storeMeta.user.c_str());
     }
     return SUCCESS;
-}
-
-DistributedDB::SecurityOption KVDBServiceImpl::ConvertSecurity(int securityLevel)
-{
-    if (securityLevel < SecurityLevel::NO_LABEL || securityLevel > SecurityLevel::S4) {
-        return {DistributedDB::NOT_SET, DistributedDB::ECE};
-    }
-    switch (securityLevel) {
-        case SecurityLevel::S3:
-            return {DistributedDB::S3, DistributedDB::SECE};
-        case SecurityLevel::S4:
-            return {DistributedDB::S4, DistributedDB::ECE};
-        default:
-            return {securityLevel, DistributedDB::ECE};
-    }
 }
 
 int32_t KVDBServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
