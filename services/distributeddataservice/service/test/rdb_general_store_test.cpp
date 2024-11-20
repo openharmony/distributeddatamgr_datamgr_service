@@ -936,17 +936,17 @@ HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
     ASSERT_NE(store, nullptr);
     std::string tableName = "tableName";
     std::set<std::string> trackerColNames = { "col1", "col2" };
-    std::string extendColName = "extendColName";
-    auto result = store->SetTrackerTable(tableName, trackerColNames, extendColName);
+    std::set<std::string> extendColNames = { "extendColName1", "extendColName2" };
+    auto result = store->SetTrackerTable(tableName, trackerColNames, extendColNames);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
     MockRelationalStoreDelegate mockDelegate;
     store->delegate_ = &mockDelegate;
-    result = store->SetTrackerTable(tableName, trackerColNames, extendColName);
+    result = store->SetTrackerTable(tableName, trackerColNames, extendColNames);
     EXPECT_EQ(result, GeneralError::E_OK);
-    result = store->SetTrackerTable("WITH_INVENTORY_DATA", trackerColNames, extendColName);
+    result = store->SetTrackerTable("WITH_INVENTORY_DATA", trackerColNames, extendColNames);
     EXPECT_EQ(result, GeneralError::E_WITH_INVENTORY_DATA);
-    result = store->SetTrackerTable("test", trackerColNames, extendColName);
+    result = store->SetTrackerTable("test", trackerColNames, extendColNames);
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
 
