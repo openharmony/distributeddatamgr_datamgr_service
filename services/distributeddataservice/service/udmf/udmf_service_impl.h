@@ -59,9 +59,9 @@ private:
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
-    void SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records);
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
+    int32_t ProcessCrossDeviceData(UnifiedData &unifiedData);
 
     class Factory {
     public:

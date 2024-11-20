@@ -273,24 +273,23 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
 int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifiedData)
 {
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-    auto records = unifiedData.GetRecords();
-    if (unifiedData.GetRuntime() == nullptr) {
-        return E_DB_ERROR;
-    }
-    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
-    if (localDeviceId != sourceDeviceId) {
-        SetRemoteUri(query, records);
+    int32_t verifyRes = ProcessCrossDeviceData(unifiedData);
+    if (verifyRes != E_OK) {
+        ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
+        return verifyRes;
     }
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         ZLOGE("GetHapBundleNameByToken fail, key=%{public}s, tokenId=%{private}d.", query.key.c_str(), query.tokenId);
         return E_ERROR;
     }
+    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
     if (localDeviceId == sourceDeviceId && query.tokenId == unifiedData.GetRuntime()->tokenId) {
         ZLOGW("No need to grant uri permissions, queryKey=%{public}s.", query.key.c_str());
         return E_OK;
     }
     std::vector<Uri> allUri;
+    auto records = unifiedData.GetRecords();
     for (auto record : records) {
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
@@ -315,25 +314,36 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
-              bundleName.c_str(), query.key.c_str());
+            bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
     }
     return E_OK;
 }
 
-void UdmfServiceImpl::SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records)
+int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData)
 {
+    if (unifiedData.GetRuntime() == nullptr) {
+        ZLOGE("Get runtime empty!");
+        return E_DB_ERROR;
+    }
+    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
+    if (localDeviceId == sourceDeviceId) {
+        return E_OK;
+    }
+    auto records = unifiedData.GetRecords();
     for (auto record : records) {
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             std::string remoteUri = file->GetRemoteUri();
             if (remoteUri.empty()) {
-                ZLOGW("Get remoteUri is empyt, key=%{public}s.", query.key.c_str());
-                continue;
+                ZLOGE("when cross devices, remote uri is required!");
+                return E_ERROR;
             }
             file->SetUri(remoteUri); // cross dev, need dis path.
         }
     }
+    return E_OK;
 }
 
 int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)
