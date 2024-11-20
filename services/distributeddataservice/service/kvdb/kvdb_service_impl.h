@@ -150,6 +150,7 @@ private:
     void TryToSync(const StoreMetaData &metaData, bool force = false);
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     bool IsOHOSType(const std::vector<std::string> &ids);
+    Status ConvertDbStatusNative(DBStatus status);
     bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
         const StoreMetaData &storeMeta);
     static Factory factory_;
