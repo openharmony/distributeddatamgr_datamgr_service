@@ -362,17 +362,7 @@ std::function<void()> KvStoreMetaManager::CloudSyncTask()
             std::lock_guard<decltype(mutex_)> lock(mutex_);
             delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
         }
-        auto bundleName = Bootstrap::GetInstance().GetProcessLabel();
-        auto storeName = Bootstrap::GetInstance().GetMetaDBName();
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
-        DistributedData::StoreInfo storeInfo;
-        storeInfo.bundleName = bundleName;
-        storeInfo.storeName = storeName;
-        auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(GeneralStore::CLOUD_TIME_FIRST,
-            GeneralStore::AUTO_SYNC_MODE));
-        auto info = ChangeEvent::EventInfo(mixMode, 0, true, nullptr, nullptr);
-        auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
-        EventCenter::GetInstance().PostEvent(std::move(evt));
     };
 }
 
