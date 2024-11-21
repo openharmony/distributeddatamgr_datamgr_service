@@ -782,7 +782,7 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
-        ZLOGE("no store in user:%{public}s", param.userId.c_str());
+        ZLOGE("no meta data appId:%{public}s", param.appId.c_str());
         return STORE_NOT_FOUND;
     }
 
@@ -803,9 +803,9 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         if (isTripleIdentifierEqual && store != nullptr) {
             store->SetEqualIdentifier(storeMeta.appId, storeMeta.storeId, accountId);
         }
-        ZLOGI("isTriple:%{public}d,storeId:%{public}s,tokenid:0x%{public}x,size:%{public}zu,user:%{public}s",
+        ZLOGI("isTriple:%{public}d,storeId:%{public}s,size:%{public}zu,user:%{public}s",
             isTripleIdentifierEqual, Anonymous::Change(storeMeta.storeId).c_str(),
-            storeMeta.tokenId, watchers.size(), storeMeta.user.c_str());
+            watchers.size(), storeMeta.user.c_str());
     }
     return SUCCESS;
 }
