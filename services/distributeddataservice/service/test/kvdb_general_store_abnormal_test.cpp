@@ -61,7 +61,6 @@ protected:
     static constexpr const char *storeName = "test_service_meta";
 
     void InitMetaData();
-    static std::vector<uint8_t> Random(uint32_t len);
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     StoreMetaData metaData_;
 };
@@ -80,17 +79,6 @@ void KVDBGeneralStoreAbnormalTest::InitMetaData()
     metaData_.storeId = storeName;
     metaData_.dataDir = "/data/service/el1/public/database/" + std::string(bundleName) + "/kvdb";
     metaData_.securityLevel = SecurityLevel::S2;
-}
-
-std::vector<uint8_t> KVDBGeneralStoreAbnormalTest::Random(uint32_t len)
-{
-    std::random_device randomDevice;
-    std::uniform_int_distribution<int> distribution(0, std::numeric_limits<uint8_t>::max());
-    std::vector<uint8_t> key(len);
-    for (uint32_t i = 0; i < len; i++) {
-        key[i] = static_cast<uint8_t>(distribution(randomDevice));
-    }
-    return key;
 }
 
 void KVDBGeneralStoreAbnormalTest::SetUpTestCase(void)
@@ -112,51 +100,9 @@ void KVDBGeneralStoreAbnormalTest::SetUp()
 
 void KVDBGeneralStoreAbnormalTest::TearDown() {}
 
-class MockGeneralWatcher : public DistributedData::GeneralWatcher {
-public:
-    int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override
-    {
-        return GeneralError::E_OK;
-    }
-
-    int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override
-    {
-        return GeneralError::E_OK;
-    }
-};
-
-class MockKvStoreChangedData : public DistributedDB::KvStoreChangedData {
-public:
-    MockKvStoreChangedData() {}
-    virtual ~MockKvStoreChangedData() {}
-    std::list<DistributedDB::Entry> entriesInserted = {};
-    std::list<DistributedDB::Entry> entriesUpdated = {};
-    std::list<DistributedDB::Entry> entriesDeleted = {};
-    bool isCleared = true;
-    const std::list<DistributedDB::Entry> &GetEntriesInserted() const override
-    {
-        return entriesInserted;
-    }
-
-    const std::list<DistributedDB::Entry> &GetEntriesUpdated() const override
-    {
-        return entriesUpdated;
-    }
-
-    const std::list<Entry> &GetEntriesDeleted() const override
-    {
-        return entriesDeleted;
-    }
-
-    bool IsCleared() const override
-    {
-        return isCleared;
-    }
-};
-
 /**
 * @tc.name: GetDBOption
-* @tc.desc: GetDBOption.
+* @tc.desc: GetDBOption test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -183,6 +129,7 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, SetEqualIdentifier, TestSize.Level0)
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     std::vector<std::string> uuids{"uuidtest01"};
     KvStoreNbDelegateMock mockDelegate;
+    mockDelegate.taskCountMock_ = 1;
     store->delegate_ = &mockDelegate;
     EXPECT_NE(store->delegate_, nullptr);
     EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::_)).WillOnce(testing::Return(uuids));
@@ -192,6 +139,8 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, SetEqualIdentifier, TestSize.Level0)
         .WillOnce(testing::Return(false)).WillOnce(testing::Return(false));
     store->SetEqualIdentifier(metaData_.appId, metaData_.storeId);
     EXPECT_EQ(uuids1, uuids);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
@@ -222,6 +171,8 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, GetIdentifierParams, TestSize.Level0)
         EXPECT_EQ(DMAdapter::GetInstance().GetAuthType(devId), 0); // NO_ACCOUNT
     }
     EXPECT_EQ(sameAccountDevs.empty(), true);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
@@ -236,11 +187,13 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, ConvertStatus, TestSize.Level0)
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     auto status = store->ConvertStatus(DistributedDB::DBStatus::BUTT_STATUS); // test
     EXPECT_EQ(status, DistributedData::GeneralError::E_ERROR);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
-* @tc.name: ConvertStatus
-* @tc.desc: ConvertStatus test.
+* @tc.name: GetDBProcessCB
+* @tc.desc: GetDBProcessCB test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
@@ -257,6 +210,8 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, GetDBProcessCB, TestSize.Level0)
     EXPECT_NE(asyncs, nullptr);
     process = store->GetDBProcessCB(asyncs);
     EXPECT_NE(process, nullptr);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
@@ -281,6 +236,8 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, SetDBPushDataInterceptor, TestSize.Level0
     EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("uuidtest01")).WillOnce(testing::Return(false));
     store->SetDBPushDataInterceptor(DistributedKv::KvStoreType::DEVICE_COLLABORATION);
     EXPECT_NE(metaData_.storeType, DistributedKv::KvStoreType::DEVICE_COLLABORATION);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
@@ -305,6 +262,8 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, SetDBReceiveDataInterceptor, TestSize.Lev
     EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("uuidtest_1")).WillOnce(testing::Return(false));
     store->SetDBReceiveDataInterceptor(DistributedKv::KvStoreType::DEVICE_COLLABORATION);
     EXPECT_NE(metaData_.storeType, DistributedKv::KvStoreType::DEVICE_COLLABORATION);
+    store->delegate_ = nullptr;
+    delete store;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -27,11 +27,18 @@ OHOS::DistributedData::DeviceManagerAdapter::DeviceManagerAdapter()
 
 std::vector<std::string> OHOS::DistributedData::DeviceManagerAdapter::ToUUID(std::vector<DeviceInfo> devices)
 {
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        std::vector<std::string> vec;
+        return vec;
+    }
     return BDeviceManagerAdapter::deviceManagerAdapter->ToUUID(devices);
 }
 
 bool OHOS::DistributedData::DeviceManagerAdapter::IsOHOSType(const std::string &id)
 {
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return false;
+    }
     return BDeviceManagerAdapter::deviceManagerAdapter->IsOHOSType(id);
 }
 }
