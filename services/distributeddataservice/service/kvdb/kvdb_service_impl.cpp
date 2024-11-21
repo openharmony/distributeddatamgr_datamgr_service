@@ -49,6 +49,7 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "water_version_manager.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -58,6 +59,7 @@ using system_clock = std::chrono::system_clock;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using CommContext = OHOS::DistributedData::CommunicatorContext;
+using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
@@ -753,31 +755,57 @@ int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
     return SUCCESS;
 }
 
+bool KVDBServiceImpl::CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
+    const StoreMetaData &storeMeta)
+{
+    std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
+    for (auto &id : accountIds) {
+        auto convertedIds =
+            AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId, storeMeta.user);
+        const std::string &tempTripleIdentifier =
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, convertedIds.first,
+                storeMeta.storeId, false);
+        if (tempTripleIdentifier == identifier) {
+            ZLOGI("find triple identifier,storeId:%{public}s,id:%{public}s",
+                Anonymous::Change(storeMeta.storeId).c_str(), Anonymous::Change(id).c_str());
+            return true;
+        }
+    }
+    return false;
+}
+
 int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
 {
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
         param.appId.c_str(), Anonymous::Change(param.storeId).c_str(), Anonymous::Change(identifier).c_str());
+    
     std::vector<StoreMetaData> metaData;
-    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid, param.userId });
+    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
-        ZLOGE("no store in user:%{public}s", param.userId.c_str());
+        ZLOGE("no meta data appId:%{public}s", param.appId.c_str());
         return STORE_NOT_FOUND;
     }
 
+    auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
     for (const auto &storeMeta : metaData) {
         if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
-            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
+            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
+            (!param.userId.empty() && (param.userId != storeMeta.user))) {
             continue;
         }
         auto identifierTag = DBManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
-        if (identifier != identifierTag) {
+        bool isTripleIdentifierEqual = CompareTripleIdentifier(accountId, identifier, storeMeta);
+        if (identifier != identifierTag && !isTripleIdentifierEqual) {
             continue;
         }
         auto watchers = GetWatchers(storeMeta.tokenId, storeMeta.storeId);
-        AutoCache::GetInstance().GetStore(storeMeta, watchers);
-
-        ZLOGD("user:%{public}s appId:%{public}s storeId:%{public}s", storeMeta.user.c_str(),
-            storeMeta.bundleName.c_str(), Anonymous::Change(storeMeta.storeId).c_str());
+        auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers);
+        if (isTripleIdentifierEqual && store != nullptr) {
+            store->SetEqualIdentifier(storeMeta.appId, storeMeta.storeId, accountId);
+        }
+        ZLOGI("isTriple:%{public}d,storeId:%{public}s,appId:%{public}s,size:%{public}zu,user:%{public}s",
+            isTripleIdentifierEqual, Anonymous::Change(storeMeta.storeId).c_str(), storeMeta.storeId.c_str(),
+            watchers.size(), storeMeta.user.c_str());
     }
     return SUCCESS;
 }

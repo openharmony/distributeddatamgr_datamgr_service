@@ -39,6 +39,7 @@ public:
     using DBLaunchParam = DistributedDB::AutoLaunchParam;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using RefCount = DistributedData::RefCount;
+    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     API_EXPORT KVDBServiceImpl();
     virtual ~KVDBServiceImpl();
     Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) override;
@@ -77,7 +78,6 @@ public:
     Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device) override;
 
 private:
-    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
     using StoreMetaDataLocal = OHOS::DistributedData::StoreMetaDataLocal;
     using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
@@ -151,6 +151,8 @@ private:
     bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
     bool IsOHOSType(const std::vector<std::string> &ids);
     Status ConvertDbStatusNative(DBStatus status);
+    bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
+        const StoreMetaData &storeMeta);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
