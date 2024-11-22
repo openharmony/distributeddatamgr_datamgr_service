@@ -180,13 +180,13 @@ HWTEST_F(RdbAssetLoaderTest, RemoveLocalAssets, TestSize.Level0)
 }
 
 /**
-* @tc.name: PostEvent
-* @tc.desc: RdbAssetLoader PostEvent abnormal
+* @tc.name: PostEvent001
+* @tc.desc: RdbAssetLoader PostEvent001 test
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: SQL
 */
-HWTEST_F(RdbAssetLoaderTest, PostEvent, TestSize.Level0)
+HWTEST_F(RdbAssetLoaderTest, PostEvent001, TestSize.Level0)
 {
     BindAssets bindAssets;
     bindAssets.bindAssets = nullptr;
@@ -199,6 +199,53 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent, TestSize.Level0)
     assets["asset1"].push_back(g_rdbAsset);
     auto result = rdbAssetLoader.Download(tableName, groupId, prefix, assets);
     EXPECT_EQ(result, DistributedDB::DBStatus::CLOUD_ERROR);
+}
+
+/**
+* @tc.name: PostEvent002
+* @tc.desc: RdbAssetLoader PostEvent002 test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbAssetLoaderTest, PostEvent002, TestSize.Level0)
+{
+    DistributedData::Asset asset = {
+        .name = "",
+        .id = "",
+        .path = "",
+        .uri = "",
+        .modifyTime = "",
+        .createTime = "",
+        .size = "",
+        .hash = "",
+        .status = DistributedData::Asset::STATUS_DELETE,
+    };
+    DistributedData::Assets assets;
+    assets.push_back(asset);
+    BindAssets bindAssets;
+    bindAssets.bindAssets = nullptr;
+    std::shared_ptr<AssetLoader> assetLoader = std::make_shared<AssetLoader>();
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(assetLoader, &bindAssets);
+    std::set<std::string> skipAssets;
+    std::set<std::string> deleteAssets;
+    rdbAssetLoader.PostEvent(DistributedData::AssetEvent::DOWNLOAD, assets, skipAssets, deleteAssets);
+    EXPECT_EQ(deleteAssets.size(), 1);
+}
+
+/**
+* @tc.name: ConvertStatus
+* @tc.desc: RdbAssetLoader ConvertStatus abnormal
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbAssetLoaderTest, ConvertStatus, TestSize.Level0)
+{
+    auto status = RdbAssetLoader::ConvertStatus(DistributedRdb::RdbAssetLoader::AssetStatus::STATUS_DOWNLOADING);
+    EXPECT_EQ(status, DistributedDB::DBStatus::OK);
+    status = RdbAssetLoader::ConvertStatus(DistributedRdb::RdbAssetLoader::AssetStatus::STATUS_BUTT);
+    EXPECT_EQ(status, DistributedDB::DBStatus::CLOUD_ERROR);
 }
 
 /**

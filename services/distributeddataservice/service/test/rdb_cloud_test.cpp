@@ -137,6 +137,30 @@ HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 }
 
 /**
+* @tc.name: RdbCloudTest004
+* @tc.desc: RdbCloud UnLockCloudDB LockCloudDB InnerUnLock test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbCloudTest, RdbCloudTest004, TestSize.Level1)
+{
+    BindAssets bindAssets;
+    std::shared_ptr<CloudDB> cloudDB = std::make_shared<CloudDB>();
+    RdbCloud rdbCloud(cloudDB, &bindAssets);
+
+    auto err = rdbCloud.UnLockCloudDB(OHOS::DistributedRdb::RdbCloud::FLAG::SYSTEM_ABILITY);
+    EXPECT_EQ(err, GeneralError::E_NOT_SUPPORT);
+
+    auto result = rdbCloud.LockCloudDB(OHOS::DistributedRdb::RdbCloud::FLAG::SYSTEM_ABILITY);
+    EXPECT_EQ(result.first, GeneralError::E_NOT_SUPPORT);
+
+    rdbCloud.flag_ = 1;
+    err = rdbCloud.InnerUnLock(static_cast<OHOS::DistributedRdb::RdbCloud::FLAG>(0));
+    EXPECT_EQ(err, GeneralError::E_OK);
+}
+
+/**
 * @tc.name: ConvertStatus
 * @tc.desc: RdbCloud ConvertStatus function test.
 * @tc.type: FUNC
@@ -160,6 +184,16 @@ HWTEST_F(RdbCloudTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT);
     result = rdbCloud.ConvertStatus(GeneralError::E_RECORD_EXIST_CONFLICT);
     EXPECT_EQ(result, DBStatus::CLOUD_RECORD_EXIST_CONFLICT);
+    result = rdbCloud.ConvertStatus(GeneralError::E_VERSION_CONFLICT);
+    EXPECT_EQ(result, DBStatus::CLOUD_VERSION_CONFLICT);
+    result = rdbCloud.ConvertStatus(GeneralError::E_RECORD_NOT_FOUND);
+    EXPECT_EQ(result, DBStatus::CLOUD_RECORD_NOT_FOUND);
+    result = rdbCloud.ConvertStatus(GeneralError::E_RECORD_ALREADY_EXISTED);
+    EXPECT_EQ(result, DBStatus::CLOUD_RECORD_ALREADY_EXISTED);
+    result = rdbCloud.ConvertStatus(GeneralError::E_FILE_NOT_EXIST);
+    EXPECT_EQ(result, DBStatus::LOCAL_ASSET_NOT_FOUND);
+    result = rdbCloud.ConvertStatus(GeneralError::E_TIME_OUT);
+    EXPECT_EQ(result, DBStatus::TIME_OUT);
 }
 
 /**
@@ -190,6 +224,39 @@ HWTEST_F(RdbCloudTest, BlobToAssets, TestSize.Level1)
     blob = rdbTranslate.AssetsToBlob(assets);
     auto results = rdbTranslate.BlobToAssets(blob);
     EXPECT_EQ(results, assets);
+}
+
+/**
+* @tc.name: ConvertQuery
+* @tc.desc: RdbCloud ConvertQuery function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbCloudTest, ConvertQuery, TestSize.Level1)
+{
+    RdbCloud::DBQueryNodes nodes;
+    DistributedDB::QueryNode node = { DistributedDB::QueryNodeType::IN, "",  {int64_t(1)} };
+    nodes.push_back(node);
+    node = { DistributedDB::QueryNodeType::OR, "",  {int64_t(1)} };
+    nodes.push_back(node);
+    node = { DistributedDB::QueryNodeType::AND, "",  {int64_t(1)} };
+    nodes.push_back(node);
+    node = { DistributedDB::QueryNodeType::EQUAL_TO, "",  {int64_t(1)} };
+    nodes.push_back(node);
+    node = { DistributedDB::QueryNodeType::BEGIN_GROUP, "",  {int64_t(1)} };
+    nodes.push_back(node);
+    node = { DistributedDB::QueryNodeType::END_GROUP, "",  {int64_t(1)} };
+    nodes.push_back(node);
+    
+    auto result = RdbCloud::ConvertQuery(std::move(nodes));
+    EXPECT_EQ(result.size(), 6);
+
+    nodes.clear();
+    node = { DistributedDB::QueryNodeType::ILLEGAL, "",  {int64_t(1)} };
+    nodes.push_back(node);
+    result = RdbCloud::ConvertQuery(std::move(nodes));
+    EXPECT_EQ(result.size(), 0);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

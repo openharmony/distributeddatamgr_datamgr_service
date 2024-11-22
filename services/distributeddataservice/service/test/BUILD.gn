@@ -529,6 +529,7 @@ ohos_unittest("RdbServiceTest") {
     "-Dprotected=public",
     "-Wno-multichar",
     "-Wno-c99-designator",
+    "-fno-access-control",  # Ignore Private Member Access Control
   ]
 
   external_deps = [

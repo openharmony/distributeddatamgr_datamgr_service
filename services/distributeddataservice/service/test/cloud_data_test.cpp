@@ -49,6 +49,7 @@
 #include "store/auto_cache.h"
 #include "store/general_value.h"
 #include "store/store_info.h"
+#include "sync_manager.h"
 #include "token_setproc.h"
 
 using namespace testing::ext;
@@ -2001,6 +2002,37 @@ HWTEST_F(CloudDataTest, Report, TestSize.Level0)
     ReportParam reportParam{ 100, TEST_CLOUD_BUNDLE };
     auto ret = cloudReport->Report(reportParam);
     EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: IsOn
+* @tc.desc: Test IsOn.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, IsOn, TestSize.Level0)
+{
+    auto cloudServerMock = std::make_shared<CloudServerMock>();
+    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
+    int32_t instanceId = 0;
+    auto ret = cloudInfo.IsOn("", instanceId);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name: IsAllSwitchOff
+* @tc.desc: Test IsAllSwitchOff.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, IsAllSwitchOff, TestSize.Level0)
+{
+    auto cloudServerMock = std::make_shared<CloudServerMock>();
+    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
+    auto ret = cloudInfo.IsAllSwitchOff();
+    EXPECT_FALSE(ret);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
