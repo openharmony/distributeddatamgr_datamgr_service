@@ -228,6 +228,8 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
     if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = ProcessUri(query, unifiedData);
         if (ret != E_OK) {
+            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+                BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
             ZLOGE("ProcessUri failed. ret=%{public}d", ret);
             return E_NO_PERMISSION;
         }
@@ -311,8 +313,6 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     asyncProcessInfo_.permTotal = allUri.size();
     if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key,
         asyncProcessInfo_.permFnished) != E_OK) {
-        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
             bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
@@ -537,12 +537,16 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
     if (!key.IsValid()) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::FAILED, E_INVALID_PARAMETERS, BizState::DFX_END);
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
 
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
@@ -563,15 +567,15 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
             syncInfo.srcDevName.c_str(), syncInfo.syncId, syncInfo.syncStatus,
             syncInfo.syncTotal, syncInfo.syncFinished);
     };
+    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+        BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
     if (store->Sync(devices, callback) != E_OK) {
         syncingData_ = false;
         ZLOGE("Store sync failed, intention: %{public}s.", key.intention.c_str());
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_ABNORMAL_END);
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
         return E_DB_ERROR;
     }
-    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-        BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_NORMAL_END);
     return E_OK;
 }
 
