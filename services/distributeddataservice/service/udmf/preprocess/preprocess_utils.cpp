@@ -193,8 +193,6 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         }
         int ret = GetDfsUrisFromLocal(uris, userId, data);
         if (ret != E_OK) {
-            // RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            //     BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::FAILED, E_FS_ERROR);
             ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
                   ret, userId, uris.size());
         }
