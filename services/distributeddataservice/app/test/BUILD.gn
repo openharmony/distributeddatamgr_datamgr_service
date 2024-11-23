@@ -93,7 +93,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
-    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -128,6 +127,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/app/src/installer:distributeddata_installer_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "//third_party/googletest:gtest_main",
   ]
   part_name = "datamgr_service"
 }
