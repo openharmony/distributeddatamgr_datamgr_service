@@ -282,18 +282,16 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices)
         }
         if (dbStatus != DBStatus::OK) {
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, dbStatus);
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, dbStatus, BizState::DFX_END);
         } else {
             RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_NORMAL_END);
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_END);
         }
 
         ZLOGI("sync complete, %{public}s, status:%{public}d.", Anonymous::Change(storeId_).c_str(), dbStatus);
     };
     DBStatus status = kvStore_->Sync(syncDevices, SyncMode::SYNC_MODE_PULL_ONLY, onComplete);
     if (status != DBStatus::OK) {
-        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, status);
         ZLOGE("Sync kvStore failed, status: %{public}d.", status);
         return E_DB_ERROR;
     }
@@ -323,8 +321,6 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices, ProcessCallba
     option.isWait = false;
     DBStatus status = kvStore_->Sync(option, progressCallback);
     if (status != DBStatus::OK) {
-        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, status);
         ZLOGE("Sync kvStore failed, status: %{public}d.", status);
         return E_DB_ERROR;
     }
@@ -347,11 +343,11 @@ void RuntimeStore::NotifySyncProcss(const DevSyncProcessMap &processMap, Process
         if (syncProcess.errCode == DBStatus::OK) {
             processInfo.syncStatus = ASYNC_SUCCESS;
             RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_NORMAL_END);
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_END);
         } else {
             processInfo.syncStatus = ASYNC_FAILURE;
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, syncProcess.errCode);
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, syncProcess.errCode, BizState::DFX_END);
         }
     }
     callback(processInfo);
