@@ -68,21 +68,21 @@ config("module_private_config") {
 ohos_unittest("KvStoreDataServiceTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/db_info_handle_impl.cpp",
+    "${data_service_path}/app/src/feature_stub_impl.cpp",
+    "${data_service_path}/app/src/kvstore_account_observer.cpp",
+    "${data_service_path}/app/src/kvstore_data_service.cpp",
+    "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
+    "${data_service_path}/app/src/kvstore_device_listener.cpp",
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/app/src/security/security.cpp",
+    "${data_service_path}/app/src/security/sensitive.cpp",
+    "${data_service_path}/app/src/session_manager/route_head_handler_impl.cpp",
+    "${data_service_path}/app/src/session_manager/session_manager.cpp",
+    "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
+    "${data_service_path}/app/src/task_manager.cpp",
+    "${data_service_path}/app/test/unittest/kvstore_data_service_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
-    "../src/db_info_handle_impl.cpp",
-    "../src/feature_stub_impl.cpp",
-    "../src/kvstore_account_observer.cpp",
-    "../src/kvstore_data_service.cpp",
-    "../src/kvstore_data_service_stub.cpp",
-    "../src/kvstore_device_listener.cpp",
-    "../src/kvstore_meta_manager.cpp",
-    "../src/security/security.cpp",
-    "../src/security/sensitive.cpp",
-    "../src/session_manager/route_head_handler_impl.cpp",
-    "../src/session_manager/session_manager.cpp",
-    "../src/session_manager/upgrade_manager.cpp",
-    "../src/task_manager.cpp",
-    "unittest/kvstore_data_service_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -93,12 +93,15 @@ ohos_unittest("KvStoreDataServiceTest") {
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
+    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -125,10 +128,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/app/src/installer:distributeddata_installer_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
-    "${kv_store_path}/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "//third_party/googletest:gtest_main",
   ]
   part_name = "datamgr_service"
 }

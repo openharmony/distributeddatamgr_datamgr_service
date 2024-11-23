@@ -13,17 +13,23 @@
  * limitations under the License.
  */
 
+#include "executor_pool.h"
 #include <memory>
 #include "kvstore_client_death_observer.h"
 #include "bootstrap.h"
 #include "gtest/gtest.h"
 #include "kvstore_data_service.h"
+#include "system_ability.h"
+#include "system_ability_definition.h"
+#include "upgrade_manager.h"
+
 
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
 using namespace OHOS;
 
+namespace OHOS::Test {
 class KvStoreDataServiceTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -46,6 +52,26 @@ void KvStoreDataServiceTest::SetUp(void)
 {}
 
 void KvStoreDataServiceTest::TearDown(void)
+{}
+
+class UpgradeManagerTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void UpgradeManagerTest::SetUpTestCase(void)
+{}
+
+void UpgradeManagerTest::TearDownTestCase(void)
+{}
+
+void UpgradeManagerTest::SetUp(void)
+{}
+
+void UpgradeManagerTest::TearDown(void)
 {}
 
 /**
@@ -112,6 +138,7 @@ HWTEST_F(KvStoreDataServiceTest, Dump001, TestSize.Level1)
     const std::u16string argstest2 = u"OHOS.DistributedKv.IKvStoreDataService2";
     args.emplace_back(argstest1);
     args.emplace_back(argstest2);
+    kvStoreDataServiceTest.OnDump();
     int32_t status = kvStoreDataServiceTest.Dump(1, args);
     EXPECT_EQ(status, SUCCESS);
 }
@@ -178,3 +205,39 @@ HWTEST_F(KvStoreDataServiceTest, AppExit001, TestSize.Level1)
     Status status = kvStoreDataServiceTest.AppExit(uid, pid, token, appId);
     EXPECT_EQ(status, SUCCESS);
 }
+
+/**
+* @tc.name: OnRemoveSystemAbility001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: sql
+*/
+HWTEST_F(KvStoreDataServiceTest, OnRemoveSystemAbility001, TestSize.Level1)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    int32_t systemAbilityId = MEMORY_MANAGER_SA_ID;
+    std::string deviceId = "ohos.test.kvstoredataservice";
+    EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.OnRemoveSystemAbility(systemAbilityId, deviceId));
+
+    systemAbilityId = COMMON_EVENT_SERVICE_ID;
+    EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.OnRemoveSystemAbility(systemAbilityId, deviceId));
+}
+
+/**
+* @tc.name: UpgradeManagerTest001
+* @tc.desc: test Init function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(UpgradeManagerTest, UpgradeManagerTest001, TestSize.Level0)
+{
+    auto executors = std::make_shared<ExecutorPool>(1, 0);
+    DistributedData::UpgradeManager instance;
+    instance.Init(executors);
+
+    EXPECT_TRUE(instance.executors_);
+    instance.Init(executors);
+}
+} // namespace OHOS::Test
