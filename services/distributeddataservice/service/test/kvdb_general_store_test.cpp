@@ -25,6 +25,7 @@
 #include "cloud/cloud_db.h"
 #include "cloud/schema_meta.h"
 #include "crypto_manager.h"
+#include "device_manager_adapter.h"
 #include "kv_store_nb_delegate_mock.h"
 #include "kvdb_query.h"
 #include "log_print.h"
@@ -42,6 +43,7 @@ using DBStoreMock = OHOS::DistributedData::DBStoreMock;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using SecurityLevel = OHOS::DistributedKv::SecurityLevel;
 using KVDBGeneralStore = OHOS::DistributedKv::KVDBGeneralStore;
+using DMAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 class KVDBGeneralStoreTest : public testing::Test {
@@ -424,6 +426,26 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync, TestSize.Level0)
     cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_CLOUD_FORCE_PUSH;
     ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
+}
+
+/**
+* @tc.name: GetIdentifierParams
+* @tc.desc: GetIdentifierParams test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: wangbin
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetIdentifierParams, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    std::vector<std::string> sameAccountDevs{};
+    std::vector<std::string> uuids{"uuidtest01", "uuidtest02", "uuidtest03"};
+    store->GetIdentifierParams(sameAccountDevs, uuids, 0); // NO_ACCOUNT
+    for (const auto &devId : uuids) {
+        EXPECT_EQ(DMAdapter::GetInstance().IsOHOSType(devId), false);
+        EXPECT_EQ(DMAdapter::GetInstance().GetAuthType(devId), 0); // NO_ACCOUNT
+    }
+    EXPECT_EQ(sameAccountDevs.empty(), false);
 }
 
 /**
