@@ -29,10 +29,11 @@
 #include "upgrade_manager.h"
 
 using namespace testing::ext;
+using namespace OHOS;
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
-using namespace OHOS;
 using StoreMetaData = DistributedData::StoreMetaData;
+
 namespace OHOS::Test {
 class KvStoreDataServiceTest : public testing::Test {
 public:
