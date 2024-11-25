@@ -38,7 +38,7 @@ int32_t GeneralStoreMock::SetDistributedTables(
 }
 
 int32_t GeneralStoreMock::SetTrackerTable(const std::string &tableName,
-    const std::set<std::string> &trackerColNames, const std::string &extendColName, bool isForceUpgrade)
+    const std::set<std::string> &trackerColNames, const std::set<std::string> &extendColNames, bool isForceUpgrade)
 {
     return 0;
 }

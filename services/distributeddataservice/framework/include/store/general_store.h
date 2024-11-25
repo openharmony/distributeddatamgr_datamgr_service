@@ -132,7 +132,7 @@ public:
         const std::vector<std::string> &tables, int type, const std::vector<Reference> &references) = 0;
 
     virtual int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
-        const std::string &extendColName, bool isForceUpgrade) = 0;
+        const std::set<std::string> &extendColNames, bool isForceUpgrade) = 0;
 
     virtual int32_t Insert(const std::string &table, VBuckets &&values) = 0;
 

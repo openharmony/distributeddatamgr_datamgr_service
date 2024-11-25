@@ -50,7 +50,7 @@ public:
     int32_t SetDistributedTables(
         const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references) override;
     int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
-        const std::string &extendColName, bool isForceUpgrade = false) override;
+        const std::set<std::string> &extendColNames = {}, bool isForceUpgrade = false) override;
     int32_t Insert(const std::string &table, VBuckets &&values) override;
     int32_t Update(const std::string &table, const std::string &setSql, Values &&values, const std::string &whereSql,
         Values &&conditions) override;
