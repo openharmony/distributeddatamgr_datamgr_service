@@ -530,10 +530,10 @@ HWTEST_F(KvStoreDataServiceTest, PrintfInfo003, TestSize.Level0)
     int fd = 0;
     std::map<std::string, KvStoreDataService::BundleInfo> datas;
     KvStoreDataService::BundleInfo bundleInfo;
-    datas["user1"] = bundleInfo;
+    datas["bundleName1"] = bundleInfo;
     EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.PrintfInfo(fd, datas));
 
-    datas["user2"] = bundleInfo;
+    datas["bundleName2"] = bundleInfo;
     EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.PrintfInfo(fd, datas));
 }
 
