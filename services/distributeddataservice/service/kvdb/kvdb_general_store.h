@@ -44,7 +44,7 @@ public:
     explicit KVDBGeneralStore(const StoreMetaData &meta);
     ~KVDBGeneralStore();
     int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config) override;
-    bool IsBound() override;
+    bool IsBound(uint32_t user) override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(
@@ -125,7 +125,8 @@ private:
     KvDelegate *delegate_ = nullptr;
     std::map<std::string, std::shared_ptr<DistributedDB::ICloudDb>> dbClouds_{};
     std::set<BindInfo> bindInfos_;
-    std::atomic<bool> isBound_ = false;
+    std::shared_mutex bindMutex_;
+    std::set<uint32_t> users_{};
     std::mutex mutex_;
     int32_t ref_ = 1;
     mutable std::shared_timed_mutex rwMutex_;

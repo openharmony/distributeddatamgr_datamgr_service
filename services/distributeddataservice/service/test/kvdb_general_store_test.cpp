@@ -361,21 +361,60 @@ HWTEST_F(KVDBGeneralStoreTest, BindTest, TestSize.Level0)
     std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
     GeneralStore::BindInfo bindInfo2(dbs, loaders);
     bindInfos[key] = bindInfo2;
-    EXPECT_EQ(store->IsBound(), false);
+    EXPECT_EQ(store->IsBound(key), false);
     ret = store->Bind(database, bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_ALREADY_CLOSED);
 
-    store->isBound_ = false;
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     EXPECT_NE(store->delegate_, nullptr);
-    EXPECT_EQ(store->IsBound(), false);
+    EXPECT_EQ(store->IsBound(key), false);
     ret = store->Bind(database, bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
 
-    EXPECT_EQ(store->IsBound(), true);
+    EXPECT_EQ(store->IsBound(key), true);
     ret = store->Bind(database, bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: BindWithDifferentUsersTest
+* @tc.desc: Bind test the functionality of different users.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Hollokin
+*/
+HWTEST_F(KVDBGeneralStoreTest, BindWithDifferentUsersTest, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    EXPECT_NE(store->delegate_, nullptr);
+    ASSERT_NE(store, nullptr);
+    DistributedData::Database database;
+    std::map<uint32_t, GeneralStore::BindInfo> bindInfos;
+    GeneralStore::CloudConfig config;
+
+    std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
+    std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
+    GeneralStore::BindInfo bindInfo(dbs, loaders);
+    uint32_t key0 = 100;
+    uint32_t key1 = 101;
+    bindInfos[key0] = bindInfo;
+    bindInfos[key1] = bindInfo;
+    EXPECT_EQ(store->IsBound(key0), false);
+    EXPECT_EQ(store->IsBound(key1), false);
+    auto ret = store->Bind(database, bindInfos, config);
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_EQ(store->IsBound(key0), true);
+    EXPECT_EQ(store->IsBound(key1), true);
+
+    uint32_t key2 = 102;
+    bindInfos[key2] = bindInfo;
+    EXPECT_EQ(store->IsBound(key2), false);
+    ret = store->Bind(database, bindInfos, config);
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_EQ(store->IsBound(key2), true);
 }
 
 /**

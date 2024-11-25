@@ -124,7 +124,7 @@ public:
     virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) = 0;
 
-    virtual bool IsBound() = 0;
+    virtual bool IsBound(uint32_t user) = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 

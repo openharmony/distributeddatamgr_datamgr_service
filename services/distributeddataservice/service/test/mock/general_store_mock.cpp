@@ -21,7 +21,7 @@ int32_t GeneralStoreMock::Bind(Database &database, const std::map<uint32_t, Bind
     return 0;
 }
 
-bool GeneralStoreMock::IsBound()
+bool GeneralStoreMock::IsBound(uint32_t user)
 {
     return false;
 }

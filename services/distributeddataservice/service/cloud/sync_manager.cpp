@@ -44,6 +44,7 @@ using Account = OHOS::DistributedKv::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
+constexpr int32_t SYSTEM_USER_ID = 0;
 SyncManager::SyncInfo::SyncInfo(
     int32_t user, const std::string &bundleName, const Store &store, const Tables &tables, int32_t triggerMode)
     : user_(user), bundleName_(bundleName), triggerMode_(triggerMode)
@@ -568,17 +569,20 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
         return nullptr;
     }
-    if (!store->IsBound()) {
-        std::vector<int32_t> users{};
-        CloudInfo info;
-        if (user == 0) {
-            AccountDelegate::GetInstance()->QueryForegroundUsers(users);
-        } else {
-            users.push_back(user);
-        }
-        if (!users.empty()) {
-            info.user = users[0];
-        }
+    CloudInfo info;
+    info.user = user;
+    std::vector<int32_t> users{};
+    if (info.user == SYSTEM_USER_ID) {
+        AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+        info.user = users.empty() ? SYSTEM_USER_ID : users[0];
+    } else {
+        users.push_back(user);
+    }
+    if (info.user == SYSTEM_USER_ID) {
+        ZLOGE("invalid cloud users, bundleName:%{public}s", meta.bundleName.c_str());
+        return nullptr;
+    }
+    if (!store->IsBound(info.user)) {
         SchemaMeta schemaMeta;
         std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
         if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {

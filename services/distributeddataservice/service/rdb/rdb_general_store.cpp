@@ -216,7 +216,7 @@ int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindI
     return GeneralError::E_OK;
 }
 
-bool RdbGeneralStore::IsBound()
+bool RdbGeneralStore::IsBound(uint32_t user)
 {
     return isBound_;
 }
