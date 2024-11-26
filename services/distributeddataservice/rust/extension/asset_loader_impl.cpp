@@ -79,7 +79,7 @@ int32_t AssetLoaderImpl::RemoveLocalAssets(
             return DBErr::E_OK;
         }
         auto dbAsset = std::get_if<DBAsset>(&value);
-        if (dbAssets != nullptr) {
+        if (dbAsset != nullptr) {
             RemoveLocalAsset(*dbAsset);
             return DBErr::E_OK;
         }
