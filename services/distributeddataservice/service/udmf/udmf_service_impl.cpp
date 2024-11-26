@@ -273,7 +273,8 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
 int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifiedData)
 {
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-    int32_t verifyRes = ProcessCrossDeviceData(unifiedData);
+    std::vector<Uri> allUri;
+    int32_t verifyRes = ProcessCrossDeviceData(unifiedData, allUri);
     if (verifyRes != E_OK) {
         ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
         return verifyRes;
@@ -288,25 +289,6 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGW("No need to grant uri permissions, queryKey=%{public}s.", query.key.c_str());
         return E_OK;
     }
-    std::vector<Uri> allUri;
-    auto records = unifiedData.GetRecords();
-    for (auto record : records) {
-        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
-            if (file->GetUri().empty()) {
-                ZLOGW("Get uri is empty, key=%{public}s.", query.key.c_str());
-                continue;
-            }
-            Uri uri(file->GetUri());
-            std::string scheme = uri.GetScheme();
-            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-                ZLOGW("Get authority is empty or uri scheme not equals to file, key=%{public}s.", query.key.c_str());
-                continue;
-            }
-            allUri.push_back(uri);
-        }
-    }
     asyncProcessInfo_.permStatus = ASYNC_RUNNING;
     asyncProcessInfo_.permTotal = allUri.size();
     if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key,
@@ -320,7 +302,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris)
 {
     if (unifiedData.GetRuntime() == nullptr) {
         ZLOGE("Get runtime empty!");
@@ -328,19 +310,28 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData)
     }
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
     std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
-    if (localDeviceId == sourceDeviceId) {
-        return E_OK;
-    }
     auto records = unifiedData.GetRecords();
     for (auto record : records) {
         if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
             auto file = static_cast<File *>(record.get());
             std::string remoteUri = file->GetRemoteUri();
-            if (remoteUri.empty()) {
+            if (remoteUri.empty() && localDeviceId != sourceDeviceId) {
                 ZLOGE("when cross devices, remote uri is required!");
                 return E_ERROR;
             }
             file->SetUri(remoteUri); // cross dev, need dis path.
+            if (file->GetUri().empty()) {
+                ZLOGW("Get uri is empty.");
+                continue;
+            }
+            Uri uri(file->GetUri());
+            std::string scheme = uri.GetScheme();
+            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+                ZLOGW("Get authority is empty or uri scheme not equals to file.");
+                continue;
+            }
+            uris.push_back(uri);
         }
     }
     return E_OK;
