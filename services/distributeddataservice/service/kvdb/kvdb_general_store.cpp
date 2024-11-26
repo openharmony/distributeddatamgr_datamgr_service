@@ -735,7 +735,7 @@ void KVDBGeneralStore::SetDBReceiveDataInterceptor(int32_t storeType)
                 return errCode;
             }
             if (sourceID.empty()) {
-                ZLOGE("targetID empty");
+                ZLOGE("sourceID empty");
                 return static_cast<int>(DBStatus::DB_ERROR);
             }
             auto entries = data.GetEntries();
