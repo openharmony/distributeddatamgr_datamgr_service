@@ -98,9 +98,7 @@ HWTEST_F(DirectoryManagerTest, GetBundleStorePath, TestSize.Level0)
     metaData.area = 1;
     metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
     metaData.storeType = KvStoreType::SINGLE_VERSION;
-    HapTokenInfo tokenInfo;
-    AccessTokenKit::GetHapTokenInfo(metaData.tokenId, tokenInfo);
-    metaData.appId = tokenInfo.appID;
+    metaData.appId = "ohos.test.demo_09AEF01D";
     auto path = DirectoryManager::GetInstance().GetStorePath(metaData);
     EXPECT_EQ(path, metaData.dataDir);
 }
@@ -165,9 +163,7 @@ HWTEST_F(DirectoryManagerTest, GetRDBBackupPath, TestSize.Level0)
     metaData.area = 1;
     metaData.storeType = 10;
     metaData.tokenId = AccessTokenKit::GetHapTokenID(10, "ohos.test.demo", 0);
-    HapTokenInfo tokenInfo;
-    AccessTokenKit::GetHapTokenInfo(metaData.tokenId, tokenInfo);
-    metaData.appId = tokenInfo.appID;
+    metaData.appId = "ohos.test.demo_09AEF01D";
     metaData.storeId = "testStpre";
     auto path = DirectoryManager::GetInstance().GetStoreBackupPath(metaData);
     EXPECT_EQ(path, metaData.dataDir + "/rdb/backup/testStpre");
@@ -189,9 +185,7 @@ HWTEST_F(DirectoryManagerTest, GetKVDBBackupPath, TestSize.Level0)
     metaData.area = 1;
     metaData.storeType = 0;
     metaData.tokenId = AccessTokenKit::GetHapTokenID(10, "ohos.test.demo", 0);
-    HapTokenInfo tokenInfo;
-    AccessTokenKit::GetHapTokenInfo(metaData.tokenId, tokenInfo);
-    metaData.appId = tokenInfo.appID;
+    metaData.appId = "ohos.test.demo_09AEF01D";
     metaData.storeId = "testStpre";
     auto path = DirectoryManager::GetInstance().GetStoreBackupPath(metaData);
     EXPECT_EQ(path, metaData.dataDir + "/backup/testStpre");
