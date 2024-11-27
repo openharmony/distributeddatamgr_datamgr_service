@@ -49,8 +49,6 @@ public:
     uint32_t GetQoSType() const;
     void UpdateExpireTime();
     int32_t GetSoftBusError();
-    bool needRemove = false;
-    bool isReuse = false;
 
 private:
     int32_t Open(int32_t socket, const QosTV qos[], const ISocketListener *listener);

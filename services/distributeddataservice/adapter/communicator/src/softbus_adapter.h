@@ -65,7 +65,7 @@ public:
 
     void NotifyDataListeners(const uint8_t *data, int size, const std::string &deviceId, const PipeInfo &pipeInfo);
 
-    std::string OnClientShutdown(int32_t socket);
+    std::string OnClientShutdown(int32_t socket, bool isForce = true);
 
     void OnBind(int32_t socket, PeerSocketInfo info);
 
@@ -87,12 +87,10 @@ private:
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     using Task = ExecutorPool::Task;
-    std::string DelConnect(int32_t socket);
+    std::string DelConnect(int32_t socket, bool isForce);
     void StartCloseSessionTask(const std::string &deviceId);
     Task GetCloseSessionTask();
     bool CloseSession(const std::string &networkId);
-    void Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
-        uint32_t qosType, std::shared_ptr<SoftBusClient> &conn);
     void GetExpireTime(std::shared_ptr<SoftBusClient> &conn);
     std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId);
     static constexpr const char *PKG_NAME = "distributeddata-default";
