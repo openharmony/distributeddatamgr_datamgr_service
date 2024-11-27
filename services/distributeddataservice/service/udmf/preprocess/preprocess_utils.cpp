@@ -27,6 +27,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "udmf_radar_reporter.h"
+#include "udmf_utils.h"
 #include "remote_file_share.h"
 #include "uri.h"
 #include "utils/crypto.h"
@@ -89,7 +90,7 @@ time_t PreProcessUtils::GetTimestamp()
     return timestamp;
 }
 
-int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId)
+int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId, int &userId)
 {
     Security::AccessToken::HapTokenInfo tokenInfo;
     auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
@@ -97,18 +98,28 @@ int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId)
         ZLOGE("GetHapUidByToken failed, result = %{public}d.", result);
         return E_ERROR;
     }
-    return tokenInfo.userID;
+    userId = tokenInfo.userID;
+    return E_OK;
 }
 
 bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleName)
 {
     Security::AccessToken::HapTokenInfo hapInfo;
     if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
-        != Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
-        return false;
+        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
+        bundleName = hapInfo.bundleName;
+        return true;
     }
-    bundleName = hapInfo.bundleName;
-    return true;
+    if (UTILS::IsTokenNative()) {
+        ZLOGD("TypeATokenTypeEnum is TOKEN_HAP");
+        std::string processName;
+        if (GetNativeProcessNameByToken(tokenId, processName)) {
+            bundleName = processName;
+            return true;
+        }
+    }
+    ZLOGE("GetHapBundleNameByToken faild");
+    return false;
 }
 
 bool PreProcessUtils::GetNativeProcessNameByToken(int tokenId, std::string &processName)
@@ -161,7 +172,6 @@ bool PreProcessUtils::IsFileType(UDType udType)
 
 int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
 {
-    int32_t userId = GetHapUidByToken(tokenId);
     std::vector<std::string> uris;
     for (const auto &record : data.GetRecords()) {
         if (record != nullptr && IsFileType(record->GetType())) {
@@ -191,10 +201,9 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         if (!IsNetworkingEnabled()) {
             return E_OK;
         }
-        int ret = GetDfsUrisFromLocal(uris, userId, data);
-        if (ret != E_OK) {
-            ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
-                  ret, userId, uris.size());
+        int32_t userId;
+        if (GetHapUidByToken(tokenId, userId) == E_OK) {
+            GetDfsUrisFromLocal(uris, userId, data);
         }
     }
     return E_OK;
