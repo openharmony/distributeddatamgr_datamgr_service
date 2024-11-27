@@ -69,9 +69,10 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::s
     return {GeneralError::E_NOT_SUPPORT, nullptr};
 }
 
-int32_t GeneralStoreMock::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm)
+std::pair<int32_t, int32_t> GeneralStoreMock::Sync(const Devices &devices, GenQuery &query,
+    DetailAsync async, const SyncParam &syncParm)
 {
-    return 0;
+    return { GeneralError::E_OK, 0 };
 }
 
 std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::PreSharing(GenQuery &query)

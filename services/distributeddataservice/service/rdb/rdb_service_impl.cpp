@@ -463,7 +463,7 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
         [this, tokenId, pid, seqNum = option.seqNum](const GenDetails &result) mutable {
             OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
         },
-        syncParam);
+        syncParam).first;
 }
 
 bool RdbServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)

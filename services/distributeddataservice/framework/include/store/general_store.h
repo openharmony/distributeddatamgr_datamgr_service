@@ -112,10 +112,12 @@ public:
         bool enableCloud_ = false;
     };
 
-    enum DistributedDb {
+    enum ErrOffset {
         DB_MODE_ID = 1,
+        CLOUD_MODE_ID = 10,
     };
     static const int32_t DB_ERR_OFFSET = ErrCodeOffset(SUBSYS_DISTRIBUTEDDATAMNG, DB_MODE_ID);
+    static const int32_t CLOUD_ERR_OFFSET = ErrCodeOffset(SUBSYS_DISTRIBUTEDDATAMNG, CLOUD_MODE_ID);
 
     virtual ~GeneralStore() = default;
 
@@ -148,7 +150,8 @@ public:
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) = 0;
 
-    virtual int32_t Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm) = 0;
+    virtual std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query,
+        DetailAsync async, const SyncParam &syncParm) = 0;
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) = 0;
 
