@@ -1019,5 +1019,165 @@ HWTEST_F(RdbGeneralStoreTest, QuerySql, TestSize.Level1)
     EXPECT_EQ(err1, GeneralError::E_ERROR);
     EXPECT_TRUE(result2.empty());
 }
+
+/**
+* @tc.name: BuildSqlWhenCloumnEmpty
+* @tc.desc: test buildsql method when cloumn empty
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenCloumnEmpty, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::string table = "mock_table";
+    std::string statement = "mock_statement";
+    std::vector<std::string> columns;
+    std::string expectSql = "select cloud_gid from naturalbase_rdb_aux_mock_table_log, (select rowid from "
+                            "mock_tablemock_statement) where data_key = rowid";
+    std::string resultSql = store->BuildSql(table, statement, columns);
+    EXPECT_EQ(resultSql, expectSql);
+}
+
+/**
+* @tc.name: BuildSqlWhenParamValid
+* @tc.desc: test buildsql method when param valid
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenParamValid, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::string table = "mock_table";
+    std::string statement = "mock_statement";
+    std::vector<std::string> columns;
+    columns.push_back("mock_column_1");
+    columns.push_back("mock_column_2");
+    std::string expectSql = "select cloud_gid, mock_column_1, mock_column_2 from naturalbase_rdb_aux_mock_table_log, "
+                            "(select rowid, mock_column_1, mock_column_2 from mock_tablemock_statement) where "
+                            "data_key = rowid";
+    std::string resultSql = store->BuildSql(table, statement, columns);
+    EXPECT_EQ(resultSql, expectSql);
+}
+
+/**
+* @tc.name: GetWaterVersionTest
+* @tc.desc: GetWaterVersion test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, GetWaterVersionTest, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::string deviceId = "";
+    std::vector<std::string> expected = {};
+    std::vector<std::string> actual = store->GetWaterVersion(deviceId);
+    EXPECT_EQ(expected, actual);
+    deviceId = "mock_deviceId";
+    actual = store->GetWaterVersion(deviceId);
+    EXPECT_EQ(expected, actual);
+}
+
+/**
+* @tc.name: LockAndUnLockCloudDBTest
+* @tc.desc: lock and unlock cloudDB test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, LockAndUnLockCloudDBTest, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    auto result = store->LockCloudDB();
+    EXPECT_EQ(result.first, 1);
+    EXPECT_EQ(result.second, 0);
+    auto unlockResult = store->UnLockCloudDB();
+    EXPECT_EQ(unlockResult, 1);
+}
+
+/**
+* @tc.name: InFinishedTest
+* @tc.desc: isFinished test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, InFinishedTest, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    DistributedRdb::RdbGeneralStore::SyncId syncId = 1;
+    bool isFinished = store->IsFinished(syncId);
+    EXPECT_TRUE(isFinished);
+}
+
+/**
+* @tc.name: GetRdbCloudTest
+* @tc.desc: getRdbCloud test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, GetRdbCloudTest, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    auto rdbCloud = store->GetRdbCloud();
+    EXPECT_EQ(rdbCloud, nullptr);
+}
+
+/**
+* @tc.name: RegisterDetailProgressObserverTest
+* @tc.desc: RegisterDetailProgressObserver test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, RegisterDetailProgressObserverTest, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    DistributedData::GeneralStore::DetailAsync async;
+    auto result = store->RegisterDetailProgressObserver(async);
+    EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: GetFinishTaskTest
+* @tc.desc: GetFinishTask test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, GetFinishTaskTest, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    DistributedRdb::RdbGeneralStore::SyncId syncId = 1;
+    auto result = store->GetFinishTask(syncId);
+    ASSERT_NE(result, nullptr);
+}
+
+/**
+* @tc.name: GetCBTest
+* @tc.desc: GetCB test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, GetCBTest, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    DistributedRdb::RdbGeneralStore::SyncId syncId = 1;
+    auto result = store->GetCB(syncId);
+    ASSERT_NE(result, nullptr);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
