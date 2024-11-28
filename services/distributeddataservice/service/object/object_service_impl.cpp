@@ -301,7 +301,7 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
         param.appId.c_str(), DistributedData::Anonymous::Change(param.storeId).c_str(),
         DistributedData::Anonymous::Change(identifier).c_str());
     std::vector<StoreMetaData> metaData;
-    auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid, param.userId });
+    auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
     if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
         ZLOGE("no store in user:%{public}s", param.userId.c_str());
         return OBJECT_STORE_NOT_FOUND;
