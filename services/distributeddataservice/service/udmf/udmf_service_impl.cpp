@@ -312,27 +312,35 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::v
     std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
     auto records = unifiedData.GetRecords();
     for (auto record : records) {
-        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
-            if (file->GetUri().empty()) {
-                ZLOGW("Get uri is empty.");
-                continue;
-            }
-            Uri uri(file->GetUri());
-            std::string scheme = uri.GetScheme();
-            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-                ZLOGW("Get authority is empty or uri scheme not equals to file.");
-                continue;
-            }
-            std::string remoteUri = file->GetRemoteUri();
-            if (remoteUri.empty() && localDeviceId != sourceDeviceId) {
+        if (record == nullptr || !PreProcessUtils::IsFileType(record->GetType())) {
+            continue;
+        }
+        auto file = static_cast<File *>(record.get());
+        if (file->GetUri().empty()) {
+            ZLOGW("Get uri is empty.");
+            continue;
+        }
+        Uri uri(file->GetUri());
+        std::string scheme = uri.GetScheme();
+        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+        std::string remoteUri = file->GetRemoteUri();
+        if (localDeviceId != sourceDeviceId) {
+            if (remoteUri.empty() && scheme == FILE_SCHEME) {
                 ZLOGE("when cross devices, remote uri is required!");
                 return E_ERROR;
             }
-            file->SetUri(remoteUri); // cross dev, need dis path.
-            uris.push_back(uri);
+            if (!remoteUri.empty()) {
+                file->SetUri(remoteUri); // cross dev, need dis path.
+            }
         }
+        Uri newUri(file->GetUri());
+        scheme = newUri.GetScheme();
+        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+        if (newUri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+            ZLOGW("Get authority is empty or uri scheme not equals to file.");
+            continue;
+        }
+        uris.push_back(uri);
     }
     return E_OK;
 }
