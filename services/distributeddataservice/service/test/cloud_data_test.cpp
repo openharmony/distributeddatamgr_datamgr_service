@@ -2034,5 +2034,42 @@ HWTEST_F(CloudDataTest, IsAllSwitchOff, TestSize.Level0)
     auto ret = cloudInfo.IsAllSwitchOff();
     EXPECT_FALSE(ret);
 }
+
+/**
+* @tc.name: GetMinExpireTime
+* @tc.desc: Test GetMinExpireTime.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetMinExpireTime, TestSize.Level0)
+{
+    uint64_t expire = 0;
+    Subscription sub;
+    sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, expire);
+    sub.GetMinExpireTime();
+    expire = 24 * 60 * 60 * 1000;
+    sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, expire);
+    expire = 24 * 60 * 60;
+    sub.expiresTime.insert_or_assign("test_cloud_bundleName1", expire);
+    EXPECT_EQ(sub.GetMinExpireTime(), expire);
+}
+ 
+ /**
+* @tc.name: GetTableNames
+* @tc.desc: Test GetTableNames.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetTableNames, TestSize.Level0)
+{
+    SchemaMeta::Database database;
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    table.sharedTableName = "test_share_table_name";
+    database.tables.emplace_back(table);
+    auto tableNames = database.GetTableNames();
+    EXPECT_EQ(tableNames.size(), 2);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
