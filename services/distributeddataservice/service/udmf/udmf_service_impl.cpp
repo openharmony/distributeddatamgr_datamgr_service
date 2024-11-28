@@ -340,7 +340,7 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::v
             ZLOGW("Get authority is empty or uri scheme not equals to file.");
             continue;
         }
-        uris.push_back(uri);
+        uris.push_back(newUri);
     }
     return E_OK;
 }
