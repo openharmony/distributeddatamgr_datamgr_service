@@ -26,26 +26,26 @@ using namespace OHOS::AAFwk;
 using namespace OHOS::DistributedData;
 
 EventSubscriber::EventSubscriber(const CommonEventSubscribeInfo &info) : CommonEventSubscriber(info) {}
+static inline const std::map<std::string, AccountStatus> STATUS = {
+    { CommonEventSupport::COMMON_EVENT_USER_REMOVED, AccountStatus::DEVICE_ACCOUNT_DELETE },
+    { CommonEventSupport::COMMON_EVENT_USER_SWITCHED, AccountStatus::DEVICE_ACCOUNT_SWITCHED },
+    { CommonEventSupport::COMMON_EVENT_USER_UNLOCKED, AccountStatus::DEVICE_ACCOUNT_UNLOCKED },
+    { CommonEventSupport::COMMON_EVENT_USER_STOPPING, AccountStatus::DEVICE_ACCOUNT_STOPPING },
+    { CommonEventSupport::COMMON_EVENT_USER_STOPPED, AccountStatus::DEVICE_ACCOUNT_STOPPED } };
 
 void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
 {
     const auto want = event.GetWant();
-    AccountEventInfo accountEventInfo {};
+    AccountEventInfo accountEventInfo{};
     std::string action = want.GetAction();
     ZLOGI("Want Action is %{public}s", action.c_str());
 
-    if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
-        accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_DELETE;
-        accountEventInfo.userId = std::to_string(event.GetCode());
-    } else if (action == CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
-        accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_SWITCHED;
-        accountEventInfo.userId = std::to_string(event.GetCode());
-    } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
-        accountEventInfo.status = AccountStatus::DEVICE_ACCOUNT_UNLOCKED;
-        accountEventInfo.userId = std::to_string(event.GetCode());
-    } else {
+    auto it = STATUS.find(action);
+    if (it == STATUS.end()) {
         return;
     }
+    accountEventInfo.userId = std::to_string(event.GetCode());
+    accountEventInfo.status = it->second;
     eventCallback_(accountEventInfo);
 }
 

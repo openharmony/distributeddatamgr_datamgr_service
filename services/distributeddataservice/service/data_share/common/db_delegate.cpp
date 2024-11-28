@@ -44,7 +44,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
                 ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
                 return false;
             }
-            auto entity = std::make_shared<Entity>(store);
+            auto entity = std::make_shared<Entity>(store, metaData);
             stores.emplace(metaData.storeId, entity);
             StartTimer();
             return !stores.empty();
@@ -57,13 +57,33 @@ void DBDelegate::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)
     executor_ = std::move(executor);
 }
 
+void DBDelegate::Close(const DBDelegate::Filter &filter)
+{
+    if (filter == nullptr) {
+        return;
+    }
+    std::list<std::shared_ptr<DBDelegate::Entity>> closeStores;
+    stores_.EraseIf([&closeStores, &filter](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
+        for (auto it = stores.begin(); it != stores.end();) {
+            if (it->second == nullptr || filter(it->second->user)) {
+                closeStores.push_back(it->second);
+                it = stores.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        return stores.empty();
+    });
+}
+
 void DBDelegate::GarbageCollect()
 {
-    stores_.EraseIf([](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
+    std::list<std::shared_ptr<DBDelegate::Entity>> closeStores;
+    stores_.EraseIf([&closeStores](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
         auto current = std::chrono::steady_clock::now();
         for (auto it = stores.begin(); it != stores.end();) {
-            // if the store is BUSY we wait more INTERVAL minutes again
             if (it->second->time_ < current) {
+                closeStores.push_back(it->second);
                 it = stores.erase(it);
             } else {
                 ++it;
@@ -94,10 +114,11 @@ void DBDelegate::StartTimer()
     ZLOGD("start timer, taskId: %{public}" PRIu64, taskId_);
 }
 
-DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store)
+DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store, const DistributedData::StoreMetaData &meta)
 {
     store_ = std::move(store);
     time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
+    user = meta.user;
 }
 
 void DBDelegate::EraseStoreCache(const int32_t tokenId)

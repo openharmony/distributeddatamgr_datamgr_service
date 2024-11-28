@@ -31,11 +31,11 @@ AutoCache &AutoCache::GetInstance()
 
 int32_t AutoCache::RegCreator(int32_t type, Creator creator)
 {
-    if (type >= MAX_CREATOR_NUM) {
+    if (type < 0 || type >= MAX_CREATOR_NUM) {
         return E_ERROR;
     }
     creators_[type] = creator;
-    return 0;
+    return E_OK;
 }
 
 void AutoCache::Bind(std::shared_ptr<Executor> executor)
@@ -158,9 +158,8 @@ void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
                     disableStores_.insert(it->second.GetDataDir());
                     storeIds.insert(it->first);
                     closeStores.emplace(closeStores.end(), it->second);
-                } else {
-                    ++it;
                 }
+                ++it;
             }
             return !delegates.empty();
         });
@@ -178,20 +177,35 @@ void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
     });
 }
 
-void AutoCache::CloseExcept(const std::set<int32_t> &users)
+void AutoCache::CloseStore(const AutoCache::Filter &filter)
 {
-    bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
-    stores_.EraseIf([&users, isScreenLocked](const auto &tokenId, std::map<std::string, Delegate> &delegates) {
-        if (delegates.empty() || users.count(delegates.begin()->second.GetUser()) != 0) {
-            return delegates.empty();
-        }
-
-        for (auto it = delegates.begin(); it != delegates.end();) {
-            // if the kv store is BUSY we wait more INTERVAL minutes again
-            if ((isScreenLocked && it->second.GetArea() >= GeneralStore::EL4) || !it->second.Close()) {
+    if (filter == nullptr) {
+        return;
+    }
+    std::map<uint32_t, std::set<std::string>> storeIds;
+    std::list<Delegate> closeStores;
+    stores_.ForEach(
+        [this, &filter, &storeIds, &closeStores](const auto &tokenId, std::map<std::string, Delegate> &delegates) {
+            auto it = delegates.begin();
+            while (it != delegates.end()) {
+                if (disableStores_.count(it->second.GetDataDir()) == 0 && filter(it->second.GetMeta())) {
+                    disableStores_.insert(it->second.GetDataDir());
+                    storeIds[tokenId].insert(it->first);
+                    closeStores.emplace(closeStores.end(), it->second);
+                }
                 ++it;
-            } else {
+            }
+            return false;
+        });
+    closeStores.clear();
+    stores_.EraseIf([this, &storeIds](auto &tokenId, auto &delegates) {
+        for (auto it = delegates.begin(); it != delegates.end();) {
+            auto ids = storeIds.find(tokenId);
+            if (ids != storeIds.end() && ids->second.count(it->first) != 0) {
+                disableStores_.erase(it->second.GetDataDir());
                 it = delegates.erase(it);
+            } else {
+                ++it;
             }
         }
         return delegates.empty();
@@ -319,6 +333,11 @@ int32_t AutoCache::Delegate::GetArea() const
 const std::string& AutoCache::Delegate::GetDataDir() const
 {
     return meta_.dataDir;
+}
+
+const StoreMetaData &AutoCache::Delegate::GetMeta() const
+{
+    return meta_;
 }
 
 int32_t AutoCache::Delegate::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)

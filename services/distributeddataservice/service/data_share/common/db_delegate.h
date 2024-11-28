@@ -33,8 +33,10 @@ namespace OHOS::DataShare {
 class DBDelegate {
 public:
     using Time = std::chrono::steady_clock::time_point;
+    using Filter = std::function<bool(const std::string &user)>;
     static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData,
         const std::string &extUri = "", const std::string &backup = "");
+    static void Close(const Filter &filter);
     virtual std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,
         const int32_t callingPid) = 0;
@@ -55,8 +57,9 @@ private:
     static void GarbageCollect();
     static void StartTimer();
     struct Entity {
-        explicit Entity(std::shared_ptr<DBDelegate> store);
+        explicit Entity(std::shared_ptr<DBDelegate> store, const DistributedData::StoreMetaData &meta);
         std::shared_ptr<DBDelegate> store_;
+        std::string user;
         Time time_;
     };
     static constexpr int NO_CHANGE_VERSION = -1;

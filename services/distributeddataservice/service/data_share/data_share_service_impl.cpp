@@ -1013,4 +1013,30 @@ void DataShareServiceImpl::InitSubEvent()
         sysEventSubscriber->OnBMSReady();
     }
 }
+
+int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
+{
+    ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
+        Anonymous::Change(account).c_str());
+    switch (code) {
+        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_DELETE):
+        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_STOPPED): {
+            std::vector<int32_t> users;
+            DistributedKv::AccountDelegate::GetInstance()->QueryUsers(users);
+            std::set<int32_t> userIds(users.begin(), users.end());
+            DBDelegate::Close([&userIds](const std::string &userId) {
+                return userIds.count(atoi(userId.c_str())) == 0;
+            });
+            break;
+        }
+        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_STOPPING):
+            DBDelegate::Close([&user](const std::string &userId) {
+                return user == userId;
+            });
+            break;
+        default:
+            break;
+    }
+    return E_OK;
+}
 } // namespace OHOS::DataShare

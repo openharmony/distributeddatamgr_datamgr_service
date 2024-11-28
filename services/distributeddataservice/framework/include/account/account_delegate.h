@@ -32,6 +32,8 @@ enum class AccountStatus {
     DEVICE_ACCOUNT_DELETE,     // the device account is deleted
     DEVICE_ACCOUNT_SWITCHED,   // the device account is switched
     DEVICE_ACCOUNT_UNLOCKED,   // the device account is unlocked
+    DEVICE_ACCOUNT_STOPPING,   // the device account is stopping
+    DEVICE_ACCOUNT_STOPPED,    // the device account is stopped
 };
 
 struct AccountEventInfo {

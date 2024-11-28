@@ -110,6 +110,8 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_STOPPING);
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_STOPPED);
         CommonEventSubscribeInfo info(matchingSkills);
         eventSubscriber_ = std::make_shared<EventSubscriber>(info);
         eventSubscriber_->SetEventCallback([this](AccountEventInfo& account) {
@@ -125,11 +127,15 @@ void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo& account
 {
     uint32_t status = static_cast<uint32_t>(account.status);
     switch (status) {
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
             userStatus_.Erase(atoi(account.userId.c_str()));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
             userStatus_.InsertOrAssign(atoi(account.userId.c_str()), true);
+            break;
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPED):
+            userStatus_.InsertOrAssign(atoi(account.userId.c_str()), false);
             break;
         default:
             break;
