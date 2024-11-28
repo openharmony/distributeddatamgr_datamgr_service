@@ -36,7 +36,7 @@ public:
     Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo);
 
     // Send data to other device, function will be called back after sent to notify send result.
-    Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
+    std::pair<Status, int32_t> SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
         uint32_t totalLength, const MessageInfo &info);
     // start server
     Status Start(const PipeInfo &pipeInfo);

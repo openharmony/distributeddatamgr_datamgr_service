@@ -53,8 +53,8 @@ public:
     Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo);
 
     // Send data to other device, function will be called back after sent to notify send result.
-    Status SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo, uint32_t length,
-        const MessageInfo &info);
+    std::pair<Status, int32_t> SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+        const DataInfo &dataInfo, uint32_t length, const MessageInfo &info);
 
     bool IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const struct DeviceId &peer);
 
@@ -84,7 +84,6 @@ public:
 
     void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
         const AppDistributedKv::DeviceChangeType &type) const override;
-
 private:
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
@@ -96,6 +95,7 @@ private:
     void Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
         uint32_t qosType, std::shared_ptr<SoftBusClient> &conn);
     void GetExpireTime(std::shared_ptr<SoftBusClient> &conn);
+    std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId);
     static constexpr const char *PKG_NAME = "distributeddata-default";
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;

@@ -48,8 +48,8 @@ Status CommunicationProviderImpl::StopWatchDataChange(const AppDataChangeListene
     return appPipeMgr_.StopWatchDataChange(observer, pipeInfo);
 }
 
-Status CommunicationProviderImpl::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId, const DataInfo &dataInfo,
-    uint32_t totalLength, const MessageInfo &info)
+std::pair<Status, int32_t> CommunicationProviderImpl::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    const DataInfo &dataInfo, uint32_t totalLength, const MessageInfo &info)
 {
     return appPipeMgr_.SendData(pipeInfo, deviceId, dataInfo, totalLength, info);
 }
