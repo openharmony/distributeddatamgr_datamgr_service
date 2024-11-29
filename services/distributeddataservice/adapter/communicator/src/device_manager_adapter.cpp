@@ -762,8 +762,8 @@ bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, con
 {
     DmAccessCaller dmAccessCaller = { .accountId = accCaller.accountId, .pkgName = accCaller.bundleName,
         .networkId = accCaller.networkId, .userId = accCaller.userId };
-    DmAccessCallee dmAccessCallee = { .userId = accCallee.userId, .accountId = accCallee.accountId,
-        .networkId = accCallee.networkId };
+    DmAccessCallee dmAccessCallee = { .accountId = accCallee.accountId, .networkId = accCallee.networkId,
+        .userId = accCallee.userId };
     return DeviceManager::GetInstance().CheckAccessControl(dmAccessCaller, dmAccessCallee);
 }
 
@@ -771,8 +771,8 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
 {
     DmAccessCaller dmAccessCaller = { .accountId = accCaller.accountId, .networkId = accCaller.networkId,
         .userId = accCaller.userId };
-    DmAccessCallee dmAccessCallee = { .userId = accCallee.userId, .accountId = accCallee.accountId,
-        .networkId = accCallee.networkId };
+    DmAccessCallee dmAccessCallee = { .accountId = accCallee.accountId, .networkId = accCallee.networkId,
+        .userId = accCallee.userId };
     return DeviceManager::GetInstance().CheckIsSameAccount(dmAccessCaller, dmAccessCallee);
 }
 } // namespace OHOS::DistributedData
