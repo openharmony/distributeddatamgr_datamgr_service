@@ -52,6 +52,7 @@ constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_s
 constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
+constexpr const char *MANAGE_UDMF_APP_SHARE_OPTION = "ohos.permission.MANAGE_UDMF_APP_SHARE_OPTION";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -617,8 +618,9 @@ int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, int32_t
 
     uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
     bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
-    if (!isSystemApp) {
-        ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
+    bool hasSharePermission = VerifyPermission(MANAGE_UDMF_APP_SHARE_OPTION, IPCSkeleton::GetCallingTokenID());
+    if (!isSystemApp && !hasSharePermission) {
+        ZLOGE("No system permission and no shareOption permission, intention: %{public}s.", intention.c_str());
         return E_NO_PERMISSION;
     }
     auto store = StoreCache::GetInstance().GetStore(intention);
@@ -672,8 +674,9 @@ int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
     }
     uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
     bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
-    if (!isSystemApp) {
-        ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
+    bool hasSharePermission = VerifyPermission(MANAGE_UDMF_APP_SHARE_OPTION, IPCSkeleton::GetCallingTokenID());
+    if (!isSystemApp && !hasSharePermission) {
+        ZLOGE("No system permission and no shareOption permission, intention: %{public}s.", intention.c_str());
         return E_NO_PERMISSION;
     }
     auto store = StoreCache::GetInstance().GetStore(intention);
@@ -756,6 +759,19 @@ int32_t UdmfServiceImpl::ClearAsynProcess()
 {
     (void)memset_s(&asyncProcessInfo_, sizeof(asyncProcessInfo_), 0, sizeof(asyncProcessInfo_));
     return E_OK;
+}
+
+bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t callerTokenId)
+{
+    if (!permission.empty()) {
+        int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerTokenId, permission);
+        if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+            ZLOGE("Permission denied. status:%{public}d, token:0x%{public}x, permission:%{public}s",
+                status, callerTokenId, permission.c_str());
+            return false;
+        }
+    }
+    return true;
 }
 } // namespace UDMF
 } // namespace OHOS
