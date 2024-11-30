@@ -56,7 +56,7 @@ public:
     void SetExecutor(std::shared_ptr<Executor> executor) override;
     int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) override;
-    bool IsBound() override;
+    bool IsBound(uint32_t user) override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
