@@ -37,7 +37,8 @@ public:
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, const std::string &sql,
         Values &&args) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) override;
-    int32_t Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParm) override;
+    std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
+        const SyncParam &syncParm) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;

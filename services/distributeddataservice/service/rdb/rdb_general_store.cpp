@@ -506,7 +506,8 @@ int32_t RdbGeneralStore::CleanTrackerData(const std::string &tableName, int64_t 
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
-int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParam)
+std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async,
+    const SyncParam &syncParam)
 {
     DistributedDB::Query dbQuery;
     RdbQuery *rdbQuery = nullptr;
@@ -525,7 +526,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
               "wait:%{public}d", devices.size(),
               devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode, syncParam.wait);
-        return GeneralError::E_ALREADY_CLOSED;
+        return { GeneralError::E_ALREADY_CLOSED, DBStatus::OK };
     }
     auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
     SyncId syncId = ++syncTaskId_;
@@ -543,7 +544,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
                                        highMode == AUTO_SYNC_MODE, LOCK_ACTION, syncParam.prepareTraceId },
             tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
         if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
-            return ConvertStatus(dbStatus);
+            return { ConvertStatus(dbStatus), dbStatus };
         }
         tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
             if (executor != nullptr) {
@@ -552,7 +553,7 @@ int32_t RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsy
             return false;
         });
     }
-    return ConvertStatus(dbStatus);
+    return { ConvertStatus(dbStatus), dbStatus };
 }
 
 std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::PreSharing(GenQuery &query)
@@ -731,7 +732,7 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
             auto &detail = details[id];
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
-            detail.dbCode = DB_ERR_OFFSET + process.errCode;
+            detail.dbCode = process.errCode;
             uint32_t totalCount = 0;
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];

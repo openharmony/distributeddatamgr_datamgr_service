@@ -379,26 +379,27 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     return delegate_->Sync(syncOption, GetDBProcessCB(async));
 }
 
-int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async, SyncParam &syncParam)
+std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async,
+    const SyncParam &syncParam)
 {
     auto syncMode = GeneralStore::GetSyncMode(syncParam.mode);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d", devices.size(),
             devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode);
-        return GeneralError::E_ALREADY_CLOSED;
+        return { GeneralError::E_ALREADY_CLOSED, DBStatus::OK };
     }
     DBStatus dbStatus;
     auto dbMode = DistributedDB::SyncMode(syncMode);
     if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         if (!enableCloud_) {
-            return GeneralError::E_NOT_SUPPORT;
+            return { GeneralError::E_NOT_SUPPORT, DBStatus::OK };
         }
         dbStatus = CloudSync(devices, dbMode, async, syncParam.wait, syncParam.prepareTraceId);
     } else {
         if (devices.empty()) {
             ZLOGE("Devices is empty! mode:%{public}d", syncParam.mode);
-            return GeneralError::E_INVALID_ARGS;
+            return { GeneralError::E_INVALID_ARGS, DBStatus::OK };
         }
         KVDBQuery *kvQuery = nullptr;
         auto ret = query.QueryInterface(kvQuery);
@@ -406,7 +407,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
         if (ret == GeneralError::E_OK && kvQuery != nullptr && kvQuery->IsValidQuery()) {
             dbQuery = kvQuery->GetDBQuery();
         } else {
-            return GeneralError::E_INVALID_ARGS;
+            return { GeneralError::E_INVALID_ARGS, DBStatus::OK };
         }
         if (syncMode == NEARBY_SUBSCRIBE_REMOTE) {
             dbStatus = delegate_->SubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
@@ -424,7 +425,7 @@ int32_t KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAs
             dbStatus = DistributedDB::INVALID_ARGS;
         }
     }
-    return ConvertStatus(dbStatus);
+    return { ConvertStatus(dbStatus), dbStatus };
 }
 
 void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account)

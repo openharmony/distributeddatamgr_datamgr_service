@@ -778,7 +778,7 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
 {
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
         param.appId.c_str(), Anonymous::Change(param.storeId).c_str(), Anonymous::Change(identifier).c_str());
-    
+
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
@@ -1121,7 +1121,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
             complete(deviceStatus);
         },
         syncParam);
-    auto status = Status(ret);
+    auto status = Status(ret.first);
     if (status != Status::SUCCESS) {
         RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_FAILED, ERROR_CODE, status, BIZ_STATE, END,
             SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,

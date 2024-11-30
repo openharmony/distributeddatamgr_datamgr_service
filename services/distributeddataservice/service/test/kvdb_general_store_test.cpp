@@ -327,9 +327,9 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
     SyncParam syncParam{};
     syncParam.mode = mixMode;
     auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_NE(ret, GeneralError::E_OK);
-    ret = store->Close();
-    EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_NE(ret.first, GeneralError::E_OK);
+    auto status = store->Close();
+    EXPECT_EQ(status, GeneralError::E_OK);
 }
 
 /**
@@ -510,43 +510,43 @@ HWTEST_F(KVDBGeneralStoreTest, Sync, TestSize.Level0)
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_NOT_SUPPORT);
+    EXPECT_EQ(ret.first, GeneralError::E_NOT_SUPPORT);
     GeneralStore::StoreConfig storeConfig;
     storeConfig.enableCloud_ = true;
     store->SetConfig(storeConfig);
     ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_EQ(ret.first, GeneralError::E_OK);
 
     syncMode = GeneralStore::SyncMode::NEARBY_END;
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
     ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(ret.first, GeneralError::E_INVALID_ARGS);
 
     std::vector<std::string> devices = { "device1", "device2" };
     syncMode = GeneralStore::SyncMode::NEARBY_SUBSCRIBE_REMOTE;
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_EQ(ret.first, GeneralError::E_OK);
 
     syncMode = GeneralStore::SyncMode::NEARBY_UNSUBSCRIBE_REMOTE;
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_EQ(ret.first, GeneralError::E_OK);
 
     syncMode = GeneralStore::SyncMode::NEARBY_PULL_PUSH;
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_OK);
+    EXPECT_EQ(ret.first, GeneralError::E_OK);
 
     syncMode = GeneralStore::SyncMode::MODE_BUTT;
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
-    EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(ret.first, GeneralError::E_INVALID_ARGS);
 }
 
 /**
