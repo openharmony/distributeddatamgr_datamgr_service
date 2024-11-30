@@ -18,6 +18,7 @@
 #include <chrono>
 #include <ipc_skeleton.h>
 #include <thread>
+#include <unistd.h>
 
 #include "accesstoken_kit.h"
 #include "auth_delegate.h"
@@ -543,6 +544,25 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
         value->OnUserChange(uint32_t(eventInfo.status), eventInfo.userId, eventInfo.harmonyAccountId);
         return false;
     });
+    switch (eventInfo.status) {
+        case AccountStatus::DEVICE_ACCOUNT_SWITCHED:
+        case AccountStatus::DEVICE_ACCOUNT_DELETE:
+        case AccountStatus::DEVICE_ACCOUNT_STOPPED: {
+            std::vector<int32_t> users;
+            AccountDelegate::GetInstance()->QueryUsers(users);
+            std::set<int32_t> userIds(users.begin(), users.end());
+            AutoCache::GetInstance().CloseStore([&userIds](const StoreMetaData &meta) {
+                return userIds.count(atoi(meta.user.c_str())) == 0;
+            });
+            break;
+        }
+        case AccountStatus::DEVICE_ACCOUNT_STOPPING:
+            AutoCache::GetInstance().CloseStore([&eventInfo](const StoreMetaData &meta) {
+                return meta.user == eventInfo.userId;
+            });
+        default:
+            break;
+    }
 }
 
 void KvStoreDataService::InitSecurityAdapter(std::shared_ptr<ExecutorPool> executors)

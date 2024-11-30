@@ -76,6 +76,7 @@ public:
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
     int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     void NotifyObserver(const std::string &uri) override;
     void DumpDataShareServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     int32_t OnInitialize() override;

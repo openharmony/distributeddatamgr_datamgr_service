@@ -40,6 +40,8 @@ public:
     using Executor = ExecutorPool;
     using TaskId = ExecutorPool::TaskId;
     using Creator = std::function<GeneralStore *(const StoreMetaData &)>;
+    using Filter = std::function<bool(const StoreMetaData &)>;
+
     API_EXPORT static AutoCache &GetInstance();
 
     API_EXPORT int32_t RegCreator(int32_t type, Creator creator);
@@ -52,7 +54,7 @@ public:
 
     API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId = "");
 
-    API_EXPORT void CloseExcept(const std::set<int32_t> &users);
+    API_EXPORT void CloseStore(const Filter &filter);
 
     API_EXPORT void SetObserver(uint32_t tokenId, const std::string &storeId, const Watchers &watchers);
 
@@ -75,6 +77,7 @@ private:
         int32_t GetUser() const;
         int32_t GetArea() const;
         const std::string& GetDataDir() const;
+        const StoreMetaData& GetMeta() const;
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
         int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;

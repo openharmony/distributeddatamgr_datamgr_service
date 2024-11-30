@@ -672,6 +672,8 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
             Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPED):
             Execute(GenTask(0, userId, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):

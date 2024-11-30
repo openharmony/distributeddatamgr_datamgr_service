@@ -812,13 +812,6 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
 
 int32_t KVDBServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    (void)code;
-    (void)user;
-    (void)account;
-    std::vector<int32_t> users;
-    AccountDelegate::GetInstance()->QueryUsers(users);
-    std::set<int32_t> userIds(users.begin(), users.end());
-    AutoCache::GetInstance().CloseExcept(userIds);
     return SUCCESS;
 }
 
