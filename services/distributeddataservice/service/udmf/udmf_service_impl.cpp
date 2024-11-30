@@ -763,13 +763,14 @@ int32_t UdmfServiceImpl::ClearAsynProcess()
 
 bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t callerTokenId)
 {
-    if (!permission.empty()) {
-        int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerTokenId, permission);
-        if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
-            ZLOGE("Permission denied. status:%{public}d, token:0x%{public}x, permission:%{public}s",
-                status, callerTokenId, permission.c_str());
-            return false;
-        }
+    if (permission.empty()) {
+        return true;
+    }
+    int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerTokenId, permission);
+    if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        ZLOGE("Permission denied. status:%{public}d, token:0x%{public}x, permission:%{public}s",
+            status, callerTokenId, permission.c_str());
+        return false;
     }
     return true;
 }
