@@ -45,7 +45,6 @@
 #include "utils/crypto.h"
 #include "utils/ref_count.h"
 #include "utils/converter.h"
-#include "water_version_manager.h"
 
 namespace OHOS {
 namespace DistributedKv {

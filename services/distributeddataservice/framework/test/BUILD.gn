@@ -44,7 +44,6 @@ config("module_private_config") {
     "${data_service_path}/app/src/security",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/waterversion",
     "//third_party/json/single_include",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
@@ -324,7 +323,6 @@ ohos_unittest("ServiceMetaDataTest") {
     "${data_service_path}/app/src/security",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/waterversion",
     "${data_service_path}/service/kvdb",
     "//third_party/json/single_include",
   ]

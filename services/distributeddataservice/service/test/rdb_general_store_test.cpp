@@ -1064,26 +1064,6 @@ HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenParamValid, TestSize.Level1)
 }
 
 /**
-* @tc.name: GetWaterVersionTest
-* @tc.desc: GetWaterVersion test
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(RdbGeneralStoreTest, GetWaterVersionTest, TestSize.Level1)
-{
-    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    std::string deviceId = "";
-    std::vector<std::string> expected = {};
-    std::vector<std::string> actual = store->GetWaterVersion(deviceId);
-    EXPECT_EQ(expected, actual);
-    deviceId = "mock_deviceId";
-    actual = store->GetWaterVersion(deviceId);
-    EXPECT_EQ(expected, actual);
-}
-
-/**
 * @tc.name: LockAndUnLockCloudDBTest
 * @tc.desc: lock and unlock cloudDB test
 * @tc.type: FUNC

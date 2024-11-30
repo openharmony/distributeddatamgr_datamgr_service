@@ -670,34 +670,6 @@ HWTEST_F(KVDBGeneralStoreTest, ConvertStatus, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetWaterVersion
-* @tc.desc: GetWaterVersion test the functionality of different branches.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(KVDBGeneralStoreTest, GetWaterVersion, TestSize.Level0)
-{
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    std::string deviceId = "deviceId";
-    std::vector<std::string> res = {};
-    auto ret = store->GetWaterVersion(deviceId);
-    EXPECT_EQ(ret, res);
-    KvStoreNbDelegateMock mockDelegate;
-    store->delegate_ = &mockDelegate;
-    ret = store->GetWaterVersion("");
-    EXPECT_EQ(ret, res);
-    ret = store->GetWaterVersion("test");
-    EXPECT_EQ(ret, res);
-    ret = store->GetWaterVersion("device");
-    EXPECT_EQ(ret, res);
-    res = { "deviceId" };
-    ret = store->GetWaterVersion(deviceId);
-    EXPECT_EQ(ret, res);
-}
-
-/**
 * @tc.name: OnChange
 * @tc.desc: OnChange test the functionality of different branches.
 * @tc.type: FUNC
