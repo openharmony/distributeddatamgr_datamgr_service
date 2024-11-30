@@ -65,7 +65,7 @@ public:
         std::shared_ptr<Context> context);
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, int32_t userId, DistributedData::StoreMetaData &metaData);
-    void EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version);
+    void EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version, const uint32_t tokenId);
     std::vector<Key> GetKeysByUri(const std::string &uri);
     void Clear();
 
@@ -83,7 +83,7 @@ private:
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
     int Notify(const Key &key, int32_t userId, const std::vector<ObserverNode> &val, const std::string &rdbDir,
-        int rdbVersion);
+        const uint32_t tokenId);
     int GetEnableObserverCount(const Key &key);
     void SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes);
 };

@@ -40,6 +40,7 @@ public:
     int32_t appIndex = 0;
     std::string permission;
     uint32_t callerTokenId = 0;
+    uint32_t calledTokenId = 0;
     std::string callerBundleName;
     std::string calledBundleName;
     std::string calledModuleName;
