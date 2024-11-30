@@ -51,7 +51,7 @@ config("module_private_config") {
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
-
+  cflags = [ "-Werror" ]
   defines = [
     "TEST_ON_DEVICE",
     "OPENSSL_SUPPRESS_DEPRECATED",

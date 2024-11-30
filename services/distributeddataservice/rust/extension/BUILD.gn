@@ -42,7 +42,10 @@ ohos_shared_library("opencloudextension") {
     cfi_cross_dso = true
     debug = false
   }
-  cflags = [ "-Wno-multichar" ]
+  cflags = [
+    "-Werror",
+    "-Wno-multichar",
+  ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 

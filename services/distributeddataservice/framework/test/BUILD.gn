@@ -47,6 +47,7 @@ config("module_private_config") {
     "${data_service_path}/service/waterversion",
     "//third_party/json/single_include",
   ]
+  cflags = [ "-Werror" ]
   ldflags = [ "-Wl,--whole-archive" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

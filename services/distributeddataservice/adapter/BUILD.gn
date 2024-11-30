@@ -18,8 +18,11 @@ config("distributeddata_adapter_private_config") {
   visibility = [ ":*" ]
   include_dirs = []
 
-  cflags = [ "-Wno-multichar" ]
-
+  cflags = [
+    "-Werror",
+    "-Wno-multichar",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+  ]
   cflags_cc = [ "-fvisibility=hidden" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -51,7 +54,6 @@ ohos_shared_library("distributeddata_adapter") {
     ubsan = true
   }
   sources = []
-  cflags = [ "-D_LIBCPP_HAS_COND_CLOCKWAIT" ]
   configs = [ ":distributeddata_adapter_private_config" ]
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account_static",
