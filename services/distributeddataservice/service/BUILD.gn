@@ -132,6 +132,7 @@ ohos_shared_library("distributeddatasvc") {
     "waterversion/water_version_manager.cpp",
   ]
   cflags = [
+    "-Werror",
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",

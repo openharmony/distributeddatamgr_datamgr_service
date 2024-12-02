@@ -106,6 +106,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/ref_count.cpp",
   ]
   cflags = [
+    "-Werror",
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
   ]
