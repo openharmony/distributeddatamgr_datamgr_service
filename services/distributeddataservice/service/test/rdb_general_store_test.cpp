@@ -996,6 +996,8 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_BUSY);
     result = store->ConvertStatus(DBStatus::DB_ERROR);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    result = store->ConvertStatus(DBStatus::CLOUD_DISABLED);
+    EXPECT_EQ(result, GeneralError::E_CLOUD_DISABLED);
 }
 
 /**
