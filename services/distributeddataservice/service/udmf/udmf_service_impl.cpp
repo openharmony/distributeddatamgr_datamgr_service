@@ -38,7 +38,10 @@
 #include "unified_types.h"
 #include "device_manager_adapter.h"
 #include "store_account_observer.h"
-
+#include "utils/anonymous.h"
+#include "bootstrap.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/meta_data_manager.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -46,6 +49,8 @@ using namespace Security::AccessToken;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using namespace RadarReporter;
 using namespace DistributedKv;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
@@ -758,6 +763,41 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
 int32_t UdmfServiceImpl::ClearAsynProcess()
 {
     (void)memset_s(&asyncProcessInfo_, sizeof(asyncProcessInfo_), 0, sizeof(asyncProcessInfo_));
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
+{
+    ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
+        param.appId.c_str(), Anonymous::Change(param.storeId).c_str(), Anonymous::Change(identifier).c_str());
+
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("no meta data appId:%{public}s", param.appId.c_str());
+        return E_NOT_FOUND;
+    }
+
+    for (const auto &storeMeta : metaData) {
+        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
+            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
+            storeMeta.appId != DistribubtedData::Bootstrap::GetInstance().GetProcessLabel()) {
+            continue;
+        }
+        auto identifierTag = DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId,
+                                                                                         storeMeta.storeId, true);
+        if (identifier != identifierTag) {
+            continue;
+        }
+        auto store = StoreCache::GetInstance().GetStore(storeMeta.storeId);
+        if (store == nullptr) {
+            ZLOGE("GetStore fail, storeId:%{public}d", Anonymous::Change(storeMeta.storeId).c_str());
+            continue;
+        }
+        ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s", Anonymous::Change(storeMeta.storeId).c_str(),
+            storeMeta.appId.c_str(), storeMeta.user.c_str());
+        return E_OK;
+    }
     return E_OK;
 }
 } // namespace UDMF
