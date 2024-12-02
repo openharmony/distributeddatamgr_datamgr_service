@@ -207,7 +207,7 @@ void AccountDelegateNormalImpl::BindExecutor(std::shared_ptr<ExecutorPool> execu
 std::string AccountDelegateNormalImpl::GetUnencryptedAccountId(int32_t userId) const
 {
     AccountSA::OhosAccountInfo info;
-    auto ret = AccountSA::OhosAccountKits::GetInstance().GetOhosAccountInfoByUserId(userId, info);
+    auto ret = AccountSA::OhosAccountKits::GetInstance().GetOsAccountDistributedInfo(userId, info);
     if (ret != ERR_OK) {
         ZLOGE("GetUnencryptedAccountId failed: %{public}d", ret);
         return "";
