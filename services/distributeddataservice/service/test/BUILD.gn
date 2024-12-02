@@ -1190,6 +1190,45 @@ ohos_unittest("DumpHelperTest") {
   ]
 }
 
+ohos_unittest("UdmfServiceImplTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/framework/feature/feature_system.cpp",
+    "udmf_service_impl_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf",
+    "${data_service_path}/framework/include",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  external_deps = [
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+    "udmf:udmf_client",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -1221,6 +1260,7 @@ group("unittest") {
     ":RdbResultSetImplTest",
     ":RdbServiceTest",
     ":UdmfRunTimeStoreTest",
+    ":UdmfServiceImplTest",
     ":ValueProxyServiceTest",
     ":WaterVersionManagerTest",
   ]
