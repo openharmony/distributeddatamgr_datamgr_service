@@ -769,11 +769,12 @@ int32_t UdmfServiceImpl::ClearAsynProcess()
 int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
 {
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
-        param.appId.c_str(), Anonymous::Change(param.storeId).c_str(), Anonymous::Change(identifier).c_str());
+        param.appId.c_str(), DistributedData::Anonymous::Change(param.storeId).c_str(),
+        DistributedData::Anonymous::Change(identifier).c_str());
 
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
         ZLOGE("no meta data appId:%{public}s", param.appId.c_str());
         return E_NOT_FOUND;
     }
@@ -781,7 +782,7 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
     for (const auto &storeMeta : metaData) {
         if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
             storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
-            storeMeta.appId != DistribubtedData::Bootstrap::GetInstance().GetProcessLabel()) {
+            storeMeta.appId != DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }
         auto identifierTag = DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId,
@@ -791,10 +792,11 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         }
         auto store = StoreCache::GetInstance().GetStore(storeMeta.storeId);
         if (store == nullptr) {
-            ZLOGE("GetStore fail, storeId:%{public}d", Anonymous::Change(storeMeta.storeId).c_str());
+            ZLOGE("GetStore fail, storeId:%{public}d", DistributedData::Anonymous::Change(storeMeta.storeId).c_str());
             continue;
         }
-        ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s", Anonymous::Change(storeMeta.storeId).c_str(),
+        ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s",
+            DistributedData::Anonymous::Change(storeMeta.storeId).c_str(),
             storeMeta.appId.c_str(), storeMeta.user.c_str());
         return E_OK;
     }

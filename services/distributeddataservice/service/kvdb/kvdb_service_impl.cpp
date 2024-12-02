@@ -791,7 +791,7 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
             storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
             (!param.userId.empty() && (param.userId != storeMeta.user)) ||
-            storeMeta.appId == DistribubtedData::Bootstrap::GetInstance().GetProcessLabel()) {
+            storeMeta.appId == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }
         auto identifierTag = DBManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
