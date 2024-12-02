@@ -365,6 +365,7 @@ HWTEST_F(KVDBGeneralStoreTest, BindTest, TestSize.Level0)
     ret = store->Bind(database, bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_ALREADY_CLOSED);
 
+    store->users_.clear();
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     EXPECT_NE(store->delegate_, nullptr);
