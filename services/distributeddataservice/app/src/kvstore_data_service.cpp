@@ -61,7 +61,6 @@
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
-#include "water_version_manager.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
@@ -347,7 +346,6 @@ void KvStoreDataService::StartService()
     ZLOGI("begin.");
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
-    WaterVersionManager::GetInstance().Init();
     LoadFeatures();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {

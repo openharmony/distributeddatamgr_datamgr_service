@@ -923,11 +923,6 @@ std::pair<int32_t, VBuckets> RdbGeneralStore::QuerySql(const std::string &sql, V
     return { GenErr::E_OK, ValueProxy::Convert(std::move(changedData)) };
 }
 
-std::vector<std::string> RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
-{
-    return {};
-}
-
 void RdbGeneralStore::OnSyncStart(const StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, uint32_t traceId,
     uint32_t syncCount)
 {

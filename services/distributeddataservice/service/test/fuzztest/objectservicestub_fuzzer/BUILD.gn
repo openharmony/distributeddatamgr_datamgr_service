@@ -30,7 +30,6 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/object",
     "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/waterversion",
     "${kv_store_common_path}",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
@@ -82,7 +81,6 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/object/object_service_stub.cpp",
     "${data_service_path}/service/object/object_snapshot.cpp",
     "${data_service_path}/service/object/object_types_utils.cpp",
-    "${data_service_path}/service/waterversion/water_version_manager.cpp",
     "objectservicestub_fuzzer.cpp",
   ]
 

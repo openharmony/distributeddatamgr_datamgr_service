@@ -41,7 +41,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/service/common",
     "${data_service_path}/service/dumper/include",
     "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/waterversion",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/installer",
