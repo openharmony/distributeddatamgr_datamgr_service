@@ -773,7 +773,7 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         DistributedData::Anonymous::Change(identifier).c_str());
 
     std::vector<StoreMetaData> metaData;
-    auto prefix = StoreMetaData::GetPrefix({ DMAdapter::GetInstance().GetLocalDevice().uuid });
+    auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
     if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
         ZLOGE("no meta data appId:%{public}s", param.appId.c_str());
         return E_NOT_FOUND;
@@ -792,7 +792,7 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         }
         auto store = StoreCache::GetInstance().GetStore(storeMeta.storeId);
         if (store == nullptr) {
-            ZLOGE("GetStore fail, storeId:%{public}d", DistributedData::Anonymous::Change(storeMeta.storeId).c_str());
+            ZLOGE("GetStore fail, storeId:%{public}s", DistributedData::Anonymous::Change(storeMeta.storeId).c_str());
             continue;
         }
         ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s",
