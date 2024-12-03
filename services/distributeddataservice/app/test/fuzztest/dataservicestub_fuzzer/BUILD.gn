@@ -70,6 +70,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
     "${data_service_path}/app/src/kvstore_device_listener.cpp",
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/app/src/kvstore_screen_observer.cpp",
     "${data_service_path}/app/src/security/security.cpp",
     "${data_service_path}/app/src/security/sensitive.cpp",
     "${data_service_path}/app/src/session_manager/route_head_handler_impl.cpp",

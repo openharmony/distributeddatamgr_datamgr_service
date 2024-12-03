@@ -52,6 +52,7 @@ enum GeneralError : int32_t {
     E_OVER_MAX_LIMITS,
     E_SECURITY_LEVEL_ERROR,
     E_FILE_NOT_EXIST,
+    E_SCREEN_LOCKED,
     E_BUTT,
 };
 }

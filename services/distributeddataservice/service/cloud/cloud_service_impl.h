@@ -69,6 +69,7 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t OnReady(const std::string &device) override;
     int32_t Offline(const std::string &device) override;
+    int32_t OnScreenUnlocked(int32_t user) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;

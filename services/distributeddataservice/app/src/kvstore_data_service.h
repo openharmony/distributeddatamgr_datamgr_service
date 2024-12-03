@@ -30,6 +30,7 @@
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "runtime_config.h"
+#include "screen/screen_manager.h"
 #include "security/security.h"
 #include "system_ability.h"
 #include "executor_pool.h"
@@ -37,6 +38,7 @@
 
 namespace OHOS::DistributedKv {
 class KvStoreAccountObserver;
+class KvStoreScreenObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
     DECLARE_SYSTEM_ABILITY(KvStoreDataService);
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
@@ -165,13 +167,14 @@ private:
     void OnStoreMetaChanged(const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag);
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
-    
+
     void LoadConfigs();
 
     static constexpr int TEN_SEC = 10;
 
     ConcurrentMap<uint32_t, std::map<int32_t, KvStoreClientDeathObserverImpl>> clients_;
     std::shared_ptr<KvStoreAccountObserver> accountEventObserver_;
+    std::shared_ptr<KvStoreScreenObserver> screenEventObserver_;
 
     std::shared_ptr<Security> security_;
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;

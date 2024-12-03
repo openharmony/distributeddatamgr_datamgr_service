@@ -15,6 +15,7 @@
 
 #define LOG_TAG "ScreenManager"
 #include "screen/screen_manager.h"
+
 #include "log_print.h"
 
 namespace OHOS::DistributedData {
@@ -38,9 +39,33 @@ bool ScreenManager::RegisterInstance(std::shared_ptr<ScreenManager> instance)
     return true;
 }
 
+void ScreenManager::Subscribe(std::shared_ptr<Observer> observer)
+{
+    return;
+}
+
+void ScreenManager::Unsubscribe(std::shared_ptr<Observer> observer)
+{
+    return;
+}
+
+void ScreenManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    return;
+}
+
+void ScreenManager::SubscribeScreenEvent()
+{
+    return;
+}
+
+void ScreenManager::UnsubscribeScreenEvent()
+{
+    return;
+}
+
 bool ScreenManager::IsLocked()
 {
     return false;
 }
-
 } // namespace OHOS::DistributedData

@@ -15,14 +15,46 @@
 #ifndef DISTRIBUTEDDATAMGR_ADAPTER_SCREEN_LOCK_H
 #define DISTRIBUTEDDATAMGR_ADAPTER_SCREEN_LOCK_H
 
-#include "visibility.h"
+#include "common_event_manager.h"
+#include "common_event_subscriber.h"
+#include "common_event_support.h"
+#include "concurrent_map.h"
 #include "screen/screen_manager.h"
 
 namespace OHOS {
 namespace DistributedData {
+using namespace OHOS::EventFwk;
+using EventCallback = std::function<void(int32_t user)>;
+
+class EventSubscriber final : public CommonEventSubscriber {
+public:
+    ~EventSubscriber() {}
+    explicit EventSubscriber(const CommonEventSubscribeInfo &info);
+    void SetEventCallback(EventCallback callback);
+    void OnReceiveEvent(const CommonEventData &event) override;
+private:
+    static constexpr const char *USER_ID = "userId";
+    static constexpr int32_t INVALID_USER = -1;
+    EventCallback eventCallback_ {};
+};
+
 class ScreenLock : public ScreenManager {
 public:
-    API_EXPORT bool IsLocked();
+    bool IsLocked();
+    void Subscribe(std::shared_ptr<Observer> observer) __attribute__((no_sanitize("cfi")));
+    void Unsubscribe(std::shared_ptr<Observer> observer) __attribute__((no_sanitize("cfi")));
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors);
+    void SubscribeScreenEvent();
+    void UnsubscribeScreenEvent();
+
+private:
+    static constexpr int32_t MAX_RETRY_TIME = 300;
+    static constexpr int32_t RETRY_WAIT_TIME_S = 1;
+    void NotifyScreenUnlocked(int32_t user);
+    ExecutorPool::Task GetTask(uint32_t retry);
+    ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_{};
+    std::shared_ptr<ExecutorPool> executors_;
+    std::shared_ptr<EventSubscriber> eventSubscriber_{};
 };
 } // namespace DistributedData
 } // namespace OHOS

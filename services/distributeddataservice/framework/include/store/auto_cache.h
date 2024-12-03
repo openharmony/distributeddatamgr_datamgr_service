@@ -50,6 +50,8 @@ public:
 
     API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers);
 
+    API_EXPORT std::pair<int32_t, Store> GetDBStore(const StoreMetaData &meta, const Watchers &watchers);
+
     API_EXPORT Stores GetStoresIfPresent(uint32_t tokenId, const std::string &storeName = "");
 
     API_EXPORT void CloseStore(uint32_t tokenId, const std::string &storeId = "");
