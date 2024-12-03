@@ -39,7 +39,6 @@ config("module_private_config") {
     "${data_service_path}/service/directory/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/waterversion",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/service/kvdb",
     "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
@@ -61,6 +60,11 @@ config("module_private_config") {
     include_dirs +=
         [ "//base/powermgr/power_manager/interfaces/innerkits/native/include" ]
   }
+  cflags = [
+    "-Werror",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
   ldflags = [ "-Wl,--whole-archive" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -112,11 +116,6 @@ ohos_unittest("KvStoreDataServiceTest") {
       "power_manager:powermgr_client",
     ]
   }
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
