@@ -36,7 +36,8 @@ SoftBusClient::SoftBusClient(const PipeInfo& pipeInfo, const DeviceId& deviceId,
 
 SoftBusClient::~SoftBusClient()
 {
-    ZLOGI("Shutdown socket:%{public}d", socket_);
+    ZLOGI("Shutdown socket:%{public}d, deviceId:%{public}s", socket_,
+        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str());
     if (socket_ > 0) {
         Shutdown(socket_);
     }
