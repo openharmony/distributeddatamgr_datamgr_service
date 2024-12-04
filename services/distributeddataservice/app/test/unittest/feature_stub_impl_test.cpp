@@ -115,7 +115,7 @@ HWTEST_F(FeatureStubImplTest, OnRemoteRequest001, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     auto result = featureStubImpl->OnRemoteRequest(code, data, reply, option);
-    EXPECT_NE(result , E_OK);
+    EXPECT_NE(result, E_OK);
 }
 
 /**
@@ -134,7 +134,7 @@ HWTEST_F(FeatureStubImplTest, OnRemoteRequest002, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     auto result = featureStubImpl->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -150,7 +150,7 @@ HWTEST_F(FeatureStubImplTest, OnInitialize001, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
     auto result = featureStubImpl->OnInitialize(executor);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -166,7 +166,7 @@ HWTEST_F(FeatureStubImplTest, OnInitialize002, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
     auto result = featureStubImpl->OnInitialize(executor);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -185,8 +185,8 @@ HWTEST_F(FeatureStubImplTest, OnAppExit001, TestSize.Level1)
     uint32_t tokenId = 0;
     std::string bundleName = "com.ohos.test";
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
-    auto result = featureStubImpl->OnAppExit(uid, pid , tokenId , bundleName);
-    EXPECT_EQ(result , -1);
+    auto result = featureStubImpl->OnAppExit(uid, pid, tokenId, bundleName);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -205,8 +205,8 @@ HWTEST_F(FeatureStubImplTest, OnAppExit002, TestSize.Level1)
     uint32_t tokenId = 0;
     std::string bundleName = "com.ohos.test";
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
-    auto result = featureStubImpl->OnAppExit(uid, pid , tokenId , bundleName);
-    EXPECT_EQ(result , E_OK);
+    auto result = featureStubImpl->OnAppExit(uid, pid, tokenId, bundleName);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -224,7 +224,7 @@ HWTEST_F(FeatureStubImplTest, OnAppUninstall001, TestSize.Level1)
     int32_t user = 0;
     int32_t index = 0;
     auto result = featureStubImpl->OnAppUninstall(bundleName, user, index);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -242,7 +242,7 @@ HWTEST_F(FeatureStubImplTest, OnAppUninstall002, TestSize.Level1)
     int32_t user = 0;
     int32_t index = 0;
     auto result = featureStubImpl->OnAppUninstall(bundleName, user, index);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -260,7 +260,7 @@ HWTEST_F(FeatureStubImplTest, OnAppUpdate001, TestSize.Level1)
     int32_t user = 0;
     int32_t index = 0;
     auto result = featureStubImpl->OnAppUpdate(bundleName, user, index);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -278,7 +278,7 @@ HWTEST_F(FeatureStubImplTest, OnAppUpdate002, TestSize.Level1)
     int32_t user = 0;
     int32_t index = 0;
     auto result = featureStubImpl->OnAppUpdate(bundleName, user, index);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -296,7 +296,7 @@ HWTEST_F(FeatureStubImplTest, OnAppInstall001, TestSize.Level1)
     int32_t user = 0;
     int32_t index = 0;
     auto result = featureStubImpl->OnAppInstall(bundleName, user, index);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -314,7 +314,7 @@ HWTEST_F(FeatureStubImplTest, OnAppInstall002, TestSize.Level1)
     int32_t user = 0;
     int32_t index = 0;
     auto result = featureStubImpl->OnAppInstall(bundleName, user, index);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -331,7 +331,7 @@ HWTEST_F(FeatureStubImplTest, ResolveAutoLaunch001, TestSize.Level1)
     std::string identifier = "identifier";
     DistributedDB::AutoLaunchParam param;
     auto result = featureStubImpl->ResolveAutoLaunch(identifier, param);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -348,7 +348,7 @@ HWTEST_F(FeatureStubImplTest, ResolveAutoLaunch002, TestSize.Level1)
     std::string identifier = "identifier";
     DistributedDB::AutoLaunchParam param;
     auto result = featureStubImpl->ResolveAutoLaunch(identifier, param);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -366,7 +366,7 @@ HWTEST_F(FeatureStubImplTest, OnUserChange001, TestSize.Level1)
     std::string user = "user";
     std::string account = "account";
     auto result = featureStubImpl->OnUserChange(code, user, account);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -384,7 +384,7 @@ HWTEST_F(FeatureStubImplTest, OnUserChange002, TestSize.Level1)
     std::string user = "user";
     std::string account = "account";
     auto result = featureStubImpl->OnUserChange(code, user, account);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -400,7 +400,7 @@ HWTEST_F(FeatureStubImplTest, Online001, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->Online(device);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -416,7 +416,7 @@ HWTEST_F(FeatureStubImplTest, Online002, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->Online(device);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -432,7 +432,7 @@ HWTEST_F(FeatureStubImplTest, Offline001, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->Offline(device);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -448,7 +448,7 @@ HWTEST_F(FeatureStubImplTest, Offline002, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->Offline(device);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -464,7 +464,7 @@ HWTEST_F(FeatureStubImplTest, OnReady001, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->OnReady(device);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -480,7 +480,7 @@ HWTEST_F(FeatureStubImplTest, OnReady002, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->OnReady(device);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -496,7 +496,7 @@ HWTEST_F(FeatureStubImplTest, OnSessionReady001, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->OnSessionReady(device);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -512,7 +512,7 @@ HWTEST_F(FeatureStubImplTest, OnSessionReady002, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     std::string device = "device";
     auto result = featureStubImpl->OnSessionReady(device);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -528,7 +528,7 @@ HWTEST_F(FeatureStubImplTest, OnScreenUnlocked001, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     int32_t user = 0;
     auto result = featureStubImpl->OnScreenUnlocked(user);
-    EXPECT_EQ(result , -1);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -544,7 +544,7 @@ HWTEST_F(FeatureStubImplTest, OnScreenUnlocked002, TestSize.Level1)
     std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
     int32_t user = 0;
     auto result = featureStubImpl->OnScreenUnlocked(user);
-    EXPECT_EQ(result , E_OK);
+    EXPECT_EQ(result, E_OK);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
