@@ -300,6 +300,73 @@ ohos_unittest("KvStoreDataServiceClearTest") {
   part_name = "datamgr_service"
 }
 
+ohos_unittest("FeatureStubImplTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/permission",
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/adapter/include/dfx",
+    "${data_service_path}/adapter/include/broadcaster",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/directory/include",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/waterversion",
+    "${data_service_path}/app/src/session_manager",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+  ]
+
+  sources = [
+    "${data_service_path}/app/src/feature_stub_impl.cpp",
+    "unittest/feature_stub_impl_test.cpp",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "file_api:securitylabel",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  if (datamgr_service_power) {
+    external_deps += [
+      "battery_manager:batterysrv_client",
+      "power_manager:powermgr_client",
+    ]
+  }
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl_static",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+  part_name = "datamgr_service"
+}
+
 ###############################################################################
 
 group("unittest") {
@@ -307,6 +374,7 @@ group("unittest") {
   deps = []
 
   deps += [
+    ":FeatureStubImplTest",
     ":KvStoreDataServiceClearTest",
     ":KvStoreDataServiceTest",
     ":KvStoreFlowCtrlManagerTest",
