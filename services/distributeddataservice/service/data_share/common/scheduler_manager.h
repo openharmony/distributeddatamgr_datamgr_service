@@ -27,9 +27,9 @@ class SchedulerManager {
 public:
     static SchedulerManager &GetInstance();
     void Execute(const std::string &uri, const int32_t userId, DistributedData::StoreMetaData &metaData);
-    void Execute(const Key &key, const int32_t userId, const std::string &rdbDir, int version, const uint32_t tokenId);
+    void Execute(const Key &key, const int32_t userId, const DistributedData::StoreMetaData &metaData);
     void ReExecuteAll();
-    void SetTimer(const std::string &dbPath, const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key, int64_t reminderTime);
+    void SetTimer(const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key, int64_t reminderTime);
     void RemoveTimer(const Key &key);
     void ClearTimer();
     void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
@@ -39,9 +39,9 @@ private:
     static constexpr int REMIND_TIMER_FUNC_LEN = 12;
     SchedulerManager() = default;
     ~SchedulerManager() = default;
-    static void GenRemindTimerFuncParams(const std::string &rdbDir, const int32_t userId, const uint32_t tokenId, const Key &key,
+    static void GenRemindTimerFuncParams(const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key,
         std::string &schedulerSQL);
-    void ExecuteSchedulerSQL(const std::string &rdbDir, const int32_t userId, const uint32_t tokenId, const Key &key,
+    void ExecuteSchedulerSQL(const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key,
         std::shared_ptr<DBDelegate> delegate);
     bool SetTimerTask(uint64_t &timerId, const std::function<void()> &callback, int64_t reminderTime);
     void DestoryTimerTask(int64_t timerId);

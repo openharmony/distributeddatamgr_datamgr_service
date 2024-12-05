@@ -26,9 +26,6 @@ std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
     const std::string &extUri, const std::string &backup)
 {
-    if (metaData.tokenId == 0) {
-        return std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backup);
-    }
     std::shared_ptr<DBDelegate> store;
     stores_.Compute(metaData.tokenId,
         [&metaData, &store, extUri, &backup](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {

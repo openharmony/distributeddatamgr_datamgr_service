@@ -128,10 +128,11 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
                     DistributedData::Anonymous::Change(key.uri).c_str(), context->callerTokenId);
                 return;
             }
-            Notify(key, context->currentUserId, node, context->calledSourceDir, context->calledTokenId);
+            DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
+            Notify(key, context->currentUserId, node, metaData);
             if (GetEnableObserverCount(key) == 1) {
                 SchedulerManager::GetInstance().Execute(
-                    key, context->currentUserId, context->calledSourceDir, context->version, context->calledTokenId);
+                    key, context->currentUserId, metaData);
             }
         };
         executorPool->Execute(task);
@@ -212,7 +213,8 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
                 node.emplace_back(it->observer, context->callerTokenId);
                 LoadConfigDataInfoStrategy loadDataInfo;
                 if (loadDataInfo(context)) {
-                    Notify(key, context->currentUserId, node, context->calledSourceDir, context->calledTokenId);
+                    DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
+                    Notify(key, context->currentUserId, node, metaData);
                 }
             }
         }
@@ -230,21 +232,17 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
         LoadConfigDataInfoStrategy loadDataInfo;
         loadDataInfo(context);
     }
-    rdbCache_.ForEach([&uri, &context, this](const Key &key, std::vector<ObserverNode> &val) {
+    DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
+    rdbCache_.ForEach([&uri, &context, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
         if (key.uri != uri) {
             return false;
         }
-        Notify(key, context->currentUserId, val, context->calledSourceDir, context->calledTokenId);
+        Notify(key, context->currentUserId, val, metaData);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
-    DistributedData::StoreMetaData meta;
-    meta.version = context->version;
-    meta.tokenId = context->calledTokenId;
-    meta.dataDir = context->calledSourceDir;
-    meta.bundleName = context->calledBundleName;
     SchedulerManager::GetInstance().Execute(
-        uri, context->currentUserId, meta);
+        uri, context->currentUserId, metaData);
 }
 
 void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
@@ -259,7 +257,7 @@ void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
             return false;
         }
         hasObserver = true;
-        Notify(key, userId, val, metaData.dataDir, metaData.tokenId);
+        Notify(key, userId, val, metaData);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
@@ -292,13 +290,13 @@ std::vector<Key> RdbSubscriberManager::GetKeysByUri(const std::string &uri)
     return results;
 }
 
-void RdbSubscriberManager::EmitByKey(const Key &key, int32_t userId, const std::string &rdbPath, int version, const uint32_t tokenId)
+void RdbSubscriberManager::EmitByKey(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
 {
     if (!URIUtils::IsDataProxyURI(key.uri)) {
         return;
     }
-    rdbCache_.ComputeIfPresent(key, [&rdbPath, &version, &userId, tokenId, this](const Key &key, auto &val) {
-        Notify(key, userId, val, rdbPath, tokenId);
+    rdbCache_.ComputeIfPresent(key, [&userId, &metaData, this](const Key &key, auto &val) {
+        Notify(key, userId, val, metaData);
         SetObserverNotifyOnEnabled(val);
         return true;
     });
@@ -320,7 +318,7 @@ int RdbSubscriberManager::GetEnableObserverCount(const Key &key)
 }
 
 int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vector<ObserverNode> &val,
-    const std::string &rdbDir, const uint32_t tokenId)
+    const DistributedData::StoreMetaData &metaData)
 {
     Template tpl;
     if (!TemplateManager::GetInstance().Get(key, userId, tpl)) {
@@ -328,9 +326,7 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
             DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return E_TEMPLATE_NOT_EXIST;
     }
-    DistributedData::StoreMetaData meta;
-    meta.tokenId = tokenId;
-    meta.dataDir = rdbDir;
+    DistributedData::StoreMetaData meta = metaData;
     meta.bundleName = key.bundleName;
     auto delegate = DBDelegate::Create(meta, key.uri);
     if (delegate == nullptr) {
@@ -382,18 +378,30 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
         LoadConfigDataInfoStrategy loadDataInfo;
         loadDataInfo(context);
     }
-    rdbCache_.ForEach([&uri, &context, &subscriberId, this](const Key &key, std::vector<ObserverNode> &val) {
+    DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
+    rdbCache_.ForEach([&uri, &context, &subscriberId, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
         if (key.uri != uri || key.subscriberId != subscriberId) {
             return false;
         }
-        Notify(key, context->currentUserId, val, context->calledSourceDir, context->calledTokenId);
+        Notify(key, context->currentUserId, val, metaData);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
     Key executeKey(uri, subscriberId, bundleName);
     SchedulerManager::GetInstance().Execute(executeKey, context->currentUserId,
-        context->calledSourceDir, context->version, context->calledTokenId);
+        metaData);
 }
+
+DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(const std::shared_ptr<Context> context)
+{
+    DistributedData::StoreMetaData metaData;
+    metaData.tokenId = context->calledTokenId;
+    metaData.dataDir = context->calledSourceDir;
+    metaData.storeId = context->calledStoreName;
+    metaData.version = context->version;
+    return metaData;
+}
+
 RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer,
     uint32_t firstCallerTokenId, uint32_t callerTokenId)
     : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId)

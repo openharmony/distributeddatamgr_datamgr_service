@@ -183,7 +183,11 @@ HWTEST_F(DataShareSubscriberManagersTest, Emit, TestSize.Level1)
     tpltId.subscriberId_ = TEST_SUB_ID;
     tpltId.bundleName_ = BUNDLE_NAME_TEST;
     DataShare::Key key(context->uri, tpltId.subscriberId_, tpltId.bundleName_);
-    RdbSubscriberManager::GetInstance().EmitByKey(key, USER_TEST, "rdbPath", 1, 0);
+    DistributedData::StoreMetaData metaData;
+    metaData.version = 1;
+    metaData.tokenId = 0;
+    metaData.dataDir = "rdbPath";
+    RdbSubscriberManager::GetInstance().EmitByKey(key, USER_TEST, metaData);
     DataShare::Key keys("", 0, "");
     auto result = RdbSubscriberManager::GetInstance().GetEnableObserverCount(keys);
     EXPECT_EQ(result, 0);
