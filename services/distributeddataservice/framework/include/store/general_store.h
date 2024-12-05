@@ -151,7 +151,7 @@ public:
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) = 0;
 
     virtual std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query,
-        DetailAsync async, const SyncParam &syncParm) = 0;
+        DetailAsync async, const SyncParam &syncParam) = 0;
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) = 0;
 
