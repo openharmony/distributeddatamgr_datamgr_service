@@ -376,7 +376,7 @@ int32_t CloudServerImpl::DoSubscribe(int32_t userId, std::shared_ptr<OhCloudExtC
             }
             auto err = *reinterpret_cast<int *>(value);
             if (err != ERRNO_SUCCESS) {
-                ZLOGE("sub fail, err:%{oublic}d", err);
+                ZLOGE("sub fail, user:%{public}d, err:%{public}d", userId, err);
                 return DBErr::E_ERROR;
             }
         }
