@@ -120,6 +120,7 @@ ohos_shared_library("distributeddatasvcfwk") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
     "json:nlohmann_json_static",
     "openssl:libcrypto_shared",

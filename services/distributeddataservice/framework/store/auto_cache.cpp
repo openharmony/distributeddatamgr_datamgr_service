@@ -58,22 +58,28 @@ AutoCache::~AutoCache()
     }
 }
 
-AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
+std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    if ((meta.area >= GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) ||
-        meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
-        disables_.ContainIf(meta.tokenId, [&meta](const std::set<std::string> &stores) -> bool {
-            return stores.count(meta.storeId) != 0;
-        })) {
-        return store;
+    if (meta.area >= GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
+        ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s", meta.user.c_str(),
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return { E_SCREEN_LOCKED, store };
+    }
+    if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
+        disables_.ContainIf(meta.tokenId,
+            [&meta](const std::set<std::string> &stores) -> bool { return stores.count(meta.storeId) != 0; })) {
+        ZLOGW("storeType is invalid or store is disabled, user:%{public}s, bundleName:%{public}s, "
+              "storeName:%{public}s",
+            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return { E_ERROR, store };
     }
 
-    stores_.Compute(
-        meta.tokenId, [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
+    stores_.Compute(meta.tokenId,
+        [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
             if (disableStores_.count(meta.dataDir) != 0) {
                 ZLOGW("store is closing, tokenId:0x%{public}x user:%{public}s"
-                    "bundleName:%{public}s storeName:%{public}s",
+                      "bundleName:%{public}s storeName:%{public}s",
                     meta.tokenId, meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
                 return !stores.empty();
             }
@@ -97,7 +103,12 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
             StartTimer();
             return !stores.empty();
         });
-    return store;
+    return { E_OK, store };
+}
+
+AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
+{
+    return GetDBStore(meta, watchers).second;
 }
 
 AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::string &storeName)

@@ -38,6 +38,7 @@
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
+#include "kvstore_screen_observer.h"
 #include "log_print.h"
 #include "mem_mgr_client.h"
 #include "mem_mgr_proxy.h"
@@ -127,6 +128,8 @@ void KvStoreDataService::Initialize()
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     accountEventObserver_ = std::make_shared<KvStoreAccountObserver>(*this, executors_);
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
+    screenEventObserver_ = std::make_shared<KvStoreScreenObserver>(*this, executors_);
+    ScreenManager::GetInstance()->Subscribe(screenEventObserver_);
     deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
     CommunicatorContext::GetInstance().RegSessionListener(deviceInnerListener_.get());
@@ -263,6 +266,7 @@ void KvStoreDataService::OnStart()
     EventCenter::Defer defer;
     Reporter::GetInstance()->SetThreadPool(executors_);
     AccountDelegate::GetInstance()->BindExecutor(executors_);
+    ScreenManager::GetInstance()->BindExecutor(executors_);
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     DmAdapter::GetInstance().Init(executors_);
     AutoCache::GetInstance().Bind(executors_);
@@ -322,6 +326,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
         AccountDelegate::GetInstance()->SubscribeAccountEvent();
         Installer::GetInstance().Init(this, executors_);
+        ScreenManager::GetInstance()->SubscribeScreenEvent();
     } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
         Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1,
                                                                 DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
@@ -337,6 +342,7 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
         return;
     }
     AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
+    ScreenManager::GetInstance()->UnsubscribeScreenEvent();
     Installer::GetInstance().UnsubscribeEvent();
 }
 
@@ -572,7 +578,7 @@ void KvStoreDataService::InitSecurityAdapter(std::shared_ptr<ExecutorPool> execu
         ZLOGE("security is nullptr.");
         return;
     }
-    
+
     security_->InitLocalSecurity();
     auto dbStatus = DistributedDB::RuntimeConfig::SetProcessSystemAPIAdapter(security_);
     ZLOGD("set distributed db system api adapter: %d.", static_cast<int>(dbStatus));

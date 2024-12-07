@@ -42,7 +42,7 @@ public:
     using TraceIds = std::map<std::string, std::string>;
     using SyncStage = DistributedData::SyncStage;
     using ReportParam = DistributedData::ReportParam;
-    static AutoCache::Store GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
+    static std::pair<int32_t, AutoCache::Store> GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     class SyncInfo final {
     public:
         using Store = std::string;
@@ -96,6 +96,8 @@ public:
     int32_t StopCloudSync(int32_t user = 0);
     int32_t QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results);
     void Report(const ReportParam &reportParam);
+    void OnScreenUnlocked(int32_t user);
+    void CleanCompensateSync(int32_t userId);
 
 private:
     using Event = DistributedData::Event;
@@ -156,6 +158,7 @@ private:
     void BatchReport(int32_t userId, const TraceIds &traceIds, SyncStage syncStage, int32_t errCode);
     TraceIds GetPrepareTraceId(const SyncInfo &info, const CloudInfo &cloud);
     std::pair<bool, StoreMetaData> GetMetaData(const StoreInfo &storeInfo);
+    void AddCompensateSync(const StoreMetaData &meta);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
@@ -164,6 +167,7 @@ private:
     std::shared_ptr<SyncStrategy> syncStrategy_;
     ConcurrentMap<QueryKey, std::map<SyncId, CloudSyncInfo>> lastSyncInfos_;
     std::set<std::string> kvApps_;
+    ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
