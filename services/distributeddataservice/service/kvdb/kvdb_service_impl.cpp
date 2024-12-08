@@ -788,7 +788,8 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
     for (const auto &storeMeta : metaData) {
         if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
             storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
-            (!param.userId.empty() && (param.userId != storeMeta.user))) {
+            (!param.userId.empty() && (param.userId != storeMeta.user)) ||
+            storeMeta.appId == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }
         auto identifierTag = DBManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
@@ -802,7 +803,7 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
             store->SetEqualIdentifier(storeMeta.appId, storeMeta.storeId, accountId);
         }
         ZLOGI("isTriple:%{public}d,storeId:%{public}s,appId:%{public}s,size:%{public}zu,user:%{public}s",
-            isTripleIdentifierEqual, Anonymous::Change(storeMeta.storeId).c_str(), storeMeta.storeId.c_str(),
+            isTripleIdentifierEqual, Anonymous::Change(storeMeta.storeId).c_str(), storeMeta.appId.c_str(),
             watchers.size(), storeMeta.user.c_str());
     }
     return SUCCESS;

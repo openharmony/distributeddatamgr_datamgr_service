@@ -27,6 +27,7 @@
 #include "unified_data.h"
 #include "unified_types.h"
 #include "visibility.h"
+#include "kv_store_delegate_manager.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -36,7 +37,7 @@ class API_EXPORT UdmfServiceImpl final : public UdmfServiceStub {
 public:
     UdmfServiceImpl();
     ~UdmfServiceImpl() = default;
-
+    using DBLaunchParam = DistributedDB::AutoLaunchParam;
     int32_t SetData(CustomOption &option, UnifiedData &unifiedData, std::string &key) override;
     int32_t GetData(const QueryOption &query, UnifiedData &unifiedData) override;
     int32_t GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet) override;
@@ -53,7 +54,7 @@ public:
     int32_t OnBind(const BindInfo &bindInfo) override;
     int32_t ObtainAsynProcess(AsyncProcessInfo &processInfo) override;
     int32_t ClearAsynProcess() override;
-
+    int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
