@@ -996,6 +996,8 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_BUSY);
     result = store->ConvertStatus(DBStatus::DB_ERROR);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    result = store->ConvertStatus(DBStatus::CLOUD_DISABLED);
+    EXPECT_EQ(result, GeneralError::E_CLOUD_DISABLED);
 }
 
 /**
@@ -1061,26 +1063,6 @@ HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenParamValid, TestSize.Level1)
                             "data_key = rowid";
     std::string resultSql = store->BuildSql(table, statement, columns);
     EXPECT_EQ(resultSql, expectSql);
-}
-
-/**
-* @tc.name: GetWaterVersionTest
-* @tc.desc: GetWaterVersion test
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(RdbGeneralStoreTest, GetWaterVersionTest, TestSize.Level1)
-{
-    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    std::string deviceId = "";
-    std::vector<std::string> expected = {};
-    std::vector<std::string> actual = store->GetWaterVersion(deviceId);
-    EXPECT_EQ(expected, actual);
-    deviceId = "mock_deviceId";
-    actual = store->GetWaterVersion(deviceId);
-    EXPECT_EQ(expected, actual);
 }
 
 /**

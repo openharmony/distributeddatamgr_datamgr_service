@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "screen_lock"
+#define LOG_TAG "ScreenLock"
 #include "screen_lock.h"
 
+#include "account/account_delegate.h"
+#include "log_print.h"
 #include "screenlock_manager.h"
 
 namespace OHOS::DistributedData {
@@ -29,5 +31,108 @@ bool ScreenLock::IsLocked()
         return false;
     }
     return manager->IsScreenLocked();
+}
+
+EventSubscriber::EventSubscriber(const CommonEventSubscribeInfo &info) : CommonEventSubscriber(info)
+{
+}
+
+void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
+{
+    const auto want = event.GetWant();
+    const auto action = want.GetAction();
+    if (action != CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+        return;
+    }
+    ZLOGI("Want Action is %{public}s", action.c_str());
+    auto user = want.GetIntParam(USER_ID, INVALID_USER);
+    if (user == INVALID_USER) {
+        std::vector<int32_t> users;
+        DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+        if (users.empty()) {
+            return;
+        }
+        user = users[0];
+    }
+    eventCallback_(user);
+}
+
+void EventSubscriber::SetEventCallback(EventCallback callback)
+{
+    eventCallback_ = callback;
+}
+
+void ScreenLock::Subscribe(std::shared_ptr<Observer> observer)
+{
+    if (observer == nullptr || observer->GetName().empty() || observerMap_.Contains(observer->GetName())) {
+        return;
+    }
+    if (!observerMap_.Insert(observer->GetName(), observer)) {
+        ZLOGE("fail, name is %{public}s", observer->GetName().c_str());
+    }
+}
+
+void ScreenLock::Unsubscribe(std::shared_ptr<Observer> observer)
+{
+    if (observer == nullptr || observer->GetName().empty() || !observerMap_.Contains(observer->GetName())) {
+        return;
+    }
+    if (!observerMap_.Erase(observer->GetName())) {
+        ZLOGD("fail, name is %{public}s", observer->GetName().c_str());
+    }
+}
+
+void ScreenLock::SubscribeScreenEvent()
+{
+    ZLOGI("Subscribe screen event listener start.");
+    if (eventSubscriber_ == nullptr) {
+        MatchingSkills matchingSkills;
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
+        CommonEventSubscribeInfo info(matchingSkills);
+        eventSubscriber_ = std::make_shared<EventSubscriber>(info);
+        eventSubscriber_->SetEventCallback([this](int32_t user) {
+            NotifyScreenUnlocked(user);
+        });
+    }
+    executors_->Execute(GetTask(0));
+}
+
+void ScreenLock::UnsubscribeScreenEvent()
+{
+    auto res = CommonEventManager::UnSubscribeCommonEvent(eventSubscriber_);
+    if (!res) {
+        ZLOGW("unregister screen event fail res:%d", res);
+    }
+}
+
+void ScreenLock::NotifyScreenUnlocked(int32_t user)
+{
+    observerMap_.ForEach([user](const auto &key, auto &val) {
+        val->OnScreenUnlocked(user);
+        return false;
+    });
+}
+
+void ScreenLock::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+}
+
+ExecutorPool::Task ScreenLock::GetTask(uint32_t retry)
+{
+    return [this, retry] {
+        auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
+        if (result) {
+            ZLOGI("success to register subscriber.");
+            return;
+        }
+        ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, retry);
+
+        if (retry + 1 > MAX_RETRY_TIME) {
+            ZLOGE("fail to register subscriber!");
+            return;
+        }
+        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+    };
 }
 } // namespace OHOS::DistributedData

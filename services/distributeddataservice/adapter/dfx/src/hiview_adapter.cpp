@@ -89,6 +89,10 @@ std::mutex HiViewAdapter::runMutex_;
 
 void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, msg]() {
         struct HiSysEventParam params[] = {
             { .name = { *FAULT_TYPE },
@@ -121,6 +125,10 @@ void HiViewAdapter::ReportFault(int dfxCode, const FaultMsg &msg, std::shared_pt
 
 void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, msg]() {
         struct HiSysEventParam params[] = {
             { .name = { *APP_ID },
@@ -153,6 +161,10 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::share
 
 void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool ::Task task([dfxCode, msg]() {
         std::string message;
         for (size_t i = 0; i < msg.deviceId.size(); i++) {
@@ -191,6 +203,10 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
 
 void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, msg]() {
         std::string message;
         message.append("Behaviour type : ").append(std::to_string(static_cast<int>(msg.behaviourType)))
@@ -226,6 +242,10 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::s
 
 void HiViewAdapter::ReportDatabaseStatistic(int dfxCode, const DbStat &stat, std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(dbMutex_);
         if (!dbStat_.count(stat.GetKey())) {
@@ -302,6 +322,10 @@ void HiViewAdapter::InvokeDbSize()
 void HiViewAdapter::ReportTrafficStatistic(int dfxCode, const TrafficStat &stat,
     std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(trafficMutex_);
         auto it = trafficStat_.find(stat.GetKey());
@@ -357,6 +381,10 @@ void HiViewAdapter::InvokeTraffic()
 
 void HiViewAdapter::ReportVisitStatistic(int dfxCode, const VisitStat &stat, std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(visitMutex_);
         auto it = visitStat_.find(stat.GetKey());
@@ -406,6 +434,10 @@ void HiViewAdapter::InvokeVisit()
 void HiViewAdapter::ReportApiPerformanceStatistic(int dfxCode, const ApiPerformanceStat &stat,
     std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
     ExecutorPool::Task task([dfxCode, stat]() {
         std::lock_guard<std::mutex> lock(apiPerformanceMutex_);
         auto it = apiPerformanceStat_.find(stat.GetKey());

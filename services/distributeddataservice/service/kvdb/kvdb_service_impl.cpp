@@ -48,7 +48,6 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
-#include "water_version_manager.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
@@ -274,7 +273,6 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
     }
     if (DeviceMatrix::GetInstance().IsSupportMatrix() &&
         (DeviceMatrix::GetInstance().IsStatics(meta) || DeviceMatrix::GetInstance().IsDynamic(meta))) {
-        WaterVersionManager::GetInstance().GenerateWaterVersion(meta.bundleName, meta.storeId);
         DeviceMatrix::GetInstance().OnChanged(meta);
     }
 

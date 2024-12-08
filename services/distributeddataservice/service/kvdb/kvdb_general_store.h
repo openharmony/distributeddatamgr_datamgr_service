@@ -60,7 +60,7 @@ public:
         const std::string &table, const std::string &sql, Values &&args) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
-        const SyncParam &syncParm) override;
+        const SyncParam &syncParam) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
@@ -73,7 +73,6 @@ public:
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
     int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
-    std::vector<std::string> GetWaterVersion(const std::string &deviceId) override;
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account = "") override;
     void SetConfig(const StoreConfig &storeConfig) override;
     void SetExecutor(std::shared_ptr<Executor> executor) override;

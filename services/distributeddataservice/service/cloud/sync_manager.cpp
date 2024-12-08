@@ -31,6 +31,7 @@
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "screen/screen_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
@@ -179,7 +180,7 @@ std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
                 storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
             return;
         }
-        auto store = GetStore(meta, storeInfo.user);
+        auto [status, store] = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
             ZLOGE("failed to get store. bundleName: %{public}s, storeName: %{public}s, user: %{public}d.",
                 storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
@@ -392,11 +393,15 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         GenDetails details;
         auto &detail = details[SyncInfo::DEFAULT_ID];
         detail.progress = GenProgress::SYNC_FINISH;
-        auto [result, meta] = GetMetaData(storeInfo);
-        if (!result) {
+        auto result = GetMetaData(storeInfo);
+        if (!result.first) {
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId);
         }
-        auto store = GetStore(meta, storeInfo.user);
+        auto &meta = result.second;
+        auto [code, store] = GetStore(meta, storeInfo.user);
+        if (code == E_SCREEN_LOCKED) {
+            AddCompensateSync(meta);
+        }
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s, prepareTraceId:%{public}s", meta.GetStoreAlias().c_str(),
                 prepareTraceId.c_str());
@@ -554,21 +559,21 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
     return bindInfos;
 }
 
-AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, bool mustBind)
+std::pair<int32_t, AutoCache::Store> SyncManager::GetStore(const StoreMetaData &meta, int32_t user, bool mustBind)
 {
     if (user != 0 && !Account::GetInstance()->IsVerified(user)) {
         ZLOGW("user:%{public}d is locked!", user);
-        return nullptr;
+        return { E_USER_UNLOCK, nullptr };
     }
-    auto instance = CloudServer::GetInstance();
-    if (instance == nullptr) {
+    if (CloudServer::GetInstance() == nullptr) {
         ZLOGD("not support cloud sync");
-        return nullptr;
+        return { E_NOT_SUPPORT, nullptr };
     }
-    auto store = AutoCache::GetInstance().GetStore(meta, {});
-    if (store == nullptr) {
-        ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
-        return nullptr;
+    auto [status, store] = AutoCache::GetInstance().GetDBStore(meta, {});
+    if (status == E_SCREEN_LOCKED) {
+        return { E_SCREEN_LOCKED, nullptr };
+    } else if (store == nullptr) {
+        return { E_ERROR, nullptr };
     }
     CloudInfo info;
     info.user = user;
@@ -581,7 +586,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
     }
     if (info.user == SYSTEM_USER_ID) {
         ZLOGE("invalid cloud users, bundleName:%{public}s", meta.bundleName.c_str());
-        return nullptr;
+        return { E_ERROR, nullptr };
     }
     if (!store->IsBound(info.user)) {
         SchemaMeta schemaMeta;
@@ -589,12 +594,12 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
             ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
-            return nullptr;
+            return { E_ERROR, nullptr };
         }
         auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
         std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, dbMeta);
         if (mustBind && bindInfos.size() != users.size()) {
-            return nullptr;
+            return { E_ERROR, nullptr };
         }
         GeneralStore::CloudConfig config;
         if (MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true)) {
@@ -603,7 +608,7 @@ AutoCache::Store SyncManager::GetStore(const StoreMetaData &meta, int32_t user, 
         }
         store->Bind(dbMeta, bindInfos, config);
     }
-    return store;
+    return { E_OK, store };
 }
 
 void SyncManager::Report(const ReportParam &reportParam)
@@ -894,5 +899,44 @@ std::pair<bool, StoreMetaData> SyncManager::GetMetaData(const StoreInfo &storeIn
         }
     }
     return { true, meta };
+}
+
+void SyncManager::OnScreenUnlocked(int32_t user)
+{
+    std::vector<SyncInfo> infos;
+    compensateSyncInfos_.ComputeIfPresent(user,
+        [&infos](auto &userId, const std::map<std::string, std::set<std::string>> &apps) {
+            for (const auto &[bundle, storeIds] : apps) {
+                std::vector<std::string> stores(storeIds.begin(), storeIds.end());
+                infos.push_back(SyncInfo(userId, bundle, stores));
+            }
+            return false;
+        });
+    compensateSyncInfos_.ComputeIfPresent(SYSTEM_USER_ID,
+        [&infos](auto &userId, const std::map<std::string, std::set<std::string>> &apps) {
+            for (const auto &[bundle, storeIds] : apps) {
+                std::vector<std::string> stores(storeIds.begin(), storeIds.end());
+                infos.push_back(SyncInfo(userId, bundle, stores));
+            }
+            return false;
+        });
+    for (auto &info : infos) {
+        info.SetTriggerMode(MODE_UNLOCK);
+        DoCloudSync(info);
+    }
+}
+
+void SyncManager::CleanCompensateSync(int32_t userId)
+{
+    compensateSyncInfos_.Erase(userId);
+}
+
+void SyncManager::AddCompensateSync(const StoreMetaData &meta)
+{
+    compensateSyncInfos_.Compute(std::stoi(meta.user),
+        [&meta](auto &, std::map<std::string, std::set<std::string>> &apps) {
+            apps[meta.bundleName].insert(meta.storeId);
+            return true;
+        });
 }
 } // namespace OHOS::CloudData

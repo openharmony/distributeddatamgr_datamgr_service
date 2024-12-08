@@ -88,6 +88,7 @@ ohos_shared_library("data_share_service") {
     "sys_event_subscriber.cpp",
   ]
   cflags = [
+    "-Werror",
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
   ]

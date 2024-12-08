@@ -151,7 +151,7 @@ public:
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) = 0;
 
     virtual std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query,
-        DetailAsync async, const SyncParam &syncParm) = 0;
+        DetailAsync async, const SyncParam &syncParam) = 0;
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) = 0;
 
@@ -176,8 +176,6 @@ public:
     virtual int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) = 0;
 
     virtual int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) = 0;
-
-    virtual std::vector<std::string> GetWaterVersion(const std::string &deviceId) = 0;
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account = "") {};
 

@@ -38,7 +38,6 @@
 #include "types.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
-#include "water_version_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -600,24 +599,6 @@ int32_t KVDBGeneralStore::RegisterDetailProgressObserver(GeneralStore::DetailAsy
 int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
 {
     return GenErr::E_OK;
-}
-
-std::vector<std::string> KVDBGeneralStore::GetWaterVersion(const std::string &deviceId)
-{
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
-    if (delegate_ == nullptr) {
-        ZLOGE("store already closed! deviceId:%{public}s", Anonymous::Change(deviceId).c_str());
-        return {};
-    }
-    auto [status, versions] = delegate_->GetCloudVersion(deviceId);
-    if (status != DBStatus::OK || versions.empty()) {
-        return {};
-    }
-    std::vector<std::string> res;
-    for (auto &[_, version] : versions) {
-        res.push_back(std::move(version));
-    }
-    return res;
 }
 
 void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data)

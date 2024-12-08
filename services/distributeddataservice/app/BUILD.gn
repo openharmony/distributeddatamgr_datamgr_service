@@ -43,6 +43,7 @@ config("module_private_config") {
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/permission",
+    "${data_service_path}/adapter/include/screen",
     "${data_service_path}/adapter/include/installer",
     "${data_service_path}/adapter/include/broadcaster",
     "${data_service_path}/adapter/include/utils",
@@ -60,7 +61,6 @@ config("module_private_config") {
     "${data_service_path}/service/backup/include",
     "${data_service_path}/service/app_id_mapping/include",
     "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/waterversion",
     "${data_service_path}/service/dumper/include",
 
     # for ipc_core interfaces.
@@ -71,6 +71,7 @@ config("module_private_config") {
   ]
 
   cflags = [
+    "-Werror",
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
   ]
@@ -96,6 +97,7 @@ ohos_shared_library("distributeddataservice") {
     "src/kvstore_data_service_stub.cpp",
     "src/kvstore_device_listener.cpp",
     "src/kvstore_meta_manager.cpp",
+    "src/kvstore_screen_observer.cpp",
     "src/security/security.cpp",
     "src/security/sensitive.cpp",
     "src/session_manager/route_head_handler_impl.cpp",

@@ -35,7 +35,6 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/object",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb",
-    "${data_service_path}/service/waterversion",
     "${kv_store_common_path}",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
@@ -92,7 +91,6 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
-    "${data_service_path}/service/waterversion/water_version_manager.cpp",
     "rdbservicestub_fuzzer.cpp",
   ]
 

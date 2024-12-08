@@ -1016,7 +1016,7 @@ std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::P
             meta.GetStoreAlias().c_str());
         return { GeneralError::E_ERROR, nullptr };
     }
-    AutoCache::Store store = SyncManager::GetStore(meta, storeInfo.user, true);
+    auto [status, store] = SyncManager::GetStore(meta, storeInfo.user, true);
     if (store == nullptr) {
         ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
         return { GeneralError::E_ERROR, nullptr };
@@ -1044,6 +1044,7 @@ bool CloudServiceImpl::DoCloudSync(int32_t user)
 bool CloudServiceImpl::StopCloudSync(int32_t user)
 {
     syncManager_.StopCloudSync(user);
+    syncManager_.CleanCompensateSync(user);
     return true;
 }
 
@@ -1490,5 +1491,11 @@ int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Valu
     ZLOGI("Strategy[user:%{public}d,bundleName:%{public}s] to [%{public}d] from [%{public}d]",
           info.user, info.bundleName.c_str(), info.strategy, oldInfo.strategy);
     return MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true) ? SUCCESS : ERROR;
+}
+
+int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
+{
+    syncManager_.OnScreenUnlocked(user);
+    return E_OK;
 }
 } // namespace OHOS::CloudData

@@ -64,7 +64,10 @@ ohos_shared_library("udmf_server") {
 
   configs = [ ":module_public_config" ]
 
-  cflags = [ "-D_LIBCPP_HAS_COND_CLOCKWAIT" ]
+  cflags = [
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Werror",
+  ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",

@@ -884,6 +884,8 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_BUSY;
         case DBStatus::CLOUD_SYNC_TASK_MERGED:
             return GenErr::E_SYNC_TASK_MERGED;
+        case DBStatus::CLOUD_DISABLED:
+            return GeneralError::E_CLOUD_DISABLED;
         default:
             ZLOGI("status:0x%{public}x", status);
             break;
@@ -921,11 +923,6 @@ std::pair<int32_t, VBuckets> RdbGeneralStore::QuerySql(const std::string &sql, V
         return { GenErr::E_ERROR, {} };
     }
     return { GenErr::E_OK, ValueProxy::Convert(std::move(changedData)) };
-}
-
-std::vector<std::string> RdbGeneralStore::GetWaterVersion(const std::string &deviceId)
-{
-    return {};
 }
 
 void RdbGeneralStore::OnSyncStart(const StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, uint32_t traceId,

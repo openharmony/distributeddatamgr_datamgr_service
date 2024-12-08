@@ -21,10 +21,11 @@ namespace OHOS {
 namespace DistributedDataDfx {
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 RadarReporter::RadarReporter(const char *eventName, int32_t scene, const char *bundleName, const char *funcName)
-    : eventName_(eventName), funcName_(funcName)
 {
+    eventName_ = eventName != nullptr ? eventName : "";
+    funcName_ = funcName != nullptr ? funcName : "";
     radarParam_.scene_ = scene;
-    radarParam_.bundleName_ = bundleName;
+    radarParam_.bundleName_ = bundleName != nullptr ? bundleName : "";
     radarParam_.res_ = RES_IDLE;
     Report(radarParam_, funcName_, BEGIN, eventName_);
 }

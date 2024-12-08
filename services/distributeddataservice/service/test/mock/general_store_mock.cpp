@@ -141,11 +141,6 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::s
     return {GeneralError::E_OK, cursor_};
 }
 
-std::vector<std::string> GeneralStoreMock::GetWaterVersion(const std::string &deviceId)
-{
-    return std::vector<std::string>();
-}
-
 void GeneralStoreMock::MakeCursor(const std::map<std::string, Value> &entry)
 {
     auto resultSet = std::make_shared<CursorMock::ResultSet>(1, entry);

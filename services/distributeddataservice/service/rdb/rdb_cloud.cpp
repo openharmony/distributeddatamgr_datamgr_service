@@ -198,6 +198,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::LOCAL_ASSET_NOT_FOUND;
         case GeneralError::E_TIME_OUT:
             return DBStatus::TIME_OUT;
+        case GeneralError::E_CLOUD_DISABLED:
+            return DBStatus::CLOUD_DISABLED;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;
