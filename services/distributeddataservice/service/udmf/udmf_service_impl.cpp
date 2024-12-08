@@ -804,6 +804,8 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         return E_OK;
     }
     return E_OK;
+}
+
 bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t callerTokenId)
 {
     if (permission.empty()) {
