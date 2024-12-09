@@ -86,6 +86,10 @@ Status LifeCyclePolicy::GetTimeoutKeys(
     }
     auto curTime = PreProcessUtils::GetTimestamp();
     for (const auto &data : datas) {
+        if (data.GetRuntime() == nullptr) {
+            ZLOGD("Runtime data is null.");
+            return E_DB_ERROR;
+        }
         if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
             || curTime < data.GetRuntime()->createTime) {
             timeoutKeys.push_back(data.GetRuntime()->key.key);
