@@ -60,6 +60,8 @@ using DumpManager = OHOS::DistributedData::DumpManager;
 using CommContext = OHOS::DistributedData::CommunicatorContext;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
+static constexpr const char *PASTEBOARD_SERVICE = "pasteboard_service";
+static constexpr const char *PASTEBOARD_USER_ID = "100";
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
@@ -241,6 +243,9 @@ void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, Progres
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    if (appId.appId == PASTEBOARD_SERVICE) {
+        metaData.user = PASTEBOARD_USER_ID;
+    }
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
@@ -641,7 +646,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str());
-    StoreMetaData meta = GetStoreMetaData(appId, storeId);
+    StoreMetaData meta = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, meta);
 
     StoreMetaData old;
@@ -692,7 +697,7 @@ Status KVDBServiceImpl::AfterCreate(
         return INVALID_ARGUMENT;
     }
 
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, metaData);
 
     StoreMetaData oldMeta;
@@ -874,7 +879,7 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true);
 }
 
-StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreId &storeId)
+StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
     StoreMetaData metaData;
     metaData.uid = IPCSkeleton::GetCallingUid();
@@ -885,6 +890,9 @@ StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreI
     metaData.storeId = storeId.storeId;
     auto user = AccountDelegate::GetInstance()->GetUserByToken(metaData.tokenId);
     metaData.user = std::to_string(user);
+    if ((metaData.user == StoreMetaData::ROOT_USER) && (std::to_string(subUser) != StoreMetaData::ROOT_USER)) {
+        metaData.user = std::to_string(subUser);
+    }
     return metaData;
 }
 
@@ -1423,6 +1431,9 @@ bool KVDBServiceImpl::IsOHOSType(const std::vector<std::string> &ids)
 Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    if (appId.appId == PASTEBOARD_SERVICE) {
+        metaData.user = PASTEBOARD_USER_ID;
+    }
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     auto watcher = GetWatchers(metaData.tokenId, metaData.storeId);
     auto store = AutoCache::GetInstance().GetStore(metaData, watcher);
