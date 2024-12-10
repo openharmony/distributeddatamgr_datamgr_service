@@ -270,8 +270,11 @@ int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sq
     std::vector<DistributedDB::VBucket> changedData;
     auto status = delegate_->ExecuteSql({ sql, {}, false }, changedData);
     if (status != DBStatus::OK) {
-        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
-              changedData.size());
+        ZLOGE("Execute failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status,
+              Anonymous::Change(sql).c_str(), changedData.size());
+        if (status == DBStatus::BUSY) {
+            return GeneralError::E_BUSY;
+        }
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -433,6 +436,9 @@ int32_t RdbGeneralStore::Replace(const std::string &table, VBucket &&value)
     if (status != DBStatus::OK) {
         ZLOGE("Replace failed! ret:%{public}d, table:%{public}s, sql:%{public}s, fields:%{public}s",
             status, Anonymous::Change(table).c_str(), Anonymous::Change(sql).c_str(), columnSql.c_str());
+        if (status == DBStatus::BUSY) {
+            return GeneralError::E_BUSY;
+        }
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -918,8 +924,11 @@ std::pair<int32_t, VBuckets> RdbGeneralStore::QuerySql(const std::string &sql, V
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
     auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), true }, changedData);
     if (status != DBStatus::OK) {
-        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sql).c_str(),
-            changedData.size());
+        ZLOGE("Query failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status,
+            Anonymous::Change(sql).c_str(), changedData.size());
+        if (status == DBStatus::BUSY) {
+            return { GenErr::E_BUSY, {} };
+        }
         return { GenErr::E_ERROR, {} };
     }
     return { GenErr::E_OK, ValueProxy::Convert(std::move(changedData)) };
