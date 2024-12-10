@@ -61,14 +61,6 @@ private:
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
 
-    using StaticActs = DistributedData::StaticActs;
-    class UdmfStatic : public StaticActs {
-    public:
-        ~UdmfStatic() override {};
-        int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
-        int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
-        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
-    };
     class Factory {
     public:
         Factory();
@@ -76,7 +68,6 @@ private:
 
     private:
         std::shared_ptr<UdmfServiceImpl> product_;
-        std::shared_ptr<UdmfStatic> staticActs_;
     };
     static Factory factory_;
     std::map<std::string, Privilege> privilegeCache_;
