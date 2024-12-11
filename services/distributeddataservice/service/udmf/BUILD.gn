@@ -58,7 +58,6 @@ ohos_shared_library("udmf_server") {
     "store/store_cache.cpp",
     "udmf_service_impl.cpp",
     "udmf_service_stub.cpp",
-    "utd/custom_utd_installer.cpp",
   ]
 
   configs = [ ":module_public_config" ]

@@ -32,7 +32,6 @@
 #include "reporter.h"
 #include "uri_permission_manager.h"
 #include "uri.h"
-#include "utd/custom_utd_installer.h"
 #include "udmf_conversion.h"
 #include "udmf_radar_reporter.h"
 
@@ -57,8 +56,6 @@ UdmfServiceImpl::Factory::Factory()
         }
         return product_;
     }, FeatureSystem::BIND_NOW);
-    staticActs_ = std::make_shared<UdmfStatic>();
-    FeatureSystem::GetInstance().RegisterStaticActs("udmf", staticActs_);
 }
 
 UdmfServiceImpl::Factory::~Factory()
@@ -692,44 +689,6 @@ int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
     LifeCycleManager::GetInstance().SetThreadPool(bindInfo.executors);
     UriPermissionManager::GetInstance().SetThreadPool(bindInfo.executors);
     return 0;
-}
-
-int32_t UdmfServiceImpl::UdmfStatic::OnAppInstall(const std::string &bundleName, int32_t user,
-    int32_t index)
-{
-    ZLOGD("Bundle: %{public}s installed.", bundleName.c_str());
-    auto status = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
-    if (status != E_OK) {
-        ZLOGE("Install Utd failed, bundleName: %{public}s, status: %{public}d", bundleName.c_str(), status);
-    }
-    return status;
-}
-
-int32_t UdmfServiceImpl::UdmfStatic::OnAppUpdate(const std::string &bundleName, int32_t user,
-    int32_t index)
-{
-    ZLOGD("Bundle: %{public}s Update.", bundleName.c_str());
-    auto status = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
-    if (status != E_OK) {
-        ZLOGE("Uninstall utd failed, bundleName: %{public}s, status: %{public}d.", bundleName.c_str(), status);
-        return status;
-    }
-    status = CustomUtdInstaller::GetInstance().InstallUtd(bundleName, user);
-    if (status != E_OK) {
-        ZLOGE("Install utd failed, bundleName: %{public}s, status: %{public}d.", bundleName.c_str(), status);
-    }
-    return status;
-}
-
-int32_t UdmfServiceImpl::UdmfStatic::OnAppUninstall(const std::string &bundleName, int32_t user,
-    int32_t index)
-{
-    ZLOGD("Bundle: %{public}s uninstalled.", bundleName.c_str());
-    auto status = CustomUtdInstaller::GetInstance().UninstallUtd(bundleName, user);
-    if (status != E_OK) {
-        ZLOGE("Uninstall utd failed, bundleName: %{public}s, status: %{public}d.", bundleName.c_str(), status);
-    }
-    return status;
 }
 } // namespace UDMF
 } // namespace OHOS
