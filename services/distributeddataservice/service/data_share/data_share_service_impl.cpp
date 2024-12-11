@@ -42,6 +42,7 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
+#include "common/uri_utils.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "matching_skills.h"
@@ -735,7 +736,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string 
     PublishedData::ClearAging();
     TemplateData::Delete(bundleName, user);
     NativeRdb::RdbHelper::ClearCache();
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     uint32_t tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(user, bundleName, index);
     DBDelegate::EraseStoreCache(tokenId);
     return E_OK;
@@ -754,7 +755,7 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUpdate(const std::string &bu
     int32_t index)
 {
     ZLOGI("%{public}s updated", bundleName.c_str());
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(user), "default", bundleName });
     std::vector<StoreMetaData> storeMetaData;
@@ -779,7 +780,7 @@ int32_t DataShareServiceImpl::OnAppUninstall(const std::string &bundleName, int3
 {
     ZLOGI("AppUninstall user=%{public}d, index=%{public}d, bundleName=%{public}s",
         user, index, bundleName.c_str());
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     return E_OK;
 }
 
@@ -787,7 +788,7 @@ int32_t DataShareServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t
 {
     ZLOGI("AppUpdate user=%{public}d, index=%{public}d, bundleName=%{public}s",
         user, index, bundleName.c_str());
-    BundleMgrProxy::GetInstance()->Delete(bundleName, user);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
     return E_OK;
 }
 
@@ -907,7 +908,12 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
         return E_OK;
     }
     std::string calledBundleName = uriInfo.bundleName;
-    uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(currentUserId, calledBundleName, 0);
+    int32_t appIndex = 0;
+    if (!URIUtils::GetAppIndexFromProxyURI(uri, appIndex)) {
+        return E_APPINDEX_INVALID;
+    }
+    uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
+        currentUserId, calledBundleName, appIndex);
     if (calledTokenId == 0) {
         calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(0, calledBundleName, 0);
     }
@@ -1052,7 +1058,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     }
     DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
         providerInfo.storeName, providerInfo.backup,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
+        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.appIndex, providerInfo.hasExtension};
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
@@ -1078,8 +1084,14 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
         return errCode;
     }
     DataShareDbConfig dbConfig;
-    auto [code, metaData] = dbConfig.GetMetaData(calledInfo.uri, calledInfo.bundleName,
-        calledInfo.storeName, calledInfo.singleton ? 0 : calledInfo.currentUserId, calledInfo.hasExtension);
+    DataShareDbConfig::DbConfig dbArg;
+    dbArg.uri = calledInfo.uri;
+    dbArg.bundleName = calledInfo.bundleName;
+    dbArg.storeName = calledInfo.storeName;
+    dbArg.userId = calledInfo.singleton ? 0 : calledInfo.currentUserId;
+    dbArg.hasExtension = calledInfo.hasExtension;
+    dbArg.appIndex = calledInfo.appIndex;
+    auto [code, metaData] = dbConfig.GetMetaData(dbArg);
     if (code != E_OK) {
         ZLOGE("Get metaData fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
             calledInfo.bundleName.c_str(), calledInfo.tableName.c_str(), tokenId,

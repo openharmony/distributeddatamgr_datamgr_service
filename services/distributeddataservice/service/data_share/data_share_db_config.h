@@ -35,14 +35,14 @@ public:
         std::string storeName;
         std::string backup;
         int32_t userId;
+        int32_t appIndex;
         bool hasExtension;
     };
     std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(DbConfig &dbConfig);
-    std::pair<int, DistributedData::StoreMetaData> GetMetaData(const std::string &uri,
-        const std::string &bundleName, const std::string &storeName, int32_t userId, bool hasExtension);
+    std::pair<int, DistributedData::StoreMetaData> GetMetaData(const DbConfig &dbConfig);
 private:
     static std::pair<bool, DistributedData::StoreMetaData> QueryMetaData(const std::string &bundleName,
-        const std::string &storeName, int32_t userId);
+        const std::string &storeName, int32_t userId, int32_t appIndex);
 };
 } // namespace OHOS::DataShare
 #endif

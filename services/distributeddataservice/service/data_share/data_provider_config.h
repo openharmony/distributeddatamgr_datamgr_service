@@ -33,6 +33,7 @@ public:
     struct ProviderInfo {
         std::string uri;
         int32_t currentUserId = -1;
+        int32_t appIndex = 0;   // appIndex is in [1, 1000], and original app's index is 0
         std::string bundleName;
         std::string moduleName;
         std::string storeName;

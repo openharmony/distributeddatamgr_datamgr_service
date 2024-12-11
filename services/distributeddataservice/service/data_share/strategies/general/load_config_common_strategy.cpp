@@ -32,6 +32,9 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
         context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     }
     context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
+    if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
+        return false;
+    }
     // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
         GetInfoFromProxyURI(

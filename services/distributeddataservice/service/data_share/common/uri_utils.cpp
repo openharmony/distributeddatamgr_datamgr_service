@@ -62,6 +62,21 @@ bool URIUtils::GetBundleNameFromProxyURI(const std::string &uri, std::string &bu
     return true;
 }
 
+bool URIUtils::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex)
+{
+    auto queryParams = URIUtils::GetQueryParams(uri);
+    if (!queryParams[APP_INDEX].empty()) {
+        auto [success, data] = URIUtils::Strtoul(queryParams[APP_INDEX]);
+        if (!success) {
+            appIndex = -1;
+            ZLOGE("appIndex is invalid! appIndex: %{public}s", queryParams[APP_INDEX].c_str());
+            return false;
+        }
+        appIndex = static_cast<int32_t>(data);
+    }
+    return true;
+}
+
 void URIUtils::FormatUri(std::string &uri)
 {
     auto pos = uri.find_last_of('?');
