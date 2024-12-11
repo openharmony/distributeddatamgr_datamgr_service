@@ -243,9 +243,6 @@ void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, Progres
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    if (appId.appId == PASTEBOARD_SERVICE) {
-        metaData.user = PASTEBOARD_USER_ID;
-    }
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
@@ -646,7 +643,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str());
-    StoreMetaData meta = GetStoreMetaData(appId, storeId, options.subUser);
+    StoreMetaData meta = GetStoreMetaData(appId, storeId);
     AddOptions(options, meta);
 
     StoreMetaData old;
@@ -697,7 +694,7 @@ Status KVDBServiceImpl::AfterCreate(
         return INVALID_ARGUMENT;
     }
 
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     AddOptions(options, metaData);
 
     StoreMetaData oldMeta;
@@ -848,7 +845,14 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = options.hapName;
-    metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    if (metaData.appId == PASTEBOARD_SERVICE) {
+        auto userId = metaData.user;
+        metaData.user = PASTEBOARD_USER_ID;
+        metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+        metaData.user = userId;
+    } else {
+        metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    }
     metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isNeedCompress = options.isNeedCompress;
@@ -879,7 +883,7 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true);
 }
 
-StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser)
+StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreId &storeId)
 {
     StoreMetaData metaData;
     metaData.uid = IPCSkeleton::GetCallingUid();
@@ -890,9 +894,6 @@ StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreI
     metaData.storeId = storeId.storeId;
     auto user = AccountDelegate::GetInstance()->GetUserByToken(metaData.tokenId);
     metaData.user = std::to_string(user);
-    if ((metaData.user == StoreMetaData::ROOT_USER) && (std::to_string(subUser) != StoreMetaData::ROOT_USER)) {
-        metaData.user = std::to_string(subUser);
-    }
     return metaData;
 }
 
@@ -1431,9 +1432,6 @@ bool KVDBServiceImpl::IsOHOSType(const std::vector<std::string> &ids)
 Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
-    if (appId.appId == PASTEBOARD_SERVICE) {
-        metaData.user = PASTEBOARD_USER_ID;
-    }
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     auto watcher = GetWatchers(metaData.tokenId, metaData.storeId);
     auto store = AutoCache::GetInstance().GetStore(metaData, watcher);
