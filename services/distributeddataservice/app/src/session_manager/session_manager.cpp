@@ -97,7 +97,7 @@ bool SessionManager::GetSendAuthParams(const SessionPoint &from, const std::stri
             aclParams.accCaller.bundleName = storeMeta.bundleName;
             aclParams.accCaller.accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
             aclParams.accCaller.userId = from.userId;
-            aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(from.deviceId);
+            aclParams.accCaller.networkId = DmAdapter::GetInstance().GetLocalDeviceNetworkId();
 
             aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
             aclParams.authType = storeMeta.authType;
@@ -125,7 +125,7 @@ bool SessionManager::GetRecvAuthParams(const SessionPoint &from, const std::stri
             aclParams.accCaller.bundleName = storeMeta.bundleName;
             aclParams.accCaller.accountId = accountId;
             aclParams.accCaller.userId = from.userId;
-            aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(from.deviceId);
+            aclParams.accCaller.networkId = DmAdapter::GetInstance().GetLocalDeviceNetworkId();
 
             aclParams.accCallee.accountId = accountId;
             aclParams.accCallee.userId = peerUser;

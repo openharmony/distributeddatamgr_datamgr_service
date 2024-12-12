@@ -545,8 +545,6 @@ void DeviceManagerAdapter::InitDeviceInfo(bool onlyCache)
     deviceInfos_.Set(local.networkId, local);
     deviceInfos_.Set(local.uuid, local);
     deviceInfos_.Set(local.udid, local);
-    ZLOGI("local uuid:%{public}s, local networkId:%{public}s",
-        KvStoreUtils::ToBeAnonymous(local.uuid).c_str(), KvStoreUtils::ToBeAnonymous(local.networkId).c_str());
 }
 
 DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
@@ -779,18 +777,14 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
     return DeviceManager::GetInstance().CheckIsSameAccount(dmAccessCaller, dmAccessCallee);
 }
 
-void DeviceManagerAdapter::ClearLocalDevInfoCache()
+std::string DeviceManagerAdapter::GetLocalDeviceNetworkId()
 {
-    auto devInfo = GetLocalDevice();
-    DeviceInfo dvInfo;
-    if (deviceInfos_.Get(devInfo.uuid, dvInfo)) {
-        deviceInfos_.Delete(devInfo.uuid);
+    std::string networkId = ""
+    int32_t ret = DeviceManager::GetInstance().GetLocalDeviceNetWorkId(PKG_NAME, networkId);
+    if (ret != DM_OK) {
+        ZLOGE("GetLocalDeviceNetworkId failed, result:%{public}d", ret);
+        return "";
     }
-    if (deviceInfos_.Get(devInfo.udid, dvInfo)) {
-        deviceInfos_.Delete(devInfo.udid);
-    }
-    if (deviceInfos_.Get(devInfo.networkId, dvInfo)) {
-        deviceInfos_.Delete(devInfo.networkId);
-    }
+    return networkId;
 }
 } // namespace OHOS::DistributedData
