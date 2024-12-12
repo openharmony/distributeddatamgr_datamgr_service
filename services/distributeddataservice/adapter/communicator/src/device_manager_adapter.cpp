@@ -259,7 +259,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
-    ClearLocalDevInfoCache();
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
             continue;
