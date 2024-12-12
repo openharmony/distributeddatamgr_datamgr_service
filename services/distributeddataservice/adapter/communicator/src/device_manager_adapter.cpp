@@ -259,6 +259,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
+    ClearLocalDevInfoCache();
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
             continue;
@@ -544,6 +545,8 @@ void DeviceManagerAdapter::InitDeviceInfo(bool onlyCache)
     deviceInfos_.Set(local.networkId, local);
     deviceInfos_.Set(local.uuid, local);
     deviceInfos_.Set(local.udid, local);
+    ZLOGI("local uuid:%{public}s, local networkId:%{public}s",
+        KvStoreUtils::ToBeAnonymous(local.uuid).c_str(), KvStoreUtils::ToBeAnonymous(local.networkId).c_str());
 }
 
 DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
@@ -774,5 +777,20 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
     DmAccessCallee dmAccessCallee = { .accountId = accCallee.accountId, .networkId = accCallee.networkId,
         .userId = accCallee.userId };
     return DeviceManager::GetInstance().CheckIsSameAccount(dmAccessCaller, dmAccessCallee);
+}
+
+void DeviceManagerAdapter::ClearLocalDevInfoCache()
+{
+    auto devInfo = GetLocalDevice();
+    DeviceInfo dvInfo;
+    if (deviceInfos_.Get(devInfo.uuid, dvInfo)) {
+        deviceInfos_.Delete(devInfo.uuid);
+    }
+    if (deviceInfos_.Get(devInfo.udid, dvInfo)) {
+        deviceInfos_.Delete(devInfo.udid);
+    }
+    if (deviceInfos_.Get(devInfo.networkId, dvInfo)) {
+        deviceInfos_.Delete(devInfo.networkId);
+    }
 }
 } // namespace OHOS::DistributedData
