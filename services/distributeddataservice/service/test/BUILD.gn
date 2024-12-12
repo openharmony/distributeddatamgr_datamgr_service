@@ -39,7 +39,7 @@ config("module_private_config") {
     "${data_service_path}/service/data_share",
     "${data_service_path}/service/matrix/include/",
     "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/object/",
+    "${data_service_path}/service/object/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb/",
     "${data_service_path}/service/test/mock",
@@ -71,6 +71,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
     "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/common/common_types_utils.cpp",
@@ -94,7 +95,6 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_general_store.cpp",
     "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
@@ -154,6 +154,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
     "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/common/common_types_utils.cpp",
@@ -177,7 +178,6 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_general_store.cpp",
     "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
@@ -410,6 +410,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   include_dirs = [
     "${data_service_path}/service/common",
     "${data_service_path}/service/rdb",
+    "${data_service_path}/service/kvdb",
     "${relational_store_path}/interfaces/innerapi/clouddata/include",
     "${relational_store_path}/interfaces/inner_api/rdb/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
@@ -436,7 +437,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
     "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -476,7 +477,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "${data_service_path}/service/data_share",
     "${data_service_path}/service/matrix/include/",
     "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/object/",
+    "${data_service_path}/service/object/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
   ]
@@ -563,7 +564,6 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_general_store.cpp",
     "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
@@ -850,7 +850,7 @@ ohos_unittest("MetaDataTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -1072,7 +1072,7 @@ ohos_unittest("KvdbServiceImplTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
   ]

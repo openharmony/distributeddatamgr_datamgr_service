@@ -40,7 +40,12 @@
         "syscap": [],
         "features": [
             "datamgr_service_config",
-            "datamgr_service_udmf"
+            "datamgr_service_udmf",
+            "datamgr_service_cloud",
+            "datamgr_service_rdb",
+            "datamgr_service_kvdb",
+            "datamgr_service_object",
+            "datamgr_service_data_share"
         ],
         "adapted_system_type": [
             "standard"
@@ -87,7 +92,8 @@
                 "file_api",
                 "openssl",
                 "json",
-                "dmsfwk"
+                "dmsfwk",
+                "data_object"
             ],
             "third_party": [
                 "libuv",
