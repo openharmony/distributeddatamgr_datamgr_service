@@ -259,6 +259,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
+    ResetLocalDeviceNetworkId();
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
             continue;
@@ -776,14 +777,11 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
     return DeviceManager::GetInstance().CheckIsSameAccount(dmAccessCaller, dmAccessCallee);
 }
 
-std::string DeviceManagerAdapter::GetLocalDeviceNetworkId()
+void DeviceManagerAdapter::ResetLocalDeviceNetworkId()
 {
-    std::string networkId = ""
-    int32_t ret = DeviceManager::GetInstance().GetLocalDeviceNetWorkId(PKG_NAME, networkId);
-    if (ret != DM_OK) {
-        ZLOGE("GetLocalDeviceNetworkId failed, result:%{public}d", ret);
-        return "";
-    }
-    return networkId;
+    auto local = GetLocalDeviceInfo();
+    deviceInfos_.Set(local.networkId, local);
+    deviceInfos_.Set(local.uuid, local);
+    deviceInfos_.Set(local.udid, local);
 }
 } // namespace OHOS::DistributedData

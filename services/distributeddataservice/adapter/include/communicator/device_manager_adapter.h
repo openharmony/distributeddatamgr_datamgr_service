@@ -82,7 +82,6 @@ public:
     bool IsSameAccount(const std::string &id);
     bool IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
-    std::string GetLocalDeviceNetworkId();
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 
@@ -103,6 +102,7 @@ private:
     void OnChanged(const DmDeviceInfo &info);
     void OnReady(const DmDeviceInfo &info);
     std::vector<const AppDeviceChangeListener *> GetObservers();
+    void ResetLocalDeviceNetworkId();
     static inline uint64_t GetTimeStamp()
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
