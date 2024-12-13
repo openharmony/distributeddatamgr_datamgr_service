@@ -102,6 +102,7 @@ private:
     void OnChanged(const DmDeviceInfo &info);
     void OnReady(const DmDeviceInfo &info);
     std::vector<const AppDeviceChangeListener *> GetObservers();
+    void ResetLocalDeviceInfo();
     static inline uint64_t GetTimeStamp()
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
