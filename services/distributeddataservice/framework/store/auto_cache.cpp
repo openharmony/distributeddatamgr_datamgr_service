@@ -61,7 +61,7 @@ AutoCache::~AutoCache()
 std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    if (meta.area >= GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
+    if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
         ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s", meta.user.c_str(),
             meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return { E_SCREEN_LOCKED, store };
@@ -164,7 +164,7 @@ void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId)
             auto it = delegates.begin();
             while (it != delegates.end()) {
                 if ((storeId == it->first || storeId.empty()) &&
-                    (!isScreenLocked || it->second.GetArea() < GeneralStore::EL4) &&
+                    (!isScreenLocked || it->second.GetArea() != GeneralStore::EL4) &&
                     disableStores_.count(it->second.GetDataDir()) == 0) {
                     disableStores_.insert(it->second.GetDataDir());
                     storeIds.insert(it->first);
@@ -243,7 +243,7 @@ void AutoCache::GarbageCollect(bool isForce)
     stores_.EraseIf([&current, isForce, isScreenLocked](auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the store is BUSY we wait more INTERVAL minutes again
-            if ((!isScreenLocked || it->second.GetArea() < GeneralStore::EL4) && (isForce || it->second < current) &&
+            if ((!isScreenLocked || it->second.GetArea() != GeneralStore::EL4) && (isForce || it->second < current) &&
                 it->second.Close()) {
                 it = delegates.erase(it);
             } else {
