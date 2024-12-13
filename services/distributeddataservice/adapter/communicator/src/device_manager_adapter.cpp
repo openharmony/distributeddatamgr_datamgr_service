@@ -260,6 +260,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
     ResetLocalDeviceNetworkId();
+
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
             continue;
