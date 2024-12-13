@@ -398,7 +398,7 @@ DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(cons
     metaData.tokenId = context->calledTokenId;
     metaData.dataDir = context->calledSourceDir;
     metaData.storeId = context->calledStoreName;
-    metaData.version = context->version;
+    metaData.haMode = context->haMode;
     return metaData;
 }
 
