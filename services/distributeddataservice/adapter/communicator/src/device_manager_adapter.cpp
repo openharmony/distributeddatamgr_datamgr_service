@@ -259,7 +259,7 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
-    ResetLocalDeviceNetworkId();
+    ResetLocalDeviceInfo();
 
     for (const auto &item : observers) { // notify db
         if (item == nullptr) {
@@ -778,7 +778,7 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
     return DeviceManager::GetInstance().CheckIsSameAccount(dmAccessCaller, dmAccessCallee);
 }
 
-void DeviceManagerAdapter::ResetLocalDeviceNetworkId()
+void DeviceManagerAdapter::ResetLocalDeviceInfo()
 {
     auto local = GetLocalDeviceInfo();
     deviceInfos_.Set(local.networkId, local);
