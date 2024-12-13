@@ -781,8 +781,12 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
 void DeviceManagerAdapter::ResetLocalDeviceInfo()
 {
     auto local = GetLocalDeviceInfo();
-    deviceInfos_.Set(local.networkId, local);
+    DeviceInfo dvInfo;
+    if (deviceInfos_.Get(local.udid, dvInfo)) {
+        deviceInfos_.Delete(dvInfo.networkId);
+    }
     deviceInfos_.Set(local.uuid, local);
     deviceInfos_.Set(local.udid, local);
+    deviceInfos_.Set(local.networkId, local);
 }
 } // namespace OHOS::DistributedData
