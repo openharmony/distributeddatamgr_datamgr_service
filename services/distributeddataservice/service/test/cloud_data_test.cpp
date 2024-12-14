@@ -90,6 +90,7 @@ static constexpr const char *PERMISSION_CLOUDDATA_CONFIG = "ohos.permission.CLOU
 static constexpr const char *PERMISSION_GET_NETWORK_INFO = "ohos.permission.GET_NETWORK_INFO";
 static constexpr const char *PERMISSION_DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
 static constexpr const char *PERMISSION_ACCESS_SERVICE_DM = "ohos.permission.ACCESS_SERVICE_DM";
+static constexpr const char *PERMISSION_MANAGE_LOCAL_ACCOUNTS = "ohos.permission.MANAGE_LOCAL_ACCOUNTS";
 PermissionDef GetPermissionDef(const std::string &permission)
 {
     PermissionDef def = { .permissionName = permission,
@@ -252,11 +253,13 @@ void CloudDataTest::SetUpTestCase(void)
     HapPolicyParams policy = { .apl = APL_SYSTEM_BASIC,
         .domain = "test.domain",
         .permList = { GetPermissionDef(PERMISSION_CLOUDDATA_CONFIG), GetPermissionDef(PERMISSION_GET_NETWORK_INFO),
-            GetPermissionDef(PERMISSION_DISTRIBUTED_DATASYNC), GetPermissionDef(PERMISSION_ACCESS_SERVICE_DM) },
+            GetPermissionDef(PERMISSION_DISTRIBUTED_DATASYNC), GetPermissionDef(PERMISSION_ACCESS_SERVICE_DM),
+            GetPermissionDef(PERMISSION_MANAGE_LOCAL_ACCOUNTS) },
         .permStateList = { GetPermissionStateFull(PERMISSION_CLOUDDATA_CONFIG),
             GetPermissionStateFull(PERMISSION_GET_NETWORK_INFO),
             GetPermissionStateFull(PERMISSION_DISTRIBUTED_DATASYNC),
-            GetPermissionStateFull(PERMISSION_ACCESS_SERVICE_DM) } };
+            GetPermissionStateFull(PERMISSION_ACCESS_SERVICE_DM),
+            GetPermissionStateFull(PERMISSION_MANAGE_LOCAL_ACCOUNTS)} };
     g_selfTokenID = GetSelfTokenID();
     AllocHapToken(policy);
     size_t max = 12;
@@ -2053,7 +2056,7 @@ HWTEST_F(CloudDataTest, GetMinExpireTime, TestSize.Level0)
     sub.expiresTime.insert_or_assign("test_cloud_bundleName1", expire);
     EXPECT_EQ(sub.GetMinExpireTime(), expire);
 }
- 
+
  /**
 * @tc.name: GetTableNames
 * @tc.desc: Test GetTableNames.
