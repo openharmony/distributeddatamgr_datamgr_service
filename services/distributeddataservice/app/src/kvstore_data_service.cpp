@@ -140,9 +140,16 @@ void KvStoreDataService::Initialize()
         meta.bundleName = appIdMeta.bundleName;
         meta.storeId = info.storeId;
         meta.user = info.userId;
-        meta.deviceId = oriDevId;
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta);
-        return Upgrade::GetInstance().GetEncryptedUuidByMeta(meta);
+        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+        std::string uuid;
+        if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
+            OHOS::Security::AccessToken::TOKEN_HAP) {
+            uuid = DmAdapter::GetInstance().CalcClientUuid(meta.appId, oriDevId);
+        } else {
+            uuid = DmAdapter::GetInstance().CalcClientUuid(" ", oriDevId);
+        }
+        return uuid;
     };
     DBConfig::SetTranslateToDeviceIdCallback(translateCall);
 }
