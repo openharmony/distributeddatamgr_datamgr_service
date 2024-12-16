@@ -69,8 +69,8 @@ void PublishedDataSubscriberManager::Delete(uint32_t callerTokenId, uint32_t cal
     publishedDataCache_.EraseIf([&callerTokenId, &callerPid](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end();) {
             if (it->callerTokenId == callerTokenId && it->callerPid == callerPid) {
-                ZLOGI("erase start, uri is %{public}s, tokenId is 0x%{public}x",
-                    DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
+                ZLOGI("erase start, uri is %{public}s, tokenId is 0x%{public}x, pid is %{public}d",
+                    DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId, callerPid);
                 it = value.erase(it);
             } else {
                 it++;
