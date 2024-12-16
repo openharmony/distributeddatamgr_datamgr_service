@@ -25,7 +25,6 @@
 #include "checker_manager.h"
 #include "dfx_types.h"
 #include "distributed_kv_data_manager.h"
-#include "file.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
 #include "preprocess_utils.h"
@@ -156,7 +155,6 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_DB_ERROR;
     }
 
-    UdmfConversion::InitValueObject(unifiedData);
     if (store->Put(unifiedData) != E_OK) {
         ZLOGE("Put unified data failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
@@ -317,38 +315,43 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::v
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
     std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
     auto records = unifiedData.GetRecords();
-    for (auto record : records) {
-        if (record == nullptr || !PreProcessUtils::IsFileType(record->GetType())) {
-            continue;
+    bool hasError = false;
+    PreProcessUtils::ProcessFileType(records, [&] (std::shared_ptr<Object> obj) {
+        if (hasError) {
+            return false;
         }
-        auto file = static_cast<File *>(record.get());
-        if (file->GetUri().empty()) {
+        std::string oriUri;
+        obj->GetValue(ORI_URI, oriUri);
+        if (oriUri.empty()) {
             ZLOGW("Get uri is empty.");
-            continue;
+            return false;
         }
-        Uri uri(file->GetUri());
+        Uri uri(oriUri);
         std::string scheme = uri.GetScheme();
         std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        std::string remoteUri = file->GetRemoteUri();
         if (localDeviceId != sourceDeviceId) {
+            std::string remoteUri;
+            obj->GetValue(REMOTE_URI, remoteUri);
             if (remoteUri.empty() && scheme == FILE_SCHEME) {
                 ZLOGE("when cross devices, remote uri is required!");
-                return E_ERROR;
+                hasError = true;
+                return false;
             }
             if (!remoteUri.empty()) {
-                file->SetUri(remoteUri); // cross dev, need dis path.
+                obj->value_.insert_or_assign(ORI_URI, remoteUri); // cross dev, need dis path.
+                uri = Uri(remoteUri);
+                scheme = uri.GetScheme();
+                std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
             }
         }
-        Uri newUri(file->GetUri());
-        scheme = newUri.GetScheme();
-        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (newUri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
             ZLOGW("Get authority is empty or uri scheme not equals to file.");
-            continue;
+            return false;
         }
-        uris.push_back(newUri);
-    }
-    return E_OK;
+        uris.push_back(uri);
+        return true;
+    });
+    return hasError ? E_ERROR : E_OK;
 }
 
 int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)
@@ -413,7 +416,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     for (auto &record : unifiedData.GetRecords()) {
         record->SetUid(PreProcessUtils::GenerateId());
     }
-    UdmfConversion::InitValueObject(unifiedData);
     if (store->Update(unifiedData) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -527,7 +529,6 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         return E_DB_ERROR;
     }
     data.GetRuntime()->privileges.emplace_back(privilege);
-    UdmfConversion::InitValueObject(data);
     if (store->Update(data) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;

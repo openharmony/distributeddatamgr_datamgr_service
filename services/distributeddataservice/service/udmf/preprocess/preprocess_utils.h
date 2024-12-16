@@ -35,13 +35,15 @@ public:
     static bool GetNativeProcessNameByToken(int tokenId, std::string &processName);
     static std::string GetLocalDeviceId();
     static void SetRemoteData(UnifiedData &data);
-    static bool IsFileType(UDType udType);
     static int32_t SetRemoteUri(uint32_t tokenId, UnifiedData &data);
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);
     static bool IsNetworkingEnabled();
+    static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+        std::function<bool(std::shared_ptr<Object>)> callback);
 private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);
     static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);
+    static bool IsFileType(std::shared_ptr<UnifiedRecord> record);
 };
 } // namespace UDMF
 } // namespace OHOS

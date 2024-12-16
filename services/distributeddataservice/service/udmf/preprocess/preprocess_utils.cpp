@@ -23,7 +23,6 @@
 #include "bundlemgr/bundle_mgr_client_impl.h"
 #include "device_manager_adapter.h"
 #include "error_code.h"
-#include "file.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "udmf_radar_reporter.h"
@@ -153,44 +152,54 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
     }
     ZLOGD("is remote data.");
     auto records = data.GetRecords();
-    for (auto record : records) {
-        auto type = record->GetType();
-        if (IsFileType(type)) {
-            auto file = static_cast<File *>(record.get());
-            UDDetails details = file->GetDetails();
-            details.insert({ "isRemote", "true" });
-            file->SetDetails(details);
+    ProcessFileType(records, [] (std::shared_ptr<Object> obj) {
+        std::shared_ptr<Object> detailObj;
+        obj->GetValue(DETAILS, detailObj);
+        if (detailObj == nullptr) {
+            ZLOGE("Not contain details for object!");
+            return false;
         }
-    }
+        UDDetails details = ObjectUtils::ConvertToUDDetails(detailObj);
+        details.insert({ "isRemote", "true" });
+        obj->value_[DETAILS] = ObjectUtils::ConvertToObject(details);
+        return true;
+    });
 }
 
-bool PreProcessUtils::IsFileType(UDType udType)
+bool PreProcessUtils::IsFileType(std::shared_ptr<UnifiedRecord> record)
 {
-    return (udType == UDType::FILE || udType == UDType::IMAGE || udType == UDType::VIDEO || udType == UDType::AUDIO
-        || udType == UDType::FOLDER);
+    if (record == nullptr) {
+        return false;
+    }
+    if (!std::holds_alternative<std::shared_ptr<Object>>(record->GetOriginValue())) {
+        return false;
+    }
+    auto obj = std::get<std::shared_ptr<Object>>(record->GetOriginValue());
+    return obj->value_.find(ORI_URI) != obj->value_.end();
 }
 
 int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
 {
     std::vector<std::string> uris;
-    for (const auto &record : data.GetRecords()) {
-        if (record != nullptr && IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
-            if (file->GetUri().empty()) {
-                ZLOGW("Get uri empty, plase check the uri.");
-                continue;
-            }
-            Uri uri(file->GetUri());
-            std::string scheme = uri.GetScheme();
-            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-                ZLOGW("Get uri authority empty or uri scheme not equals to file.");
-                continue;
-            }
-            uris.push_back(file->GetUri());
+    ProcessFileType(data.GetRecords(), [&uris](std::shared_ptr<Object> obj) {
+        std::string oriUri;
+        obj->GetValue(ORI_URI, oriUri);
+        if (oriUri.empty()) {
+            ZLOGW("Get uri empty, plase check the uri.");
+            return false;
         }
-    }
+        Uri uri(oriUri);
+        std::string scheme = uri.GetScheme();
+        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+            ZLOGW("Get uri authority empty or uri scheme not equals to file.");
+            return false;
+        }
+        uris.push_back(oriUri);
+        return true;
+    });
     if (!uris.empty()) {
+        ZLOGI("Read to check uri authorization");
         if (!CheckUriAuthorization(uris, tokenId)) {
             ZLOGE("CheckUriAuthorization failed, bundleName:%{public}s, tokenId: %{public}d, uris size:%{public}zu.",
                   data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
@@ -218,15 +227,15 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
               ret, userId, uris.size());
         return E_FS_ERROR;
     }
-    for (const auto &record : data.GetRecords()) {
-        if (record != nullptr && IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
-            auto iter = dfsUris.find(file->GetUri());
-            if (iter != dfsUris.end()) {
-                file->SetRemoteUri((iter->second).uriStr);
-            }
+    ProcessFileType(data.GetRecords(), [&dfsUris] (std::shared_ptr<Object> obj) {
+        std::string oriUri;
+        obj->GetValue(ORI_URI, oriUri);
+        auto iter = dfsUris.find(oriUri);
+        if (iter != dfsUris.end()) {
+            obj->value_[REMOTE_URI] = (iter->second).uriStr;
         }
-    }
+        return true;
+    });
     return E_OK;
 }
 
@@ -270,6 +279,27 @@ bool PreProcessUtils::IsNetworkingEnabled()
         return false;
     }
     return true;
+}
+
+void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+    std::function<bool(std::shared_ptr<Object>)> callback)
+{
+    for (auto record : records) {
+        if (record == nullptr) {
+            continue;
+        }
+        if (!PreProcessUtils::IsFileType(record)) {
+            continue;
+        }
+        auto obj = std::get<std::shared_ptr<Object>>(record->GetOriginValue());
+        if (obj == nullptr) {
+            ZLOGE("ValueType is not Object, Not convert to remote uri!");
+            continue;
+        }
+        if (!callback(obj)) {
+            continue;
+        }
+    }
 }
 } // namespace UDMF
 } // namespace OHOS
