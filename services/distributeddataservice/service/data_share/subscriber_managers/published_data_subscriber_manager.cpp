@@ -39,7 +39,7 @@ int PublishedDataSubscriberManager::Add(
         key, [&observer, &firstCallerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{public}s tokenId 0x%{public}x",
                 DistributedData::Anonymous::Change(key.key).c_str(), firstCallerTokenId);
-            value.emplace_back(observer, firstCallerTokenId, IPCSkeleton::GetCallingTokenID());
+            value.emplace_back(observer, firstCallerTokenId, IPCSkeleton::GetCallingTokenID(), IPCSkeleton::GetCallingPid());
             return true;
         });
     return E_OK;
@@ -64,11 +64,11 @@ int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, uint32_t
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-void PublishedDataSubscriberManager::Delete(uint32_t callerTokenId)
+void PublishedDataSubscriberManager::Delete(uint32_t callerTokenId, uint32_t callerPid)
 {
-    publishedDataCache_.EraseIf([&callerTokenId](const auto &key, std::vector<ObserverNode> &value) {
+    publishedDataCache_.EraseIf([&callerTokenId, &callerPid](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end();) {
-            if (it->callerTokenId == callerTokenId) {
+            if (it->callerTokenId == callerTokenId && it->callerPid == callerPid) {
                 ZLOGI("erase start, uri is %{public}s, tokenId is 0x%{public}x",
                     DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId);
                 it = value.erase(it);
@@ -266,8 +266,8 @@ bool PublishedDataKey::operator!=(const PublishedDataKey &rhs) const
 }
 
 PublishedDataSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer,
-    uint32_t firstCallerTokenId, uint32_t callerTokenId)
-    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId)
+    uint32_t firstCallerTokenId, uint32_t callerTokenId, uint32_t callerPid)
+    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId), callerPid(callerPid)
 {
 }
 } // namespace OHOS::DataShare
