@@ -1038,8 +1038,14 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
 
 bool CloudServiceImpl::DoCloudSync(int32_t user)
 {
-    SyncManager::SyncInfo info(user);
-    syncManager_.DoCloudSync(info);
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        return false;
+    }
+    for (const auto &appInfo : cloudInfo.apps) {
+        SyncManager::SyncInfo info(user, appInfo.first);
+        syncManager_.DoCloudSync(info);
+    }
     return true;
 }
 
