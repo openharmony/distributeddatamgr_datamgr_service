@@ -175,8 +175,8 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId, uint32_t callerPid)
             }
         }
         if (value.empty()) {
-            ZLOGI("delete timer, subId %{public}" PRId64 ", bundleName %{public}s, tokenId %{public}x, pid %{public}d, uri %{public}s.",
-                key.subscriberId, key.bundleName.c_str(), callerTokenId, callerPid,
+            ZLOGI("delete timer, subId %{public}" PRId64 ", bundleName %{public}s, tokenId %{public}x, uri %{public}s.",
+                key.subscriberId, key.bundleName.c_str(), callerTokenId,
                 DistributedData::Anonymous::Change(key.uri).c_str());
             SchedulerManager::GetInstance().RemoveTimer(key);
         }

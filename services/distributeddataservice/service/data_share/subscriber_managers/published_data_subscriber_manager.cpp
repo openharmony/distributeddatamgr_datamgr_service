@@ -39,7 +39,8 @@ int PublishedDataSubscriberManager::Add(
         key, [&observer, &firstCallerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{public}s tokenId 0x%{public}x",
                 DistributedData::Anonymous::Change(key.key).c_str(), firstCallerTokenId);
-            value.emplace_back(observer, firstCallerTokenId, IPCSkeleton::GetCallingTokenID(), IPCSkeleton::GetCallingPid());
+            value.emplace_back(observer, firstCallerTokenId,IPCSkeleton::GetCallingTokenID(),
+                IPCSkeleton::GetCallingPid());
             return true;
         });
     return E_OK;
