@@ -28,25 +28,15 @@ namespace OHOS {
 namespace UDMF {
 class UriPermissionManager {
 public:
-    using Time = std::chrono::steady_clock::time_point;
     static UriPermissionManager &GetInstance();
     Status GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId,
         const std::string &queryKey, uint32_t &completeCount);
-    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 
 private:
     UriPermissionManager() {}
     ~UriPermissionManager() {}
     UriPermissionManager(const UriPermissionManager &mgr) = delete;
     UriPermissionManager &operator=(const UriPermissionManager &mgr) = delete;
-
-    void RevokeUriPermission();
-
-    ConcurrentMap<std::pair<std::string, uint32_t>, Time> uriTimeout_;
-    static constexpr int64_t INTERVAL = 60;  // 60 min
-    ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
-    std::mutex taskMutex_;
-    std::shared_ptr<ExecutorPool> executorPool_;
 };
 } // namespace UDMF
 } // namespace OHOS
