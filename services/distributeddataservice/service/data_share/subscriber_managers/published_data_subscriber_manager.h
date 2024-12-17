@@ -44,7 +44,7 @@ public:
     int Add(const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer,
         uint32_t firstCallerTokenId);
     int Delete(const PublishedDataKey &key, uint32_t firstCallerTokenId);
-    void Delete(uint32_t callerTokenId);
+    void Delete(uint32_t callerTokenId, uint32_t callerPid);
     int Disable(const PublishedDataKey &key, uint32_t firstCallerTokenId);
     int Enable(const PublishedDataKey &key, uint32_t firstCallerTokenId);
     void Emit(const std::vector<PublishedDataKey> &keys, int32_t userId, const std::string &ownerBundleName,
@@ -58,10 +58,11 @@ public:
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t firstCallerTokenId,
-            uint32_t callerTokenId = 0);
+            uint32_t callerTokenId = 0, uint32_t callerPid = 0);
         sptr<IDataProxyPublishedDataObserver> observer;
         uint32_t firstCallerTokenId;
         uint32_t callerTokenId;
+        uint32_t callerPid;
         bool enabled = true;
         bool isNotifyOnEnabled = false;
     };

@@ -58,7 +58,7 @@ public:
     int Add(const Key &key, const sptr<IDataProxyRdbObserver> observer, std::shared_ptr<Context> context,
         std::shared_ptr<ExecutorPool> executorPool);
     int Delete(const Key &key, uint32_t firstCallerTokenId);
-    void Delete(uint32_t callerTokenId);
+    void Delete(uint32_t callerTokenId, uint32_t callerPid);
     int Disable(const Key &key, uint32_t firstCallerTokenId);
     int Enable(const Key &key, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, int64_t subscriberId, const std::string &bundleName,
@@ -73,10 +73,11 @@ public:
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyRdbObserver> &observer, uint32_t firstCallerTokenId,
-            uint32_t callerTokenId = 0);
+            uint32_t callerTokenId = 0, uint32_t callerPid = 0);
         sptr<IDataProxyRdbObserver> observer;
         uint32_t firstCallerTokenId;
         uint32_t callerTokenId;
+        uint32_t callerPid;
         bool enabled = true;
         bool isNotifyOnEnabled = false;
     };

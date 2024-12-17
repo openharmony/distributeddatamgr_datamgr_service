@@ -118,9 +118,10 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
         ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
         auto callerTokenId = IPCSkeleton::GetCallingTokenID();
-        value.emplace_back(observer, context->callerTokenId, callerTokenId);
+        auto callerPid = IPCSkeleton::GetCallingPid();
+        value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
         std::vector<ObserverNode> node;
-        node.emplace_back(observer, context->callerTokenId, callerTokenId);
+        node.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
         ExecutorPool::Task task = [key, node, context, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
@@ -164,11 +165,11 @@ int RdbSubscriberManager::Delete(const Key &key, uint32_t firstCallerTokenId)
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
-void RdbSubscriberManager::Delete(uint32_t callerTokenId)
+void RdbSubscriberManager::Delete(uint32_t callerTokenId, uint32_t callerPid)
 {
-    rdbCache_.EraseIf([&callerTokenId, this](const auto &key, std::vector<ObserverNode> &value) {
+    rdbCache_.EraseIf([&callerTokenId, &callerPid, this](const auto &key, std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end();) {
-            if (it->callerTokenId == callerTokenId) {
+            if (it->callerTokenId == callerTokenId && it->callerPid == callerPid) {
                 it = value.erase(it);
             } else {
                 it++;
@@ -404,8 +405,8 @@ DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(cons
 }
 
 RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer,
-    uint32_t firstCallerTokenId, uint32_t callerTokenId)
-    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId)
+    uint32_t firstCallerTokenId, uint32_t callerTokenId, uint32_t callerPid)
+    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId), callerPid(callerPid)
 {
 }
 } // namespace OHOS::DataShare
