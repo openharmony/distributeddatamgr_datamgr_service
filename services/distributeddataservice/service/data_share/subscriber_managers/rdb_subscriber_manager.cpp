@@ -328,6 +328,7 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
     }
     DistributedData::StoreMetaData meta = metaData;
     meta.bundleName = key.bundleName;
+    meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(meta, key.uri);
     if (delegate == nullptr) {
         ZLOGE("Create fail %{public}s %{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
@@ -398,7 +399,7 @@ DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(cons
     metaData.tokenId = context->calledTokenId;
     metaData.dataDir = context->calledSourceDir;
     metaData.storeId = context->calledStoreName;
-    metaData.version = context->version;
+    metaData.haMode = context->haMode;
     return metaData;
 }
 

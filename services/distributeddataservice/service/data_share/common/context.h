@@ -38,6 +38,7 @@ public:
     std::string uri;
     int32_t currentUserId = -1;
     int32_t appIndex = 0;
+    int32_t haMode = 0;
     std::string permission;
     uint32_t callerTokenId = 0;
     uint32_t calledTokenId = 0;

@@ -38,6 +38,7 @@ void SchedulerManager::Execute(const std::string &uri, const int32_t userId, Dis
         return;
     }
     DistributedData::StoreMetaData meta;
+    meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(metaData);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(uri).c_str());
@@ -53,6 +54,7 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const Distr
 {
     DistributedData::StoreMetaData meta = metaData;
     meta.bundleName = key.bundleName;
+    meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(meta);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
@@ -187,7 +189,7 @@ void SchedulerManager::GenRemindTimerFuncParams(
     index += REMIND_TIMER_FUNC_LEN;
     std::string keyStr = "'" + metaData.dataDir + "', " + std::to_string(metaData.tokenId) + ", '" + key.uri + "', " +
                          std::to_string(key.subscriberId) + ", '" + key.bundleName + "', " + std::to_string(userId) +
-                         ", '" + metaData.storeId + "', ";
+                         ", '" + metaData.storeId + "', " + std::to_string(metaData.haMode) + ", ";
     schedulerSQL.insert(index, keyStr);
     return;
 }
