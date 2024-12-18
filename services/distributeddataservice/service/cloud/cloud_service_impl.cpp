@@ -780,7 +780,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user)
         std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
         if (status == NOT_SUPPORT) {
             ZLOGW("app not support, del cloudInfo! user:%{public}d, bundleName:%{public}s", user, bundle.c_str());
-            MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey());
+            MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
             return false;
         }
         if (status != SUCCESS) {
