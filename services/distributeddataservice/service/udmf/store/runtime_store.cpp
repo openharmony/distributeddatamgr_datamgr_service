@@ -21,10 +21,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include "data_handler.h"
 #include "log_print.h"
 #include "ipc_skeleton.h"
-#include "file.h"
-#include "udmf_conversion.h"
+#include "unified_data_helper.h"
 #include "udmf_radar_reporter.h"
 #include "unified_meta.h"
 #include "tlv_util.h"
@@ -107,33 +107,11 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
 {
     UpdateTime();
     std::vector<Entry> entries;
-    std::string unifiedKey = unifiedData.GetRuntime()->key.GetUnifiedKey();
-    // add runtime info
-    std::vector<uint8_t> runtimeBytes;
-    auto runtimeTlv = TLVObject(runtimeBytes);
-    if (!TLVUtil::Writing(*unifiedData.GetRuntime(), runtimeTlv, TAG::TAG_RUNTIME)) {
-        ZLOGE("Marshall runtime info failed, dataPrefix: %{public}s.", unifiedKey.c_str());
-        return E_WRITE_PARCEL_ERROR;
+    auto status = DataHandler::MarshalToEntries(unifiedData, entries);
+    if (status != E_OK) {
+        return status;
     }
-    std::vector<uint8_t> udKeyBytes = {unifiedKey.begin(), unifiedKey.end()};
-    Entry entry = {udKeyBytes, runtimeBytes};
-    entries.push_back(entry);
-
-    // add unified record
-    for (const auto &record : unifiedData.GetRecords()) {
-        std::vector<uint8_t> recordBytes;
-        auto recordTlv = TLVObject(recordBytes);
-        if (!TLVUtil::Writing(record, recordTlv, TAG::TAG_UNIFIED_RECORD)) {
-            ZLOGI("Marshall unified record failed.");
-            return E_WRITE_PARCEL_ERROR;
-        }
-        std::string recordKey = unifiedKey + "/" + record->GetUid();
-        std::vector<uint8_t> keyBytes = {recordKey.begin(), recordKey.end() };
-        Entry entry = { keyBytes, recordBytes };
-        entries.push_back(entry);
-    }
-    auto status = PutEntries(entries);
-    return status;
+    return PutEntries(entries);
 }
 
 Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
@@ -148,7 +126,7 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
         ZLOGW("entries is empty, dataPrefix: %{public}s", key.c_str());
         return E_NOT_FOUND;
     }
-    return UnmarshalEntries(key, entries, unifiedData);
+    return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
 bool RuntimeStore::GetDetailsFromUData(UnifiedData &data, UDDetails &details)
@@ -160,11 +138,18 @@ bool RuntimeStore::GetDetailsFromUData(UnifiedData &data, UDDetails &details)
     if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {
         return false;
     }
-    auto file = static_cast<File*>(records[0].get());
-    if (file == nullptr) {
+    auto obj = std::get<std::shared_ptr<Object>>(records[0]->GetOriginValue());
+    if (obj == nullptr) {
+        ZLOGE("ValueType is not Object!");
         return false;
     }
-    auto result = file->GetDetails();
+    std::shared_ptr<Object> detailObj;
+    obj->GetValue(DETAILS, detailObj);
+        if (detailObj == nullptr) {
+            ZLOGE("Not contain details for object!");
+            return false;
+        }
+    auto result = ObjectUtils::ConvertToUDDetails(detailObj);
     if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
         return false;
     }
@@ -200,17 +185,7 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
     if (GetDetailsFromUData(unifiedData, details)) {
         return GetSummaryFromDetails(details, summary);
     }
-    for (const auto &record : unifiedData.GetRecords()) {
-        int64_t recordSize = record->GetSize();
-        auto udType = UtdUtils::GetUtdIdFromUtdEnum(record->GetType());
-        auto it = summary.summary.find(udType);
-        if (it == summary.summary.end()) {
-            summary.summary[udType] = recordSize;
-        } else {
-            summary.summary[udType] += recordSize;
-        }
-        summary.totalSize += recordSize;
-    }
+    UnifiedDataHelper::GetSummary(unifiedData, summary);
     return E_OK;
 }
 
@@ -382,7 +357,7 @@ Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<Uni
 
     for (const std::string &key : keySet) {
         UnifiedData data;
-        if (UnmarshalEntries(key, entries, data) != E_OK) {
+        if (DataHandler::UnmarshalEntries(key, entries, data) != E_OK) {
             return E_READ_PARCEL_ERROR;
         }
         unifiedDataSet.emplace_back(data);
@@ -583,30 +558,5 @@ Status RuntimeStore::DeleteEntries(const std::vector<Key> &keys)
     return E_OK;
 }
 
-Status RuntimeStore::UnmarshalEntries(const std::string &key, std::vector<Entry> &entries, UnifiedData &unifiedData)
-{
-    for (const auto &entry : entries) {
-        std::string keyStr = {entry.key.begin(), entry.key.end()};
-        if (keyStr == key) {
-            Runtime runtime;
-            auto runtimeTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
-            if (!TLVUtil::ReadTlv(runtime, runtimeTlv, TAG::TAG_RUNTIME)) {
-                ZLOGE("Unmarshall runtime info failed.");
-                return E_READ_PARCEL_ERROR;
-            }
-            unifiedData.SetRuntime(runtime);
-        } else if (keyStr.find(key) == 0) {
-            std::shared_ptr<UnifiedRecord> record;
-            auto recordTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
-            if (!TLVUtil::ReadTlv(record, recordTlv, TAG::TAG_UNIFIED_RECORD)) {
-                ZLOGE("Unmarshall unified record failed.");
-                return E_READ_PARCEL_ERROR;
-            }
-            unifiedData.AddRecord(record);
-        }
-    }
-    UdmfConversion::ConvertRecordToSubclass(unifiedData);
-    return E_OK;
-}
 } // namespace UDMF
 } // namespace OHOS

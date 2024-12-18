@@ -54,6 +54,7 @@ ohos_shared_library("udmf_server") {
     "permission/checker_manager.cpp",
     "permission/data_checker.cpp",
     "permission/uri_permission_manager.cpp",
+    "preprocess/data_handler.cpp",
     "preprocess/preprocess_utils.cpp",
     "store/runtime_store.cpp",
     "store/store_account_observer.cpp",
