@@ -749,7 +749,6 @@ int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
     executors_ = bindInfo.executors;
     StoreCache::GetInstance().SetThreadPool(bindInfo.executors);
     LifeCycleManager::GetInstance().SetThreadPool(bindInfo.executors);
-    UriPermissionManager::GetInstance().SetThreadPool(bindInfo.executors);
     return 0;
 }
 

@@ -51,7 +51,9 @@ Status UriPermissionManager::GrantUriPermission(
         std::vector<Uri> uriLst(
             allUri.begin() + index, allUri.begin() + std::min(index + GRANT_URI_PERMISSION_MAX_SIZE, allUri.size()));
         auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermissionPrivileged(uriLst,
-            AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION | AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION,
+            AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
+            AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION |
+            AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION,
             bundleName, instIndex);
         if (status != ERR_OK) {
             ZLOGE("GrantUriPermission failed, status:%{public}d, queryKey:%{public}s, instIndex:%{public}d.",
@@ -59,63 +61,9 @@ Status UriPermissionManager::GrantUriPermission(
             return E_NO_PERMISSION;
         }
         completeCount = std::min(allUri.size(), index + GRANT_URI_PERMISSION_MAX_SIZE);
-        auto time = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
-        std::for_each(uriLst.begin(), uriLst.end(), [&](const Uri &uri) {
-            auto times = std::make_pair(uri.ToString(), tokenId);
-            uriTimeout_.Insert(times, time);
-        });
     }
     ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
-
-    std::unique_lock<std::mutex> lock(taskMutex_);
-    if (taskId_ == ExecutorPool::INVALID_TASK_ID && executorPool_ != nullptr) {
-        taskId_ = executorPool_->Schedule(
-            std::chrono::minutes(INTERVAL), std::bind(&UriPermissionManager::RevokeUriPermission, this));
-    }
     return E_OK;
-}
-
-void UriPermissionManager::RevokeUriPermission()
-{
-    auto current = std::chrono::steady_clock::now();
-    uriTimeout_.EraseIf([&](const auto &key, const Time &time) {
-        if (time > current) {
-            return false;
-        }
-        Uri uri(key.first);
-        uint32_t tokenId = key.second;
-        std::string bundleName;
-        if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
-            ZLOGE("Get BundleName fail, tokenId:%{public}u.", tokenId);
-            return true;
-        }
-        int32_t instIndex = -1;
-        if (!PreProcessUtils::GetInstIndex(tokenId, instIndex)) {
-            ZLOGE("Get InstIndex fail, tokenId:%{public}u.", tokenId);
-            return true;
-        }
-        int status = AAFwk::UriPermissionManagerClient::GetInstance().RevokeUriPermissionManually(
-            uri, bundleName, instIndex);
-        if (status != E_OK) {
-            ZLOGE("RevokeUriPermission error, permissionCode:%{public}d, bundleName:%{public}s, instIndex:%{public}d",
-                status, bundleName.c_str(), instIndex);
-        }
-        return true;
-    });
-
-    std::unique_lock<std::mutex> lock(taskMutex_);
-    if (!uriTimeout_.Empty() && executorPool_ != nullptr) {
-        ZLOGD("RevokeUriPermission, uriTimeout size:%{public}zu", uriTimeout_.Size());
-        taskId_ = executorPool_->Schedule(
-            std::chrono::minutes(INTERVAL), std::bind(&UriPermissionManager::RevokeUriPermission, this));
-    } else {
-        taskId_ = ExecutorPool::INVALID_TASK_ID;
-    }
-}
-
-void UriPermissionManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
-{
-    executorPool_ = executors;
 }
 } // namespace UDMF
 } // namespace OHOS
