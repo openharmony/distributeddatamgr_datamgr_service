@@ -37,8 +37,7 @@ void SchedulerManager::Execute(const std::string &uri, const int32_t userId, Dis
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
     }
-    DistributedData::StoreMetaData meta;
-    meta.user = std::to_string(userId);
+    metaData.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(metaData);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(uri).c_str());
