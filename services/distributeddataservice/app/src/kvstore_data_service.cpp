@@ -571,6 +571,7 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
             AutoCache::GetInstance().CloseStore([&eventInfo](const StoreMetaData &meta) {
                 return meta.user == eventInfo.userId;
             });
+            break;
         default:
             break;
     }
