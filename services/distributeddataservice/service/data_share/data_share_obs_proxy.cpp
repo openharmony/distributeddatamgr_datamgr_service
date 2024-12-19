@@ -110,7 +110,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     int dataSize = static_cast<int>(changeNode.data_.size());
     for (int i = 0; i < dataSize; i++) {
         size += intByteLen;
-        size += static_cast<int>(changeNode.data_.size());
+        size += static_cast<int>(changeNode.data_[i].length());
     }
     if (size > DATA_SIZE_ASHMEM_TRANSFER_LIMIT) {
         ZLOGE("Data to write into ashmem is %{public}d bytes, over 10M.", size);
