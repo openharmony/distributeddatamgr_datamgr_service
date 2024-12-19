@@ -1020,7 +1020,7 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string 
     }
     DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
         providerInfo.storeName, providerInfo.backup,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.hasExtension};
+        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.appIndex, providerInfo.hasExtension};
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
