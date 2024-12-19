@@ -85,7 +85,7 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     }
     for (int i = 0; i < dataSize; i++) {
         const char *str = changeNode.data_[i].c_str();
-        int strLen = changeNode.data_[i].length();
+        int strLen = static_cast<int>(changeNode.data_[i].length());
         // write length int
         if (WriteAshmem(changeNode, (void *)&strLen, intLen, offset) != E_OK) {
             ZLOGE("failed to write data with index %{public}d, len %{public}d, offset %{public}d.", i, intLen, offset);
@@ -110,7 +110,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     int dataSize = static_cast<int>(changeNode.data_.size());
     for (int i = 0; i < dataSize; i++) {
         size += intByteLen;
-        size += changeNode.data_[i].length();
+        size += static_cast<int>(changeNode.data_.size());
     }
     if (size > DATA_SIZE_ASHMEM_TRANSFER_LIMIT) {
         ZLOGE("Data to write into ashmem is %{public}d bytes, over 10M.", size);
