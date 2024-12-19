@@ -78,7 +78,7 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     int offset = 0;
     // 4 byte for length int
     int intLen = 4;
-    int dataSize = changeNode.data_.size();
+    int dataSize = static_cast<int>(changeNode.data_.size());
     if (WriteAshmem(changeNode, (void *)&dataSize, intLen, offset) != E_OK) {
         ZLOGE("failed to write data with len %{public}d, offset %{public}d.", intLen, offset);
         return E_ERROR;
@@ -107,7 +107,8 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     // 4 byte for length int
     int intByteLen = 4;
     int size = intByteLen;
-    for (int i = 0; i < changeNode.data_.size(); i++) {
+    int dataSize = static_cast<int>(changeNode.data_.size());
+    for (int i = 0; i < dataSize; i++) {
         size += intByteLen;
         size += changeNode.data_[i].length();
     }
