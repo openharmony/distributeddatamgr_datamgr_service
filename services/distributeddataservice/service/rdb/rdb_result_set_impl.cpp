@@ -330,16 +330,6 @@ int RdbResultSetImpl::GetAssets(int32_t col, NativeRdb::ValueObject::Assets& val
     }
     return Get(col, value);
 }
-
-int RdbResultSetImpl::GetFloat32Array(int32_t index, NativeRdb::ValueObject::FloatVector& vecs)
-{
-    std::shared_lock<std::shared_mutex> lock(mutex_);
-    if (resultSet_ == nullptr) {
-        return NativeRdb::E_ALREADY_CLOSED;
-    }
-    return NativeRdb::E_NOT_SUPPORT;
-}
-
 int RdbResultSetImpl::Get(int32_t col, NativeRdb::ValueObject& value)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);

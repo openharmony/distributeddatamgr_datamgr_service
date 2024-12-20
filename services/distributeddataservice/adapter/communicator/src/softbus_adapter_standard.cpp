@@ -50,20 +50,21 @@ public:
 
     static void OnClientShutdown(int32_t socket, ShutdownReason reason);
     static void OnClientBytesReceived(int32_t socket, const void *data, uint32_t dataLen);
+    static void OnClientSocketChanged(int32_t socket, QoSEvent eventId, const QosTV *qos, uint32_t qosCount);
 
     static void OnServerBind(int32_t socket, PeerSocketInfo info);
     static void OnServerShutdown(int32_t socket, ShutdownReason reason);
     static void OnServerBytesReceived(int32_t socket, const void *data, uint32_t dataLen);
 
-public:
+private:
     // notify all listeners when received message
     static void NotifyDataListeners(const uint8_t *data, const int size, const std::string &deviceId,
         const PipeInfo &pipeInfo);
     static std::string GetPipeId(const std::string &name);
 
-private:
     static SoftBusAdapter *softBusAdapter_;
 };
+
 SoftBusAdapter *AppDataListenerWrap::softBusAdapter_;
 std::shared_ptr<SoftBusAdapter> SoftBusAdapter::instance_;
 
@@ -95,6 +96,7 @@ SoftBusAdapter::SoftBusAdapter()
     clientListener_.OnShutdown = AppDataListenerWrap::OnClientShutdown;
     clientListener_.OnBytes = AppDataListenerWrap::OnClientBytesReceived;
     clientListener_.OnMessage = AppDataListenerWrap::OnClientBytesReceived;
+    clientListener_.OnQos = AppDataListenerWrap::OnClientSocketChanged;
 
     serverListener_.OnBind = AppDataListenerWrap::OnServerBind;
     serverListener_.OnShutdown = AppDataListenerWrap::OnServerShutdown;
@@ -166,18 +168,6 @@ Status SoftBusAdapter::StopWatchDataChange(__attribute__((unused)) const AppData
     return Status::ERROR;
 }
 
-void SoftBusAdapter::Reuse(const PipeInfo &pipeInfo, const DeviceId &deviceId,
-    uint32_t qosType, std::shared_ptr<SoftBusClient> &conn)
-{
-    std::vector<std::shared_ptr<SoftBusClient>> connects;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
-    connect->isReuse = true;
-    connects.emplace_back(connect);
-    conn = connect;
-    connects_.Insert(deviceId.deviceId, connects);
-    ZLOGI("reuse connect:%{public}s", KvStoreUtils::ToBeAnonymous(deviceId.deviceId).c_str());
-}
-
 void SoftBusAdapter::GetExpireTime(std::shared_ptr<SoftBusClient> &conn)
 {
     Time now = std::chrono::steady_clock::now();
@@ -195,28 +185,19 @@ std::pair<Status, int32_t> SoftBusAdapter::SendData(const PipeInfo &pipeInfo, co
     std::shared_ptr<SoftBusClient> conn;
     bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
     uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
-    bool isReuse = false;
-    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType, isOHOSType, &isReuse](const auto &key,
+    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType, isOHOSType](const auto &key,
         std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
         for (auto &connect : connects) {
-            if (connect->GetQoSType() != qosType) {
-                continue;
+            if (connect->GetQoSType() == qosType) {
+                conn = connect;
+                return true;
             }
-            if (!isOHOSType && connect->needRemove) {
-                isReuse = true;
-                return false;
-            }
-            conn = connect;
-            return true;
         }
         auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
         connects.emplace_back(connect);
         conn = connect;
         return true;
     });
-    if (!isOHOSType && isReuse) {
-        Reuse(pipeInfo, deviceId, qosType, conn);
-    }
     if (conn == nullptr) {
         return std::make_pair(Status::ERROR, 0);
     }
@@ -371,11 +352,14 @@ uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
     return interval;
 }
 
-std::string SoftBusAdapter::DelConnect(int32_t socket)
+std::string SoftBusAdapter::DelConnect(int32_t socket, bool isForce)
 {
     std::string name;
     std::set<std::string> closedConnect;
-    connects_.EraseIf([socket, &name, &closedConnect](const auto &deviceId, auto &connects) -> bool {
+    connects_.EraseIf([socket, isForce, &name, &closedConnect](const auto &deviceId, auto &connects) -> bool {
+        if (!isForce && DmAdapter::GetInstance().IsOHOSType(deviceId)) {
+            return false;
+        }
         for (auto iter = connects.begin(); iter != connects.end();) {
             if (*iter != nullptr && **iter == socket) {
                 name += deviceId;
@@ -398,9 +382,9 @@ std::string SoftBusAdapter::DelConnect(int32_t socket)
     return name;
 }
 
-std::string SoftBusAdapter::OnClientShutdown(int32_t socket)
+std::string SoftBusAdapter::OnClientShutdown(int32_t socket, bool isForce)
 {
-    return DelConnect(socket);
+    return DelConnect(socket, isForce);
 }
 
 bool SoftBusAdapter::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
@@ -506,6 +490,14 @@ void AppDataListenerWrap::OnClientShutdown(int32_t socket, ShutdownReason reason
 
 void AppDataListenerWrap::OnClientBytesReceived(int32_t socket, const void *data, uint32_t dataLen) {}
 
+void AppDataListenerWrap::OnClientSocketChanged(int32_t socket, QoSEvent eventId, const QosTV *qos, uint32_t qosCount)
+{
+    if (eventId == QoSEvent::QOS_SATISFIED && qos != nullptr && qos[0].qos == QOS_TYPE_MIN_BW && qosCount == 1) {
+        auto name = softBusAdapter_->OnClientShutdown(socket, false);
+        ZLOGI("[SocketChanged] socket:%{public}d, name:%{public}s", socket, KvStoreUtils::ToBeAnonymous(name).c_str());
+    }
+}
+
 void AppDataListenerWrap::OnServerBind(int32_t socket, PeerSocketInfo info)
 {
     softBusAdapter_->OnBind(socket, info);
@@ -573,18 +565,6 @@ void SoftBusAdapter::OnBind(int32_t socket, PeerSocketInfo info)
     socketInfo.networkId = info.networkId;
     socketInfo.pkgName = info.pkgName;
     peerSocketInfos_.Insert(socket, socketInfo);
-    if (!DmAdapter::GetInstance().IsOHOSType(info.networkId)) {
-        auto uuid = DmAdapter::GetInstance().ToUUID(info.networkId);
-        auto connects = connects_.Find(uuid);
-        if (!connects.first) {
-            return;
-        }
-        for (auto &conn : connects.second) {
-            if (!conn->isReuse) {
-                conn->needRemove = true;
-            }
-        }
-    }
 }
 
 void SoftBusAdapter::OnServerShutdown(int32_t socket)

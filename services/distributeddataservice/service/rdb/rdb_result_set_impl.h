@@ -58,7 +58,6 @@ public:
     int Close() override;
     int GetAsset(int32_t col, NativeRdb::ValueObject::Asset& value) override;
     int GetAssets(int32_t col, NativeRdb::ValueObject::Assets& value) override;
-    int GetFloat32Array(int32_t index, NativeRdb::ValueObject::FloatVector& vecs) override;
     int Get(int32_t col, NativeRdb::ValueObject& value) override;
     int GetRow(NativeRdb::RowEntity& rowEntity) override;
     int GetSize(int columnIndex, size_t& size) override;

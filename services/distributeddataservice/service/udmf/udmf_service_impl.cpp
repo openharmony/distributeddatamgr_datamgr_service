@@ -34,18 +34,25 @@
 #include "uri.h"
 #include "udmf_conversion.h"
 #include "udmf_radar_reporter.h"
-
+#include "utils/anonymous.h"
+#include "bootstrap.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/meta_data_manager.h"
+#include "device_manager_adapter.h"
 namespace OHOS {
 namespace UDMF {
 using namespace Security::AccessToken;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using namespace RadarReporter;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
+constexpr const char *MANAGE_UDMF_APP_SHARE_OPTION = "ohos.permission.MANAGE_UDMF_APP_SHARE_OPTION";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -566,8 +573,9 @@ int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, int32_t
 
     uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
     bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
-    if (!isSystemApp) {
-        ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
+    bool hasSharePermission = VerifyPermission(MANAGE_UDMF_APP_SHARE_OPTION, IPCSkeleton::GetCallingTokenID());
+    if (!isSystemApp && !hasSharePermission) {
+        ZLOGE("No system permission and no shareOption permission, intention: %{public}s.", intention.c_str());
         return E_NO_PERMISSION;
     }
     auto store = StoreCache::GetInstance().GetStore(intention);
@@ -621,8 +629,9 @@ int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
     }
     uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
     bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
-    if (!isSystemApp) {
-        ZLOGE("no system permission, intention: %{public}s.", intention.c_str());
+    bool hasSharePermission = VerifyPermission(MANAGE_UDMF_APP_SHARE_OPTION, IPCSkeleton::GetCallingTokenID());
+    if (!isSystemApp && !hasSharePermission) {
+        ZLOGE("No system permission and no shareOption permission, intention: %{public}s.", intention.c_str());
         return E_NO_PERMISSION;
     }
     auto store = StoreCache::GetInstance().GetStore(intention);
@@ -689,6 +698,57 @@ int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
     LifeCycleManager::GetInstance().SetThreadPool(bindInfo.executors);
     UriPermissionManager::GetInstance().SetThreadPool(bindInfo.executors);
     return 0;
+}
+
+int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
+{
+    ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
+        param.appId.c_str(), DistributedData::Anonymous::Change(param.storeId).c_str(),
+        DistributedData::Anonymous::Change(identifier).c_str());
+
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        ZLOGE("no meta data appId:%{public}s", param.appId.c_str());
+        return E_NOT_FOUND;
+    }
+
+    for (const auto &storeMeta : metaData) {
+        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
+            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
+            storeMeta.appId != DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
+            continue;
+        }
+        auto identifierTag = DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId,
+                                                                                         storeMeta.storeId, true);
+        if (identifier != identifierTag) {
+            continue;
+        }
+        auto store = StoreCache::GetInstance().GetStore(storeMeta.storeId);
+        if (store == nullptr) {
+            ZLOGE("GetStore fail, storeId:%{public}s", DistributedData::Anonymous::Change(storeMeta.storeId).c_str());
+            continue;
+        }
+        ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s",
+            DistributedData::Anonymous::Change(storeMeta.storeId).c_str(),
+            storeMeta.appId.c_str(), storeMeta.user.c_str());
+        return E_OK;
+    }
+    return E_OK;
+}
+
+bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t callerTokenId)
+{
+    if (permission.empty()) {
+        return true;
+    }
+    int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerTokenId, permission);
+    if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
+        ZLOGE("Permission denied. status:%{public}d, token:0x%{public}x, permission:%{public}s",
+            status, callerTokenId, permission.c_str());
+        return false;
+    }
+    return true;
 }
 } // namespace UDMF
 } // namespace OHOS

@@ -27,6 +27,7 @@
 #include "unified_data.h"
 #include "unified_types.h"
 #include "visibility.h"
+#include "kv_store_delegate_manager.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -37,6 +38,7 @@ public:
     UdmfServiceImpl();
     ~UdmfServiceImpl() = default;
 
+    using DBLaunchParam = DistributedDB::AutoLaunchParam;
     int32_t SetData(CustomOption &option, UnifiedData &unifiedData, std::string &key) override;
     int32_t GetData(const QueryOption &query, UnifiedData &unifiedData) override;
     int32_t GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet) override;
@@ -51,6 +53,7 @@ public:
     int32_t RemoveAppShareOption(const std::string &intention) override;
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &bindInfo) override;
+    int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
 
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
@@ -60,6 +63,7 @@ private:
     void SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records);
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
+    bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
 
     class Factory {
     public:

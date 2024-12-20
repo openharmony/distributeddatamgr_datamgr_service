@@ -178,7 +178,7 @@ HWTEST_F(DataShareSubscriberManagersTest, Emit, TestSize.Level1)
 {
     auto context = std::make_shared<Context>(DATA_SHARE_URI_TEST);
     RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_URI_TEST, context);
-    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_URI_TEST, TEST_SUB_ID, context);
+    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_URI_TEST, TEST_SUB_ID, BUNDLE_NAME_TEST, context);
     TemplateId tpltId;
     tpltId.subscriberId_ = TEST_SUB_ID;
     tpltId.bundleName_ = BUNDLE_NAME_TEST;
