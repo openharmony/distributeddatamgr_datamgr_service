@@ -407,6 +407,9 @@ bool RuntimeStore::Init()
         }
     };
     kvStore_ = std::shared_ptr<KvStoreNbDelegate>(delegate, release);
+    uint32_t pragmData = 16 * 1024 * 1024;
+    PragmaData input = static_cast<PragmaData>(&pragmData);
+    kvStore_->Pragma(SET_MAX_VALUE_SIZE, input);
     return true;
 }
 

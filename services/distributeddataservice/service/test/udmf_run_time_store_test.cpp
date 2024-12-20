@@ -207,6 +207,9 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries003, TestSize.Level1)
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
     EXPECT_EQ(0, entries.size());
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
@@ -240,11 +243,14 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries004, TestSize.Level1)
     EXPECT_EQ(0, entries.size());
 
     status = store->PutEntries(entrysMix2);
-    EXPECT_EQ(E_DB_ERROR, status);
+    EXPECT_EQ(E_OK, status);
     entries.clear();
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
-    EXPECT_EQ(0, entries.size());
+    EXPECT_EQ(1, entries.size());
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
@@ -284,10 +290,13 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries005, TestSize.Level1)
     GetRandomValue(valueInvalid, MAX_VALUE_SIZE + 1); // 4M + 1
     entrysRand[128] = { key, valueInvalid };
     status = store->PutEntries(entrysRand);
-    EXPECT_EQ(E_DB_ERROR, status);
+    EXPECT_EQ(E_OK, status);
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
-    EXPECT_EQ(0, entries.size());
+    EXPECT_EQ(129, entries.size());
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
@@ -326,6 +335,9 @@ HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries001, TestSize.Level1)
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
     EXPECT_EQ(0, entries.size());
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
@@ -366,6 +378,9 @@ HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries002, TestSize.Level1)
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
     EXPECT_EQ(0, entries.size());
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
@@ -415,6 +430,9 @@ HWTEST_F(UdmfRunTimeStoreTest, Get001, TestSize.Level1)
 
     status = store->Get(KEY_PREFIX, unifiedData);
     EXPECT_EQ(E_NOT_FOUND, status);
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
@@ -445,6 +463,9 @@ HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level1)
     UnifiedData data1;
     status = store->Get(EMPTY_DEVICE_ID, data1);
     EXPECT_EQ(E_NOT_FOUND, status);
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
@@ -481,6 +502,9 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level1)
     EXPECT_EQ(records.size(), 0);
     status = store->GetDetailsFromUData(data1, details1);
     EXPECT_FALSE(status);
+
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
 }
 
 /**
