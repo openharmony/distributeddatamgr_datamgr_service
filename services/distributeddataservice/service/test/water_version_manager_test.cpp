@@ -103,7 +103,7 @@ void WaterVersionManagerTest::SetUpTestCase(void)
         instance_.SetStatic(staticStores);
     }
     WaterVersionManager::GetInstance().Init();
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
 
     staticMeta_.deviceId = TEST_DEVICE;
     staticMeta_.version = WvManager::WaterVersionMetaData::DEFAULT_VERSION;

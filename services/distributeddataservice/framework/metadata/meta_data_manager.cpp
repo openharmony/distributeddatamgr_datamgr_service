@@ -17,9 +17,11 @@
 #include <csignal>
 #define LOG_TAG "MetaDataManager"
 
+#include "directory/directory_manager.h"
 #include "kv_store_nb_delegate.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
+#include "utils/corrupt_reporter.h"
 
 namespace OHOS::DistributedData {
 class MetaObserver : public DistributedDB::KvStoreObserver {
@@ -153,7 +155,7 @@ MetaDataManager::~MetaDataManager()
     metaObservers_.Clear();
 }
 
-void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup)
+void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string storeId)
 {
     if (metaStore == nullptr) {
         return;
@@ -165,6 +167,7 @@ void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Bac
     }
     metaStore_ = std::move(metaStore);
     backup_ = backup;
+    storeId_ = std::move(storeId);
     inited_ = true;
 }
 
@@ -196,6 +199,7 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
             status, isLocal, Anonymous::Change(key).c_str());
+        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
         StopSA();
         return false;
     }
@@ -224,6 +228,7 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
             status, isLocal, Anonymous::Change(key).c_str());
+        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
         StopSA();
         return false;
     }
@@ -244,6 +249,7 @@ bool MetaDataManager::GetEntries(const std::string &prefix, std::vector<Bytes> &
                           : metaStore_->GetEntries({ prefix.begin(), prefix.end() }, dbEntries);
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d", status, isLocal);
+        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
         StopSA();
         return false;
     }
@@ -271,6 +277,7 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
             status, isLocal, Anonymous::Change(key).c_str());
+        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
         StopSA();
         return false;
     }
@@ -297,6 +304,7 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
     });
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d", status);
+        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
         StopSA();
         return false;
     }
