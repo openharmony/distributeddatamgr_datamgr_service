@@ -512,23 +512,9 @@ Status RuntimeStore::GetEntries(const std::string &dataPrefix, std::vector<Entry
 
 Status RuntimeStore::PutEntries(const std::vector<Entry> &entries)
 {
-    DBStatus status = kvStore_->StartTransaction();
-    if (status != DBStatus::OK) {
-        ZLOGE("start transaction failed, status: %{public}d.", status);
-        return E_DB_ERROR;
-    }
-    status = kvStore_->PutBatch(entries);
+    DBStatus status = kvStore_->PutBatch(entries);
     if (status != DBStatus::OK) {
         ZLOGE("putBatch failed, status: %{public}d.", status);
-        status = kvStore_->Rollback();
-        if (status != DBStatus::OK) {
-            ZLOGE("rollback failed, status: %{public}d.", status);
-        }
-        return E_DB_ERROR;
-    }
-    status = kvStore_->Commit();
-    if (status != DBStatus::OK) {
-        ZLOGE("commit failed, status: %{public}d.", status);
         return E_DB_ERROR;
     }
     return E_OK;
@@ -536,23 +522,9 @@ Status RuntimeStore::PutEntries(const std::vector<Entry> &entries)
 
 Status RuntimeStore::DeleteEntries(const std::vector<Key> &keys)
 {
-    DBStatus status = kvStore_->StartTransaction();
-    if (status != DBStatus::OK) {
-        ZLOGE("start transaction failed, status: %{public}d.", status);
-        return E_DB_ERROR;
-    }
-    status = kvStore_->DeleteBatch(keys);
+    DBStatus status = kvStore_->DeleteBatch(keys);
     if (status != DBStatus::OK) {
         ZLOGE("deleteBatch failed, status: %{public}d.", status);
-        status = kvStore_->Rollback();
-        if (status != DBStatus::OK) {
-            ZLOGE("rollback failed, status: %{public}d.", status);
-        }
-        return E_DB_ERROR;
-    }
-    status = kvStore_->Commit();
-    if (status != DBStatus::OK) {
-        ZLOGE("commit failed, status: %{public}d.", status);
         return E_DB_ERROR;
     }
     return E_OK;
