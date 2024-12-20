@@ -23,11 +23,14 @@
 #include "utils/block_integer.h"
 #include "utils/constant.h"
 #include "utils/converter.h"
+#include "utils/corrupt_reporter.h"
 #include "utils/ref_count.h"
 #include "utils/endian_converter.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
+static constexpr const char *TEST_CORRUPT_PATH = "/data/service/el1/public/database/utils_test/";
+static constexpr const char *TEST_CORRUPT_STOREID = "utils_test_store";
 class ServiceUtilsTest : public testing::Test {
 public:
     static constexpr uint16_t HOST_VALUE16 = 0x1234;
@@ -225,5 +228,41 @@ HWTEST_F(ServiceUtilsTest, DCopy, TestSize.Level1)
     EXPECT_FALSE(constant.DCopy(tag, tagsLen, srcs, srcsLen));
     EXPECT_FALSE(constant.DCopy(tags, tagLen, srcs, srcLen));
     EXPECT_TRUE(constant.DCopy(tags, tagsLen, srcs, srcsLen));
+}
+
+/**
+* @tc.name: CorruptTest001
+* @tc.desc: test CorruptReporter function with invalid parameter.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(ServiceUtilsTest, CorruptTest001, TestSize.Level1)
+{
+    ASSERT_EQ(false, CorruptReporter::CreateCorruptedFlag(TEST_CORRUPT_PATH, ""));
+    ASSERT_EQ(false, CorruptReporter::CreateCorruptedFlag("", TEST_CORRUPT_STOREID));
+    ASSERT_EQ(false, CorruptReporter::CreateCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
+    ASSERT_EQ(false, CorruptReporter::HasCorruptedFlag(TEST_CORRUPT_PATH, ""));
+    ASSERT_EQ(false, CorruptReporter::HasCorruptedFlag("", TEST_CORRUPT_STOREID));
+    ASSERT_EQ(false, CorruptReporter::DeleteCorruptedFlag(TEST_CORRUPT_PATH, ""));
+    ASSERT_EQ(false, CorruptReporter::DeleteCorruptedFlag("", TEST_CORRUPT_STOREID));
+    ASSERT_EQ(false, CorruptReporter::DeleteCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
+}
+
+/**
+* @tc.name: CorruptTest002
+* @tc.desc: test CorruptReporter function with normal parameter.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(ServiceUtilsTest, CorruptTest002, TestSize.Level1)
+{
+    mode_t mode = S_IRWXU | S_IRWXG | S_IXOTH; // 0771
+    mkdir(TEST_CORRUPT_PATH, mode);
+    ASSERT_EQ(true, CorruptReporter::CreateCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
+    ASSERT_EQ(true, CorruptReporter::HasCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
+    ASSERT_EQ(true, CorruptReporter::DeleteCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
+    rmdir(TEST_CORRUPT_PATH);
 }
 } // namespace OHOS::Test

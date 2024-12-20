@@ -156,7 +156,7 @@ public:
 HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_001, TestSize.Level0)
 {
     ZLOGI("GetDBPasswordTest start");
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_, true));
     auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
@@ -173,7 +173,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_001, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
 {
     ZLOGI("GetDBPasswordTest_002 start");
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     metaData_.isEncrypt = true;
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
 

@@ -72,7 +72,7 @@ uint32_t DeviceMatrixTest::selfToken_ = 0;
 CheckerMock DeviceMatrixTest::instance_;
 void DeviceMatrixTest::SetUpTestCase(void)
 {
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     MetaDataManager::GetInstance().SetCloudSyncer([]() {
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
     });

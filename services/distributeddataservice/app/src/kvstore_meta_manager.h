@@ -65,7 +65,7 @@ private:
     using TaskQueue = std::shared_ptr<SafeBlockQueue<Backup>>;
     NbDelegate GetMetaKvStore();
 
-    NbDelegate CreateMetaKvStore();
+    NbDelegate CreateMetaKvStore(bool isRestore = false);
 
     void SetCloudSyncer();
 
@@ -94,7 +94,7 @@ private:
 
     ExecutorPool::Task GetTask(uint32_t retry);
 
-    void InitDBOption(DistributedDB::KvStoreNbDelegate::Option &option);
+    DistributedDB::KvStoreNbDelegate::Option InitDBOption();
 
     static ExecutorPool::Task GetBackupTask(
         TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);
