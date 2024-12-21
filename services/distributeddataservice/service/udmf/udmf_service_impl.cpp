@@ -385,7 +385,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     }
     std::string bundleName;
     PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
-    if (key.bundleName != bundleName && !IsBundleNameWhitelisted()) {
+    if (key.bundleName != bundleName && !IsBundleNameWhitelisted(bundleName)) {
         ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
@@ -408,7 +408,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     if (runtime == nullptr) {
         return E_DB_ERROR;
     }
-    if (runtime->tokenId != query.tokenId && !IsBundleNameWhitelisted()) {
+    if (runtime->tokenId != query.tokenId && !IsBundleNameWhitelisted(bundleName)) {
         ZLOGE("update data failed, query option tokenId not equals data's tokenId");
         return E_INVALID_PARAMETERS;
     }
