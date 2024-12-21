@@ -79,8 +79,8 @@ public:
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);
     static DBSecurity GetDBSecurity(int32_t secLevel);
-    virtual std::pair<int32_t, uint32_t> LockCloudDB() override;
-    virtual int32_t UnLockCloudDB() override;
+    std::pair<int32_t, uint32_t> LockCloudDB() override;
+    int32_t UnLockCloudDB() override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;
