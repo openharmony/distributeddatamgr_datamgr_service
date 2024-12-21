@@ -64,6 +64,7 @@ private:
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
     int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
+    bool IsBundleNameWhitelisted(const std::string &bundleName);
 
     class Factory {
     public:

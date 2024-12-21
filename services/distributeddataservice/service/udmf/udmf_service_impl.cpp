@@ -821,7 +821,8 @@ bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t c
     return true;
 }
 
-bool IsBundleNameWhitelisted(const std::string &bundleName) {
+bool UdmfServiceImpl::IsBundleNameWhitelisted(const std::string &bundleName)
+{
     return std::find(std::begin(WHITE_LIST), std::end(WHITE_LIST), bundleName) != std::end(WHITE_LIST);
 }
 } // namespace UDMF
