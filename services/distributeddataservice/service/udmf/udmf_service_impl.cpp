@@ -57,6 +57,7 @@ constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
 constexpr const char *MANAGE_UDMF_APP_SHARE_OPTION = "ohos.permission.MANAGE_UDMF_APP_SHARE_OPTION";
+constexpr const char *WHITE_LIST[] = {"com.ohos.pasteboarddialog"};
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -384,7 +385,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     }
     std::string bundleName;
     PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
-    if (key.bundleName != bundleName) {
+    if (key.bundleName != bundleName && !IsBundleNameWhitelisted(bundleName)) {
         ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
@@ -407,7 +408,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     if (runtime == nullptr) {
         return E_DB_ERROR;
     }
-    if (runtime->tokenId != query.tokenId) {
+    if (runtime->tokenId != query.tokenId && !IsBundleNameWhitelisted(bundleName)) {
         ZLOGE("update data failed, query option tokenId not equals data's tokenId");
         return E_INVALID_PARAMETERS;
     }
@@ -818,6 +819,11 @@ bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t c
         return false;
     }
     return true;
+}
+
+bool UdmfServiceImpl::IsBundleNameWhitelisted(const std::string &bundleName)
+{
+    return std::find(std::begin(WHITE_LIST), std::end(WHITE_LIST), bundleName) != std::end(WHITE_LIST);
 }
 } // namespace UDMF
 } // namespace OHOS
