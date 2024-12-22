@@ -28,10 +28,8 @@ public:
     static Status UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries, UnifiedData &unifiedData);
 
 private:
-    static Status Split(const std::vector<std::shared_ptr<UnifiedRecord>> &records, const std::string &unifiedKey,
-        std::vector<Entry> &entries);
-    static Status Assembler(const Entry &entry, const std::string &keyStr,
-        std::map<std::string, std::vector<std::vector<uint8_t>>> &sliceMap, UnifiedData &unifiedData);
+    static Status BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord>> &records,
+        const std::string &unifiedKey, std::vector<Entry> &entries);
 };
 } // namespace UDMF::OHOS
 #endif // DATA_HANDLER_H
