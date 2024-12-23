@@ -166,12 +166,7 @@ private:
 
     Status AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId);
 
-    bool ResolveAutoLaunchParamByIdentifier(const std::string &identifier, DistributedDB::AutoLaunchParam &param);
-    void ResolveAutoLaunchCompatible(const StoreMetaData &storeMeta, const std::string &identifier,
-        const std::string &accountId);
-    static DistributedDB::SecurityOption ConvertSecurity(int securityLevel);
-    static Status InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
-                          DistributedDB::KvStoreNbDelegate::Option &dbOption);
+    void LoadConfigs();
 
     static constexpr int TEN_SEC = 10;
 

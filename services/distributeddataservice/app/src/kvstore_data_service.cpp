@@ -61,6 +61,7 @@
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "water_version_manager.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -274,12 +275,7 @@ void KvStoreDataService::OnStart()
         ZLOGW("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
     ZLOGI("Bootstrap configs and plugins.");
-    Bootstrap::GetInstance().LoadComponents();
-    Bootstrap::GetInstance().LoadDirectory();
-    Bootstrap::GetInstance().LoadCheckers();
-    Bootstrap::GetInstance().LoadNetworks();
-    Bootstrap::GetInstance().LoadBackup(executors_);
-    Bootstrap::GetInstance().LoadCloud();
+    LoadConfigs();
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
@@ -306,6 +302,17 @@ void KvStoreDataService::OnStart()
         std::placeholders::_2);
     DumpManager::GetInstance().AddHandler("BUNDLE_INFO", uintptr_t(this), handlerBundleInfo);
     StartService();
+}
+
+void KvStoreDataService::LoadConfigs()
+{
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    Bootstrap::GetInstance().LoadNetworks();
+    Bootstrap::GetInstance().LoadBackup(executors_);
+    Bootstrap::GetInstance().LoadCloud();
+    Bootstrap::GetInstance().LoadAppIdMappings();
 }
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -355,12 +362,11 @@ void KvStoreDataService::StartService()
 
     // subscribe account event listener to EventNotificationMgr
     auto autoLaunch = [this](const std::string &identifier, DistributedDB::AutoLaunchParam &param) -> bool {
-        auto status = ResolveAutoLaunchParamByIdentifier(identifier, param);
         features_.ForEachCopies([&identifier, &param](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
             value->ResolveAutoLaunch(identifier, param);
             return false;
         });
-        return status;
+        return false;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
     ZLOGI("Start distributedata Success, Publish ret: %{public}d", static_cast<int>(ret));
@@ -386,163 +392,6 @@ void KvStoreDataService::OnStoreMetaChanged(
         return;
     }
     ZLOGI("dirty kv store. storeId:%{public}s", Anonymous::Change(metaData.storeId).c_str());
-}
-
-bool KvStoreDataService::ResolveAutoLaunchParamByIdentifier(
-    const std::string &identifier, DistributedDB::AutoLaunchParam &param)
-{
-    std::vector<StoreMetaData> entries;
-    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), entries)) {
-        ZLOGE("get full meta failed");
-        return false;
-    }
-
-    auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
-    for (const auto &storeMeta : entries) {
-        if ((!param.userId.empty() && (param.userId != storeMeta.user)) || (localDeviceId != storeMeta.deviceId) ||
-            ((StoreMetaData::STORE_RELATIONAL_BEGIN <= storeMeta.storeType) &&
-             (StoreMetaData::STORE_RELATIONAL_END >= storeMeta.storeType))) {
-            // judge local userid and local meta
-            continue;
-        }
-        const std::string &itemTripleIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(accountId, storeMeta.appId,
-                storeMeta.storeId, false);
-        const std::string &itemDualIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
-        if (identifier == itemTripleIdentifier && storeMeta.bundleName != Bootstrap::GetInstance().GetProcessLabel()) {
-            ResolveAutoLaunchCompatible(storeMeta, identifier, accountId);
-        }
-        if (identifier == itemDualIdentifier || identifier == itemTripleIdentifier) {
-            ZLOGI("identifier  find");
-            DistributedDB::AutoLaunchOption option;
-            option.createIfNecessary = false;
-            option.isEncryptedDb = storeMeta.isEncrypt;
-
-            SecretKeyMeta secretKey;
-            if (storeMeta.isEncrypt && MetaDataManager::GetInstance().LoadMeta(storeMeta.GetSecretKey(), secretKey)) {
-                std::vector<uint8_t> decryptKey;
-                CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptKey);
-                option.passwd.SetValue(decryptKey.data(), decryptKey.size());
-                std::fill(decryptKey.begin(), decryptKey.end(), 0);
-            }
-
-            if (storeMeta.bundleName == Bootstrap::GetInstance().GetProcessLabel()) {
-                param.userId = storeMeta.user;
-            }
-            option.schema = storeMeta.schema;
-            option.createDirByStoreIdOnly = true;
-            option.dataDir = storeMeta.dataDir;
-            option.secOption = ConvertSecurity(storeMeta.securityLevel);
-            option.isAutoSync = storeMeta.isAutoSync;
-            option.syncDualTupleMode = true; // dual tuple flag
-            param.appId = storeMeta.appId;
-            param.storeId = storeMeta.storeId;
-            param.option = option;
-            return true;
-        }
-    }
-    ZLOGI("not find identifier");
-    return false;
-}
-
-DistributedDB::SecurityOption KvStoreDataService::ConvertSecurity(int securityLevel)
-{
-    if (securityLevel < SecurityLevel::NO_LABEL || securityLevel > SecurityLevel::S4) {
-        return {DistributedDB::NOT_SET, DistributedDB::ECE};
-    }
-    switch (securityLevel) {
-        case SecurityLevel::S3:
-            return {DistributedDB::S3, DistributedDB::SECE};
-        case SecurityLevel::S4:
-            return {DistributedDB::S4, DistributedDB::ECE};
-        default:
-            return {securityLevel, DistributedDB::ECE};
-    }
-}
-
-void KvStoreDataService::ResolveAutoLaunchCompatible(const StoreMetaData &storeMeta, const std::string &identifier,
-    const std::string &accountId)
-{
-    if (storeMeta.storeType > KvStoreType::SINGLE_VERSION) {
-        ZLOGW("no longer support multi or higher version store type");
-        return;
-    }
-    ZLOGI("AutoLaunch:peer device is old tuple, begin to open store, storeId: %{public}s",
-        Anonymous::Change(storeMeta.storeId).c_str());
-    // open store and SetEqualIdentifier, then close store after 60s
-    DistributedDB::KvStoreDelegateManager delegateManager(storeMeta.appId, storeMeta.user);
-    delegateManager.SetKvStoreConfig({ DirectoryManager::GetInstance().GetStorePath(storeMeta) });
-    Options options = {
-        .createIfMissing = false,
-        .encrypt = storeMeta.isEncrypt,
-        .autoSync = storeMeta.isAutoSync,
-        .securityLevel = storeMeta.securityLevel,
-        .kvStoreType = static_cast<KvStoreType>(storeMeta.storeType),
-    };
-    DistributedDB::KvStoreNbDelegate::Option dbOptions;
-    SecretKeyMeta secretKey;
-    if (storeMeta.isEncrypt && MetaDataManager::GetInstance().LoadMeta(storeMeta.GetSecretKey(), secretKey)) {
-        std::vector<uint8_t> decryptKey;
-        CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptKey);
-        std::fill(secretKey.sKey.begin(), secretKey.sKey.end(), 0);
-        secretKey.sKey = std::move(decryptKey);
-        std::fill(decryptKey.begin(), decryptKey.end(), 0);
-    }
-    InitNbDbOption(options, secretKey.sKey, dbOptions);
-    DistributedDB::KvStoreNbDelegate *store = nullptr;
-    delegateManager.GetKvStore(storeMeta.storeId, dbOptions,
-        [&store, &storeMeta, &accountId](int status, DistributedDB::KvStoreNbDelegate *delegate) {
-            ZLOGI("temporary open db for equal identifier, ret:%{public}d", status);
-            if (delegate != nullptr) {
-                KvStoreTuple tuple = { accountId, storeMeta.appId, storeMeta.storeId };
-                UpgradeManager::SetCompatibleIdentifyByType(delegate, tuple);
-                store = delegate;
-            }
-        });
-    ExecutorPool::Task delayTask([store]() {
-        ZLOGI("AutoLaunch:close store after 60s while autolaunch finishied");
-        DistributedDB::KvStoreDelegateManager delegateManager("", "");
-        delegateManager.CloseKvStore(store);
-    });
-    constexpr int CLOSE_STORE_DELAY_TIME = 60; // unit: seconds
-    executors_->Schedule(std::chrono::seconds(CLOSE_STORE_DELAY_TIME), std::move(delayTask));
-}
-
-Status KvStoreDataService::InitNbDbOption(const Options &options, const std::vector<uint8_t> &cipherKey,
-    DistributedDB::KvStoreNbDelegate::Option &dbOption)
-{
-    DistributedDB::CipherPassword password;
-    auto status = password.SetValue(cipherKey.data(), cipherKey.size());
-    if (status != DistributedDB::CipherPassword::ErrorCode::OK) {
-        ZLOGE("Failed to set the passwd.");
-        return Status::DB_ERROR;
-    }
-
-    dbOption.syncDualTupleMode = true; // tuple of (appid+storeid)
-    dbOption.createIfNecessary = options.createIfMissing;
-    dbOption.isMemoryDb = (!options.persistent);
-    dbOption.isEncryptedDb = options.encrypt;
-    dbOption.isNeedCompressOnSync = options.isNeedCompress;
-    if (options.encrypt) {
-        dbOption.cipher = DistributedDB::CipherType::AES_256_GCM;
-        dbOption.passwd = password;
-    }
-
-    if (options.kvStoreType == KvStoreType::SINGLE_VERSION) {
-        dbOption.conflictResolvePolicy = DistributedDB::LAST_WIN;
-    } else if (options.kvStoreType == KvStoreType::DEVICE_COLLABORATION) {
-        dbOption.conflictResolvePolicy = DistributedDB::DEVICE_COLLABORATION;
-    } else {
-        ZLOGE("kvStoreType is invalid");
-        return Status::INVALID_ARGUMENT;
-    }
-
-    dbOption.schema = options.schema;
-    dbOption.createDirByStoreIdOnly = true;
-    dbOption.secOption = ConvertSecurity(options.securityLevel);
-    return Status::SUCCESS;
 }
 
 void KvStoreDataService::OnStop()

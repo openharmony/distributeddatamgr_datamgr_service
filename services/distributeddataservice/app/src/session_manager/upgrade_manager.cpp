@@ -23,6 +23,7 @@
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -85,54 +86,5 @@ bool UpgradeManager::InitLocalCapability()
     }
     ZLOGI("put capability meta data ret %{public}d", status);
     return status;
-}
-
-void UpgradeManager::GetIdentifierParams(std::vector<std::string> &devices,
-    const std::vector<std::string> &uuids, int32_t authType)
-{
-    for (const auto &devId : uuids) {
-        if (DmAdapter::GetInstance().IsOHOSType(devId)) {
-            continue;
-        }
-        if (DmAdapter::GetInstance().GetAuthType(devId) != authType) {
-            continue;
-        }
-        devices.push_back(devId);
-    }
-}
-
-void UpgradeManager::SetCompatibleIdentifyByType(DistributedDB::KvStoreNbDelegate *storeDelegate,
-    const KvStoreTuple &tuple)
-{
-    if (storeDelegate == nullptr) {
-        ZLOGE("null store delegate");
-        return;
-    }
-    auto uuids = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices());
-    if (uuids.empty()) {
-        ZLOGI("no remote devs");
-        return;
-    }
-
-    std::vector<std::string> sameAccountDevs {};
-    std::vector<std::string> defaultAccountDevs {};
-    GetIdentifierParams(sameAccountDevs, uuids, IDENTICAL_ACCOUNT);
-    GetIdentifierParams(defaultAccountDevs, uuids, NO_ACCOUNT);
-    if (!sameAccountDevs.empty()) {
-        auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(tuple.userId, tuple.appId, tuple.storeId);
-        ZLOGI("same account set compatible identifier store:%{public}s, user:%{public}s, device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(), Anonymous::Change(tuple.userId).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str());
-        storeDelegate->SetEqualIdentifier(syncIdentifier, sameAccountDevs);
-    }
-    if (!defaultAccountDevs.empty()) {
-        auto syncIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(defaultAccountId, tuple.appId, tuple.storeId);
-        ZLOGI("no account set compatible identifier, store:%{public}s,  device:%{public}.10s",
-            Anonymous::Change(tuple.storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str());
-        storeDelegate->SetEqualIdentifier(syncIdentifier, defaultAccountDevs);
-    }
 }
 } // namespace OHOS::DistributedData

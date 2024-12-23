@@ -28,6 +28,7 @@ bool GlobalConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(directory)], directory);
     SetValue(node[GET_NAME(backup)], backup);
     SetValue(node[GET_NAME(cloud)], cloud);
+    SetValue(node[GET_NAME(appIdMapping)], appIdMapping);
     return true;
 }
 
@@ -43,6 +44,7 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(directory), directory);
     GetValue(node, GET_NAME(backup), backup);
     GetValue(node, GET_NAME(cloud), cloud);
+    GetValue(node, GET_NAME(appIdMapping), appIdMapping);
     return true;
 }
 
@@ -54,6 +56,7 @@ GlobalConfig::~GlobalConfig()
     delete directory;
     delete backup;
     delete cloud;
+    delete appIdMapping;
 }
 } // namespace DistributedData
 } // namespace OHOS

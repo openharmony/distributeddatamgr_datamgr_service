@@ -49,6 +49,7 @@ ohos_shared_library("distributeddatasvcfwk") {
   }
   sources = [
     "account/account_delegate.cpp",
+    "app_id_mapping/app_id_mapping_config_manager.cpp",
     "backuprule/backup_rule_manager.cpp",
     "changeevent/remote_change_event.cpp",
     "checker/checker_manager.cpp",
