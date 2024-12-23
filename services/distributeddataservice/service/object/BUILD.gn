@@ -1,0 +1,79 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+config("object_public_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/bootstrap/include",
+  ]
+}
+
+ohos_static_library("distributeddata_object_static") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  sources = [
+    "src/object_asset_loader.cpp",
+    "src/object_asset_machine.cpp",
+    "src/object_callback_proxy.cpp",
+    "src/object_data_listener.cpp",
+    "src/object_dms_handler.cpp",
+    "src/object_manager.cpp",
+    "src/object_service_impl.cpp",
+    "src/object_service_stub.cpp",
+    "src/object_snapshot.cpp",
+    "src/object_types_utils.cpp",
+  ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  include_dirs = [ "include" ]
+
+  configs = [ ":object_public_config" ]
+
+  cflags = [
+    "-Werror",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
+    "${data_service_path}/service/common:distributeddata_common_static",
+  ]
+
+  external_deps = [
+    "access_token:libtokenid_sdk",
+    "data_object:distributeddataobject_impl",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "dmsfwk:distributed_sdk",
+    "kv_store:distributeddb",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
