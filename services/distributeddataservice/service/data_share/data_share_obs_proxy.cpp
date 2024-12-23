@@ -78,7 +78,7 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     int offset = 0;
     // 4 byte for length int
     int intLen = 4;
-    auto uDataSize = changeNode.data_.size();
+    size_t uDataSize = changeNode.data_.size();
     if (uDataSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
         ZLOGE("changeNode data size exceeds the value of int.");
         return E_ERROR;
@@ -90,7 +90,7 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     }
     for (int i = 0; i < dataSize; i++) {
         const char *str = changeNode.data_[i].c_str();
-        auto uStrLen = changeNode.data_[i].length();
+        size_t uStrLen = changeNode.data_[i].length();
         if (uStrLen > static_cast<size_t>(std::numeric_limits<int>::max())) {
             ZLOGE("string length exceeds the value of int.");
             return E_ERROR;
@@ -117,7 +117,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     // 4 byte for length int
     int intByteLen = 4;
     int size = intByteLen;
-    auto uDataSize = changeNode.data_.size();
+    size_t uDataSize = changeNode.data_.size();
     if (uDataSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
         ZLOGE("changeNode data size exceeds the value of int.");
         return E_ERROR;
@@ -125,7 +125,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     int dataSize = static_cast<int>(uDataSize);
     for (int i = 0; i < dataSize; i++) {
         size += intByteLen;
-        auto uStrLen = changeNode.data_[i].length();
+        size_t uStrLen = changeNode.data_[i].length();
         if (uStrLen > static_cast<size_t>(std::numeric_limits<int>::max())) {
             ZLOGE("string length exceeds the value of int.");
             return E_ERROR;
