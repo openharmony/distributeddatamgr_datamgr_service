@@ -43,7 +43,7 @@ std::shared_ptr<DBStoreMock> CloudTest::dbStoreMock_ = std::make_shared<DBStoreM
 
 void CloudTest::SetUpTestCase(void)
 {
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr);
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
 }
 
 /**

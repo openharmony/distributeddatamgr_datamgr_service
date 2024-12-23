@@ -52,7 +52,7 @@ public:
     using Bytes = std::vector<uint8_t>;
     using OnComplete = std::function<void(const std::map<std::string, int32_t> &)>;
     API_EXPORT static MetaDataManager &GetInstance();
-    API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup);
+    API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string storeId);
     API_EXPORT void SetSyncer(const Syncer &syncer);
     API_EXPORT void SetCloudSyncer(const CloudSyncer &cloudSyncer);
     API_EXPORT bool SaveMeta(const std::string &key, const Serializable &value, bool isLocal = false);
@@ -94,6 +94,7 @@ private:
     Backup backup_;
     Syncer syncer_;
     CloudSyncer cloudSyncer_;
+    std::string storeId_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_META_DATA_MANAGER_H

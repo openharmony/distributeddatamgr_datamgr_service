@@ -42,6 +42,7 @@
 #include "store/store_info.h"
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
+#include "utils/corrupt_reporter.h"
 #include "utils/crypto.h"
 #include "utils/ref_count.h"
 #include "utils/converter.h"
@@ -238,7 +239,19 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
         return metaDelegate_;
     }
 
-    metaDelegate_ = CreateMetaKvStore();
+    auto metaDbName = Bootstrap::GetInstance().GetMetaDBName();
+    if (CorruptReporter::HasCorruptedFlag(metaDBDirectory_, metaDbName)) {
+        DistributedDB::DBStatus dbStatus = delegateManager_.DeleteKvStore(metaDbName);
+        if (dbStatus != DistributedDB::DBStatus::OK) {
+            ZLOGE("delete meta store failed! dbStatus: %{public}d", dbStatus);
+        }
+        metaDelegate_ = CreateMetaKvStore(true);
+        if (metaDelegate_ != nullptr) {
+            CorruptReporter::DeleteCorruptedFlag(metaDBDirectory_, metaDbName);
+        }
+    } else {
+        metaDelegate_ = CreateMetaKvStore();
+    }
     auto fullName = GetBackupPath();
     auto backup = [executors = executors_, queue = std::make_shared<SafeBlockQueue<Backup>>(MAX_TASK_COUNT), fullName](
                       const auto &store) -> int32_t {
@@ -256,7 +269,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
         executors->Schedule(std::chrono::hours(RETRY_INTERVAL), GetBackupTask(queue, executors, store));
         return OK;
     };
-    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup);
+    MetaDataManager::GetInstance().Initialize(metaDelegate_, backup, metaDbName);
     return metaDelegate_;
 }
 
@@ -274,19 +287,19 @@ ExecutorPool::Task KvStoreMetaManager::GetBackupTask(
     };
 }
 
-KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
+KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore(bool isRestore)
 {
     DistributedDB::DBStatus dbStatusTmp = DistributedDB::DBStatus::NOT_SUPPORT;
-    DistributedDB::KvStoreNbDelegate::Option option;
-    InitDBOption(option);
+    auto option = InitDBOption();
     DistributedDB::KvStoreNbDelegate *delegate = nullptr;
-    delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
-        [&delegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *nbDelegate) {
-            delegate = nbDelegate;
-            dbStatusTmp = dbStatus;
-        });
-
-    if (dbStatusTmp == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+    if (!isRestore) {
+        delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
+            [&delegate, &dbStatusTmp](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *nbDelegate) {
+                delegate = nbDelegate;
+                dbStatusTmp = dbStatus;
+            });
+    }
+    if (dbStatusTmp == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB || isRestore) {
         ZLOGE("meta data corrupted!");
         option.isNeedRmCorruptedDb = true;
         auto fullName = GetBackupPath();
@@ -302,7 +315,6 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
                 }
             });
     }
-
     if (dbStatusTmp != DistributedDB::DBStatus::OK || delegate == nullptr) {
         ZLOGE("GetKvStore return error status: %{public}d or delegate is nullptr", static_cast<int>(dbStatusTmp));
         return nullptr;
@@ -315,11 +327,10 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     auto data = static_cast<DistributedDB::PragmaData>(&param);
     delegate->Pragma(DistributedDB::SET_SYNC_RETRY, data);
     auto release = [this](DistributedDB::KvStoreNbDelegate *delegate) {
-        ZLOGI("release meta data  kv store");
+        ZLOGI("release meta data kv store");
         if (delegate == nullptr) {
             return;
         }
-
         auto result = delegateManager_.CloseKvStore(delegate);
         if (result != DistributedDB::DBStatus::OK) {
             ZLOGE("CloseMetaKvStore return error status: %{public}d", static_cast<int>(result));
@@ -328,8 +339,9 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore()
     return NbDelegate(delegate, release);
 }
 
-void KvStoreMetaManager::InitDBOption(DistributedDB::KvStoreNbDelegate::Option &option)
+DistributedDB::KvStoreNbDelegate::Option KvStoreMetaManager::InitDBOption()
 {
+    DistributedDB::KvStoreNbDelegate::Option option;
     option.createIfNecessary = true;
     option.isMemoryDb = false;
     option.createDirByStoreIdOnly = true;
@@ -339,6 +351,7 @@ void KvStoreMetaManager::InitDBOption(DistributedDB::KvStoreNbDelegate::Option &
     option.isNeedCompressOnSync = true;
     option.compressionRate = COMPRESS_RATE;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
+    return option;
 }
 
 void KvStoreMetaManager::SetCloudSyncer()

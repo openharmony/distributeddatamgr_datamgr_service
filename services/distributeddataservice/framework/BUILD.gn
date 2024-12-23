@@ -102,6 +102,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/block_integer.cpp",
     "utils/constant.cpp",
     "utils/converter.cpp",
+    "utils/corrupt_reporter.cpp",
     "utils/crypto.cpp",
     "utils/ref_count.cpp",
   ]
