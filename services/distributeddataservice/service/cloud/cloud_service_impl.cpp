@@ -58,6 +58,7 @@ using namespace DistributedDataDfx;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = OHOS::DistributedKv::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
+static constexpr uint32_t RESTART_SERVICE_TIME_THRESHOLD = 60;
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
     &CloudServiceImpl::SaveNetworkStrategy
@@ -103,7 +104,8 @@ CloudServiceImpl::CloudServiceImpl()
 
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(
+        __FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY, RESTART_SERVICE_TIME_THRESHOLD);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     auto [status, cloudInfo] = GetCloudInfo(user);
