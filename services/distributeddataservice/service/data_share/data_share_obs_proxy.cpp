@@ -24,6 +24,7 @@
 namespace OHOS {
 namespace DataShare {
 static constexpr int REQUEST_CODE = 0;
+static constexpr int MAX_EXCEEDS = static_cast<size_t>(std::numeric_limits<int>::max());
 int RdbObserverProxy::CreateAshmem(RdbChangeNode &changeNode)
 {
     OHOS::sptr<Ashmem> memory = Ashmem::CreateAshmem(ASHMEM_NAME, DATA_SIZE_ASHMEM_TRANSFER_LIMIT);
@@ -79,7 +80,7 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     // 4 byte for length int
     int intLen = 4;
     size_t uDataSize = changeNode.data_.size();
-    if (uDataSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    if (uDataSize > MAX_EXCEEDS) {
         ZLOGE("changeNode data size exceeds the value of int.");
         return E_ERROR;
     }
@@ -91,7 +92,7 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     for (int i = 0; i < dataSize; i++) {
         const char *str = changeNode.data_[i].c_str();
         size_t uStrLen = changeNode.data_[i].length();
-        if (uStrLen > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        if (uStrLen > MAX_EXCEEDS) {
             ZLOGE("string length exceeds the value of int.");
             return E_ERROR;
         }
@@ -118,7 +119,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     int intByteLen = 4;
     int size = intByteLen;
     size_t uDataSize = changeNode.data_.size();
-    if (uDataSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    if (uDataSize > MAX_EXCEEDS) {
         ZLOGE("changeNode data size exceeds the value of int.");
         return E_ERROR;
     }
@@ -126,7 +127,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     for (int i = 0; i < dataSize; i++) {
         size += intByteLen;
         size_t uStrLen = changeNode.data_[i].length();
-        if (uStrLen > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        if (uStrLen > MAX_EXCEEDS) {
             ZLOGE("string length exceeds the value of int.");
             return E_ERROR;
         }
