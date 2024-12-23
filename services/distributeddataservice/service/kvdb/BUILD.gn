@@ -1,0 +1,82 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+ohos_static_library("distributeddata_kvdb_static") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  include_dirs = [
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/rdb",
+  ]
+
+  sources = [
+    "kvdb_exporter.cpp",
+    "kvdb_general_store.cpp",
+    "kvdb_notifier_proxy.cpp",
+    "kvdb_service_impl.cpp",
+    "kvdb_service_stub.cpp",
+    "kvdb_watcher.cpp",
+    "kvstore_sync_manager.cpp",
+    "query_helper.cpp",
+  ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  cflags = [
+    "-Werror",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+  ]
+
+  deps = [ "${data_service_path}/service/rdb:distributeddata_rdb_static" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
