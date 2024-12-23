@@ -78,14 +78,24 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     int offset = 0;
     // 4 byte for length int
     int intLen = 4;
-    int dataSize = static_cast<int>(changeNode.data_.size());
+    auto uDataSize = changeNode.data_.size();
+    if (uDataSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        ZLOGE("changeNode data size exceeds the value of int.");
+        return E_ERROR;
+    }
+    int dataSize = static_cast<int>(uDataSize);
     if (WriteAshmem(changeNode, (void *)&dataSize, intLen, offset) != E_OK) {
         ZLOGE("failed to write data with len %{public}d, offset %{public}d.", intLen, offset);
         return E_ERROR;
     }
     for (int i = 0; i < dataSize; i++) {
         const char *str = changeNode.data_[i].c_str();
-        int strLen = static_cast<int>(changeNode.data_[i].length());
+        auto uStrLen = changeNode.data_[i].length();
+        if (uStrLen > static_cast<size_t>(std::numeric_limits<int>::max())) {
+            ZLOGE("string length exceeds the value of int.");
+            return E_ERROR;
+        }
+        int strLen = static_cast<int>(uStrLen);
         // write length int
         if (WriteAshmem(changeNode, (void *)&strLen, intLen, offset) != E_OK) {
             ZLOGE("failed to write data with index %{public}d, len %{public}d, offset %{public}d.", i, intLen, offset);
@@ -107,10 +117,21 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     // 4 byte for length int
     int intByteLen = 4;
     int size = intByteLen;
-    int dataSize = static_cast<int>(changeNode.data_.size());
+    auto uDataSize = changeNode.data_.size();
+    if (uDataSize > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        ZLOGE("changeNode data size exceeds the value of int.");
+        return E_ERROR;
+    }
+    int dataSize = static_cast<int>(uDataSize);
     for (int i = 0; i < dataSize; i++) {
         size += intByteLen;
-        size += static_cast<int>(changeNode.data_[i].length());
+        auto uStrLen = changeNode.data_[i].length();
+        if (uStrLen > static_cast<size_t>(std::numeric_limits<int>::max())) {
+            ZLOGE("string length exceeds the value of int.");
+            return E_ERROR;
+        }
+        int strLen = static_cast<int>(uStrLen);
+        size += strLen;
     }
     if (size > DATA_SIZE_ASHMEM_TRANSFER_LIMIT) {
         ZLOGE("Data to write into ashmem is %{public}d bytes, over 10M.", size);
