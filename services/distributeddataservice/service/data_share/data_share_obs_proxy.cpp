@@ -24,7 +24,7 @@
 namespace OHOS {
 namespace DataShare {
 static constexpr int REQUEST_CODE = 0;
-static constexpr int MAX_EXCEEDS = static_cast<size_t>(std::numeric_limits<int>::max());
+static constexpr size_t MAX_EXCEEDS = (10 << 10) << 10;
 int RdbObserverProxy::CreateAshmem(RdbChangeNode &changeNode)
 {
     OHOS::sptr<Ashmem> memory = Ashmem::CreateAshmem(ASHMEM_NAME, DATA_SIZE_ASHMEM_TRANSFER_LIMIT);
@@ -79,17 +79,12 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     int offset = 0;
     // 4 byte for length int
     int intLen = 4;
-    size_t uDataSize = changeNode.data_.size();
-    if (uDataSize > MAX_EXCEEDS) {
-        ZLOGE("changeNode data size exceeds the value of int.");
-        return E_ERROR;
-    }
-    int dataSize = static_cast<int>(uDataSize);
+    size_t dataSize = changeNode.data_.size();;
     if (WriteAshmem(changeNode, (void *)&dataSize, intLen, offset) != E_OK) {
         ZLOGE("failed to write data with len %{public}d, offset %{public}d.", intLen, offset);
         return E_ERROR;
     }
-    for (int i = 0; i < dataSize; i++) {
+    for (size_t i = 0; i < dataSize; i++) {
         const char *str = changeNode.data_[i].c_str();
         size_t uStrLen = changeNode.data_[i].length();
         if (uStrLen > MAX_EXCEEDS) {
@@ -118,13 +113,8 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     // 4 byte for length int
     int intByteLen = 4;
     int size = intByteLen;
-    size_t uDataSize = changeNode.data_.size();
-    if (uDataSize > MAX_EXCEEDS) {
-        ZLOGE("changeNode data size exceeds the value of int.");
-        return E_ERROR;
-    }
-    int dataSize = static_cast<int>(uDataSize);
-    for (int i = 0; i < dataSize; i++) {
+    size_t dataSize = changeNode.data_.size();
+    for (size_t i = 0; i < dataSize; i++) {
         size += intByteLen;
         size_t uStrLen = changeNode.data_[i].length();
         if (uStrLen > MAX_EXCEEDS) {
