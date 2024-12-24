@@ -37,7 +37,7 @@ config("module_public_config") {
   ]
 }
 
-ohos_shared_library("udmf_server") {
+ohos_static_library("udmf_server") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     ubsan = true
@@ -72,7 +72,7 @@ ohos_shared_library("udmf_server") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
   ]
 
   external_deps = [
