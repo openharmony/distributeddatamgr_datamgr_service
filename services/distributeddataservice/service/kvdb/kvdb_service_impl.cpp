@@ -1160,12 +1160,17 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
     for (auto &[key, status] : result) {
         if (status != SUCCESS) {
             success = false;
+            RADAR_REPORT(STANDARD_DEVICE_SYNC, FINISH_SYNC, RADAR_FAILED, ERROR_CODE, status, BIZ_STATE, END,
+                SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+                std::to_string(info.syncId), DATA_TYPE, meta.dataType);
             break;
         }
     }
-    RADAR_REPORT(STANDARD_DEVICE_SYNC, FINISH_SYNC, success ? RADAR_SUCCESS : RADAR_FAILED, BIZ_STATE, END,
-        SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
-        std::to_string(info.syncId), DATA_TYPE, meta.dataType);
+    if (success) {
+        RADAR_REPORT(STANDARD_DEVICE_SYNC, FINISH_SYNC, RADAR_SUCCESS, BIZ_STATE, END,
+            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+            std::to_string(info.syncId), DATA_TYPE, meta.dataType);
+    }
     for (const auto &device : info.devices) {
         auto it = result.find(device);
         if (it != result.end() && it->second == SUCCESS) {
