@@ -1,0 +1,93 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+config("rdb_public_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/rdb",
+    "${data_service_path}/service/cloud",
+  ]
+}
+
+ohos_static_library("distributeddata_rdb_static") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  sources = [
+    "cache_cursor.cpp",
+    "rdb_asset_loader.cpp",
+    "rdb_cloud.cpp",
+    "rdb_cursor.cpp",
+    "rdb_general_store.cpp",
+    "rdb_notifier_proxy.cpp",
+    "rdb_query.cpp",
+    "rdb_result_set_impl.cpp",
+    "rdb_result_set_stub.cpp",
+    "rdb_service_impl.cpp",
+    "rdb_service_stub.cpp",
+    "rdb_watcher.cpp",
+  ]
+
+  configs = [ ":rdb_public_config" ]
+
+  cflags = [
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Werror",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
+    "${data_service_path}/service/common:distributeddata_common_static",
+    "${data_service_path}/service/matrix:distributeddata_matrix_static",
+    "${data_service_path}/service/permission:distributeddata_permit_static",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "dmsfwk:distributed_sdk",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "huks:libhukssdk",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+  cflags_cc = [ ]
+  subsystem_name = "distributeddatamgr"
+
+  part_name = "datamgr_service"
+}
