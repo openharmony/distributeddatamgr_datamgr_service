@@ -623,9 +623,9 @@ ohos_unittest("RdbServiceTest") {
 ohos_unittest("ObjectAssetLoaderTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
-    "../object/object_snapshot.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
+    "../object/src/object_snapshot.cpp",
     "object_asset_loader_test.cpp",
   ]
 
@@ -663,8 +663,8 @@ ohos_unittest("ObjectAssetLoaderTest") {
 ohos_unittest("ObjectAssetMachineTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
     "object_asset_machine_test.cpp",
   ]
 
@@ -697,7 +697,7 @@ ohos_unittest("ObjectAssetMachineTest") {
 ohos_unittest("ObjectDmsHandlerTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_dms_handler.cpp",
+    "../object/src/object_dms_handler.cpp",
     "object_dms_handler_test.cpp",
   ]
 
@@ -729,12 +729,12 @@ ohos_unittest("ObjectManagerTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/common/value_proxy.cpp",
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
-    "../object/object_callback_proxy.cpp",
-    "../object/object_data_listener.cpp",
-    "../object/object_manager.cpp",
-    "../object/object_snapshot.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
+    "../object/src/object_callback_proxy.cpp",
+    "../object/src/object_data_listener.cpp",
+    "../object/src/object_manager.cpp",
+    "../object/src/object_snapshot.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
     "object_manager_test.cpp",
   ]
@@ -779,9 +779,9 @@ ohos_unittest("ObjectManagerTest") {
 ohos_unittest("ObjectSnapshotTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
-    "../object/object_snapshot.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
+    "../object/src/object_snapshot.cpp",
     "object_snapshot_test.cpp",
   ]
 
