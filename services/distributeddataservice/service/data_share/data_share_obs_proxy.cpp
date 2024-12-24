@@ -24,7 +24,10 @@
 namespace OHOS {
 namespace DataShare {
 static constexpr int REQUEST_CODE = 0;
-static constexpr size_t MAX_EXCEEDS = (10 << 10) << 10;
+// length of int32 bytes
+static constexpr int32_t INT32_BYTE_LEN = static_cast<int32_t>(sizeof(int32_t));
+// maximum size of changeNode.data_(all 0-length strings)
+static constexpr size_t MAX_DATA_SIZE = DATA_SIZE_ASHMEM_TRANSFER_LIMIT >> 2;
 int RdbObserverProxy::CreateAshmem(RdbChangeNode &changeNode)
 {
     OHOS::sptr<Ashmem> memory = Ashmem::CreateAshmem(ASHMEM_NAME, DATA_SIZE_ASHMEM_TRANSFER_LIMIT);
@@ -49,7 +52,7 @@ int RdbObserverProxy::CreateAshmem(RdbChangeNode &changeNode)
     return E_OK;
 }
 
-int RdbObserverProxy::WriteAshmem(RdbChangeNode &changeNode, void *data, int len, int &offset)
+int RdbObserverProxy::WriteAshmem(RdbChangeNode &changeNode, void *data, int32_t len, int32_t &offset)
 {
     if (changeNode.memory_ == nullptr) {
         ZLOGE("changeNode memory is nullptr.");
@@ -76,25 +79,28 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     // move data
     // simple serialization: [vec_size(int32); str1_len(int32), str1; str2_len(int32), str2; ...],
     // total byte size is recorded in changeNode.size
-    int offset = 0;
-    // 4 byte for length int
-    int intLen = 4;
-    size_t dataSize = changeNode.data_.size();;
-    if (WriteAshmem(changeNode, (void *)&dataSize, intLen, offset) != E_OK) {
-        ZLOGE("failed to write data with len %{public}d, offset %{public}d.", intLen, offset);
+    int32_t offset = 0;
+    size_t dataSize = changeNode.data_.size();
+    if (dataSize > MAX_DATA_SIZE) {
+        ZLOGE("changeNode size exceeds the maximum limit.");
+        return E_ERROR;
+    }
+    if (WriteAshmem(changeNode, (void *)&dataSize, INT32_BYTE_LEN, offset) != E_OK) {
+        ZLOGE("failed to write data with len %{public}d, offset %{public}d.", INT32_BYTE_LEN, offset);
         return E_ERROR;
     }
     for (size_t i = 0; i < dataSize; i++) {
         const char *str = changeNode.data_[i].c_str();
         size_t uStrLen = changeNode.data_[i].length();
-        if (uStrLen > MAX_EXCEEDS) {
-            ZLOGE("string length exceeds the value of int.");
+        if (uStrLen > DATA_SIZE_ASHMEM_TRANSFER_LIMIT) {
+            ZLOGE("string length exceeds the maximum limit.");
             return E_ERROR;
         }
-        int strLen = static_cast<int>(uStrLen);
+        int32_t strLen = static_cast<int32_t>(uStrLen);
         // write length int
-        if (WriteAshmem(changeNode, (void *)&strLen, intLen, offset) != E_OK) {
-            ZLOGE("failed to write data with index %{public}d, len %{public}d, offset %{public}d.", i, intLen, offset);
+        if (WriteAshmem(changeNode, (void *)&strLen, INT32_BYTE_LEN, offset) != E_OK) {
+            ZLOGE("failed to write data with index %{public}d, len %{public}d, offset %{public}d.",
+                i, INT32_BYTE_LEN, offset);
             return E_ERROR;
         }
         // write str
@@ -110,18 +116,20 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
 int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
 {
     // If data size is bigger than the limit, move it to the shared memory
-    // 4 byte for length int
-    int intByteLen = 4;
-    int size = intByteLen;
+    int32_t size = INT32_BYTE_LEN;
     size_t dataSize = changeNode.data_.size();
+    if (dataSize > MAX_DATA_SIZE) {
+        ZLOGE("changeNode size exceeds the maximum limit.");
+        return E_ERROR;
+    }
     for (size_t i = 0; i < dataSize; i++) {
-        size += intByteLen;
+        size += INT32_BYTE_LEN;
         size_t uStrLen = changeNode.data_[i].length();
-        if (uStrLen > MAX_EXCEEDS) {
-            ZLOGE("string length exceeds the value of int.");
+        if (uStrLen > DATA_SIZE_ASHMEM_TRANSFER_LIMIT) {
+            ZLOGE("string length exceeds the maximum limit.");
             return E_ERROR;
         }
-        int strLen = static_cast<int>(uStrLen);
+        int32_t strLen = static_cast<int32_t>(uStrLen);
         size += strLen;
     }
     if (size > DATA_SIZE_ASHMEM_TRANSFER_LIMIT) {
