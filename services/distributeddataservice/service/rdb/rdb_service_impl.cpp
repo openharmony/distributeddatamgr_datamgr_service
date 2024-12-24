@@ -307,6 +307,12 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
                 syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
             MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
         }
+    } else if(type == DistributedRdb::DistributedTableType::DISTRIBUTED_CLOUD) {
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+        if (meta.asyncDownloadAsset != param.asyncDownloadAsset_) {
+            meta.asyncDownloadAsset = param.asyncDownloadAsset_;
+            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+        }
     }
     auto store = GetStore(param);
     if (store == nullptr) {
@@ -558,6 +564,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode,
         option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
     SyncParam syncParam = { mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isCompensation };
+    syncParam.asyncDownloadAsset = param.asyncDownloadAsset_;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
         : option.isAsync  ? asyncCallback
@@ -857,6 +864,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.isManualClean = !param.isAutoClean_;
     metaData.isSearchable = param.isSearchable_;
     metaData.haMode = param.haMode_;
+    metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
     return metaData;
 }
 

@@ -239,11 +239,8 @@ int32_t RdbGeneralStore::Close(bool isForce)
         if (delegate_ == nullptr) {
             return GeneralError::E_OK;
         }
-        if (!isForce && delegate_->GetCloudSyncTaskCount() > 0) {
+        if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || delegate_->GetDownloadingAssetsCount() > 0) {
             return GeneralError::E_BUSY;
-        }
-        if (isForce && bindInfo_.loader_ != nullptr) {
-            bindInfo_.loader_->Cancel();
         }
         auto status = manager_.CloseStore(delegate_);
         if (status != DBStatus::OK) {
@@ -554,7 +551,8 @@ std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQue
         }
         dbStatus = delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait,
                                        (isPriority || highMode == MANUAL_SYNC_MODE), syncParam.isCompensation, {},
-                                       highMode == AUTO_SYNC_MODE, LOCK_ACTION, syncParam.prepareTraceId },
+                                       highMode == AUTO_SYNC_MODE, LOCK_ACTION, syncParam.prepareTraceId,
+                                       syncParam.asyncDownloadAsset },
             tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
         if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
             return { ConvertStatus(dbStatus), dbStatus };

@@ -124,6 +124,16 @@ DBStatus RdbAssetLoader::RemoveLocalAssets(const std::vector<Asset> &assets)
     return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
 }
 
+DBStatus RdbAssetLoader::CancelDownload()
+{
+    if (assetLoader_ == nullptr) {
+        ZLOGE("assetLoader is nullptr");
+        return DBStatus::DB_ERROR;
+    }
+    auto error = assetLoader_->CancelDownload();
+    return RdbCloud::ConvertStatus(static_cast<DistributedData::GeneralError>(error));
+}
+
 void RdbAssetLoader::PostEvent(std::set<std::string> &skipAssets, std::vector<AssetsRecord> &assetsRecords,
     DistributedData::AssetEvent eventId, std::set<std::string> &deleteAssets)
 {

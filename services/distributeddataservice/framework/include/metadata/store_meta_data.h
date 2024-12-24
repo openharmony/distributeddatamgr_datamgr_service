@@ -59,6 +59,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     std::string user = "";
     std::string account = "";
     int32_t authType = 0;
+    bool asyncDownloadAsset = false;
 
     enum StoreType {
         STORE_KV_BEGIN = 0,

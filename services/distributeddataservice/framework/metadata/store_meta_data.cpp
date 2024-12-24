@@ -56,6 +56,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(dataType)], dataType);
     SetValue(node[GET_NAME(enableCloud)], enableCloud);
     SetValue(node[GET_NAME(cloudAutoSync)], cloudAutoSync);
+    SetValue(node[GET_NAME(asyncDownloadAsset)], asyncDownloadAsset);
     // compatible with the versions which lower than VERSION_TAG_0000
     SetValue(node[GET_NAME(kvStoreType)], storeType);
     SetValue(node[GET_NAME(deviceAccountID)], user);
@@ -96,6 +97,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(dataType), dataType);
     GetValue(node, GET_NAME(enableCloud), enableCloud);
     GetValue(node, GET_NAME(cloudAutoSync), cloudAutoSync);
+    GetValue(node, GET_NAME(asyncDownloadAsset), asyncDownloadAsset);
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
         GetValue(node, GET_NAME(kvStoreType), storeType);

@@ -407,13 +407,15 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 prepareTraceId.c_str());
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId);
         }
-        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start", storeInfo.user,
-            storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
+        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
+              storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
+              meta.asyncDownloadAsset);
         RadarReporter::Report(
             { storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId, evt.GetTriggerMode() },
             "GetSyncHandler", BizState::BEGIN);
         Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::START, E_OK });
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation(), MODE_DEFAULT, prepareTraceId };
+        syncParam.asyncDownloadAsset = meta.asyncDownloadAsset;
         auto [status, dbCode] = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
             evt.AutoRetry() ? RetryCallback(storeInfo, retryer, evt.GetTriggerMode(), prepareTraceId, user)
                             : GetCallback(evt.GetAsyncDetail(), storeInfo, evt.GetTriggerMode(), prepareTraceId, user),

@@ -33,7 +33,7 @@ int32_t AssetLoader::RemoveLocalAssets(
     return E_NOT_SUPPORT;
 }
 
-int32_t AssetLoader::Cancel()
+int32_t AssetLoader::CancelDownload()
 {
     return E_NOT_SUPPORT;
 }
