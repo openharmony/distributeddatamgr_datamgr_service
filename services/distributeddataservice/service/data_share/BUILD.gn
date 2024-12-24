@@ -97,10 +97,10 @@ ohos_static_library("data_share_service") {
   configs = [ ":module_public_config" ]
 
   deps = [
+    "${data_service_path}/service/common:distributeddata_common_static",
     "../../adapter:distributeddata_adapter",
     "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",
-    "${data_service_path}/service/common:distributeddata_common_static",
   ]
 
   external_deps = [

@@ -82,7 +82,7 @@ ohos_static_library("distributeddata_rdb_static") {
     "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
-  cflags_cc = [ ]
+  cflags_cc = []
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
