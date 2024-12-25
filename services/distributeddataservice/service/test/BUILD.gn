@@ -394,6 +394,11 @@ ohos_unittest("DeviceMatrixTest") {
 }
 
 ohos_unittest("KVDBGeneralStoreTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   module_out_path = module_output_path
   sources = [
     "../common/value_proxy.cpp",

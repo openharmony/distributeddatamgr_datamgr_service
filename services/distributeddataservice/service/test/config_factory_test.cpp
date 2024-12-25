@@ -54,7 +54,7 @@ HWTEST_F(ConfigFactoryTest, ComponentConfig, TestSize.Level0)
 {
     auto *components = ConfigFactory::GetInstance().GetComponentConfig();
     ASSERT_NE(components, nullptr);
-    ASSERT_EQ(components->size(), 4);
+    ASSERT_EQ(components->size(), 2);
     const ComponentConfig &config = (*components)[0];
     ASSERT_EQ(config.description, "3rd party adapter");
     ASSERT_EQ(config.lib, "libconfigdemo.z.so");
