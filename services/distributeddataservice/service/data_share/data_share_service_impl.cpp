@@ -1001,6 +1001,11 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
 
 void DataShareServiceImpl::InitSubEvent()
 {
+    static std::atomic<bool> alreadySubscribe = false;
+    bool except = false;
+    if (!alreadySubscribe.compare_exchange_strong(except, true)) {
+        return;
+    }
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
@@ -1008,6 +1013,7 @@ void DataShareServiceImpl::InitSubEvent()
     auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo);
     if (!EventFwk::CommonEventManager::SubscribeCommonEvent(sysEventSubscriber)) {
         ZLOGE("Subscribe sys event failed.");
+        alreadySubscribe = false;
     }
     if (BundleMgrProxy::GetInstance()->CheckBMS() != nullptr) {
         sysEventSubscriber->OnBMSReady();
