@@ -356,7 +356,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             schemas = GetSchemaMeta(cloud, info.bundleName_);
             if (schemas.empty()) {
                 auto it = traceIds.find(info.bundleName_);
-                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, E_CLOUD_DISABLED, it == traceIds.end() ? "" : it->second);
+                retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, GenStore::CLOUD_ERR_OFFSET + E_CLOUD_DISABLED,
+                        it == traceIds.end() ? "" : it->second);
                 BatchUpdateFinishState(cloudSyncInfos, E_CLOUD_DISABLED);
                 BatchReport(info.user_, traceIds, SyncStage::END, E_CLOUD_DISABLED);
                 return;
@@ -399,7 +400,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             "GetSyncHandler", BizState::BEGIN);
         Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::START, E_OK });
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation(), MODE_DEFAULT, prepareTraceId };
-        auto status = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
+        auto [status, dbCode] = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
             evt.AutoRetry() ? RetryCallback(storeInfo, retryer, evt.GetTriggerMode(), prepareTraceId, user)
                             : GetCallback(evt.GetAsyncDetail(), storeInfo, evt.GetTriggerMode(), prepareTraceId, user),
             syncParam);
@@ -412,10 +413,10 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             if (status == GeneralError::E_NOT_SUPPORT) {
                 return;
             }
-            int32_t errCode = status + GenStore::DB_ERR_OFFSET;
+            auto code = dbCode == 0 ? GenStore::CLOUD_ERR_OFFSET + status : dbCode;
             RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                  evt.GetTriggerMode(), false, errCode }, "GetSyncHandler", BizState::END);
-            Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, errCode });
+                                  evt.GetTriggerMode(), false, code }, "GetSyncHandler", BizState::END);
+            Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, code });
         }
     };
 }

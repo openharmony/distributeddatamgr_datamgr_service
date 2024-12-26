@@ -1140,7 +1140,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
             complete(deviceStatus);
         },
         syncParam);
-    auto status = Status(ret);
+    auto status = Status(ret.first);
     if (status != Status::SUCCESS) {
         RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_FAILED, ERROR_CODE, status, BIZ_STATE, END,
             SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,

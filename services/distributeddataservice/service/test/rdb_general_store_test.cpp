@@ -726,12 +726,12 @@ HWTEST_F(RdbGeneralStoreTest, Sync, TestSize.Level1)
     GeneralStore::DetailAsync async;
     SyncParam syncParam;
     auto result = store->Sync(devices, query, async, syncParam);
-    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    EXPECT_EQ(result.first, GeneralError::E_ALREADY_CLOSED);
 
     MockRelationalStoreDelegate mockDelegate;
     store->delegate_ = &mockDelegate;
     result = store->Sync(devices, query, async, syncParam);
-    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(result.first, GeneralError::E_OK);
 }
 
 /**
