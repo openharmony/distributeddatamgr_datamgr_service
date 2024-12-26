@@ -122,7 +122,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
-        ExecutorPool::Task task = [key, node, context, this]() {
+        ExecutorPool::Task task = [key, node, context, callerTokenId, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
                 ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",
@@ -135,6 +135,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
                 SchedulerManager::GetInstance().Execute(
                     key, context->currentUserId, metaData);
             }
+            SchedulerManager::GetInstance().AddToSchedulerCache(key);
         };
         executorPool->Execute(task);
         return true;
@@ -162,6 +163,7 @@ int RdbSubscriberManager::Delete(const Key &key, uint32_t firstCallerTokenId)
             }
             return !value.empty();
         });
+    SchedulerManager::GetInstance().RemoveFromSchedulerCache(key);
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
@@ -209,19 +211,37 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
                 continue;
             }
             it->enabled = true;
-            if (it->isNotifyOnEnabled) {
+            bool everStopped = SchedulerManager::GetInstance().CheckSchedulerEverStopped(key);
+            if (it->isNotifyOnEnabled || everStopped) {
                 std::vector<ObserverNode> node;
                 node.emplace_back(it->observer, context->callerTokenId);
                 LoadConfigDataInfoStrategy loadDataInfo;
                 if (loadDataInfo(context)) {
                     DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
                     Notify(key, context->currentUserId, node, metaData);
+                    if (everStopped) {
+                        SchedulerManager::GetInstance().Execute(key, context->currentUserId, metaData);
+                        SchedulerManager::GetInstance().SetSchedulerEverStopped(key, false);
+                    }
                 }
             }
         }
         return true;
     });
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
+}
+
+bool RdbSubscriberManager::ReadTemplateStatus(const Key &key)
+{
+    auto it = rdbCache_.Find(key);
+    if (it.first) {
+        for (const auto &node : it.second) {
+            if (node.enabled) {
+                return node.enabled;
+            }
+        }
+    }
+    return false;
 }
 
 void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context> context)

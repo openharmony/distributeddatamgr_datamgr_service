@@ -66,6 +66,7 @@ public:
     void Emit(const std::string &uri, std::shared_ptr<Context> context);
     void Emit(const std::string &uri, int32_t userId, DistributedData::StoreMetaData &metaData);
     void EmitByKey(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData);
+    bool ReadTemplateStatus(const Key &key);
     DistributedData::StoreMetaData GenMetaDataFromContext(const std::shared_ptr<Context> context);
     std::vector<Key> GetKeysByUri(const std::string &uri);
     void Clear();

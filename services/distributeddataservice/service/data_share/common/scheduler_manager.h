@@ -32,7 +32,11 @@ public:
     void SetTimer(const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key, int64_t reminderTime);
     void RemoveTimer(const Key &key);
     void ClearTimer();
+    void AddToSchedulerCache(const Key &key);
+    void RemoveFromSchedulerCache(const Key &key);
     void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
+    bool CheckSchedulerEverStopped(const Key &key);
+    void SetSchedulerEverStopped(const Key &key, bool everStopped);
 
 private:
     static constexpr const char *REMIND_TIMER_FUNC = "remindTimer(";
@@ -49,6 +53,7 @@ private:
 
     std::mutex mutex_;
     std::map<Key, int64_t> timerCache_;
+    std::map<Key, bool> schedulerCache_; // the flag means whether the scheduler is ever stopped
     std::shared_ptr<ExecutorPool> executor_ = nullptr;
 };
 } // namespace OHOS::DataShare
