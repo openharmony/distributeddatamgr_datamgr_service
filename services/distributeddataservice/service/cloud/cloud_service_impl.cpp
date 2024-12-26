@@ -126,6 +126,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    ReleaseUserInfo(user);
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
@@ -140,7 +141,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE, WORK_SUB }));
+    Execute(GenTask(0, cloudInfo.user, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
     return SUCCESS;
 }
 
@@ -1005,6 +1006,7 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
         return true;
     }
     instance->ReleaseUserInfo(user);
+    ZLOGI("notify release user info, user:%{public}d", user);
     return true;
 }
 
