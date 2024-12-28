@@ -28,8 +28,6 @@ ohos_static_library("distributeddata_permit_static") {
     ubsan = true
   }
   sources = [
-    "../kvdb/auth_delegate.cpp",
-    "../kvdb/upgrade.cpp",
     "../kvdb/user_delegate.cpp",
     "src/permit_delegate.cpp",
   ]

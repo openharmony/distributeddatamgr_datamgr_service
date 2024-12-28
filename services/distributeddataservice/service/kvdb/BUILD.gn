@@ -40,6 +40,7 @@ ohos_static_library("distributeddata_kvdb_static") {
   ]
 
   sources = [
+    "auth_delegate.cpp",
     "kvdb_exporter.cpp",
     "kvdb_general_store.cpp",
     "kvdb_notifier_proxy.cpp",
@@ -48,6 +49,7 @@ ohos_static_library("distributeddata_kvdb_static") {
     "kvdb_watcher.cpp",
     "kvstore_sync_manager.cpp",
     "query_helper.cpp",
+    "upgrade.cpp",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
