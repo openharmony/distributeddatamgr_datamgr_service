@@ -36,11 +36,11 @@ ohos_static_library("distributeddata_cloud_static") {
     ubsan = true
   }
   sources = [
+    "cloud_data_translate.cpp",
     "cloud_service_impl.cpp",
     "cloud_service_stub.cpp",
     "cloud_types_util.cpp",
     "cloud_value_util.cpp",
-    "rdb_cloud_data_translate.cpp",
     "sync_manager.cpp",
     "sync_strategies/network_sync_strategy.cpp",
   ]

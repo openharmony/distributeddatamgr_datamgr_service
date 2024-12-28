@@ -15,11 +15,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("bootstrap_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/service/backup/include",
-    "${data_service_path}/service/config/include",
-  ]
+  include_dirs = [ "include" ]
 }
 
 ohos_static_library("distributeddata_bootstrap_static") {
@@ -35,7 +31,11 @@ ohos_static_library("distributeddata_bootstrap_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/config/include",
+  ]
   configs = [ ":bootstrap_public_config" ]
   public_configs = [ ":bootstrap_public_config" ]
   cflags = [

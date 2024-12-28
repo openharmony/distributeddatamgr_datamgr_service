@@ -15,7 +15,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("matrix_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [ "${data_service_path}/service/bootstrap/include" ]
+  include_dirs = [ "include" ]
 }
 
 ohos_static_library("distributeddata_matrix_static") {
@@ -34,7 +34,7 @@ ohos_static_library("distributeddata_matrix_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  include_dirs = [ "include" ]
+  include_dirs = [ "${data_service_path}/service/bootstrap/include" ]
   configs = [ ":matrix_public_config" ]
   public_configs = [ ":matrix_public_config" ]
   cflags = [

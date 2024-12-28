@@ -15,10 +15,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("permission_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [
-    "${data_service_path}/service/crypto/include",
-    "${data_service_path}/service/kvdb",
-  ]
+  include_dirs = [ "include" ]
 }
 
 ohos_static_library("distributeddata_permit_static") {
@@ -39,7 +36,10 @@ ohos_static_library("distributeddata_permit_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/kvdb",
+  ]
   configs = [ ":permission_public_config" ]
   public_configs = [ ":permission_public_config" ]
   cflags = [

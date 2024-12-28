@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 
-#include "rdb_cloud_data_translate.h"
+#include "cloud_data_translate.h"
 
 #include "utils/endian_converter.h"
 #include "value_proxy.h"
