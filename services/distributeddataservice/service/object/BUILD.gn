@@ -67,7 +67,7 @@ ohos_static_library("distributeddata_object_static") {
 
   external_deps = [
     "access_token:libtokenid_sdk",
-    "data_object:distributeddataobject_impl",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "dmsfwk:distributed_sdk",
