@@ -17,8 +17,6 @@
 #include "auth_delegate.h"
 
 #include "checker/checker_manager.h"
-#include "device_auth.h"
-#include "device_auth_defines.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 #include "user_delegate.h"
