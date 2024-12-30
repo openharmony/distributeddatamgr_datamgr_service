@@ -27,13 +27,16 @@ ohos_static_library("distributeddata_config_static") {
     "src/model/app_id_mapping_config.cpp",
     "src/model/backup_config.cpp",
     "src/model/checker_config.cpp",
-    "src/model/cloud_config.cpp",
     "src/model/component_config.cpp",
     "src/model/directory_config.cpp",
     "src/model/global_config.cpp",
     "src/model/network_config.cpp",
     "src/model/protocol_config.cpp",
   ]
+
+  if (datamgr_service_cloud) {
+    sources += [ "src/model/cloud_config.cpp" ]
+  }
 
   cflags_cc = [ "-fvisibility=hidden" ]
 

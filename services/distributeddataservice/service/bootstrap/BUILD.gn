@@ -32,8 +32,6 @@ ohos_static_library("distributeddata_bootstrap_static") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   include_dirs = [
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/service/backup/include",
     "${data_service_path}/service/config/include",
   ]
   configs = [ ":bootstrap_public_config" ]
