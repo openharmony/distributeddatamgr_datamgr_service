@@ -142,7 +142,8 @@ HWTEST_F(DataShareSubscriberManagersTest, Delete, TestSize.Level1)
     auto context = std::make_shared<Context>(DATA_SHARE_URI_TEST);
     DataShare::Key key(context->uri, TEST_SUB_ID, BUNDLE_NAME_TEST);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME_TEST, USER_TEST);
-    RdbSubscriberManager::GetInstance().Delete(tokenId);
+    uint32_t pid = getpid();
+    RdbSubscriberManager::GetInstance().Delete(tokenId, pid);
     auto result = RdbSubscriberManager::GetInstance().Delete(key, tokenId);
     EXPECT_EQ(result, E_SUBSCRIBER_NOT_EXIST);
 }
