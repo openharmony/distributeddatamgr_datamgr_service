@@ -31,7 +31,6 @@ ohos_static_library("distributeddata_kvdb_static") {
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/bootstrap/include",
-    "${data_service_path}/service/backup/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
@@ -61,7 +60,10 @@ ohos_static_library("distributeddata_kvdb_static") {
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
   ]
 
-  deps = [ "${data_service_path}/service/rdb:distributeddata_rdb_static" ]
+  deps = [
+    "${data_service_path}/service/backup:distributeddata_backup_static",
+    "${data_service_path}/service/rdb:distributeddata_rdb_static",
+  ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",

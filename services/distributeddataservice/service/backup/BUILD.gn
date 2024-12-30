@@ -31,9 +31,7 @@ ohos_static_library("distributeddata_backup_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  include_dirs = [
-    "${data_service_path}/service/crypto/include",
-  ]
+  include_dirs = [ "${data_service_path}/service/crypto/include" ]
   configs = [ ":backup_public_config" ]
   public_configs = [ ":backup_public_config" ]
   cflags = [
