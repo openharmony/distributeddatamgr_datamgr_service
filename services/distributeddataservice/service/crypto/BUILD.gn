@@ -18,7 +18,6 @@ config("crypto_public_config") {
   include_dirs = [ "include" ]
 }
 
-
 ohos_static_library("distributeddata_crypto_static") {
   branch_protector_ret = "pac_ret"
   sanitize = {
