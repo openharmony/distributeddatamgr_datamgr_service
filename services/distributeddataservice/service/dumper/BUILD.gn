@@ -41,7 +41,6 @@ ohos_static_library("distributeddata_dumper_static") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
-    "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

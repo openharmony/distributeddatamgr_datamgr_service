@@ -22,7 +22,6 @@ config("cloud_public_config") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",
-    "${data_service_path}/service/rdb",
   ]
 }
 
@@ -69,7 +68,7 @@ ohos_static_library("distributeddata_cloud_static") {
     "access_token:libtokenid_sdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "kv_store:distributeddb",
     "relational_store:cloud_data_inner",
   ]

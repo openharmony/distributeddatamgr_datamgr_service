@@ -23,7 +23,6 @@ config("rdb_public_config") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",
-    "${data_service_path}/service/rdb",
     "${data_service_path}/service/cloud",
   ]
 }
