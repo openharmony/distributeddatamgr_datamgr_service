@@ -138,7 +138,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
         auto [errCode, ret] = dbDelegate->InsertEx(providerInfo.tableName, valuesBucket);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
@@ -208,7 +208,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         auto [errCode, ret] = dbDelegate->UpdateEx(providerInfo.tableName, predicate, valuesBucket);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
@@ -255,7 +255,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
         auto [errCode, ret] = dbDelegate->DeleteEx(providerInfo.tableName, predicate);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
-            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.currentUserId, metaData);
+            RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
@@ -1029,11 +1029,21 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string 
     DataProviderConfig providerConfig(uri, tokenId);
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
-        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
-            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
+        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s,visitedUserId:%{public}d", tokenId,
+            errCode, URIUtils::Anonymous(providerInfo.uri).c_str(), providerInfo.visitedUserId);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
         return errCode;
+    }
+    // when HAP interacts across users, it needs to check across users permission
+    if (!VerifyAcrossAccountsPermission(providerInfo.currentUserId, providerInfo.visitedUserId,
+        providerInfo.acrossAccountsPermission, tokenId)) {
+        ZLOGE("Across accounts permission denied! token:0x%{public}x, uri:%{public}s, current user:%{public}d,"
+            "visited user:%{public}d", tokenId, URIUtils::Anonymous(providerInfo.uri).c_str(),
+            providerInfo.currentUserId, providerInfo.visitedUserId);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
+        return ERROR_PERMISSION_DENIED;
     }
     std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
@@ -1049,8 +1059,8 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string 
         extensionUri = providerInfo.extensionUri;
     }
     DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
-        providerInfo.storeName, providerInfo.backup,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.appIndex, providerInfo.hasExtension};
+        providerInfo.storeName, providerInfo.backup, providerInfo.singleton ? 0 : providerInfo.visitedUserId,
+        providerInfo.appIndex, providerInfo.hasExtension};
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
@@ -1061,17 +1071,37 @@ int32_t DataShareServiceImpl::Execute(const std::string &uri, const std::string 
     return callback(providerInfo, metaData, dbDelegate);
 }
 
+bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId, int32_t visitedUserId,
+    const std::string &acrossAccountsPermission, uint32_t callerTokenId)
+{
+    // if it's SA, or visit itself, no need to verify permission
+    if (currentUserId == 0 || currentUserId == visitedUserId) {
+        return true;
+    }
+    return PermitDelegate::VerifyPermission(acrossAccountsPermission, callerTokenId);
+}
+
 std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const std::string &extUri,
     const int32_t tokenId, bool isRead, ExecuteCallbackEx callback)
 {
     DataProviderConfig providerConfig(uri, tokenId);
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
-        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
-            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
+        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s,visitedUserId:%{public}d", tokenId,
+            errCode, URIUtils::Anonymous(providerInfo.uri).c_str(), providerInfo.visitedUserId);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
         return std::make_pair(E_DATA_SUPPLIER_ERROR, 0);
+    }
+    // when HAP interacts across users, it needs to check across users permission
+    if (!VerifyAcrossAccountsPermission(providerInfo.currentUserId, providerInfo.visitedUserId,
+        providerInfo.acrossAccountsPermission, tokenId)) {
+        ZLOGE("Across accounts permission denied! token:0x%{public}x, uri:%{public}s, current user:%{public}d,"
+            "visited user:%{public}d", tokenId, URIUtils::Anonymous(providerInfo.uri).c_str(),
+            providerInfo.currentUserId, providerInfo.visitedUserId);
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
+        return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
     std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
@@ -1087,8 +1117,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
         extensionUri = providerInfo.extensionUri;
     }
     DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
-        providerInfo.storeName, providerInfo.backup,
-        providerInfo.singleton ? 0 : providerInfo.currentUserId, providerInfo.appIndex, providerInfo.hasExtension};
+        providerInfo.storeName, providerInfo.backup, providerInfo.singleton ? 0 : providerInfo.visitedUserId,
+        providerInfo.appIndex, providerInfo.hasExtension};
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
@@ -1118,7 +1148,7 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
     dbArg.uri = calledInfo.uri;
     dbArg.bundleName = calledInfo.bundleName;
     dbArg.storeName = calledInfo.storeName;
-    dbArg.userId = calledInfo.singleton ? 0 : calledInfo.currentUserId;
+    dbArg.userId = calledInfo.singleton ? 0 : calledInfo.visitedUserId;
     dbArg.hasExtension = calledInfo.hasExtension;
     dbArg.appIndex = calledInfo.appIndex;
     auto [code, metaData] = dbConfig.GetMetaData(dbArg);
