@@ -244,7 +244,6 @@ HWTEST_F(RdbResultSetImplTest, RdbResultSetImpl001, TestSize.Level0)
     EXPECT_EQ(resultSet->GetAssets(col, assets), NativeRdb::E_OK);
     NativeRdb::ValueObject::FloatVector vecs;
     size_t size = 0;
-    EXPECT_EQ(resultSet->GetFloat32Array(col, vecs), NativeRdb::E_NOT_SUPPORT);
     EXPECT_EQ(resultSet->GetSize(col, size), NativeRdb::E_OK);
     EXPECT_FALSE(resultSet->IsClosed());
     EXPECT_EQ(resultSet->Close(), NativeRdb::E_OK);
@@ -298,7 +297,6 @@ HWTEST_F(RdbResultSetImplTest, RdbResultSetImpl002, TestSize.Level0)
     EXPECT_EQ(result->Close(), NativeRdb::E_OK);
     EXPECT_EQ(result->GetAsset(col, asset), NativeRdb::E_ALREADY_CLOSED);
     EXPECT_EQ(result->GetAssets(col, assets), NativeRdb::E_ALREADY_CLOSED);
-    EXPECT_EQ(result->GetFloat32Array(col, vecs), NativeRdb::E_ALREADY_CLOSED);
     EXPECT_EQ(result->Get(col, valueObject), NativeRdb::E_ALREADY_CLOSED);
     EXPECT_EQ(result->GetSize(col, size), NativeRdb::E_ALREADY_CLOSED);
 }

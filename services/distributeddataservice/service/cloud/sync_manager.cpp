@@ -357,7 +357,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             if (schemas.empty()) {
                 auto it = traceIds.find(info.bundleName_);
                 retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, GenStore::CLOUD_ERR_OFFSET + E_CLOUD_DISABLED,
-                        it == traceIds.end() ? "" : it->second);
+                    it == traceIds.end() ? "" : it->second);
                 BatchUpdateFinishState(cloudSyncInfos, E_CLOUD_DISABLED);
                 BatchReport(info.user_, traceIds, SyncStage::END, E_CLOUD_DISABLED);
                 return;
