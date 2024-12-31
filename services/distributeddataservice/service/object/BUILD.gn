@@ -15,6 +15,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("object_public_config") {
   visibility = [ ":*" ]
+
   include_dirs = [ "${data_service_path}/service/common" ]
 }
 

@@ -2075,7 +2075,7 @@ HWTEST_F(CloudDataTest, GetTableNames, TestSize.Level0)
 
 /**
 * @tc.name: BlobToAssets
-* @tc.desc: rdb_cloud_data_translate BlobToAsset error test.
+* @tc.desc: cloud_data_translate BlobToAsset error test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: SQL

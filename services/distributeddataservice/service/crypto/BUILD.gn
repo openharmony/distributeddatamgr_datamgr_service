@@ -43,6 +43,7 @@ ohos_static_library("distributeddata_crypto_static") {
   public_configs = [ ":crypto_public_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
+    "dmsfwk:distributed_sdk",
     "hilog:libhilog",
     "huks:libhukssdk",
   ]
