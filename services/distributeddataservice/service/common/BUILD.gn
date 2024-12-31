@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,58 +11,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("//build/ohos.gni")
-import("//build/ohos_var.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-group("build_module") {
-  if (datamgr_service_cloud) {
-    deps = [ ":opencloudextension" ]
-  }
-}
-config("module_public_config") {
-  visibility = [ ":*" ]
-  include_dirs = [
-    "../../framework/include",
-    "${kv_store_common_path}",
-  ]
-}
-
-ohos_shared_library("opencloudextension") {
-  include_dirs = [ "../ylong_cloud_extension/include" ]
-  sources = [
-    "asset_loader_impl.cpp",
-    "cloud_cursor_impl.cpp",
-    "cloud_db_impl.cpp",
-    "cloud_server_impl.cpp",
-    "extension_util.cpp",
-  ]
+ohos_static_library("distributeddata_common_static") {
   branch_protector_ret = "pac_ret"
   sanitize = {
-    ubsan = true
-    boundary_sanitize = true
     cfi = true
     cfi_cross_dso = true
     debug = false
+    boundary_sanitize = true
+    ubsan = true
   }
-  cflags = [
-    "-Werror",
-    "-Wno-multichar",
+  sources = [
+    "common_types_utils.cpp",
+    "value_proxy.cpp",
+    "xcollie.cpp",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  configs = [ ":module_public_config" ]
-
-  deps = [
-    "../../framework:distributeddatasvcfwk",
-    "../ylong_cloud_extension:ylong_cloud_extension",
+  include_dirs = [ "include" ]
+  cflags = [
+    "-Werror",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
   ]
 
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
-    "access_token:libaccesstoken_sdk",
+    "hicollie:libhicollie",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

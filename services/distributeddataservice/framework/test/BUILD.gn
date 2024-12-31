@@ -181,6 +181,7 @@ ohos_unittest("StoreTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/common:distributeddata_common_static",
     "//third_party/googletest:gtest_main",
   ]
 }
@@ -351,7 +352,7 @@ ohos_unittest("ServiceMetaDataTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/app/src/checker:distributeddata_checker_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
     "${kv_store_distributeddb_path}:distributeddb",
     "${kv_store_path}/interfaces/innerkits/distributeddata:distributeddata_inner",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",

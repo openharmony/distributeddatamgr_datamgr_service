@@ -55,4 +55,14 @@ declare_args() {
   datamgr_service_config = true
 
   datamgr_service_udmf = false
+
+  datamgr_service_cloud = true
+
+  datamgr_service_rdb = true
+
+  datamgr_service_kvdb = true
+
+  datamgr_service_object = true
+
+  datamgr_service_data_share = true
 }

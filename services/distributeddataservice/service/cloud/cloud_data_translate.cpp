@@ -13,12 +13,12 @@
 * limitations under the License.
 */
 
-#include "rdb_cloud_data_translate.h"
+#include "cloud_data_translate.h"
 
 #include "utils/endian_converter.h"
 #include "value_proxy.h"
 
-namespace OHOS::DistributedRdb {
+namespace OHOS::CloudData {
 using Asset = DistributedDB::Asset;
 using Assets = DistributedDB::Assets;
 using DataAsset = NativeRdb::ValueObject::Asset;

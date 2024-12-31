@@ -16,12 +16,6 @@
     },
     {
       "lib": "libopencloudextension.z.so"
-    },
-    {
-      "lib": "libudmf_server.z.so"
-    },
-    {
-      "lib": "libdata_share_service.z.so"
     }
   ],
   "bundleChecker": {

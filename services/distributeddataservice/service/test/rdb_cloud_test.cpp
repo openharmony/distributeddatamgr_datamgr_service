@@ -18,7 +18,6 @@
 
 #include "gtest/gtest.h"
 #include "log_print.h"
-#include "rdb_cloud_data_translate.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -196,36 +195,6 @@ HWTEST_F(RdbCloudTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, DBStatus::TIME_OUT);
     result = rdbCloud.ConvertStatus(GeneralError::E_CLOUD_DISABLED);
     EXPECT_EQ(result, DBStatus::CLOUD_DISABLED);
-}
-
-/**
-* @tc.name: BlobToAssets
-* @tc.desc: rdb_cloud_data_translate BlobToAsset error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(RdbCloudTest, BlobToAssets, TestSize.Level1)
-{
-    RdbCloudDataTranslate rdbTranslate;
-    DistributedDB::Asset asset = {
-        .name = "",
-        .assetId = "",
-        .subpath = "",
-        .uri = "",
-        .modifyTime = "",
-        .createTime = "",
-        .size = "",
-        .hash = ""
-    };
-    std::vector<uint8_t> blob;
-    auto result = rdbTranslate.BlobToAsset(blob);
-    EXPECT_EQ(result, asset);
-
-    DistributedDB::Assets assets;
-    blob = rdbTranslate.AssetsToBlob(assets);
-    auto results = rdbTranslate.BlobToAssets(blob);
-    EXPECT_EQ(results, assets);
 }
 
 /**

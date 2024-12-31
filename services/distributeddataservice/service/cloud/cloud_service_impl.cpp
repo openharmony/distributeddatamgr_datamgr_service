@@ -27,6 +27,7 @@
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
 #include "cloud/sharing_center.h"
+#include "cloud_data_translate.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
@@ -36,7 +37,6 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "rdb_cloud_data_translate.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
 #include "runtime_config.h"
@@ -631,7 +631,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
 int32_t CloudServiceImpl::OnInitialize()
 {
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
-    DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<DistributedRdb::RdbCloudDataTranslate>());
+    DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
     Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     std::vector<int> users;
     Account::GetInstance()->QueryUsers(users);

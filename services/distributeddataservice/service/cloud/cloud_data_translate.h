@@ -18,7 +18,7 @@
 #include "cloud/icloud_data_translate.h"
 #include "serializable/serializable.h"
 #include "value_object.h"
-namespace OHOS::DistributedRdb {
+namespace OHOS::CloudData {
 class RdbCloudDataTranslate : public DistributedDB::ICloudDataTranslate {
 public:
     using Asset = DistributedDB::Asset;
