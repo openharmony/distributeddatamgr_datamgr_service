@@ -54,6 +54,7 @@
 #include "xcollie.h"
 #include "permit_delegate.h"
 #include "bootstrap.h"
+#include "rdb_schema_config.h"
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
