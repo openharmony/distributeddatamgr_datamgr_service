@@ -41,8 +41,6 @@
 #include "relational_store_manager.h"
 #include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
-#include "serializable/serializable.h"
-#include "rdb_schema_config.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -99,13 +97,13 @@ static bool IsExistence(const std::string &col, const std::vector<std::string> &
     return false;
 }
 
-static DistributedSchema GetGaussDistributedSchema(const RdbSchema &schema)
+static DistributedSchema GetGaussDistributedSchema(const Database &database)
 {
     DistributedSchema distributedSchema;
-    distributedSchema.version = schema.version;
-    distributedSchema.tables.resize(schema.tables.size());
-    for (size_t i = 0; i < schema.tables.size(); i++) {
-        const Table &table = schema.tables[i];
+    distributedSchema.version = database.version;
+    distributedSchema.tables.resize(database.tables.size());
+    for (size_t i = 0; i < database.tables.size(); i++) {
+        const Table &table = database.tables[i];
         DistributedTable &dbTable = distributedSchema.tables[i];
         dbTable.tableName = table.name;
         for (auto &field : table.fields) {
@@ -118,16 +116,16 @@ static DistributedSchema GetGaussDistributedSchema(const RdbSchema &schema)
     return distributedSchema;
 }
 
-static std::pair<bool, RdbSchema> GetDistributedSchema(const StoreMetaData &meta)
+static std::pair<bool, Database> GetDistributedSchema(const StoreMetaData &meta)
 {
-    std::pair<bool, RdbSchema> tableData;
-    RdbSchema schema;
-    schema.bundleName = meta.bundleName;
-    schema.name = meta.storeId;
-    schema.user = meta.user;
-    schema.deviceId = meta.deviceId;
-    tableData.first = MetaDataManager::GetInstance().LoadMeta(schema.GetKey(), schema, true);
-    tableData.second = schema;
+    std::pair<bool, Database> tableData;
+    Database database;
+    database.bundleName = meta.bundleName;
+    database.name = meta.storeId;
+    database.user = meta.user;
+    database.deviceId = meta.deviceId;
+    tableData.first = MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true);
+    tableData.second = database;
     return tableData;
 }
 
