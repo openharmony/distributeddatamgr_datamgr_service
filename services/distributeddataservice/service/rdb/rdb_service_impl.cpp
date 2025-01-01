@@ -43,6 +43,7 @@
 #include "rdb_general_store.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
+#include "rdb_schema_config.h"
 #include "rdb_result_set_impl.h"
 #include "rdb_watcher.h"
 #include "store/general_store.h"
