@@ -57,8 +57,6 @@ ohos_static_library("distributeddata_rdb_static") {
   cflags = [
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
-    "-Wno-multichar",
-    "-Wno-c99-designator",
   ]
 
   deps = [
