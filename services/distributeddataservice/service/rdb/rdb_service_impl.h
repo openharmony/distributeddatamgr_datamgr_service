@@ -37,7 +37,6 @@
 #include "store/general_value.h"
 #include "store_observer.h"
 #include "visibility.h"
-#include "cloud/schema_meta.h"
 #include "process_communicator_impl.h"
 
 namespace OHOS::DistributedRdb {
@@ -47,6 +46,7 @@ public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     using DetailAsync = DistributedData::GeneralStore::DetailAsync;
+    using Database = DistributedData::Database;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using StoreInfo = DistributedData::StoreInfo;
     RdbServiceImpl();
