@@ -100,6 +100,28 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     if (isOpening_.exchange(true)) {
         return Status::RATE_LIMIT;
     }
+    int32_t clientSocket = CreateSocket();
+    if (clientSocket <= 0) {
+        isOpening_.store(false);
+        return Status::NETWORK_ERROR;
+    }
+    auto task = [type = type_, clientSocket, listener, client = shared_from_this()]() {
+        if (client == nullptr) {
+            ZLOGE("OpenSessionByAsync client is nullptr.");
+            return;
+        }
+        ZLOGI("Bind Start, device:%{public}s socket:%{public}d type:%{public}u",
+            KvStoreUtils::ToBeAnonymous(client->device_.deviceId).c_str(), clientSocket, type);
+        int32_t status = client->Open(clientSocket, type, listener);
+        Context::GetInstance().NotifySessionReady(client->device_.deviceId, status);
+        client->isOpening_.store(false);
+    };
+    Context::GetInstance().GetThreadPool()->Execute(task);
+    return Status::RATE_LIMIT;
+}
+
+int32_t SoftBusClient::CreateSocket() const
+{
     SocketInfo socketInfo;
     std::string peerName = pipe_.pipeId;
     socketInfo.peerName = const_cast<char *>(peerName.c_str());
@@ -110,25 +132,11 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     std::string pkgName = "ohos.distributeddata";
     socketInfo.pkgName = pkgName.data();
     socketInfo.dataType = DATA_TYPE_BYTES;
-    int32_t clientSocket = Socket(socketInfo);
-    if (clientSocket <= 0) {
-        isOpening_.store(false);
-        ZLOGE("Create the client Socket:%{public}d failed, peerName:%{public}s", clientSocket, socketInfo.peerName);
-        return Status::NETWORK_ERROR;
+    int32_t socket = Socket(socketInfo);
+    if (socket <= 0) {
+        ZLOGE("Create the client Socket:%{public}d failed, peerName:%{public}s", socket, socketInfo.peerName);
     }
-    auto task = [type = type_, clientSocket, listener, client = shared_from_this()]() {
-        if (client == nullptr) {
-            ZLOGE("OpenSessionByAsync client is nullptr.");
-            return;
-        }
-        ZLOGI("Bind Start, device:%{public}s socket:%{public}d type:%{public}u",
-            KvStoreUtils::ToBeAnonymous(client->device_.deviceId).c_str(), clientSocket, type);
-        int32_t status = client->Open(clientSocket, QOS_INFOS[type % QOS_BUTT], listener);
-        Context::GetInstance().NotifySessionReady(client->device_.deviceId, status);
-        client->isOpening_.store(false);
-    };
-    Context::GetInstance().GetThreadPool()->Execute(task);
-    return Status::RATE_LIMIT;
+    return socket;
 }
 
 Status SoftBusClient::CheckStatus()
@@ -145,9 +153,9 @@ Status SoftBusClient::CheckStatus()
     return Status::ERROR;
 }
 
-int32_t SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketListener *listener)
+int32_t SoftBusClient::Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async)
 {
-    int32_t status = ::Bind(socket, qos, QOS_COUNT, listener);
+    int32_t status = ::Bind(socket, QOS_INFOS[type % QOS_BUTT], QOS_COUNTS[type % QOS_BUTT], listener);
     ZLOGI("Bind %{public}s,session:%{public}s,socketId:%{public}d",
         KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket);
 
@@ -157,20 +165,16 @@ int32_t SoftBusClient::Open(int32_t socket, const QosTV qos[], const ISocketList
         ::Shutdown(socket);
         return status;
     }
-    UpdateExpireTime();
+    UpdateExpireTime(async);
     uint32_t mtu = 0;
     std::tie(status, mtu) = GetMtu(socket);
     if (status != SOFTBUS_OK) {
         ZLOGE("GetMtu failed, session:%{public}s, socket:%{public}d, status:%{public}d", pipe_.pipeId.c_str(), socket_,
             status);
+        ::Shutdown(socket);
         return status;
     }
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        socket_ = socket;
-        mtu_ = mtu;
-        bindState_ = status;
-    }
+    UpdateBindInfo(socket, mtu, status, async);
     ZLOGI("open %{public}s, session:%{public}s success, socket:%{public}d",
         KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket_);
     ConnectManager::GetInstance()->OnSessionOpen(DmAdapter::GetInstance().GetDeviceInfo(device_.deviceId).networkId);
@@ -188,12 +192,32 @@ int32_t SoftBusClient::GetSocket() const
     return socket_;
 }
 
-void SoftBusClient::UpdateExpireTime()
+void SoftBusClient::UpdateExpireTime(bool async)
 {
     auto expireTime = CalcExpireTime();
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (expireTime > expireTime_) {
-        expireTime_ = expireTime;
+    if (async) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (expireTime > expireTime_) {
+            expireTime_ = expireTime;
+        }
+    } else {
+        if (expireTime > expireTime_) {
+            expireTime_ = expireTime;
+        }
+    }
+}
+
+void SoftBusClient::UpdateBindInfo(int32_t socket, uint32_t mtu, int32_t status, bool async)
+{
+    if (async) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        socket_ = socket;
+        mtu_ = mtu;
+        bindState_ = status;
+    } else {
+        socket_ = socket;
+        mtu_ = mtu;
+        bindState_ = status;
     }
 }
 
@@ -206,12 +230,30 @@ std::pair<int32_t, uint32_t> SoftBusClient::GetMtu(int32_t socket)
 
 uint32_t SoftBusClient::GetQoSType() const
 {
-    return type_ % QOS_COUNT;
+    return type_ % QOS_BUTT;
 }
 
 SoftBusClient::Time SoftBusClient::CalcExpireTime() const
 {
     auto delay = type_ == QOS_BR ? BR_CLOSE_DELAY : HML_CLOSE_DELAY;
     return std::chrono::steady_clock::now() + delay;
+}
+
+Status SoftBusClient::ReuseConnect(const ISocketListener *listener)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto checkStatus = CheckStatus();
+    if (checkStatus == Status::SUCCESS) {
+        UpdateExpireTime(false);
+        return Status::SUCCESS;
+    }
+    int32_t socket = CreateSocket();
+    if (socket <= 0) {
+        return Status::NETWORK_ERROR;
+    }
+    ZLOGI("Reuse Start, device:%{public}s session:%{public}s socket:%{public}d",
+        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket);
+    int32_t status = Open(socket, QOS_REUSE, listener, false);
+    return status == SOFTBUS_OK ? Status::SUCCESS : Status::NETWORK_ERROR;
 }
 } // namespace OHOS::AppDistributedKv

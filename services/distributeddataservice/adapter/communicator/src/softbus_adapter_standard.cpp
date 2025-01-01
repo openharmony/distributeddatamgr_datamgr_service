@@ -182,22 +182,9 @@ void SoftBusAdapter::GetExpireTime(std::shared_ptr<SoftBusClient> &conn)
 std::pair<Status, int32_t> SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
     const DataInfo &dataInfo, uint32_t length, const MessageInfo &info)
 {
-    std::shared_ptr<SoftBusClient> conn;
     bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
     uint32_t qosType = isOHOSType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
-    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType, isOHOSType](const auto &key,
-        std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
-        for (auto &connect : connects) {
-            if (connect->GetQoSType() == qosType) {
-                conn = connect;
-                return true;
-            }
-        }
-        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
-        connects.emplace_back(connect);
-        conn = connect;
-        return true;
-    });
+    std::shared_ptr<SoftBusClient> conn = GetConnect(pipeInfo, deviceId, qosType);
     if (conn == nullptr) {
         return std::make_pair(Status::ERROR, 0);
     }
@@ -214,6 +201,29 @@ std::pair<Status, int32_t> SoftBusAdapter::SendData(const PipeInfo &pipeInfo, co
     }
     auto errCode = conn->GetSoftBusError();
     return std::make_pair(status, errCode);
+}
+
+std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    uint32_t qosType)
+{
+    std::shared_ptr<SoftBusClient> conn;
+    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType](const auto &key,
+        std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
+        for (auto &connect : connects) {
+            if (connect == nullptr) {
+                continue;
+            }
+            if (connect->GetQoSType() == qosType) {
+                conn = connect;
+                return true;
+            }
+        }
+        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
+        connects.emplace_back(connect);
+        conn = connect;
+        return true;
+    });
+    return conn;
 }
 
 std::pair<Status, int32_t> SoftBusAdapter::OpenConnect(const std::shared_ptr<SoftBusClient> &conn,
@@ -586,6 +596,39 @@ bool SoftBusAdapter::CloseSession(const std::string &networkId)
         ConnectManager::GetInstance()->OnSessionClose(networkId);
     }
     return ret != 0;
+}
+
+Status SoftBusAdapter::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId)
+{
+    bool isOHOSType = DmAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
+    if (!isOHOSType) {
+        return Status::NOT_SUPPORT;
+    }
+    uint32_t qosType = SoftBusClient::QOS_HML;
+    std::shared_ptr<SoftBusClient> conn = GetConnect(pipeInfo, deviceId, qosType);
+    if (conn == nullptr) {
+        return Status::ERROR;
+    }
+    auto status = conn->ReuseConnect(&clientListener_);
+    if (status != Status::SUCCESS) {
+        return status;
+    }
+    // Avoid being cleared by scheduled tasks
+    connects_.Compute(deviceId.deviceId, [&conn, qosType](const auto &key,
+        std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
+        for (auto &connect : connects) {
+            if (connect == nullptr) {
+                continue;
+            }
+            if (connect->GetQoSType() == qosType) {
+                return true;
+            }
+        }
+        connects.emplace_back(conn);
+        return true;
+    });
+    StartCloseSessionTask(deviceId.deviceId);
+    return Status::SUCCESS;
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

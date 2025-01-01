@@ -41,6 +41,7 @@ public:
     bool IsRemoteQuery();
     bool IsPriority();
     void MakeQuery(const PredicatesMemo &predicates);
+    void MakeQuery(const std::string &table);
     void MakeRemoteQuery(const std::string &devices, const std::string &sql, DistributedData::Values &&args);
     void MakeCloudQuery(const PredicatesMemo &predicates);
 

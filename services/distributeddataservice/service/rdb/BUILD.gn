@@ -46,6 +46,7 @@ ohos_static_library("distributeddata_rdb_static") {
     "rdb_query.cpp",
     "rdb_result_set_impl.cpp",
     "rdb_result_set_stub.cpp",
+    "rdb_schema_config.cpp",
     "rdb_service_impl.cpp",
     "rdb_service_stub.cpp",
     "rdb_watcher.cpp",
@@ -81,6 +82,7 @@ ohos_static_library("distributeddata_rdb_static") {
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
   ]
   cflags_cc = []
   subsystem_name = "distributeddatamgr"

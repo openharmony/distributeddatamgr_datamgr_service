@@ -52,6 +52,8 @@ public:
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
         std::function<void(const std::string &, const LevelInfo &)> listener) override;
 
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId) override;
+
 protected:
     virtual Status Initialize();
 

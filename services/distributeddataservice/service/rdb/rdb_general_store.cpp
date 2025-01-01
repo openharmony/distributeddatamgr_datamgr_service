@@ -41,6 +41,8 @@
 #include "relational_store_manager.h"
 #include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
+#include "serializable/serializable.h"
+#include "rdb_schema_config.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -87,6 +89,48 @@ static DBSchema GetDBSchema(const Database &database)
     return schema;
 }
 
+static bool IsExistence(const std::string &col, const std::vector<std::string> &cols)
+{
+    for (auto &column : cols) {
+        if (col == column) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static DistributedSchema GetGaussDistributedSchema(const RdbSchema &schema)
+{
+    DistributedSchema distributedSchema;
+    distributedSchema.version = schema.version;
+    distributedSchema.tables.resize(schema.tables.size());
+    for (size_t i = 0; i < schema.tables.size(); i++) {
+        const Table &table = schema.tables[i];
+        DistributedTable &dbTable = distributedSchema.tables[i];
+        dbTable.tableName = table.name;
+        for (auto &field : table.fields) {
+            DistributedField dbField;
+            dbField.colName = field.colName;
+            dbField.isP2pSync = IsExistence(field.colName, table.columns);
+            dbTable.fields.push_back(std::move(dbField));
+        }
+    }
+    return distributedSchema;
+}
+
+static std::pair<bool, RdbSchema> GetDistributedSchema(const StoreMetaData &meta)
+{
+    std::pair<bool, RdbSchema> tableData;
+    RdbSchema schema;
+    schema.bundleName = meta.bundleName;
+    schema.name = meta.storeId;
+    schema.user = meta.user;
+    schema.deviceId = meta.deviceId;
+    tableData.first = MetaDataManager::GetInstance().LoadMeta(schema.GetKey(), schema, true);
+    tableData.second = schema;
+    return tableData;
+}
+
 void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
 {
     storeInfo_.tokenId = meta.tokenId;
@@ -97,13 +141,22 @@ void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
     storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
 }
 
+RelationalStoreDelegate::Option GetOption(const StoreMetaData &meta)
+{
+    RelationalStoreDelegate::Option option;
+    option.syncDualTupleMode = true;
+    if (GetDistributedSchema(meta).first) {
+        option.tableMode = DistributedTableMode::COLLABORATION;
+    }
+    return option;
+}
+
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     : manager_(meta.appId, meta.user, meta.instanceId), tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
 {
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
-    RelationalStoreDelegate::Option option;
-    option.syncDualTupleMode = true;
+    RelationalStoreDelegate::Option option = GetOption(meta);
     option.observer = &observer_;
     if (meta.isEncrypt) {
         std::string key = meta.GetSecretKey();
@@ -131,17 +184,16 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
             delegate_ = nullptr;
         }
     }
-
     InitStoreInfo(meta);
-
     if (meta.isSearchable) {
         syncNotifyFlag_ |= SEARCHABLE_FLAG;
     }
-
     if (delegate_ != nullptr && meta.isManualClean) {
-        PragmaData data =
-            static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
+        PragmaData data = static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
         delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
+    }
+    if (GetDistributedSchema(meta).first) {
+        delegate_->SetDistributedSchema(GetGaussDistributedSchema(GetDistributedSchema(meta).second));
     }
     ZLOGI("Get rdb store, tokenId:%{public}u, bundleName:%{public}s, storeName:%{public}s, user:%{public}s,"
           "isEncrypt:%{public}d, isManualClean:%{public}d, isSearchable:%{public}d",
