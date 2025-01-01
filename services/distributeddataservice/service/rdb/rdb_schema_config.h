@@ -17,7 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_SCHEMA_CONFIG_H
 #include <string>
 #include <vector>
-#include "bundle_mgr_proxy.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "metadata/store_meta_data.h"
 #include "serializable/serializable.h"
 #include "cloud/schema_meta.h"
