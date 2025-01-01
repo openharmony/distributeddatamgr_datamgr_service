@@ -124,6 +124,7 @@ ohos_unittest("CloudDataTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
   ]
 
   deps = [
@@ -207,6 +208,7 @@ ohos_unittest("CloudServiceImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
   ]
 
   deps = [
