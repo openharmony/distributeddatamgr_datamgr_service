@@ -20,7 +20,7 @@
 #include <string>
 
 #include "bundle_info.h"
-#include "bundlemgr/bundle_mgr_proxy.h"
+#include "bundle_mgr_proxy.h"
 #include "concurrent_map.h"
 #include "data_share_profile_config.h"
 
