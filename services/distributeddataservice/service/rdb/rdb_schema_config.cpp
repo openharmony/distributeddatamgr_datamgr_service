@@ -99,8 +99,8 @@ bool RdbSchemaConfig::GetSchemaFromHap(
         std::string jsonData(fileContent.get(), fileContent.get() + length);
         DbSchema databases;
         databases.Unmarshall(jsonData);
-        for (auto &database : databases.databases) {
-            if (database.name == storeName) {
+        for (auto &schema : databases.databases) {
+            if (schema.name == storeName) {
                 database = schema;
                 return true;
             }
