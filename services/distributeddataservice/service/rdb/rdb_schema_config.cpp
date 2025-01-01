@@ -33,17 +33,17 @@ using namespace OHOS::DistributedData;
 using Serializable = DistributedData::Serializable;
 constexpr const char *SCHEMA_PATH = "arkdata/schema/schema.json";
 
-bool RdbSchemaConfig::GetDistributedSchema(const StoreMetaData &meta, RdbSchema &rdbSchema)
+bool RdbSchemaConfig::GetDistributedSchema(const StoreMetaData &meta, Database &database)
 {
     OHOS::AppExecFwk::BundleInfo bundleInfo;
     if (!InitBundleInfo(meta.bundleName, std::atoi(meta.user.c_str()), bundleInfo)) {
         return false;
     }
     std::string storeName = meta.storeId;
-    auto ret = GetSchemaFromHap(bundleInfo, meta.storeId, rdbSchema);
+    auto ret = GetSchemaFromHap(bundleInfo, meta.storeId, database);
     if (ret) {
-        rdbSchema.user = meta.user;
-        rdbSchema.deviceId = meta.deviceId;
+        database.user = meta.user;
+        database.deviceId = meta.deviceId;
         return true;
     }
     return false;
@@ -81,7 +81,7 @@ bool RdbSchemaConfig::InitBundleInfo(
 }
 
 bool RdbSchemaConfig::GetSchemaFromHap(
-    const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName, RdbSchema &rdbSchema)
+    const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName, Database &database)
 {
     for (auto &hapInfo : bundleInfo.hapModuleInfos) {
         std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
@@ -97,11 +97,11 @@ bool RdbSchemaConfig::GetSchemaFromHap(
             continue;
         }
         std::string jsonData(fileContent.get(), fileContent.get() + length);
-        DbSchema schema;
-        schema.Unmarshall(jsonData);
-        for (auto &schema : schema.databases) {
-            if (schema.name == storeName) {
-                rdbSchema = schema;
+        DbSchema databases;
+        databases.Unmarshall(jsonData);
+        for (auto &database : databases.databases) {
+            if (database.name == storeName) {
+                database = schema;
                 return true;
             }
         }
