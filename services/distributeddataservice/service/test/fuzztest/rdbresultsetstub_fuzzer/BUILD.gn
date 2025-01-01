@@ -80,6 +80,7 @@ ohos_fuzztest("RdbResultSetStubFuzzTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
   ]
 }
 
