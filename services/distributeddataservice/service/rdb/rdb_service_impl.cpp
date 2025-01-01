@@ -311,7 +311,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
                 syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
             MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
         }
-        DataBase dataBase;
+        Database dataBase;
         if (RdbSchemaConfig::GetDistributedSchema(localMeta, dataBase) && !dataBase.name.empty() &&
             !dataBase.bundleName.empty()) {
             MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true);
@@ -965,7 +965,7 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
     return 0;
 }
 
-StoreMetaData RdbServiceImpl::GetStoreMetaData(const DataBase &dataBase)
+StoreMetaData RdbServiceImpl::GetStoreMetaData(const Database &dataBase)
 {
     StoreMetaData storeMetaData;
     storeMetaData.storeId = dataBase.name;
@@ -1001,7 +1001,7 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
 }
 
 int RdbServiceImpl::DoAutoSync(
-    const std::vector<std::string> &devices, const DataBase &dataBase, std::vector<std::string> tables)
+    const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tables)
 {
     StoreMetaData storeMetaData = GetStoreMetaData(dataBase);
     auto tokenId = storeMetaData.tokenId;
@@ -1038,7 +1038,7 @@ int RdbServiceImpl::DoAutoSync(
     return RDB_OK;
 }
 
-int RdbServiceImpl::DoOnlineSync(const std::vector<std::string> &devices, const DataBase &dataBase)
+int RdbServiceImpl::DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase)
 {
     std::vector<std::string> tableNames;
     for (auto &table : dataBase.tables) {
@@ -1052,9 +1052,9 @@ int RdbServiceImpl::DoOnlineSync(const std::vector<std::string> &devices, const 
 int32_t RdbServiceImpl::OnReady(const std::string &device)
 {
     int index = ALLOW_ONLINE_AUTO_SYNC;
-    DataBase dataBase;
+    Database dataBase;
     std::string prefix = dataBase.GetPrefix({});
-    std::vector<DataBase> dataBases;
+    std::vector<Database> dataBases;
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, dataBases, true)) {
         return 0;
     }
@@ -1128,8 +1128,8 @@ int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int
 
 int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    std::string prefix = DataBase::GetPrefix({std::to_string(user), "default", bundleName});
-    std::vector<DataBase> dataBase;
+    std::string prefix = Database::GetPrefix({std::to_string(user), "default", bundleName});
+    std::vector<Database> dataBase;
     if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
         for (const auto &dataBase : dataBase) {
             MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true);
@@ -1140,8 +1140,8 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName,
 
 int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
-    std::string prefix = DataBase::GetPrefix({std::to_string(user), "default", bundleName});
-    std::vector<DataBase> dataBase;
+    std::string prefix = Database::GetPrefix({std::to_string(user), "default", bundleName});
+    std::vector<Database> dataBase;
     if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
         for (const auto &dataBase : dataBase) {
             MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true);
@@ -1194,7 +1194,7 @@ RdbServiceImpl::~RdbServiceImpl()
 int RdbServiceImpl::DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData)
 {
     std::vector<std::string> tableNames;
-    DataBase dataBase;
+    Database dataBase;
     dataBase.bundleName = storeInfo.bundleName;
     dataBase.name = storeInfo.storeName;
     dataBase.user = std::to_string(storeInfo.user);
