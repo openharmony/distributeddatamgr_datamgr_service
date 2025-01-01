@@ -22,17 +22,17 @@
 #include "serializable/serializable.h"
 #include "cloud/schema_meta.h"
 namespace OHOS::DistributedRdb {
-using RdbSchema = DistributedData::Database;
+using Database = DistributedData::Database;
 using DbSchema = DistributedData::SchemaMeta;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 class RdbSchemaConfig {
 public:
-    static bool GetDistributedSchema(const StoreMetaData &meta, RdbSchema &rdbSchema);
+    static bool GetDistributedSchema(const StoreMetaData &meta, Database &database);
 
 private:
     static bool InitBundleInfo(const std::string &bundleName, int32_t userId, OHOS::AppExecFwk::BundleInfo &bundleInfo);
     static bool GetSchemaFromHap(
-        const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName, RdbSchema &rdbSchema);
+        const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName, Database &database);
 };
 }  // namespace OHOS::DistributedRdb
 #endif  // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_SCHEMA_CONFIG_H
