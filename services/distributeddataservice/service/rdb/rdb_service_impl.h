@@ -37,7 +37,7 @@
 #include "store/general_value.h"
 #include "store_observer.h"
 #include "visibility.h"
-#include "rdb_schema_config.h"
+#include "cloud/schema_meta.h"
 #include "process_communicator_impl.h"
 
 namespace OHOS::DistributedRdb {
@@ -169,10 +169,10 @@ private:
         const AsyncDetail &async);
     
     int DoAutoSync(
-        const std::vector<std::string> &devices, const RdbSchema &rdbschema, std::vector<std::string> tableNames);
+        const std::vector<std::string> &devices, const DataBase &dataBase, std::vector<std::string> tableNames);
     
     std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices);
-    int DoOnlineSync(const std::vector<std::string> &devices, const RdbSchema &rdbschema);
+    int DoOnlineSync(const std::vector<std::string> &devices, const DataBase &dataBase);
 
     int DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData);
 
@@ -190,7 +190,7 @@ private:
 
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 
-    StoreMetaData GetStoreMetaData(const RdbSchema &rdbschema);
+    StoreMetaData GetStoreMetaData(const DataBase &dataBase);
 
     int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
 
