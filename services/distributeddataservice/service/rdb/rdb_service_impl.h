@@ -169,10 +169,10 @@ private:
         const AsyncDetail &async);
     
     int DoAutoSync(
-        const std::vector<std::string> &devices, const DataBase &dataBase, std::vector<std::string> tableNames);
+        const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tableNames);
     
     std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices);
-    int DoOnlineSync(const std::vector<std::string> &devices, const DataBase &dataBase);
+    int DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase);
 
     int DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData);
 
@@ -190,7 +190,7 @@ private:
 
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 
-    StoreMetaData GetStoreMetaData(const DataBase &dataBase);
+    StoreMetaData GetStoreMetaData(const Database &dataBase);
 
     int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
 
