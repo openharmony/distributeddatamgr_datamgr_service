@@ -34,13 +34,13 @@
 #include "store/general_value.h"
 #include "utils/ref_count.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT KVDBServiceImpl final : public KVDBServiceStub {
+class KVDBServiceImpl final : public KVDBServiceStub {
 public:
     using DBLaunchParam = DistributedDB::AutoLaunchParam;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using RefCount = DistributedData::RefCount;
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
-    API_EXPORT KVDBServiceImpl();
+    KVDBServiceImpl();
     virtual ~KVDBServiceImpl();
     Status GetStoreIds(const AppId &appId, std::vector<StoreId> &storeIds) override;
     Status BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options) override;
