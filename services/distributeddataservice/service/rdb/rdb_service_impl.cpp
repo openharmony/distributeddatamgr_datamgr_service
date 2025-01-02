@@ -1013,6 +1013,9 @@ int RdbServiceImpl::DoAutoSync(
     SyncParam syncParam = {0, 0};
     auto pid = IPCSkeleton::GetCallingPid();
     DetailAsync async;
+    if (executors_ == nullptr) {
+        return RDB_ERROR;
+    }
     for (auto &table : tables) {
         executors_->Execute([this, table, store, pid, syncParam, tokenId, async,
                                 devices, storeMetaData]() {
