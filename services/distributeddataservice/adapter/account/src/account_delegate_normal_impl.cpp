@@ -34,6 +34,11 @@ using namespace OHOS::DistributedData;
 using namespace Security::AccessToken;
 __attribute__((used)) static bool g_isInit = AccountDelegateNormalImpl::Init();
 
+AccountDelegateNormalImpl::AccountDelegateNormalImpl()
+{
+    userDeactivating_.InsertOrAssign(0, false);
+}
+
 std::string AccountDelegateNormalImpl::GetCurrentAccountId() const
 {
     ZLOGD("start");
@@ -130,6 +135,7 @@ void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo& account
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
             userStatus_.Erase(atoi(account.userId.c_str()));
+            userDeactivating_.Erase(atoi(account.userId.c_str()));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
             userStatus_.InsertOrAssign(atoi(account.userId.c_str()), true);
@@ -231,6 +237,21 @@ bool AccountDelegateNormalImpl::Init()
     static std::once_flag onceFlag;
     std::call_once(onceFlag, [&]() { AccountDelegate::RegisterAccountInstance(&normalAccountDelegate); });
     return true;
+}
+
+bool AccountDelegateNormalImpl::IsDeactivating(int userId)
+{
+    auto [success, res] = userDeactivating_.Find(userId);
+    if (success && !res) {
+        return res;
+    }
+    auto status = AccountSA::OsAccountManager::IsOsAccountDeactivating(userId, res);
+    if (status != 0) {
+        ZLOGE("IsOsAccountDeactivating failed: %{public}d, user:%{public}d", status, userId);
+        return true;
+    }
+    userDeactivating_.InsertOrAssign(userId, res);
+    return res;
 }
 } // namespace DistributedKv
 }  // namespace OHOS

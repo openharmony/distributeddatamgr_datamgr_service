@@ -1168,17 +1168,24 @@ void RdbGeneralStore::RemoveTasks()
         taskIds.push_back(task.taskId);
         return true;
     });
+    auto func = [](const std::list<DBProcessCB> &cbs) {
+        std::map<std::string, SyncProcess> result;
+        result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
+        for (auto &cb : cbs) {
+            if (cb != nullptr) {
+                cb(result);
+            }
+        }
+    };
     if (executor_ != nullptr) {
-        for (auto taskId : taskIds) {
+        for (auto taskId: taskIds) {
             executor_->Remove(taskId, true);
         }
-    }
-    std::map<std::string, SyncProcess> result;
-    result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
-    for (auto &cb : cbs) {
-        if (cb != nullptr) {
-            cb(result);
-        }
+        executor_->Execute([cbs, func]() {
+            func(cbs);
+        });
+    } else {
+        func(cbs);
     }
 }
 

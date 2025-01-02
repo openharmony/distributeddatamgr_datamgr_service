@@ -62,6 +62,12 @@ bool AccountDelegateDefaultImpl::IsVerified(int userId)
     return true;
 }
 
+bool AccountDelegateDefaultImpl::IsDeactivating(int userId)
+{
+    ZLOGD("no account part.");
+    return false;
+}
+
 void AccountDelegateDefaultImpl::SubscribeAccountEvent()
 {
     ZLOGD("no account part.");

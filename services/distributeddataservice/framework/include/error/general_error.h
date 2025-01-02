@@ -53,6 +53,7 @@ enum GeneralError : int32_t {
     E_SECURITY_LEVEL_ERROR,
     E_FILE_NOT_EXIST,
     E_SCREEN_LOCKED,
+    E_USER_DEACTIVATING,
     E_BUTT,
 };
 }

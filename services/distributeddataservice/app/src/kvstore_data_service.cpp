@@ -562,8 +562,14 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
             std::vector<int32_t> users;
             AccountDelegate::GetInstance()->QueryUsers(users);
             std::set<int32_t> userIds(users.begin(), users.end());
+            userIds.insert(0);
             AutoCache::GetInstance().CloseStore([&userIds](const StoreMetaData &meta) {
-                return userIds.count(atoi(meta.user.c_str())) == 0;
+                if (userIds.count(atoi(meta.user.c_str())) == 0) {
+                    ZLOGW("Illegal use of database by user %{public}s, %{public}s:%{public}s", meta.user.c_str(),
+                          meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+                    return true;
+                }
+                return false;
             });
             break;
         }
