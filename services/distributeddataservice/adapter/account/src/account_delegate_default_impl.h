@@ -27,6 +27,7 @@ public:
     bool QueryForegroundUsers(std::vector<int> &users) override;
     bool IsLoginAccount() override;
     bool IsVerified(int userId) override;
+    bool IsDeactivating(int userId) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;

@@ -1030,8 +1030,13 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
             std::vector<int32_t> users;
             DistributedKv::AccountDelegate::GetInstance()->QueryUsers(users);
             std::set<int32_t> userIds(users.begin(), users.end());
+            userIds.insert(0);
             DBDelegate::Close([&userIds](const std::string &userId) {
-                return userIds.count(atoi(userId.c_str())) == 0;
+                if (userIds.count(atoi(userId.c_str())) == 0) {
+                    ZLOGW("Illegal use of database by user %{public}s", userId.c_str());
+                    return true;
+                }
+                return false;
             });
             break;
         }
