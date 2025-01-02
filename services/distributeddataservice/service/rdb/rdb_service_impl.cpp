@@ -289,7 +289,6 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, param, eventInfo);
     }
     auto meta = GetStoreMetaData(param);
-
     if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE) {
         StoreMetaData localMeta;
         bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);

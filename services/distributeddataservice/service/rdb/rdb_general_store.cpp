@@ -239,7 +239,8 @@ int32_t RdbGeneralStore::Close(bool isForce)
         if (delegate_ == nullptr) {
             return GeneralError::E_OK;
         }
-        if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || delegate_->GetDownloadingAssetsCount() > 0) {
+        auto [dbStatus, downloadCount] = delegate_->GetDownloadingAssetsCount();
+        if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0)) {
             return GeneralError::E_BUSY;
         }
         auto status = manager_.CloseStore(delegate_);
