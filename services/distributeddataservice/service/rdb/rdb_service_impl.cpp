@@ -306,7 +306,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
                 syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
             MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
         }
-    } else if(type == DistributedRdb::DistributedTableType::DISTRIBUTED_CLOUD) {
+    } else if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_CLOUD) {
         MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
         if (meta.asyncDownloadAsset != param.asyncDownloadAsset_) {
             meta.asyncDownloadAsset = param.asyncDownloadAsset_;

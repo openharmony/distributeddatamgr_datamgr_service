@@ -393,11 +393,10 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         GenDetails details;
         auto &detail = details[SyncInfo::DEFAULT_ID];
         detail.progress = GenProgress::SYNC_FINISH;
-        auto result = GetMetaData(storeInfo);
-        if (!result.first) {
+        auto [hasMeta, meta] = GetMetaData(storeInfo);
+        if (!hasMeta) {
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId);
         }
-        auto &meta = result.second;
         auto [code, store] = GetStore(meta, storeInfo.user);
         if (code == E_SCREEN_LOCKED) {
             AddCompensateSync(meta);
@@ -411,7 +410,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
               storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
               meta.asyncDownloadAsset);
         RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId,
-                                evt.GetTriggerMode() },"GetSyncHandler", BizState::BEGIN);
+            evt.GetTriggerMode() }, "GetSyncHandler", BizState::BEGIN);
         Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::START, E_OK });
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation(), MODE_DEFAULT, prepareTraceId };
         syncParam.asyncDownloadAsset = meta.asyncDownloadAsset;
@@ -420,13 +419,14 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                             : GetCallback(async, storeInfo, evt.GetTriggerMode(), prepareTraceId, user), syncParam);
         if (status != E_OK) {
             if (async) {
-                async({ std::make_pair(SyncInfo::DEFAULT_ID, { GenProgress::SYNC_FINISH, status }) });
+                detail.code = status;
+                async(std::move(details));
             }
             UpdateFinishSyncInfo({ GetAccountId(storeInfo.user), storeInfo.bundleName, "" }, storeInfo.syncId, E_ERROR);
             if (status != GeneralError::E_NOT_SUPPORT) {
                 auto code = dbCode == 0 ? GenStore::CLOUD_ERR_OFFSET + status : dbCode;
                 RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                        evt.GetTriggerMode(), code }, "GetSyncHandler", BizState::END);
+                    evt.GetTriggerMode(), code }, "GetSyncHandler", BizState::END);
                 Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, code });
             }
         }
