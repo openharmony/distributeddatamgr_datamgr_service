@@ -37,7 +37,7 @@ config("module_public_config") {
   ]
 }
 
-ohos_static_library("udmf_server") {
+ohos_source_set("udmf_server") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     ubsan = true
@@ -68,12 +68,13 @@ ohos_static_library("udmf_server") {
   cflags = [
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
+    "-Oz",
   ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
   ]
 
   external_deps = [
@@ -94,7 +95,10 @@ ohos_static_library("udmf_server") {
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"

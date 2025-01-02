@@ -27,7 +27,7 @@ config("rdb_public_config") {
   ]
 }
 
-ohos_static_library("distributeddata_rdb_static") {
+ohos_source_set("distributeddata_rdb") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     ubsan = true
@@ -56,15 +56,16 @@ ohos_static_library("distributeddata_rdb_static") {
   cflags = [
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
+    "-Oz",
   ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
-    "${data_service_path}/service/common:distributeddata_common_static",
-    "${data_service_path}/service/crypto:distributeddata_crypto_static",
-    "${data_service_path}/service/matrix:distributeddata_matrix_static",
-    "${data_service_path}/service/permission:distributeddata_permit_static",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/crypto:distributeddata_crypto",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
+    "${data_service_path}/service/permission:distributeddata_permit",
   ]
 
   external_deps = [
@@ -82,7 +83,10 @@ ohos_static_library("distributeddata_rdb_static") {
     "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"

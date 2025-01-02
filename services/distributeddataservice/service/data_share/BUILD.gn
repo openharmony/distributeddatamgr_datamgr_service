@@ -34,7 +34,7 @@ config("module_public_config") {
 group("build_module") {
   deps = [ ":data_share_service" ]
 }
-ohos_static_library("data_share_service") {
+ohos_source_set("data_share_service") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     ubsan = true
@@ -90,14 +90,18 @@ ohos_static_library("data_share_service") {
     "-Werror",
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 
   configs = [ ":module_public_config" ]
 
   deps = [
-    "${data_service_path}/service/common:distributeddata_common_static",
+    "${data_service_path}/service/common:distributeddata_common",
     "../../adapter:distributeddata_adapter",
     "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",

@@ -13,7 +13,7 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_static_library("distributeddata_checker_static") {
+ohos_source_set("distributeddata_checker") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -27,20 +27,19 @@ ohos_static_library("distributeddata_checker_static") {
     "system_checker.cpp",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
-
-  include_dirs = [
-    "${kv_store_common_path}",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
   ]
+
+  include_dirs = [ "${data_service_path}/framework/include" ]
 
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
   }
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static" ]
-
+  deps = [ "${data_service_path}/adapter/utils:distributeddata_utils_static" ]
+  cflags = [ "-Oz" ]
   external_deps = [
     "ability_base:base",
     "ability_base:want",
@@ -50,6 +49,7 @@ ohos_static_library("distributeddata_checker_static") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"

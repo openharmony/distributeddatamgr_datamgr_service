@@ -17,6 +17,7 @@
 #define DISTRIBUTED_RDB_RDB_RESULT_SET_STUB_H
 
 #include <iremote_stub.h>
+
 #include "irdb_result_set.h"
 #include "result_set.h"
 

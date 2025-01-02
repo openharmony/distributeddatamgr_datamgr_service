@@ -25,7 +25,7 @@ config("cloud_public_config") {
   ]
 }
 
-ohos_static_library("distributeddata_cloud_static") {
+ohos_source_set("distributeddata_cloud") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -44,7 +44,10 @@ ohos_static_library("distributeddata_cloud_static") {
     "sync_strategies/network_sync_strategy.cpp",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 
   include_dirs = [ "sync_strategies" ]
   configs = [ ":cloud_public_config" ]
@@ -53,14 +56,14 @@ ohos_static_library("distributeddata_cloud_static") {
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
-    "${data_service_path}/service/common:distributeddata_common_static",
-    "${data_service_path}/service/matrix:distributeddata_matrix_static",
-    "${data_service_path}/service/permission:distributeddata_permit_static",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/permission:distributeddata_permit",
   ]
 
   external_deps = [

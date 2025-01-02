@@ -19,7 +19,7 @@ config("object_public_config") {
   include_dirs = [ "${data_service_path}/service/common" ]
 }
 
-ohos_static_library("distributeddata_object_static") {
+ohos_source_set("distributeddata_object") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -42,7 +42,10 @@ ohos_static_library("distributeddata_object_static") {
     "src/object_types_utils.cpp",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 
   include_dirs = [ "include" ]
 
@@ -53,13 +56,14 @@ ohos_static_library("distributeddata_object_static") {
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
-    "${data_service_path}/service/common:distributeddata_common_static",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
   ]
 
   external_deps = [

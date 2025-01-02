@@ -30,7 +30,6 @@
 #include "cloud_data_translate.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
-#include "device_matrix.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "hap_token_info.h"

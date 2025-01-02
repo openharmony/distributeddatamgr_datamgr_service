@@ -59,9 +59,13 @@ ohos_shared_library("distributeddatasvc") {
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 
   configs = [ ":module_public_config" ]
   public_configs = [ ":module_public_config" ]
@@ -70,23 +74,22 @@ ohos_shared_library("distributeddatasvc") {
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/backup:distributeddata_backup_static",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
-    "${data_service_path}/service/common:distributeddata_common_static",
-    "${data_service_path}/service/config:distributeddata_config_static",
-    "${data_service_path}/service/crypto:distributeddata_crypto_static",
-    "${data_service_path}/service/dumper:distributeddata_dumper_static",
-    "${data_service_path}/service/matrix:distributeddata_matrix_static",
-    "${data_service_path}/service/permission:distributeddata_permit_static",
+    "${data_service_path}/service/backup:distributeddata_backup",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/config:distributeddata_config",
+    "${data_service_path}/service/crypto:distributeddata_crypto",
+    "${data_service_path}/service/dumper:distributeddata_dumper",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
+    "${data_service_path}/service/permission:distributeddata_permit",
   ]
 
   if (datamgr_service_cloud) {
-    deps +=
-        [ "${data_service_path}/service/cloud:distributeddata_cloud_static" ]
+    deps += [ "${data_service_path}/service/cloud:distributeddata_cloud" ]
   }
 
   if (datamgr_service_kvdb) {
-    deps += [ "${data_service_path}/service/kvdb:distributeddata_kvdb_static" ]
+    deps += [ "${data_service_path}/service/kvdb:distributeddata_kvdb" ]
   }
 
   if (datamgr_service_udmf) {
@@ -94,7 +97,7 @@ ohos_shared_library("distributeddatasvc") {
   }
 
   if (datamgr_service_rdb) {
-    deps += [ "${data_service_path}/service/rdb:distributeddata_rdb_static" ]
+    deps += [ "${data_service_path}/service/rdb:distributeddata_rdb" ]
   }
 
   if (datamgr_service_data_share) {
@@ -102,8 +105,7 @@ ohos_shared_library("distributeddatasvc") {
   }
 
   if (datamgr_service_object) {
-    deps +=
-        [ "${data_service_path}/service/object:distributeddata_object_static" ]
+    deps += [ "${data_service_path}/service/object:distributeddata_object" ]
   }
 
   external_deps = [ "hilog:libhilog" ]
