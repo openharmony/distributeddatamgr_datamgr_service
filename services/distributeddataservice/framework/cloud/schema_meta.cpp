@@ -91,7 +91,6 @@ bool Database::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(dbName), name);
     GetValue(node, GET_NAME(autoSyncType), autoSyncType);
     GetValue(node, GET_NAME(user), user);
-    GetValue(node, GET_NAME(deviceId), deviceId);
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(bundleName), bundleName);
     return true;
