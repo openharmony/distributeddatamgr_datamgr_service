@@ -43,7 +43,6 @@
 #include "mock/general_store_mock.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
-#include "rdb_schema.config.h"
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "store/auto_cache.h"
