@@ -46,6 +46,8 @@ public:
     bool IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const struct DeviceId &peer);
 
     void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag);
+
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
 private:
     std::mutex dataBusMapMutex_ {};
     std::map<std::string, std::shared_ptr<AppPipeHandler>> dataBusMap_ {};

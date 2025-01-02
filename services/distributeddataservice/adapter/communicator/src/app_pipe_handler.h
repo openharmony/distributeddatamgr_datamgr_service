@@ -51,6 +51,8 @@ public:
     int CreateSessionServer(const std::string &sessionName) const;
 
     int RemoveSessionServer(const std::string &sessionName) const;
+
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
 private:
     PipeInfo pipeInfo_;
     std::shared_ptr<SoftBusAdapter> softbusAdapter_ {};

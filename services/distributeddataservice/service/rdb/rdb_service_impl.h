@@ -37,13 +37,16 @@
 #include "store/general_value.h"
 #include "store_observer.h"
 #include "visibility.h"
+#include "process_communicator_impl.h"
 
 namespace OHOS::DistributedRdb {
+using namespace OHOS::AppDistributedKv;
 class RdbServiceImpl : public RdbServiceStub {
 public:
     using StoreMetaData = OHOS::DistributedData::StoreMetaData;
     using SecretKeyMetaData = DistributedData::SecretKeyMetaData;
     using DetailAsync = DistributedData::GeneralStore::DetailAsync;
+    using Database = DistributedData::Database;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using StoreInfo = DistributedData::StoreInfo;
     RdbServiceImpl();
@@ -84,6 +87,8 @@ public:
         const PredicatesMemo& predicates, const std::vector<std::string>& columns) override;
 
     int32_t OnBind(const BindInfo &bindInfo) override;
+
+    int32_t OnReady(const std::string &device) override;
 
     int32_t OnInitialize() override;
 
@@ -162,6 +167,14 @@ private:
 
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
+    
+    int DoAutoSync(
+        const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tableNames);
+    
+    std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices);
+    int DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase);
+
+    int DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 
@@ -170,10 +183,14 @@ private:
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
+    
+    std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);
 
     void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
 
     StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
+
+    StoreMetaData GetStoreMetaData(const Database &dataBase);
 
     int32_t SetSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
 

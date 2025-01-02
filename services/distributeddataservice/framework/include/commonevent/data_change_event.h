@@ -23,6 +23,7 @@ class API_EXPORT DataChangeEvent : public CloudEvent {
 public:
     struct TableChangeProperties {
         bool isTrackedDataChange = false;
+        bool isP2pSyncDataChange = false;
     };
     using TableProperties = std::map<std::string, TableChangeProperties>;
     struct EventInfo {

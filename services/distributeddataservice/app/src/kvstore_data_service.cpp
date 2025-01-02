@@ -116,7 +116,9 @@ void KvStoreDataService::Initialize()
     KvStoreDelegateManager::SetProcessLabel(Bootstrap::GetInstance().GetProcessLabel(), "default");
 #endif
     CommunicatorContext::GetInstance().SetThreadPool(executors_);
-    auto communicator = std::make_shared<AppDistributedKv::ProcessCommunicatorImpl>(RouteHeadHandlerImpl::Create);
+    auto communicator = std::shared_ptr<AppDistributedKv::ProcessCommunicatorImpl>(
+        AppDistributedKv::ProcessCommunicatorImpl::GetInstance());
+    communicator->SetRouteHeadHandlerCreator(RouteHeadHandlerImpl::Create);
     DistributedDB::RuntimeConfig::SetDBInfoHandle(std::make_shared<DBInfoHandleImpl>());
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));

@@ -14,6 +14,7 @@
  */
 
 #include "app_pipe_mgr.h"
+#include "kvstore_utils.h"
 #include "reporter.h"
 
 #undef LOG_TAG
@@ -161,6 +162,27 @@ void AppPipeMgr::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)
         appPipeHandler = it->second;
     }
     appPipeHandler->SetMessageTransFlag(pipeInfo, flag);
+}
+
+Status AppPipeMgr::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId)
+{
+    if (pipeInfo.pipeId.empty() || deviceId.deviceId.empty()) {
+        ZLOGW("Input is invalid, pipeId:%{public}s, deviceId:%{public}s", pipeInfo.pipeId.c_str(),
+            KvStoreUtils::ToBeAnonymous(deviceId.deviceId).c_str());
+        return Status::INVALID_ARGUMENT;
+    }
+    ZLOGD("pipeInfo:%s", pipeInfo.pipeId.c_str());
+    std::shared_ptr<AppPipeHandler> appPipeHandler;
+    {
+        std::lock_guard<std::mutex> lock(dataBusMapMutex_);
+        auto it = dataBusMap_.find(pipeInfo.pipeId);
+        if (it == dataBusMap_.end()) {
+            ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
+            return Status::INVALID_ARGUMENT;
+        }
+        appPipeHandler = it->second;
+    }
+    return appPipeHandler->ReuseConnect(pipeInfo, deviceId);
 }
 }  // namespace AppDistributedKv
 }  // namespace OHOS

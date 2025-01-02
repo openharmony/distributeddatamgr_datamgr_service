@@ -80,5 +80,10 @@ int AppPipeHandler::RemoveSessionServer(const std::string &sessionName) const
 {
     return softbusAdapter_->RemoveSessionServerAdapter(sessionName);
 }
+
+Status AppPipeHandler::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId)
+{
+    return softbusAdapter_->ReuseConnect(pipeInfo, deviceId);
+}
 }  // namespace AppDistributedKv
 }  // namespace OHOS

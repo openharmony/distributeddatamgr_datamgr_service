@@ -36,8 +36,8 @@ public:
     using RouteHeadHandlerCreator =
         std::function<std::shared_ptr<DistributedData::RouteHeadHandler>(const DistributedDB::ExtendInfo &info)>;
 
-    API_EXPORT ProcessCommunicatorImpl();
-    API_EXPORT explicit ProcessCommunicatorImpl(RouteHeadHandlerCreator handlerCreator);
+    API_EXPORT static ProcessCommunicatorImpl *GetInstance();
+    API_EXPORT void SetRouteHeadHandlerCreator(RouteHeadHandlerCreator handlerCreator);
     API_EXPORT ~ProcessCommunicatorImpl() override;
 
     DBStatus Start(const std::string &processLabel) override;
@@ -64,10 +64,12 @@ public:
     API_EXPORT DBStatus CheckAndGetDataHeadInfo(
         const uint8_t *data, uint32_t dataLen, uint32_t &headLen, std::vector<std::string> &users) override;
 
+    Status ReuseConnect(const DeviceId &deviceId);
+
 private:
     void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
                    const PipeInfo &pipeInfo) const override;
-
+    ProcessCommunicatorImpl();
     std::string thisProcessLabel_;
     OnDeviceChange onDeviceChangeHandler_;
     OnDataReceive onDataReceiveHandler_;

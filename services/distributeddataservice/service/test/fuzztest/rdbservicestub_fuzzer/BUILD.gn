@@ -87,6 +87,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_query.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_schema_config.cpp",
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
@@ -109,6 +110,8 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
@@ -119,6 +122,8 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",
+    "resource_management:global_resmgr",
+    "samgr:samgr_proxy",
   ]
 }
 

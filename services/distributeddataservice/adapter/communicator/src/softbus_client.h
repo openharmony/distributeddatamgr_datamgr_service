@@ -30,6 +30,7 @@ public:
     enum QoSType {
         QOS_BR,
         QOS_HML,
+        QOS_REUSE,
         QOS_BUTT
     };
     SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId, uint32_t type = QOS_HML);
@@ -47,13 +48,16 @@ public:
     Time GetExpireTime() const;
     int32_t GetSocket() const;
     uint32_t GetQoSType() const;
-    void UpdateExpireTime();
+    void UpdateExpireTime(bool async = true);
     int32_t GetSoftBusError();
+    Status ReuseConnect(const ISocketListener *listener);
 
 private:
-    int32_t Open(int32_t socket, const QosTV qos[], const ISocketListener *listener);
+    int32_t Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async = true);
     std::pair<int32_t, uint32_t> GetMtu(int32_t socket);
     Time CalcExpireTime() const;
+    int32_t CreateSocket() const;
+    void UpdateBindInfo(int32_t socket, uint32_t mtu, int32_t status, bool async = true);
 
     static constexpr int32_t INVALID_SOCKET_ID = -1;
     static constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
@@ -62,6 +66,9 @@ private:
     static constexpr Duration HML_CLOSE_DELAY = std::chrono::seconds(3);
     static constexpr Duration MAX_DELAY = std::chrono::seconds(20);
     static constexpr uint32_t QOS_COUNT = 3;
+    static constexpr uint32_t BR_QOS_COUNT = 3;
+    static constexpr uint32_t HML_QOS_COUNT = 2;
+    static constexpr uint32_t REUSE_QOS_COUNT = 1;
     static constexpr QosTV QOS_INFOS[QOS_BUTT][QOS_COUNT] = {
         { // BR QOS
             QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 0x5a5a5a5a },
@@ -69,11 +76,14 @@ private:
             QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 }
         },
         { // HML QOS
-            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 90 * 1024 * 1024 },
             QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 10000 },
             QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 2000 }
+        },
+        { // REUSE_QOS
+            QosTV{ .qos = QOS_TYPE_REUSE_BE, .value = 1 }
         }
     };
+    static constexpr uint32_t QOS_COUNTS[QOS_BUTT] = { BR_QOS_COUNT, HML_QOS_COUNT, REUSE_QOS_COUNT };
     std::atomic_bool isOpening_ = false;
     mutable std::mutex mutex_;
     uint32_t type_ = QOS_HML;
