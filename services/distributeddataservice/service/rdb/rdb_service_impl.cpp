@@ -279,6 +279,19 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
     return store;
 }
 
+void RdbServiceImpl::UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaData &localMeta)
+{
+    StoreMetaData syncMeta;
+    bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
+    if (!isCreatedSync || localMeta != syncMeta) {
+        ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
+              "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
+            syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
+    }
+}
+
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
     const std::vector<Reference> &references, bool isRebuild, int32_t type)
 {
@@ -301,15 +314,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
                 Anonymous::Change(param.storeName_).c_str());
             return RDB_ERROR;
         }
-        StoreMetaData syncMeta;
-        bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
-        if (!isCreatedSync || localMeta != syncMeta) {
-            ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
-                  "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
-                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
-                syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
-            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
-        }
+        UpdateSyncMeta(meta, localMeta);
         Database dataBase;
         if (RdbSchemaConfig::GetDistributedSchema(localMeta, dataBase) && !dataBase.name.empty() &&
             !dataBase.bundleName.empty()) {
@@ -319,6 +324,8 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
         if (meta.asyncDownloadAsset != param.asyncDownloadAsset_) {
             meta.asyncDownloadAsset = param.asyncDownloadAsset_;
+            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset?[%{public}d]",
+                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), meta.asyncDownloadAsset);
             MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         }
     }
