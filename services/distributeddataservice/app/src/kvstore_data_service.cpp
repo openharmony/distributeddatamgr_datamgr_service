@@ -72,11 +72,12 @@ using namespace OHOS::Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
-using DBConfig = DistributedDB::RuntimeConfig;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
 constexpr char FOUNDATION_PROCESS_NAME[] = "foundation";
+constexpr int MAX_DOWNLOAD_ASSETS_COUNT = 50;
+constexpr int MAX_DOWNLOAD_TASK = 5;
 
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
     : SystemAbility(runOnCreate), clients_()
@@ -120,6 +121,7 @@ void KvStoreDataService::Initialize()
         AppDistributedKv::ProcessCommunicatorImpl::GetInstance());
     communicator->SetRouteHeadHandlerCreator(RouteHeadHandlerImpl::Create);
     DistributedDB::RuntimeConfig::SetDBInfoHandle(std::make_shared<DBInfoHandleImpl>());
+    DistributedDB::RuntimeConfig::SetAsyncDownloadAssetsConfig({ MAX_DOWNLOAD_TASK, MAX_DOWNLOAD_ASSETS_COUNT });
     auto ret = KvStoreDelegateManager::SetProcessCommunicator(communicator);
     ZLOGI("set communicator ret:%{public}d.", static_cast<int>(ret));
 
@@ -153,7 +155,7 @@ void KvStoreDataService::Initialize()
         }
         return uuid;
     };
-    DBConfig::SetTranslateToDeviceIdCallback(translateCall);
+    DistributedDB::RuntimeConfig::SetTranslateToDeviceIdCallback(translateCall);
 }
 
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
