@@ -32,6 +32,7 @@ struct API_EXPORT Table final : public Serializable {
     std::string sharedTableName;
     std::string alias;
     std::vector<Field> fields;
+    std::vector<std::string> columns = {};
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
@@ -41,6 +42,14 @@ struct API_EXPORT Database final : public Serializable {
     std::string alias;
     std::vector<Table> tables;
     std::vector<std::string> GetTableNames() const;
+    uint32_t autoSyncType = 0;
+    std::string user = "";
+    std::string deviceId = "";
+    uint32_t version = 0;
+    std::string bundleName = "";
+    API_EXPORT std::string GetKey() const;
+    API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
+    API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
@@ -83,5 +92,14 @@ public:
     bool IsValid() const;
     Database GetDataBase(const std::string &storeId);
 };
+
+// Table mode of device data sync time
+enum AutoSyncType {
+    IS_NOT_AUTO_SYNC = 0,
+    SYNC_ON_CHANGE = 1, // datachange sync
+    SYNC_ON_READY, // onready sync
+    SYNC_ON_CHANGE_READY //datachange and onready sync
+};
+
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SCHEMA_META_H

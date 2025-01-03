@@ -16,16 +16,23 @@
 #define LOG_TAG "DBAdaptor"
 #include "db_delegate.h"
 
+#include "account_delegate.h"
 #include "kv_delegate.h"
 #include "log_print.h"
 #include "rdb_delegate.h"
 namespace OHOS::DataShare {
+using Account = DistributedKv::AccountDelegate;
 ExecutorPool::TaskId DBDelegate::taskId_ = ExecutorPool::INVALID_TASK_ID;
 ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::stores_ = {};
 std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
     const std::string &extUri, const std::string &backup)
 {
+    if (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str()))) {
+        ZLOGW("user %{public}s is deactivating, storeName: %{public}s", metaData.user.c_str(),
+              metaData.GetStoreAlias().c_str());
+        return nullptr;
+    }
     std::shared_ptr<DBDelegate> store;
     stores_.Compute(metaData.tokenId,
         [&metaData, &store, extUri, &backup](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {

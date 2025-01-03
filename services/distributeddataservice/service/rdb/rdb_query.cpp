@@ -69,6 +69,11 @@ void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
     tables_ = predicates.tables_;
 }
 
+void RdbQuery::MakeQuery(const std::string &table)
+{
+    query_ = DistributedDB::Query::Select(table);
+}
+
 void RdbQuery::MakeCloudQuery(const PredicatesMemo& predicates)
 {
     ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),

@@ -15,7 +15,9 @@ import("//build/ohos_var.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
-  deps = [ ":opencloudextension" ]
+  if (datamgr_service_cloud) {
+    deps = [ ":opencloudextension" ]
+  }
 }
 config("module_public_config") {
   visibility = [ ":*" ]

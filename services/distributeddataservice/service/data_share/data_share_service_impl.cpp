@@ -1001,6 +1001,11 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
 
 void DataShareServiceImpl::InitSubEvent()
 {
+    static std::atomic<bool> alreadySubscribe = false;
+    bool except = false;
+    if (!alreadySubscribe.compare_exchange_strong(except, true)) {
+        return;
+    }
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
@@ -1008,6 +1013,7 @@ void DataShareServiceImpl::InitSubEvent()
     auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo);
     if (!EventFwk::CommonEventManager::SubscribeCommonEvent(sysEventSubscriber)) {
         ZLOGE("Subscribe sys event failed.");
+        alreadySubscribe = false;
     }
     if (BundleMgrProxy::GetInstance()->CheckBMS() != nullptr) {
         sysEventSubscriber->OnBMSReady();
@@ -1024,8 +1030,13 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
             std::vector<int32_t> users;
             DistributedKv::AccountDelegate::GetInstance()->QueryUsers(users);
             std::set<int32_t> userIds(users.begin(), users.end());
+            userIds.insert(0);
             DBDelegate::Close([&userIds](const std::string &userId) {
-                return userIds.count(atoi(userId.c_str())) == 0;
+                if (userIds.count(atoi(userId.c_str())) == 0) {
+                    ZLOGW("Illegal use of database by user %{public}s", userId.c_str());
+                    return true;
+                }
+                return false;
             });
             break;
         }

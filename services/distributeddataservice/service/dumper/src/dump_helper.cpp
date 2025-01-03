@@ -18,7 +18,6 @@
 #include <securec.h>
 
 #include "log_print.h"
-#include "rdb_types.h"
 #include "runtime_config.h"
 #include "string_ex.h"
 

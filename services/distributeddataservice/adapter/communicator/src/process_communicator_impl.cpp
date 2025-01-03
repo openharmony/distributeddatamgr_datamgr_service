@@ -29,14 +29,20 @@ ProcessCommunicatorImpl::ProcessCommunicatorImpl()
 {
 }
 
-ProcessCommunicatorImpl::ProcessCommunicatorImpl(RouteHeadHandlerCreator handlerCreator)
-    : routeHeadHandlerCreator_(std::move(handlerCreator))
-{
-}
-
 ProcessCommunicatorImpl::~ProcessCommunicatorImpl()
 {
     ZLOGE("destructor.");
+}
+
+ProcessCommunicatorImpl *ProcessCommunicatorImpl::GetInstance()
+{
+    static ProcessCommunicatorImpl *processCommunicatorImpl = new ProcessCommunicatorImpl();
+    return processCommunicatorImpl;
+}
+
+void ProcessCommunicatorImpl::SetRouteHeadHandlerCreator(RouteHeadHandlerCreator handlerCreator)
+{
+    routeHeadHandlerCreator_ = std::move(handlerCreator);
 }
 
 DBStatus ProcessCommunicatorImpl::Start(const std::string &processLabel)
@@ -268,6 +274,12 @@ DBStatus ProcessCommunicatorImpl::CheckAndGetDataHeadInfo(
     }
     ZLOGD("ok, result:%{public}zu, user:%{public}s", users.size(), users.front().c_str());
     return DBStatus::OK;
+}
+
+Status ProcessCommunicatorImpl::ReuseConnect(const DeviceId &deviceId)
+{
+    PipeInfo pi = {thisProcessLabel_, ""};
+    return CommunicationProvider::GetInstance().ReuseConnect(pi, deviceId);
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

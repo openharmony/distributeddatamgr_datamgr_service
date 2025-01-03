@@ -1,0 +1,58 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+config("bootstrap_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [ "include" ]
+}
+
+ohos_static_library("distributeddata_bootstrap_static") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+  sources = [ "src/bootstrap.cpp" ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  include_dirs = [ "${data_service_path}/service/config/include" ]
+  configs = [ ":bootstrap_public_config" ]
+  public_configs = [ ":bootstrap_public_config" ]
+  cflags = [
+    "-Werror",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/backup:distributeddata_backup_static",
+    "${data_service_path}/service/config:distributeddata_config_static",
+    "${data_service_path}/service/crypto:distributeddata_crypto_static",
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+  ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}

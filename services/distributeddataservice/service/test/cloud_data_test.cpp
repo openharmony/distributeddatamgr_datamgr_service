@@ -27,6 +27,7 @@
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
 #include "cloud/schema_meta.h"
+#include "cloud_data_translate.h"
 #include "cloud_service_impl.h"
 #include "cloud_types.h"
 #include "cloud_types_util.h"
@@ -2073,6 +2074,36 @@ HWTEST_F(CloudDataTest, GetTableNames, TestSize.Level0)
     database.tables.emplace_back(table);
     auto tableNames = database.GetTableNames();
     EXPECT_EQ(tableNames.size(), 2);
+}
+
+/**
+* @tc.name: BlobToAssets
+* @tc.desc: cloud_data_translate BlobToAsset error test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(CloudDataTest, BlobToAssets, TestSize.Level1)
+{
+    CloudData::RdbCloudDataTranslate rdbTranslate;
+    DistributedDB::Asset asset = {
+        .name = "",
+        .assetId = "",
+        .subpath = "",
+        .uri = "",
+        .modifyTime = "",
+        .createTime = "",
+        .size = "",
+        .hash = ""
+    };
+    std::vector<uint8_t> blob;
+    auto result = rdbTranslate.BlobToAsset(blob);
+    EXPECT_EQ(result, asset);
+
+    DistributedDB::Assets assets;
+    blob = rdbTranslate.AssetsToBlob(assets);
+    auto results = rdbTranslate.BlobToAssets(blob);
+    EXPECT_EQ(results, assets);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

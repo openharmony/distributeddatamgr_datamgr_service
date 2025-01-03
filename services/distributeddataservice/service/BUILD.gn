@@ -16,10 +16,6 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
   deps = [ ":distributeddatasvc" ]
-
-  if (datamgr_service_udmf) {
-    deps += [ "${data_service_path}/service/udmf:udmf_server" ]
-  }
 }
 config("module_public_config") {
   visibility = [ ":*" ]
@@ -57,78 +53,7 @@ ohos_shared_library("distributeddatasvc") {
     cfi_cross_dso = true
     debug = false
   }
-  include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "../../../../relational_store/interfaces/inner_api/cloud_data/include",
-    "../../../../relational_store/interfaces/inner_api/common_type/include",
-    "../../../../relational_store/interfaces/inner_api/rdb/include",
-    "${kv_store_distributeddb_path}",
-  ]
-  sources = [
-    "${dataobject_path}/frameworks/innerkitsimpl/src/object_radar_reporter.cpp",
-    "backup/src/backup_manager.cpp",
-    "bootstrap/src/bootstrap.cpp",
-    "cloud/cloud_service_impl.cpp",
-    "cloud/cloud_service_stub.cpp",
-    "cloud/cloud_types_util.cpp",
-    "cloud/cloud_value_util.cpp",
-    "cloud/sync_manager.cpp",
-    "cloud/sync_strategies/network_sync_strategy.cpp",
-    "common/common_types_utils.cpp",
-    "common/value_proxy.cpp",
-    "common/xcollie.cpp",
-    "config/src/config_factory.cpp",
-    "config/src/model/app_id_mapping_config.cpp",
-    "config/src/model/backup_config.cpp",
-    "config/src/model/checker_config.cpp",
-    "config/src/model/cloud_config.cpp",
-    "config/src/model/component_config.cpp",
-    "config/src/model/directory_config.cpp",
-    "config/src/model/global_config.cpp",
-    "config/src/model/network_config.cpp",
-    "config/src/model/protocol_config.cpp",
-    "crypto/src/crypto_manager.cpp",
-    "dumper/src/dump_helper.cpp",
-    "kvdb/auth_delegate.cpp",
-    "kvdb/kvdb_exporter.cpp",
-    "kvdb/kvdb_general_store.cpp",
-    "kvdb/kvdb_notifier_proxy.cpp",
-    "kvdb/kvdb_service_impl.cpp",
-    "kvdb/kvdb_service_stub.cpp",
-    "kvdb/kvdb_watcher.cpp",
-    "kvdb/kvstore_sync_manager.cpp",
-    "kvdb/query_helper.cpp",
-    "kvdb/upgrade.cpp",
-    "kvdb/user_delegate.cpp",
-    "matrix/src/device_matrix.cpp",
-    "matrix/src/matrix_event.cpp",
-    "object/object_asset_loader.cpp",
-    "object/object_asset_machine.cpp",
-    "object/object_callback_proxy.cpp",
-    "object/object_data_listener.cpp",
-    "object/object_dms_handler.cpp",
-    "object/object_manager.cpp",
-    "object/object_service_impl.cpp",
-    "object/object_service_stub.cpp",
-    "object/object_snapshot.cpp",
-    "object/object_types_utils.cpp",
-    "permission/src/permit_delegate.cpp",
-    "rdb/cache_cursor.cpp",
-    "rdb/rdb_asset_loader.cpp",
-    "rdb/rdb_cloud.cpp",
-    "rdb/rdb_cloud_data_translate.cpp",
-    "rdb/rdb_cursor.cpp",
-    "rdb/rdb_general_store.cpp",
-    "rdb/rdb_notifier_proxy.cpp",
-    "rdb/rdb_query.cpp",
-    "rdb/rdb_result_set_impl.cpp",
-    "rdb/rdb_result_set_stub.cpp",
-    "rdb/rdb_service_impl.cpp",
-    "rdb/rdb_service_stub.cpp",
-    "rdb/rdb_watcher.cpp",
-  ]
+
   cflags = [
     "-Werror",
     "-Wno-multichar",
@@ -139,32 +64,49 @@ ohos_shared_library("distributeddatasvc") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   configs = [ ":module_public_config" ]
+  public_configs = [ ":module_public_config" ]
 
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
+    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/backup:distributeddata_backup_static",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
+    "${data_service_path}/service/common:distributeddata_common_static",
+    "${data_service_path}/service/config:distributeddata_config_static",
+    "${data_service_path}/service/crypto:distributeddata_crypto_static",
+    "${data_service_path}/service/dumper:distributeddata_dumper_static",
+    "${data_service_path}/service/matrix:distributeddata_matrix_static",
+    "${data_service_path}/service/permission:distributeddata_permit_static",
   ]
 
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "access_token:libtokenid_sdk",
-    "c_utils:utils",
-    "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
-    "dfs_service:cloudsync_asset_kit_inner",
-    "dfs_service:distributed_file_daemon_kit_inner",
-    "dmsfwk:distributed_sdk",
-    "hicollie:libhicollie",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "huks:libhukssdk",
-    "ipc:ipc_core",
-    "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "relational_store:native_rdb",
-  ]
+  if (datamgr_service_cloud) {
+    deps +=
+        [ "${data_service_path}/service/cloud:distributeddata_cloud_static" ]
+  }
+
+  if (datamgr_service_kvdb) {
+    deps += [ "${data_service_path}/service/kvdb:distributeddata_kvdb_static" ]
+  }
+
+  if (datamgr_service_udmf) {
+    deps += [ "${data_service_path}/service/udmf:udmf_server" ]
+  }
+
+  if (datamgr_service_rdb) {
+    deps += [ "${data_service_path}/service/rdb:distributeddata_rdb_static" ]
+  }
+
+  if (datamgr_service_data_share) {
+    deps += [ "${data_service_path}/service/data_share:data_share_service" ]
+  }
+
+  if (datamgr_service_object) {
+    deps +=
+        [ "${data_service_path}/service/object:distributeddata_object_static" ]
+  }
+
+  external_deps = [ "hilog:libhilog" ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"

@@ -83,6 +83,8 @@ public:
 
     void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
         const AppDistributedKv::DeviceChangeType &type) const override;
+
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
 private:
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
@@ -93,6 +95,7 @@ private:
     bool CloseSession(const std::string &networkId);
     void GetExpireTime(std::shared_ptr<SoftBusClient> &conn);
     std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId);
+    std::shared_ptr<SoftBusClient> GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, uint32_t qosType);
     static constexpr const char *PKG_NAME = "distributeddata-default";
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
     static constexpr uint32_t QOS_COUNT = 3;

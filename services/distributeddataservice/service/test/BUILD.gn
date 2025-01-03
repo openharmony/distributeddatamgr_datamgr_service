@@ -39,7 +39,7 @@ config("module_private_config") {
     "${data_service_path}/service/data_share",
     "${data_service_path}/service/matrix/include/",
     "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/object/",
+    "${data_service_path}/service/object/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb/",
     "${data_service_path}/service/test/mock",
@@ -67,6 +67,7 @@ ohos_unittest("CloudDataTest") {
   sources = [
     "${data_service_path}/service/backup/src/backup_manager.cpp",
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
@@ -94,13 +95,13 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_general_store.cpp",
     "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
     "${data_service_path}/service/rdb/rdb_query.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_schema_config.cpp",
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
@@ -116,6 +117,8 @@ ohos_unittest("CloudDataTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -124,6 +127,8 @@ ohos_unittest("CloudDataTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "resource_management:global_resmgr",
+    "samgr:samgr_proxy",
   ]
 
   deps = [
@@ -150,6 +155,7 @@ ohos_unittest("CloudServiceImplTest") {
   sources = [
     "${data_service_path}/service/backup/src/backup_manager.cpp",
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
@@ -177,13 +183,13 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_general_store.cpp",
     "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
     "${data_service_path}/service/rdb/rdb_query.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
+    "${data_service_path}/service/rdb/rdb_schema_config.cpp",
     "${data_service_path}/service/rdb/rdb_service_impl.cpp",
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
@@ -199,6 +205,8 @@ ohos_unittest("CloudServiceImplTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -207,6 +215,8 @@ ohos_unittest("CloudServiceImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "resource_management:global_resmgr",
+    "samgr:samgr_proxy",
   ]
 
   deps = [
@@ -394,6 +404,11 @@ ohos_unittest("DeviceMatrixTest") {
 }
 
 ohos_unittest("KVDBGeneralStoreTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   module_out_path = module_output_path
   sources = [
     "../common/value_proxy.cpp",
@@ -410,6 +425,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   include_dirs = [
     "${data_service_path}/service/common",
     "${data_service_path}/service/rdb",
+    "${data_service_path}/service/kvdb",
     "${relational_store_path}/interfaces/innerapi/clouddata/include",
     "${relational_store_path}/interfaces/inner_api/rdb/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
@@ -436,7 +452,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
     "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -476,7 +492,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "${data_service_path}/service/data_share",
     "${data_service_path}/service/matrix/include/",
     "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/object/",
+    "${data_service_path}/service/object/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
   ]
@@ -563,7 +579,6 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud_data_translate.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_general_store.cpp",
     "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
@@ -623,9 +638,9 @@ ohos_unittest("RdbServiceTest") {
 ohos_unittest("ObjectAssetLoaderTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
-    "../object/object_snapshot.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
+    "../object/src/object_snapshot.cpp",
     "object_asset_loader_test.cpp",
   ]
 
@@ -663,8 +678,8 @@ ohos_unittest("ObjectAssetLoaderTest") {
 ohos_unittest("ObjectAssetMachineTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
     "object_asset_machine_test.cpp",
   ]
 
@@ -697,7 +712,7 @@ ohos_unittest("ObjectAssetMachineTest") {
 ohos_unittest("ObjectDmsHandlerTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_dms_handler.cpp",
+    "../object/src/object_dms_handler.cpp",
     "object_dms_handler_test.cpp",
   ]
 
@@ -729,12 +744,12 @@ ohos_unittest("ObjectManagerTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/common/value_proxy.cpp",
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
-    "../object/object_callback_proxy.cpp",
-    "../object/object_data_listener.cpp",
-    "../object/object_manager.cpp",
-    "../object/object_snapshot.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
+    "../object/src/object_callback_proxy.cpp",
+    "../object/src/object_data_listener.cpp",
+    "../object/src/object_manager.cpp",
+    "../object/src/object_snapshot.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
     "object_manager_test.cpp",
   ]
@@ -752,6 +767,7 @@ ohos_unittest("ObjectManagerTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "data_object:distributeddataobject_impl",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "dmsfwk:distributed_sdk",
@@ -779,9 +795,9 @@ ohos_unittest("ObjectManagerTest") {
 ohos_unittest("ObjectSnapshotTest") {
   module_out_path = module_output_path
   sources = [
-    "../object/object_asset_loader.cpp",
-    "../object/object_asset_machine.cpp",
-    "../object/object_snapshot.cpp",
+    "../object/src/object_asset_loader.cpp",
+    "../object/src/object_asset_machine.cpp",
+    "../object/src/object_snapshot.cpp",
     "object_snapshot_test.cpp",
   ]
 
@@ -850,7 +866,7 @@ ohos_unittest("MetaDataTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -1072,7 +1088,7 @@ ohos_unittest("KvdbServiceImplTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
   ]

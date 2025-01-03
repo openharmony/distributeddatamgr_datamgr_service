@@ -26,12 +26,14 @@ namespace OHOS {
 namespace DistributedKv {
 class AccountDelegateNormalImpl final : public AccountDelegateImpl {
 public:
+    AccountDelegateNormalImpl();
     std::string GetCurrentAccountId() const override;
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
     bool QueryForegroundUsers(std::vector<int> &users) override;
     bool IsLoginAccount() override;
     bool IsVerified(int userId) override;
+    bool IsDeactivating(int userId) override;
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
@@ -49,6 +51,7 @@ private:
     std::shared_ptr<EventSubscriber> eventSubscriber_ {};
     std::shared_ptr<ExecutorPool> executors_;
     ConcurrentMap<int32_t, bool> userStatus_ {};
+    ConcurrentMap<int32_t, bool> userDeactivating_ {};
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

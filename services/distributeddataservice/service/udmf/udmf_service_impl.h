@@ -33,7 +33,7 @@ namespace UDMF {
 /*
  * UDMF server implementation
  */
-class API_EXPORT UdmfServiceImpl final : public UdmfServiceStub {
+class UdmfServiceImpl final : public UdmfServiceStub {
 public:
     UdmfServiceImpl();
     ~UdmfServiceImpl() = default;

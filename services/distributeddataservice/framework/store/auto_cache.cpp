@@ -17,12 +17,14 @@
 
 #include <cinttypes>
 
+#include "account_delegate.h"
 #include "changeevent/remote_change_event.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "screenlock/screen_lock.h"
 #include "utils/anonymous.h"
 namespace OHOS::DistributedData {
+using Account = DistributedKv::AccountDelegate;
 AutoCache &AutoCache::GetInstance()
 {
     static AutoCache cache;
@@ -61,11 +63,6 @@ AutoCache::~AutoCache()
 std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
-        ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s", meta.user.c_str(),
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return { E_SCREEN_LOCKED, store };
-    }
     if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
         disables_.ContainIf(meta.tokenId,
             [&meta](const std::set<std::string> &stores) -> bool { return stores.count(meta.storeId) != 0; })) {
@@ -74,7 +71,16 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
             meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return { E_ERROR, store };
     }
-
+    if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
+        ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s", meta.user.c_str(),
+              meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return { E_SCREEN_LOCKED, store };
+    }
+    if (Account::GetInstance()->IsDeactivating(atoi(meta.user.c_str()))) {
+        ZLOGW("user %{public}s is deactivating, bundleName:%{public}s, storeName: %{public}s", meta.user.c_str(),
+              meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return { E_USER_DEACTIVATING, store };
+    }
     stores_.Compute(meta.tokenId,
         [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
             if (disableStores_.count(meta.dataDir) != 0) {

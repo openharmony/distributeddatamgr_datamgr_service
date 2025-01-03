@@ -34,7 +34,7 @@ config("module_public_config") {
 group("build_module") {
   deps = [ ":data_share_service" ]
 }
-ohos_shared_library("data_share_service") {
+ohos_static_library("data_share_service") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     ubsan = true
@@ -44,7 +44,6 @@ ohos_shared_library("data_share_service") {
     debug = false
   }
   sources = [
-    "${data_service_path}/service/common/xcollie.cpp",
     "common/app_connect_manager.cpp",
     "common/base64_utils.cpp",
     "common/bundle_mgr_proxy.cpp",
@@ -98,10 +97,10 @@ ohos_shared_library("data_share_service") {
   configs = [ ":module_public_config" ]
 
   deps = [
+    "${data_service_path}/service/common:distributeddata_common_static",
     "../../adapter:distributeddata_adapter",
     "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",
-    "../../service:distributeddatasvc",
   ]
 
   external_deps = [

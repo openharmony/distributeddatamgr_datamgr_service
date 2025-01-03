@@ -25,7 +25,7 @@ namespace OHOS {
 namespace UDMF {
 using DevNameMap = std::map<std::string, std::string>;
 using DevSyncProcessMap = std::map<std::string, DistributedDB::DeviceSyncProcess>;
-class API_EXPORT RuntimeStore final : public Store {
+class RuntimeStore final : public Store {
 public:
     explicit RuntimeStore(const std::string &storeId);
     ~RuntimeStore();
