@@ -18,15 +18,31 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 group("fuzztest") {
   testonly = true
 
-  deps = [
-    "cloudservicestub_fuzzer:fuzztest",
-    "datashareservicestub_fuzzer:fuzztest",
-    "dumphelper_fuzzer:fuzztest",
-    "kvdbservicestub_fuzzer:fuzztest",
-    "objectservicestub_fuzzer:fuzztest",
-    "rdbresultsetstub_fuzzer:fuzztest",
-    "rdbservicestub_fuzzer:fuzztest",
-  ]
+  deps = [ "dumphelper_fuzzer:fuzztest" ]
+
+  if (datamgr_service_cloud) {
+    deps += [ "cloudservicestub_fuzzer:fuzztest" ]
+  }
+
+  if (datamgr_service_object) {
+    deps += [ "objectservicestub_fuzzer:fuzztest" ]
+  }
+
+  if (datamgr_service_rdb) {
+    deps += [
+      "rdbresultsetstub_fuzzer:fuzztest",
+      "rdbservicestub_fuzzer:fuzztest",
+    ]
+  }
+
+  if (datamgr_service_kvdb) {
+    deps += [ "kvdbservicestub_fuzzer:fuzztest" ]
+  }
+
+  if (datamgr_service_data_share) {
+    deps += [ "datashareservicestub_fuzzer:fuzztest" ]
+  }
+
   if (datamgr_service_udmf) {
     deps += [ "udmfservice_fuzzer:fuzztest" ]
   }

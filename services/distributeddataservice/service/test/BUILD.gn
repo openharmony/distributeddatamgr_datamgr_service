@@ -1230,29 +1230,57 @@ group("unittest") {
     deps += [ ":ConfigFactoryTest" ]
   }
 
+  if (datamgr_service_cloud) {
+    deps += [
+      ":CloudDataTest",
+      ":CloudServiceImplTest",
+      ":CloudTest",
+    ]
+  }
+
+  if (datamgr_service_udmf) {
+    deps += [
+      ":UdmfCheckerManagerTest",
+      ":UdmfRunTimeStoreTest",
+      ":UdmfServiceImplTest",
+    ]
+  }
+
+  if (datamgr_service_object) {
+    deps += [
+      ":ObjectAssetLoaderTest",
+      ":ObjectAssetMachineTest",
+      ":ObjectDmsHandlerTest",
+      ":ObjectManagerTest",
+      ":ObjectSnapshotTest",
+    ]
+  }
+
+  if (datamgr_service_rdb) {
+    deps += [
+      ":RdbResultSetImplTest",
+      ":RdbServiceTest",
+    ]
+  }
+
+  if (datamgr_service_kvdb) {
+    deps += [
+      ":KVDBGeneralStoreAbnormalTest",
+      ":KVDBGeneralStoreTest",
+      ":KvdbServiceImplTest",
+    ]
+  }
+
+  if (datamgr_service_data_share) {
+    deps += [ ":DataShareServiceImplTest" ]
+  }
+
   deps += [
-    ":CloudDataTest",
-    ":CloudServiceImplTest",
-    ":CloudTest",
     ":CryptoManagerTest",
-    ":DataShareServiceImplTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
     ":DumpHelperTest",
-    ":KVDBGeneralStoreAbnormalTest",
-    ":KVDBGeneralStoreTest",
-    ":KvdbServiceImplTest",
     ":MetaDataTest",
-    ":ObjectAssetLoaderTest",
-    ":ObjectAssetMachineTest",
-    ":ObjectDmsHandlerTest",
-    ":ObjectManagerTest",
-    ":ObjectSnapshotTest",
-    ":RdbResultSetImplTest",
-    ":RdbServiceTest",
-    ":UdmfCheckerManagerTest",
-    ":UdmfRunTimeStoreTest",
-    ":UdmfServiceImplTest",
     ":ValueProxyServiceTest",
   ]
 }
