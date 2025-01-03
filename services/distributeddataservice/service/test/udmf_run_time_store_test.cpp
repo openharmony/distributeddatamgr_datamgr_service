@@ -564,10 +564,9 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
     UnifiedData data;
     UDDetails details;
     details.insert({ "udmf_key", "udmf_value" });
-    Text text;
-    text.SetDetails(details);
-    std::shared_ptr<UnifiedRecord> record1 = std::make_shared<Text>(text);
-    data.AddRecord(record1);
+    auto text = std::make_shared<Text>();
+    text->SetDetails(details);
+    data.AddRecord(text);
 
     Summary summary;
     auto status = store->GetSummary(KEY_PREFIX, summary);
