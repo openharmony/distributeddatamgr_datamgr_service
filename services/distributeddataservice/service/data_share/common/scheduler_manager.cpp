@@ -219,7 +219,6 @@ void SchedulerManager::SetSchedulerEverStopped(const Key &key, bool everStopped)
 void SchedulerManager::AddToSchedulerCache(const Key &key)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    ObserverNode node(firstCallerTokenId);
     auto it = schedulerCache_.find(key);
     if (it != schedulerCache_.end()) {
         return;

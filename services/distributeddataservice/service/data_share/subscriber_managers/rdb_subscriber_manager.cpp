@@ -122,7 +122,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
-        ExecutorPool::Task task = [key, node, context, callerTokenId, this]() {
+        ExecutorPool::Task task = [key, node, context, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
                 ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",

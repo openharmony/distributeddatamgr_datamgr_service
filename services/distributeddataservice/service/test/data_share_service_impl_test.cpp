@@ -26,6 +26,8 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
+#include "rdb_subscriber_manager.h"
+#include "scheduler_manager.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
 
@@ -360,6 +362,55 @@ HWTEST_F(DataShareServiceImplTest, SubscribePublishedData002, TestSize.Level1)
     for (auto const &operationResult : result) {
         EXPECT_NE(operationResult.errCode_, 0);
     }
+}
+
+/**
+* @tc.name: StopScheduler
+* @tc.desc: test stop scheduler while template is disabled
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, StopScheduler, TestSize.Level1)
+{
+    sptr<IDataProxyRdbObserver> observer;
+    Key key(SLIENT_ACCESS_URI, TEST_SUB_ID, BUNDLE_NAME);
+    auto context = std::make_shared<Context>(SLIENT_ACCESS_URI);
+    context->currentUserId = USER_TEST;
+    context->callerTokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME, 0);
+
+    auto result1 = RdbSubscriberManager::GetInstance().rdbCache_.Compute(key, [&observer, &context](const auto &key, auto &value) {
+        auto callerPid = 0;
+        value.emplace_back(observer, context->callerTokenId, context->callerTokenId, callerPid);
+        std::vector<DataShare::RdbSubscriberManager::ObserverNode> node;
+        node.emplace_back(observer, context->callerTokenId, context->ccallerTokenId, callerPid);
+        return true;
+    });
+    EXPECT_EQ(result1, true);
+
+    SchedulerManager::GetInstance().AddToSchedulerCache(key);
+    auto result2 = RdbSubscriberManager::GetInstance().Disable(key, context->callerTokenId);
+    EXPECT_EQ(result2, OHOS::DataShare::E_OK);
+    auto result3 = RdbSubscriberManager::GetInstance().ReadTemplateStatus(key);
+    EXPECT_EQ(result3, false);
+    auto result4 = SchedulerManager::GetInstance().CheckSchedulerEverStopped(key);
+    EXPECT_EQ(result4, false);
+
+    SchedulerManager::GetInstance().SetSchedulerEverStopped(key, true);
+    result3 = SchedulerManager::GetInstance().CheckSchedulerEverStopped(key);
+    EXPECT_EQ(result3, true);
+
+    result1 = RdbSubscriberManager::GetInstance().rdbCache_.ComputeIfPresent(key, [&context](const auto &key, auto &value) {
+        for (auto it = value.begin(); it != value.end();) {
+            if (it->callerTokenId == context->callerTokenId) {
+                it = value.erase(it);
+            } else {
+                it++;
+            }
+        }
+        return !value.empty();
+    });
+    EXPECT_EQ(result1, true);
+    SchedulerManager::GetInstance().RemoveFromSchedulerCache(key);
 }
 
 /**
