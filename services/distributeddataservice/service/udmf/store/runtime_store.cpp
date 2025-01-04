@@ -305,7 +305,7 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices, ProcessCallba
 void RuntimeStore::NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
     const DevNameMap &deviceNameMap)
 {
-    AsyncProcessInfo processInfo{ASYNC_IDLE, ASYNC_IDLE, "", 0, 0, 0, 0, 0};
+    AsyncProcessInfo processInfo;
     for (const auto &[originDeviceId, syncProcess] : processMap) { // only one device
         processInfo.srcDevName = deviceNameMap.at(originDeviceId);
         processInfo.syncId = syncProcess.syncId;

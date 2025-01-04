@@ -151,11 +151,6 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_DB_ERROR;
     }
 
-    if (!UnifiedDataUtils::IsPersist(intention) && store->Clear() != E_OK) {
-        ZLOGE("Clear store failed, intention: %{public}s.", intention.c_str());
-        return E_DB_ERROR;
-    }
-
     if (store->Put(unifiedData) != E_OK) {
         ZLOGE("Put unified data failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
@@ -296,10 +291,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGW("No need to grant uri permissions, queryKey=%{public}s.", query.key.c_str());
         return E_OK;
     }
-    asyncProcessInfo_.permStatus = ASYNC_RUNNING;
-    asyncProcessInfo_.permTotal = allUri.size();
-    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key,
-        asyncProcessInfo_.permFnished) != E_OK) {
+    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
             bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
@@ -549,7 +541,7 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
-
+    RegisterAsyncProcessInfo(query.key);
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
@@ -557,19 +549,13 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
-    syncingData_ = true;
-    if (devices.size() > 0) {
-        syncingDevName_ = DistributedData::DeviceManagerAdapter::GetInstance().GetDeviceInfo(devices[0]).deviceName;
-    }
-    auto callback = [this](AsyncProcessInfo &syncInfo) {
-        asyncProcessInfo_.syncId = syncInfo.syncId;
-        asyncProcessInfo_.syncStatus = syncInfo.syncStatus;
-        asyncProcessInfo_.syncTotal = syncInfo.syncTotal;
-        asyncProcessInfo_.syncFinished = syncInfo.syncFinished;
-        asyncProcessInfo_.srcDevName = syncInfo.srcDevName;
-        if (asyncProcessInfo_.syncStatus != ASYNC_RUNNING) {
-            syncingData_ = false;
+    auto callback = [this, query](AsyncProcessInfo &syncInfo) {
+        if (query.key.empty()) {
+            return;
         }
+        syncInfo.businessUdKey = query.key;
+        std::lock_guard<std::mutex> lock(mutex_);
+        asyncProcessInfoMap_.insert_or_assign(syncInfo.businessUdKey, syncInfo);
         ZLOGD("store.Sync: name=%{public}s, id=%{public}u, status=%{public}u, total=%{public}u, finish=%{public}u",
             syncInfo.srcDevName.c_str(), syncInfo.syncId, syncInfo.syncStatus,
             syncInfo.syncTotal, syncInfo.syncFinished);
@@ -577,7 +563,6 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
     if (store->Sync(devices, callback) != E_OK) {
-        syncingData_ = false;
         ZLOGE("Store sync failed, intention: %{public}s.", key.intention.c_str());
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
@@ -667,7 +652,7 @@ int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, int32_t
     std::string appShareOption;
     int32_t ret = store->GetLocal(std::to_string(accessTokenIDEx), appShareOption);
     if (ret != E_OK) {
-        ZLOGE("GetAppShareOption empty, intention: %{public}s.", intention.c_str());
+        ZLOGW("GetAppShareOption empty, intention: %{public}s.", intention.c_str());
         return ret;
     }
     ZLOGI("GetAppShareOption, intention: %{public}s, appShareOption:%{public}s.",
@@ -756,17 +741,35 @@ int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
 
 int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
 {
-    processInfo = asyncProcessInfo_;
-    if (syncingData_ && processInfo.syncStatus != ASYNC_RUNNING) {
-        processInfo.syncStatus = ASYNC_RUNNING;
-        processInfo.srcDevName = syncingDevName_;
+    if (processInfo.businessUdKey.empty()) {
+        return E_INVALID_PARAMETERS;
     }
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (asyncProcessInfoMap_.empty()) {
+        processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
+        processInfo.srcDevName = "Local";
+        return E_OK;
+    }
+    auto it = asyncProcessInfoMap_.find(processInfo.businessUdKey);
+    if (it == asyncProcessInfoMap_.end()) {
+        processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
+        processInfo.srcDevName = "Local";
+        return E_OK;
+    }
+    auto asyncProcessInfo = asyncProcessInfoMap_.at(processInfo.businessUdKey);
+    processInfo.syncStatus = asyncProcessInfo.syncStatus;
+    processInfo.srcDevName = asyncProcessInfo.srcDevName;
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::ClearAsynProcess()
+int32_t UdmfServiceImpl::ClearAsynProcessByKey(const std::string & businessUdKey)
 {
-    (void)memset_s(&asyncProcessInfo_, sizeof(asyncProcessInfo_), 0, sizeof(asyncProcessInfo_));
+    ZLOGI("ClearAsynProcessByKey begin.");
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (asyncProcessInfoMap_.find(businessUdKey) == asyncProcessInfoMap_.end()) {
+        return E_OK;
+    }
+    asyncProcessInfoMap_.erase(businessUdKey);
     return E_OK;
 }
 
@@ -825,5 +828,13 @@ bool UdmfServiceImpl::IsBundleNameWhitelisted(const std::string &bundleName)
 {
     return std::find(std::begin(WHITE_LIST), std::end(WHITE_LIST), bundleName) != std::end(WHITE_LIST);
 }
+
+void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
+{
+    AsyncProcessInfo info;
+    std::lock_guard<std::mutex> lock(mutex_);
+    asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
+}
+
 } // namespace UDMF
 } // namespace OHOS

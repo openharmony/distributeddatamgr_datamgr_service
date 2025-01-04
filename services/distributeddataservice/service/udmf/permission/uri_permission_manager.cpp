@@ -30,8 +30,8 @@ UriPermissionManager &UriPermissionManager::GetInstance()
     return instance;
 }
 
-Status UriPermissionManager::GrantUriPermission(
-    const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey, uint32_t &completeCount)
+Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId,
+    const std::string &queryKey)
 {
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
@@ -60,7 +60,6 @@ Status UriPermissionManager::GrantUriPermission(
                 status, queryKey.c_str(), instIndex);
             return E_NO_PERMISSION;
         }
-        completeCount = std::min(allUri.size(), index + GRANT_URI_PERMISSION_MAX_SIZE);
     }
     ZLOGI("GrantUriPermission end, url size:%{public}zu, queryKey:%{public}s.", allUri.size(), queryKey.c_str());
     return E_OK;

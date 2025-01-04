@@ -29,8 +29,7 @@ namespace UDMF {
 class UriPermissionManager {
 public:
     static UriPermissionManager &GetInstance();
-    Status GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId,
-        const std::string &queryKey, uint32_t &completeCount);
+    Status GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey);
 
 private:
     UriPermissionManager() {}
