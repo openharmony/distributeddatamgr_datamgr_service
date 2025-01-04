@@ -122,9 +122,9 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
-    "${data_service_path}/app/src/checker:distributeddata_checker_static",
-    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl_static",
-    "${data_service_path}/app/src/installer:distributeddata_installer_static",
+    "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
+    "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
@@ -175,11 +175,11 @@ ohos_unittest("SessionManagerTest") {
   }
 
   deps = [
+    "${data_service_path}/app/src/checker:distributeddata_checker",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
@@ -217,9 +217,9 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   }
 
   deps = [
+    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/flowctrl_manager:distributeddata_flowctrl_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -291,9 +291,9 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
-    "${data_service_path}/app/src/checker:distributeddata_checker_static",
-    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl_static",
-    "${data_service_path}/app/src/installer:distributeddata_installer_static",
+    "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
+    "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
@@ -320,7 +320,6 @@ ohos_unittest("FeatureStubImplTest") {
     "${data_service_path}/service/directory/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/waterversion",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/app/src",
     "${data_service_path}/service/kvdb",
@@ -362,7 +361,7 @@ ohos_unittest("FeatureStubImplTest") {
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl_static",
+    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]

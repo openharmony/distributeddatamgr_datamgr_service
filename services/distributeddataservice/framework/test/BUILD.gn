@@ -66,8 +66,8 @@ ohos_unittest("CheckerManagerTest") {
   ]
 
   deps = [
+    "${data_service_path}/app/src/checker:distributeddata_checker",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app/src/checker:distributeddata_checker_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -181,7 +181,7 @@ ohos_unittest("StoreTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/common:distributeddata_common_static",
+    "${data_service_path}/service/common:distributeddata_common",
     "//third_party/googletest:gtest_main",
   ]
 }
@@ -350,9 +350,9 @@ ohos_unittest("ServiceMetaDataTest") {
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
-    "${data_service_path}/app/src/checker:distributeddata_checker_static",
+    "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_distributeddb_path}:distributeddb",
     "${kv_store_path}/interfaces/innerkits/distributeddata:distributeddata_inner",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",

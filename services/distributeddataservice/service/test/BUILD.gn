@@ -411,10 +411,6 @@ ohos_unittest("KVDBGeneralStoreTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "../common/value_proxy.cpp",
-    "../kvdb/kvdb_general_store.cpp",
-    "../rdb/rdb_cloud.cpp",
-    "../rdb/rdb_query.cpp",
     "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
@@ -452,7 +448,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -866,7 +862,7 @@ ohos_unittest("MetaDataTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -1031,7 +1027,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/data_share:data_share_service",
     "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -1041,16 +1036,6 @@ ohos_unittest("KvdbServiceImplTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "${data_service_path}/service/common/value_proxy.cpp",
-    "${data_service_path}/service/kvdb/auth_delegate.cpp",
-    "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
-    "${data_service_path}/service/kvdb/kvdb_notifier_proxy.cpp",
-    "${data_service_path}/service/kvdb/kvdb_watcher.cpp",
-    "${data_service_path}/service/kvdb/query_helper.cpp",
-    "${data_service_path}/service/kvdb/upgrade.cpp",
-    "${data_service_path}/service/kvdb/user_delegate.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_query.cpp",
     "kvdb_service_impl_test.cpp",
     "kvdb_service_test.cpp",
   ]
@@ -1088,7 +1073,7 @@ ohos_unittest("KvdbServiceImplTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/kvdb:distributeddata_kvdb_static",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
   ]
@@ -1192,7 +1177,6 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/udmf:udmf_server",
   ]
 
   external_deps = [

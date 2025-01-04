@@ -18,7 +18,7 @@ config("backup_public_config") {
   include_dirs = [ "include" ]
 }
 
-ohos_static_library("distributeddata_backup_static") {
+ohos_source_set("distributeddata_backup") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -29,7 +29,10 @@ ohos_static_library("distributeddata_backup_static") {
   }
   sources = [ "src/backup_manager.cpp" ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 
   include_dirs = [ "${data_service_path}/service/crypto/include" ]
   configs = [ ":backup_public_config" ]
@@ -39,12 +42,13 @@ ohos_static_library("distributeddata_backup_static") {
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/crypto:distributeddata_crypto_static",
+    "${data_service_path}/service/crypto:distributeddata_crypto",
   ]
 
   external_deps = [

@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_static_library("distributeddata_installer_static") {
+ohos_source_set("distributeddata_installer") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -31,15 +31,17 @@ ohos_static_library("distributeddata_installer_static") {
   include_dirs = [
     "../../../adapter/include/account",
     "../../src",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
+
+  cflags = [ "-Oz" ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
@@ -55,6 +57,7 @@ ohos_static_library("distributeddata_installer_static") {
     "dataclassification:data_transit_mgr",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

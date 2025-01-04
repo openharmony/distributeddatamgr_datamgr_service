@@ -18,7 +18,7 @@ config("crypto_public_config") {
   include_dirs = [ "include" ]
 }
 
-ohos_static_library("distributeddata_crypto_static") {
+ohos_source_set("distributeddata_crypto") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -29,7 +29,10 @@ ohos_static_library("distributeddata_crypto_static") {
   }
   sources = [ "src/crypto_manager.cpp" ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 
   include_dirs = [ "include" ]
 
@@ -38,6 +41,7 @@ ohos_static_library("distributeddata_crypto_static") {
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
   configs = [ ":crypto_public_config" ]
   public_configs = [ ":crypto_public_config" ]

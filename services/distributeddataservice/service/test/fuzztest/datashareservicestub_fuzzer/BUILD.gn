@@ -100,7 +100,6 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/data_share:data_share_service",
   ]
 
   external_deps = [

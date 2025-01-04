@@ -74,9 +74,13 @@ config("module_private_config") {
     "-Werror",
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 }
 
 ohos_shared_library("distributeddataservice") {
@@ -117,11 +121,9 @@ ohos_shared_library("distributeddataservice") {
   configs = [ ":module_private_config" ]
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
     "${data_service_path}/adapter/utils:distributeddata_utils_static",
-    "${data_service_path}/app/src/checker:distributeddata_checker_static",
-    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl_static",
-    "${data_service_path}/app/src/installer:distributeddata_installer_static",
+    "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]

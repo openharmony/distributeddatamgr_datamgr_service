@@ -18,7 +18,7 @@ config("matrix_public_config") {
   include_dirs = [ "include" ]
 }
 
-ohos_static_library("distributeddata_matrix_static") {
+ohos_source_set("distributeddata_matrix") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -32,7 +32,10 @@ ohos_static_library("distributeddata_matrix_static") {
     "src/matrix_event.cpp",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
 
   include_dirs = [ "${data_service_path}/service/bootstrap/include" ]
   configs = [ ":matrix_public_config" ]
@@ -42,12 +45,13 @@ ohos_static_library("distributeddata_matrix_static") {
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
   ]
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap_static",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
   ]
   external_deps = [
     "hilog:libhilog",
