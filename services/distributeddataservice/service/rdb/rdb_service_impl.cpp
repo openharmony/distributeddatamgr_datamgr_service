@@ -279,6 +279,19 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
     return store;
 }
 
+void RdbServiceImpl::UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaData &localMeta)
+{
+    StoreMetaData syncMeta;
+    bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
+    if (!isCreatedSync || localMeta != syncMeta) {
+        ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
+              "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
+            syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
+    }
+}
+
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
     const std::vector<Reference> &references, bool isRebuild, int32_t type)
 {
@@ -287,34 +300,32 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_SEARCH) {
+    if (type == DistributedTableType::DISTRIBUTED_SEARCH) {
         DistributedData::SetSearchableEvent::EventInfo eventInfo;
         eventInfo.isRebuild = isRebuild;
         return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, param, eventInfo);
     }
     auto meta = GetStoreMetaData(param);
-
-    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE) {
-        StoreMetaData localMeta;
-        bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
-        if (!isCreatedLocal) {
-            ZLOGE("no meta. bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
-                Anonymous::Change(param.storeName_).c_str());
-            return RDB_ERROR;
-        }
-        StoreMetaData syncMeta;
-        bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
-        if (!isCreatedSync || localMeta != syncMeta) {
-            ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
-                  "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
-                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
-                syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
-            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
-        }
+    StoreMetaData localMeta;
+    bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
+    if (!isCreatedLocal) {
+        ZLOGE("no meta. bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
+              Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
+        UpdateSyncMeta(meta, localMeta);
         Database dataBase;
         if (RdbSchemaConfig::GetDistributedSchema(localMeta, dataBase) && !dataBase.name.empty() &&
             !dataBase.bundleName.empty()) {
             MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true);
+        }
+    } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
+        if (localMeta.asyncDownloadAsset != param.asyncDownloadAsset_) {
+            localMeta.asyncDownloadAsset = param.asyncDownloadAsset_;
+            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset?[%{public}d]",
+                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), localMeta.asyncDownloadAsset);
+            MetaDataManager::GetInstance().SaveMeta(localMeta.GetKey(), localMeta, true);
         }
     }
     auto store = GetStore(param);
@@ -567,6 +578,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode,
         option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
     SyncParam syncParam = { mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isCompensation };
+    syncParam.asyncDownloadAsset = param.asyncDownloadAsset_;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
         : option.isAsync  ? asyncCallback
@@ -866,6 +878,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.isManualClean = !param.isAutoClean_;
     metaData.isSearchable = param.isSearchable_;
     metaData.haMode = param.haMode_;
+    metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
     return metaData;
 }
 

@@ -99,6 +99,7 @@ struct SyncParam {
     int32_t triggerMode = MODE_DEFAULT;
     std::string prepareTraceId;
     int32_t user;
+    bool asyncDownloadAsset = false;
 };
 
 enum SyncStage : int8_t {

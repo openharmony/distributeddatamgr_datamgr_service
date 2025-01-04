@@ -45,6 +45,8 @@ public:
 
     DBStatus RemoveLocalAssets(const std::vector<Asset> &assets) override;
 
+    DBStatus CancelDownload() override;
+
 private:
     static std::vector<AssetRecord> Convert(std::vector<AssetsRecord> &&assetsRecords);
     static std::vector<AssetsRecord> Convert(std::vector<AssetRecord> &&assetRecords);

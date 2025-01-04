@@ -55,13 +55,13 @@ HWTEST_F(AssetLoaderTest, RemoveLocalAssets, TestSize.Level1)
 }
 
 /**
-* @tc.name: Cancel
-* @tc.desc: cancel.
+* @tc.name: CancelDownload
+* @tc.desc: cancel download asset.
 * @tc.type: FUNC
 */
-HWTEST_F(AssetLoaderTest, Cancel, TestSize.Level1)
+HWTEST_F(AssetLoaderTest, CancelDownload, TestSize.Level1)
 {
     AssetLoader loader;
-    auto ret = loader.Cancel();
+    auto ret = loader.CancelDownload();
     ASSERT_EQ(ret, E_NOT_SUPPORT);
 }

@@ -393,11 +393,10 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         GenDetails details;
         auto &detail = details[SyncInfo::DEFAULT_ID];
         detail.progress = GenProgress::SYNC_FINISH;
-        auto result = GetMetaData(storeInfo);
-        if (!result.first) {
+        auto [hasMeta, meta] = GetMetaData(storeInfo);
+        if (!hasMeta) {
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId);
         }
-        auto &meta = result.second;
         auto [code, store] = GetStore(meta, storeInfo.user);
         if (code == E_SCREEN_LOCKED) {
             AddCompensateSync(meta);
@@ -407,30 +406,29 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 prepareTraceId.c_str());
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId);
         }
-        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start", storeInfo.user,
-            storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
-        RadarReporter::Report(
-            { storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId, evt.GetTriggerMode() },
-            "GetSyncHandler", BizState::BEGIN);
+        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
+              storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
+              meta.asyncDownloadAsset);
+        RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId,
+            evt.GetTriggerMode() }, "GetSyncHandler", BizState::BEGIN);
         Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::START, E_OK });
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation(), MODE_DEFAULT, prepareTraceId };
+        syncParam.asyncDownloadAsset = meta.asyncDownloadAsset;
         auto [status, dbCode] = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
             evt.AutoRetry() ? RetryCallback(storeInfo, retryer, evt.GetTriggerMode(), prepareTraceId, user)
-                            : GetCallback(evt.GetAsyncDetail(), storeInfo, evt.GetTriggerMode(), prepareTraceId, user),
-            syncParam);
+                            : GetCallback(async, storeInfo, evt.GetTriggerMode(), prepareTraceId, user), syncParam);
         if (status != E_OK) {
             if (async) {
                 detail.code = status;
                 async(std::move(details));
             }
             UpdateFinishSyncInfo({ GetAccountId(storeInfo.user), storeInfo.bundleName, "" }, storeInfo.syncId, E_ERROR);
-            if (status == GeneralError::E_NOT_SUPPORT) {
-                return;
+            if (status != GeneralError::E_NOT_SUPPORT) {
+                auto code = dbCode == 0 ? GenStore::CLOUD_ERR_OFFSET + status : dbCode;
+                RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
+                    evt.GetTriggerMode(), code }, "GetSyncHandler", BizState::END);
+                Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, code });
             }
-            auto code = dbCode == 0 ? GenStore::CLOUD_ERR_OFFSET + status : dbCode;
-            RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                  evt.GetTriggerMode(), false, code }, "GetSyncHandler", BizState::END);
-            Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, code });
         }
     };
 }
@@ -462,7 +460,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             }
             info.SetError(code);
             RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
-                                      false, dbCode },
+                                    dbCode },
                 "GetRetryer", BizState::END);
             Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
                 dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode });
@@ -477,7 +475,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
         if (code == E_NO_SPACE_FOR_ASSET || code == E_RECODE_LIMIT_EXCEEDED) {
             info.SetError(code);
             RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
-                                      false, dbCode },
+                                    dbCode },
                 "GetRetryer", BizState::END);
             Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
                 dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode });
@@ -768,7 +766,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
 
         int32_t dbCode = (result.begin()->second.dbCode == GenStore::DB_ERR_OFFSET) ? 0 : result.begin()->second.dbCode;
         RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, triggerMode,
-                                  result.begin()->second.changeCount, dbCode },
+                                dbCode, result.begin()->second.changeCount },
             "GetCallback", BizState::END);
         Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, dbCode });
 
@@ -859,7 +857,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
             UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
             if (code == E_OK) {
                 RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                                          triggerMode, details.begin()->second.changeCount },
+                                        triggerMode, code, details.begin()->second.changeCount },
                     "RetryCallback", BizState::END);
                 Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END,
                     dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode });
