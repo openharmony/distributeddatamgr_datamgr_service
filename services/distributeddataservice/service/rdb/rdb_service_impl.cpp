@@ -300,33 +300,32 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_SEARCH) {
+    if (type == DistributedTableType::DISTRIBUTED_SEARCH) {
         DistributedData::SetSearchableEvent::EventInfo eventInfo;
         eventInfo.isRebuild = isRebuild;
         return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, param, eventInfo);
     }
     auto meta = GetStoreMetaData(param);
-    if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE) {
-        StoreMetaData localMeta;
-        bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
-        if (!isCreatedLocal) {
-            ZLOGE("no meta. bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
-                Anonymous::Change(param.storeName_).c_str());
-            return RDB_ERROR;
-        }
+    StoreMetaData localMeta;
+    bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
+    if (!isCreatedLocal) {
+        ZLOGE("no meta. bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
+              Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
         UpdateSyncMeta(meta, localMeta);
         Database dataBase;
         if (RdbSchemaConfig::GetDistributedSchema(localMeta, dataBase) && !dataBase.name.empty() &&
             !dataBase.bundleName.empty()) {
             MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true);
         }
-    } else if (type == DistributedRdb::DistributedTableType::DISTRIBUTED_CLOUD) {
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
-        if (meta.asyncDownloadAsset != param.asyncDownloadAsset_) {
-            meta.asyncDownloadAsset = param.asyncDownloadAsset_;
+    } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
+        if (localMeta.asyncDownloadAsset != param.asyncDownloadAsset_) {
+            localMeta.asyncDownloadAsset = param.asyncDownloadAsset_;
             ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset?[%{public}d]",
-                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), meta.asyncDownloadAsset);
-            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), localMeta.asyncDownloadAsset);
+            MetaDataManager::GetInstance().SaveMeta(localMeta.GetKey(), localMeta, true);
         }
     }
     auto store = GetStore(param);
