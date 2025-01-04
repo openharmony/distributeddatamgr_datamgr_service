@@ -32,11 +32,11 @@ public:
     void SetTimer(const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key, int64_t reminderTime);
     void RemoveTimer(const Key &key);
     void ClearTimer();
-    void AddToSchedulerCache(const Key &key);
-    void RemoveFromSchedulerCache(const Key &key);
     void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
-    bool CheckSchedulerEverStopped(const Key &key);
-    void SetSchedulerEverStopped(const Key &key, bool everStopped);
+    void Start(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData);
+    void Stop(const Key &key);
+    void Enable(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData);
+    void Disable(const Key &key);
 
 private:
     static constexpr const char *REMIND_TIMER_FUNC = "remindTimer(";
@@ -50,10 +50,12 @@ private:
     bool SetTimerTask(uint64_t &timerId, const std::function<void()> &callback, int64_t reminderTime);
     void DestoryTimerTask(int64_t timerId);
     void ResetTimerTask(int64_t timerId, int64_t reminderTime);
+    int64_t EraseTimerTaskId(const Key &key);
+    bool GetSchedulerStatus(const Key &key);
 
     std::mutex mutex_;
     std::map<Key, int64_t> timerCache_;
-    std::map<Key, bool> schedulerCache_; // the flag means whether the scheduler is ever stopped
+    std::map<Key, bool> schedulerStatusCache_;
     std::shared_ptr<ExecutorPool> executor_ = nullptr;
 };
 } // namespace OHOS::DataShare

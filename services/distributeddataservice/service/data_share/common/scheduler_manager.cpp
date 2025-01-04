@@ -62,6 +62,57 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const Distr
     ExecuteSchedulerSQL(userId, meta, key, delegate);
 }
 
+void SchedulerManager::Start(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
+{
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = schedulerStatusCache_.find(key);
+        if (it == schedulerStatusCache_.end()) {
+            schedulerStatusCache_.emplace(key, true);
+        }
+    }
+    Execute(key, userId, metaData);
+}
+
+void SchedulerManager::Stop(const Key &key)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RemoveTimer(key);
+    auto it = schedulerStatusCache_.find(key);
+    if (it != schedulerStatusCache_.end()) {
+        schedulerStatusCache_.erase(it);
+    }
+}
+
+void SchedulerManager::Enable(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
+{
+    bool isTimerStopped = false;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = schedulerStatusCache_.find(key);
+        if (it != schedulerStatusCache_.end()) {
+            it->second = true;
+        }
+        auto timer = timerCache_.find(key);
+        if (timer == timerCache_.end()) {
+            isTimerStopped = true;
+        }
+    }
+    if (isTimerStopped) {
+        Execute(key, userId, metaData);
+        RdbSubscriberManager::GetInstance().EmitByKey(key, userId, metaData);
+    }
+}
+
+void SchedulerManager::Disable(const Key &key)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = schedulerStatusCache_.find(key);
+    if (it != schedulerStatusCache_.end()) {
+        it->second = false;
+    }
+}
+
 bool SchedulerManager::SetTimerTask(uint64_t &timerId, const std::function<void()> &callback,
     int64_t reminderTime)
 {
@@ -90,6 +141,29 @@ void SchedulerManager::ResetTimerTask(int64_t timerId, int64_t reminderTime)
 {
     // This start also means reset, new one will replace old one
     TimeServiceClient::GetInstance()->StartTimer(timerId, static_cast<uint64_t>(reminderTime));
+}
+
+int64_t SchedulerManager::EraseTimerTaskId(const Key &key)
+{
+    int64_t timerId = -1;
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = timerCache_.find(key);
+    if (it != timerCache_.end()) {
+        timerId = it->second;
+        timerCache_.erase(key);
+    }
+    return timerId;
+}
+
+bool SchedulerManager::GetSchedulerStatus(const Key &key)
+{
+    bool enabled = false;
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = schedulerStatusCache_.find(key);
+    if (it != schedulerStatusCache_.end()) {
+        enabled = it->second;
+    }
+    return enabled;
 }
 
 void SchedulerManager::SetTimer(
@@ -122,22 +196,12 @@ void SchedulerManager::SetTimer(
         ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
             "%{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
             key.subscriberId, key.bundleName.c_str());
-        int64_t timerId = -1;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto it = timerCache_.find(key);
-            if (it != timerCache_.end()) {
-                timerId = it->second;
-                timerCache_.erase(key);
-            }
-        }
+        int64_t timerId = EraseTimerTaskId(key);
         DestoryTimerTask(timerId);
-        if (RdbSubscriberManager::GetInstance().ReadTemplateStatus(key)) {
+        if (GetSchedulerStatus(key)) {
             Execute(key, userId, metaData);
             RdbSubscriberManager::GetInstance().EmitByKey(key, userId, metaData);
-            return;
         }
-        SetSchedulerEverStopped(key, true);
     };
     uint64_t timerId = 0;
     if (!SetTimerTask(timerId, callback, reminderTime)) {
@@ -197,47 +261,8 @@ void SchedulerManager::GenRemindTimerFuncParams(
     return;
 }
 
-bool SchedulerManager::CheckSchedulerEverStopped(const Key &key)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = schedulerCache_.find(key);
-    if (it != schedulerCache_.end()) {
-        return it->second;
-    }
-    return false;
-}
-
-void SchedulerManager::SetSchedulerEverStopped(const Key &key, bool everStopped)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = schedulerCache_.find(key);
-    if (it != schedulerCache_.end()) {
-        it->second = everStopped;
-    }
-}
-
-void SchedulerManager::AddToSchedulerCache(const Key &key)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = schedulerCache_.find(key);
-    if (it != schedulerCache_.end()) {
-        return;
-    }
-    schedulerCache_.emplace(key, false);
-}
-
-void SchedulerManager::RemoveFromSchedulerCache(const Key &key)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = schedulerCache_.find(key);
-    if (it != schedulerCache_.end()) {
-        schedulerCache_.erase(key);
-    }
-}
-
 void SchedulerManager::RemoveTimer(const Key &key)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
     if (executor_ == nullptr) {
         ZLOGE("executor_ is nullptr");
         return;
