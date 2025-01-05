@@ -18,7 +18,7 @@
 #include <mutex>
 #include <shared_mutex>
 
-#include "ikvstore_observer.h"
+#include "kvdb_observer_proxy.h"
 #include "kv_store_changed_data.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
