@@ -43,6 +43,7 @@ ohos_source_set("distributeddata_kvdb") {
     "kvdb_exporter.cpp",
     "kvdb_general_store.cpp",
     "kvdb_notifier_proxy.cpp",
+    "kvdb_observer_proxy.cpp",
     "kvdb_service_impl.cpp",
     "kvdb_service_stub.cpp",
     "kvdb_watcher.cpp",
@@ -79,8 +80,8 @@ ohos_source_set("distributeddata_kvdb") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
-    "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
   ]
 
   subsystem_name = "distributeddatamgr"

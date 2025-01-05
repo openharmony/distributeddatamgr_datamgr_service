@@ -28,6 +28,45 @@ constexpr int MAX_QUERY_LENGTH = 5 * 1024; // Max query string length 5k
 constexpr int MAX_QUERY_COMPLEXITY = 500;  // Max query complexity 500
 bool QueryHelper::hasPrefixKey_ = false;
 std::string QueryHelper::deviceId_;
+const char * const EQUAL_TO = "^EQUAL";
+const char * const NOT_EQUAL_TO = "^NOT_EQUAL";
+const char * const GREATER_THAN = "^GREATER";
+const char * const LESS_THAN = "^LESS";
+const char * const GREATER_THAN_OR_EQUAL_TO = "^GREATER_EQUAL";
+const char * const LESS_THAN_OR_EQUAL_TO = "^LESS_EQUAL";
+const char * const IS_NULL = "^IS_NULL";
+const char * const IN = "^IN";
+const char * const NOT_IN = "^NOT_IN";
+const char * const LIKE = "^LIKE";
+const char * const NOT_LIKE = "^NOT_LIKE";
+const char * const AND = "^AND";
+const char * const OR = "^OR";
+const char * const ORDER_BY_ASC = "^ASC";
+const char * const ORDER_BY_DESC = "^DESC";
+const char * const ORDER_BY_WRITE_TIME = "^OrderByWriteTime";
+const char * const IS_DESC = "^IS_DESC";
+const char * const LIMIT = "^LIMIT";
+const char * const SPACE = " ";
+const char * const SPECIAL = "^";
+const char * const SPECIAL_ESCAPE = "(^)";
+const char * const SPACE_ESCAPE = "^^";
+const char * const EMPTY_STRING = "^EMPTY_STRING";
+const char * const START_IN = "^START";
+const char * const END_IN = "^END";
+const char * const BEGIN_GROUP = "^BEGIN_GROUP";
+const char * const END_GROUP = "^END_GROUP";
+const char * const KEY_PREFIX = "^KEY_PREFIX";
+const char * const DEVICE_ID = "^DEVICE_ID";
+const char * const IS_NOT_NULL = "^IS_NOT_NULL";
+const char * const TYPE_STRING = "STRING";
+const char * const TYPE_INTEGER = "INTEGER";
+const char * const TYPE_LONG = "LONG";
+const char * const TYPE_DOUBLE = "DOUBLE";
+const char * const TYPE_BOOLEAN = "BOOL";
+const char * const VALUE_TRUE = "true";
+const char * const VALUE_FALSE = "false";
+const char * const SUGGEST_INDEX = "^SUGGEST_INDEX";
+const char * const IN_KEYS = "^IN_KEYS";
 
 DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool &isSuccess)
 {
@@ -44,8 +83,8 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
         return dbQuery;
     }
     deviceId_.clear();
-    hasPrefixKey_ = (query.find(DataQuery::KEY_PREFIX) != std::string::npos);
-    size_t pos = query.find_first_not_of(DataQuery::SPACE);
+    hasPrefixKey_ = (query.find(KEY_PREFIX) != std::string::npos);
+    size_t pos = query.find_first_not_of(SPACE);
     std::string inputTrim = (pos == std::string::npos) ? "" : query.substr(pos);
     std::regex regex(" ");
     // regex split string by space
@@ -61,17 +100,17 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
     // Counts how many keywords has been handled
     for (int count = 0; pointer <= end && count <= MAX_QUERY_COMPLEXITY; ++count) {
         std::string keyword = words.at(pointer);
-        if (keyword == DataQuery::EQUAL_TO) {
+        if (keyword == EQUAL_TO) {
             isSuccess = HandleEqualTo(words, pointer, end, dbQuery);
-        } else if (keyword == DataQuery::NOT_EQUAL_TO) {
+        } else if (keyword == NOT_EQUAL_TO) {
             isSuccess = HandleNotEqualTo(words, pointer, end, dbQuery);
-        } else if (keyword == DataQuery::GREATER_THAN) {
+        } else if (keyword == GREATER_THAN) {
             isSuccess = HandleGreaterThan(words, pointer, end, dbQuery);
-        } else if (keyword == DataQuery::LESS_THAN) {
+        } else if (keyword == LESS_THAN) {
             isSuccess = HandleLessThan(words, pointer, end, dbQuery);
-        } else if (keyword == DataQuery::GREATER_THAN_OR_EQUAL_TO) {
+        } else if (keyword == GREATER_THAN_OR_EQUAL_TO) {
             isSuccess = HandleGreaterThanOrEqualTo(words, pointer, end, dbQuery);
-        } else if (keyword == DataQuery::LESS_THAN_OR_EQUAL_TO) {
+        } else if (keyword == LESS_THAN_OR_EQUAL_TO) {
             isSuccess = HandleLessThanOrEqualTo(words, pointer, end, dbQuery);
         } else {
             isSuccess = Handle(words, pointer, end, dbQuery);
@@ -87,27 +126,27 @@ DistributedDB::Query QueryHelper::StringToDbQuery(const std::string &query, bool
 bool QueryHelper::Handle(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
 {
     std::string keyword = words.at(pointer);
-    if (keyword == DataQuery::IS_NULL) {
+    if (keyword == IS_NULL) {
         return HandleIsNull(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::IN) {
+    } else if (keyword == IN) {
         return HandleIn(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::NOT_IN) {
+    } else if (keyword == NOT_IN) {
         return HandleNotIn(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::LIKE) {
+    } else if (keyword == LIKE) {
         return HandleLike(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::NOT_LIKE) {
+    } else if (keyword == NOT_LIKE) {
         return HandleNotLike(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::AND) {
+    } else if (keyword == AND) {
         return HandleAnd(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::OR) {
+    } else if (keyword == OR) {
         return HandleOr(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::ORDER_BY_ASC) {
+    } else if (keyword == ORDER_BY_ASC) {
         return HandleOrderByAsc(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::ORDER_BY_DESC) {
+    } else if (keyword == ORDER_BY_DESC) {
         return HandleOrderByDesc(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::ORDER_BY_WRITE_TIME) {
+    } else if (keyword == ORDER_BY_WRITE_TIME) {
         return HandleOrderByWriteTime(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::LIMIT) {
+    } else if (keyword == LIMIT) {
         return HandleLimit(words, pointer, end, dbQuery);
     } else {
         return HandleExtra(words, pointer, end, dbQuery);
@@ -117,19 +156,19 @@ bool QueryHelper::Handle(const std::vector<std::string> &words, int &pointer, in
 bool QueryHelper::HandleExtra(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
 {
     std::string keyword = words.at(pointer);
-    if (keyword == DataQuery::BEGIN_GROUP) {
+    if (keyword == BEGIN_GROUP) {
         return HandleBeginGroup(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::END_GROUP) {
+    } else if (keyword == END_GROUP) {
         return HandleEndGroup(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::KEY_PREFIX) {
+    } else if (keyword == KEY_PREFIX) {
         return HandleKeyPrefix(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::IS_NOT_NULL) {
+    } else if (keyword == IS_NOT_NULL) {
         return HandleIsNotNull(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::DEVICE_ID) {
+    } else if (keyword == DEVICE_ID) {
         return HandleDeviceId(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::SUGGEST_INDEX) {
+    } else if (keyword == SUGGEST_INDEX) {
         return HandleSetSuggestIndex(words, pointer, end, dbQuery);
-    } else if (keyword == DataQuery::IN_KEYS) {
+    } else if (keyword == IN_KEYS) {
         return HandleInKeys(words, pointer, end, dbQuery);
     }
     ZLOGE("Invalid keyword.");
@@ -145,15 +184,15 @@ bool QueryHelper::HandleEqualTo(const std::vector<std::string> &words, int &poin
     const std::string &fieldType = words.at(pointer + 1);  // fieldType
     const std::string &fieldName = words.at(pointer + 2);  // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         dbQuery.EqualTo(StringToString(fieldName), StringToInt(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         dbQuery.EqualTo(StringToString(fieldName), StringToLong(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         dbQuery.EqualTo(StringToString(fieldName), StringToDouble(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_BOOLEAN) {
+    } else if (fieldType == TYPE_BOOLEAN) {
         dbQuery.EqualTo(StringToString(fieldName), StringToBoolean(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         dbQuery.EqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("EqualTo wrong type.");
@@ -172,15 +211,15 @@ bool QueryHelper::HandleNotEqualTo(const std::vector<std::string> &words, int &p
     const std::string &fieldType = words.at(pointer + 1);  // fieldType
     const std::string &fieldName = words.at(pointer + 2);  // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         dbQuery.NotEqualTo(StringToString(fieldName), StringToInt(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         dbQuery.NotEqualTo(StringToString(fieldName), StringToLong(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         dbQuery.NotEqualTo(StringToString(fieldName), StringToDouble(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_BOOLEAN) {
+    } else if (fieldType == TYPE_BOOLEAN) {
         dbQuery.NotEqualTo(StringToString(fieldName), StringToBoolean(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         dbQuery.NotEqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("NotEqualTo wrong type.");
@@ -199,13 +238,13 @@ bool QueryHelper::HandleGreaterThan(const std::vector<std::string> &words, int &
     const std::string &fieldType = words.at(pointer + 1);  // fieldType
     const std::string &fieldName = words.at(pointer + 2);  // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         dbQuery.GreaterThan(StringToString(fieldName), StringToInt(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         dbQuery.GreaterThan(StringToString(fieldName), StringToLong(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         dbQuery.GreaterThan(StringToString(fieldName), StringToDouble(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         dbQuery.GreaterThan(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("GreaterThan wrong type.");
@@ -224,13 +263,13 @@ bool QueryHelper::HandleLessThan(const std::vector<std::string> &words, int &poi
     const std::string &fieldType = words.at(pointer + 1);  // fieldType
     const std::string &fieldName = words.at(pointer + 2);  // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         dbQuery.LessThan(StringToString(fieldName), StringToInt(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         dbQuery.LessThan(StringToString(fieldName), StringToLong(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         dbQuery.LessThan(StringToString(fieldName), StringToDouble(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         dbQuery.LessThan(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("LessThan wrong type.");
@@ -250,13 +289,13 @@ bool QueryHelper::HandleGreaterThanOrEqualTo(
     const std::string &fieldType = words.at(pointer + 1);  // fieldType
     const std::string &fieldName = words.at(pointer + 2);  // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         dbQuery.GreaterThanOrEqualTo(StringToString(fieldName), StringToInt(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         dbQuery.GreaterThanOrEqualTo(StringToString(fieldName), StringToLong(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         dbQuery.GreaterThanOrEqualTo(StringToString(fieldName), StringToDouble(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         dbQuery.GreaterThanOrEqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("GreaterThanOrEqualTo wrong type.");
@@ -276,13 +315,13 @@ bool QueryHelper::HandleLessThanOrEqualTo(
     const std::string &fieldType = words.at(pointer + 1);  // fieldType
     const std::string &fieldName = words.at(pointer + 2);  // fieldName
     const std::string &fieldValue = words.at(pointer + 3); // fieldValue
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         dbQuery.LessThanOrEqualTo(StringToString(fieldName), StringToInt(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         dbQuery.LessThanOrEqualTo(StringToString(fieldName), StringToLong(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         dbQuery.LessThanOrEqualTo(StringToString(fieldName), StringToDouble(fieldValue));
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         dbQuery.LessThanOrEqualTo(StringToString(fieldName), StringToString(fieldValue));
     } else {
         ZLOGE("LessThanOrEqualTo wrong type.");
@@ -319,29 +358,29 @@ bool QueryHelper::HandleIsNotNull(const std::vector<std::string> &words, int &po
 bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
 {
     //       | <-------------------------4---------------------------->|
-    // words [ DataQuery::IN, fieldType, fieldName, DataQuery::START_IN, ...valueList, DataQuery::END_IN ]
+    // words [ IN, fieldType, fieldName, START_IN, ...valueList, END_IN ]
     // index [ -------0-----, ----1----, ----2----, ---------3---------,      ...    , ---------n--------]
     //                ^                                                                                  ^
     //                |                                                                                  |
     //              pointer                                                                             end
     // first fieldValue, or END if list is empty
-    if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) {
+    if (pointer + 4 > end || words.at(pointer + 3) != START_IN) {
         ZLOGE("In not enough params.");
         return false;
     }
     const std::string &fieldType = words.at(pointer + 1); // fieldType
     const std::string &fieldName = words.at(pointer + 2); // fieldName
     int elementPointer = pointer + 4;                     // first fieldValue, or END if list is empty
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         const std::vector<int> intValueList = GetIntegerList(words, elementPointer, end);
         dbQuery.In(StringToString(fieldName), intValueList);
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         const std::vector<int64_t> longValueList = GetLongList(words, elementPointer, end);
         dbQuery.In(StringToString(fieldName), longValueList);
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         const std::vector<double> doubleValueList = GetDoubleList(words, elementPointer, end);
         dbQuery.In(StringToString(fieldName), doubleValueList);
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         const std::vector<std::string> stringValueList = GetStringList(words, elementPointer, end);
         dbQuery.In(StringToString(fieldName), stringValueList);
     } else {
@@ -355,29 +394,29 @@ bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, 
 bool QueryHelper::HandleNotIn(const std::vector<std::string> &words, int &pointer, int end, DBQuery &dbQuery)
 {
     //       |<--------------------------4-------------------------------->|
-    // words [ DataQuery::NOT_IN, fieldType, fieldName, DataQuery::START_IN, ...valueList, DataQuery::END_IN ]
+    // words [ NOT_IN, fieldType, fieldName, START_IN, ...valueList, END_IN ]
     // index [ --------0--------, ----1----, ----2----, ---------3---------,      ...    , ---------n--------]
     //                 ^                                                                                     ^
     //                 |                                                                                     |
     //               pointer                                                                                end
     // first fieldValue, or END if list is empty
-    if (pointer + 4 > end || words.at(pointer + 3) != DataQuery::START_IN) {
+    if (pointer + 4 > end || words.at(pointer + 3) != START_IN) {
         ZLOGE("NotIn not enough params.");
         return false;
     }
     const std::string &fieldType = words.at(pointer + 1); // fieldType
     const std::string &fieldName = words.at(pointer + 2); // fieldName
     int elementPointer = pointer + 4;                     // first fieldValue, or END if list is empty
-    if (fieldType == DataQuery::TYPE_INTEGER) {
+    if (fieldType == TYPE_INTEGER) {
         const std::vector<int> intValueList = GetIntegerList(words, elementPointer, end);
         dbQuery.NotIn(StringToString(fieldName), intValueList);
-    } else if (fieldType == DataQuery::TYPE_LONG) {
+    } else if (fieldType == TYPE_LONG) {
         const std::vector<int64_t> longValueList = GetLongList(words, elementPointer, end);
         dbQuery.NotIn(StringToString(fieldName), longValueList);
-    } else if (fieldType == DataQuery::TYPE_DOUBLE) {
+    } else if (fieldType == TYPE_DOUBLE) {
         const std::vector<double> doubleValueList = GetDoubleList(words, elementPointer, end);
         dbQuery.NotIn(StringToString(fieldName), doubleValueList);
-    } else if (fieldType == DataQuery::TYPE_STRING) {
+    } else if (fieldType == TYPE_STRING) {
         const std::vector<std::string> stringValueList = GetStringList(words, elementPointer, end);
         dbQuery.NotIn(StringToString(fieldName), stringValueList);
     } else {
@@ -460,7 +499,7 @@ bool QueryHelper::HandleOrderByWriteTime(const std::vector<std::string> &words, 
     }
     const std::string isAsc = words.at(pointer + 1); // isASC
 
-    dbQuery.OrderByWriteTime(isAsc == DataQuery::IS_ASC);
+    dbQuery.OrderByWriteTime(isAsc == IS_ASC);
     pointer += 2; // 2 Pointer goes to next keyword
     return true;
 }
@@ -510,7 +549,7 @@ bool QueryHelper::HandleInKeys(const std::vector<std::string> &words, int &point
     // pointer points at keyword "IN_KEYS", (pointer + 1) points at keyword "START_IN"
     int startInOffSet = pointer + 1;
     int queryLen = end - pointer;
-    if (queryLen < 2 || words.at(startInOffSet) != DataQuery::START_IN) { // This keyword has at least 2 params
+    if (queryLen < 2 || words.at(startInOffSet) != START_IN) { // This keyword has at least 2 params
         ZLOGE("In not enough params.");
         return false;
     }
@@ -587,9 +626,9 @@ double QueryHelper::StringToDouble(const std::string &word)
 
 bool QueryHelper::StringToBoolean(const std::string &word)
 {
-    if (word == DataQuery::VALUE_TRUE) {
+    if (word == VALUE_TRUE) {
         return true;
-    } else if (word == DataQuery::VALUE_FALSE) {
+    } else if (word == VALUE_FALSE) {
         return false;
     } else {
         ZLOGE("StringToBoolean wrong value.");
@@ -600,26 +639,26 @@ bool QueryHelper::StringToBoolean(const std::string &word)
 std::string QueryHelper::StringToString(const std::string &word)
 {
     std::string result = word;
-    if (result.compare(DataQuery::EMPTY_STRING) == 0) {
+    if (result.compare(EMPTY_STRING) == 0) {
         result = "";
         return result;
     }
     size_t index = 0; // search from the beginning of the string
     while (true) {
-        index = result.find(DataQuery::SPACE_ESCAPE, index);
+        index = result.find(SPACE_ESCAPE, index);
         if (index == std::string::npos) {
             break;
         }
-        result.replace(index, 2, DataQuery::SPACE); // 2 chars to be replaced
+        result.replace(index, 2, SPACE); // 2 chars to be replaced
         index += 1;                                 // replaced with 1 char, keep searching the remaining string
     }
     index = 0; // search from the beginning of the string
     while (true) {
-        index = result.find(DataQuery::SPECIAL_ESCAPE, index);
+        index = result.find(SPECIAL_ESCAPE, index);
         if (index == std::string::npos) {
             break;
         }
-        result.replace(index, 3, DataQuery::SPECIAL); // 3 chars to be replaced
+        result.replace(index, 3, SPECIAL); // 3 chars to be replaced
         index += 1;                                   // replaced with 1 char, keep searching the remaining string
     }
     return result;
@@ -630,7 +669,7 @@ std::vector<int> QueryHelper::GetIntegerList(const std::vector<std::string> &wor
     std::vector<int> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
-        if (words.at(elementPointer) == DataQuery::END_IN) {
+        if (words.at(elementPointer) == END_IN) {
             isEndFound = true;
             break;
         }
@@ -650,7 +689,7 @@ std::vector<int64_t> QueryHelper::GetLongList(const std::vector<std::string> &wo
     std::vector<int64_t> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
-        if (words.at(elementPointer) == DataQuery::END_IN) {
+        if (words.at(elementPointer) == END_IN) {
             isEndFound = true;
             break;
         }
@@ -670,7 +709,7 @@ std::vector<double> QueryHelper::GetDoubleList(const std::vector<std::string> &w
     std::vector<double> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
-        if (words.at(elementPointer) == DataQuery::END_IN) {
+        if (words.at(elementPointer) == END_IN) {
             isEndFound = true;
             break;
         }
@@ -690,7 +729,7 @@ std::vector<std::string> QueryHelper::GetStringList(const std::vector<std::strin
     std::vector<std::string> valueList;
     bool isEndFound = false;
     while (elementPointer <= end) {
-        if (words.at(elementPointer) == DataQuery::END_IN) {
+        if (words.at(elementPointer) == END_IN) {
             isEndFound = true;
             break;
         }

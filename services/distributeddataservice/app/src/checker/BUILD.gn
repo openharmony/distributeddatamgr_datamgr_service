@@ -49,7 +49,7 @@ ohos_source_set("distributeddata_checker") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"

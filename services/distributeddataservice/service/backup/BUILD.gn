@@ -53,7 +53,7 @@ ohos_source_set("distributeddata_backup") {
 
   external_deps = [
     "hilog:libhilog",
-    "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

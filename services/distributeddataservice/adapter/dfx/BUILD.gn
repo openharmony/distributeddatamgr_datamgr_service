@@ -58,7 +58,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
-    "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
     "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"
