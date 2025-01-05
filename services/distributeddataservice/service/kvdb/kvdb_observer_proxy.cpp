@@ -36,15 +36,6 @@ KVDBObserverProxy::KVDBObserverProxy(const sptr<IRemoteObject> &impl) : IRemoteP
 {
 }
 
-int64_t GetBufferSize(const std::vector<Entry> &entries)
-{
-    int64_t bufferSize = 0;
-    for (const auto &item : entries) {
-        bufferSize += item.key.RawSize() + item.value.RawSize();
-    }
-    return bufferSize;
-}
-
 void KVDBObserverProxy::OnChange(const ChangeNotification &changeNotification)
 {
     MessageParcel data;
