@@ -38,6 +38,7 @@ ohos_static_library("distributeddata_screenlock_static") {
   external_deps = [
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
     "kv_store:datamgr_common",
     "screenlock_mgr:screenlock_client",
   ]
