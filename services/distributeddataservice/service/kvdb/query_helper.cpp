@@ -26,6 +26,8 @@ constexpr int QUERY_SKIP_SIZE = 1;
 constexpr int QUERY_WORD_SIZE = 2;
 constexpr int MAX_QUERY_LENGTH = 5 * 1024; // Max query string length 5k
 constexpr int MAX_QUERY_COMPLEXITY = 500;  // Max query complexity 500
+constexpr int QUERY_WORD_INDEX = 3;
+constexpr int QUERY_WORD_LEN = 4;
 bool QueryHelper::hasPrefixKey_ = false;
 std::string QueryHelper::deviceId_;
 const char * const EQUAL_TO = "^EQUAL";
@@ -364,7 +366,7 @@ bool QueryHelper::HandleIn(const std::vector<std::string> &words, int &pointer, 
     //                |                                                                                  |
     //              pointer                                                                             end
     // first fieldValue, or END if list is empty
-    if (pointer + 4 > end || words.at(pointer + 3) != START_IN) {
+    if (pointer + QUERY_WORD_LEN > end || words.at(pointer + QUERY_WORD_INDEX) != START_IN) {
         ZLOGE("In not enough params.");
         return false;
     }
@@ -400,7 +402,7 @@ bool QueryHelper::HandleNotIn(const std::vector<std::string> &words, int &pointe
     //                 |                                                                                     |
     //               pointer                                                                                end
     // first fieldValue, or END if list is empty
-    if (pointer + 4 > end || words.at(pointer + 3) != START_IN) {
+    if (pointer + QUERY_WORD_LEN > end || words.at(pointer + QUERY_WORD_INDEX) != START_IN) {
         ZLOGE("NotIn not enough params.");
         return false;
     }
