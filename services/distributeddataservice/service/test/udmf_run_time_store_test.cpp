@@ -533,6 +533,8 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
     vector<Entry> entries;
     status = store->GetEntries(KEY_PREFIX, entries);
     EXPECT_EQ(E_OK, status);
+    status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
     UDDetails details1;
     details1.insert({ "udmf_key", "udmf_value" });
     UnifiedData inputData;
