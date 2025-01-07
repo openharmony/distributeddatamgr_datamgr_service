@@ -1158,9 +1158,6 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
 {
     ZLOGD("seqId:0x%{public}" PRIx64 " tokenId:0x%{public}x remote:%{public}zu", info.seqId, meta.tokenId,
         dbResult.size());
-    RADAR_REPORT(STANDARD_DEVICE_SYNC, FINISH_SYNC, RADAR_SUCCESS, BIZ_STATE, END,
-        SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
-        std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     std::map<std::string, Status> result;
     if (AccessTokenKit::GetTokenTypeFlag(meta.tokenId) != TOKEN_HAP) {
         for (auto &[key, status] : dbResult) {
@@ -1170,6 +1167,21 @@ Status KVDBServiceImpl::DoComplete(const StoreMetaData &meta, const SyncInfo &in
         for (auto &[key, status] : dbResult) {
             result[key] = ConvertDbStatus(status);
         }
+    }
+    bool success = true;
+    for (auto &[key, status] : result) {
+        if (status != SUCCESS) {
+            success = false;
+            RADAR_REPORT(STANDARD_DEVICE_SYNC, FINISH_SYNC, RADAR_FAILED, ERROR_CODE, status, BIZ_STATE, END,
+                SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+                std::to_string(info.syncId), DATA_TYPE, meta.dataType);
+            break;
+        }
+    }
+    if (success) {
+        RADAR_REPORT(STANDARD_DEVICE_SYNC, FINISH_SYNC, RADAR_SUCCESS, BIZ_STATE, END,
+            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+            std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     }
     for (const auto &device : info.devices) {
         auto it = result.find(device);
