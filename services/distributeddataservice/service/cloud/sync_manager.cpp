@@ -31,6 +31,7 @@
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "network_adapter.h"
 #include "screen/screen_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
@@ -273,7 +274,7 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
         ZLOGD("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
         return E_CLOUD_DISABLED;
     }
-    if (!DmAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
         info.SetError(E_NETWORK_ERROR);
         ZLOGD("network unavailable");
         return E_NETWORK_ERROR;
@@ -642,7 +643,7 @@ SyncManager::TraceIds SyncManager::GetPrepareTraceId(const SyncInfo &info, const
 bool SyncManager::NeedGetCloudInfo(CloudInfo &cloud)
 {
     return (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true) || !cloud.enableCloud) &&
-           DmAdapter::GetInstance().IsNetworkAvailable() && Account::GetInstance()->IsLoginAccount();
+           NetworkAdapter::GetInstance().IsNetworkAvailable() && Account::GetInstance()->IsLoginAccount();
 }
 
 std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud)

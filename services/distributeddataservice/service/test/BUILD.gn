@@ -38,6 +38,7 @@ config("module_private_config") {
     "${data_service_path}/service/data_share/subscriber_managers",
     "${data_service_path}/service/data_share",
     "${data_service_path}/service/matrix/include/",
+    "${data_service_path}/service/network",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/object/include",
     "${data_service_path}/service/permission/include",
@@ -107,6 +108,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
     "cloud_data_test.cpp",
+    "network_adapter_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -132,6 +134,7 @@ ohos_unittest("CloudDataTest") {
   ]
 
   deps = [
+    "${data_service_path}/service/network:distributeddata_network",
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
@@ -220,6 +223,7 @@ ohos_unittest("CloudServiceImplTest") {
   ]
 
   deps = [
+    "${data_service_path}/service/network:distributeddata_network",
     "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",

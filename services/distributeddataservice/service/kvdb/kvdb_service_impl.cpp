@@ -944,9 +944,6 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     if (instance == nullptr) {
         return Status::CLOUD_DISABLED;
     }
-    if (!DMAdapter::GetInstance().IsNetworkAvailable()) {
-        return Status::NETWORK_ERROR;
-    }
     std::vector<int32_t> users;
     if (meta.user != StoreMetaData::ROOT_USER) {
         users.push_back(std::atoi(meta.user.c_str()));

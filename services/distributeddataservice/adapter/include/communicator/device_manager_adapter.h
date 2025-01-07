@@ -37,13 +37,6 @@ public:
         DEVICE_ONREADY,
         DEVICE_BUTT
     };
-    enum NetworkType {
-        NONE,
-        CELLULAR,
-        WIFI,
-        ETHERNET,
-        OTHER
-    };
     using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
@@ -76,12 +69,12 @@ public:
     static std::vector<std::string> ToUUID(std::vector<DeviceInfo> devices);
     std::string ToNetworkID(const std::string &id);
     void NotifyReadyEvent(const std::string &uuid);
-    bool IsNetworkAvailable();
-    NetworkType GetNetworkType(bool retrieve = false);
     int32_t GetAuthType(const std::string& id);
     bool IsSameAccount(const std::string &id);
     bool IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
+    void Offline(const DmDeviceInfo &info);
+    void OnReady(const DmDeviceInfo &info);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 
@@ -89,18 +82,13 @@ private:
     DeviceManagerAdapter();
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
-    bool RegOnNetworkChange();
-    NetworkType SetNet(NetworkType netWorkType);
-    NetworkType RefreshNet();
     bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void InitDeviceInfo(bool onlyCache = true);
     DeviceInfo GetLocalDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
     void Online(const DmDeviceInfo &info);
-    void Offline(const DmDeviceInfo &info);
     void OnChanged(const DmDeviceInfo &info);
-    void OnReady(const DmDeviceInfo &info);
     std::vector<const AppDeviceChangeListener *> GetObservers();
     void ResetLocalDeviceInfo();
     static inline uint64_t GetTimeStamp()
@@ -120,11 +108,6 @@ private:
     static constexpr int32_t OH_OS_TYPE = 10;
     ConcurrentMap<std::string, std::string> syncTask_ {};
     std::shared_ptr<ExecutorPool> executors_;
-    static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
-    static constexpr int32_t NET_LOST_DURATION = 10 * 1000; // ms
-    uint64_t expireTime_ = 0;
-    uint64_t netLostTime_ = 0;
-    NetworkType defaultNetwork_ = NONE;
     ConcurrentMap<std::string, std::pair<DeviceState, DeviceInfo>> readyDevices_;
 };
 }  // namespace DistributedData
