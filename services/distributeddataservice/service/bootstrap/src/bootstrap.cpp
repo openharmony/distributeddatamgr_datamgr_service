@@ -17,6 +17,7 @@
 
 #include <dlfcn.h>
 
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "backup_manager.h"
 #include "backuprule/backup_rule_manager.h"
 #include "checker/checker_manager.h"
@@ -24,7 +25,7 @@
 #include "config_factory.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
-#include "app_id_mapping/app_id_mapping_config_manager.h"
+#include "thread/thread_manager.h"
 namespace OHOS {
 namespace DistributedData {
 Bootstrap &Bootstrap::GetInstance()
@@ -180,6 +181,15 @@ void Bootstrap::LoadAppIdMappings()
         infos.push_back({ info.srcAppId, info.dstAppId });
     }
     AppIdMappingConfigManager::GetInstance().Initialize(infos);
+}
+
+void Bootstrap::LoadThread()
+{
+    auto *config = ConfigFactory::GetInstance().GetThreadConfig();
+    if (config == nullptr) {
+        return;
+    }
+    ThreadManager::GetInstance().Initialize(config->minThreadNum, config->maxThreadNum, config->ipcThreadNum);
 }
 } // namespace DistributedData
 } // namespace OHOS

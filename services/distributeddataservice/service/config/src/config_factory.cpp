@@ -16,8 +16,7 @@
 #include <fstream>
 namespace OHOS {
 namespace DistributedData {
-ConfigFactory::ConfigFactory()
-    : file_(std::string(CONF_PATH) + "/config.json")
+ConfigFactory::ConfigFactory() : file_(std::string(CONF_PATH) + "/config.json")
 {
 }
 
@@ -86,6 +85,11 @@ CloudConfig *ConfigFactory::GetCloudConfig()
 std::vector<AppIdMappingConfig> *ConfigFactory::GetAppIdMappingConfig()
 {
     return config_.appIdMapping;
+}
+
+ThreadConfig *ConfigFactory::GetThreadConfig()
+{
+    return config_.thread;
 }
 } // namespace DistributedData
 } // namespace OHOS

@@ -84,6 +84,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",
     "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/config/src/model/thread_config.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",

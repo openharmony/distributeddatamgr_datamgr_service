@@ -98,6 +98,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "snapshot/bind_event.cpp",
     "snapshot/snapshot.cpp",
     "store/auto_cache.cpp",
+    "thread/thread_manager.cpp",
     "utils/anonymous.cpp",
     "utils/block_integer.cpp",
     "utils/constant.cpp",

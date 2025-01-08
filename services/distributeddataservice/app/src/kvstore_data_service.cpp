@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "accesstoken_kit.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
@@ -36,6 +37,7 @@
 #include "dump_helper.h"
 #include "eventcenter/event_center.h"
 #include "if_system_ability_manager.h"
+#include "installer/installer.h"
 #include "iservice_registry.h"
 #include "kvstore_account_observer.h"
 #include "kvstore_screen_observer.h"
@@ -55,14 +57,13 @@
 #include "string_ex.h"
 #include "system_ability_definition.h"
 #include "task_manager.h"
-#include "installer/installer.h"
+#include "thread/thread_manager.h"
 #include "upgrade.h"
 #include "upgrade_manager.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
-#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -83,24 +84,12 @@ KvStoreDataService::KvStoreDataService(bool runOnCreate)
     : SystemAbility(runOnCreate), clients_()
 {
     ZLOGI("begin.");
-    if (executors_ == nullptr) {
-        constexpr size_t MAX = 12;
-        constexpr size_t MIN = 5;
-        executors_ = std::make_shared<ExecutorPool>(MAX, MIN);
-        DistributedDB::RuntimeConfig::SetThreadPool(std::make_shared<TaskManager>(executors_));
-    }
 }
 
 KvStoreDataService::KvStoreDataService(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate), clients_()
 {
     ZLOGI("begin");
-    if (executors_ == nullptr) {
-        constexpr size_t MAX = 12;
-        constexpr size_t MIN = 5;
-        executors_ = std::make_shared<ExecutorPool>(MAX, MIN);
-        DistributedDB::RuntimeConfig::SetThreadPool(std::make_shared<TaskManager>(executors_));
-    }
 }
 
 KvStoreDataService::~KvStoreDataService()
@@ -271,9 +260,20 @@ int KvStoreDataService::Dump(int fd, const std::vector<std::u16string> &args)
     return ERROR;
 }
 
+void KvStoreDataService::InitExecutor()
+{
+    if (executors_ == nullptr) {
+        executors_ = std::make_shared<ExecutorPool>(ThreadManager::GetInstance().GetMaxThreadNum(),
+            ThreadManager::GetInstance().GetMinThreadNum());
+        DistributedDB::RuntimeConfig::SetThreadPool(std::make_shared<TaskManager>(executors_));
+    }
+    IPCSkeleton::SetMaxWorkThreadNum(ThreadManager::GetInstance().GetIpcThreadNum());
+}
+
 void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
+    LoadConfigs();
     EventCenter::Defer defer;
     Reporter::GetInstance()->SetThreadPool(executors_);
     AccountDelegate::GetInstance()->BindExecutor(executors_);
@@ -289,8 +289,6 @@ void KvStoreDataService::OnStart()
         }
         ZLOGW("GetLocalDeviceId failed, retry count:%{public}d", static_cast<int>(retry));
     }
-    ZLOGI("Bootstrap configs and plugins.");
-    LoadConfigs();
     Initialize();
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr != nullptr) {
@@ -321,6 +319,9 @@ void KvStoreDataService::OnStart()
 
 void KvStoreDataService::LoadConfigs()
 {
+    ZLOGI("Bootstrap configs and plugins.");
+    Bootstrap::GetInstance().LoadThread();
+    InitExecutor();
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();

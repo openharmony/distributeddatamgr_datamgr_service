@@ -32,6 +32,7 @@ public:
     API_EXPORT void LoadCloud();
     API_EXPORT void LoadBackup(std::shared_ptr<ExecutorPool> executors);
     API_EXPORT void LoadAppIdMappings();
+    API_EXPORT void LoadThread();
 private:
     static constexpr const char *DEFAULT_LABEL = "distributeddata";
     static constexpr const char *DEFAULT_META = "service_meta";
