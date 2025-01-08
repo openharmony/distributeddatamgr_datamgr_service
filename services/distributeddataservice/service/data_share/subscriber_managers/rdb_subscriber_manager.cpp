@@ -50,7 +50,7 @@ int32_t TemplateManager::Delete(const Key &key, int32_t userId)
         ZLOGE("Delete failed, %{public}d", status);
         return E_ERROR;
     }
-    SchedulerManager::GetInstance().RemoveTimer(key);
+    SchedulerManager::GetInstance().Stop(key);
     return E_OK;
 }
 
@@ -132,8 +132,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
             DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
             Notify(key, context->currentUserId, node, metaData);
             if (GetEnableObserverCount(key) == 1) {
-                SchedulerManager::GetInstance().Execute(
-                    key, context->currentUserId, metaData);
+                SchedulerManager::GetInstance().Start(key, context->currentUserId, metaData);
             }
         };
         executorPool->Execute(task);
@@ -158,7 +157,7 @@ int RdbSubscriberManager::Delete(const Key &key, uint32_t firstCallerTokenId)
                 }
             }
             if (value.empty()) {
-                SchedulerManager::GetInstance().RemoveTimer(key);
+                SchedulerManager::GetInstance().Stop(key);
             }
             return !value.empty();
         });
@@ -179,7 +178,7 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId, uint32_t callerPid)
             ZLOGI("delete timer, subId %{public}" PRId64 ", bundleName %{public}s, tokenId %{public}x, uri %{public}s.",
                 key.subscriberId, key.bundleName.c_str(), callerTokenId,
                 DistributedData::Anonymous::Change(key.uri).c_str());
-            SchedulerManager::GetInstance().RemoveTimer(key);
+            SchedulerManager::GetInstance().Stop(key);
         }
         return value.empty();
     });
@@ -187,40 +186,55 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId, uint32_t callerPid)
 
 int RdbSubscriberManager::Disable(const Key &key, uint32_t firstCallerTokenId)
 {
+    bool isAllDisabled = true;
     auto result =
-        rdbCache_.ComputeIfPresent(key, [&firstCallerTokenId, this](const auto &key,
+        rdbCache_.ComputeIfPresent(key, [&firstCallerTokenId, &isAllDisabled, this](const auto &key,
             std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
                 if (it->firstCallerTokenId == firstCallerTokenId) {
                     it->enabled = false;
                     it->isNotifyOnEnabled = false;
                 }
+                if (it->enabled) {
+                    isAllDisabled = false;
+                }
             }
             return true;
         });
+    if (isAllDisabled) {
+        SchedulerManager::GetInstance().Disable(key);
+    }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
 int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> context)
 {
-    auto result = rdbCache_.ComputeIfPresent(key, [&context, this](const auto &key, std::vector<ObserverNode> &value) {
+    bool isChanged = false;
+    DistributedData::StoreMetaData metaData;
+    auto result = rdbCache_.ComputeIfPresent(key, [&context, &metaData, &isChanged, this](const auto &key,
+        std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end(); it++) {
             if (it->firstCallerTokenId != context->callerTokenId) {
                 continue;
             }
             it->enabled = true;
+            LoadConfigDataInfoStrategy loadDataInfo;
+            if (!loadDataInfo(context)) {
+                return true;
+            }
+            isChanged = true;
+            metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
             if (it->isNotifyOnEnabled) {
                 std::vector<ObserverNode> node;
                 node.emplace_back(it->observer, context->callerTokenId);
-                LoadConfigDataInfoStrategy loadDataInfo;
-                if (loadDataInfo(context)) {
-                    DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
-                    Notify(key, context->currentUserId, node, metaData);
-                }
+                Notify(key, context->currentUserId, node, metaData);
             }
         }
         return true;
     });
+    if (isChanged) {
+        SchedulerManager::GetInstance().Enable(key, context->currentUserId, metaData);
+    }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
@@ -390,8 +404,7 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
         return false;
     });
     Key executeKey(uri, subscriberId, bundleName);
-    SchedulerManager::GetInstance().Execute(executeKey, context->currentUserId,
-        metaData);
+    SchedulerManager::GetInstance().Start(executeKey, context->currentUserId, metaData);
 }
 
 DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(const std::shared_ptr<Context> context)
