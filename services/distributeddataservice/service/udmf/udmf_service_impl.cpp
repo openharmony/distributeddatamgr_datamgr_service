@@ -836,5 +836,24 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
     asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
 }
 
+int32_t UdmfServiceImpl::InvokeHap(const std::string &progressKey, const std::string &cancelKey)
+{
+    ProgressDialog::ProgressMessageInfo message;
+    message.promptText = "PromptText_PasteBoard_Local";
+    message.remoteDeviceName = "";
+    message.isRemote = false;
+    message.progressKey = progressKey;
+    message.signalKey = cancelKey;
+    
+    ProgressDialog::FocusedAppInfo appInfo = ProgressDialog::GetInstance().GetFocusedAppInfo();
+    message.windowId = appInfo.windowId;
+    message.callerToken = appInfo.abilityToken;
+    auto status = ProgressDialog::GetInstance().ShowProgress(message);
+    if (status != E_OK) {
+        ZLOGE("ShowProgress fail, status:%{public}d", status);
+    }
+    return E_OK;
+}
+
 } // namespace UDMF
 } // namespace OHOS
