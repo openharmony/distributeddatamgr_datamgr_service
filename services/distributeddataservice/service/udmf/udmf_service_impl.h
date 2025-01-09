@@ -53,7 +53,7 @@ public:
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &bindInfo) override;
     int32_t ObtainAsynProcess(AsyncProcessInfo &processInfo) override;
-    int32_t ClearAsynProcess() override;
+    int32_t ClearAsynProcessByKey(const std::string &businessUdKey) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
@@ -65,6 +65,7 @@ private:
     int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
     bool IsBundleNameWhitelisted(const std::string &bundleName);
+    void RegisterAsyncProcessInfo(const std::string &businessUdKey);
 
     class Factory {
     public:
@@ -78,9 +79,8 @@ private:
     std::map<std::string, Privilege> privilegeCache_;
     std::shared_ptr<ExecutorPool> executors_;
 
-    AsyncProcessInfo asyncProcessInfo_{};
-    bool syncingData_{false};
-    std::string syncingDevName_;
+    std::mutex mutex_;
+    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
 };
 } // namespace UDMF
 } // namespace OHOS
