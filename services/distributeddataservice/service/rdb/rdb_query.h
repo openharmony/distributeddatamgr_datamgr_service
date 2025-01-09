@@ -71,6 +71,9 @@ private:
     void IndexedBy(const RdbPredicateOperation& operation);
     void BeginGroup(const RdbPredicateOperation& operation);
     void EndGroup(const RdbPredicateOperation& operation);
+    void NotContains(const RdbPredicateOperation& operation);
+    void NotLike(const RdbPredicateOperation& operation);
+    void AssetsOnly(const RdbPredicateOperation& operation);
     using PredicateHandle = void (RdbQuery::*)(const RdbPredicateOperation &operation);
     static constexpr inline PredicateHandle HANDLES[OPERATOR_MAX] = {
         &RdbQuery::EqualTo,
@@ -97,6 +100,9 @@ private:
         &RdbQuery::LessThan,
         &RdbQuery::LessThanOrEqual,
         &RdbQuery::Distinct,
+        &RdbQuery::NotContains,
+        &RdbQuery::NotLike,
+        &RdbQuery::AssetsOnly,
         &RdbQuery::IndexedBy
     };
     static constexpr inline uint32_t DECIMAL_BASE = 10;

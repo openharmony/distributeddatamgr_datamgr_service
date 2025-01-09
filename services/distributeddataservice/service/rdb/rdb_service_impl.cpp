@@ -575,8 +575,10 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
             async(HandleGenDetails(details));
         }
     };
-    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode,
-        option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE));
+    auto highMode = (!predicates.tables_.empty() && option.mode == DistributedData::GeneralStore::CLOUD_ClOUD_FIRST)
+                    ? GeneralStore::ASSETS_SYNC_MODE
+                    : (option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
+    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode, highMode));
     SyncParam syncParam = { mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isCompensation };
     syncParam.asyncDownloadAsset = param.asyncDownloadAsset_;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
