@@ -41,6 +41,7 @@
 #include "bootstrap.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "udmf_dialog.h"
 
 namespace OHOS {
 namespace UDMF {

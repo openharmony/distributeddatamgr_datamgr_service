@@ -39,10 +39,10 @@ public:
 
     static ProgressDialog &GetInstance();
     int32_t ShowProgress(const ProgressMessageInfo &message);
+    FocusedAppInfo GetFocusedAppInfo(void) const;
 
 private:
     static sptr<OHOS::AAFwk::IAbilityManager> GetAbilityManagerService();
-    FocusedAppInfo GetFocusedAppInfo(void) const;
 
     static constexpr const char *DEFAULT_LABEL = "unknown";
     static constexpr const char *PASTEBOARD_DIALOG_APP = "com.ohos.pasteboarddialog";
