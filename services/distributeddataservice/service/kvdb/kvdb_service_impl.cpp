@@ -322,7 +322,7 @@ Status KVDBServiceImpl::PutSwitch(const AppId &appId, const SwitchData &data)
 
 Status KVDBServiceImpl::GetSwitch(const AppId &appId, const std::string &networkId, SwitchData &data)
 {
-    auto uuid = DMAdapter::GetInstance().ToUUID(networkId);
+    auto uuid = DMAdapter::GetInstance().GetUuidByNetworkId(networkId);
     if (uuid.empty()) {
         return Status::INVALID_ARGUMENT;
     }
