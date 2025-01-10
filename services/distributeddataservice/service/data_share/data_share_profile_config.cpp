@@ -28,6 +28,7 @@
 #include "log_print.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
+#include "log_debug.h"
 
 namespace OHOS {
 namespace DataShare {
@@ -180,7 +181,7 @@ std::string DataShareProfileConfig::GetResFromResMgr(
     std::string profileName = resName.substr(pos + PROFILE_PREFIX_LEN);
     // hap is compressed status, get file content.
     if (!hapPath.empty()) {
-        ZLOGD("compressed status.");
+        ZLOGD_MACRO("compressed status.");
         std::unique_ptr<uint8_t[]> fileContent = nullptr;
         size_t len = 0;
         RState ret = resMgr.GetProfileDataByName(profileName.c_str(), len, fileContent);

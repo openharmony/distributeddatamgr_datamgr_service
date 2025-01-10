@@ -21,6 +21,7 @@
 #include "general/load_config_from_bundle_info_strategy.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
+#include "log_debug.h"
 
 namespace OHOS::DataShare {
 bool RdbNotifyStrategy::Execute(std::shared_ptr<Context> context)
@@ -35,7 +36,7 @@ bool RdbNotifyStrategy::Execute(std::shared_ptr<Context> context)
         return false;
     }
     if (context->callerBundleName != context->calledBundleName) {
-        ZLOGD("not your data, cannot notify, callerBundleName: %{public}s, calledBundleName: %{public}s",
+        ZLOGD_MACRO("not your data, cannot notify, callerBundleName: %{public}s, calledBundleName: %{public}s",
             context->callerBundleName.c_str(), context->calledBundleName.c_str());
         return false;
     }

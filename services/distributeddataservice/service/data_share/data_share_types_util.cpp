@@ -14,6 +14,7 @@
  */
 #define LOG_TAG "DataShareTypesUtil"
 #include "data_share_types_util.h"
+#include "log_debug.h"
 
 #include "log_print.h"
 namespace OHOS::ITypesUtil {
@@ -21,7 +22,7 @@ using namespace OHOS::DataShare;
 template<>
 bool Unmarshalling(Predicates &predicates, MessageParcel &parcel)
 {
-    ZLOGD("Unmarshalling DataSharePredicates Start");
+    ZLOGD_MACRO("Unmarshalling DataSharePredicates Start");
     std::vector<Operation> operations {};
     std::string whereClause = "";
     std::vector<std::string> whereArgs;
