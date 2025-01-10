@@ -20,7 +20,6 @@
 #include "iremote_broker.h"
 #include "ikvstore_observer.h"
 #include "iremote_proxy.h"
-#include "iremote_stub.h"
 #include "types.h"
 
 namespace OHOS {
