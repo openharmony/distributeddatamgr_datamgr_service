@@ -40,7 +40,7 @@ ohos_source_set("distributeddata_flowctrl") {
   external_deps = [
     "c_utils:utils",
     "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
   ]
 
   subsystem_name = "distributeddatamgr"

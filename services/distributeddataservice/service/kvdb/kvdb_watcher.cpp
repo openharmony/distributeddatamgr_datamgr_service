@@ -18,7 +18,7 @@
 #include "kvdb_watcher.h"
 
 #include "error/general_error.h"
-#include "ikvstore_observer.h"
+#include "kvdb_observer_proxy.h"
 #include "log_print.h"
 #include "types.h"
 #include "utils/anonymous.h"

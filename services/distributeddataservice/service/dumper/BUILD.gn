@@ -43,7 +43,7 @@ ohos_source_set("distributeddata_dumper") {
   external_deps = [
     "hilog:libhilog",
     "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]
   subsystem_name = "distributeddatamgr"
