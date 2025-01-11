@@ -68,6 +68,20 @@ bool LaunchInfo::Unmarshal(const json &node)
     return true;
 }
 
+bool AllowList::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(appIdentifier)], appIdentifier);
+    SetValue(node[GET_NAME(onlyMain)], onlyMain);
+    return true;
+}
+
+bool AllowList::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(appIdentifier), appIdentifier);
+    GetValue(node, GET_NAME(onlyMain), onlyMain);
+    return true;
+}
+
 bool ProfileInfo::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(tableConfig)], tableConfig);
@@ -76,6 +90,7 @@ bool ProfileInfo::Marshal(json &node) const
     SetValue(node[GET_NAME(scope)], scope);
     SetValue(node[GET_NAME(type)], type);
     SetValue(node[GET_NAME(launchInfos)], launchInfos);
+    SetValue(node[GET_NAME(allowLists)], allowLists);
     SetValue(node[GET_NAME(storeMetaDataFromUri)], storeMetaDataFromUri);
     SetValue(node[GET_NAME(launchForCleanData)], launchForCleanData);
     SetValue(node[GET_NAME(backup)], backup);
@@ -90,6 +105,7 @@ bool ProfileInfo::Unmarshal(const json &node)
     GetValue(node, GET_NAME(scope), scope);
     GetValue(node, GET_NAME(type), type);
     GetValue(node, GET_NAME(launchInfos), launchInfos);
+    GetValue(node, GET_NAME(allowLists), allowLists);
     GetValue(node, GET_NAME(storeMetaDataFromUri), storeMetaDataFromUri);
     GetValue(node, GET_NAME(launchForCleanData), launchForCleanData);
     GetValue(node, GET_NAME(backup), backup);

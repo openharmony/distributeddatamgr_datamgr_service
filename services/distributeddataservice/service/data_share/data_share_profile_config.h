@@ -43,6 +43,14 @@ struct LaunchInfo final : public DistributedData::Serializable {
     bool Unmarshal(const json &node) override;
 };
 
+// List of applications that can access shared data
+struct AllowList final : public DistributedData::Serializable {
+    std::string appIdentifier;
+    bool onlyMain = false;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
 struct ProfileInfo : public DistributedData::Serializable {
     std::vector<Config> tableConfig;
     bool isSilentProxyEnable = true;
@@ -53,6 +61,7 @@ struct ProfileInfo : public DistributedData::Serializable {
     std::string backup;
     std::string extUri;
     std::vector<LaunchInfo> launchInfos;
+    std::vector<AllowList> allowLists;
     bool storeMetaDataFromUri = false;
     bool launchForCleanData = false;
     bool Marshal(json &node) const override;

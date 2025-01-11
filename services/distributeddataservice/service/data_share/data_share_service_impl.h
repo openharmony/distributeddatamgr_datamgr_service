@@ -20,6 +20,7 @@
 #include <functional>
 #include <string>
 
+#include "accesstoken_kit.h"
 #include "bundle_mgr_proxy.h"
 #include "common_event_subscribe_info.h"
 #include "common_event_subscriber.h"
@@ -121,6 +122,7 @@ private:
     bool GetCallerBundleName(std::string &bundleName);
     std::pair<int32_t, int32_t> ExecuteEx(const std::string &uri, const std::string &extUri, const int32_t tokenId,
         bool isRead, ExecuteCallbackEx callback);
+    std::pair<bool, Security::AccessToken::ATokenTypeEnum> GetCallerInfo(std::string &bundleName, int32_t &appIndex);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     void SubscribeCommonEvent();
     static void InitSubEvent();
@@ -135,6 +137,8 @@ private:
         const std::string &acrossAccountsPermission, uint32_t callerTokenId);
     void ReportExcuteFault(uint32_t callingTokenId, DataProviderConfig::ProviderInfo &providerInfo,
         int32_t errCode, std::string &func);
+    bool CheckAllowList(const uint32_t &currentUserId, const uint32_t &callerTokenId,
+        const std::vector<AllowList> &allowLists);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
