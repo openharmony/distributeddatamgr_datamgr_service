@@ -33,6 +33,7 @@ ohos_source_set("distributeddata_config") {
     "src/model/global_config.cpp",
     "src/model/network_config.cpp",
     "src/model/protocol_config.cpp",
+    "src/model/thread_config.cpp",
   ]
 
   cflags_cc = [

@@ -71,6 +71,7 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",
     "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/config/src/model/thread_config.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/kvdb/auth_delegate.cpp",
     "${data_service_path}/service/kvdb/kvdb_exporter.cpp",
