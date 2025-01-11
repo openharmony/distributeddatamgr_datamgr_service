@@ -26,8 +26,6 @@ using namespace testing::ext;
 using namespace OHOS::DataShare;
 std::string BUNDLE_NAME = "ohos.datasharetest.demo";
 constexpr int64_t TEST_SUB_ID = 100;
-// length of int32 bytes
-static constexpr int32_t INT32_BYTE_LEN = static_cast<int32_t>(sizeof(int32_t));
 
 class DataShareObsProxyTest : public testing::Test {
 public:
@@ -89,8 +87,8 @@ HWTEST_F(DataShareObsProxyTest, WriteAshmem001, TestSize.Level1)
     EXPECT_EQ(retCreate, DataShare::E_OK);
 
     int len = 10;
-    int32_t intLen = 4;
-    int32_t offset = 0;
+    int intLen = 4;
+    int offset = 0;
     int ret = proxy.WriteAshmem(node, (void *)&len, intLen, offset);
     EXPECT_EQ(ret, E_OK);
     EXPECT_EQ(offset, intLen);
@@ -120,8 +118,8 @@ HWTEST_F(DataShareObsProxyTest, WriteAshmem002, TestSize.Level1)
 
     std::string string("Hello World");
     const char *str = string.c_str();
-    int32_t len = string.length();
-    int32_t offset = 0;
+    int len = string.length();
+    int offset = 0;
     int ret = proxy.WriteAshmem(node, (void *)str, len, offset);
     EXPECT_EQ(ret, E_OK);
     EXPECT_EQ(offset, len);
@@ -155,7 +153,7 @@ HWTEST_F(DataShareObsProxyTest, WriteAshmem003, TestSize.Level1)
     node.memory_ = memory;
 
     int len = 10;
-    int32_t offset = 0;
+    int offset = 0;
     int ret = proxy.WriteAshmem(node, (void *)&len, 4, offset);
     EXPECT_EQ(ret, E_ERROR);
     ZLOGI("WriteAshmem003 ends");
@@ -183,26 +181,27 @@ HWTEST_F(DataShareObsProxyTest, SerializeDataIntoAshmem, TestSize.Level1)
     node.data_.push_back(BUNDLE_NAME);
     node.data_.push_back(BUNDLE_NAME);
 
+    int intLen = 4;
     // item length size + (str length size + str length) * 3
-    int32_t offset = INT32_BYTE_LEN + (INT32_BYTE_LEN + static_cast<int32_t>(strlen(BUNDLE_NAME.c_str()))) * 3;
+    int offset = intLen + (intLen + strlen(BUNDLE_NAME.c_str())) * 3;
     int retSe = proxy.SerializeDataIntoAshmem(node);
     EXPECT_EQ(retSe, E_OK);
     EXPECT_EQ(node.size_, offset);
 
     offset = 0;
-    const void *vecLenRead = node.memory_->ReadFromAshmem(INT32_BYTE_LEN, offset);
+    const void *vecLenRead = node.memory_->ReadFromAshmem(intLen, offset);
     EXPECT_NE(vecLenRead, nullptr);
     int vecLen = *reinterpret_cast<const int *>(vecLenRead);
     EXPECT_EQ(vecLen, 3);
-    offset += INT32_BYTE_LEN;
+    offset += intLen;
 
     // 3 strings in the vec
     for (int i = 0; i < 3; i++) {
-        const void *strLenRead = node.memory_->ReadFromAshmem(INT32_BYTE_LEN, offset);
+        const void *strLenRead = node.memory_->ReadFromAshmem(intLen, offset);
         EXPECT_NE(strLenRead, nullptr);
-        int32_t strLen = *reinterpret_cast<const int32_t *>(strLenRead);
+        int strLen = *reinterpret_cast<const int *>(strLenRead);
         EXPECT_EQ(strLen, BUNDLE_NAME.length());
-        offset += INT32_BYTE_LEN;
+        offset += intLen;
 
         const void *strRead = node.memory_->ReadFromAshmem(strLen, offset);
         EXPECT_NE(strRead, nullptr);
