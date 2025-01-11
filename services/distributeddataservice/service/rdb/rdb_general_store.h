@@ -153,6 +153,8 @@ private:
     std::shared_ptr<RdbCloud> GetRdbCloud() const;
     bool IsFinished(uint64_t syncId) const;
     void RemoveTasks();
+    std::pair<int32_t, int32_t> DoCloudSync(const Devices &devices, const DistributedDB::Query &dbQuery,
+        const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
 
     ObserverProxy observer_;
     RdbManager manager_;

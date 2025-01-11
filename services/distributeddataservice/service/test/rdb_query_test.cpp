@@ -16,6 +16,7 @@
 
 #include "rdb_query.h"
 
+#include "asset_value.h"
 #include "gtest/gtest.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
@@ -178,6 +179,68 @@ HWTEST_F(RdbQueryTest, RdbQueryTest004, TestSize.Level1)
     rdbQuery.MakeQuery(predicates);
     EXPECT_TRUE(!values.empty());
     EXPECT_FALSE(values.size() != 2);
+}
+
+/**
+* @tc.name: RdbQueryTest005
+* @tc.desc: RdbQuery function operation test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest005, TestSize.Level1)
+{
+    RdbQuery rdbQuery;
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<NativeRdb::AssetValue> assets;
+    NativeRdb::AssetValue asset{ .name = "name1" };
+    assets.push_back(asset);
+    NativeRdb::ValueObject object(assets);
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", object);
+    rdbQuery.MakeCloudQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest006
+* @tc.desc: RdbQuery function operation test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest006, TestSize.Level1)
+{
+    RdbQuery rdbQuery;
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<NativeRdb::AssetValue> assets;
+    NativeRdb::AssetValue asset{ .name = "name1" };
+    NativeRdb::ValueObject object(asset);
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", object);
+    rdbQuery.MakeCloudQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest007
+* @tc.desc: RdbQuery function operation test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest007, TestSize.Level1)
+{
+    RdbQuery rdbQuery;
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<NativeRdb::AssetValue> assets;
+    NativeRdb::AssetValue asset{ .name = "name1" };
+    assets.push_back(asset);
+    NativeRdb::ValueObject object(assets);
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
+    rdbQuery.MakeCloudQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

@@ -86,6 +86,7 @@ static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
+static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *PERMISSION_CLOUDDATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
@@ -293,6 +294,7 @@ void CloudDataTest::SetUp()
 
 void CloudDataTest::TearDown()
 {
+    EventCenter::GetInstance().Unsubscribe(CloudEvent::LOCAL_CHANGE);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
@@ -307,7 +309,6 @@ void CloudDataTest::TearDown()
 */
 HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest start");
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
@@ -329,7 +330,6 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 */
 HWTEST_F(CloudDataTest, QueryStatistics001, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryStatistics001 start");
     // prepare MetaDta
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
 
@@ -346,7 +346,6 @@ HWTEST_F(CloudDataTest, QueryStatistics001, TestSize.Level0)
 */
 HWTEST_F(CloudDataTest, QueryStatistics002, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryStatistics002 start");
     // prepare MetaDta
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
@@ -373,7 +372,6 @@ HWTEST_F(CloudDataTest, QueryStatistics002, TestSize.Level0)
 */
 HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryStatistics003 start");
     // Construct the statisticInfo data
     auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
         auto store = new (std::nothrow) GeneralStoreMock();
@@ -409,8 +407,6 @@ HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
 */
 HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryStatistics004 start");
-
     // Construct the statisticInfo data
     auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
         auto store = new (std::nothrow) GeneralStoreMock();
@@ -444,7 +440,6 @@ HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, QueryLastSyncInfo001, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryLastSyncInfo001 start");
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo("accountId", TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
@@ -459,7 +454,6 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo001, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, QueryLastSyncInfo002, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryLastSyncInfo002 start");
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, "bundleName", TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::Status::INVALID_ARGUMENT);
@@ -474,7 +468,6 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo002, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, QueryLastSyncInfo003, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryLastSyncInfo003 start");
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "storeId");
     EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
     EXPECT_TRUE(result.empty());
@@ -488,7 +481,6 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo003, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryLastSyncInfo004 start");
     auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
@@ -510,7 +502,6 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryLastSyncInfo005 start");
     std::map<std::string, int32_t> switches;
     switches.emplace(TEST_CLOUD_ID, true);
     CloudInfo info;
@@ -535,7 +526,6 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, QueryLastSyncInfo006, TestSize.Level0)
 {
-    ZLOGI("CloudDataTest QueryLastSyncInfo006 start");
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
@@ -893,7 +883,6 @@ HWTEST_F(CloudDataTest, Offline001, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, CloudShare001, TestSize.Level0)
 {
-    ZLOGI("weisx CloudShare start");
     StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, 0 };
     std::pair<int32_t, std::shared_ptr<Cursor>> result;
     CloudShareEvent::Callback asyncCallback = [&result](int32_t status, std::shared_ptr<Cursor> cursor) {
@@ -1869,7 +1858,6 @@ HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
 {
-    ZLOGI("weisx test OnAppUninstall 111");
     CloudData::CloudServiceImpl::CloudStatic cloudStatic;
     int32_t userId = 1001;
     Subscription sub;
@@ -1896,7 +1884,6 @@ HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, GetCloudInfo001, TestSize.Level0)
 {
-    ZLOGI("weisx test OnAppUninstall 111");
     int32_t userId = 1000;
     auto [status, cloudInfo] = cloudServiceImpl_->GetCloudInfo(userId);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
@@ -1971,7 +1958,6 @@ HWTEST_F(CloudDataTest, InitSubTask, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, DoSubscribe, TestSize.Level0)
 {
-    ZLOGI("CloudServiceImplTest DoSubscribe start");
     Subscription sub;
     sub.userId = cloudInfo_.user;
     MetaDataManager::GetInstance().SaveMeta(sub.GetKey(), sub, true);
@@ -2105,6 +2091,95 @@ HWTEST_F(CloudDataTest, BlobToAssets, TestSize.Level1)
     blob = rdbTranslate.AssetsToBlob(assets);
     auto results = rdbTranslate.BlobToAssets(blob);
     EXPECT_EQ(results, assets);
+}
+
+/**
+* @tc.name: GetPriorityLevel001
+* @tc.desc: GetPriorityLevel test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, GetPriorityLevel001, TestSize.Level1)
+{
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [](const Event &event) {
+        auto &evt = static_cast<const SyncEvent &>(event);
+        auto mode = evt.GetMode();
+        EXPECT_EQ(GeneralStore::GetPriorityLevel(GeneralStore::GetHighMode(static_cast<uint32_t>(mode))), 2);
+    });
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST, .isAsync = true };
+    DistributedRdb::PredicatesMemo memo;
+    memo.tables_ = { TEST_CLOUD_TABLE };
+    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+}
+
+/**
+* @tc.name: GetPriorityLevel002
+* @tc.desc: GetPriorityLevel test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, GetPriorityLevel002, TestSize.Level1)
+{
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [](const Event &event) {
+        auto &evt = static_cast<const SyncEvent &>(event);
+        auto mode = evt.GetMode();
+        EXPECT_EQ(GeneralStore::GetPriorityLevel(GeneralStore::GetHighMode(static_cast<uint32_t>(mode))), 0);
+    });
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_TIME_FIRST, .isAsync = true };
+    DistributedRdb::PredicatesMemo memo;
+    memo.tables_ = { TEST_CLOUD_TABLE };
+    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+}
+
+/**
+* @tc.name: GetPriorityLevel003
+* @tc.desc: GetPriorityLevel test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, GetPriorityLevel003, TestSize.Level1)
+{
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [](const Event &event) {
+        auto &evt = static_cast<const SyncEvent &>(event);
+        auto mode = evt.GetMode();
+        EXPECT_EQ(GeneralStore::GetPriorityLevel(GeneralStore::GetHighMode(static_cast<uint32_t>(mode))), 0);
+    });
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST, .isAsync = true };
+    DistributedRdb::PredicatesMemo memo;
+    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+}
+
+/**
+* @tc.name: GetPriorityLevel004
+* @tc.desc: GetPriorityLevel test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
+{
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [](const Event &event) {
+        auto &evt = static_cast<const SyncEvent &>(event);
+        auto mode = evt.GetMode();
+        EXPECT_EQ(GeneralStore::GetPriorityLevel(GeneralStore::GetHighMode(static_cast<uint32_t>(mode))), 1);
+    });
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST,
+        .seqNum = 0,
+        .isAsync = true,
+        .isAutoSync = true };
+    DistributedRdb::PredicatesMemo memo;
+    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

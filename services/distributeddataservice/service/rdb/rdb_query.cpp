@@ -15,6 +15,7 @@
 #define LOG_TAG "RdbQuery"
 #include "rdb_query.h"
 
+#include "asset_value.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
@@ -346,5 +347,38 @@ void RdbQuery::SetColumns(const std::vector<std::string> &columns)
 std::vector<std::string> RdbQuery::GetColumns() const
 {
     return columns_;
+}
+
+void RdbQuery::NotContains(const RdbPredicateOperation &operation)
+{
+    return;
+}
+
+void RdbQuery::NotLike(const RdbPredicateOperation &operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    query_.NotLike(operation.field_, operation.values_[0]);
+    predicates_->NotLike(operation.field_, operation.values_[0]);
+}
+
+void RdbQuery::AssetsOnly(const RdbPredicateOperation &operation)
+{
+    if (operation.values_.empty()) {
+        return;
+    }
+    DistributedDB::AssetsMap assetsMap;
+    std::vector<NativeRdb::AssetValue> assets;
+    std::set<std::string> names;
+    for (const auto &value : operation.values_) {
+        names.insert(value);
+        NativeRdb::AssetValue asset{ .name = value };
+        assets.push_back(std::move(asset));
+    }
+    NativeRdb::ValueObject object(assets);
+    assetsMap[operation.field_] = names;
+    query_.AssetsOnly(assetsMap);
+    predicates_->EqualTo(operation.field_, object);
 }
 } // namespace OHOS::DistributedRdb

@@ -54,6 +54,7 @@ public:
     enum HighMode : uint32_t {
         MANUAL_SYNC_MODE = 0x00000,
         AUTO_SYNC_MODE = 0x10000,
+        ASSETS_SYNC_MODE = 0x20000,
     };
     enum CleanMode {
         NEARBY_DATA = 0,
@@ -85,6 +86,12 @@ public:
     static inline uint32_t GetHighMode(uint32_t mixMode)
     {
         return mixMode & ~0xFFFF;
+    }
+
+    static inline uint32_t GetPriorityLevel(uint32_t highMode)
+    {
+        // shift right 16 bits
+        return highMode >> 16;
     }
 
     struct BindInfo {

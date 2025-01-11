@@ -567,6 +567,43 @@ int32_t RdbGeneralStore::CleanTrackerData(const std::string &tableName, int64_t 
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
+std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices, const DistributedDB::Query &dbQuery,
+    const SyncParam &syncParam, bool isPriority, DetailAsync async)
+{
+    auto syncMode = GeneralStore::GetSyncMode(syncParam.mode);
+    auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
+    SyncId syncId = ++syncTaskId_;
+    auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
+    if (executor_ != nullptr && tasks_ != nullptr) {
+        auto id = executor_->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
+        tasks_->Insert(syncId, { id, callback });
+    }
+    CloudSyncOption option;
+    option.devices = devices;
+    option.mode = DistributedDB::SyncMode(syncMode);
+    option.query = dbQuery;
+    option.waitTime = syncParam.wait;
+    option.priorityTask = isPriority || highMode == MANUAL_SYNC_MODE;
+    option.priorityLevel = GetPriorityLevel(highMode);
+    option.compensatedSyncOnly = syncParam.isCompensation;
+    option.merge = highMode == AUTO_SYNC_MODE;
+    option.lockAction = LOCK_ACTION;
+    option.prepareTraceId = syncParam.prepareTraceId;
+    option.asyncDownloadAssets = syncParam.asyncDownloadAsset;
+    auto dbStatus = DistributedDB::INVALID_ARGS;
+    dbStatus = delegate_->Sync(option, tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
+    if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
+        return { ConvertStatus(dbStatus), dbStatus };
+    }
+    tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
+        if (executor != nullptr) {
+            executor->Remove(task.taskId);
+        }
+        return false;
+    });
+    return { ConvertStatus(dbStatus), dbStatus };
+}
+
 std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async,
     const SyncParam &syncParam)
 {
@@ -589,31 +626,11 @@ std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQue
               devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode, syncParam.wait);
         return { GeneralError::E_ALREADY_CLOSED, DBStatus::OK };
     }
-    auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
-    SyncId syncId = ++syncTaskId_;
     auto dbStatus = DistributedDB::INVALID_ARGS;
     if (syncMode < NEARBY_END) {
         dbStatus = delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0);
     } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
-        auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
-        if (executor_ != nullptr && tasks_ != nullptr) {
-            auto id = executor_->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
-            tasks_->Insert(syncId, { id, callback });
-        }
-        dbStatus = delegate_->Sync({ devices, dbMode, dbQuery, syncParam.wait,
-                                       (isPriority || highMode == MANUAL_SYNC_MODE), syncParam.isCompensation, {},
-                                       highMode == AUTO_SYNC_MODE, LOCK_ACTION, syncParam.prepareTraceId,
-                                       syncParam.asyncDownloadAsset },
-            tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
-        if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
-            return { ConvertStatus(dbStatus), dbStatus };
-        }
-        tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
-            if (executor != nullptr) {
-                executor->Remove(task.taskId);
-            }
-            return false;
-        });
+        return DoCloudSync(devices, dbQuery, syncParam, isPriority, async);
     }
     return { ConvertStatus(dbStatus), dbStatus };
 }
