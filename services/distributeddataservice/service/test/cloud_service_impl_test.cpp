@@ -41,6 +41,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
+#include "network_adapter.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
 #include "rdb_service_impl.h"
@@ -246,7 +247,7 @@ HWTEST_F(CloudServiceImplTest, UpdateSchema001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest GetAppSchemaFromServer001 start");
-    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
+    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
     int user = -1;
     auto [status, result] = cloudServiceImpl_->GetAppSchemaFromServer(user, TEST_CLOUD_BUNDLE);
     EXPECT_EQ(status, CloudData::CloudService::SERVER_UNAVAILABLE);
@@ -261,7 +262,7 @@ HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, GetCloudInfoFromServer001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest GetCloudInfoFromServer001 start");
-    DeviceManagerAdapter::GetInstance().SetNet(DeviceManagerAdapter::WIFI);
+    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
     int user = -1;
     auto [status, result] = cloudServiceImpl_->GetCloudInfoFromServer(user);
     EXPECT_EQ(status, CloudData::CloudService::SERVER_UNAVAILABLE);

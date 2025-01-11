@@ -15,14 +15,6 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("cloud_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/service/common",
-    "${data_service_path}/service/bootstrap/include",
-    "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/permission/include",
-  ]
 }
 
 ohos_source_set("distributeddata_cloud") {
@@ -49,7 +41,15 @@ ohos_source_set("distributeddata_cloud") {
     "-Oz",
   ]
 
-  include_dirs = [ "sync_strategies" ]
+  include_dirs = [
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/network",
+    "${data_service_path}/service/permission/include",
+    "sync_strategies",
+  ]
   configs = [ ":cloud_public_config" ]
   cflags = [
     "-Werror",
@@ -63,6 +63,7 @@ ohos_source_set("distributeddata_cloud") {
     "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/network:distributeddata_network",
     "${data_service_path}/service/permission:distributeddata_permit",
   ]
 

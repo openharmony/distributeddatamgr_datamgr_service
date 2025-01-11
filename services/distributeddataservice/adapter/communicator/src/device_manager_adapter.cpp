@@ -20,31 +20,14 @@
 
 #include "kvstore_utils.h"
 #include "log_print.h"
-#include "net_conn_callback_stub.h"
-#include "net_conn_client.h"
-#include "net_handle.h"
 #include "serializable/serializable.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedHardware;
 using namespace OHOS::AppDistributedKv;
-using namespace OHOS::NetManagerStandard;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
-static DeviceManagerAdapter::NetworkType Convert(NetManagerStandard::NetBearType bearType)
-{
-    switch (bearType) {
-        case NetManagerStandard::BEARER_WIFI:
-            return DeviceManagerAdapter::WIFI;
-        case NetManagerStandard::BEARER_CELLULAR:
-            return DeviceManagerAdapter::CELLULAR;
-        case NetManagerStandard::BEARER_ETHERNET:
-            return DeviceManagerAdapter::ETHERNET;
-        default:
-            return DeviceManagerAdapter::OTHER;
-    }
-}
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
 public:
     explicit DataMgrDmStateCall(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
@@ -92,69 +75,6 @@ void DataMgrDmInitCall::OnRemoteDied()
 {
     ZLOGI("device manager died, init again");
     dmAdapter_.Init(executors_);
-}
-
-class NetConnCallbackObserver : public NetConnCallbackStub {
-public:
-    explicit NetConnCallbackObserver(DeviceManagerAdapter &dmAdapter) : dmAdapter_(dmAdapter) {}
-    ~NetConnCallbackObserver() override = default;
-    int32_t NetAvailable(sptr<NetHandle> &netHandle) override;
-    int32_t NetCapabilitiesChange(sptr<NetHandle> &netHandle, const sptr<NetAllCapabilities> &netAllCap) override;
-    int32_t NetConnectionPropertiesChange(sptr<NetHandle> &netHandle, const sptr<NetLinkInfo> &info) override;
-    int32_t NetLost(sptr<NetHandle> &netHandle) override;
-    int32_t NetUnavailable() override;
-    int32_t NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked) override;
-
-private:
-    DeviceManagerAdapter &dmAdapter_;
-};
-
-int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
-{
-    ZLOGI("OnNetworkAvailable");
-    return DistributedKv::SUCCESS;
-}
-
-int32_t NetConnCallbackObserver::NetUnavailable()
-{
-    ZLOGI("OnNetworkUnavailable");
-    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
-    return 0;
-}
-
-int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandle,
-    const sptr<NetAllCapabilities> &netAllCap)
-{
-    ZLOGI("OnNetCapabilitiesChange");
-    if (netHandle == nullptr || netAllCap == nullptr) {
-        return 0;
-    }
-    if (netAllCap->netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) && !netAllCap->bearerTypes_.empty()) {
-        dmAdapter_.SetNet(Convert(*netAllCap->bearerTypes_.begin()));
-    } else {
-        dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
-    }
-    return 0;
-}
-
-int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &netHandle,
-    const sptr<NetLinkInfo> &info)
-{
-    ZLOGI("OnNetConnectionPropertiesChange");
-    return 0;
-}
-
-int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
-{
-    ZLOGI("OnNetLost");
-    dmAdapter_.SetNet(DeviceManagerAdapter::NONE);
-    return 0;
-}
-
-int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked)
-{
-    ZLOGI("OnNetBlockStatusChange");
-    return 0;
 }
 
 struct DeviceExtraInfo final : public Serializable {
@@ -208,8 +128,7 @@ std::function<void()> DeviceManagerAdapter::RegDevCallback()
         auto dmInitCall = std::make_shared<DataMgrDmInitCall>(*this, executors_);
         auto resultInit = devManager.InitDeviceManager(PKG_NAME, dmInitCall);
         auto resultState = devManager.RegisterDevStateCallback(PKG_NAME, "", dmStateCall);
-        auto resultNet = RegOnNetworkChange();
-        if (resultInit == DM_OK && resultState == DM_OK && resultNet) {
+        if (resultInit == DM_OK && resultState == DM_OK) {
             InitDeviceInfo(false);
             return;
         }
@@ -667,72 +586,6 @@ std::string DeviceManagerAdapter::CalcClientUuid(const std::string &appId, const
         return "";
     }
     return encryptedUuid;
-}
-
-bool DeviceManagerAdapter::RegOnNetworkChange()
-{
-    sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(*this);
-    if (observer == nullptr) {
-        ZLOGE("new operator error.observer is nullptr");
-        return false;
-    }
-    int nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
-    if (nRet != NETMANAGER_SUCCESS) {
-        ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
-        return false;
-    }
-    return true;
-}
-
-bool DeviceManagerAdapter::IsNetworkAvailable()
-{
-    if (defaultNetwork_ != NONE || expireTime_ > GetTimeStamp()) {
-        return defaultNetwork_ != NONE;
-    }
-    return RefreshNet() != NONE;
-}
-
-DeviceManagerAdapter::NetworkType DeviceManagerAdapter::SetNet(NetworkType netWorkType)
-{
-    auto oldNet = defaultNetwork_;
-    bool ready = oldNet == NONE && netWorkType != NONE && (GetTimeStamp() - netLostTime_) > NET_LOST_DURATION;
-    bool offline = oldNet != NONE && netWorkType == NONE;
-    if (offline) {
-        netLostTime_ = GetTimeStamp();
-    }
-    defaultNetwork_ = netWorkType;
-    expireTime_ = GetTimeStamp() + EFFECTIVE_DURATION;
-    if (ready) {
-        OnReady(cloudDmInfo);
-    }
-    if (offline) {
-        Offline(cloudDmInfo);
-    }
-    return netWorkType;
-}
-
-DeviceManagerAdapter::NetworkType DeviceManagerAdapter::GetNetworkType(bool retrieve)
-{
-    if (!retrieve) {
-        return defaultNetwork_;
-    }
-    return RefreshNet();
-}
-
-DeviceManagerAdapter::NetworkType DeviceManagerAdapter::RefreshNet()
-{
-    NetHandle handle;
-    auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
-    if (status != 0 || handle.GetNetId() == 0) {
-        return SetNet(NONE);
-    }
-    NetAllCapabilities capabilities;
-    status = NetConnClient::GetInstance().GetNetCapabilities(handle, capabilities);
-    if (status != 0 || !capabilities.netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) ||
-        capabilities.bearerTypes_.empty()) {
-        return SetNet(NONE);
-    }
-    return SetNet(Convert(*capabilities.bearerTypes_.begin()));
 }
 
 std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string &networkId)
