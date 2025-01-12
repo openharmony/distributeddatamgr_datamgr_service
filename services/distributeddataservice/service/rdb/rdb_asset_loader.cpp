@@ -83,6 +83,7 @@ void RdbAssetLoader::UpdateStatus(AssetRecord &assetRecord, const VBucket &asset
         for (const auto &asset : *downloadAssets) {
             if (assetRecord.status == DBStatus::OK) {
                 assetRecord.status = ConvertStatus(static_cast<AssetStatus>(asset.status));
+                return;
             }
         }
     }
