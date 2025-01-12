@@ -332,6 +332,7 @@ uint32_t ValueProxy::Asset::ConvertToDBStatus(const uint32_t &status)
             lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);
             break;
         case DistributedData::Asset::STATUS_ABNORMAL:
+        case DistributedData::Asset::STATUS_SKIP_ASSET :
             lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL);
             break;
         case DistributedData::Asset::STATUS_INSERT:

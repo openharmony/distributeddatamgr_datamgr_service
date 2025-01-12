@@ -51,7 +51,7 @@ private:
     static std::vector<AssetRecord> Convert(std::vector<AssetsRecord> &&assetsRecords);
     static std::vector<AssetsRecord> Convert(std::vector<AssetRecord> &&assetRecords);
     static DBStatus ConvertStatus(AssetStatus error);
-    static void UpdateStatus(AssetRecord &assetRecord, VBucket &assets);
+    static void UpdateStatus(AssetRecord &assetRecord, const VBucket &assets);
 
     void PostEvent(std::set<std::string> &skipAssets, std::map<std::string, DistributedData::Value> &assets,
         DistributedData::AssetEvent eventId, std::set<std::string> &deleteAssets);

@@ -72,19 +72,17 @@ std::vector<RdbAssetLoader::AssetsRecord> RdbAssetLoader::Convert(std::vector<As
     return assetsRecords;
 }
 
-void RdbAssetLoader::UpdateStatus(AssetRecord &assetRecord, VBucket &assets)
+void RdbAssetLoader::UpdateStatus(AssetRecord &assetRecord, const VBucket &assets)
 {
-    for (auto &[key, value] : assets) {
+    for (const auto &[key, value] : assets) {
         auto downloadAssets = std::get_if<DistributedData::Assets>(&value);
         if (downloadAssets == nullptr) {
             assetRecord.status = DBStatus::CLOUD_ERROR;
             continue;
         }
-        for (auto &asset : *downloadAssets) {
+        for (const auto &asset : *downloadAssets) {
             if (assetRecord.status == DBStatus::OK) {
                 assetRecord.status = ConvertStatus(static_cast<AssetStatus>(asset.status));
-                asset.status = asset.status == AssetStatus::STATUS_SKIP_ASSET ? AssetStatus::STATUS_ABNORMAL
-                                                                              : asset.status;
             }
         }
     }
