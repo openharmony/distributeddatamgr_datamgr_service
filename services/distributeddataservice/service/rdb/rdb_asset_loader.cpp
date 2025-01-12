@@ -85,7 +85,6 @@ void RdbAssetLoader::UpdateStatus(AssetRecord &assetRecord, VBucket &assets)
                 assetRecord.status = ConvertStatus(static_cast<AssetStatus>(asset.status));
                 asset.status = asset.status == AssetStatus::STATUS_SKIP_ASSET ? AssetStatus::STATUS_ABNORMAL
                                                                               : asset.status;
-                return;
             }
         }
     }
