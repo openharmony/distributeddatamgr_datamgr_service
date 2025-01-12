@@ -77,6 +77,20 @@ bool URIUtils::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex
     return true;
 }
 
+std::pair<bool, int32_t> URIUtils::GetUserFromProxyURI(const std::string &uri)
+{
+    auto queryParams = URIUtils::GetQueryParams(uri);
+    if (queryParams[USER_PARAM].empty()) {
+        return std::make_pair(false, -1);
+    }
+    auto [success, data] = URIUtils::Strtoul(queryParams[USER_PARAM]);
+    if (!success) {
+        ZLOGE("user is invalid! user: %{public}s", queryParams[USER_PARAM].c_str());
+        return std::make_pair(false, data);
+    }
+    return std::make_pair(true, data);
+}
+
 void URIUtils::FormatUri(std::string &uri)
 {
     auto pos = uri.find_last_of('?');
