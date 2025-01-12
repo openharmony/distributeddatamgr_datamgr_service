@@ -27,6 +27,7 @@
 #include "grd_document/grd_document_api.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "log_debug.h"
 
 namespace OHOS::DataShare {
 constexpr int WAIT_TIME = 30;
@@ -87,7 +88,7 @@ void KvDelegate::Restore()
 {
     // No need to lock because this inner method will only be called when upper methods lock up
     CopyFile(false);
-    ZLOGD("finish restoring kv");
+    ZLOGD_MACRO("finish restoring kv");
 }
 
 // Backup database data by copying its key files. This mechanism might be costly, but acceptable when updating
@@ -95,12 +96,12 @@ void KvDelegate::Restore()
 void KvDelegate::Backup()
 {
     // No need to lock because this inner method will only be called when upper methods lock up
-    ZLOGD("backup kv");
+    ZLOGD_MACRO("backup kv");
     if (hasChange_) {
         CopyFile(true);
         hasChange_ = false;
     }
-    ZLOGD("finish backing up kv");
+    ZLOGD_MACRO("finish backing up kv");
 }
 
 // Set hasChange_ to true. Caller can use this to control when to back up db.

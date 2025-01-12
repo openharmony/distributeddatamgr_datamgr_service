@@ -22,6 +22,7 @@
 #include "timer_info.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
+#include "log_debug.h"
 
 namespace OHOS::DataShare {
 static constexpr int64_t MAX_MILLISECONDS = 31536000000; // 365 days
@@ -186,7 +187,7 @@ void SchedulerManager::SetTimer(
           duration, key.subscriberId, key.bundleName.c_str());
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
-        ZLOGD("has current taskId, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
+        ZLOGD_MACRO("has current taskId: %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
             DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         auto timerId = it->second;
         ResetTimerTask(timerId, reminderTime);

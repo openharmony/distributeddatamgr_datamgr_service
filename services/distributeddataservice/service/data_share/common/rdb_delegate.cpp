@@ -32,6 +32,8 @@
 #include "string_wrapper.h"
 #include "utils/anonymous.h"
 #include "want_params.h"
+#include "db_delegate.h"
+#include "log_debug.h"
 
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 32;
@@ -206,7 +208,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         return std::make_pair(errCode_, nullptr);
     }
     int count = resultSetCount.fetch_add(1);
-    ZLOGD("start query %{public}d", count);
+    ZLOGD_MACRO("start query %{public}d", count);
     if (count > MAX_RESULTSET_COUNT && IsLimit(count, callingPid)) {
         resultSetCount--;
         return std::make_pair(E_RESULTSET_BUSY, nullptr);
@@ -234,7 +236,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         std::chrono::system_clock::now().time_since_epoch()).count();
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
     std::shared_ptr<DataShareResultSet> result = { new DataShareResultSet(bridge), [callingPid, beginTime](auto p) {
-        ZLOGD("release resultset");
+        ZLOGD_MACRO("release resultset");
         resultSetCount--;
         int64_t endTime = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();

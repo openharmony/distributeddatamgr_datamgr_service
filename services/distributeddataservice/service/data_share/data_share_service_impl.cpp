@@ -56,6 +56,7 @@
 #include "template_data.h"
 #include "utils/anonymous.h"
 #include "xcollie.h"
+#include "log_debug.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -730,7 +731,7 @@ int32_t DataShareServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t
 
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
-    ZLOGD("%{private}s try notified", uri.c_str());
+    ZLOGD_MACRO("%{private}s try notified", uri.c_str());
     auto context = std::make_shared<Context>(uri);
     if (!GetCallerBundleName(context->callerBundleName)) {
         ZLOGE("get bundleName error, %{private}s", uri.c_str());
@@ -745,7 +746,7 @@ void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 
 bool DataShareServiceImpl::SubscribeTimeChanged()
 {
-    ZLOGD("start");
+    ZLOGD_MACRO("start");
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);

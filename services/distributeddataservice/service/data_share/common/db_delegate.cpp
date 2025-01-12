@@ -20,6 +20,8 @@
 #include "kv_delegate.h"
 #include "log_print.h"
 #include "rdb_delegate.h"
+#include "log_debug.h"
+
 namespace OHOS::DataShare {
 using Account = DistributedKv::AccountDelegate;
 ExecutorPool::TaskId DBDelegate::taskId_ = ExecutorPool::INVALID_TASK_ID;
@@ -110,12 +112,12 @@ void DBDelegate::StartTimer()
                     return;
                 }
                 executor_->Remove(taskId_);
-                ZLOGD("remove timer, taskId: %{public}" PRIu64, taskId_);
+                ZLOGD_MACRO("remove timer, taskId: %{public}" PRIu64, taskId_);
                 taskId_ = Executor::INVALID_TASK_ID;
             });
         },
         std::chrono::seconds(INTERVAL), std::chrono::seconds(INTERVAL));
-    ZLOGD("start timer, taskId: %{public}" PRIu64, taskId_);
+    ZLOGD_MACRO("start timer, taskId: %{public}" PRIu64, taskId_);
 }
 
 DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store, const DistributedData::StoreMetaData &meta)

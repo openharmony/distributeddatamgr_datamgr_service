@@ -20,6 +20,7 @@
 #include "itypes_util.h"
 #include "datashare_itypes_utils.h"
 #include "log_print.h"
+#include "log_debug.h"
 
 namespace OHOS {
 namespace DataShare {
@@ -116,7 +117,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
         return E_ERROR;
     }
     if (size > DATA_SIZE_IPC_TRANSFER_LIMIT) {
-        ZLOGD("Data size is over 200k, transfer it by the shared memory");
+        ZLOGD_MACRO("Data size is over 200k, transfer it by the shared memory");
         if (RdbObserverProxy::CreateAshmem(changeNode) != E_OK) {
             ZLOGE("failed to create ashmem.");
             return E_ERROR;
@@ -128,7 +129,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
         // clear original data spot
         changeNode.data_.clear();
         changeNode.isSharedMemory_ = true;
-        ZLOGD("Preparation done. Data size: %{public}d", changeNode.size_);
+        ZLOGD_MACRO("Preparation done. Data size: %{public}d", changeNode.size_);
     }
     return E_OK;
 }
