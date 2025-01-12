@@ -72,17 +72,20 @@ std::vector<RdbAssetLoader::AssetsRecord> RdbAssetLoader::Convert(std::vector<As
     return assetsRecords;
 }
 
-void RdbAssetLoader::UpdateStatus(AssetRecord &assetRecord, const VBucket &assets)
+void RdbAssetLoader::UpdateStatus(AssetRecord &assetRecord, VBucket &assets)
 {
-    for (const auto &[key, value] : assets) {
+    for (auto &[key, value] : assets) {
         auto downloadAssets = std::get_if<DistributedData::Assets>(&value);
         if (downloadAssets == nullptr) {
             assetRecord.status = DBStatus::CLOUD_ERROR;
             continue;
         }
-        for (const auto &asset : *downloadAssets) {
+        for (auto &asset : *downloadAssets) {
             if (assetRecord.status == DBStatus::OK) {
                 assetRecord.status = ConvertStatus(static_cast<AssetStatus>(asset.status));
+                if (asset.status == AssetStatus::STATUS_SKIP_ASSET) {
+                    asset.status = AssetStatus::STATUS_ABNORMAL;
+                }
                 return;
             }
         }
@@ -107,9 +110,10 @@ DBStatus RdbAssetLoader::ConvertStatus(AssetStatus error)
 {
     switch (error) {
         case AssetStatus::STATUS_NORMAL:
-            return DBStatus::OK;
         case AssetStatus::STATUS_DOWNLOADING:
             return DBStatus::OK;
+        case AssetStatus::STATUS_SKIP_ASSET:
+            return DBStatus::SKIP_ASSET;
         default:
             ZLOGE("error:0x%{public}x", error);
             break;
