@@ -65,6 +65,7 @@ private:
     int32_t haMode_;
     std::string extUri_;
     std::string backup_;
+    std::string user_;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:
