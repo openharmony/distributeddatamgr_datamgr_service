@@ -27,6 +27,7 @@ ohos_unittest("AccountDelegateTest") {
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/utils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+
     "${data_service_path}/adapter/account/src",
   ]
   cflags = [
@@ -41,8 +42,8 @@ ohos_unittest("AccountDelegateTest") {
     "ability_base:want",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-    "hilog:libhilog",
     "googletest:gtest_main",
+    "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
