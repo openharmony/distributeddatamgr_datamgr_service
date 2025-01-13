@@ -13,6 +13,10 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
+config("dfx_public_config") {
+  include_dirs = ["${data_service_path}/adapter/include/dfx"]
+}
+
 ohos_static_library("distributeddata_dfx_static") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -24,6 +28,7 @@ ohos_static_library("distributeddata_dfx_static") {
   }
   sources = [
     "src/behaviour/behaviour_reporter_impl.cpp",
+    "src/fault/cloud_sync_fault_impl.cpp",
     "src/fault/communication_fault_impl.cpp",
     "src/fault/database_fault_impl.cpp",
     "src/fault/runtime_fault_impl.cpp",
@@ -61,6 +66,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "kv_store:datamgr_common",
     "openssl:libcrypto_shared",
   ]
+  public_config = [ ":dfx_public_config" ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]

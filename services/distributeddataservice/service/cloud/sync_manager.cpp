@@ -27,11 +27,13 @@
 #include "cloud/sync_event.h"
 #include "cloud_value_util.h"
 #include "device_manager_adapter.h"
+#include "dfx_types.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "network_adapter.h"
+#include "reporter.h"
 #include "screen/screen_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
@@ -540,6 +542,16 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
         if (cloudDB == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
+            ArkDataFaultMsg msg;
+            auto now = std::chrono::system_clock::now();
+            msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+            msg.faultType = FaultType::CLOUD_SYNC_FAULT;
+            msg.bundleName = "",
+            msg.moduleName = "datamgr_service";
+            msg.storeId = "";
+            msg.errorType = Fault::CFS_CONNECT_CLOUD_DB;
+            msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+            Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }
         if (meta.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN &&
@@ -551,6 +563,16 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
         if (assetLoader == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
+            ArkDataFaultMsg msg;
+            auto now = std::chrono::system_clock::now();
+            msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+            msg.faultType = FaultType::CLOUD_SYNC_FAULT;
+            msg.bundleName = "",
+            msg.moduleName = "datamgr_service";
+            msg.storeId = "";
+            msg.errorType = Fault::CFS_CONNECT_ASSET_LOADER;
+            msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+            Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }
         bindInfos.insert_or_assign(activeUser, GeneralStore::BindInfo{ std::move(cloudDB), std::move(assetLoader) });
@@ -655,7 +677,8 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
         if (instance == nullptr) {
             return cloudSyncInfos;
         }
-        cloud = instance->GetServerInfo(cloud.user, false);
+        auto [errCode, cloudInfo] = instance->GetServerInfo(cloud.user, false);
+        cloud = cloudInfo;
         if (!cloud.IsValid()) {
             ZLOGE("cloud is empty, user: %{public}d", cloud.user);
             return cloudSyncInfos;

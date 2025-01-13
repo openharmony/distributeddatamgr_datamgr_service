@@ -25,6 +25,7 @@
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
+#include "dfx_types.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "kvdb_query.h"
@@ -34,6 +35,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "query_helper.h"
 #include "rdb_cloud.h"
+#include "reporter.h"
 #include "snapshot/bind_event.h"
 #include "types.h"
 #include "user_delegate.h"
@@ -395,6 +397,18 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
             return { GeneralError::E_NOT_SUPPORT, DBStatus::OK };
         }
         dbStatus = CloudSync(devices, dbMode, async, syncParam.wait, syncParam.prepareTraceId);
+        if (dbStatus != DBStatus::OK) {
+            ArkDataFaultMsg msg;
+            auto now = std::chrono::system_clock::now();
+            msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+            msg.faultType = FaultType::CLOUD_SYNC_FAULT;
+            msg.bundleName = "",
+            msg.moduleName = "datamgr_service";
+            msg.storeId = "";
+            msg.errorType = Fault::CFS_GS_KVDB_CLOUD_SYNC;
+            msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+            Reporter::GetInstance()->CloudSyncFault()->Report(msg);
+        }
     } else {
         if (devices.empty()) {
             ZLOGE("Devices is empty! mode:%{public}d", syncParam.mode);

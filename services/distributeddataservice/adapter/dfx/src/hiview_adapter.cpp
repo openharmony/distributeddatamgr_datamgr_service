@@ -26,8 +26,14 @@ using namespace DistributedKv;
 namespace {
 constexpr const char *DATAMGR_DOMAIN = "DISTDATAMGR";
 // fault key
+constexpr const char *FAULT_TIME = "FAULT_TIME";
 constexpr const char *FAULT_TYPE = "FAULT_TYPE";
 constexpr const char *MODULE_NAME = "MODULE_NAME";
+constexpr const char *BUNDLE_NAME = "BUNDLE_NAME";
+constexpr const char *STORE_NAME = "STORE_NAME";
+constexpr const char *BUSINESS_NAME = "BUSINESS_NAME";
+constexpr const char *ERROR_CODE = "ERROR_CODE";
+constexpr const char *APPENDIX = "APPENDIX";
 constexpr const char *INTERFACE_NAME = "INTERFACE_NAME";
 constexpr const char *ERROR_TYPE = "ERROR_TYPE";
 constexpr const char *SYNC_ERROR_INFO = "SYNC_ERROR_INFO";
@@ -70,6 +76,7 @@ const std::map<int, std::string> EVENT_COVERT_TABLE = {
     { DfxCodeConstant::DATABASE_REKEY_FAILED, "DATABASE_REKEY_FAILED" },
     { DfxCodeConstant::DATABASE_BEHAVIOUR, "DATABASE_BEHAVIOUR" },
     { DfxCodeConstant::UDMF_DATA_BEHAVIOR, "UDMF_DATA_BEHAVIOR" },
+    { DfxCodeConstant::ARKDATA_CLOUD_SYNC_FAULT, "ARKDATA_CLOUD_SYNC_FAULT" },
 };
 }
 std::mutex HiViewAdapter::visitMutex_;
@@ -194,6 +201,59 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
             DATAMGR_DOMAIN,
             CoverEventID(dfxCode).c_str(),
             HISYSEVENT_FAULT,
+            params,
+            sizeof(params) / sizeof(params[0])
+        );
+    });
+    executors->Execute(std::move(task));
+}
+
+void HiViewAdapter::ReportArkdataFault(int dfxCode, const ArkdataFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
+{
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
+    ExecutorPool::Task task([dfxCode, msg]() {
+        std::string message = msg.appendix.GetMessage();
+        struct HiSysEventParam params[] = {
+            { .name = { *FAULT_TIME },
+                .t = HISYSEVENT_INT64,
+                .v = { .i64 = msg.faultTime },
+                .arraySize = 0 },
+            { .name = { *FAULT_TYPE },
+                .t = HISYSEVENT_INT32,
+                .v = { .i32 = static_cast<int32_t>(msg.faultType) },
+                .arraySize = 0 },
+            { .name = { *BUNDLE_NAME },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.bundleName.c_str()) },
+                .arraySize = 0 },
+            { .name = { *MODULE_NAME },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.moduleName.c_str()) },
+                .arraySize = 0 },
+            { .name = { *STORE_ID },// todo storename 还是storeId
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
+                .arraySize = 0 },
+            { .name = { *BUSINESS_NAME },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(msg.businessType.c_str()) },
+                .arraySize = 0 },
+            { .name = { *ERROR_CODE },
+                .t = HISYSEVENT_INT32,
+                .v = { .s = const_cast<char *>(msg.errorType) },
+                .arraySize = 0 },
+            { .name = { *APPENDIX },
+                .t = HISYSEVENT_STRING,
+                .v = { .s = const_cast<char *>(message.c_str()) },
+                .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(
+            DATAMGR_DOMAIN,
+            CoverEventID(dfxCode).c_str(),
+            HISYSEVENT_BEHAVIOR,
             params,
             sizeof(params) / sizeof(params[0])
         );

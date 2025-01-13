@@ -13,21 +13,18 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
-#define DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
-
-#include "dfx_types.h"
+#include "cloud_sync_fault_impl.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
-class FaultReporter {
-public:
-    KVSTORE_API virtual ReportStatus Report(const FaultMsg &msg) = 0;
-    KVSTORE_API virtual ReportStatus Report(const CommFaultMsg &msg) = 0;
-    KVSTORE_API virtual ReportStatus Report(const DBFaultMsg &ms) = 0;
-    KVSTORE_API virtual ReportStatus Report(const ArkDataFaultMsg &ms){ return ReportStatus::SUCCESS };
-    KVSTORE_API virtual ~FaultReporter() {}
-};
-}  // namespace DistributedDataDfx
-}  // namespace OHOS
-#endif // DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
+ReportStatus CloudSyncFaultImpl::Report(const ArkDataFaultMsg &msg)
+{
+    HiViewAdapter::ReportCommFault(DfxCodeConstant::ARKDATA_CLOUD_SYNC_FAULT, msg, executors_);
+    return ReportStatus::SUCCESS;
+}
+void CloudSyncFaultImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+}
+} // namespace DistributedDataDfx
+} // namespace OHOS

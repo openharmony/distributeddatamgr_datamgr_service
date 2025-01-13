@@ -90,12 +90,28 @@ private:
     };
     static Factory factory_;
 
+    enum class CloudSyncScene {
+        ENABLE_CLOUD = 0,
+        DISABLE_CLOUD = 1,
+        SWITCH_ON = 2,
+        SWITCH_OFF = 3,
+        QUERY_SYNC_INFO = 4,
+        USER_CHANGE = 5,
+        USER_UNLOCK = 6,
+        NETWORK_RECOVERY = 7,
+        CLOUD_SYNC_TASK = 8,
+        SUBSCRIBE = 9,
+        UNSUBSCRIBE = 10,
+        SERVICE_INIT = 11,
+        ACCOUNT_STOP = 12,
+    };
+
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
     using CloudEvent = DistributedData::CloudEvent;
     using Subscription = DistributedData::Subscription;
-    using Handle = bool (CloudServiceImpl::*)(int32_t);
+    using Handle = bool (CloudServiceImpl::*)(int32_t, CloudSyncScene);
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
@@ -120,12 +136,12 @@ private:
     static constexpr int32_t TIME_BEFORE_SUB = 12 * 60 * 60 * 1000;  // 12hours, ms
     static constexpr int32_t SUBSCRIPTION_INTERVAL = 60 * 60 * 1000; // 1hours
 
-    bool UpdateCloudInfo(int32_t user);
-    bool UpdateSchema(int32_t user);
-    bool DoSubscribe(int32_t user);
-    bool ReleaseUserInfo(int32_t user);
-    bool DoCloudSync(int32_t user);
-    bool StopCloudSync(int32_t user);
+    bool UpdateCloudInfo(int32_t user, CloudSyncScene scene);
+    bool UpdateSchema(int32_t user, CloudSyncScene scene);
+    bool DoSubscribe(int32_t user, CloudSyncScene scene);
+    bool ReleaseUserInfo(int32_t user, CloudSyncScene scene);
+    bool DoCloudSync(int32_t user, CloudSyncScene scene);
+    bool StopCloudSync(int32_t user, CloudSyncScene scene);
 
     static std::pair<int32_t, CloudInfo> GetCloudInfo(int32_t userId);
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);
@@ -144,7 +160,7 @@ private:
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);
 
-    Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
+    Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
     void InitSubTask(const Subscription &sub, uint64_t minInterval = 0);
     void Execute(Task task);
@@ -164,6 +180,7 @@ private:
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
+    void Report(int32_t user, CloudSyncScene scebeType, int32_t errCode);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

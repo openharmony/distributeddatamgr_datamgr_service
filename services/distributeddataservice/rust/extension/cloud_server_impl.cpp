@@ -33,12 +33,12 @@ __attribute__((used)) static bool g_isInit =
 using namespace Security::AccessToken;
 using DBMetaMgr = DistributedData::MetaDataManager;
 using Anonymous = DistributedData::Anonymous;
-DBCloudInfo CloudServerImpl::GetServerInfo(int32_t userId, bool needSpaceInfo)
+std::pair<int32_t, DBCloudInfo> CloudServerImpl::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     DBCloudInfo result;
     OhCloudExtCloudSync *server = OhCloudExtCloudSyncNew(userId);
     if (server == nullptr) {
-        return result;
+        return { DBErr::E_ERROR, result };
     }
     auto pServer = std::shared_ptr<OhCloudExtCloudSync>(server, [](auto *server) {
         OhCloudExtCloudSyncFree(server);
@@ -46,19 +46,19 @@ DBCloudInfo CloudServerImpl::GetServerInfo(int32_t userId, bool needSpaceInfo)
     OhCloudExtCloudInfo *info = nullptr;
     auto status = OhCloudExtCloudSyncGetServiceInfo(pServer.get(), &info);
     if (status != ERRNO_SUCCESS || info == nullptr) {
-        return result;
+        return { DBErr::E_ERROR, result };
     }
     auto pInfo = std::shared_ptr<OhCloudExtCloudInfo>(info, [](auto *info) { OhCloudExtCloudInfoFree(info); });
     status = OhCloudExtCloudInfoGetUser(pInfo.get(), &result.user);
     if (status != ERRNO_SUCCESS || result.user != userId) {
         ZLOGE("[IN]user: %{public}d, [OUT]user: %{public}d", userId, result.user);
-        return result;
+        return { DBErr::E_ERROR, result };
     }
     unsigned char *id = nullptr;
     size_t idLen = 0;
     status = OhCloudExtCloudInfoGetId(pInfo.get(), &id, reinterpret_cast<unsigned int *>(&idLen));
     if (status != ERRNO_SUCCESS || id == nullptr) {
-        return result;
+        return { DBErr::E_ERROR, result };
     }
     result.id = std::string(reinterpret_cast<char *>(id), idLen);
     if (needSpaceInfo) {
@@ -73,13 +73,13 @@ DBCloudInfo CloudServerImpl::GetServerInfo(int32_t userId, bool needSpaceInfo)
     OhCloudExtHashMap *briefInfo = nullptr;
     status = OhCloudExtCloudInfoGetAppInfo(pInfo.get(), &briefInfo);
     if (status != ERRNO_SUCCESS || briefInfo == nullptr) {
-        return result;
+        return { DBErr::E_ERROR, result };
     }
     auto pBriefInfo = std::shared_ptr<OhCloudExtHashMap>(briefInfo, [](auto *briefInfo) {
         OhCloudExtHashMapFree(briefInfo);
     });
     GetAppInfo(pBriefInfo, result);
-    return result;
+    return { DBErr::E_ERROR, result };
 }
 
 void CloudServerImpl::GetAppInfo(std::shared_ptr<OhCloudExtHashMap> briefInfo, DBCloudInfo &cloudInfo)

@@ -65,6 +65,50 @@ enum class Fault {
     DF_DB_DAMAGE = 60,
     DF_DB_REKEY_FAILED = 61,
     DF_DB_CORRUPTED = 62,
+
+    // Cloud Sync Fault
+    CFS_CLOUD_INFO_ENABLE_CLOUD = 70,
+    CFS_CLOUD_INFO_DISABLE_CLOUD = 71,
+    CFS_CLOUD_INFO_OPEN_CLOUD_SWITCH = 72,
+    CFS_CLOUD_INFO_CLOSE_CLOUD_SWITCH = 73,
+    CFS_CLOUD_INFO_QUERY_SYNC_INFO = 74,
+    CFS_CLOUD_INFO_USER_CHANGED = 75,
+    CFS_CLOUD_INFO_USER_UNLOCKED = 76,
+    CFS_CLOUD_INFO_NETWORK_RECOVERY = 77,
+    CFS_CLOUD_INFO_CLOUD_SYNC_TASK,
+    CFS_CLOUD_INFO_SUBSCRIBE,
+    CFS_CLOUD_INFO_UNSUBSCRIBE,
+    CFS_BRIEF_INFO_ENABLE_CLOUD,
+    CFS_BRIEF_INFO_OPEN_CLOUD_SWITCH,
+    CFS_BRIEF_INFO_USER_CHANGE,
+    CFS_BRIEF_INFO_USER_UNLOCKED,
+    CFS_BRIEF_INFO_NETWORK_RECOVERY,
+    CFS_BRIEF_INFO_CLOUD_SYNC_TASK,
+    CFS_APP_SCHEMA_ENABLE_CLOUD,
+    CFS_APP_SCHEMA_OPEN_CLOUD_SWITCH,
+    CFS_APP_SCHEMA_QUERY_SYNC_INFO,
+    CFS_APP_SCHEMA_USER_CHANGED,
+    CFS_APP_SCHEMA_USER_UNLOCKED,
+    CFS_APP_SCHEMA_NETWORK_RECOVERY,
+    CFS_APP_SCHEMA_CLOUD_SYNC_TASK,
+    CFS_CONNECT_CLOUD_ASSET_LOADER,
+    CFS_CONNECT_CLOUD_DB,
+    CFS_BATCH_INSERT_GENERATE_ID,
+    CFS_BATCH_INSERT_SAVE_RECORDS,
+    CFS_BATCH_UPDATE_SAVE_RECORDS,
+    CFS_BATCH_DELETE_DELETE_RECORES,
+    CFS_BATCH_QUERY_START_CURSOR,
+    CFS_BATCH_QUERY_FETCH_RECORRDS,
+    CFS_BATCH_QUERY_FETCH_DB_CHANGES,
+    CFS_BATCH_QUERY_FETCH_RECORD_WITH_ID,
+    CFS_LOCK_GET_LOCK,
+    CFS_LOCK_HEART_BEAT,
+    CFS_SHARE_SET_PRESHARE,
+    CFS_DOWNLOAD_ASSETS,
+    CFS_GS_CREATE_DISTRIBUTED_TABLE,
+    CFS_GS_SET_DISTRIBUTED_TABLE,
+    CFS_GS_RDB_CLOUD_SYNC,
+    CFS_GS_KVDB_CLOUD_SYNC,
 };
 
 enum class FaultType {
@@ -72,6 +116,7 @@ enum class FaultType {
     RUNTIME_FAULT = 1,
     DATABASE_FAULT = 2,
     COMM_FAULT = 3,
+    CLOUD_SYNC_FAULT = 4,
 };
 
 enum class BehaviourType {
@@ -106,6 +151,26 @@ struct CommFaultMsg {
     std::string storeId;
     std::vector<std::string> deviceId;
     std::vector<int32_t> errorCode;
+};
+
+struct AppendixMsg {
+    uint32_t tokenId;
+    int32_t uid;
+    std::string GetMessage() const
+    {
+        return std::to_string(tokenId) + std::to_string(uid);
+    }
+};
+
+struct ArkDataFaultMsg {
+    int64_t faultTime;
+    FaultType faultType;
+    std::string bundleName;
+    std::string moduleName;
+    std::string storeId;
+    std::string businessType;
+    Fault errorType;
+    AppendixMsg appendixMsg;
 };
 
 struct SecurityPermissionsMsg {

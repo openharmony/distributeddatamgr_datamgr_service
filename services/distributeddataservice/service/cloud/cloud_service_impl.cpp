@@ -30,6 +30,7 @@
 #include "cloud_data_translate.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
+#include "dfx/dfx_types.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "hap_token_info.h"
@@ -38,6 +39,7 @@
 #include "metadata/meta_data_manager.h"
 #include "network_adapter.h"
 #include "rdb_types.h"
+#include "reporter.h"
 #include "relational_store_manager.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
@@ -110,6 +112,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
+        Report(user, CloudSyncScene::ENABLE_CLOUD, status);
         return status;
     }
     cloudInfo.enableCloud = true;
@@ -123,9 +126,114 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+    Execute(GenTask(0, cloudInfo.user, CloudSyncScene::ENABLE_CLOUD,
+        { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("EnableCloud success, id:%{public}s, count:%{public}zu", Anonymous::Change(id).c_str(), switches.size());
     return SUCCESS;
+}
+
+void CloudServiceImpl::Report(
+    int32_t user, OHOS::CloudData::CloudServiceImpl::CloudSyncScene scebeType, int32_t errCode)
+{
+    int32_t errorType = errCode;
+    if (errCode == E_GET_CLOUD_USER_INFO) {
+        switch (scebeType) {
+            case CloudSyncScene::ENABLE_CLOUD:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_ENABLE_CLOUD);
+                break;
+            case CloudSyncScene::DISABLE_CLOUD:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_DISABLE_CLOUD);
+                break;
+            case CloudSyncScene::SWITCH_ON:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_OPEN_CLOUD_SWITCH);
+                break;
+            case CloudSyncScene::SWITCH_OFF:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_CLOSE_CLOUD_SWITCH);
+                break;
+            case CloudSyncScene::QUERY_SYNC_INFO:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_QUERY_SYNC_INFO);
+                break;
+            case CloudSyncScene::USER_CHANGE:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_USER_CHANGE);
+                break;
+            case CloudSyncScene::USER_UNLOCK:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_USER_UNLOCK);
+                break;
+            case CloudSyncScene::NETWORK_RECOVERY:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_NETWORK_RECOVERY);
+                break;
+            case CloudSyncScene::CLOUD_SYNC_TASK:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_CLOUD_SYNC_TASK);
+                break;
+            case CloudSyncScene::SUBSCRIBE:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_SUBSCRIBE);
+                break;
+            case CloudSyncScene::UNSUBSCRIBE:
+                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_UNSUBSCRIBE);
+                break;
+            default:
+                break;
+        }
+    } else if (errCode == E_GET_BRIEF_INFO) {
+        switch (scebeType) {
+            case CloudSyncScene::ENABLE_CLOUD:
+                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_ENABLE_CLOUD);
+                break;
+            case CloudSyncScene::SWITCH_ON:
+                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_OPEN_CLOUD_SWITCH);
+                break;
+            case CloudSyncScene::USER_CHANGE:
+                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_USER_CHANGE);
+                break;
+            case CloudSyncScene::USER_UNLOCK:
+                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_USER_UNLOCK);
+                break;
+            case CloudSyncScene::NETWORK_RECOVERY:
+                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_NETWORK_RECOVERY);
+                break;
+            case CloudSyncScene::CLOUD_SYNC_TASK:
+                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_CLOUD_SYNC_TASK);
+                break;
+            default:
+                break;
+        }
+    } else if (errCode == E_GET_APP_SCHEMA) {
+        switch (scebeType) {
+            case CloudSyncScene::ENABLE_CLOUD:
+                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_ENABLE_CLOUD);
+                break;
+            case CloudSyncScene::SWITCH_ON:
+                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_OPEN_CLOUD_SWITCH);
+                break;
+            case CloudSyncScene::QUERY_SYNC_INFO:
+                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_QUERY_SYNC_INFO);
+                break;
+            case CloudSyncScene::USER_CHANGE:
+                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_USER_CHANGE);
+                break;
+            case CloudSyncScene::USER_UNLOCK:
+                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_USER_UNLOCK);
+                break;
+            case CloudSyncScene::NETWORK_RECOVERY:
+                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_NETWORK_RECOVERY);
+                break;
+            case CloudSyncScene::CLOUD_SYNC_TASK:
+                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_CLOUD_SYNC_TASK);
+                break;
+            default:
+                break;
+        }
+    }
+    ArkDataFaultMsg msg;
+    auto now = std::chrono::system_clock::now();
+    msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    msg.faultType = FaultType::CLOUD_SYNC_FAULT;
+    msg.bundleName = "",
+    msg.moduleName = "datamgr_service";
+    msg.storeId = "";
+    msg.errorType = Fault(errorType);
+    msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+    Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
 int32_t CloudServiceImpl::DisableCloud(const std::string &id)
@@ -133,10 +241,11 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
-    ReleaseUserInfo(user);
+    ReleaseUserInfo(user, CloudSyncScene::DISABLE_CLOUD);
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
+        Report(user, CloudSyncScene::DISABLE_CLOUD, status);
         return status;
     }
     if (cloudInfo.id != id) {
@@ -148,7 +257,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
+    Execute(GenTask(0, cloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
@@ -158,15 +267,22 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    CloudSyncScene scene;
+    if (appSwitch == SWITCH_ON) {
+        scene = CloudSyncScene::SWITCH_ON;
+    } else {
+        scene = CloudSyncScene::SWITCH_OFF;
+    }
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS || !cloudInfo.enableCloud) {
+        Report(user, scene, status);
         return status;
     }
     if (cloudInfo.id != id) {
         ZLOGW("invalid args, [input] id:%{public}s, [exist] id:%{public}s, bundleName:%{public}s",
             Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
-        Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB,
+        Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB,
             WORK_DO_CLOUD_SYNC }));
         return INVALID_ARGUMENT;
     }
@@ -176,6 +292,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
             ZLOGE("invalid args, status:%{public}d, enableCloud:%{public}d, [input] id:%{public}s,"
                   "[exist] id:%{public}s, bundleName:%{public}s", status, cloudInfo.enableCloud,
                   Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
+            Report(user, scene, status);
             return INVALID_ARGUMENT;
         }
         ZLOGI("add app switch, bundleName:%{public}s", bundleName.c_str());
@@ -184,7 +301,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
         return ERROR;
     }
-    Execute(GenTask(0, cloudInfo.user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
         SyncManager::SyncInfo info(cloudInfo.user, bundleName);
         syncManager_.DoCloudSync(info);
@@ -582,6 +699,16 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     auto user = Account::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
+        ArkDataFaultMsg msg;
+        auto now = std::chrono::system_clock::now();
+        msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        msg.faultType = FaultType::CLOUD_SYNC_FAULT;
+        msg.bundleName = "",
+        msg.moduleName = "datamgr_service";
+        msg.storeId = "";
+        msg.errorType = Fault::CFS_CLOUD_INFO_QUERY_SYNC_INFO;
+        msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+        Reporter::GetInstance()->CloudSyncFault()->Report(msg);
         return { ERROR, results };
     }
     if (cloudInfo.apps.find(bundleName) == cloudInfo.apps.end()) {
@@ -633,7 +760,7 @@ int32_t CloudServiceImpl::OnInitialize()
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     NetworkAdapter::GetInstance().RegOnNetworkChange();
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
-    Execute(GenTask(0, 0, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+    Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     std::vector<int> users;
     Account::GetInstance()->QueryUsers(users);
     for (auto user : users) {
@@ -673,15 +800,15 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
           Anonymous::Change(account).c_str());
     switch (code) {
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED):
-            Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+            Execute(GenTask(0, userId, CloudSyncScene::USER_CHANGE, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPED):
-            Execute(GenTask(0, userId, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE }));
+            Execute(GenTask(0, userId, CloudSyncScene::ACCOUNT_STOP, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
-            Execute(GenTask(0, userId, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+            Execute(GenTask(0, userId, CloudSyncScene::USER_UNLOCK,{ WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
             break;
         default:
             break;
@@ -704,8 +831,8 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
         return NETWORK_ERROR;
     }
     for (auto user : users) {
-        DoKvCloudSync(user, "", MODE_ONLINE);
-        Execute(GenTask(0, user, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+        DoKvCloudSync(user, "", MODE_ONLINE); // todo 加场景
+        Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     }
     return SUCCESS;
 }
@@ -769,11 +896,12 @@ int32_t CloudServiceImpl::UpdateCloudInfoFromServer(int32_t user)
     return MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true) ? E_OK : E_ERROR;
 }
 
-bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
+bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
+        Report(user, scene, status);
         return false;
     }
     ZLOGI("[server] id:%{public}s, enableCloud:%{public}d, user:%{public}d, app size:%{public}zu",
@@ -785,7 +913,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
     }
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
     if (oldInfo.id != cloudInfo.id) {
-        ReleaseUserInfo(user);
+        ReleaseUserInfo(user, scene);
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(oldInfo.id).c_str());
         MetaDataManager::GetInstance().DelMeta(Subscription::GetKey(user), true);
@@ -799,10 +927,11 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user)
     return true;
 }
 
-bool CloudServiceImpl::UpdateSchema(int32_t user)
+bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
+        Report(user, scene, status);
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -860,9 +989,9 @@ void CloudServiceImpl::UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaM
     }
 }
 
-ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handles handles)
+ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles)
 {
-    return [this, retry, user, works = std::move(handles)]() mutable {
+    return [this, retry, user, scene, works = std::move(handles)]() mutable {
         auto executor = executor_;
         if (retry >= RETRY_TIMES || executor == nullptr || works.empty()) {
             return;
@@ -885,15 +1014,15 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, Handle
             if (user == 0 || !Account::GetInstance()->IsVerified(user)) {
                 continue;
             }
-            finished = (this->*handle)(user) && finished;
+            finished = (this->*handle)(user, scene) && finished;
         }
         if (!finished || users.empty()) {
-            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, std::move(works)));
+            executor->Schedule(std::chrono::seconds(RETRY_INTERVAL), GenTask(retry + 1, user, scene, std::move(works)));
             return;
         }
         works.pop_front();
         if (!works.empty()) {
-            executor->Execute(GenTask(retry, user, std::move(works)));
+            executor->Execute(GenTask(retry, user, scene, std::move(works)));
         }
     };
 }
@@ -1031,7 +1160,7 @@ std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::P
     return store->PreSharing(query);
 }
 
-bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
+bool CloudServiceImpl::ReleaseUserInfo(int32_t user, CloudSyncScene scene)
 {
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
@@ -1042,10 +1171,11 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user)
     return true;
 }
 
-bool CloudServiceImpl::DoCloudSync(int32_t user)
+bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
+        Report(user, scene, status);
         return false;
     }
     for (const auto &appInfo : cloudInfo.apps) {
@@ -1055,14 +1185,14 @@ bool CloudServiceImpl::DoCloudSync(int32_t user)
     return true;
 }
 
-bool CloudServiceImpl::StopCloudSync(int32_t user)
+bool CloudServiceImpl::StopCloudSync(int32_t user, CloudSyncScene scene)
 {
     syncManager_.StopCloudSync(user);
     syncManager_.CleanCompensateSync(user);
     return true;
 }
 
-bool CloudServiceImpl::DoSubscribe(int32_t user)
+bool CloudServiceImpl::DoSubscribe(int32_t user, CloudSyncScene scene)
 {
     Subscription sub;
     sub.userId = user;
@@ -1113,8 +1243,14 @@ bool CloudServiceImpl::DoSubscribe(int32_t user)
         sub.userId, subDbs.size(), unsubDbs.size());
     ZLOGD("Subscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(subDbs).c_str());
     ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
-    CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
-    CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
+    auto status = CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
+    if (status != GeneralError::E_ERROR) {
+        Report(user, CloudSyncScene::SUBSCRIBE, status);
+    }
+    status = CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
+    if (status != GeneralError::E_ERROR) {
+        Report(user, CloudSyncScene::UNSUBSCRIBE, status);
+    }
     return subDbs.empty() && unsubDbs.empty();
 }
 
@@ -1465,7 +1601,7 @@ void CloudServiceImpl::InitSubTask(const Subscription &sub, uint64_t minInterval
         }
         return;
     }
-    subTask_ = executor->Schedule(delay, GenSubTask(GenTask(0, sub.userId), sub.userId));
+    subTask_ = executor->Schedule(delay, GenSubTask(GenTask(0, sub.userId, CloudSyncScene::SERVICE_INIT), sub.userId));
     expireTime_ = expire > now ? expire : now;
 }
 

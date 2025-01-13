@@ -28,6 +28,8 @@ enum GeneralError : int32_t {
     E_BUSY,
     E_INVALID_ARGS,
     E_NOT_INIT,
+    E_DK_NOT_INIT,
+    E_NOT_LOGIN,
     E_NOT_SUPPORT,
     E_ALREADY_CONSUMED,
     E_ALREADY_CLOSED,
