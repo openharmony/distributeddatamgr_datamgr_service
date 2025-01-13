@@ -33,6 +33,7 @@ class RdbDelegate final : public DBDelegate {
 public:
     explicit RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
         bool registerFunction, const std::string &extUri, const std::string &backup);
+    ~RdbDelegate();
     std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,
         const int32_t callingPid) override;

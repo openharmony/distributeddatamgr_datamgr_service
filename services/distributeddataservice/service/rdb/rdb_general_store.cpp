@@ -201,6 +201,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
 
 RdbGeneralStore::~RdbGeneralStore()
 {
+    ZLOGI("Destruct RdbGeneralStore");
     manager_.CloseStore(delegate_);
     delegate_ = nullptr;
     bindInfo_.loader_ = nullptr;

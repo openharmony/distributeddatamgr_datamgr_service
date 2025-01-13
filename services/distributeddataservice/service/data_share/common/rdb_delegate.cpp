@@ -115,7 +115,10 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
         RdbDelegate::TryAndSend(errCode_);
     }
 }
-
+RdbDelegate::~RdbDelegate()
+{
+    ZLOGI("Destruct RdbDelegate");
+}
 void RdbDelegate::TryAndSend(int errCode)
 {
     if (errCode != E_SQLITE_CORRUPT || (haMode_ == HAMode::SINGLE && (backup_ != DUAL_WRITE && backup_ != PERIODIC))) {
