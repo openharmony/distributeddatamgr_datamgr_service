@@ -539,18 +539,16 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
             continue;
         }
         auto cloudDB = instance->ConnectCloudDB(meta.bundleName, activeUser, schemaDatabase);
+        ArkDataFaultMsg msg;
+        auto now = std::chrono::system_clock::now();
+        msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        msg.faultType = FaultType::CLOUD_SYNC_FAULT;
+        msg.moduleName = "datamgr_service";
+        msg.errorType = Fault::CFS_CONNECT_CLOUD_DB;
+        msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), activeUser };
         if (cloudDB == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
-            ArkDataFaultMsg msg;
-            auto now = std::chrono::system_clock::now();
-            msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-            msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-            msg.bundleName = "",
-            msg.moduleName = "datamgr_service";
-            msg.storeId = "";
-            msg.errorType = Fault::CFS_CONNECT_CLOUD_DB;
-            msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }
@@ -563,15 +561,7 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
         if (assetLoader == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
-            ArkDataFaultMsg msg;
-            auto now = std::chrono::system_clock::now();
-            msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-            msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-            msg.bundleName = "",
-            msg.moduleName = "datamgr_service";
-            msg.storeId = "";
             msg.errorType = Fault::CFS_CONNECT_ASSET_LOADER;
-            msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }

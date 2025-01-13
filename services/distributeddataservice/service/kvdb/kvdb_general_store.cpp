@@ -402,9 +402,9 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
             auto now = std::chrono::system_clock::now();
             msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
             msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-            msg.bundleName = "",
+            msg.bundleName = storeInfo_.bundleName,
             msg.moduleName = "datamgr_service";
-            msg.storeId = "";
+            msg.storeId = storeInfo_.storeName;
             msg.errorType = Fault::CFS_GS_KVDB_CLOUD_SYNC;
             msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);

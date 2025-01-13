@@ -135,12 +135,13 @@ void CloudServiceImpl::Report(int32_t user, OHOS::CloudData::CloudServiceImpl::C
     int32_t errCode, const std::string &bundleName, const std::string &storeId)
 {
     auto now = std::chrono::system_clock::now();
+    std::string anonStoreId = Anonymous::Change(storeId).c_str();
     ArkDataFaultMsg msg;
     msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     msg.faultType = FaultType::CLOUD_SYNC_FAULT;
     msg.bundleName = bundleName;
     msg.moduleName = "datamgr_service";
-    msg.storeId = storeId;
+    msg.storeId = anonStoreId;
     msg.errorType = GetCloudDfxError(sceneType, errCode);
     msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
@@ -607,18 +608,10 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
 {
     QueryLastResults results;
     auto user = Account::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    std::string anonStoreId = Anonymous::Change(storeId).c_str();
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        ArkDataFaultMsg msg;
-        auto now = std::chrono::system_clock::now();
-        msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-        msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-        msg.bundleName = "",
-        msg.moduleName = "datamgr_service";
-        msg.storeId = "";
-        msg.errorType = Fault::CFS_CLOUD_INFO_QUERY_SYNC_INFO;
-        msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
-        Reporter::GetInstance()->CloudSyncFault()->Report(msg);
+        Report(user, CloudSyncScene::QUERY_SYNC_INFO, status, bundleName, storeId);
         return { ERROR, results };
     }
     if (cloudInfo.apps.find(bundleName) == cloudInfo.apps.end()) {
