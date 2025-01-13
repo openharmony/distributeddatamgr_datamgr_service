@@ -19,6 +19,8 @@
 
 #include <cinttypes>
 #include "data_share_obs_proxy.h"
+#include "hiview_adapter.h"
+#include "hiview_fault_adapter.h"
 #include "ipc_skeleton.h"
 #include "ishared_result_set.h"
 #include "itypes_util.h"
@@ -339,15 +341,19 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     }
     int res = -1;
     if (code < DATA_SHARE_SERVICE_CMD_MAX) {
+        auto callingTokenid = IPCSkeleton::GetCallingTokenID();
         auto start = std::chrono::steady_clock::now();
         res = (this->*HANDLERS[code])(data, reply);
         auto finish = std::chrono::steady_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+        CallerInfo callerInfo(callingTokenid, IPCSkeleton::GetCallingUid(), callingPid, duration.count(), code);
         if (duration >= TIME_THRESHOLD) {
             int64_t milliseconds = duration.count();
             ZLOGW("over time, code:%{public}u callingPid:%{public}d, cost:%{public}" PRIi64 "ms",
                 code, callingPid, milliseconds);
+            callerInfo.isSlowRequest = true;
         }
+        HiViewAdapter::GetInstance().ReportDataStatistic(callerInfo);
     }
     return res;
 }
