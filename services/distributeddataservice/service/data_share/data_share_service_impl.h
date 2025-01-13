@@ -138,6 +138,8 @@ private:
         const std::string &deviceId);
     static DistributedData::StoreMetaData MakeMetaData(const std::string &bundleName, const std::string &userId,
         const std::string &deviceId, const std::string storeId = "");
+    void ReportExcuteFault(uint32_t callingTokenId, DataProviderConfig::ProviderInfo &providerInfo,
+        int32_t errCode, std::string &func);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;

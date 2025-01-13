@@ -39,7 +39,7 @@ public:
     int64_t Delete(const std::string &tableName, const DataSharePredicates &predicate) override;
     std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,
-        const int32_t callingPid) override;
+        int32_t callingPid, uint32_t callingTokenId) override;
     std::string Query(const std::string &sql, const std::vector<std::string> &selectionArgs) override;
     std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) override;
     bool IsInvalid() override;
@@ -53,7 +53,7 @@ public:
 private:
     void TryAndSend(int errCode);
     std::pair<int, RdbStoreConfig> GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
-    bool IsLimit(int count, const int32_t callingPid);
+    bool IsLimit(int count, int32_t callingPid, uint32_t callingTokenId);
     static std::atomic<int32_t> resultSetCount;
     static ConcurrentMap<uint32_t, int32_t> resultSetCallingPids;
     static constexpr std::chrono::milliseconds WAIT_TIME = std::chrono::milliseconds(50);

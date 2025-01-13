@@ -259,7 +259,7 @@ std::pair<int64_t, int64_t> RdbDelegate::DeleteEx(const std::string &tableName, 
 
 std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std::string &tableName,
     const DataSharePredicates &predicates, const std::vector<std::string> &columns,
-    const int32_t callingPid)
+    int32_t callingPid, uint32_t callingTokenId)
 {
     if (store_ == nullptr) {
         ZLOGE("store is null");
@@ -267,7 +267,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     }
     int count = resultSetCount.fetch_add(1);
     ZLOGD("start query %{public}d", count);
-    if (count > MAX_RESULTSET_COUNT && IsLimit(count, callingPid)) {
+    if (count > MAX_RESULTSET_COUNT && IsLimit(count, callingPid, callingTokenId)) {
         resultSetCount--;
         return std::make_pair(E_RESULTSET_BUSY, nullptr);
     }
@@ -355,7 +355,7 @@ bool RdbDelegate::IsInvalid()
     return store_ == nullptr;
 }
 
-bool RdbDelegate::IsLimit(int count, const int32_t callingPid)
+bool RdbDelegate::IsLimit(int count, int32_t callingPid, uint32_t callingTokenId)
 {
     bool isFull = true;
     for (int32_t retryCount = 0; retryCount < RETRY; retryCount++) {
@@ -374,6 +374,10 @@ bool RdbDelegate::IsLimit(int count, const int32_t callingPid)
         return false;
     });
     ZLOGE("resultSetCount is full, pid: %{public}d, owner is %{public}s", callingPid, logStr.c_str());
+    std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(callingTokenId).first;
+    DataShareFaultInfo faultInfo{RESULTSET_FULL, "callingTokenId:" + std::to_string(callingTokenId),
+        "Pid:" + std::to_string(callingPid), "owner:" + logStr, __FUNCTION__, E_RESULTSET_BUSY, appendix};
+    HiViewFaultAdapter::ReportDataFault(faultInfo);
     return true;
 }
 } // namespace OHOS::DataShare
