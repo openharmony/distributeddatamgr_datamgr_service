@@ -190,8 +190,9 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
         PragmaData data = static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
         delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
     }
-    if (GetDistributedSchema(meta).first) {
-        delegate_->SetDistributedSchema(GetGaussDistributedSchema(GetDistributedSchema(meta).second));
+    std::pair<bool, Database> tableData = GetDistributedSchema(meta);
+    if (delegate_ != nullptr && tableData.first) {
+        delegate_->SetDistributedSchema(GetGaussDistributedSchema(tableData.second));
     }
     ZLOGI("Get rdb store, tokenId:%{public}u, bundleName:%{public}s, storeName:%{public}s, user:%{public}s,"
           "isEncrypt:%{public}d, isManualClean:%{public}d, isSearchable:%{public}d",

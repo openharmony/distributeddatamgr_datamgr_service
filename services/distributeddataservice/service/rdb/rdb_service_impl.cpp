@@ -1029,6 +1029,7 @@ int RdbServiceImpl::DoAutoSync(
     auto pid = IPCSkeleton::GetCallingPid();
     DetailAsync async;
     if (executors_ == nullptr) {
+        ZLOGE("autosync executors_ null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
         return RDB_ERROR;
     }
     for (auto &table : tables) {
@@ -1038,6 +1039,7 @@ int RdbServiceImpl::DoAutoSync(
             rdbQuery.MakeQuery(table);
             std::vector<std::string> onDevices = GetReuseDevice(devices);
             if (onDevices.empty()) {
+                ZLOGE("autosync ondevices null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
                 return;
             }
             auto complete = [this, rdbQuery, store, pid, syncParam, tokenId, async, seq = 0](
