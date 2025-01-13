@@ -28,6 +28,7 @@ ohos_unittest("AccountDelegateTest") {
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/utils",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
     "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "${data_service_path}/adapter/account/src",
   ]
@@ -36,10 +37,7 @@ ohos_unittest("AccountDelegateTest") {
     "-Dprotected=public",
   ]
 
-  deps = [
-    "../:distributeddata_account_static",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps = [ "../:distributeddata_account_static" ]
 
   external_deps = [
     "ability_base:base",
@@ -47,6 +45,7 @@ ohos_unittest("AccountDelegateTest") {
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "hilog:libhilog",
+    "googletest:gtest_main",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
