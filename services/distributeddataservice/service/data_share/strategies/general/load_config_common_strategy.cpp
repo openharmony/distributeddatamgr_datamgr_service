@@ -23,6 +23,7 @@
 #include "uri_utils.h"
 
 namespace OHOS::DataShare {
+using namespace OHOS::DistributedData;
 constexpr const char USER_PARAM[] = "user";
 constexpr const char TOKEN_ID_PARAM[] = "srcToken";
 constexpr const char DST_BUNDLE_NAME_PARAM[] = "dstBundleName";
@@ -31,7 +32,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (context->callerTokenId == 0) {
         context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     }
-    context->currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
+    context->currentUserId = AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
     if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
         return false;
     }

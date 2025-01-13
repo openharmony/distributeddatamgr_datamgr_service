@@ -41,7 +41,8 @@ static inline const std::map<int32_t , AccountStatus> STATUS = {
     { AccountSA::SWITCHED, AccountStatus::DEVICE_ACCOUNT_SWITCHED },
     { AccountSA::UNLOCKED, AccountStatus::DEVICE_ACCOUNT_UNLOCKED },
     { AccountSA::STOPPING, AccountStatus::DEVICE_ACCOUNT_STOPPING },
-    { AccountSA::STOPPED, AccountStatus::DEVICE_ACCOUNT_STOPPED } };
+    { AccountSA::STOPPED, AccountStatus::DEVICE_ACCOUNT_STOPPED }
+};
 
 void AccountSubscriber::OnStateChanged(const OsAccountStateData &data)
 {

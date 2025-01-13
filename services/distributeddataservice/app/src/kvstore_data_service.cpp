@@ -516,7 +516,7 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
 
 void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY, 5);
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY, XCOLLIE_COUNT);
     ZLOGI("account event %{public}d changed process, begin.", eventInfo.status);
     NotifyAccountEvent(eventInfo);
     switch (eventInfo.status) {
