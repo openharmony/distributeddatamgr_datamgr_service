@@ -117,7 +117,8 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
 }
 RdbDelegate::~RdbDelegate()
 {
-    ZLOGI("Destruct RdbDelegate");
+    ZLOGI("Destruct. BundleName: %{public}s. StoreName: %{public}s. ExtUri: %{public}s", bundleName_.c_str(),
+        DistributedData::Anonymous::Change(storeName_).c_str(), DistributedData::Anonymous::Change(extUri_).c_str());
 }
 void RdbDelegate::TryAndSend(int errCode)
 {
