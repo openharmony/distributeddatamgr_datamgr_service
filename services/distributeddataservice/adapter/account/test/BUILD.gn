@@ -23,13 +23,10 @@ ohos_unittest("AccountDelegateTest") {
     "account_delegate_test.cpp",
   ]
   include_dirs = [
-    "//commonlibrary/c_utils/base/include",
     "${data_service_path}/framework/include/account",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/utils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "${data_service_path}/adapter/account/src",
   ]
   cflags = [
