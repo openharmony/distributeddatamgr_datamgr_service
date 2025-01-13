@@ -36,7 +36,7 @@ using namespace Security::AccessToken;
 __attribute__((used)) static bool g_isInit = AccountDelegateNormalImpl::Init();
 
 AccountSubscriber::AccountSubscriber(const OsAccountSubscribeInfo &info) : OsAccountSubscriber(info) {}
-static inline const std::map<int32_t , AccountStatus> STATUS = {
+static inline const std::map<int32_t, AccountStatus> STATUS = {
     { AccountSA::REMOVED, AccountStatus::DEVICE_ACCOUNT_DELETE },
     { AccountSA::SWITCHED, AccountStatus::DEVICE_ACCOUNT_SWITCHED },
     { AccountSA::UNLOCKED, AccountStatus::DEVICE_ACCOUNT_UNLOCKED },
