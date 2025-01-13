@@ -233,7 +233,7 @@ void HiViewAdapter::ReportArkdataFault(int dfxCode, const ArkdataFaultMsg &msg, 
                 .t = HISYSEVENT_STRING,
                 .v = { .s = const_cast<char *>(msg.moduleName.c_str()) },
                 .arraySize = 0 },
-            { .name = { *STORE_ID },// todo storename 还是storeId
+            { .name = { *STORE_NAME },// todo storename 还是storeId
                 .t = HISYSEVENT_STRING,
                 .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
                 .arraySize = 0 },
