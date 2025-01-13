@@ -27,8 +27,10 @@
 #include "cloud/subscription.h"
 #include "cloud_service_stub.h"
 #include "feature/static_acts.h"
+#include "store/general_store.h"
 #include "sync_manager.h"
 #include "values_bucket.h"
+
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
@@ -89,22 +91,6 @@ private:
         std::shared_ptr<CloudStatic> staticActs_;
     };
     static Factory factory_;
-
-    enum class CloudSyncScene {
-        ENABLE_CLOUD = 0,
-        DISABLE_CLOUD = 1,
-        SWITCH_ON = 2,
-        SWITCH_OFF = 3,
-        QUERY_SYNC_INFO = 4,
-        USER_CHANGE = 5,
-        USER_UNLOCK = 6,
-        NETWORK_RECOVERY = 7,
-        CLOUD_SYNC_TASK = 8,
-        SUBSCRIBE = 9,
-        UNSUBSCRIBE = 10,
-        SERVICE_INIT = 11,
-        ACCOUNT_STOP = 12,
-    };
 
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;

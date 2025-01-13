@@ -43,7 +43,6 @@
 #include "relational_store_manager.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
-#include "store/general_store.h"
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
@@ -112,7 +111,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(user, CloudSyncScene::ENABLE_CLOUD, status);
+        Report(user, CloudSyncScene::ENABLE_CLOUD, status, "", "");
         return status;
     }
     cloudInfo.enableCloud = true;
@@ -132,107 +131,18 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     return SUCCESS;
 }
 
-void CloudServiceImpl::Report(
-    int32_t user, OHOS::CloudData::CloudServiceImpl::CloudSyncScene scebeType, int32_t errCode)
+void CloudServiceImpl::Report(int32_t user, OHOS::CloudData::CloudServiceImpl::CloudSyncScene sceneType,
+    int32_t errCode, const std::string &bundleName, const std::string &storeId)
 {
-    int32_t errorType = errCode;
-    if (errCode == E_GET_CLOUD_USER_INFO) {
-        switch (scebeType) {
-            case CloudSyncScene::ENABLE_CLOUD:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_ENABLE_CLOUD);
-                break;
-            case CloudSyncScene::DISABLE_CLOUD:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_DISABLE_CLOUD);
-                break;
-            case CloudSyncScene::SWITCH_ON:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_OPEN_CLOUD_SWITCH);
-                break;
-            case CloudSyncScene::SWITCH_OFF:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_CLOSE_CLOUD_SWITCH);
-                break;
-            case CloudSyncScene::QUERY_SYNC_INFO:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_QUERY_SYNC_INFO);
-                break;
-            case CloudSyncScene::USER_CHANGE:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_USER_CHANGE);
-                break;
-            case CloudSyncScene::USER_UNLOCK:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_USER_UNLOCK);
-                break;
-            case CloudSyncScene::NETWORK_RECOVERY:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_NETWORK_RECOVERY);
-                break;
-            case CloudSyncScene::CLOUD_SYNC_TASK:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_CLOUD_SYNC_TASK);
-                break;
-            case CloudSyncScene::SUBSCRIBE:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_SUBSCRIBE);
-                break;
-            case CloudSyncScene::UNSUBSCRIBE:
-                errorType = static_cast<int32_t>(Fault::CSF_CLOUD_INFO_UNSUBSCRIBE);
-                break;
-            default:
-                break;
-        }
-    } else if (errCode == E_GET_BRIEF_INFO) {
-        switch (scebeType) {
-            case CloudSyncScene::ENABLE_CLOUD:
-                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_ENABLE_CLOUD);
-                break;
-            case CloudSyncScene::SWITCH_ON:
-                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_OPEN_CLOUD_SWITCH);
-                break;
-            case CloudSyncScene::USER_CHANGE:
-                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_USER_CHANGE);
-                break;
-            case CloudSyncScene::USER_UNLOCK:
-                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_USER_UNLOCK);
-                break;
-            case CloudSyncScene::NETWORK_RECOVERY:
-                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_NETWORK_RECOVERY);
-                break;
-            case CloudSyncScene::CLOUD_SYNC_TASK:
-                errorType = static_cast<int32_t>(Fault::CFS_BRIEF_INFO_CLOUD_SYNC_TASK);
-                break;
-            default:
-                break;
-        }
-    } else if (errCode == E_GET_APP_SCHEMA) {
-        switch (scebeType) {
-            case CloudSyncScene::ENABLE_CLOUD:
-                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_ENABLE_CLOUD);
-                break;
-            case CloudSyncScene::SWITCH_ON:
-                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_OPEN_CLOUD_SWITCH);
-                break;
-            case CloudSyncScene::QUERY_SYNC_INFO:
-                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_QUERY_SYNC_INFO);
-                break;
-            case CloudSyncScene::USER_CHANGE:
-                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_USER_CHANGE);
-                break;
-            case CloudSyncScene::USER_UNLOCK:
-                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_USER_UNLOCK);
-                break;
-            case CloudSyncScene::NETWORK_RECOVERY:
-                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_NETWORK_RECOVERY);
-                break;
-            case CloudSyncScene::CLOUD_SYNC_TASK:
-                errorType = static_cast<int32_t>(Fault::CFS_APP_SCHEMA_CLOUD_SYNC_TASK);
-                break;
-            default:
-                break;
-        }
-    }
-    ArkDataFaultMsg msg;
     auto now = std::chrono::system_clock::now();
+    ArkDataFaultMsg msg;
     msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
     msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-    msg.bundleName = "",
+    msg.bundleName = bundleName;
     msg.moduleName = "datamgr_service";
-    msg.storeId = "";
-    msg.errorType = Fault(errorType);
-    msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+    msg.storeId = storeId;
+    msg.errorType = GetCloudDfxError(sceneType, errCode);
+    msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
@@ -245,7 +155,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(user, CloudSyncScene::DISABLE_CLOUD, status);
+        Report(user, CloudSyncScene::DISABLE_CLOUD, status, "", "");
         return status;
     }
     if (cloudInfo.id != id) {
@@ -276,7 +186,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS || !cloudInfo.enableCloud) {
-        Report(user, scene, status);
+        Report(user, scene, status, bundleName, "");
         return status;
     }
     if (cloudInfo.id != id) {
@@ -292,7 +202,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
             ZLOGE("invalid args, status:%{public}d, enableCloud:%{public}d, [input] id:%{public}s,"
                   "[exist] id:%{public}s, bundleName:%{public}s", status, cloudInfo.enableCloud,
                   Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
-            Report(user, scene, status);
+            Report(user, scene, status, bundleName, "");
             return INVALID_ARGUMENT;
         }
         ZLOGI("add app switch, bundleName:%{public}s", bundleName.c_str());
@@ -901,7 +811,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
-        Report(user, scene, status);
+        Report(user, scene, status, "", "");
         return false;
     }
     ZLOGI("[server] id:%{public}s, enableCloud:%{public}d, user:%{public}d, app size:%{public}zu",
@@ -931,7 +841,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(user, scene, status);
+        Report(user, scene, status, "", "");
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -1175,7 +1085,7 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(user, scene, status);
+        Report(user, scene, status, "", "");
         return false;
     }
     for (const auto &appInfo : cloudInfo.apps) {
@@ -1245,11 +1155,11 @@ bool CloudServiceImpl::DoSubscribe(int32_t user, CloudSyncScene scene)
     ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
     auto status = CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
     if (status != GeneralError::E_ERROR) {
-        Report(user, CloudSyncScene::SUBSCRIBE, status);
+        Report(user, CloudSyncScene::SUBSCRIBE, status, "", "");
     }
     status = CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
     if (status != GeneralError::E_ERROR) {
-        Report(user, CloudSyncScene::UNSUBSCRIBE, status);
+        Report(user, CloudSyncScene::UNSUBSCRIBE, status, "", "");
     }
     return subDbs.empty() && unsubDbs.empty();
 }
