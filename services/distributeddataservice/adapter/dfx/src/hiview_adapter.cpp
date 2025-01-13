@@ -247,7 +247,7 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkdataFaultMsg &msg, 
                 .v = { .s = const_cast<char *>(message.c_str()) },
                 .arraySize = 0 },
         };
-        OH_HiSysEvent_Write(DATAMGR_DOMAIN, CoverEventID(dfxCode).c_str(), HISYSEVENT_BEHAVIOR, params,
+        OH_HiSysEvent_Write(DATAMGR_DOMAIN, CoverEventID(dfxCode).c_str(), HISYSEVENT_FAULT, params,
             sizeof(params) / sizeof(params[0]));
     });
     executors->Execute(std::move(task));
