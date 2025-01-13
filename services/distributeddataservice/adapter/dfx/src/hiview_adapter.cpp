@@ -208,7 +208,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
     executors->Execute(std::move(task));
 }
 
-void HiViewAdapter::ReportArkdataFault(int dfxCode, const ArkdataFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
+void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkdataFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
     if (executors == nullptr) {
         ZLOGW("executors is nullptr!");
@@ -217,10 +217,7 @@ void HiViewAdapter::ReportArkdataFault(int dfxCode, const ArkdataFaultMsg &msg, 
     ExecutorPool::Task task([dfxCode, msg]() {
         std::string message = msg.appendix.GetMessage();
         struct HiSysEventParam params[] = {
-            { .name = { *FAULT_TIME },
-                .t = HISYSEVENT_INT64,
-                .v = { .i64 = msg.faultTime },
-                .arraySize = 0 },
+            { .name = { *FAULT_TIME }, .t = HISYSEVENT_INT64, .v = { .i64 = msg.faultTime }, .arraySize = 0 },
             { .name = { *FAULT_TYPE },
                 .t = HISYSEVENT_INT32,
                 .v = { .i32 = static_cast<int32_t>(msg.faultType) },
@@ -250,13 +247,8 @@ void HiViewAdapter::ReportArkdataFault(int dfxCode, const ArkdataFaultMsg &msg, 
                 .v = { .s = const_cast<char *>(message.c_str()) },
                 .arraySize = 0 },
         };
-        OH_HiSysEvent_Write(
-            DATAMGR_DOMAIN,
-            CoverEventID(dfxCode).c_str(),
-            HISYSEVENT_BEHAVIOR,
-            params,
-            sizeof(params) / sizeof(params[0])
-        );
+        OH_HiSysEvent_Write(DATAMGR_DOMAIN, CoverEventID(dfxCode).c_str(), HISYSEVENT_BEHAVIOR, params,
+            sizeof(params) / sizeof(params[0]));
     });
     executors->Execute(std::move(task));
 }

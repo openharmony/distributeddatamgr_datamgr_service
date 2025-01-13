@@ -19,7 +19,7 @@ namespace OHOS {
 namespace DistributedDataDfx {
 ReportStatus CloudSyncFaultImpl::Report(const ArkDataFaultMsg &msg)
 {
-    HiViewAdapter::ReportCommFault(DfxCodeConstant::ARKDATA_CLOUD_SYNC_FAULT, msg, executors_);
+    HiViewAdapter::ReportArkDataFault(DfxCodeConstant::ARKDATA_CLOUD_SYNC_FAULT, msg, executors_);
     return ReportStatus::SUCCESS;
 }
 void CloudSyncFaultImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
