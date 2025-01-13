@@ -24,6 +24,7 @@
 #include "os_account_manager.h"
 #include "log_print.h"
 namespace {
+using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
 using namespace testing::ext;
 class AccountObserver : public AccountDelegate::Observer {
