@@ -200,7 +200,7 @@ bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)
 
 UserDelegate::LocalUserObserver::LocalUserObserver(UserDelegate &userDelegate) : userDelegate_(userDelegate) {}
 
-void UserDelegate::LocalUserObserver::OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo)
+void UserDelegate::LocalUserObserver::OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo)
 {
     ZLOGI("event info:%{public}s, %{public}d", eventInfo.userId.c_str(), eventInfo.status);
     userDelegate_.NotifyUserEvent({}); // just notify

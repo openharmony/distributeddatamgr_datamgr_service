@@ -69,7 +69,7 @@ UdmfServiceImpl::Factory::Factory()
         return product_;
     }, FeatureSystem::BIND_NOW);
     auto observer = std::make_shared<RuntimeStoreAccountObserver>();
-    DistributedKv::AccountDelegate::GetInstance()->Subscribe(observer);
+    DistributedData::AccountDelegate::GetInstance()->Subscribe(observer);
 }
 
 UdmfServiceImpl::Factory::~Factory()

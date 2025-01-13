@@ -24,7 +24,7 @@
 #include "screenlock/screen_lock.h"
 #include "utils/anonymous.h"
 namespace OHOS::DistributedData {
-using Account = DistributedKv::AccountDelegate;
+using Account = AccountDelegate;
 AutoCache &AutoCache::GetInstance()
 {
     static AutoCache cache;

@@ -59,7 +59,7 @@ using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
 using OHOS::DistributedData::StoreMetaData;
-using OHOS::DistributedKv::AccountDelegate;
+using OHOS::DistributedData::AccountDelegate;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DistributedDB::RelationalStoreManager;
@@ -759,11 +759,17 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(StoreI
 int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
     auto meta = GetStoreMetaData(param);
-    auto isCreated =
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
     if (!isCreated) {
-        return RDB_OK;
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_NO_META;
     }
     SetReturnParam(meta, param);
     return RDB_OK;
@@ -1335,7 +1341,7 @@ int32_t RdbServiceImpl::PostSearchEvent(int32_t evtId, const RdbSyncerParam& par
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::Disable(const RdbSyncerParam& param)
+int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
@@ -1343,7 +1349,7 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam& param)
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::Enable(const RdbSyncerParam& param)
+int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);

@@ -37,6 +37,7 @@
 #include "types.h"
 
 namespace OHOS::DistributedKv {
+using namespace DistributedData;
 class KvStoreAccountObserver;
 class KvStoreScreenObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {

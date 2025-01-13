@@ -15,25 +15,55 @@
 #define LOG_TAG "AccountDelegateNormalImpl"
 
 #include "account_delegate_normal_impl.h"
+
 #include <algorithm>
 #include <endian.h>
-#include <list>
 #include <regex>
 #include <thread>
 #include <unistd.h>
+
 #include "accesstoken_kit.h"
 #include "log_print.h"
 #include "ohos_account_kits.h"
 #include "os_account_manager.h"
+#include "os_account_subscribe_info.h"
 
 namespace OHOS {
-namespace DistributedKv {
-using namespace OHOS::EventFwk;
+namespace DistributedData {
 using namespace OHOS::AAFwk;
 using namespace OHOS::DistributedData;
 using namespace Security::AccessToken;
 __attribute__((used)) static bool g_isInit = AccountDelegateNormalImpl::Init();
 
+AccountSubscriber::AccountSubscriber(const OsAccountSubscribeInfo &info) : OsAccountSubscriber(info) {}
+static inline const std::map<int32_t , AccountStatus> STATUS = {
+    { AccountSA::REMOVED, AccountStatus::DEVICE_ACCOUNT_DELETE },
+    { AccountSA::SWITCHED, AccountStatus::DEVICE_ACCOUNT_SWITCHED },
+    { AccountSA::UNLOCKED, AccountStatus::DEVICE_ACCOUNT_UNLOCKED },
+    { AccountSA::STOPPING, AccountStatus::DEVICE_ACCOUNT_STOPPING },
+    { AccountSA::STOPPED, AccountStatus::DEVICE_ACCOUNT_STOPPED } };
+
+void AccountSubscriber::OnStateChanged(const OsAccountStateData &data)
+{
+    ZLOGI("state change. state:%{public}d, from %{public}d to %{public}d", data.state, data.fromId, data.toId);
+
+    auto it = STATUS.find(data.state);
+    if (it == STATUS.end()) {
+        return;
+    }
+    AccountEventInfo accountEventInfo;
+    accountEventInfo.userId = std::to_string(data.toId);
+    accountEventInfo.status = it->second;
+    eventCallback_(accountEventInfo);
+    if (data.callback != nullptr) {
+        data.callback->OnComplete();
+    }
+}
+
+void AccountSubscriber::SetEventCallback(EventCallback callback)
+{
+    eventCallback_ = callback;
+}
 AccountDelegateNormalImpl::AccountDelegateNormalImpl()
 {
     userDeactivating_.InsertOrAssign(0, false);
@@ -73,7 +103,7 @@ int32_t AccountDelegateNormalImpl::GetUserByToken(uint32_t tokenId) const
 
 bool AccountDelegateNormalImpl::QueryUsers(std::vector<int> &users)
 {
-    users = {0}; // default user
+    users = { 0 }; // default user
     return AccountSA::OsAccountManager::QueryActiveOsAccountIds(users) == 0;
 }
 
@@ -110,16 +140,16 @@ bool AccountDelegateNormalImpl::IsVerified(int userId)
 void AccountDelegateNormalImpl::SubscribeAccountEvent()
 {
     ZLOGI("Subscribe account event listener start.");
-    if (eventSubscriber_ == nullptr) {
-        MatchingSkills matchingSkills;
-        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
-        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_SWITCHED);
-        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
-        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_STOPPING);
-        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_STOPPED);
-        CommonEventSubscribeInfo info(matchingSkills);
-        eventSubscriber_ = std::make_shared<EventSubscriber>(info);
-        eventSubscriber_->SetEventCallback([this](AccountEventInfo& account) {
+    if (AccountSubscriber_ == nullptr) {
+        std::set<OsAccountState> states;
+        states.insert(AccountSA::REMOVED);
+        states.insert(AccountSA::SWITCHED);
+        states.insert(AccountSA::UNLOCKED);
+        states.insert(AccountSA::STOPPING);
+        states.insert(AccountSA::STOPPED);
+        OsAccountSubscribeInfo info(states, true);
+        AccountSubscriber_ = std::make_shared<AccountSubscriber>(info);
+        AccountSubscriber_->SetEventCallback([this](AccountEventInfo &account) {
             UpdateUserStatus(account);
             account.harmonyAccountId = GetCurrentAccountId();
             NotifyAccountChanged(account);
@@ -128,7 +158,7 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
     executors_->Execute(GetTask(0));
 }
 
-void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo& account)
+void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo &account)
 {
     uint32_t status = static_cast<uint32_t>(account.status);
     switch (status) {
@@ -151,7 +181,7 @@ void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo& account
 ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
 {
     return [this, retry] {
-        auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
+        auto result = OsAccountManager::SubscribeOsAccount(AccountSubscriber_);
         if (result) {
             ZLOGI("success to register subscriber.");
             return;
@@ -169,7 +199,7 @@ ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
 AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
 {
     ZLOGD("destruct");
-    auto res = CommonEventManager::UnSubscribeCommonEvent(eventSubscriber_);
+    auto res = OsAccountManager::UnsubscribeOsAccount(AccountSubscriber_);
     if (!res) {
         ZLOGW("unregister account event fail res:%d", res);
     }
@@ -177,7 +207,7 @@ AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
 
 void AccountDelegateNormalImpl::UnsubscribeAccountEvent()
 {
-    auto res = CommonEventManager::UnSubscribeCommonEvent(eventSubscriber_);
+    auto res = OsAccountManager::UnsubscribeOsAccount(AccountSubscriber_);
     if (!res) {
         ZLOGW("unregister account event fail res:%d", res);
     }
@@ -235,7 +265,9 @@ bool AccountDelegateNormalImpl::Init()
 {
     static AccountDelegateNormalImpl normalAccountDelegate;
     static std::once_flag onceFlag;
-    std::call_once(onceFlag, [&]() { AccountDelegate::RegisterAccountInstance(&normalAccountDelegate); });
+    std::call_once(onceFlag, [&]() {
+        AccountDelegate::RegisterAccountInstance(&normalAccountDelegate);
+    });
     return true;
 }
 
@@ -253,5 +285,5 @@ bool AccountDelegateNormalImpl::IsDeactivating(int userId)
     userDeactivating_.InsertOrAssign(userId, res);
     return res;
 }
-} // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedData
+} // namespace OHOS

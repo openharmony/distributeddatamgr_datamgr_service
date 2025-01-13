@@ -64,6 +64,7 @@
 #include "utils/anonymous.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
+#include "xcollie.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -515,6 +516,7 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
 
 void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
 {
+    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY, 5);
     ZLOGI("account event %{public}d changed process, begin.", eventInfo.status);
     NotifyAccountEvent(eventInfo);
     switch (eventInfo.status) {

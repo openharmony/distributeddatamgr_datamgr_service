@@ -508,8 +508,8 @@ enum DataShareKvStoreType : int32_t {
 int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 {
     binderInfo_ = binderInfo;
-    const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(binderInfo.selfTokenId);
+    const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
+    const auto userId = AccountDelegate::GetInstance()->GetUserByToken(binderInfo.selfTokenId);
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.storeId = "data_share_data_";
@@ -839,7 +839,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
             return errCode;
         }
     }
-    int32_t currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    int32_t currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     UriInfo uriInfo;
     if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
         return E_OK;
@@ -1046,10 +1046,10 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
         Anonymous::Change(account).c_str());
     switch (code) {
-        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_DELETE):
-        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_STOPPED): {
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPED): {
             std::vector<int32_t> users;
-            DistributedKv::AccountDelegate::GetInstance()->QueryUsers(users);
+            AccountDelegate::GetInstance()->QueryUsers(users);
             std::set<int32_t> userIds(users.begin(), users.end());
             userIds.insert(0);
             DBDelegate::Close([&userIds](const std::string &userId) {
@@ -1061,7 +1061,7 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
             });
             break;
         }
-        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_STOPPING):
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
             DBDelegate::Close([&user](const std::string &userId) {
                 return user == userId;
             });

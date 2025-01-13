@@ -192,7 +192,7 @@ void CloudDataTest::InitMetaData()
     metaData_.appId = TEST_CLOUD_APPID;
     metaData_.bundleName = TEST_CLOUD_BUNDLE;
     metaData_.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    metaData_.user = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
+    metaData_.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
     metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
@@ -231,7 +231,7 @@ void CloudDataTest::InitSchemaMeta()
 
 void CloudDataTest::InitCloudInfo()
 {
-    cloudInfo_.user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    cloudInfo_.user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     cloudInfo_.id = TEST_CLOUD_ID;
     cloudInfo_.enableCloud = true;
 
@@ -310,7 +310,7 @@ void CloudDataTest::TearDown()
 HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
     auto cloudServerMock = std::make_shared<CloudServerMock>();
-    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));
     SchemaMeta schemaMeta;
@@ -772,7 +772,7 @@ HWTEST_F(CloudDataTest, Clean002, TestSize.Level0)
     ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
-    metaData_.user = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
+    metaData_.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyLocal(), true);
 }
 
@@ -2004,7 +2004,7 @@ HWTEST_F(CloudDataTest, Report, TestSize.Level0)
 HWTEST_F(CloudDataTest, IsOn, TestSize.Level0)
 {
     auto cloudServerMock = std::make_shared<CloudServerMock>();
-    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
     int32_t instanceId = 0;
     auto ret = cloudInfo.IsOn("", instanceId);
@@ -2020,7 +2020,7 @@ HWTEST_F(CloudDataTest, IsOn, TestSize.Level0)
 HWTEST_F(CloudDataTest, IsAllSwitchOff, TestSize.Level0)
 {
     auto cloudServerMock = std::make_shared<CloudServerMock>();
-    auto user = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
     auto ret = cloudInfo.IsAllSwitchOff();
     EXPECT_FALSE(ret);

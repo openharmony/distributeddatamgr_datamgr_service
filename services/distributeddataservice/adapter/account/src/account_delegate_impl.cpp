@@ -13,46 +13,18 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "EVENT_HANDLER"
+#define LOG_TAG "AccountDelegateImpl"
 
 #include "account_delegate_impl.h"
+
 #include <thread>
 #include <unistd.h>
 
+#include "error/general_error.h"
+
 namespace OHOS {
-namespace DistributedKv {
-using namespace OHOS::EventFwk;
-using namespace OHOS::AAFwk;
+namespace DistributedData {
 using namespace OHOS::DistributedData;
-
-EventSubscriber::EventSubscriber(const CommonEventSubscribeInfo &info) : CommonEventSubscriber(info) {}
-static inline const std::map<std::string, AccountStatus> STATUS = {
-    { CommonEventSupport::COMMON_EVENT_USER_REMOVED, AccountStatus::DEVICE_ACCOUNT_DELETE },
-    { CommonEventSupport::COMMON_EVENT_USER_SWITCHED, AccountStatus::DEVICE_ACCOUNT_SWITCHED },
-    { CommonEventSupport::COMMON_EVENT_USER_UNLOCKED, AccountStatus::DEVICE_ACCOUNT_UNLOCKED },
-    { CommonEventSupport::COMMON_EVENT_USER_STOPPING, AccountStatus::DEVICE_ACCOUNT_STOPPING },
-    { CommonEventSupport::COMMON_EVENT_USER_STOPPED, AccountStatus::DEVICE_ACCOUNT_STOPPED } };
-
-void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
-{
-    const auto want = event.GetWant();
-    AccountEventInfo accountEventInfo{};
-    std::string action = want.GetAction();
-    ZLOGI("Want Action is %{public}s", action.c_str());
-
-    auto it = STATUS.find(action);
-    if (it == STATUS.end()) {
-        return;
-    }
-    accountEventInfo.userId = std::to_string(event.GetCode());
-    accountEventInfo.status = it->second;
-    eventCallback_(accountEventInfo);
-}
-
-void EventSubscriber::SetEventCallback(EventCallback callback)
-{
-    eventCallback_ = callback;
-}
 
 AccountDelegateImpl::~AccountDelegateImpl()
 {
@@ -61,13 +33,13 @@ AccountDelegateImpl::~AccountDelegateImpl()
 
 void AccountDelegateImpl::NotifyAccountChanged(const AccountEventInfo &accountEventInfo)
 {
-    observerMap_.ForEach([&accountEventInfo] (const auto& key, auto& val) {
+    observerMap_.ForEach([&accountEventInfo](const auto &key, auto &val) {
         if (val->GetLevel() == AccountDelegate::Observer::LevelType::HIGH) {
             val->OnAccountChanged(accountEventInfo);
         }
         return false;
     });
-    observerMap_.ForEach([&accountEventInfo] (const auto& key, auto& val) {
+    observerMap_.ForEach([&accountEventInfo](const auto &key, auto &val) {
         if (val->GetLevel() == AccountDelegate::Observer::LevelType::LOW) {
             val->OnAccountChanged(accountEventInfo);
         }
@@ -75,42 +47,42 @@ void AccountDelegateImpl::NotifyAccountChanged(const AccountEventInfo &accountEv
     });
 }
 
-Status AccountDelegateImpl::Subscribe(std::shared_ptr<Observer> observer)
+int32_t AccountDelegateImpl::Subscribe(std::shared_ptr<Observer> observer)
 {
     ZLOGD("start");
     if (observer == nullptr || observer->Name().empty()) {
-        return Status::INVALID_ARGUMENT;
+        return GeneralError::E_INVALID_ARGS;
     }
     if (observerMap_.Contains(observer->Name())) {
-        return Status::INVALID_ARGUMENT;
+        return GeneralError::E_INVALID_ARGS;
     }
 
     auto ret = observerMap_.Insert(observer->Name(), observer);
     if (ret) {
         ZLOGD("end");
-        return Status::SUCCESS;
+        return GeneralError::E_OK;
     }
     ZLOGE("fail");
-    return Status::ERROR;
+    return GeneralError::E_ERROR;
 }
 
-Status AccountDelegateImpl::Unsubscribe(std::shared_ptr<Observer> observer)
+int32_t AccountDelegateImpl::Unsubscribe(std::shared_ptr<Observer> observer)
 {
     ZLOGD("start");
     if (observer == nullptr || observer->Name().empty()) {
-        return Status::INVALID_ARGUMENT;
+        return GeneralError::E_INVALID_ARGS;
     }
     if (!observerMap_.Contains(observer->Name())) {
-        return Status::INVALID_ARGUMENT;
+        return GeneralError::E_INVALID_ARGS;
     }
 
     auto ret = observerMap_.Erase(observer->Name());
     if (ret) {
         ZLOGD("end");
-        return Status::SUCCESS;
+        return GeneralError::E_OK;
     }
     ZLOGD("fail");
-    return Status::ERROR;
+    return GeneralError::E_ERROR;
 }
 
 bool AccountDelegateImpl::RegisterHashFunc(HashFunc hash)
@@ -126,5 +98,5 @@ std::string AccountDelegateImpl::DoHash(const void *data, size_t size, bool isUp
     }
     return hash_(data, size, isUpper);
 }
-}  // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedData
+} // namespace OHOS

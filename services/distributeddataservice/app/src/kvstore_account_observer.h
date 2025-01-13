@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
+using namespace DistributedData;
 // KvStore account event proc controller.
 extern std::atomic<int> g_kvStoreAccountEventStatus;
 #define KVSTORE_ACCOUNT_EVENT_PROCESSING_CHECKER(result) \

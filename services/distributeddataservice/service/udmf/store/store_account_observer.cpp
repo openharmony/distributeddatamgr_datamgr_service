@@ -26,10 +26,10 @@ namespace OHOS {
 namespace UDMF {
 using namespace DistributedKv;
 using namespace DistributedData;
-void RuntimeStoreAccountObserver::OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo)
+void RuntimeStoreAccountObserver::OnAccountChanged(const AccountEventInfo &eventInfo)
 {
     ZLOGI("account event begin. status is %{public}d.", eventInfo.status);
-    if (eventInfo.status == DistributedKv::AccountStatus::DEVICE_ACCOUNT_DELETE) {
+    if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_DELETE) {
         DistributedData::StoreMetaData metaData;
         uint32_t token = IPCSkeleton::GetSelfTokenID();
         metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();

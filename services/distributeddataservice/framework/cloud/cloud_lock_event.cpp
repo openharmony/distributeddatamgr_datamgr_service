@@ -17,7 +17,7 @@
 
 namespace OHOS::DistributedData {
 CloudLockEvent::CloudLockEvent(int32_t evtId, StoreInfo storeInfo, Callback callback)
-    : CloudEvent(evtId, storeInfo), callback_(std::move(callback))
+    : CloudEvent(evtId, std::move(storeInfo)), callback_(std::move(callback))
 {
 }
 
