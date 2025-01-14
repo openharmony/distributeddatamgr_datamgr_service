@@ -27,7 +27,7 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-const std::string ALL_URI = "*";
+const char *ALL_URI = "*";
 bool DataShareSilentConfig::IsSilentProxyEnable(uint32_t callerTokenId, int32_t currentUserId,
     const std::string &calledBundleName, const std::string &originUriStr)
 {
@@ -56,7 +56,7 @@ bool DataShareSilentConfig::EnableSilentProxy(uint32_t callerTokenId, const std:
     URIUtils::FormatUri(uri);
     if (uri.empty()) {
         enableSilentUris_.Erase(callerTokenId);
-        uri = ALL_URI;
+        uri = std::string(ALL_URI);
     }
     ZLOGI("Enable silent proxy, callerTokenId:%{public}u, enable:%{public}d, uri:%{public}s",
           callerTokenId, enable, DistributedData::Anonymous::Change(uri).c_str());
@@ -80,7 +80,7 @@ int DataShareSilentConfig::CheckExistEnableSilentUris(uint32_t callerTokenId,
             status = E_OK;
             return true;
         }
-        iter = uris.find(ALL_URI);
+        iter = uris.find(std::string(ALL_URI));
         if (iter != uris.end()) {
             isEnable = iter->second;
             status = E_OK;
