@@ -598,15 +598,12 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
         return { ConvertStatus(dbStatus), dbStatus };
     }
-    ArkDataFaultMsg msg;
-    auto now = std::chrono::system_clock::now();
-    msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-    msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-    msg.bundleName = "",
-    msg.moduleName = "datamgr_service";
-    msg.storeId = "";
-    msg.errorType = Fault::CFS_GS_RDB_CLOUD_SYNC;
-    msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+    ArkDataFaultMsg msg = { .faultType = FaultType::CLOUD_SYNC_FAULT,
+        .bundleName = storeInfo_.bundleName,
+        .moduleName = ModuleName::RDB_STORE,
+        .storeId = storeInfo_.storeName,
+        .errorType = Fault::CFS_GS_RDB_CLOUD_SYNC,
+        .appendix = { .user = storeInfo_.user } };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
     tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
         if (executor != nullptr) {
@@ -907,15 +904,12 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         if (dBStatus != DistributedDB::DBStatus::OK) {
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
                 Anonymous::Change(table).c_str(), dBStatus);
-            ArkDataFaultMsg msg;
-            auto now = std::chrono::system_clock::now();
-            msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-            msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-            msg.bundleName = "",
-            msg.moduleName = "datamgr_service";
-            msg.storeId = "";
-            msg.errorType = Fault::CFS_GS_CREATE_DISTRIBUTED_TABLE;
-            msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+            ArkDataFaultMsg msg = { .faultType = FaultType::CLOUD_SYNC_FAULT,
+                .bundleName = storeInfo_.bundleName,
+                .moduleName = ModuleName::RDB_STORE,
+                .storeId = storeInfo_.storeName,
+                .errorType = Fault::CFS_GS_CREATE_DISTRIBUTED_TABLE,
+                .appendix = { .user = storeInfo_.user } };
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return GeneralError::E_ERROR;
         }

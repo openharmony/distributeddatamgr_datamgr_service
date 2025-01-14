@@ -25,6 +25,9 @@ namespace DistributedDataDfx {
 struct ModuleName {
     static const inline std::string DEVICE = "DEVICE";
     static const inline std::string USER = "USER";
+    static const inline std::string RDB_STORE = "RDB_STORE";
+    static const inline std::string KV_STORE = "KV_STORE";
+    static const inline std::string CLOUD_SERVER = "CLOUD_SERVER";
 };
 
 enum class Fault {
@@ -163,10 +166,12 @@ struct AppendixMsg {
 };
 
 struct ArkDataFaultMsg {
-    int64_t faultTime;
+    int64_t faultTime =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+            .count();
     FaultType faultType;
     std::string bundleName;
-    std::string moduleName;
+    std::string moduleName = "datamgr_service";
     std::string storeId;
     std::string businessType;
     Fault errorType;

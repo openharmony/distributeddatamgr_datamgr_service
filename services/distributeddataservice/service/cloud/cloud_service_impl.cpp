@@ -134,16 +134,12 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
 void CloudServiceImpl::Report(int32_t user, OHOS::CloudData::CloudServiceImpl::CloudSyncScene sceneType,
     int32_t errCode, const std::string &bundleName, const std::string &storeId)
 {
-    auto now = std::chrono::system_clock::now();
-    std::string anonStoreId = Anonymous::Change(storeId).c_str();
-    ArkDataFaultMsg msg;
-    msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-    msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-    msg.bundleName = bundleName;
-    msg.moduleName = "datamgr_service";
-    msg.storeId = anonStoreId;
-    msg.errorType = GetCloudDfxError(sceneType, errCode);
-    msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user };
+    ArkDataFaultMsg msg = { .faultType = FaultType::CLOUD_SYNC_FAULT,
+        .bundleName = bundleName,
+        .moduleName = ModuleName::CLOUD_SERVER,
+        .storeId = storeId,
+        .errorType = GetCloudDfxError(sceneType, errCode),
+        .appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user } };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 

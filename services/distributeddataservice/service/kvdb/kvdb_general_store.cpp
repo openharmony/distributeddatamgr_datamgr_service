@@ -398,15 +398,12 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
         }
         dbStatus = CloudSync(devices, dbMode, async, syncParam.wait, syncParam.prepareTraceId);
         if (dbStatus != DBStatus::OK) {
-            ArkDataFaultMsg msg;
-            auto now = std::chrono::system_clock::now();
-            msg.faultTime = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-            msg.faultType = FaultType::CLOUD_SYNC_FAULT;
-            msg.bundleName = storeInfo_.bundleName,
-            msg.moduleName = "datamgr_service";
-            msg.storeId = storeInfo_.storeName;
-            msg.errorType = Fault::CFS_GS_KVDB_CLOUD_SYNC;
-            msg.appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user};
+            ArkDataFaultMsg msg = { .faultType = FaultType::CLOUD_SYNC_FAULT,
+                .bundleName = storeInfo_.bundleName,
+                .moduleName = ModuleName::KV_STORE,
+                .storeId = storeInfo_.storeName,
+                .errorType = Fault::CFS_GS_KVDB_CLOUD_SYNC,
+                .appendix = { .user = storeInfo_.user } };
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
         }
     } else {
