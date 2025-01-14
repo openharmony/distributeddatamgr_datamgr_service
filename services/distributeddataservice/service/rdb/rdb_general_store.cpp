@@ -109,7 +109,7 @@ static DistributedSchema GetGaussDistributedSchema(const Database &database)
         for (auto &field : table.fields) {
             DistributedField dbField;
             dbField.colName = field.colName;
-            dbField.isP2pSync = IsExistence(field.colName, table.nearbyFields);
+            dbField.isP2pSync = IsExistence(field.colName, table.deviceSyncFields);
             dbTable.fields.push_back(std::move(dbField));
         }
     }
