@@ -104,6 +104,7 @@ bool Table::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(alias)], alias);
     SetValue(node[GET_NAME(fields)], fields);
     SetValue(node[GET_NAME(deviceSyncFields)], deviceSyncFields);
+    SetValue(node[GET_NAME(cloudSyncFields)], cloudSyncFields);
     return true;
 }
 
@@ -115,6 +116,7 @@ bool Table::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(fields), fields);
     GetValue(node, GET_NAME(tableName), name);
     GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
+    GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
     return true;
 }
 
