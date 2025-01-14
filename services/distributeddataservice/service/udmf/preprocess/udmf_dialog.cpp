@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -69,7 +69,7 @@ sptr<IAbilityManager> ProgressDialog::GetAbilityManagerService()
 
 int32_t ProgressDialog::ShowProgress(const ProgressMessageInfo &message)
 {
-    ZLOGI("Begin.");
+    ZLOGD("Begin.");
     auto abilityManager = GetAbilityManagerService();
     if (abilityManager == nullptr) {
         ZLOGE("Get ability manager failed.");

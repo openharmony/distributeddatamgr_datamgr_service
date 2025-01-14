@@ -28,10 +28,10 @@ public:
         sptr<IRemoteObject> abilityToken = nullptr;
     };
     struct ProgressMessageInfo {
-        std::string promptText{ DEFAULT_LABEL };
-        std::string remoteDeviceName{ DEFAULT_LABEL };
-        std::string progressKey{ DEFAULT_LABEL };
-        std::string signalKey{ DEFAULT_LABEL };
+        std::string promptText { DEFAULT_LABEL };
+        std::string remoteDeviceName { DEFAULT_LABEL };
+        std::string progressKey { DEFAULT_LABEL };
+        std::string signalKey { DEFAULT_LABEL };
         bool isRemote { false };
         int32_t windowId { 0 };
         sptr<IRemoteObject> callerToken { nullptr };
