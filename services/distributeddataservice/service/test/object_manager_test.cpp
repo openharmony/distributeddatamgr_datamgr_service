@@ -313,7 +313,9 @@ HWTEST_F(ObjectManagerTest, NotifyChange001, TestSize.Level0)
     data = {{ "test_cloud", data_ }};
     data1 = {{ "p_###SAVEINFO###001", data1_ }};
     manager->NotifyChange(data1);
+    EXPECT_FALSE(manager->restoreStatus_.Find("p_###SAVEINFO###001").first);
     manager->NotifyChange(data);
+    EXPECT_FALSE(manager->restoreStatus_.Find("test_cloud").first);
 }
 
 /**
@@ -489,7 +491,9 @@ HWTEST_F(ObjectManagerTest, FlushClosedStore001, TestSize.Level0)
     manager->syncCount_ = 0; // test syncCount_
     manager->FlushClosedStore();
     manager->delegate_ = manager->OpenObjectKvStore();
+    ASSERT_NE(manager->delegate_, nullptr);
     manager->FlushClosedStore();
+    ASSERT_EQ(manager->delegate_, nullptr);
 }
 
 /**
@@ -583,6 +587,7 @@ HWTEST_F(ObjectManagerTest, SyncCompleted001, TestSize.Level0)
     userId.push_back(99);
     userId.push_back(100);
     manager->SyncCompleted(results, sequenceId_);
+    EXPECT_FALSE(manager->isSyncing_);
 }
 
 /**
