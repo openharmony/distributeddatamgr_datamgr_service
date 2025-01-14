@@ -32,7 +32,7 @@ struct API_EXPORT Table final : public Serializable {
     std::string sharedTableName;
     std::string alias;
     std::vector<Field> fields;
-    std::vector<std::string> nearbyFields = {};
+    std::vector<std::string> deviceSyncFields = {};
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
