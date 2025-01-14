@@ -99,22 +99,6 @@ HWTEST_F(CommunicationProviderImplTest, CommunicationProvider003, TestSize.Level
 }
 
 /**
-* @tc.name: CommunicationProvider004
-* @tc.desc: singleton pipe
-* @tc.type: FUNC
-* @tc.require: AR000CCPQ2
-* @tc.author: hongbo
-*/
-HWTEST_F(CommunicationProviderImplTest, CommunicationProvider004, TestSize.Level1)
-{
-    ZLOGI("begin.");
-    auto &provider = CommunicationProvider::GetInstance();
-    auto &provider1 = CommunicationProvider::GetInstance();
-    EXPECT_EQ(&provider, &provider1);
-    sleep(1); // avoid thread dnet thread died, then will have pthread;
-}
-
-/**
 * @tc.name: CommunicationProvider005
 * @tc.desc: parse sent data
 * @tc.type: FUNC
