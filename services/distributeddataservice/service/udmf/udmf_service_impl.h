@@ -65,7 +65,7 @@ private:
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
     int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
-    bool IsBundleNameWhitelisted(const std::string &bundleName);
+    bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
 
     class Factory {
