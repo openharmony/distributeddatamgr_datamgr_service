@@ -33,6 +33,7 @@ struct API_EXPORT Table final : public Serializable {
     std::string alias;
     std::vector<Field> fields;
     std::vector<std::string> deviceSyncFields = {};
+    std::vector<std::string> cloudSyncFields = {};
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
