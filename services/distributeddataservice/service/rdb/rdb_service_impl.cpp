@@ -1062,7 +1062,7 @@ int RdbServiceImpl::DoOnlineSync(const std::vector<std::string> &devices, const 
 {
     std::vector<std::string> tableNames;
     for (auto &table : dataBase.tables) {
-        if (!table.columns.empty()) {
+        if (!table.deviceSyncFields.empty()) {
             tableNames.push_back(table.name);
         }
     }
