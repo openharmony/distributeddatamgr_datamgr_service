@@ -33,10 +33,10 @@ public:
     {
         return ReportStatus::SUCCESS;
     };
-    ReportStatus Report(const struct CommFaultMsg &msg) override;
+    ReportStatus Report(const struct CommFaultMsg &msg) override
     {
         return ReportStatus::SUCCESS;
-    }
+    };
     ReportStatus Report(const ArkDataFaultMsg &msg) override;
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 

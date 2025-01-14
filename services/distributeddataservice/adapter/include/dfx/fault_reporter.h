@@ -25,7 +25,7 @@ public:
     KVSTORE_API virtual ReportStatus Report(const FaultMsg &msg) = 0;
     KVSTORE_API virtual ReportStatus Report(const CommFaultMsg &msg) = 0;
     KVSTORE_API virtual ReportStatus Report(const DBFaultMsg &ms) = 0;
-    KVSTORE_API virtual ReportStatus Report(const ArkDataFaultMsg &ms){ return ReportStatus::SUCCESS };
+    KVSTORE_API virtual ReportStatus Report(const ArkDataFaultMsg &ms){ return ReportStatus::SUCCESS; };
     KVSTORE_API virtual ~FaultReporter() {}
 };
 }  // namespace DistributedDataDfx

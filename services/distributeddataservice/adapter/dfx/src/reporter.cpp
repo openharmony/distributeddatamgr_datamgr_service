@@ -58,9 +58,9 @@ FaultReporter* Reporter::RuntimeFault()
 
 FaultReporter* Reporter::CloudSyncFault()
 {
-    static ServiceFaultImpl serviceFault;
-    serviceFault.SetThreadPool(executors_);
-    return &serviceFault;
+    static CloudSyncFaultImpl cloudSyncFault;
+    cloudSyncFault.SetThreadPool(executors_);
+    return &cloudSyncFault;
 }
 
 FaultReporter* Reporter::ServiceFault()

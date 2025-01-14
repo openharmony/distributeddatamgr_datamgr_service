@@ -66,7 +66,57 @@ ohos_static_library("distributeddata_dfx_static") {
     "kv_store:datamgr_common",
     "openssl:libcrypto_shared",
   ]
-  public_config = [ ":dfx_public_config" ]
+  public_configs = [ ":dfx_public_config" ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
+ohos_static_library("distributeddata_dfx_fault_static") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+  sources = [
+    "src/behaviour/behaviour_reporter_impl.cpp",
+    "src/fault/cloud_sync_fault_impl.cpp",
+    "src/fault/communication_fault_impl.cpp",
+    "src/fault/database_fault_impl.cpp",
+    "src/fault/runtime_fault_impl.cpp",
+    "src/fault/service_fault_impl.cpp",
+    "src/hiview_adapter.cpp",
+    "src/reporter.cpp",
+    "src/statistic/api_performance_statistic_impl.cpp",
+    "src/statistic/database_statistic_impl.cpp",
+    "src/statistic/traffic_statistic_impl.cpp",
+    "src/statistic/visit_statistic_impl.cpp",
+  ]
+
+  include_dirs = [
+    "./src",
+    "./src/fault",
+    "./src/statistic",
+    "../include/dfx",
+    "../include/utils",
+  ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
+  ]
+
+  public_configs = [ ":dfx_public_config" ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]

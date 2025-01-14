@@ -602,8 +602,8 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
         .bundleName = storeInfo_.bundleName,
         .moduleName = ModuleName::RDB_STORE,
         .storeId = storeInfo_.storeName,
-        .errorType = Fault::CFS_GS_RDB_CLOUD_SYNC,
-        .appendix = { .user = storeInfo_.user } };
+        .errorType = Fault::CSF_GS_RDB_CLOUD_SYNC,
+        .appendixMsg = { .uid = storeInfo_.user } };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
     tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
         if (executor != nullptr) {
@@ -908,8 +908,8 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
                 .bundleName = storeInfo_.bundleName,
                 .moduleName = ModuleName::RDB_STORE,
                 .storeId = storeInfo_.storeName,
-                .errorType = Fault::CFS_GS_CREATE_DISTRIBUTED_TABLE,
-                .appendix = { .user = storeInfo_.user } };
+                .errorType = Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE,
+                .appendixMsg = { .uid = storeInfo_.user } };
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return GeneralError::E_ERROR;
         }

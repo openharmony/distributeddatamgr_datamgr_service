@@ -26,12 +26,14 @@
 #include "cloud/sharing_center.h"
 #include "cloud/subscription.h"
 #include "cloud_service_stub.h"
+#include "dfx/dfx_types.h"
 #include "feature/static_acts.h"
 #include "store/general_store.h"
 #include "sync_manager.h"
 #include "values_bucket.h"
 
 namespace OHOS::CloudData {
+using namespace DistributedDataDfx;
 class CloudServiceImpl : public CloudServiceStub {
 public:
     using StoreMetaData = DistributedData::StoreMetaData;
@@ -167,7 +169,8 @@ private:
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
-    void Report(int32_t user, CloudSyncScene scebeType, int32_t errCode);
+    void Report(int32_t user, CloudSyncScene sceneType, int32_t errCode, const std::string &bundleName,
+        const std::string &storeId);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

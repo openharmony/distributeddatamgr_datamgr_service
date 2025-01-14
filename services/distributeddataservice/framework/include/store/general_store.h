@@ -111,8 +111,8 @@ public:
 
     struct CloudConfig {
         int32_t maxNumber = 30;
-        int32_t maxSize = 1024 * 512 * 3;  // 1.5M
-        int32_t maxRetryConflictTimes = 3; // default max retry 3 times when version conflict
+        int32_t maxSize = 1024 * 512 * 3; // 1.5M
+        int32_t maxRetryConflictTimes = 3;     // default max retry 3 times when version conflict
     };
 
     struct StoreConfig {

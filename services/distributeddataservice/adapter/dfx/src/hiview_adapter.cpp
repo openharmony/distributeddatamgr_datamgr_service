@@ -31,7 +31,7 @@ constexpr const char *FAULT_TYPE = "FAULT_TYPE";
 constexpr const char *MODULE_NAME = "MODULE_NAME";
 constexpr const char *BUNDLE_NAME = "BUNDLE_NAME";
 constexpr const char *STORE_NAME = "STORE_NAME";
-constexpr const char *BUSINESS_NAME = "BUSINESS_NAME";
+constexpr const char *BUSINESS_TYPE = "BUSINESS_TYPE";
 constexpr const char *ERROR_CODE = "ERROR_CODE";
 constexpr const char *APPENDIX = "APPENDIX";
 constexpr const char *INTERFACE_NAME = "INTERFACE_NAME";
@@ -208,14 +208,14 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
     executors->Execute(std::move(task));
 }
 
-void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkdataFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
+void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
 {
     if (executors == nullptr) {
         ZLOGW("executors is nullptr!");
         return;
     }
     ExecutorPool::Task task([dfxCode, msg]() {
-        std::string message = msg.appendix.GetMessage();
+        std::string message = msg.appendixMsg.GetMessage();
         struct HiSysEventParam params[] = {
             { .name = { *FAULT_TIME }, .t = HISYSEVENT_INT64, .v = { .i64 = msg.faultTime }, .arraySize = 0 },
             { .name = { *FAULT_TYPE },
@@ -234,13 +234,13 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkdataFaultMsg &msg, 
                 .t = HISYSEVENT_STRING,
                 .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
                 .arraySize = 0 },
-            { .name = { *BUSINESS_NAME },
+            { .name = { *BUSINESS_TYPE },
                 .t = HISYSEVENT_STRING,
                 .v = { .s = const_cast<char *>(msg.businessType.c_str()) },
                 .arraySize = 0 },
             { .name = { *ERROR_CODE },
                 .t = HISYSEVENT_INT32,
-                .v = { .s = const_cast<char *>(msg.errorType) },
+                .v = { .i32 = static_cast<int32_t>(msg.errorType) },
                 .arraySize = 0 },
             { .name = { *APPENDIX },
                 .t = HISYSEVENT_STRING,

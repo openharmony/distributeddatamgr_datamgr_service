@@ -16,8 +16,10 @@
 #ifndef DISTRIBUTEDDATAMGR_DFX_TYPES_H
 #define DISTRIBUTEDDATAMGR_DFX_TYPES_H
 
-#include <string>
+#include <map>
 #include <memory>
+#include <string>
+
 #include "db_meta_callback_delegate.h"
 
 namespace OHOS {
@@ -70,48 +72,48 @@ enum class Fault {
     DF_DB_CORRUPTED = 62,
 
     // Cloud Sync Fault
-    CFS_CLOUD_INFO_ENABLE_CLOUD             = 70,
-    CFS_CLOUD_INFO_DISABLE_CLOUD            = 71,
-    CFS_CLOUD_INFO_OPEN_CLOUD_SWITCH        = 72,
-    CFS_CLOUD_INFO_CLOSE_CLOUD_SWITCH       = 73,
-    CFS_CLOUD_INFO_QUERY_SYNC_INFO          = 74,
-    CFS_CLOUD_INFO_USER_CHANGED             = 75,
-    CFS_CLOUD_INFO_USER_UNLOCKED            = 76,
-    CFS_CLOUD_INFO_NETWORK_RECOVERY         = 77,
-    CFS_CLOUD_INFO_CLOUD_SYNC_TASK          = 78,
-    CFS_CLOUD_INFO_SUBSCRIBE                = 79,
-    CFS_CLOUD_INFO_UNSUBSCRIBE              = 80,
-    CFS_BRIEF_INFO_ENABLE_CLOUD             = 81,
-    CFS_BRIEF_INFO_OPEN_CLOUD_SWITCH        = 83,
-    CFS_BRIEF_INFO_USER_CHANGE              = 84,
-    CFS_BRIEF_INFO_USER_UNLOCKED            = 85,
-    CFS_BRIEF_INFO_NETWORK_RECOVERY         = 86,
-    CFS_BRIEF_INFO_CLOUD_SYNC_TASK          = 87,
-    CFS_APP_SCHEMA_ENABLE_CLOUD             = 88,
-    CFS_APP_SCHEMA_OPEN_CLOUD_SWITCH        = 89,
-    CFS_APP_SCHEMA_QUERY_SYNC_INFO          = 90,
-    CFS_APP_SCHEMA_USER_CHANGED             = 91,
-    CFS_APP_SCHEMA_USER_UNLOCKED            = 92,
-    CFS_APP_SCHEMA_NETWORK_RECOVERY         = 93,
-    CFS_APP_SCHEMA_CLOUD_SYNC_TASK          = 94,
-    CFS_CONNECT_CLOUD_ASSET_LOADER          = 95,
-    CFS_CONNECT_CLOUD_DB                    = 96,
-    CFS_BATCH_INSERT_GENERATE_ID            = 97,
-    CFS_BATCH_INSERT_SAVE_RECORDS           = 98,
-    CFS_BATCH_UPDATE_SAVE_RECORDS           = 99,
-    CFS_BATCH_DELETE_DELETE_RECORES         = 100,
-    CFS_BATCH_QUERY_START_CURSOR            = 101,
-    CFS_BATCH_QUERY_FETCH_RECORRDS          = 102,
-    CFS_BATCH_QUERY_FETCH_DB_CHANGES        = 103,
-    CFS_BATCH_QUERY_FETCH_RECORD_WITH_ID    = 104,
-    CFS_LOCK_GET_LOCK                       = 105,
-    CFS_LOCK_HEART_BEAT                     = 106,
-    CFS_SHARE_SET_PRESHARE                  = 107,
-    CFS_DOWNLOAD_ASSETS                     = 108,
-    CFS_GS_CREATE_DISTRIBUTED_TABLE         = 109,
-    CFS_GS_SET_DISTRIBUTED_TABLE            = 110,
-    CFS_GS_RDB_CLOUD_SYNC                   = 111,
-    CFS_GS_KVDB_CLOUD_SYNC                  = 112,
+    CSF_CLOUD_INFO_ENABLE_CLOUD             = 70,
+    CSF_CLOUD_INFO_DISABLE_CLOUD            = 71,
+    CSF_CLOUD_INFO_OPEN_CLOUD_SWITCH        = 72,
+    CSF_CLOUD_INFO_CLOSE_CLOUD_SWITCH       = 73,
+    CSF_CLOUD_INFO_QUERY_SYNC_INFO          = 74,
+    CSF_CLOUD_INFO_USER_CHANGED             = 75,
+    CSF_CLOUD_INFO_USER_UNLOCKED            = 76,
+    CSF_CLOUD_INFO_NETWORK_RECOVERY         = 77,
+    CSF_CLOUD_INFO_CLOUD_SYNC_TASK          = 78,
+    CSF_CLOUD_INFO_SUBSCRIBE                = 79,
+    CSF_CLOUD_INFO_UNSUBSCRIBE              = 80,
+    CSF_BRIEF_INFO_ENABLE_CLOUD             = 81,
+    CSF_BRIEF_INFO_OPEN_CLOUD_SWITCH        = 83,
+    CSF_BRIEF_INFO_USER_CHANGED              = 84,
+    CSF_BRIEF_INFO_USER_UNLOCKED            = 85,
+    CSF_BRIEF_INFO_NETWORK_RECOVERY         = 86,
+    CSF_BRIEF_INFO_CLOUD_SYNC_TASK          = 87,
+    CSF_APP_SCHEMA_ENABLE_CLOUD             = 88,
+    CSF_APP_SCHEMA_OPEN_CLOUD_SWITCH        = 89,
+    CSF_APP_SCHEMA_QUERY_SYNC_INFO          = 90,
+    CSF_APP_SCHEMA_USER_CHANGED             = 91,
+    CSF_APP_SCHEMA_USER_UNLOCKED            = 92,
+    CSF_APP_SCHEMA_NETWORK_RECOVERY         = 93,
+    CSF_APP_SCHEMA_CLOUD_SYNC_TASK          = 94,
+    CSF_CONNECT_CLOUD_ASSET_LOADER          = 95,
+    CSF_CONNECT_CLOUD_DB                    = 96,
+    CSF_BATCH_INSERT_GENERATE_ID            = 97,
+    CSF_BATCH_INSERT_SAVE_RECORDS           = 98,
+    CSF_BATCH_UPDATE_SAVE_RECORDS           = 99,
+    CSF_BATCH_DELETE_DELETE_RECORDS         = 100,
+    CSF_BATCH_QUERY_START_CURSOR            = 101,
+    CSF_BATCH_QUERY_FETCH_RECORDS           = 102,
+    CSF_BATCH_QUERY_FETCH_DB_CHANGES        = 103,
+    CSF_BATCH_QUERY_FETCH_RECORD_WITH_ID    = 104,
+    CSF_LOCK_GET_LOCK                       = 105,
+    CSF_LOCK_HEART_BEAT                     = 106,
+    CSF_SHARE_SET_PRESHARE                  = 107,
+    CSF_DOWNLOAD_ASSETS                     = 108,
+    CSF_GS_CREATE_DISTRIBUTED_TABLE         = 109,
+    CSF_GS_SET_DISTRIBUTED_TABLE            = 110,
+    CSF_GS_RDB_CLOUD_SYNC                   = 111,
+    CSF_GS_KVDB_CLOUD_SYNC                  = 112,
 };
 
 enum class FaultType {
@@ -166,21 +168,21 @@ static std::map<CloudSyncScene, Fault> userInfoErrs = {
 
 static std::map<CloudSyncScene, Fault> briefInfoErrs = {
     { CloudSyncScene::ENABLE_CLOUD, Fault::CSF_BRIEF_INFO_ENABLE_CLOUD },
-    { CloudSyncScene::SWITCH_ON, Fault::CFS_BRIEF_INFO_OPEN_CLOUD_SWITCH },
-    { CloudSyncScene::USER_CHANGE, Fault::CFS_BRIEF_INFO_USER_CHANGE },
-    { CloudSyncScene::USER_UNLOCK, Fault::CFS_BRIEF_INFO_USER_UNLOCK },
-    { CloudSyncScene::NETWORK_RECOVERY, Fault::CFS_BRIEF_INFO_NETWORK_RECOVERY },
-    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CFS_BRIEF_INFO_CLOUD_SYNC_TASK }
+    { CloudSyncScene::SWITCH_ON, Fault::CSF_BRIEF_INFO_OPEN_CLOUD_SWITCH },
+    { CloudSyncScene::USER_CHANGE, Fault::CSF_BRIEF_INFO_USER_CHANGED },
+    { CloudSyncScene::USER_UNLOCK, Fault::CSF_BRIEF_INFO_USER_UNLOCKED },
+    { CloudSyncScene::NETWORK_RECOVERY, Fault::CSF_BRIEF_INFO_NETWORK_RECOVERY },
+    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CSF_BRIEF_INFO_CLOUD_SYNC_TASK }
 };
 
 static std::map<CloudSyncScene, Fault> appSchemaErrs = {
-    { CloudSyncScene::ENABLE_CLOUD, Fault::CFS_APP_SCHEMA_ENABLE_CLOUD },
-    { CloudSyncScene::SWITCH_ON, Fault::CFS_APP_SCHEMA_OPEN_CLOUD_SWITCH },
-    { CloudSyncScene::QUERY_SYNC_INFO, Fault::CFS_APP_SCHEMA_QUERY_SYNC_INFO },
-    { CloudSyncScene::USER_CHANGE, Fault::CFS_APP_SCHEMA_USER_CHANGE },
-    { CloudSyncScene::USER_UNLOCK, Fault::CFS_APP_SCHEMA_USER_UNLOCK },
-    { CloudSyncScene::NETWORK_RECOVERY, Fault::CFS_APP_SCHEMA_NETWORK_RECOVERY },
-    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CFS_APP_SCHEMA_CLOUD_SYNC_TASK }
+    { CloudSyncScene::ENABLE_CLOUD, Fault::CSF_APP_SCHEMA_ENABLE_CLOUD },
+    { CloudSyncScene::SWITCH_ON, Fault::CSF_APP_SCHEMA_OPEN_CLOUD_SWITCH },
+    { CloudSyncScene::QUERY_SYNC_INFO, Fault::CSF_APP_SCHEMA_QUERY_SYNC_INFO },
+    { CloudSyncScene::USER_CHANGE, Fault::CSF_APP_SCHEMA_USER_CHANGED },
+    { CloudSyncScene::USER_UNLOCK, Fault::CSF_APP_SCHEMA_USER_UNLOCKED },
+    { CloudSyncScene::NETWORK_RECOVERY, Fault::CSF_APP_SCHEMA_NETWORK_RECOVERY },
+    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CSF_APP_SCHEMA_CLOUD_SYNC_TASK }
 };
 
 struct FaultMsg {

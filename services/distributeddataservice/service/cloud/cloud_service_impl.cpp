@@ -30,7 +30,6 @@
 #include "cloud_data_translate.h"
 #include "cloud_value_util.h"
 #include "communicator/device_manager_adapter.h"
-#include "dfx/dfx_types.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "hap_token_info.h"
@@ -131,15 +130,15 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     return SUCCESS;
 }
 
-void CloudServiceImpl::Report(int32_t user, OHOS::CloudData::CloudServiceImpl::CloudSyncScene sceneType,
-    int32_t errCode, const std::string &bundleName, const std::string &storeId)
+void CloudServiceImpl::Report(
+    int32_t user, CloudSyncScene sceneType, int32_t errCode, const std::string &bundleName, const std::string &storeId)
 {
     ArkDataFaultMsg msg = { .faultType = FaultType::CLOUD_SYNC_FAULT,
         .bundleName = bundleName,
         .moduleName = ModuleName::CLOUD_SERVER,
         .storeId = storeId,
         .errorType = GetCloudDfxError(sceneType, errCode),
-        .appendix = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user } };
+        .appendixMsg = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user } };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
@@ -604,7 +603,6 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
 {
     QueryLastResults results;
     auto user = Account::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    std::string anonStoreId = Anonymous::Change(storeId).c_str();
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         Report(user, CloudSyncScene::QUERY_SYNC_INFO, status, bundleName, storeId);
@@ -659,7 +657,8 @@ int32_t CloudServiceImpl::OnInitialize()
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     NetworkAdapter::GetInstance().RegOnNetworkChange();
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
-    Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+    Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT,
+        { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     std::vector<int> users;
     Account::GetInstance()->QueryUsers(users);
     for (auto user : users) {
@@ -696,10 +695,11 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     int32_t userId = atoi(user.c_str());
     ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
-          Anonymous::Change(account).c_str());
+        Anonymous::Change(account).c_str());
     switch (code) {
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED):
-            Execute(GenTask(0, userId, CloudSyncScene::USER_CHANGE, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+            Execute(GenTask(0, userId, CloudSyncScene::USER_CHANGE,
+                { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
@@ -707,7 +707,8 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
             Execute(GenTask(0, userId, CloudSyncScene::ACCOUNT_STOP, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE }));
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
-            Execute(GenTask(0, userId, CloudSyncScene::USER_UNLOCK,{ WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+            Execute(GenTask(0, userId, CloudSyncScene::USER_UNLOCK,
+                { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
             break;
         default:
             break;
@@ -730,8 +731,9 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
         return NETWORK_ERROR;
     }
     for (auto user : users) {
-        DoKvCloudSync(user, "", MODE_ONLINE); // todo 加场景
-        Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+        DoKvCloudSync(user, "", MODE_ONLINE);
+        Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY,
+            { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     }
     return SUCCESS;
 }
@@ -777,12 +779,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
         ZLOGD("cloud server is nullptr, user:%{public}d", userId);
         return { SERVER_UNAVAILABLE, cloudInfo };
     }
-    cloudInfo = instance->GetServerInfo(cloudInfo.user, false);
-    if (!cloudInfo.IsValid()) {
-        ZLOGE("cloud is empty, user:%{public}d", cloudInfo.user);
-        return { CLOUD_INFO_INVALID, cloudInfo };
-    }
-    return { SUCCESS, cloudInfo };
+    return instance->GetServerInfo(cloudInfo.user, false);
 }
 
 int32_t CloudServiceImpl::UpdateCloudInfoFromServer(int32_t user)
@@ -1284,17 +1281,17 @@ Fault CloudServiceImpl::GetCloudDfxError(CloudSyncScene scene, int32_t errCode)
     if (errCode == E_GET_CLOUD_USER_INFO) {
         auto dfxFault = userInfoErrs.find(scene);
         if (dfxFault != userInfoErrs.end()) {
-            return dfxFault.second;
+            return dfxFault->second;
         }
     } else if (errCode == E_GET_BRIEF_INFO) {
         auto dfxFault = briefInfoErrs.find(scene);
         if (dfxFault != briefInfoErrs.end()) {
-            return dfxFault.second;
+            return dfxFault->second;
         }
     } else if (errCode == E_GET_APP_SCHEMA) {
         auto dfxFault = appSchemaErrs.find(scene);
         if (dfxFault != appSchemaErrs.end()) {
-            return dfxFault.second;
+            return dfxFault->second;
         }
     }
     return Fault(-1);

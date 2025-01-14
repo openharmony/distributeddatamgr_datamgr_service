@@ -44,6 +44,7 @@
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
 using namespace DistributedDB;
+using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
@@ -402,8 +403,8 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
                 .bundleName = storeInfo_.bundleName,
                 .moduleName = ModuleName::KV_STORE,
                 .storeId = storeInfo_.storeName,
-                .errorType = Fault::CFS_GS_KVDB_CLOUD_SYNC,
-                .appendix = { .user = storeInfo_.user } };
+                .errorType = Fault::CSF_GS_KVDB_CLOUD_SYNC,
+                .appendixMsg = { .uid = storeInfo_.user } };
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
         }
     } else {

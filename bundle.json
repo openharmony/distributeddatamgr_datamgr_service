@@ -167,7 +167,7 @@
                     }
                 },
                 {
-                    "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx:distributeddata_dfx_static",
+                    "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx:distributeddata_dfx_fault_static",
                     "header": {
                         "header_files": [
                             "dfx_types.h",
