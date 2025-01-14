@@ -112,6 +112,7 @@ private:
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static HapInfo GetHapInfo(uint32_t tokenId);
+    static Fault GetCloudDfxError(CloudSyncScene scene, int32_t errCode);
 
     static constexpr uint64_t INVALID_SUB_TIME = 0;
     static constexpr int32_t RETRY_TIMES = 3;

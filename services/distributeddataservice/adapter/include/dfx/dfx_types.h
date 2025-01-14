@@ -134,6 +134,55 @@ enum class SecurityInfo {
     SENSITIVE_LEVEL_FAILE = 3,
 };
 
+enum class CloudSyncScene {
+    ENABLE_CLOUD = 0,
+    DISABLE_CLOUD = 1,
+    SWITCH_ON = 2,
+    SWITCH_OFF = 3,
+    QUERY_SYNC_INFO = 4,
+    USER_CHANGE = 5,
+    USER_UNLOCK = 6,
+    NETWORK_RECOVERY = 7,
+    CLOUD_SYNC_TASK = 8,
+    SUBSCRIBE = 9,
+    UNSUBSCRIBE = 10,
+    SERVICE_INIT = 11,
+    ACCOUNT_STOP = 12,
+};
+
+static std::map<CloudSyncScene, Fault> userInfoErrs = {
+    { CloudSyncScene::ENABLE_CLOUD, Fault::CSF_CLOUD_INFO_ENABLE_CLOUD },
+    { CloudSyncScene::DISABLE_CLOUD, Fault::CSF_CLOUD_INFO_DISABLE_CLOUD },
+    { CloudSyncScene::SWITCH_ON, Fault::CSF_CLOUD_INFO_OPEN_CLOUD_SWITCH },
+    { CloudSyncScene::SWITCH_OFF, Fault::CSF_CLOUD_INFO_CLOSE_CLOUD_SWITCH },
+    { CloudSyncScene::QUERY_SYNC_INFO, Fault::CSF_CLOUD_INFO_QUERY_SYNC_INFO },
+    { CloudSyncScene::USER_CHANGE, Fault::CSF_CLOUD_INFO_USER_CHANGED },
+    { CloudSyncScene::USER_UNLOCK, Fault::CSF_CLOUD_INFO_USER_UNLOCKED },
+    { CloudSyncScene::NETWORK_RECOVERY, Fault::CSF_CLOUD_INFO_NETWORK_RECOVERY },
+    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CSF_CLOUD_INFO_CLOUD_SYNC_TASK },
+    { CloudSyncScene::SUBSCRIBE, Fault::CSF_CLOUD_INFO_SUBSCRIBE },
+    { CloudSyncScene::UNSUBSCRIBE, Fault::CSF_CLOUD_INFO_UNSUBSCRIBE }
+};
+
+static std::map<CloudSyncScene, Fault> briefInfoErrs = {
+    { CloudSyncScene::ENABLE_CLOUD, Fault::CSF_BRIEF_INFO_ENABLE_CLOUD },
+    { CloudSyncScene::SWITCH_ON, Fault::CFS_BRIEF_INFO_OPEN_CLOUD_SWITCH },
+    { CloudSyncScene::USER_CHANGE, Fault::CFS_BRIEF_INFO_USER_CHANGE },
+    { CloudSyncScene::USER_UNLOCK, Fault::CFS_BRIEF_INFO_USER_UNLOCK },
+    { CloudSyncScene::NETWORK_RECOVERY, Fault::CFS_BRIEF_INFO_NETWORK_RECOVERY },
+    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CFS_BRIEF_INFO_CLOUD_SYNC_TASK }
+};
+
+static std::map<CloudSyncScene, Fault> appSchemaErrs = {
+    { CloudSyncScene::ENABLE_CLOUD, Fault::CFS_APP_SCHEMA_ENABLE_CLOUD },
+    { CloudSyncScene::SWITCH_ON, Fault::CFS_APP_SCHEMA_OPEN_CLOUD_SWITCH },
+    { CloudSyncScene::QUERY_SYNC_INFO, Fault::CFS_APP_SCHEMA_QUERY_SYNC_INFO },
+    { CloudSyncScene::USER_CHANGE, Fault::CFS_APP_SCHEMA_USER_CHANGE },
+    { CloudSyncScene::USER_UNLOCK, Fault::CFS_APP_SCHEMA_USER_UNLOCK },
+    { CloudSyncScene::NETWORK_RECOVERY, Fault::CFS_APP_SCHEMA_NETWORK_RECOVERY },
+    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CFS_APP_SCHEMA_CLOUD_SYNC_TASK }
+};
+
 struct FaultMsg {
     FaultType faultType;
     std::string moduleName;

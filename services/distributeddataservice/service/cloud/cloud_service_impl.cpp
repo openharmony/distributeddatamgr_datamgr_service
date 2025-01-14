@@ -1279,6 +1279,27 @@ CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
     return { tokenInfo.userID, tokenInfo.instIndex, tokenInfo.bundleName };
 }
 
+Fault CloudServiceImpl::GetCloudDfxError(CloudSyncScene scene, int32_t errCode)
+{
+    if (errCode == E_GET_CLOUD_USER_INFO) {
+        auto dfxFault = userInfoErrs.find(scene);
+        if (dfxFault != userInfoErrs.end()) {
+            return dfxFault.second;
+        }
+    } else if (errCode == E_GET_BRIEF_INFO) {
+        auto dfxFault = briefInfoErrs.find(scene);
+        if (dfxFault != briefInfoErrs.end()) {
+            return dfxFault.second;
+        }
+    } else if (errCode == E_GET_APP_SCHEMA) {
+        auto dfxFault = appSchemaErrs.find(scene);
+        if (dfxFault != appSchemaErrs.end()) {
+            return dfxFault.second;
+        }
+    }
+    return Fault(-1);
+}
+
 int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participants &participants, Results &results)
 {
     XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
