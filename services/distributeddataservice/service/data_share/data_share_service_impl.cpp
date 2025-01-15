@@ -38,6 +38,7 @@
 #include "dump/dump_manager.h"
 #include "extension_ability_manager.h"
 #include "hap_token_info.h"
+#include "hiview_adapter.h"
 #include "if_system_ability_manager.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -101,17 +102,24 @@ DataShareServiceImpl::Factory::~Factory() {}
 std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &uri, const std::string &extUri,
     const DataShareValuesBucket &valuesBucket)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    std::string func = __FUNCTION__;
+    XCollie xcollie(func, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return std::make_pair(ERROR, 0);
     }
-    auto callBack = [&uri, &valuesBucket, this](ProviderInfo &providerInfo, DistributedData::StoreMetaData &metaData,
+    auto callingTokenId = IPCSkeleton::GetCallingTokenID();
+    auto callBack = [&uri, &valuesBucket, this, &callingTokenId, &func](ProviderInfo &providerInfo,
+        DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
+            func, callingTokenId);
         auto [errCode, ret] = dbDelegate->InsertEx(providerInfo.tableName, valuesBucket);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
+        } else {
+            ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
         return std::make_pair(errCode, ret);
     };
@@ -141,48 +149,62 @@ bool DataShareServiceImpl::NotifyChange(const std::string &uri)
 std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    std::string func = __FUNCTION__;
+    XCollie xcollie(func, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return std::make_pair(ERROR, 0);
     }
-    auto callBack = [&uri, &predicate, &valuesBucket, this](ProviderInfo &providerInfo,
+    auto callingTokenId = IPCSkeleton::GetCallingTokenID();
+    auto callBack = [&uri, &predicate, &valuesBucket, this, &callingTokenId, &func](ProviderInfo &providerInfo,
         DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
+            func, callingTokenId);
         auto [errCode, ret] = dbDelegate->UpdateEx(providerInfo.tableName, predicate, valuesBucket);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
+        } else {
+            ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
         return std::make_pair(errCode, ret);
     };
-    return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return ExecuteEx(uri, extUri, callingTokenId, false, callBack);
 }
 
 std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicate)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    std::string func = __FUNCTION__;
+    XCollie xcollie(func, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
         return std::make_pair(ERROR, 0);
     }
-    auto callBack = [&uri, &predicate, this](ProviderInfo &providerInfo, DistributedData::StoreMetaData &metaData,
+    auto callingTokenId = IPCSkeleton::GetCallingTokenID();
+    auto callBack = [&uri, &predicate, this, &callingTokenId, &func](ProviderInfo &providerInfo,
+        DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
+            func, callingTokenId);
         auto [errCode, ret] = dbDelegate->DeleteEx(providerInfo.tableName, predicate);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
+        } else {
+            ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
         return std::make_pair(errCode, ret);
     };
-    return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
+    return ExecuteEx(uri, extUri, callingTokenId, false, callBack);
 }
 
 std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
 {
-    XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
+    std::string func = __FUNCTION__;
+    XCollie xcollie(std::string(LOG_TAG) + "::" + func,
         HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
     if (GetSilentProxyStatus(uri, false) != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
@@ -190,14 +212,21 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     }
     std::shared_ptr<DataShareResultSet> resultSet;
     auto callingPid = IPCSkeleton::GetCallingPid();
-    auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid](ProviderInfo &providerInfo,
-            DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+    auto callingTokenId = IPCSkeleton::GetCallingTokenID();
+    auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid, &callingTokenId, &func, this]
+        (ProviderInfo &providerInfo, DistributedData::StoreMetaData &,
+        std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
+            func, callingTokenId);
         auto [err, result] = dbDelegate->Query(providerInfo.tableName,
-            predicates, columns, callingPid);
+            predicates, columns, callingPid, callingTokenId);
+        if (err != E_OK) {
+            ReportExcuteFault(callingTokenId, providerInfo, err, func);
+        }
         resultSet = std::move(result);
         return std::make_pair(err, E_OK);
     };
-    auto [errVal, status] = ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), true, callBack);
+    auto [errVal, status] = ExecuteEx(uri, extUri, callingTokenId, true, callBack);
     errCode = errVal;
     return resultSet;
 }
@@ -530,6 +559,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
+    HiViewAdapter::GetInstance().SetThreadPool(binderInfo.executors);
     SubscribeCommonEvent();
     SubscribeTimeChanged();
     SubscribeChange();
@@ -1070,5 +1100,14 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
             break;
     }
     return E_OK;
+}
+
+void DataShareServiceImpl::ReportExcuteFault(uint32_t callingTokenId, DataProviderConfig::ProviderInfo &providerInfo,
+    int32_t errCode, std::string &func)
+{
+    std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(callingTokenId).first;
+    DataShareFaultInfo faultInfo = {CURD_FAILED, providerInfo.bundleName, providerInfo.moduleName,
+        providerInfo.storeName, func, errCode, appendix};
+    HiViewFaultAdapter::ReportDataFault(faultInfo);
 }
 } // namespace OHOS::DataShare
