@@ -54,6 +54,7 @@ enum GeneralError : int32_t {
     E_FILE_NOT_EXIST,
     E_SCREEN_LOCKED,
     E_USER_DEACTIVATING,
+    E_SKIP_ASSET,
     E_BUTT,
 };
 }

@@ -107,9 +107,10 @@ DBStatus RdbAssetLoader::ConvertStatus(AssetStatus error)
 {
     switch (error) {
         case AssetStatus::STATUS_NORMAL:
-            return DBStatus::OK;
         case AssetStatus::STATUS_DOWNLOADING:
             return DBStatus::OK;
+        case AssetStatus::STATUS_SKIP_ASSET:
+            return DBStatus::SKIP_ASSET;
         default:
             ZLOGE("error:0x%{public}x", error);
             break;
