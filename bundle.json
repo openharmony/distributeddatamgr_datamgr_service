@@ -3,7 +3,7 @@
     "version": "3.2.0",
     "description": "Distributed data manager that provides the capability to store data in the databases of different devices",
     "homePage": "https://gitee.com/openharmony",
-    "license": "Apache V2",
+    "license": "Apache-2.0",
     "repository": "https://gitee.com/openharmony/distributeddatamgr_datamgr_service",
     "domain": "os",
     "language": "",
