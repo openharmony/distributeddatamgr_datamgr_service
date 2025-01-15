@@ -74,5 +74,12 @@ std::string SecretKeyMetaData::GetBackupPrefix(const std::initializer_list<std::
     prefix.append(Constant::KEY_SEPARATOR);
     return prefix;
 }
+
+std::string SecretKeyMetaData::GetCloneKey(const std::initializer_list<std::string> &fields)
+{
+    std::string prefix = CLONE_KEY_PREFIX;
+    prefix.append(Constant::KEY_SEPARATOR).append(GetKey(fields));
+    return prefix;
+}
 } // namespace DistributedData
 } // namespace OHOS

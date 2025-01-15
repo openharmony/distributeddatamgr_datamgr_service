@@ -14,6 +14,8 @@
  */
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_CRYPTO_CRYPTO_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_CRYPTO_CRYPTO_MANAGER_H
+
+#include <mutex>
 #include <cstdint>
 #include <vector>
 #include "visibility.h"
@@ -25,7 +27,10 @@ public:
     int32_t GenerateRootKey();
     int32_t CheckRootKey();
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key);
+    std::vector<uint8_t> BackupKeyEncrypt(const std::vector<uint8_t> &key);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
+    bool BackupKeyDecrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
+    bool ImportBackupKey(const std::string &key, const std::string &iv);
 
     enum ErrCode : int32_t {
         SUCCESS,
@@ -33,16 +38,28 @@ public:
         ERROR,
     };
 private:
+    enum RootKeys {
+        rootKey,
+        backupKey,
+    };
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
+    static constexpr const char *BACKUP_KEY_ALIAS = "distributed_db_backup_key";
     static constexpr const char *HKS_BLOB_TYPE_NONCE = "Z5s0Bo571KoqwIi6";
     static constexpr const char *HKS_BLOB_TYPE_AAD = "distributeddata";
     static constexpr int KEY_SIZE = 32;
+    static constexpr int AES_256_NONCE_SIZE = 32;
     static constexpr int HOURS_PER_YEAR = (24 * 365);
+
+    std::vector<uint8_t> EncryptInner(const std::vector<uint8_t> &key, const RootKeys type);
+    bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const RootKeys type);
     CryptoManager();
     ~CryptoManager();
     std::vector<uint8_t> vecRootKeyAlias_{};
+    std::vector<uint8_t> vecBackupKeyAlias_{};
     std::vector<uint8_t> vecNonce_{};
     std::vector<uint8_t> vecAad_{};
+    std::vector<uint8_t> backupNonce_{};
+    std::mutex mutex_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_CRYPTO_CRYPTO_MANAGER_H

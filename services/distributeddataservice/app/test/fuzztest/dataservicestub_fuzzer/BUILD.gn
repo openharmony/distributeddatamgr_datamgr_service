@@ -63,6 +63,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",

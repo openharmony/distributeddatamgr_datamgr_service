@@ -62,7 +62,7 @@ config("module_private_config") {
     "${data_service_path}/service/app_id_mapping/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/dumper/include",
-
+    "${data_service_path}/service/data_share/common",
     # for ipc_core interfaces.
     "include",
     "src",
@@ -94,6 +94,7 @@ ohos_shared_library("distributeddataservice") {
   }
   sources = [
     "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/service/data_share/common/base64_utils.cpp",
     "src/db_info_handle_impl.cpp",
     "src/feature_stub_impl.cpp",
     "src/kvstore_account_observer.cpp",
@@ -108,6 +109,8 @@ ohos_shared_library("distributeddataservice") {
     "src/session_manager/session_manager.cpp",
     "src/session_manager/upgrade_manager.cpp",
     "src/task_manager.cpp",
+    "src/clone/clone_backup_info.cpp",
+    "src/clone/secret_key_backup_data.cpp",
   ]
 
   if (datamgr_service_power) {

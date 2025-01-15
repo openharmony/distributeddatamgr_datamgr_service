@@ -16,11 +16,14 @@
 #ifndef KVSTORE_DATASERVICE_H
 #define KVSTORE_DATASERVICE_H
 
+#include <fcntl.h>
 #include <map>
 #include <mutex>
 #include <set>
 
 #include "account_delegate.h"
+#include "clone/clone_backup_info.h"
+#include "clone/secret_key_backup_data.h"
 #include "feature_stub_impl.h"
 #include "ikvstore_data_service.h"
 #include "ithread_pool.h"
@@ -35,6 +38,7 @@
 #include "system_ability.h"
 #include "executor_pool.h"
 #include "types.h"
+#include "unique_fd.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -59,6 +63,8 @@ public:
         std::set<std::string> storeIDs;
     };
     using StoreMetaData = DistributedData::StoreMetaData;
+    using SecretKeyBackupData = DistributedData::SecretKeyBackupData;
+    using CloneBackupInfo = DistributedData::CloneBackupInfo;
     // record kvstore meta version for compatible, should update when modify kvstore meta structure.
     static constexpr uint32_t STORE_VERSION = 0x03000001;
 
@@ -123,7 +129,16 @@ public:
 
     int32_t OnScreenUnlocked(int32_t user);
 
-private:
+    int32_t OnExtension(const std::string& extension, MessageParcel& data, MessageParcel& reply) override;
+    ErrCode OnBackup(MessageParcel& data, MessageParcel& reply);
+    ErrCode OnRestore(MessageParcel& data, MessageParcel& reply);
+    int32_t OnRestoreTest();
+    static std::string SetBackupReplyCode(int replyCode, const std::string &info);
+    static bool GetSecretKeyBackup(
+        const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
+        const std::string &userId, std::string &content);
+
+  private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
     class KvStoreClientDeathObserverImpl {
     public:
@@ -172,6 +187,10 @@ private:
     void LoadConfigs();
 
     void InitExecutor();
+
+    bool ParseBackupSecretKey(UniqueFd &fd, SecretKeyBackupData &backupData);
+
+    int32_t RestoreSecretKey(const SecretKeyBackupData &backupData, const CloneBackupInfo &backupInfo);
 
     static constexpr int TEN_SEC = 10;
 

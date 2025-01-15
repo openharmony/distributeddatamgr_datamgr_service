@@ -6,7 +6,8 @@
             "libpath": "libdistributeddataservice.z.so",
             "run-on-create": true,
             "distributed": false,
-            "dump_level": 1
+            "dump_level": 1,
+            "extension": ["backup", "restore"]
         }
     ]
 }
