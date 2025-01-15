@@ -88,12 +88,23 @@ static DBSchema GetDBSchema(const Database &database)
     return schema;
 }
 
+void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
+{
+    storeInfo_.tokenId = meta.tokenId;
+    storeInfo_.bundleName = meta.bundleName;
+    storeInfo_.storeName = meta.storeId;
+    storeInfo_.instanceId = meta.instanceId;
+    storeInfo_.user = std::stoi(meta.user);
+    storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+}
+
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     : manager_(meta.appId, meta.user, meta.instanceId), tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
 {
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
     RelationalStoreDelegate::Option option;
+    option.syncDualTupleMode = true;
     option.observer = &observer_;
     if (meta.isEncrypt) {
         std::string key = meta.GetSecretKey();
@@ -122,12 +133,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
         }
     }
 
-    storeInfo_.tokenId = meta.tokenId;
-    storeInfo_.bundleName = meta.bundleName;
-    storeInfo_.storeName = meta.storeId;
-    storeInfo_.instanceId = meta.instanceId;
-    storeInfo_.user = std::stoi(meta.user);
-    storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    InitStoreInfo(meta);
     if (meta.isSearchable) {
         syncNotifyFlag_ |= SEARCHABLE_FLAG;
     }
