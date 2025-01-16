@@ -32,34 +32,37 @@ SchedulerManager &SchedulerManager::GetInstance()
     return instance;
 }
 
-void SchedulerManager::Execute(const std::string &uri, const int32_t userId, DistributedData::StoreMetaData &metaData)
+void SchedulerManager::Execute(const std::string &uri, const int32_t userId, const std::string &rdbDir, int version,
+    const std::string &bundleName)
 {
     if (!URIUtils::IsDataProxyURI(uri)) {
         return;
     }
-    metaData.user = std::to_string(userId);
-    auto delegate = DBDelegate::Create(metaData);
+    DistributedData::StoreMetaData meta;
+    meta.dataDir = rdbDir;
+    meta.bundleName = bundleName;
+    auto delegate = DBDelegate::Create(meta);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return;
     }
     std::vector<Key> keys = RdbSubscriberManager::GetInstance().GetKeysByUri(uri);
     for (auto const &key : keys) {
-        ExecuteSchedulerSQL(userId, metaData, key, delegate);
+        ExecuteSchedulerSQL(rdbDir, userId, version, key, delegate);
     }
 }
 
-void SchedulerManager::Execute(const Key &key, const int32_t userId, const DistributedData::StoreMetaData &metaData)
+void SchedulerManager::Execute(const Key &key, const int32_t userId, const std::string &rdbDir, int version)
 {
-    DistributedData::StoreMetaData meta = metaData;
+    DistributedData::StoreMetaData meta;
+    meta.dataDir = rdbDir;
     meta.bundleName = key.bundleName;
-    meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(meta);
     if (delegate == nullptr) {
         ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
         return;
     }
-    ExecuteSchedulerSQL(userId, meta, key, delegate);
+    ExecuteSchedulerSQL(rdbDir, userId, version, key, delegate);
 }
 
 bool SchedulerManager::SetTimerTask(uint64_t &timerId, const std::function<void()> &callback,
@@ -93,7 +96,7 @@ void SchedulerManager::ResetTimerTask(int64_t timerId, int64_t reminderTime)
 }
 
 void SchedulerManager::SetTimer(
-    const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key, int64_t reminderTime)
+    const std::string &dbPath, const int32_t userId, int version, const Key &key, int64_t reminderTime)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (executor_ == nullptr) {
@@ -118,7 +121,7 @@ void SchedulerManager::SetTimer(
         ResetTimerTask(timerId, reminderTime);
         return;
     }
-    auto callback = [key, metaData, userId, this]() {
+    auto callback = [key, dbPath, version, userId, this]() {
         ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
             "%{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
             key.subscriberId, key.bundleName.c_str());
@@ -132,8 +135,8 @@ void SchedulerManager::SetTimer(
             }
         }
         DestoryTimerTask(timerId);
-        Execute(key, userId, metaData);
-        RdbSubscriberManager::GetInstance().EmitByKey(key, userId, metaData);
+        Execute(key, userId, dbPath, version);
+        RdbSubscriberManager::GetInstance().EmitByKey(key, userId, dbPath, version);
     };
     uint64_t timerId = 0;
     if (!SetTimerTask(timerId, callback, reminderTime)) {
@@ -145,8 +148,8 @@ void SchedulerManager::SetTimer(
     timerCache_.emplace(key, timerId);
 }
 
-void SchedulerManager::ExecuteSchedulerSQL(const int32_t userId, DistributedData::StoreMetaData &metaData,
-    const Key &key, std::shared_ptr<DBDelegate> delegate)
+void SchedulerManager::ExecuteSchedulerSQL(const std::string &rdbDir, const int32_t userId, int version, const Key &key,
+    std::shared_ptr<DBDelegate> delegate)
 {
     Template tpl;
     if (!TemplateManager::GetInstance().Get(key, userId, tpl)) {
@@ -159,7 +162,7 @@ void SchedulerManager::ExecuteSchedulerSQL(const int32_t userId, DistributedData
             DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
-    GenRemindTimerFuncParams(userId, metaData, key, tpl.scheduler_);
+    GenRemindTimerFuncParams(rdbDir, userId, version, key, tpl.scheduler_);
     auto resultSet = delegate->QuerySql(tpl.scheduler_);
     if (resultSet == nullptr) {
         ZLOGE("resultSet is nullptr, %{public}s, %{public}" PRId64 ", %{public}s",
@@ -178,7 +181,7 @@ void SchedulerManager::ExecuteSchedulerSQL(const int32_t userId, DistributedData
 }
 
 void SchedulerManager::GenRemindTimerFuncParams(
-    const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key, std::string &schedulerSQL)
+    const std::string &rdbDir, const int32_t userId, int version, const Key &key, std::string &schedulerSQL)
 {
     auto index = schedulerSQL.find(REMIND_TIMER_FUNC);
     if (index == std::string::npos) {
@@ -186,9 +189,9 @@ void SchedulerManager::GenRemindTimerFuncParams(
         return;
     }
     index += REMIND_TIMER_FUNC_LEN;
-    std::string keyStr = "'" + metaData.dataDir + "', " + std::to_string(metaData.tokenId) + ", '" + key.uri + "', " +
+    std::string keyStr = "'" + rdbDir + "', " + std::to_string(version) + ", '" + key.uri + "', " +
                          std::to_string(key.subscriberId) + ", '" + key.bundleName + "', " + std::to_string(userId) +
-                         ", '" + metaData.storeId + "', " + std::to_string(metaData.haMode) + ", ";
+                         ", ";
     schedulerSQL.insert(index, keyStr);
     return;
 }
