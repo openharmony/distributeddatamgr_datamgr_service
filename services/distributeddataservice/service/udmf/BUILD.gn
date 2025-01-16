@@ -56,6 +56,7 @@ ohos_source_set("udmf_server") {
     "permission/uri_permission_manager.cpp",
     "preprocess/data_handler.cpp",
     "preprocess/preprocess_utils.cpp",
+    "preprocess/udmf_dialog.cpp",
     "store/runtime_store.cpp",
     "store/store_account_observer.cpp",
     "store/store_cache.cpp",
@@ -76,10 +77,13 @@ ohos_source_set("udmf_server") {
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
   ]
+  defines = []
 
   external_deps = [
     "ability_base:zuri",
+    "ability_runtime:ability_manager",
     "ability_runtime:uri_permission_mgr",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
@@ -102,4 +106,11 @@ ohos_source_set("udmf_server") {
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
+
+  if (window_manager_use_sceneboard) {
+    external_deps += [ "window_manager:libwm_lite" ]
+    defines += [ "SCENE_BOARD_ENABLE" ]
+  } else {
+    external_deps += [ "window_manager:libwm" ]
+  }
 }

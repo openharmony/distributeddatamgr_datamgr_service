@@ -61,6 +61,7 @@ enum GeneralError : int32_t {
     E_GET_APP_SCHEMA,
     E_CONNECT_ASSET_LOADER,
     E_CONNECT_CLOUD_DB,
+    E_SKIP_ASSET,
     E_BUTT,
 };
 }

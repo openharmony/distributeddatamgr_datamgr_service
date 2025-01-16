@@ -69,6 +69,7 @@ struct Asset {
         STATUS_DELETE,
         STATUS_ABNORMAL,
         STATUS_DOWNLOADING,
+        STATUS_SKIP_ASSET,
         STATUS_BUTT
     };
 

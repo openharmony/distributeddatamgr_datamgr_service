@@ -48,6 +48,7 @@ public:
             ServiceFault();
             RuntimeFault();
             DatabaseFault();
+            CloudSyncFault();
             CommunicationFault();
             DatabaseStatistic();
             VisitStatistic();

@@ -948,6 +948,11 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
         return { ERROR, schemaMeta };
     }
     std::tie(status, schemaMeta) = GetAppSchemaFromServer(userId, bundleName);
+    if (status == NOT_SUPPORT) {
+        ZLOGW("app not support, del cloudInfo! userId:%{public}d, bundleName:%{public}s", userId, bundleName.c_str());
+        MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+        return { status, schemaMeta };
+    }
     if (status != SUCCESS) {
         return { status, schemaMeta };
     }

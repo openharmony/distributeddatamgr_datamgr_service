@@ -22,7 +22,7 @@
 using namespace testing::ext;
 using namespace OHOS::DistributedDataDfx;
 
-class DistributedataDfxUTTest : public testing::Test {
+class DistributeddataDfxUTTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
 
@@ -33,27 +33,23 @@ public:
     void TearDown();
 };
 
-void DistributedataDfxUTTest::SetUpTestCase()
+void DistributeddataDfxUTTest::SetUpTestCase()
 {
     FakeHivew::Clear();
-}
-
-void DistributedataDfxUTTest::TearDownTestCase()
-{
-    FakeHivew::Clear();
-}
-
-void DistributedataDfxUTTest::SetUp()
-{
     size_t max = 12;
     size_t min = 5;
     Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
 }
 
-void DistributedataDfxUTTest::TearDown()
+void DistributeddataDfxUTTest::TearDownTestCase()
 {
     Reporter::GetInstance()->SetThreadPool(nullptr);
+    FakeHivew::Clear();
 }
+
+void DistributeddataDfxUTTest::SetUp() {}
+
+void DistributeddataDfxUTTest::TearDown() {}
 
 /**
   * @tc.name: Dfx001
@@ -62,7 +58,7 @@ void DistributedataDfxUTTest::TearDown()
   * @tc.require: AR000CQE1L SR000CQE1J
   * @tc.author: hongbo
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx001, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx001, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. getcommunicationFault instance
@@ -104,7 +100,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx001, TestSize.Level0)
   * @tc.require: AR000CQE1L AR000CQE1K SR000CQE1J
   * @tc.author: hongbo
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx002, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx002, TestSize.Level0)
 {
     FakeHivew::Clear();
     /**
@@ -140,7 +136,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx002, TestSize.Level0)
   * @tc.require: AR000CQE1O SR000CQE1J
   * @tc.author: hongbo
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx003, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx003, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. get database reporter instance.
@@ -165,7 +161,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx003, TestSize.Level0)
   * @tc.require: AR000CQE1L SR000CQE1J
   * @tc.author: hongbo
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx004, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx004, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. Get runtime fault instance.
@@ -202,7 +198,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx004, TestSize.Level0)
   * @tc.require: AR000CQE1P SR000CQE1J
   * @tc.author: hongbo
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx005, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx005, TestSize.Level0)
 {
     /**
      * @tc.steps:step1. send data to 1 device
@@ -228,7 +224,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx005, TestSize.Level0)
   * @tc.require: AR000CQE1N SR000CQE1J
   * @tc.author: hongbo
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx006, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx006, TestSize.Level0)
 {
     /**
      * @tc.steps:step1. create call interface statistic instance
@@ -258,7 +254,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx006, TestSize.Level0)
   * @tc.require: AR000DPVGP SR000DPVGH
   * @tc.author: liwei
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx007, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx007, TestSize.Level0)
 {
     /**
      * @tc.steps:step1. create call api perforamnce statistic instance
@@ -283,7 +279,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx007, TestSize.Level0)
   * @tc.type: send data
   * @tc.author: nhj
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx008, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx008, TestSize.Level0)
 {
      /**
      * @tc.steps: step1. get database fault report instance
@@ -321,7 +317,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx008, TestSize.Level0)
   * @tc.type: CreateKvStore test
   * @tc.author: nhj
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx009, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx009, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. Get runtime fault instance.
@@ -357,7 +353,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx009, TestSize.Level0)
   * @tc.type: check database file size.
   * @tc.author: nhj
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx010, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx010, TestSize.Level0)
 {
     /**
      * @tc.steps: step1. get database reporter instance.
@@ -389,7 +385,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx010, TestSize.Level0)
   * @tc.type: Send data
   * @tc.author: nhj
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx011, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx011, TestSize.Level0)
 {
      /**
      * @tc.steps: step1. get database fault report instance
@@ -433,7 +429,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx011, TestSize.Level0)
   * @tc.type: send data
   * @tc.author: nhj
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx012, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx012, TestSize.Level0)
 {
     /**
      * @tc.steps:step1. send data to 1 device
@@ -462,7 +458,7 @@ HWTEST_F(DistributedataDfxUTTest, Dfx012, TestSize.Level0)
   * @tc.type:
   * @tc.author: nhj
   */
-HWTEST_F(DistributedataDfxUTTest, Dfx013, TestSize.Level0)
+HWTEST_F(DistributeddataDfxUTTest, Dfx013, TestSize.Level0)
 {
     /**
      * @tc.steps:step1. create call api perforamnce statistic instance

@@ -24,6 +24,7 @@
 #include "datashare_result_set.h"
 #include "datashare_values_bucket.h"
 #include "executor_pool.h"
+#include "hiview_fault_adapter.h"
 #include "metadata/store_meta_data.h"
 #include "result_set.h"
 #include "serializable/serializable.h"
@@ -39,7 +40,7 @@ public:
     static void Close(const Filter &filter);
     virtual std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,
-        const int32_t callingPid) = 0;
+        int32_t callingPid, uint32_t callingTokenId) = 0;
     virtual std::string Query(
         const std::string &sql, const std::vector<std::string> &selectionArgs = std::vector<std::string>()) = 0;
     virtual std::shared_ptr<NativeRdb::ResultSet> QuerySql(const std::string &sql) = 0;
