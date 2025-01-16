@@ -14,18 +14,13 @@
  */
 
 #include "communication_provider.h"
-#include "ark_communication_provider.h"
+#include "communication_provider_impl.h"
 
 namespace OHOS {
 namespace AppDistributedKv {
 CommunicationProvider &CommunicationProvider::GetInstance()
 {
-    return ArkCommunicationProvider::Init();
-}
-
-std::shared_ptr<CommunicationProvider> CommunicationProvider::MakeCommunicationProvider()
-{
-    static std::shared_ptr<CommunicationProvider> instance(&ArkCommunicationProvider::Init(), [](void *) {});
+    static CommunicationProviderImpl instance;
     return instance;
 }
 }  // namespace AppDistributedKv

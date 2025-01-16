@@ -37,7 +37,10 @@ ohos_source_set("distributeddata_matrix") {
     "-Oz",
   ]
 
-  include_dirs = [ "${data_service_path}/service/bootstrap/include" ]
+  include_dirs = [
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
   configs = [ ":matrix_public_config" ]
   public_configs = [ ":matrix_public_config" ]
   cflags = [
@@ -49,11 +52,11 @@ ohos_source_set("distributeddata_matrix") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
   ]
   external_deps = [
+    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]

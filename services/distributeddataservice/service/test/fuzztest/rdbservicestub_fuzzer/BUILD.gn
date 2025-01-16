@@ -48,6 +48,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${relational_store_path}/interfaces/inner_api/rdb/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
     "//third_party/json/single_include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   fuzz_config_file =
@@ -96,12 +97,12 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${kv_store_distributeddb_path}:distributeddb",
     "${relational_store_inner_api_path}:native_rdb_static",
+    "${data_service_path}/adapter/account:distributeddata_account"
   ]
 
   external_deps = [

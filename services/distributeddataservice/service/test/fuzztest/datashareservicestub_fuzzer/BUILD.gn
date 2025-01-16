@@ -37,6 +37,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
     "//third_party/json/single_include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   fuzz_config_file =
@@ -101,8 +102,9 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator"
   ]
 
   external_deps = [
@@ -131,6 +133,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "resource_management:global_resmgr",
     "samgr:samgr_proxy",
     "time_service:time_client",
+    "kv_store:distributeddata_inner"
   ]
 }
 

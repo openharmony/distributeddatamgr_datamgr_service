@@ -13,7 +13,7 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_static_library("distributeddata_account_static") {
+ohos_source_set("distributeddata_account") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -31,9 +31,8 @@ ohos_static_library("distributeddata_account_static") {
     "../include/permission",
     "../include/utils",
     "./src",
-    "${kv_store_common_path}",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include/account",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -47,6 +46,7 @@ ohos_static_library("distributeddata_account_static") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
+    "kv_store:datamgr_common",
   ]
 
   if (os_account_part_is_enabled) {

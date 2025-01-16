@@ -54,6 +54,7 @@ config("module_private_config") {
     "../../../../interfaces/innerkits/distributeddata",
     "../../service/dumper/include",
     "//third_party/json/single_include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   if (datamgr_service_power) {
@@ -119,14 +120,13 @@ ohos_unittest("KvStoreDataServiceTest") {
   }
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "//third_party/googletest:gtest_main",
   ]
   part_name = "datamgr_service"
@@ -177,11 +177,10 @@ ohos_unittest("SessionManagerTest") {
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster",
+    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
@@ -219,7 +218,6 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   deps = [
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -288,14 +286,13 @@ ohos_unittest("KvStoreDataServiceClearTest") {
   }
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "//third_party/googletest:gtest_main",
   ]
 
@@ -360,7 +357,6 @@ ohos_unittest("FeatureStubImplTest") {
   }
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",

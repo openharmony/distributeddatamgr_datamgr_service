@@ -26,11 +26,6 @@ config("module_dfx_mst_config") {
     "../../include/log",
     "../../include/autils",
     "../../include/dfx",
-    "${kv_store_path}/interfaces/inner_api/distributeddata/include",
-    "//commonlibrary/c_utils/base/include",
-    "//utils/system/safwk/native/include",
-    "//third_party/openssl/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 }
 
@@ -47,13 +42,10 @@ ohos_unittest("DistributeddataDfxMSTTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [
-    "../../dfx:distributeddata_dfx_static",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
-  ]
+  deps = [ "../../dfx:distributeddata_dfx" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -70,10 +62,6 @@ config("module_dfx_config") {
     "../../include/log",
     "../../include/autils",
     "../../include/dfx",
-    "//commonlibrary/c_utils/base/include",
-    "//utils/system/safwk/native/include",
-    "//third_party/openssl/include/",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
   ]
 }
 
@@ -106,12 +94,9 @@ ohos_unittest("DistributeddataDfxUTTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
-  ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

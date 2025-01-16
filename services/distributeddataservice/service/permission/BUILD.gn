@@ -30,6 +30,7 @@ ohos_source_set("distributeddata_permit") {
   sources = [
     "../kvdb/user_delegate.cpp",
     "src/permit_delegate.cpp",
+    "src/permission_validator.cpp"
   ]
 
   cflags_cc = [
@@ -40,6 +41,7 @@ ohos_source_set("distributeddata_permit") {
   include_dirs = [
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/kvdb",
+    "${data_service_path}/adapter/include/communicator"
   ]
   configs = [ ":permission_public_config" ]
   public_configs = [ ":permission_public_config" ]
@@ -52,7 +54,6 @@ ohos_source_set("distributeddata_permit") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/crypto:distributeddata_crypto",
   ]
@@ -63,6 +64,7 @@ ohos_source_set("distributeddata_permit") {
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "device_manager:devicemanagersdk"
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

@@ -26,13 +26,7 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "${data_service_path}/adapter/include/autils",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/communicator/src",
-    "${data_service_path}/framework/include",
-    "${dsoftbus_core_path}",
-    "${kv_store_common_path}",
-    "${kv_store_distributeddb_path}/interfaces/include",
-    "${kv_store_distributeddb_path}/include",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "${data_service_path}/framework/include"
   ]
 
   fuzz_config_file = "${data_service_path}/adapter/communicator/test/fuzztest/softbusadapter_fuzzer"
@@ -47,9 +41,8 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
   sources = [ "softbusadapter_fuzzer.cpp" ]
 
   deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
-    "${data_service_path}/adapter/dfx:distributeddata_dfx_static",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
   ]
 
   external_deps = [
@@ -57,6 +50,8 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb"
   ]
 }
 

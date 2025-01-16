@@ -50,6 +50,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/adapter/include",
     "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "//third_party/json/single_include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   fuzz_config_file =
@@ -82,14 +83,14 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${kv_store_distributeddb_path}:distributeddb",
   ]
 

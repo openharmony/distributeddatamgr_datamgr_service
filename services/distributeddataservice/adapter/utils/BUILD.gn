@@ -13,7 +13,7 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_static_library("distributeddata_utils_static") {
+ohos_source_set("distributeddata_utils") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -35,15 +35,14 @@ ohos_static_library("distributeddata_utils_static") {
     "../include/utils",
     "../include/log",
     "../include/communicator",
-    "../include/dfx",
-    "${kv_store_common_path}",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "../include/dfx"
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "kv_store:datamgr_common"
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
