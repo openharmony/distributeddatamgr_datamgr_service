@@ -112,9 +112,22 @@ private:
         std::string bundleName;
     };
 
+    enum class CloudSyncScene {
+        ENABLE_CLOUD = 0,
+        DISABLE_CLOUD = 1,
+        SWITCH_ON = 2,
+        SWITCH_OFF = 3,
+        QUERY_SYNC_INFO = 4,
+        USER_CHANGE = 5,
+        USER_UNLOCK = 6,
+        NETWORK_RECOVERY = 7,
+        SERVICE_INIT = 8,
+        ACCOUNT_STOP = 9,
+    };
+
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static HapInfo GetHapInfo(uint32_t tokenId);
-    static Fault GetCloudDfxError(CloudSyncScene scene, int32_t errCode);
+    static std::string GetDfxFaultType(CloudSyncScene scene);
 
     static constexpr uint64_t INVALID_SUB_TIME = 0;
     static constexpr int32_t RETRY_TIMES = 3;
@@ -169,8 +182,8 @@ private:
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
-    void Report(int32_t user, CloudSyncScene sceneType, int32_t errCode, const std::string &bundleName,
-        const std::string &storeId);
+    void Report(
+        const std::string &faultType, int32_t errCode, const std::string &bundleName, const std::string &appendix);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

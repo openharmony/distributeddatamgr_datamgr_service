@@ -539,11 +539,14 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
             continue;
         }
         auto cloudDB = instance->ConnectCloudDB(meta.bundleName, activeUser, schemaDatabase);
-        ArkDataFaultMsg msg = { .faultType = FaultType::CLOUD_SYNC_FAULT, .moduleName = ModuleName::CLOUD_SERVER };
+        ArkDataFaultMsg msg = { .faultType = "GetBindInfos",
+            .moduleName = ModuleName::CLOUD_SERVER,
+            .bundleName = meta.bundleName };
         if (cloudDB == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
-            msg.errorType = Fault::CSF_CONNECT_CLOUD_DB;
+            msg.errorType = static_cast<int32_t>(Fault::CSF_CONNECT_CLOUD_DB) + GenStore::CLOUD_ERR_OFFSET;
+            msg.appendix = "ConnectCloudDB failed, database=" + schemaDatabase.name;
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }
@@ -557,6 +560,7 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
             msg.errorType = Fault::CSF_CONNECT_CLOUD_ASSET_LOADER;
+            msg.appendix = "ConnectAssetLoader failed, database=" + schemaDatabase.name;
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }

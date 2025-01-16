@@ -22,7 +22,10 @@ ohos_static_library("distributeddata_utils_static") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [ "src/kvstore_utils.cpp" ]
+  sources = [
+    "src/kvstore_utils.cpp",
+    "src/time_utils.cpp",
+   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 

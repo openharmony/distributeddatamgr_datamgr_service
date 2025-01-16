@@ -16,9 +16,12 @@
 #define LOG_TAG "HiViewAdapter"
 
 #include "hiview_adapter.h"
+
 #include <thread>
 #include <unistd.h>
+
 #include "log_print.h"
+#include "time_utils.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
@@ -209,36 +212,21 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, 
         return;
     }
     ExecutorPool::Task task([dfxCode, msg]() {
+        std::string occurTime = TimeUtils::GetCurSysTimeWithMs();
+        std::string bundleName = msg.bundleName;
+        std::string moduleName = msg.moduleName;
+        std::string storeName = msg.storeId;
+        std::string businessType = msg.businessType;
+        std::string appendix = msg.appendixMsg;
         struct HiSysEventParam params[] = {
-            { .name = { "FAULT_TIME" }, .t = HISYSEVENT_STRING, .v = { .s = msg.faultTime }, .arraySize = 0 },
-            { .name = { "FAULT_TYPE" },
-                .t = HISYSEVENT_STRING,
-                .v = { .s = msg.faultType.c_str() },
-                .arraySize = 0 },
-            { .name = { "BUNDLE_NAME" },
-                .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.bundleName.c_str()) },
-                .arraySize = 0 },
-            { .name = { "MODULE_NAME" },
-                .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.moduleName.c_str()) },
-                .arraySize = 0 },
-            { .name = { "STORE_NAME" },
-                .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
-                .arraySize = 0 },
-            { .name = { "BUSINESS_TYPE" },
-                .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.businessType.c_str()) },
-                .arraySize = 0 },
-            { .name = { "ERROR_CODE" },
-                .t = HISYSEVENT_INT32,
-                .v = { .i32 = static_cast<int32_t>(msg.errorType) },
-                .arraySize = 0 },
-            { .name = { "APPENDIX" },
-                .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.appendixMsg.c_str()) },
-                .arraySize = 0 },
+            { .name = { "FAULT_TIME" }, .t = HISYSEVENT_STRING, .v = { .s = occurTime.data() }, .arraySize = 0 },
+            { .name = { "FAULT_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = msg.faultType.c_str() }, .arraySize = 0 },
+            { .name = { "BUNDLE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = bundleName.data() }, .arraySize = 0 },
+            { .name = { "MODULE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = moduleName.data() }, .arraySize = 0 },
+            { .name = { "STORE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = storeName.data() }, .arraySize = 0 },
+            { .name = { "BUSINESS_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = businessType.data() }, .arraySize = 0 },
+            { .name = { "ERROR_CODE" }, .t = HISYSEVENT_INT32, .v = { .i32 = msg.errorType }, .arraySize = 0 },
+            { .name = { "APPENDIX" }, .t = HISYSEVENT_STRING, .v = { .s = appendix.data() }, .arraySize = 0 },
         };
         OH_HiSysEvent_Write(DATAMGR_DOMAIN, CoverEventID(dfxCode).c_str(), HISYSEVENT_FAULT, params,
             sizeof(params) / sizeof(params[0]));

@@ -72,48 +72,24 @@ enum class Fault {
     DF_DB_CORRUPTED = 62,
 
     // Cloud Sync Fault
-    CSF_CLOUD_INFO_ENABLE_CLOUD             = 70,
-    CSF_CLOUD_INFO_DISABLE_CLOUD            = 71,
-    CSF_CLOUD_INFO_OPEN_CLOUD_SWITCH        = 72,
-    CSF_CLOUD_INFO_CLOSE_CLOUD_SWITCH       = 73,
-    CSF_CLOUD_INFO_QUERY_SYNC_INFO          = 74,
-    CSF_CLOUD_INFO_USER_CHANGED             = 75,
-    CSF_CLOUD_INFO_USER_UNLOCKED            = 76,
-    CSF_CLOUD_INFO_NETWORK_RECOVERY         = 77,
-    CSF_CLOUD_INFO_CLOUD_SYNC_TASK          = 78,
-    CSF_CLOUD_INFO_SUBSCRIBE                = 79,
-    CSF_CLOUD_INFO_UNSUBSCRIBE              = 80,
-    CSF_BRIEF_INFO_ENABLE_CLOUD             = 81,
-    CSF_BRIEF_INFO_OPEN_CLOUD_SWITCH        = 83,
-    CSF_BRIEF_INFO_USER_CHANGED              = 84,
-    CSF_BRIEF_INFO_USER_UNLOCKED            = 85,
-    CSF_BRIEF_INFO_NETWORK_RECOVERY         = 86,
-    CSF_BRIEF_INFO_CLOUD_SYNC_TASK          = 87,
-    CSF_APP_SCHEMA_ENABLE_CLOUD             = 88,
-    CSF_APP_SCHEMA_OPEN_CLOUD_SWITCH        = 89,
-    CSF_APP_SCHEMA_QUERY_SYNC_INFO          = 90,
-    CSF_APP_SCHEMA_USER_CHANGED             = 91,
-    CSF_APP_SCHEMA_USER_UNLOCKED            = 92,
-    CSF_APP_SCHEMA_NETWORK_RECOVERY         = 93,
-    CSF_APP_SCHEMA_CLOUD_SYNC_TASK          = 94,
-    CSF_CONNECT_CLOUD_ASSET_LOADER          = 95,
-    CSF_CONNECT_CLOUD_DB                    = 96,
-    CSF_BATCH_INSERT_GENERATE_ID            = 97,
-    CSF_BATCH_INSERT_SAVE_RECORDS           = 98,
-    CSF_BATCH_UPDATE_SAVE_RECORDS           = 99,
-    CSF_BATCH_DELETE_DELETE_RECORDS         = 100,
-    CSF_BATCH_QUERY_START_CURSOR            = 101,
-    CSF_BATCH_QUERY_FETCH_RECORDS           = 102,
-    CSF_BATCH_QUERY_FETCH_DB_CHANGES        = 103,
-    CSF_BATCH_QUERY_FETCH_RECORD_WITH_ID    = 104,
-    CSF_LOCK_GET_LOCK                       = 105,
-    CSF_LOCK_HEART_BEAT                     = 106,
-    CSF_SHARE_SET_PRESHARE                  = 107,
-    CSF_DOWNLOAD_ASSETS                     = 108,
-    CSF_GS_CREATE_DISTRIBUTED_TABLE         = 109,
-    CSF_GS_SET_DISTRIBUTED_TABLE            = 110,
-    CSF_GS_RDB_CLOUD_SYNC                   = 111,
-    CSF_GS_KVDB_CLOUD_SYNC                  = 112,
+    CSF_CLOUD_INFO                          = 70,
+    CSF_BRIEF_INFO                          = 71,
+    CSF_APP_SCHEMA                          = 72,
+    CSF_CONNECT_CLOUD_ASSET_LOADER          = 73,
+    CSF_CONNECT_CLOUD_DB                    = 74,
+    CSF_BATCH_INSERT                        = 75,
+    CSF_BATCH_INSERT_SAVE_RECORDS           = 76,
+    CSF_BATCH_UPDATE_SAVE_RECORDS           = 77,
+    CSF_BATCH_DELETE_DELETE_RECORDS         = 78,
+    CSF_BATCH_QUERY                         = 79,
+    CSF_LOCK_GET_LOCK                       = 80,
+    CSF_LOCK_HEART_BEAT                     = 81,
+    CSF_SHARE_SET_PRESHARE                  = 82,
+    CSF_DOWNLOAD_ASSETS                     = 83,
+    CSF_GS_CREATE_DISTRIBUTED_TABLE         = 84,
+    CSF_GS_SET_DISTRIBUTED_TABLE            = 85,
+    CSF_GS_RDB_CLOUD_SYNC                   = 86,
+    CSF_GS_KVDB_CLOUD_SYNC                  = 87,
 };
 
 enum class FaultType {
@@ -121,7 +97,6 @@ enum class FaultType {
     RUNTIME_FAULT = 1,
     DATABASE_FAULT = 2,
     COMM_FAULT = 3,
-    CLOUD_SYNC_FAULT = 4,
 };
 
 enum class BehaviourType {
@@ -134,55 +109,6 @@ enum class SecurityInfo {
     PERMISSIONS_DEVICEID_FAILE = 1,
     PERMISSIONS_TOKENID_FAILE = 2,
     SENSITIVE_LEVEL_FAILE = 3,
-};
-
-enum class CloudSyncScene {
-    ENABLE_CLOUD = 0,
-    DISABLE_CLOUD = 1,
-    SWITCH_ON = 2,
-    SWITCH_OFF = 3,
-    QUERY_SYNC_INFO = 4,
-    USER_CHANGE = 5,
-    USER_UNLOCK = 6,
-    NETWORK_RECOVERY = 7,
-    CLOUD_SYNC_TASK = 8,
-    SUBSCRIBE = 9,
-    UNSUBSCRIBE = 10,
-    SERVICE_INIT = 11,
-    ACCOUNT_STOP = 12,
-};
-
-static std::map<CloudSyncScene, Fault> userInfoErrs = {
-    { CloudSyncScene::ENABLE_CLOUD, Fault::CSF_CLOUD_INFO_ENABLE_CLOUD },
-    { CloudSyncScene::DISABLE_CLOUD, Fault::CSF_CLOUD_INFO_DISABLE_CLOUD },
-    { CloudSyncScene::SWITCH_ON, Fault::CSF_CLOUD_INFO_OPEN_CLOUD_SWITCH },
-    { CloudSyncScene::SWITCH_OFF, Fault::CSF_CLOUD_INFO_CLOSE_CLOUD_SWITCH },
-    { CloudSyncScene::QUERY_SYNC_INFO, Fault::CSF_CLOUD_INFO_QUERY_SYNC_INFO },
-    { CloudSyncScene::USER_CHANGE, Fault::CSF_CLOUD_INFO_USER_CHANGED },
-    { CloudSyncScene::USER_UNLOCK, Fault::CSF_CLOUD_INFO_USER_UNLOCKED },
-    { CloudSyncScene::NETWORK_RECOVERY, Fault::CSF_CLOUD_INFO_NETWORK_RECOVERY },
-    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CSF_CLOUD_INFO_CLOUD_SYNC_TASK },
-    { CloudSyncScene::SUBSCRIBE, Fault::CSF_CLOUD_INFO_SUBSCRIBE },
-    { CloudSyncScene::UNSUBSCRIBE, Fault::CSF_CLOUD_INFO_UNSUBSCRIBE }
-};
-
-static std::map<CloudSyncScene, Fault> briefInfoErrs = {
-    { CloudSyncScene::ENABLE_CLOUD, Fault::CSF_BRIEF_INFO_ENABLE_CLOUD },
-    { CloudSyncScene::SWITCH_ON, Fault::CSF_BRIEF_INFO_OPEN_CLOUD_SWITCH },
-    { CloudSyncScene::USER_CHANGE, Fault::CSF_BRIEF_INFO_USER_CHANGED },
-    { CloudSyncScene::USER_UNLOCK, Fault::CSF_BRIEF_INFO_USER_UNLOCKED },
-    { CloudSyncScene::NETWORK_RECOVERY, Fault::CSF_BRIEF_INFO_NETWORK_RECOVERY },
-    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CSF_BRIEF_INFO_CLOUD_SYNC_TASK }
-};
-
-static std::map<CloudSyncScene, Fault> appSchemaErrs = {
-    { CloudSyncScene::ENABLE_CLOUD, Fault::CSF_APP_SCHEMA_ENABLE_CLOUD },
-    { CloudSyncScene::SWITCH_ON, Fault::CSF_APP_SCHEMA_OPEN_CLOUD_SWITCH },
-    { CloudSyncScene::QUERY_SYNC_INFO, Fault::CSF_APP_SCHEMA_QUERY_SYNC_INFO },
-    { CloudSyncScene::USER_CHANGE, Fault::CSF_APP_SCHEMA_USER_CHANGED },
-    { CloudSyncScene::USER_UNLOCK, Fault::CSF_APP_SCHEMA_USER_UNLOCKED },
-    { CloudSyncScene::NETWORK_RECOVERY, Fault::CSF_APP_SCHEMA_NETWORK_RECOVERY },
-    { CloudSyncScene::CLOUD_SYNC_TASK, Fault::CSF_APP_SCHEMA_CLOUD_SYNC_TASK }
 };
 
 struct FaultMsg {
@@ -208,13 +134,12 @@ struct CommFaultMsg {
 };
 
 struct ArkDataFaultMsg {
-    std::string faultTime;
     std::string faultType;
     std::string bundleName;
     std::string moduleName;
     std::string storeId;
     std::string businessType;
-    Fault errorType;
+    int32_t errorType;
     std::string appendixMsg;
 };
 

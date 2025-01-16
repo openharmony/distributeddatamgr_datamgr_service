@@ -599,12 +599,12 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
         return { ConvertStatus(dbStatus), dbStatus };
     }
-    ArkDataFaultMsg msg = { .faultType = "CLOUD_SYNC_FAULT",
+    ArkDataFaultMsg msg = { .faultType = "DB_CLOUD_SYNC",
         .bundleName = storeInfo_.bundleName,
         .moduleName = ModuleName::RDB_STORE,
         .storeId = storeInfo_.storeName,
-        .errorType = Fault::CSF_GS_RDB_CLOUD_SYNC,
-        .appendixMsg = std::to_string(static_cast<int32_t>(dbStatus)) };
+        .errorType = static_cast<int32_t>(Fault::CSF_GS_RDB_CLOUD_SYNC) + GenStore::CLOUD_ERR_OFFSET,
+        .appendixMsg = "cloud sync by db failed,ret=" + std::to_string(static_cast<int32_t>(dbStatus)) };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
     tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
         if (executor != nullptr) {
@@ -905,12 +905,12 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         if (dBStatus != DistributedDB::DBStatus::OK) {
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
                 Anonymous::Change(table).c_str(), dBStatus);
-            ArkDataFaultMsg msg = { .faultType = "CLOUD_SYNC_FAULT",
+            ArkDataFaultMsg msg = { .faultType = "SetDistributedTables",
                 .bundleName = storeInfo_.bundleName,
                 .moduleName = ModuleName::RDB_STORE,
                 .storeId = storeInfo_.storeName,
-                .errorType = Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE,
-                .appendixMsg = std::to_string(static_cast<int32_t>(dbStatus)) };
+                .errorType = static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE) + GenStore::CLOUD_ERR_OFFSET,
+                .appendixMsg = "SetDistributedTables failed,ret=" + std::to_string(static_cast<int32_t>(dBStatus)) };
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return GeneralError::E_ERROR;
         }

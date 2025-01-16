@@ -399,12 +399,12 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
         }
         dbStatus = CloudSync(devices, dbMode, async, syncParam.wait, syncParam.prepareTraceId);
         if (dbStatus != DBStatus::OK) {
-            ArkDataFaultMsg msg = { .faultType = "CLOUD_SYNC_FAULT",
+            ArkDataFaultMsg msg = { .faultType = "DB_CLOUD_SYNC",
                 .bundleName = storeInfo_.bundleName,
                 .moduleName = ModuleName::KV_STORE,
                 .storeId = storeInfo_.storeName,
-                .errorType = Fault::CSF_GS_KVDB_CLOUD_SYNC,
-                .appendixMsg = std::to_string(static_cast<int32_t>(dbStatus)) };
+                .errorType = static_cast<int32_t>(Fault::CSF_GS_KVDB_CLOUD_SYNC) + GenStore::CLOUD_ERR_OFFSET,
+                .appendixMsg = "cloud sync by db failed,ret=" + std::to_string(static_cast<int32_t>(dbStatus)) };
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
         }
     } else {
