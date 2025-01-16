@@ -133,12 +133,11 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
 void CloudServiceImpl::Report(
     int32_t user, CloudSyncScene sceneType, int32_t errCode, const std::string &bundleName, const std::string &storeId)
 {
-    ArkDataFaultMsg msg = { .faultType = FaultType::CLOUD_SYNC_FAULT,
+    ArkDataFaultMsg msg = { .faultType = "CLOUD_SYNC_FAULT",
         .bundleName = bundleName,
         .moduleName = ModuleName::CLOUD_SERVER,
         .storeId = storeId,
-        .errorType = GetCloudDfxError(sceneType, errCode),
-        .appendixMsg = { static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()), user } };
+        .errorType = GetCloudDfxError(sceneType, errCode)};
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
@@ -1145,11 +1144,11 @@ bool CloudServiceImpl::DoSubscribe(int32_t user, CloudSyncScene scene)
     ZLOGD("Subscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(subDbs).c_str());
     ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
     auto status = CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
-    if (status != GeneralError::E_ERROR) {
+    if (status != SUCCESS) {
         Report(user, CloudSyncScene::SUBSCRIBE, status, "", "");
     }
     status = CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
-    if (status != GeneralError::E_ERROR) {
+    if (status != SUCCESS) {
         Report(user, CloudSyncScene::UNSUBSCRIBE, status, "", "");
     }
     return subDbs.empty() && unsubDbs.empty();

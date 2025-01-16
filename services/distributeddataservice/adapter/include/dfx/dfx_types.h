@@ -207,26 +207,15 @@ struct CommFaultMsg {
     std::vector<int32_t> errorCode;
 };
 
-struct AppendixMsg {
-    uint32_t tokenId;
-    int32_t uid;
-    std::string GetMessage() const
-    {
-        return std::to_string(tokenId) + "/" + std::to_string(uid);
-    }
-};
-
 struct ArkDataFaultMsg {
-    int64_t faultTime =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
-            .count();
-    FaultType faultType;
+    std::string faultTime;
+    std::string faultType;
     std::string bundleName;
-    std::string moduleName = "datamgr_service";
+    std::string moduleName;
     std::string storeId;
     std::string businessType;
     Fault errorType;
-    AppendixMsg appendixMsg;
+    std::string appendixMsg;
 };
 
 struct SecurityPermissionsMsg {
