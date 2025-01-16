@@ -69,7 +69,7 @@ public:
         BundleConfig &bundleConfig, int32_t appIndex = 0);
     void Delete(const std::string &bundleName, int32_t userId, int32_t appIndex);
     sptr<IRemoteObject> CheckBMS();
-
+    std::pair<int, std::string> GetCallerAppIdentifier(const std::string &bundleName, int32_t userId);
 private:
     BundleMgrProxy() = default;
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -95,6 +95,7 @@ private:
     sptr<IRemoteObject> proxy_;
     sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient_;
     ConcurrentMap<std::string, BundleConfig> bundleCache_;
+    ConcurrentMap<std::string, std::string> callerInfoCache_;
     static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
     static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
 };

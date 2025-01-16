@@ -93,6 +93,7 @@ int DataProviderConfig::GetFromProxyData()
             }
             providerInfo_.readPermission = std::move(data.requiredReadPermission);
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
+            providerInfo_.allowLists = std::move(data.profileInfo.profile.allowLists);
             auto profileInfo = data.profileInfo;
             if (profileInfo.resultCode == NOT_FOUND) {
                 return E_OK;
