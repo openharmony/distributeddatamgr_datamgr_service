@@ -37,6 +37,7 @@
 #include "types.h"
 
 namespace OHOS::DistributedKv {
+using namespace DistributedData;
 class KvStoreAccountObserver;
 class KvStoreScreenObserver;
 class KvStoreDataService : public SystemAbility, public KvStoreDataServiceStub {
@@ -191,6 +192,7 @@ private:
     static constexpr pid_t INVALID_UID = -1;
     static constexpr pid_t INVALID_PID = -1;
     static constexpr uint32_t INVALID_TOKEN = 0;
+    static constexpr uint32_t XCOLLIE_COUNT = 5;
 };
 }
 #endif  // KVSTORE_DATASERVICE_H

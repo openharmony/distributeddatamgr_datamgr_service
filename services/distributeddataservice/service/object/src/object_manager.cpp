@@ -39,8 +39,7 @@ namespace DistributedObject {
 using namespace OHOS::DistributedKv;
 using namespace Security::AccessToken;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
-using AccountDelegate = DistributedKv::AccountDelegate;
-using Account = OHOS::DistributedKv::AccountDelegate;
+using Account = OHOS::DistributedData::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 using ValueProxy = OHOS::DistributedData::ValueProxy;
 using DistributedFileDaemonManager = Storage::DistributedFile::DistributedFileDaemonManager;
@@ -1205,7 +1204,7 @@ DistributedData::AssetBindInfo ObjectStoreManager::ConvertBindInfo(ObjectStore::
 int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::string& appId,
     const std::string& sessionId, const std::string& deviceId, const ObjectStore::Asset& asset)
 {
-    const int32_t userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    const int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     auto objectAsset = asset;
     Asset dataAsset =  ValueProxy::Convert(std::move(objectAsset));
     auto snapshotKey = appId + SEPERATOR + sessionId;

@@ -16,14 +16,22 @@
 #define DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_NORMAL_IMPL_H
 
 #include "account_delegate_impl.h"
-#include "common_event_manager.h"
-#include "common_event_subscriber.h"
-#include "common_event_support.h"
 #include "executor_pool.h"
 #include "log_print.h"
+#include "os_account_subscriber.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedData {
+using namespace AccountSA;
+class AccountSubscriber final : public OsAccountSubscriber {
+public:
+    ~AccountSubscriber() {}
+    explicit AccountSubscriber(const OsAccountSubscribeInfo &subscribeInfo);
+    void SetEventCallback(EventCallback callback);
+    void OnStateChanged(const OsAccountStateData &data) override;
+private:
+    EventCallback eventCallback_{};
+};
 class AccountDelegateNormalImpl final : public AccountDelegateImpl {
 public:
     AccountDelegateNormalImpl();
@@ -45,14 +53,14 @@ private:
     ~AccountDelegateNormalImpl();
     std::string Sha256AccountId(const std::string &plainText) const;
     ExecutorPool::Task GetTask(uint32_t retry);
-    void UpdateUserStatus(const AccountEventInfo& account);
+    void UpdateUserStatus(const AccountEventInfo &account);
     static constexpr int MAX_RETRY_TIME = 300;
     static constexpr int RETRY_WAIT_TIME_S = 1;
-    std::shared_ptr<EventSubscriber> eventSubscriber_ {};
+    std::shared_ptr<AccountSubscriber> AccountSubscriber_{};
     std::shared_ptr<ExecutorPool> executors_;
-    ConcurrentMap<int32_t, bool> userStatus_ {};
-    ConcurrentMap<int32_t, bool> userDeactivating_ {};
+    ConcurrentMap<int32_t, bool> userStatus_{};
+    ConcurrentMap<int32_t, bool> userDeactivating_{};
 };
-}  // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedData
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_NORMAL_IMPL_H

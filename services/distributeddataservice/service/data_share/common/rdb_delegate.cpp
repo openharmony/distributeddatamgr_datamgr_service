@@ -99,7 +99,7 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
 RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
     bool registerFunction, const std::string &extUri, const std::string &backup)
     : tokenId_(meta.tokenId), bundleName_(meta.bundleName), storeName_(meta.storeId),
-    haMode_(meta.haMode), extUri_(extUri), backup_(backup)
+    haMode_(meta.haMode), extUri_(extUri), backup_(backup), user_(meta.user)
 {
     auto [err, config] = GetConfig(meta, registerFunction);
     if (err != E_OK) {
@@ -115,7 +115,11 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
         RdbDelegate::TryAndSend(errCode_);
     }
 }
-
+RdbDelegate::~RdbDelegate()
+{
+    ZLOGI("Destruct. BundleName: %{public}s. StoreName: %{public}s. user: %{public}s", bundleName_.c_str(),
+        DistributedData::Anonymous::Change(storeName_).c_str(), user_.c_str());
+}
 void RdbDelegate::TryAndSend(int errCode)
 {
     if (errCode != E_SQLITE_CORRUPT || (haMode_ == HAMode::SINGLE && (backup_ != DUAL_WRITE && backup_ != PERIODIC))) {

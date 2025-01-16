@@ -16,44 +16,31 @@
 #ifndef DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_IMPL_H
 #define DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_IMPL_H
 
-#include "account_delegate.h"
-#include <mutex>
 #include <memory.h>
-#include "common_event_manager.h"
-#include "common_event_subscriber.h"
-#include "common_event_support.h"
+#include <mutex>
+
+#include "account_delegate.h"
 #include "concurrent_map.h"
 #include "log_print.h"
 
 namespace OHOS {
-namespace DistributedKv {
-using namespace OHOS::EventFwk;
+namespace DistributedData {
 using EventCallback = std::function<void(AccountEventInfo &account)>;
-
-class EventSubscriber final : public CommonEventSubscriber {
-public:
-    ~EventSubscriber() {}
-    explicit EventSubscriber(const CommonEventSubscribeInfo &info);
-    void SetEventCallback(EventCallback callback);
-    void OnReceiveEvent(const CommonEventData &event) override;
-private:
-    EventCallback eventCallback_ {};
-};
-
 class AccountDelegateImpl : public AccountDelegate {
 public:
     ~AccountDelegateImpl();
-    Status Subscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
-    Status Unsubscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
+    int32_t Subscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
+    int32_t Unsubscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
     void NotifyAccountChanged(const AccountEventInfo &accountEventInfo);
     bool RegisterHashFunc(HashFunc hash) override;
 
 protected:
     std::string DoHash(const void *data, size_t size, bool isUpper) const;
+
 private:
-    ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_ {};
+    ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_{};
     HashFunc hash_ = nullptr;
 };
-}  // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedData
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_IMPL_H

@@ -32,7 +32,7 @@ using namespace OHOS::DistributedData;
 DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTokenId)
 {
     providerInfo_.uri = uri;
-    providerInfo_.currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    providerInfo_.currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     providerInfo_.visitedUserId = providerInfo_.currentUserId;
     URIUtils::GetAppIndexFromProxyURI(providerInfo_.uri, providerInfo_.appIndex);
     if (providerInfo_.currentUserId == 0) {

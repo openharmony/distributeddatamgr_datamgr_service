@@ -23,7 +23,7 @@
 #include "log_debug.h"
 
 namespace OHOS::DataShare {
-using Account = DistributedKv::AccountDelegate;
+using Account = DistributedData::AccountDelegate;
 ExecutorPool::TaskId DBDelegate::taskId_ = ExecutorPool::INVALID_TASK_ID;
 ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::stores_ = {};
 std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;

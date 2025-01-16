@@ -202,6 +202,8 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
 
 RdbGeneralStore::~RdbGeneralStore()
 {
+    ZLOGI("Destruct. BundleName: %{public}s. StoreName: %{public}s. user: %{public}d",
+        storeInfo_.bundleName.c_str(), Anonymous::Change(storeInfo_.storeName).c_str(), storeInfo_.user);
     manager_.CloseStore(delegate_);
     delegate_ = nullptr;
     bindInfo_.loader_ = nullptr;

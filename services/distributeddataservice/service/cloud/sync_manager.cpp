@@ -42,7 +42,7 @@ using namespace DistributedDataDfx;
 using namespace DistributedKv;
 using namespace SharingUtil;
 using namespace std::chrono;
-using Account = OHOS::DistributedKv::AccountDelegate;
+using Account = OHOS::DistributedData::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;

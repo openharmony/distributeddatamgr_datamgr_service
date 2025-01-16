@@ -422,7 +422,7 @@ bool RuntimeStore::BuildMetaDataParam(DistributedData::StoreMetaData &metaData)
     }
 
     uint32_t token = IPCSkeleton::GetSelfTokenID();
-    const std::string userId = std::to_string(DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token));
+    const std::string userId = std::to_string(DistributedData::AccountDelegate::GetInstance()->GetUserByToken(token));
     metaData.appType = "harmony";
     metaData.deviceId = localDeviceId;
     metaData.storeId = storeId_;
@@ -432,7 +432,7 @@ bool RuntimeStore::BuildMetaDataParam(DistributedData::StoreMetaData &metaData)
     metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     metaData.user = userId;
-    metaData.account = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    metaData.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.tokenId = token;
     metaData.securityLevel = DistributedKv::SecurityLevel::S1;
     metaData.area = DistributedKv::Area::EL1;
@@ -452,7 +452,7 @@ bool RuntimeStore::SaveMetaData()
     }
 
     int foregroundUserId = 0;
-    bool ret = DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    bool ret = DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
     if (!ret) {
         ZLOGE("QueryForegroundUserId failed.");
         return false;

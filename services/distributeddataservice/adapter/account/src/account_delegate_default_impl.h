@@ -18,7 +18,7 @@
 #include "account_delegate_impl.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedData {
 class AccountDelegateDefaultImpl final : public AccountDelegateImpl {
 public:
     std::string GetCurrentAccountId() const override;
@@ -36,6 +36,6 @@ public:
 private:
     ~AccountDelegateDefaultImpl();
 };
-}  // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedData
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_ACCOUNT_DELEGATE_DEFAULT_IMPL_H
