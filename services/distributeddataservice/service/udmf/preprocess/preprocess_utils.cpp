@@ -19,6 +19,8 @@
 #include <random>
 #include <sstream>
 
+#include "dds_trace.h"
+#include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
 #include "bundlemgr/bundle_mgr_client_impl.h"
 #include "device_manager_adapter.h"
@@ -39,7 +41,9 @@ static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
 constexpr char SPECIAL = '^';
 constexpr const char *FILE_SCHEME = "file";
+constexpr const char *TAG = "PreProcessUtils::";
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
+using namespace OHOS::DistributedDataDfx;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 using namespace RadarReporter;
@@ -220,13 +224,21 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
 
 int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data)
 {
+    DdsTrace trace(
+        std::string(TAG) + std::string(__FUNCTION__), TraceSwitch::BYTRACE_ON | TraceSwitch::TRACE_CHAIN_ON);
+    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::IDLE, BizState::DFX_BEGIN);
     std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
     int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, dfsUris);
     if (ret != 0 || dfsUris.empty()) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::FAILED, E_FS_ERROR, BizState::DFX_END);
         ZLOGE("Get remoteUri failed, ret = %{public}d, userId: %{public}d, uri size:%{public}zu.",
               ret, userId, uris.size());
         return E_FS_ERROR;
     }
+    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::SUCCESS);
     ProcessFileType(data.GetRecords(), [&dfsUris] (std::shared_ptr<Object> obj) {
         std::string oriUri;
         obj->GetValue(ORI_URI, oriUri);
@@ -236,6 +248,8 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
         }
         return true;
     });
+    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::SUCCESS, BizState::DFX_END);
     return E_OK;
 }
 
