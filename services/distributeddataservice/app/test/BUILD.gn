@@ -92,7 +92,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_data_service_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
-    "${data_service_path}/service/data_share/common/base64_utils.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -253,7 +252,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
-    "${data_service_path}/service/data_share/common/base64_utils.cpp",
     "unittest/kvstore_data_service_clear_test.cpp",
   ]
 

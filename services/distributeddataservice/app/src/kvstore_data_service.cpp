@@ -66,10 +66,10 @@
 #include "upgrade_manager.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
+#include "utils/base64_utils.h"
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "xcollie.h"
-#include "base64_utils.h"
 
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
@@ -502,7 +502,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
             item.bundleName = bundleInfo.bundleName;
             item.dbName = storeMeta.storeId;
             item.instanceId = storeMeta.instanceId;
-            item.sKey = DataShare::Base64::Encode(reEncryptedKey);
+            item.sKey = DistributedData::Base64::Encode(reEncryptedKey);
             item.storeType = secretKeyMeta.storeType;
             item.user = userId;
             backupInfos.infos.push_back(item);
@@ -567,7 +567,7 @@ int32_t KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData &backupDa
         backupInfo.encryptionInfo.iv)) {
         return -1;
     };
-    for (auto item : backupData.infos) {
+    for (auto &item : backupData.infos) {
         if (!item.IsValid()) {
             ZLOGW("Secretkey backup info is invalid! bundleName:%{public}s, dbName:%{public}s, instanceId:%{public}d, "
                 "storeType:%{public}d, time.size:%{public}zu, sKey:%{public}s, user:%{public}s",
@@ -580,7 +580,7 @@ int32_t KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData &backupDa
         metaData.storeId = item.dbName;
         metaData.user = item.user == "0" ? "0" : backupInfo.userId;
         metaData.instanceId = item.instanceId;
-        auto sKey = DataShare::Base64::Decode(item.sKey);
+        auto sKey = DistributedData::Base64::Decode(item.sKey);
         std::vector<uint8_t> rawKey;
         CryptoManager::GetInstance().BackupKeyDecrypt(sKey, rawKey);
 

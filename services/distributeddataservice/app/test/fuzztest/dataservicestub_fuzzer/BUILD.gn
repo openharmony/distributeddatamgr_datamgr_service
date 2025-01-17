@@ -81,7 +81,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
-    "${data_service_path}/service/data_share/common/base64_utils.cpp",
     "dataservicestub_fuzzer.cpp",
   ]
 

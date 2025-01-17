@@ -132,7 +132,6 @@ public:
     int32_t OnExtension(const std::string& extension, MessageParcel& data, MessageParcel& reply) override;
     ErrCode OnBackup(MessageParcel& data, MessageParcel& reply);
     ErrCode OnRestore(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRestoreTest();
     static std::string SetBackupReplyCode(int replyCode, const std::string &info);
     static bool GetSecretKeyBackup(
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,

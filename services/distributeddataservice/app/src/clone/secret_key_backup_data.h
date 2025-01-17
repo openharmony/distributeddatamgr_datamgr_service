@@ -33,7 +33,7 @@ public:
         API_EXPORT ~BackupItem();
         API_EXPORT bool Marshal(json &node) const override;
         API_EXPORT bool Unmarshal(const json &node) override;
-        API_EXPORT bool IsValid();
+        API_EXPORT bool IsValid() const;
     };
     std::vector<BackupItem> infos;
     API_EXPORT SecretKeyBackupData();

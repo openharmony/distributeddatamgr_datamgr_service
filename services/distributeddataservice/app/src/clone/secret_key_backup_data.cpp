@@ -68,7 +68,7 @@ bool SecretKeyBackupData::BackupItem::Unmarshal(const json &node)
     return true;
 }
 
-bool SecretKeyBackupData::BackupItem::IsValid()
+bool SecretKeyBackupData::BackupItem::IsValid() const
 {
     return !bundleName.empty() && !dbName.empty() && !time.empty() && !sKey.empty() && !user.empty();
 }

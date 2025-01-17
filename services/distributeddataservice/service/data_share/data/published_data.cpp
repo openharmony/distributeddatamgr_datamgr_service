@@ -17,7 +17,7 @@
 
 #include "log_print.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
-#include "base64_utils.h"
+#include "utils/base64_utils.h"
 
 namespace OHOS::DataShare {
 bool PublishedData::HasVersion() const
@@ -115,7 +115,7 @@ std::variant<std::vector<uint8_t>, std::string> PublishedDataNode::MoveTo(const 
     }
     auto *valueBytes = std::get_if<PublishedDataNode::BytesData>(&data);
     if (valueBytes != nullptr) {
-        return Base64::Decode(valueBytes->data);
+        return DistributedData::Base64::Decode(valueBytes->data);
     }
     ZLOGE("error");
     return "";
@@ -129,7 +129,7 @@ PublishedDataNode::Data PublishedDataNode::MoveTo(std::variant<std::vector<uint8
     }
     auto *valueBytes = std::get_if<std::vector<uint8_t>>(&data);
     if (valueBytes != nullptr) {
-        std::string valueEncode = Base64::Encode(*valueBytes);
+        std::string valueEncode = DistributedData::Base64::Encode(*valueBytes);
         return BytesData(std::move(valueEncode));
     }
     ZLOGE("error");

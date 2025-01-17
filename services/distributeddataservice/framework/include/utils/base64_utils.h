@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef DATASHARESERVICE_BASE64_H
-#define DATASHARESERVICE_BASE64_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_BASE64_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_BASE64_H
 
 #include <string>
 #include <vector>
+#include "visibility.h"
+namespace OHOS::DistributedData::Base64 {
+API_EXPORT std::string Encode(const std::vector<uint8_t> &source);
+API_EXPORT std::vector<uint8_t> Decode(const std::string &encoded);
+} // namespace OHOS::DistributedData::Base64
 
-namespace OHOS::DataShare::Base64 {
-std::string Encode(const std::vector<uint8_t> &source);
-std::vector<uint8_t> Decode(const std::string &encoded);
-} // namespace OHOS::DataShare::Base64
-
-#endif /* DATASHARESERVICE_BASE64_H */
+#endif /* OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_UTILS_BASE64_H */

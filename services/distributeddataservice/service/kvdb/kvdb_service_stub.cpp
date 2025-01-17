@@ -437,7 +437,7 @@ int32_t KVDBServiceStub::OnGetBackupPassword(
         }
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
-    for (auto password : passwords) {
+    for (auto &password : passwords) {
         password.assign(password.size(), 0);
     }
     return ERR_NONE;
