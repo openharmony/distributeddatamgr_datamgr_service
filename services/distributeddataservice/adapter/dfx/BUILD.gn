@@ -48,7 +48,7 @@ ohos_static_library("distributeddata_dfx_static") {
     "./src/statistic",
     "../include/dfx",
     "../include/log",
-    "../include/autils",
+    "../include/utils",
     "../include/communicator",
     "${kv_store_common_path}",
     "${kv_store_path}/interfaces/inner_api/distributeddata/include",
@@ -105,6 +105,8 @@ ohos_static_library("distributeddata_dfx_fault_static") {
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
+
+  deps = [ "${data_service_path}/adapter/utils:distributeddata_utils_static" ]
 
   external_deps = [
     "c_utils:utils",

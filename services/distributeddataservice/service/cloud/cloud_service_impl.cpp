@@ -146,8 +146,8 @@ void CloudServiceImpl::Report(
     ArkDataFaultMsg msg = { .faultType = faultType,
         .bundleName = bundleName,
         .moduleName = ModuleName::CLOUD_SERVER,
-        .errorType = errCode + GenStore::CLOUD_ERR_OFFSET,
-        .appendix = appendix };
+        .errorType = errCode + SyncManager::GenStore::CLOUD_ERR_OFFSET,
+        .appendixMsg = appendix };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
@@ -617,7 +617,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         Report(FT_QUERY_INFO, status, bundleName,
-            "QueryLastSyncInfo ret=" + std::to_string(status) + ",storeId=" + std::to_string(storeId));
+            "QueryLastSyncInfo ret=" + std::to_string(status) + ",storeId=" + storeId);
         return { ERROR, results };
     }
     if (cloudInfo.apps.find(bundleName) == cloudInfo.apps.end()) {
@@ -809,7 +809,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
-        Report(GetDfxFaultType(scene), scene, status, "", "UpdateCloudInfo, ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), status, "", "UpdateCloudInfo, ret=" + std::to_string(status));
         return false;
     }
     ZLOGI("[server] id:%{public}s, enableCloud:%{public}d, user:%{public}d, app size:%{public}zu",
@@ -839,7 +839,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(GetDfxFaultType(scene), scene, status, "", "UpdateSchema ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), status, "", "UpdateSchema ret=" + std::to_string(status));
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -1088,7 +1088,7 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(GetDfxFaultType(scene), scene, status, "", "DoCloudSync ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), status, "", "DoCloudSync ret=" + std::to_string(status));
         return false;
     }
     for (const auto &appInfo : cloudInfo.apps) {
@@ -1158,13 +1158,11 @@ bool CloudServiceImpl::DoSubscribe(int32_t user, CloudSyncScene scene)
     ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
     auto status = CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
     if (status != SUCCESS) {
-        Report(
-            GetDfxFaultType(scene), CloudSyncScene::SUBSCRIBE, status, "", "Subscribe ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), status, "", "Subscribe ret=" + std::to_string(status));
     }
     status = CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
     if (status != SUCCESS) {
-        Report(GetDfxFaultType(scene), CloudSyncScene::UNSUBSCRIBE, status, "",
-            "Unsubscribe, ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), status, "", "Unsubscribe, ret=" + std::to_string(status));
     }
     return subDbs.empty() && unsubDbs.empty();
 }

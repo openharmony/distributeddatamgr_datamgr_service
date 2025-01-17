@@ -93,6 +93,18 @@ private:
         std::shared_ptr<CloudStatic> staticActs_;
     };
     static Factory factory_;
+    enum class CloudSyncScene {
+        ENABLE_CLOUD = 0,
+        DISABLE_CLOUD = 1,
+        SWITCH_ON = 2,
+        SWITCH_OFF = 3,
+        QUERY_SYNC_INFO = 4,
+        USER_CHANGE = 5,
+        USER_UNLOCK = 6,
+        NETWORK_RECOVERY = 7,
+        SERVICE_INIT = 8,
+        ACCOUNT_STOP = 9,
+    };
 
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
@@ -110,19 +122,6 @@ private:
         int32_t user;
         int32_t instIndex;
         std::string bundleName;
-    };
-
-    enum class CloudSyncScene {
-        ENABLE_CLOUD = 0,
-        DISABLE_CLOUD = 1,
-        SWITCH_ON = 2,
-        SWITCH_OFF = 3,
-        QUERY_SYNC_INFO = 4,
-        USER_CHANGE = 5,
-        USER_UNLOCK = 6,
-        NETWORK_RECOVERY = 7,
-        SERVICE_INIT = 8,
-        ACCOUNT_STOP = 9,
     };
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);

@@ -25,7 +25,7 @@ ohos_static_library("distributeddata_utils_static") {
   sources = [
     "src/kvstore_utils.cpp",
     "src/time_utils.cpp",
-   ]
+  ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 

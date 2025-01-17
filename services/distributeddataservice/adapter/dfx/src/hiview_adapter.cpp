@@ -218,9 +218,10 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, 
         std::string storeName = msg.storeId;
         std::string businessType = msg.businessType;
         std::string appendix = msg.appendixMsg;
+        std::string faultType = msg.faultType;
         struct HiSysEventParam params[] = {
             { .name = { "FAULT_TIME" }, .t = HISYSEVENT_STRING, .v = { .s = occurTime.data() }, .arraySize = 0 },
-            { .name = { "FAULT_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = msg.faultType.c_str() }, .arraySize = 0 },
+            { .name = { "FAULT_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = faultType.data() }, .arraySize = 0 },
             { .name = { "BUNDLE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = bundleName.data() }, .arraySize = 0 },
             { .name = { "MODULE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = moduleName.data() }, .arraySize = 0 },
             { .name = { "STORE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = storeName.data() }, .arraySize = 0 },

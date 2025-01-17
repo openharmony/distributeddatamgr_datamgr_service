@@ -49,6 +49,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 constexpr int32_t SYSTEM_USER_ID = 0;
+static constexpr const char *FT_GET_STORE = "GET_STORE";
 SyncManager::SyncInfo::SyncInfo(
     int32_t user, const std::string &bundleName, const Store &store, const Tables &tables, int32_t triggerMode)
     : user_(user), bundleName_(bundleName), triggerMode_(triggerMode)
@@ -539,14 +540,14 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
             continue;
         }
         auto cloudDB = instance->ConnectCloudDB(meta.bundleName, activeUser, schemaDatabase);
-        ArkDataFaultMsg msg = { .faultType = "GetBindInfos",
-            .moduleName = ModuleName::CLOUD_SERVER,
-            .bundleName = meta.bundleName };
+        ArkDataFaultMsg msg = { .faultType = FT_GET_STORE,
+            .bundleName = meta.bundleName,
+            .moduleName = ModuleName::CLOUD_SERVER };
         if (cloudDB == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
             msg.errorType = static_cast<int32_t>(Fault::CSF_CONNECT_CLOUD_DB) + GenStore::CLOUD_ERR_OFFSET;
-            msg.appendix = "ConnectCloudDB failed, database=" + schemaDatabase.name;
+            msg.appendixMsg = "ConnectCloudDB failed, database=" + schemaDatabase.name;
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }
@@ -559,8 +560,9 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
         if (assetLoader == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
-            msg.errorType = Fault::CSF_CONNECT_CLOUD_ASSET_LOADER;
-            msg.appendix = "ConnectAssetLoader failed, database=" + schemaDatabase.name;
+            msg.errorType =
+                static_cast<int32_t>(Fault::CSF_CONNECT_CLOUD_ASSET_LOADER) + SyncManager::GenStore::CLOUD_ERR_OFFSET;
+            msg.appendixMsg = "ConnectAssetLoader failed, database=" + schemaDatabase.name;
             Reporter::GetInstance()->CloudSyncFault()->Report(msg);
             return {};
         }
