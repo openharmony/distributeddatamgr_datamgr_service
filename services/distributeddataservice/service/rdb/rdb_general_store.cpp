@@ -602,7 +602,7 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
         return { ConvertStatus(dbStatus), dbStatus };
     }
     Report(FT_CLOUD_SYNC, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
-        "Cloud sync ret=" + std::to_string(static_cast<int32_t>(dBStatus)));
+        "Cloud sync ret=" + std::to_string(static_cast<int32_t>(dbStatus)));
     tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
         if (executor != nullptr) {
             executor->Remove(task.taskId);
@@ -892,7 +892,7 @@ void RdbGeneralStore::Report(const std::string &faultType, int32_t errCode, cons
     ArkDataFaultMsg msg = { .faultType = faultType,
         .bundleName = storeInfo_.bundleName,
         .moduleName = ModuleName::RDB_STORE,
-        .storeName = storeInfo_.storeId,
+        .storeName = storeInfo_.storeName,
         .errorType = errCode + GeneralStore::CLOUD_ERR_OFFSET,
         .appendixMsg = appendix };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);

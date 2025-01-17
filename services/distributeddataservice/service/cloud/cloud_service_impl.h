@@ -33,7 +33,6 @@
 #include "values_bucket.h"
 
 namespace OHOS::CloudData {
-using namespace DistributedDataDfx;
 class CloudServiceImpl : public CloudServiceStub {
 public:
     using StoreMetaData = DistributedData::StoreMetaData;
@@ -181,8 +180,8 @@ private:
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
-    void Report(
-        const std::string &faultType, int32_t errCode, const std::string &bundleName, const std::string &appendix);
+    void Report(const std::string &faultType, DistributedDataDfx::Fault errCode, const std::string &bundleName,
+        const std::string &appendix);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

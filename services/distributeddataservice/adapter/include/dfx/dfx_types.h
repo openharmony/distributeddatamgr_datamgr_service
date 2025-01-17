@@ -30,6 +30,7 @@ struct ModuleName {
     static const inline std::string RDB_STORE = "RDB_STORE";
     static const inline std::string KV_STORE = "KV_STORE";
     static const inline std::string CLOUD_SERVER = "CLOUD_SERVER";
+    static const inline std::string CLOUD_SYNC_CALLBACK = "CLOUD_SYNC_CALLBACK";
 };
 
 enum class Fault {
@@ -73,19 +74,20 @@ enum class Fault {
 
     // Cloud Sync Fault
     CSF_CLOUD_INFO                          = 70,
-    CSF_BRIEF_INFO                          = 71,
-    CSF_APP_SCHEMA                          = 72,
-    CSF_CONNECT_CLOUD_ASSET_LOADER          = 73,
-    CSF_CONNECT_CLOUD_DB                    = 74,
-    CSF_BATCH_INSERT                        = 75,
-    CSF_BATCH_UPDATE                        = 76,
-    CSF_BATCH_DELETE                        = 77,
-    CSF_BATCH_QUERY                         = 78,
-    CSF_LOCK                                = 79,
-    CSF_SHARE                               = 80,
-    CSF_DOWNLOAD_ASSETS                     = 81,
-    CSF_GS_CREATE_DISTRIBUTED_TABLE         = 82,
-    CSF_GS_CLOUD_SYNC                       = 83,
+    CSF_SUBSCRIBE                           = 71,
+    CSF_UNSUBSCRIBE                         = 72,
+    CSF_APP_SCHEMA                          = 73,
+    CSF_CONNECT_CLOUD_ASSET_LOADER          = 74,
+    CSF_CONNECT_CLOUD_DB                    = 75,
+    CSF_BATCH_INSERT                        = 76,
+    CSF_BATCH_UPDATE                        = 77,
+    CSF_BATCH_DELETE                        = 78,
+    CSF_BATCH_QUERY                         = 79,
+    CSF_LOCK                                = 80,
+    CSF_SHARE                               = 81,
+    CSF_DOWNLOAD_ASSETS                     = 82,
+    CSF_GS_CREATE_DISTRIBUTED_TABLE         = 83,
+    CSF_GS_CLOUD_SYNC                       = 84,
 };
 
 enum class FaultType {
@@ -133,7 +135,7 @@ struct ArkDataFaultMsg {
     std::string faultType;
     std::string bundleName;
     std::string moduleName;
-    std::string storeId;
+    std::string storeName;
     std::string businessType;
     int32_t errorType;
     std::string appendixMsg;

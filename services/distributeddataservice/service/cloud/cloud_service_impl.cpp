@@ -120,7 +120,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(FT_ENABLE_CLOUD, status, "", "EnableCloud ret=" + std::to_string(status));
+        Report(FT_ENABLE_CLOUD, Fault::CSF_CLOUD_INFO, "", "EnableCloud ret=" + std::to_string(status));
         return status;
     }
     cloudInfo.enableCloud = true;
@@ -141,12 +141,12 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
 }
 
 void CloudServiceImpl::Report(
-    const std::string &faultType, int32_t errCode, const std::string &bundleName, const std::string &appendix)
+    const std::string &faultType, Fault errCode, const std::string &bundleName, const std::string &appendix)
 {
     ArkDataFaultMsg msg = { .faultType = faultType,
         .bundleName = bundleName,
         .moduleName = ModuleName::CLOUD_SERVER,
-        .errorType = errCode + SyncManager::GenStore::CLOUD_ERR_OFFSET,
+        .errorType = static_cast<int32_t>(errCode) + SyncManager::GenStore::CLOUD_ERR_OFFSET,
         .appendixMsg = appendix };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
@@ -160,7 +160,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(FT_DISABLE_CLOUD, status, "", "DisableCloud ret = " + std::to_string(status));
+        Report(FT_DISABLE_CLOUD, Fault::CSF_CLOUD_INFO, "", "DisableCloud ret=" + std::to_string(status));
         return status;
     }
     if (cloudInfo.id != id) {
@@ -191,7 +191,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS || !cloudInfo.enableCloud) {
-        Report(appSwitch == SWITCH_ON ? FT_SWITCH_ON : FT_SWITCH_OFF, status, bundleName,
+        Report(appSwitch == SWITCH_ON ? FT_SWITCH_ON : FT_SWITCH_OFF, Fault::CSF_CLOUD_INFO, bundleName,
             "ChangeAppSwitch ret = " + std::to_string(status));
         return status;
     }
@@ -208,7 +208,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
             ZLOGE("invalid args, status:%{public}d, enableCloud:%{public}d, [input] id:%{public}s,"
                   "[exist] id:%{public}s, bundleName:%{public}s", status, cloudInfo.enableCloud,
                   Anonymous::Change(id).c_str(), Anonymous::Change(cloudInfo.id).c_str(), bundleName.c_str());
-            Report(appSwitch == SWITCH_ON ? FT_SWITCH_ON : FT_SWITCH_OFF, status, bundleName,
+            Report(appSwitch == SWITCH_ON ? FT_SWITCH_ON : FT_SWITCH_OFF, Fault::CSF_CLOUD_INFO, bundleName,
                 "ChangeAppSwitch ret=" + std::to_string(status));
             return INVALID_ARGUMENT;
         }
@@ -616,7 +616,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     auto user = Account::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(FT_QUERY_INFO, status, bundleName,
+        Report(FT_QUERY_INFO, Fault::CSF_CLOUD_INFO, bundleName,
             "QueryLastSyncInfo ret=" + std::to_string(status) + ",storeId=" + storeId);
         return { ERROR, results };
     }
@@ -809,7 +809,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
     auto [status, cloudInfo] = GetCloudInfoFromServer(user);
     if (status != SUCCESS) {
         ZLOGE("user:%{public}d, status:%{public}d", user, status);
-        Report(GetDfxFaultType(scene), status, "", "UpdateCloudInfo, ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), Fault::CSF_CLOUD_INFO, "", "UpdateCloudInfo ret=" + std::to_string(status));
         return false;
     }
     ZLOGI("[server] id:%{public}s, enableCloud:%{public}d, user:%{public}d, app size:%{public}zu",
@@ -839,7 +839,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(GetDfxFaultType(scene), status, "", "UpdateSchema ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), Fault::CSF_APP_SCHEMA, "", "UpdateSchema ret=" + std::to_string(status));
         return false;
     }
     auto keys = cloudInfo.GetSchemaKey();
@@ -1088,7 +1088,7 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        Report(GetDfxFaultType(scene), status, "", "DoCloudSync ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), Fault::CSF_CLOUD_INFO, "", "DoCloudSync ret=" + std::to_string(status));
         return false;
     }
     for (const auto &appInfo : cloudInfo.apps) {
@@ -1114,7 +1114,6 @@ bool CloudServiceImpl::DoSubscribe(int32_t user, CloudSyncScene scene)
         ZLOGE("not support cloud server");
         return true;
     }
-
     CloudInfo cloudInfo;
     cloudInfo.user = sub.userId;
     if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
@@ -1123,12 +1122,7 @@ bool CloudServiceImpl::DoSubscribe(int32_t user, CloudSyncScene scene)
     }
     if (!sub.id.empty() && sub.id != cloudInfo.id) {
         CleanSubscription(sub);
-        sub.id.clear();
-        sub.expiresTime.clear();
     }
-
-    ZLOGD("begin cloud:%{public}d user:%{public}d apps:%{public}zu", cloudInfo.enableCloud, sub.userId,
-        cloudInfo.apps.size());
     auto onThreshold = duration_cast<milliseconds>((system_clock::now() + hours(EXPIRE_INTERVAL)).time_since_epoch());
     auto offThreshold = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     std::map<std::string, std::vector<SchemaMeta::Database>> subDbs;
@@ -1145,24 +1139,20 @@ bool CloudServiceImpl::DoSubscribe(int32_t user, CloudSyncScene scene)
         if (!enabled && (it == sub.expiresTime.end() || it->second <= static_cast<uint64_t>(offThreshold.count()))) {
             continue;
         }
-
         SchemaMeta schemaMeta;
         if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(bundle), schemaMeta, true)) {
             dbs.insert_or_assign(bundle, std::move(schemaMeta.databases));
         }
     }
-
     ZLOGI("cloud switch:%{public}d user%{public}d, sub:%{public}zu, unsub:%{public}zu", cloudInfo.enableCloud,
         sub.userId, subDbs.size(), unsubDbs.size());
-    ZLOGD("Subscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(subDbs).c_str());
-    ZLOGD("Unsubscribe user%{public}d details:%{public}s", sub.userId, Serializable::Marshall(unsubDbs).c_str());
     auto status = CloudServer::GetInstance()->Subscribe(sub.userId, subDbs);
     if (status != SUCCESS) {
-        Report(GetDfxFaultType(scene), status, "", "Subscribe ret=" + std::to_string(status));
+        Report(GetDfxFaultType(scene), Fault::CSF_SUBSCRIBE, "", "Subscribe ret=" + std::to_string(status));
     }
     status = CloudServer::GetInstance()->Unsubscribe(sub.userId, unsubDbs);
-    if (status != SUCCESS) {
-        Report(GetDfxFaultType(scene), status, "", "Unsubscribe, ret=" + std::to_string(status));
+    if (status != SUCCESS && scene != CloudSyncScene::DISABLE_CLOUD) {
+        Report(GetDfxFaultType(scene), Fault::CSF_UNSUBSCRIBE, "", "Unsubscribe, ret=" + std::to_string(status));
     }
     return subDbs.empty() && unsubDbs.empty();
 }
@@ -1174,6 +1164,8 @@ void CloudServiceImpl::CleanSubscription(Subscription &sub)
     for (const auto &[bundle, expireTime] : sub.expiresTime) {
         MetaDataManager::GetInstance().DelMeta(sub.GetRelationKey(bundle), true);
     }
+    sub.id.clear();
+    sub.expiresTime.clear();
 }
 
 void CloudServiceImpl::Execute(Task task)
@@ -1295,7 +1287,7 @@ CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 
 std::string CloudServiceImpl::GetDfxFaultType(CloudSyncScene scene)
 {
-    switch(scene) {
+    switch (scene) {
         case CloudSyncScene::ENABLE_CLOUD:
             return FT_ENABLE_CLOUD;
         case CloudSyncScene::DISABLE_CLOUD:

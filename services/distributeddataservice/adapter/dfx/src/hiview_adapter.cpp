@@ -215,7 +215,7 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, 
         std::string occurTime = TimeUtils::GetCurSysTimeWithMs();
         std::string bundleName = msg.bundleName;
         std::string moduleName = msg.moduleName;
-        std::string storeName = msg.storeId;
+        std::string storeName = msg.storeName;
         std::string businessType = msg.businessType;
         std::string appendix = msg.appendixMsg;
         std::string faultType = msg.faultType;

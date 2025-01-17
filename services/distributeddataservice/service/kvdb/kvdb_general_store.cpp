@@ -387,7 +387,7 @@ void KVDBGeneralStore::Report(const std::string &faultType, int32_t errCode, con
     ArkDataFaultMsg msg = { .faultType = faultType,
         .bundleName = storeInfo_.bundleName,
         .moduleName = ModuleName::KV_STORE,
-        .storeName = storeInfo_.storeId,
+        .storeName = storeInfo_.storeName,
         .errorType = errCode + GeneralStore::CLOUD_ERR_OFFSET,
         .appendixMsg = appendix };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
@@ -412,7 +412,7 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
         dbStatus = CloudSync(devices, dbMode, async, syncParam.wait, syncParam.prepareTraceId);
         if (dbStatus != DBStatus::OK) {
             Report(FT_CLOUD_SYNC, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
-                "Cloud sync ret=" + std::to_string(static_cast<int32_t>(dBStatus)));
+                "Cloud sync ret=" + std::to_string(static_cast<int32_t>(dbStatus)));
         }
     } else {
         if (devices.empty()) {

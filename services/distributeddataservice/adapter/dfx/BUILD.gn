@@ -14,7 +14,7 @@ import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("dfx_public_config") {
-  include_dirs = ["${data_service_path}/adapter/include/dfx"]
+  include_dirs = [ "${data_service_path}/adapter/include/dfx" ]
 }
 
 ohos_static_library("distributeddata_dfx_static") {
