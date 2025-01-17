@@ -35,6 +35,26 @@ using namespace OHOS::DistributedData;
 using StoreMetaData = DistributedData::StoreMetaData;
 
 namespace OHOS::Test {
+const std::string SECRETKEY_BACKUP_PATH = "/data/service/el1/public/database/backup_test/";
+const std::string SECRETKEY_BACKUP_FILE = SECRETKEY_BACKUP_PATH + "secret_key_backup.conf";
+const std::string NORMAL_CLONE_INFO = 
+    "[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"27,"
+    "145,118,212,62,156,133,135,50,68,188,239,20,170,227,190,37,142,218,"
+    "158,177,32,5,160,13,114,186,141,59,91,44,200\",\"encryption_algname\":"
+    "\"AES256\",\"gcmParams_iv\":\"97,160,201,177,46,37,129,18,112,220,107,"
+    "106,25,231,15,15,58,85,31,83,123,216,211,2,222,49,122,72,21,251,83,"
+    "16\"}},{\"type\":\"application_selection\",\"detail\":[{"
+    "\"bundleName\":\"com.example.restore_test\",\"accessTokenId\":"
+    "536973769}]},{\"type\":\"userId\",\"detail\":\"100\"}]";
+const std::string NORMAL_BACKUP_DATA = 
+    "{\"infos\":[{\"bundleName\":\"com.huawei.example\",\"dbName\":"
+    "\"storeId\",\"instanceId\":0,\"storeType\":\"1\",\"user\":\"100\","
+    "\"sKey\":\"9aJQwx3XD3EN7To2j/I9E9MCzn2+6f/bBqFjOPcY+1pRgx/"
+    "XI6jXedyuzEEVdwrc\",\"time\":[50,180,137,103,0,0,0,0]},{"
+    "\"bundleName\":\"sa1\",\"dbName\":\"storeId1\",\"instanceId\":\"0\","
+    "\"dbType\":\"1\",\"user\":\"0\",\"sKey\":\"9aJQwx3XD3EN7To2j/"
+    "I9E9MCzn2+6f/bBqFjOPcY+1pRgx/"
+    "XI6jXedyuzEEVdwrc\",\"time\":[50,180,137,103,0,0,0,0]}]}";
 class KvStoreDataServiceTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -48,10 +68,16 @@ public:
 };
 
 void KvStoreDataServiceTest::SetUpTestCase(void)
-{}
+{
+    mode_t mode = S_IRWXU | S_IRWXG | S_IXOTH; // 0771
+    mkdir(SECRETKEY_BACKUP_PATH.c_str(), mode);
+}
 
 void KvStoreDataServiceTest::TearDownTestCase(void)
-{}
+{
+    remove(SECRETKEY_BACKUP_FILE.c_str());
+    rmdir(SECRETKEY_BACKUP_PATH.c_str());
+}
 
 void KvStoreDataServiceTest::SetUp(void)
 {}
@@ -78,6 +104,23 @@ void UpgradeManagerTest::SetUp(void)
 
 void UpgradeManagerTest::TearDown(void)
 {}
+
+static int32_t writeContentToFile(const std::string &path, const std::string &content)
+{
+    FILE *fp = fopen(path.c_str(), "w");
+    if (!fp) {
+        return -1;
+    }
+    size_t ret = fwrite(content.c_str(), 1, content.length(), fp);
+    if (ret != content.length()) {
+        (void)fclose(fp);
+        return -1;
+    }
+    (void)fflush(fp);
+    (void)fsync(fileno(fp));
+    (void)fclose(fp);
+    return 0;
+}
 
 /**
 * @tc.name: RegisterClientDeathObserver001
@@ -630,5 +673,142 @@ HWTEST_F(UpgradeManagerTest, UpgradeManagerTest001, TestSize.Level0)
 
     instance.Init(executors);
     EXPECT_TRUE(instance.executors_);
+}
+
+/**
+* @tc.name: OnExtensionRestore001
+* @tc.desc: restore with invalid fd
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore001, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+    data.WriteFileDescriptor(-1);
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+}
+
+/**
+* @tc.name: OnExtensionRestore002
+* @tc.desc: restore with invalid json
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore002, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+    writeContentToFile(SECRETKEY_BACKUP_FILE, "{}");
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+    std::string cloneInfoStr = "[{\"type\":\"application_selection\",\"detail\"";
+    data.WriteString(cloneInfoStr);
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+}
+
+/**
+* @tc.name: OnExtensionRestore003
+* @tc.desc: restore with empty backup content
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore003, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+    writeContentToFile(SECRETKEY_BACKUP_FILE, "{}");
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+    data.WriteString(NORMAL_CLONE_INFO);
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
+}
+
+/**
+* @tc.name: OnExtensionRestore004
+* @tc.desc: restore with invalid backup item
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore004, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+    std::string backupData =
+        "{\"infos\":[{\"bundleName\":\"\",\"dbName\":"
+        "\"storeId\",\"instanceId\":0,\"storeType\":\"1\",\"user\":\"100\","
+        "\"key\":\"9aJQwx3XD3EN7To2j/I9E9MCzn2+6f/bBqFjOPcY+1pRgx/"
+        "XI6jXedyuzEEVdwrc\",\"time\":[50,180,137,103,0,0,0,0]},{"
+        "\"bundleName\":\"sa1\",\"dbName\":\"\",\"instanceId\":\"0\","
+        "\"dbType\":\"1\",\"user\":\"0\",\"key\":\"9aJQwx3XD3EN7To2j/"
+        "I9E9MCzn2+6f/bBqFjOPcY+1pRgx/"
+        "XI6jXedyuzEEVdwrc\",\"time\":[50,180,137,103,0,0,0,0]}]}";
+    writeContentToFile(SECRETKEY_BACKUP_FILE, backupData);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+    data.WriteString(NORMAL_CLONE_INFO);
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), 0);
+    close(fd);
+}
+
+/**
+* @tc.name: OnExtensionRestore005
+* @tc.desc: restore with empty userId
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore005, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    std::string cloneInfoStr =
+        "[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"27,"
+        "145,118,212,62,156,133,135,50,68,188,239\",\"encryption_algname\":"
+        "\"AES256\",\"gcmParams_iv\":\"97,160,201,177,46,37,129,18,112,220,107,"
+        "106,25,231,15,15,58,85,31,83,123,216,211,2,222,49,122,72,21,251,83,"
+        "16\"}},{\"type\":\"userId\",\"detail\":\"\"}]";
+    writeContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+    data.WriteString(cloneInfoStr);
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
+}
+
+/**
+* @tc.name: OnExtensionRestore006
+* @tc.desc: restore success
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yanhui
+*/
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore006, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+    writeContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+    data.WriteString(NORMAL_CLONE_INFO);
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), 0);
+    close(fd);
 }
 } // namespace OHOS::Test
