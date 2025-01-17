@@ -16,19 +16,16 @@
 #ifndef DISTRIBUTEDDATA_SRC_COMMUNICATION_PROVIDER_IMPL_H
 #define DISTRIBUTEDDATA_SRC_COMMUNICATION_PROVIDER_IMPL_H
 
-#include <map>
-#include <mutex>
-#include "app_data_change_listener.h"
-#include "app_pipe_handler.h"
-#include "data_buffer.h"
-#include "log_print.h"
+#include <set>
+
+#include "app_pipe_mgr.h"
 #include "communication_provider.h"
 
 namespace OHOS {
 namespace AppDistributedKv {
 class CommunicationProviderImpl : public CommunicationProvider {
 public:
-    explicit CommunicationProviderImpl();
+    explicit CommunicationProviderImpl(AppPipeMgr &appPipeMgr);
 
     virtual ~CommunicationProviderImpl();
 
@@ -48,7 +45,7 @@ public:
     // stop server
     Status Stop(const PipeInfo &pipeInfo) override;
 
-    bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) override;
+    bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const override;
     void SetMessageTransFlag(const struct PipeInfo &pipeInfo, bool flag) override;
 
     Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo) override;
@@ -57,9 +54,13 @@ public:
 
     Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId) override;
 
+protected:
+    virtual Status Initialize();
+
+    static std::mutex mutex_;
+
 private:
-    std::mutex dataBusMapMutex_ {};
-    std::map<std::string, std::shared_ptr<AppPipeHandler>> dataBusMap_ {};
+    AppPipeMgr &appPipeMgr_;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

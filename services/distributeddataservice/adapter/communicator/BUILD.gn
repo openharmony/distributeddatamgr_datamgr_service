@@ -24,6 +24,10 @@ ohos_source_set("distributeddata_communicator") {
   sources = [
     "src/app_pipe_handler.cpp",
     "src/app_pipe_handler.h",
+    "src/app_pipe_mgr.cpp",
+    "src/app_pipe_mgr.h",
+    "src/ark_communication_provider.cpp",
+    "src/ark_communication_provider.h",
     "src/communication_provider.cpp",
     "src/communication_provider_impl.cpp",
     "src/communication_provider_impl.h",

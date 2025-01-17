@@ -13,20 +13,24 @@
  * limitations under the License.
  */
 
-#include "communication_provider.h"
-#include "ark_communication_provider.h"
+#ifndef IDEVICE_QUERY_H
+#define IDEVICE_QUERY_H
 
+#include "commu_types.h"
 namespace OHOS {
 namespace AppDistributedKv {
-CommunicationProvider &CommunicationProvider::GetInstance()
-{
-    return ArkCommunicationProvider::Init();
-}
+class IDeviceQuery {
+public:
+    API_EXPORT virtual ~IDeviceQuery() {}
 
-std::shared_ptr<CommunicationProvider> CommunicationProvider::MakeCommunicationProvider()
-{
-    static std::shared_ptr<CommunicationProvider> instance(&ArkCommunicationProvider::Init(), [](void *) {});
-    return instance;
-}
+    // Get online deviceList
+    virtual std::vector<DeviceInfo> GetRemoteDevices() const = 0;
+
+    // Get local device information
+    virtual DeviceInfo GetLocalDevice() const = 0;
+    // Get deviceType by networkId
+    virtual DeviceInfo GetDeviceInfo(const std::string &networkId) const = 0;
+};
 }  // namespace AppDistributedKv
 }  // namespace OHOS
+#endif // IDEVICE_QUERY_H
