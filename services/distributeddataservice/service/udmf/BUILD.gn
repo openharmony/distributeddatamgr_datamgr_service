@@ -92,6 +92,8 @@ ohos_source_set("udmf_server") {
     "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
