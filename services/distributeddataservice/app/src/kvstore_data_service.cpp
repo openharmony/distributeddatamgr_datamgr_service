@@ -69,7 +69,6 @@
 #include "utils/block_integer.h"
 #include "utils/crypto.h"
 #include "xcollie.h"
-#include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "base64_utils.h"
 
 namespace OHOS::DistributedKv {
@@ -85,7 +84,6 @@ const std::string EXTENSION_RESTORE = "restore";
 const std::string SECRET_KEY_BACKUP_PATH =
     "/data/service/el1/public/database/distributeddata/"
     "secret_key_backup.conf";
-std::mutex valueMutex_;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
@@ -392,33 +390,40 @@ std::string KvStoreDataService::SetBackupReplyCode(int replyCode, const std::str
     return Serializable::Marshall(reply);
 }
 
-ErrCode KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
-{
+bool KvStoreDataService::CheckBackupInfo(MessageParcel &data, CloneBackupInfo &backupInfo) {
     std::string info = data.ReadString();
-    CloneBackupInfo backupInfo;
     bool success = backupInfo.Unmarshal(DistributedData::Serializable::ToJson(info));
     if (!success) {
         ZLOGE("parse json failed.");
-        return -1;
+        return false;
     }
     auto bundleInfos = backupInfo.bundleInfos;
     auto userId = backupInfo.userId;
     if (bundleInfos.empty()) {
         ZLOGE("bundle empty.");
-        return -1;
+        return false;
     }
     if (userId.empty()) {
         ZLOGE("userId invalid");
+        return false;
+    }
+    return true;
+}
+
+ErrCode KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
+{
+    CloneBackupInfo backupInfo;
+    if (!CheckBackupInfo(data, backupInfo)) {
         return -1;
     }
 
     if (!CryptoManager::GetInstance().ImportBackupKey(backupInfo.encryptionInfo.symkey,
-                                       backupInfo.encryptionInfo.iv)) {
+        backupInfo.encryptionInfo.iv)) {
         return -1;
     };
 
     std::string content;
-    if (!KvStoreDataService::GetSecretKeyBackup(bundleInfos, userId, content)) {
+    if (!KvStoreDataService::GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, content)) {
         return -1;
     };
 
@@ -426,12 +431,14 @@ ErrCode KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
 
     if (!fp) {
         ZLOGE("Secret key backup file open failed");
+        (void)fclose(fp);
         return -1;
     }
     std::lock_guard<std::mutex> lock(valueMutex_);
     size_t ret = fwrite(content.c_str(), 1, content.length(), fp);
     if (ret != content.length()) {
         ZLOGE("Save config file fwrite() failed!");
+        (void)fclose(fp);
         return -1;
     }
 
@@ -473,15 +480,15 @@ bool KvStoreDataService::GetSecretKeyBackup(
             auto key = storeMeta.GetSecretKey();
             SecretKeyMetaData secretKeyMeta;
             if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
-              ZLOGE("Secret key meta load failed, bundleName: %{public}s, Db: "
+                ZLOGE("Secret key meta load failed, bundleName: %{public}s, Db: "
                     "%{public}s, instanceId: %{public}d",
                     storeMeta.bundleName.c_str(), storeMeta.storeId.c_str(),
                     storeMeta.instanceId);
-              continue;
+                continue;
             };
             std::vector<uint8_t> password;
             if (!CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, password)) {
-              ZLOGE("Secret key decrypt failed, bundleName: %{public}s, Db: "
+                ZLOGE("Secret key decrypt failed, bundleName: %{public}s, Db: "
                     "%{public}s, instanceId: %{public}d",
                     storeMeta.bundleName.c_str(), storeMeta.storeId.c_str(),
                     storeMeta.instanceId);

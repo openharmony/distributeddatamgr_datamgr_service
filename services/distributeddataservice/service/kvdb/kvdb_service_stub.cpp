@@ -432,7 +432,7 @@ int32_t KVDBServiceStub::OnGetBackupPassword(
     if (!ITypesUtil::Marshal(reply, status, passwords)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
-        for (auto password : passwords) {
+        for (auto &password : passwords) {
             password.assign(password.size(), 0);
         }
         return IPC_STUB_WRITE_PARCEL_ERR;

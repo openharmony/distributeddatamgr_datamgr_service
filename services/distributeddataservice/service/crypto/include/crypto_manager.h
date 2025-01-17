@@ -39,8 +39,8 @@ public:
     };
 private:
     enum RootKeys {
-        rootKey,
-        backupKey,
+        ROOT_KEY,
+        BACKUP_KEY,
     };
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
     static constexpr const char *BACKUP_KEY_ALIAS = "distributed_db_backup_key";

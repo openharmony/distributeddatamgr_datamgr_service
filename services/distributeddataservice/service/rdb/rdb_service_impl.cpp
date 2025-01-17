@@ -1372,7 +1372,7 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std
     password.resize(KEY_COUNT);
     SecretKeyMetaData secretKey;
     SecretKeyMetaData cloneSecretKey;
-    bool keyMeta = MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKey,true);
+    bool keyMeta = MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKey, true);
     bool cloneKeyMeta = MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), cloneSecretKey, true);
     if (!keyMeta && !cloneKeyMeta) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
