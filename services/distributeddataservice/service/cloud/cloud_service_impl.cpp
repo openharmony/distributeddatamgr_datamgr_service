@@ -47,6 +47,7 @@
 #include "utils/anonymous.h"
 #include "values_bucket.h"
 #include "xcollie.h"
+#include "schemahelper/get_schema_helper.h"
 
 namespace OHOS::CloudData {
 using namespace DistributedData;
@@ -58,6 +59,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 static constexpr uint32_t RESTART_SERVICE_TIME_THRESHOLD = 60;
+constexpr const char *CLOUD_SCHEMA = "arkdata/cloud/cloud_schema.json";
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
     &CloudServiceImpl::SaveNetworkStrategy
@@ -87,6 +89,14 @@ CloudServiceImpl::CloudServiceImpl()
     });
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SHARE, [this](const Event &event) {
         CloudShare(event);
+    });
+    EventCenter::GetInstance().Subscribe(CloudEvent::UPDATE_SCHEMA_FROM_HAP, [this](const Event &event) {
+        auto &cloudEvent = static_cast<const CloudEvent &>(event);
+        auto &storeInfo = cloudEvent.GetStoreInfo();
+        HapInfo hapInfo { .user=storeInfo.user, .instIndex=storeInfo.instanceId, .bundleName=storeInfo.bundleName};
+        auto task = [this, hapInfo]() { UpdateSchemaFromHap(hapInfo);};
+        Execute(task);
+
     });
     MetaDataManager::GetInstance().Subscribe(
         Subscription::GetPrefix({ "" }), [this](const std::string &key,
@@ -916,7 +926,12 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
         return { SUCCESS, schemaMeta };
     }
     UpgradeSchemaMeta(userId, schemaMeta);
-
+    HapInfo hapInfo { .user=userId, .instIndex=instanceId, .bundleName=bundleName};
+    std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
+    if (status == SUCCESS) {
+     	MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+        return { status, schemaMeta };
+    }
     if (!Account::GetInstance()->IsVerified(userId)) {
         ZLOGE("user:%{public}d is locked!", userId);
         return { ERROR, schemaMeta };
@@ -979,6 +994,58 @@ int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleNam
     return UpdateCloudInfoFromServer(user);
 }
 
+int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
+{
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+    if (status != SUCCESS) {
+        return status;
+    }
+    if (!cloudInfo.Exist(bundleName, index)) {
+        ZLOGI("bundleName:%{public}s instanceId:%{public}d is not exist", bundleName.c_str(), index);
+        return ERROR;
+    }
+    StoreInfo storeInfo {.bundleName = bundleName, .instanceId = index, .user = user};
+    EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::UPDATE_SCHEMA_FROM_HAP, storeInfo));
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
+{
+    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
+    auto [ret, hapSchemaMeta] = GetSchemaFromHap(hapInfo);
+    if (ret != SUCCESS) {
+        ZLOGE("get schema from hap failed, schemaKey:%{public}s", schemaKey.c_str());
+        MetaDataManager::GetInstance().DelMeta(schemaKey, true);
+        return ret;
+    }
+    SchemaMeta schemaMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        ZLOGW("local schema is not exist, schemaKey:%{public}s", schemaKey.c_str());
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, hapSchemaMeta, true);
+        return SUCCESS;
+    }
+    if (hapSchemaMeta.version != schemaMeta.version) {
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, hapSchemaMeta, true);
+    }
+    return SUCCESS;
+}
+
+std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
+{
+    SchemaMeta schemaMeta;
+    AppInfo info{.bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex};
+    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
+    if (schemas.size() == 0) {
+        return {ERROR, schemaMeta};
+    }
+    
+    for (auto &schema : schemas) {
+        if (schemaMeta.Unmarshal(schema)) {
+            return {SUCCESS, schemaMeta};
+        }
+    }
+    return {ERROR, schemaMeta};
+}
 void CloudServiceImpl::GetSchema(const Event &event)
 {
     auto &rdbEvent = static_cast<const CloudEvent &>(event);

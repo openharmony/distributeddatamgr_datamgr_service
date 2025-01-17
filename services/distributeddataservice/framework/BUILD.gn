@@ -51,6 +51,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "account/account_delegate.cpp",
     "app_id_mapping/app_id_mapping_config_manager.cpp",
     "backuprule/backup_rule_manager.cpp",
+    "schemahelper/get_schema_helper.cpp",
     "changeevent/remote_change_event.cpp",
     "checker/checker_manager.cpp",
     "cloud/asset_loader.cpp",
@@ -126,6 +127,11 @@ ohos_shared_library("distributeddatasvcfwk") {
     "hilog:libhilog",
     "json:nlohmann_json_static",
     "openssl:libcrypto_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "samgr:samgr_proxy",
+    "ipc:ipc_single",
+    "resource_management:global_resmgr",
   ]
   subsystem_name = "distributeddatamgr"
 

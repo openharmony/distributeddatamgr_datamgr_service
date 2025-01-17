@@ -61,6 +61,7 @@ ohos_source_set("distributeddata_cloud") {
 
   deps = [
     "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/network:distributeddata_network",

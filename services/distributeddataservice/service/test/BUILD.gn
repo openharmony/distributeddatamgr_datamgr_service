@@ -1275,6 +1275,8 @@ group("unittest") {
     ":DumpHelperTest",
     ":MetaDataTest",
     ":ValueProxyServiceTest",
+    "testCloud:testCloud",
+    "ohos_test:copy_ohos_test",
   ]
 }
 ###############################################################################

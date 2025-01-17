@@ -78,6 +78,7 @@ private:
         ~CloudStatic() override{};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
     };
     class Factory {
     public:
@@ -164,6 +165,9 @@ private:
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
+
+    std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
+    int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

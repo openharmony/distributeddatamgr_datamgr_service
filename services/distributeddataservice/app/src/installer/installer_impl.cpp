@@ -95,21 +95,6 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
 void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
     kvStoreDataService_->OnUpdate(bundleName, userId, appIndex);
-    std::string prefix = StoreMetaData::GetPrefix(
-        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
-    std::vector<StoreMetaData> storeMetaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true)) {
-        ZLOGE("load meta failed! bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d", bundleName.c_str(),
-            userId, appIndex);
-        return;
-    }
-    for (auto &meta : storeMetaData) {
-        if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("updated bundleName:%{public}s, storeId:%{public}s, userId:%{public}d, appIndex:%{public}d",
-                bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
-            MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(meta), true);
-        }
-    }
 }
 
 void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
