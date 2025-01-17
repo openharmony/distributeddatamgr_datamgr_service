@@ -26,6 +26,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/directory/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/matrix/include",
@@ -64,6 +65,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
 
   sources = [
     "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
@@ -79,6 +81,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/service/data_share/common/base64_utils.cpp",
     "dataservicestub_fuzzer.cpp",
   ]
 
