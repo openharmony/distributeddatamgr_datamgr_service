@@ -106,13 +106,11 @@ ohos_source_set("data_share_service") {
   deps = [
     "${data_service_path}/service/common:distributeddata_common",
     "../../adapter:distributeddata_adapter",
-    "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",
   ]
 
   external_deps = [
     "ability_base:want",
-    "ability_base:zuri",
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
@@ -122,7 +120,6 @@ ohos_source_set("data_share_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
@@ -133,7 +130,6 @@ ohos_source_set("data_share_service") {
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
-    "resource_management:global_resmgr",
     "samgr:samgr_proxy",
     "time_service:time_client",
   ]
