@@ -32,8 +32,7 @@ ohos_source_set("distributeddata_screenlock") {
     "${data_service_path}/framework/include",
   ]
 
-  deps =
-      [ "${data_service_path}/adapter/account:distributeddata_account" ]
+  deps = [ "${data_service_path}/adapter/account:distributeddata_account" ]
 
   external_deps = [
     "c_utils:utils",

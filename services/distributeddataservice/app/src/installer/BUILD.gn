@@ -56,7 +56,6 @@ ohos_source_set("distributeddata_installer") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_mgr",

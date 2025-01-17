@@ -19,7 +19,6 @@
 #include <string>
 #include <atomic>
 #include "visibility.h"
-#include "communication_provider.h"
 
 namespace OHOS {
 namespace DistributedKv {
