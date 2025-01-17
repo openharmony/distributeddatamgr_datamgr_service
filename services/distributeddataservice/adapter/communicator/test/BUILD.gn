@@ -33,7 +33,8 @@ ohos_unittest("CommunicationProviderTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
-  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator" ]
+
+  deps = [ "${data_service_path}/adapter/communicator:distributeddata_communicator" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -62,7 +63,7 @@ ohos_unittest("DeviceManagerAdapterTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator" ]
+  deps = [ "${data_service_path}/adapter/communicator:distributeddata_communicator" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

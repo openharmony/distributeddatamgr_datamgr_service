@@ -42,6 +42,7 @@ ohos_source_set("distributeddata_cloud") {
   ]
 
   include_dirs = [
+    "${data_service_path}/adapter/include",
     "${data_service_path}/service/common",
     "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/kvdb",

@@ -55,7 +55,7 @@ ohos_source_set("distributeddata_communicator") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "../dfx:distributeddata_dfx",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils",
+    "${data_service_path}/adapter/utils:distributeddata_utils"
   ]
 
   external_deps = [

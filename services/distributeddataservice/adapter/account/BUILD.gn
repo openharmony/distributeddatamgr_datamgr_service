@@ -31,8 +31,7 @@ ohos_source_set("distributeddata_account") {
     "../include/permission",
     "../include/utils",
     "./src",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include/account",
+    "${data_service_path}/framework/include/account",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
