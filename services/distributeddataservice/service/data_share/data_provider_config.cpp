@@ -32,7 +32,7 @@ using namespace OHOS::DistributedData;
 DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTokenId)
 {
     providerInfo_.uri = uri;
-    providerInfo_.currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    providerInfo_.currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     providerInfo_.visitedUserId = providerInfo_.currentUserId;
     URIUtils::GetAppIndexFromProxyURI(providerInfo_.uri, providerInfo_.appIndex);
     if (providerInfo_.currentUserId == 0) {
@@ -93,6 +93,7 @@ int DataProviderConfig::GetFromProxyData()
             }
             providerInfo_.readPermission = std::move(data.requiredReadPermission);
             providerInfo_.writePermission = std::move(data.requiredWritePermission);
+            providerInfo_.allowLists = std::move(data.profileInfo.profile.allowLists);
             auto profileInfo = data.profileInfo;
             if (profileInfo.resultCode == NOT_FOUND) {
                 return E_OK;

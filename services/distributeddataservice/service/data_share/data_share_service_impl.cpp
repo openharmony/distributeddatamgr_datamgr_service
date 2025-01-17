@@ -20,7 +20,6 @@
 #include <cstdint>
 #include <utility>
 
-#include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
 #include "common_event_manager.h"
@@ -288,6 +287,28 @@ bool DataShareServiceImpl::GetCallerBundleName(std::string &bundleName)
     return true;
 }
 
+std::pair<bool, Security::AccessToken::ATokenTypeEnum> DataShareServiceImpl::GetCallerInfo(
+    std::string &bundleName, int32_t &appIndex)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (type == Security::AccessToken::TOKEN_NATIVE) {
+        return std::make_pair(true, type);
+    }
+    if (type != Security::AccessToken::TOKEN_HAP) {
+        return std::make_pair(false, type);
+    }
+    Security::AccessToken::HapTokenInfo tokenInfo;
+    auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (result != Security::AccessToken::RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
+        return std::make_pair(false, type);
+    }
+    bundleName = tokenInfo.bundleName;
+    appIndex = tokenInfo.instIndex;
+    return std::make_pair(true, type);
+}
+
 std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, const std::string &bundleNameOfProvider)
 {
     std::vector<OperationResult> results;
@@ -537,8 +558,8 @@ enum DataShareKvStoreType : int32_t {
 int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
 {
     binderInfo_ = binderInfo;
-    const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(binderInfo.selfTokenId);
+    const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
+    const auto userId = AccountDelegate::GetInstance()->GetUserByToken(binderInfo.selfTokenId);
     DistributedData::StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.storeId = "data_share_data_";
@@ -869,7 +890,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
             return errCode;
         }
     }
-    int32_t currentUserId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    int32_t currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     UriInfo uriInfo;
     if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
         return E_OK;
@@ -904,6 +925,11 @@ int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
     }
+    if (!CheckAllowList(providerInfo.currentUserId, callerTokenId, providerInfo.allowLists)) {
+        ZLOGE("CheckAllowList failed, permission denied! token:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(providerInfo.uri).c_str());
+        return ERROR;
+    }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
             callerTokenId, URIUtils::Anonymous(uri).c_str());
@@ -937,6 +963,11 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     if (errCode != E_OK) {
         ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
+    }
+    if (!CheckAllowList(providerInfo.currentUserId, callerTokenId, providerInfo.allowLists)) {
+        ZLOGE("CheckAllowList failed, permission denied! token:0x%{public}x, uri:%{public}s",
+            callerTokenId, URIUtils::Anonymous(providerInfo.uri).c_str());
+        return ERROR;
     }
     if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
         ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
@@ -992,6 +1023,11 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
+    if (!CheckAllowList(providerInfo.currentUserId, tokenId, providerInfo.allowLists)) {
+        ZLOGE("CheckAllowList failed, permission denied! token:0x%{public}x, uri:%{public}s",
+            tokenId, URIUtils::Anonymous(providerInfo.uri).c_str());
+        return std::make_pair(ERROR_PERMISSION_DENIED, 0);
+    }
     std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
     if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
@@ -1016,6 +1052,43 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
         return std::make_pair(code, 0);
     }
     return callback(providerInfo, metaData, dbDelegate);
+}
+
+bool DataShareServiceImpl::CheckAllowList(const uint32_t &currentUserId, const uint32_t &callerTokenId,
+    const std::vector<AllowList> &allowLists)
+{
+    if (allowLists.empty()) {
+        return true;
+    }
+    std::string callerBundleName;
+    int32_t callerAppIndex;
+    auto [success, type] = GetCallerInfo(callerBundleName, callerAppIndex);
+    if (!success) {
+        ZLOGE("Get caller info failed, token:0x%{public}x", callerTokenId);
+        return false;
+    }
+    // SA calling
+    if (type == Security::AccessToken::TOKEN_NATIVE) {
+        return true;
+    }
+
+    auto [ret, callerAppIdentifier] = BundleMgrProxy::GetInstance()->GetCallerAppIdentifier(
+        callerBundleName, currentUserId);
+    if (ret != 0) {
+        ZLOGE("Get caller appIdentifier failed, callerBundleName is %{public}s", callerBundleName.c_str());
+        return false;
+    }
+
+    for (auto const& allowList : allowLists) {
+        if (callerAppIdentifier == allowList.appIdentifier) {
+            if (callerAppIndex != 0 && allowList.onlyMain) {
+                ZLOGE("Provider only allow main application!");
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId)
@@ -1076,10 +1149,10 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
     ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
         Anonymous::Change(account).c_str());
     switch (code) {
-        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_DELETE):
-        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_STOPPED): {
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_DELETE):
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPED): {
             std::vector<int32_t> users;
-            DistributedKv::AccountDelegate::GetInstance()->QueryUsers(users);
+            AccountDelegate::GetInstance()->QueryUsers(users);
             std::set<int32_t> userIds(users.begin(), users.end());
             userIds.insert(0);
             DBDelegate::Close([&userIds](const std::string &userId) {
@@ -1091,7 +1164,7 @@ int32_t DataShareServiceImpl::OnUserChange(uint32_t code, const std::string &use
             });
             break;
         }
-        case static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_STOPPING):
+        case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
             DBDelegate::Close([&user](const std::string &userId) {
                 return user == userId;
             });

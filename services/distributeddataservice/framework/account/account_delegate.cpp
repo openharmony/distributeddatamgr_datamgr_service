@@ -16,7 +16,7 @@
 #include "account_delegate.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedData {
 AccountDelegate *AccountDelegate::instance_ = nullptr;
 
 bool AccountDelegate::RegisterAccountInstance(AccountDelegate *instance)
@@ -32,5 +32,5 @@ AccountDelegate *AccountDelegate::GetInstance()
 {
     return instance_;
 }
-} // namespace DistributedKv
+} // namespace DistributedData
 } // namespace OHOS

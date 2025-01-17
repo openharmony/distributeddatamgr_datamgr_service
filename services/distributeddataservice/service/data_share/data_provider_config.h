@@ -50,6 +50,7 @@ public:
         bool allowEmptyPermission = false;
         bool storeMetaDataFromUri = false;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
+        std::vector<AllowList> allowLists;
     };
 
     std::pair<int, ProviderInfo> GetProviderInfo();

@@ -19,11 +19,14 @@
 #include "account_delegate.h"
 #include "account_delegate_impl.h"
 #include "account_delegate_normal_impl.h"
+#include "error/general_error.h"
 #include "ipc_skeleton.h"
 #include "ohos_account_kits.h"
 #include "os_account_manager.h"
 #include "log_print.h"
+
 namespace {
+using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
 using namespace testing::ext;
 class AccountObserver : public AccountDelegate::Observer {
@@ -80,11 +83,11 @@ HWTEST_F(AccountDelegateTest, Subscribe001, TestSize.Level0)
     auto account = AccountDelegate::GetInstance();
     EXPECT_NE(account, nullptr);
     auto status = account->Subscribe(nullptr);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    EXPECT_EQ(status, GeneralError::E_INVALID_ARGS);
     auto observer = std::make_shared<AccountObserver>();
     observer->SetName("");
     status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    EXPECT_EQ(status, GeneralError::E_INVALID_ARGS);
 }
 
 /**
@@ -100,10 +103,10 @@ HWTEST_F(AccountDelegateTest, Subscribe002, TestSize.Level0)
     EXPECT_NE(account, nullptr);
     auto observer = std::make_shared<AccountObserver>();
     auto status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
     observer->SetName("Subscribe002Observer");
     status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
 }
 
 /**
@@ -118,13 +121,13 @@ HWTEST_F(AccountDelegateTest, Subscribe003, TestSize.Level0)
     EXPECT_NE(account, nullptr);
     auto observer = std::make_shared<AccountObserver>();
     auto status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    EXPECT_EQ(status, GeneralError::E_INVALID_ARGS);
     observer->SetName("Subscribe003Observer");
     status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
     observer->SetName("Subscribe002ObserverAfter");
     status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
 }
 
 /**
@@ -139,14 +142,14 @@ HWTEST_F(AccountDelegateTest, Unsubscribe001, TestSize.Level0)
     auto account = AccountDelegate::GetInstance();
     EXPECT_NE(account, nullptr);
     auto status = account->Unsubscribe(nullptr);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    EXPECT_EQ(status, GeneralError::E_INVALID_ARGS);
     auto observer = std::make_shared<AccountObserver>();
     observer->SetName("");
     status = account->Unsubscribe(observer);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    EXPECT_EQ(status, GeneralError::E_INVALID_ARGS);
     observer->SetName("Unsubscribe001Observer");
     status = account->Unsubscribe(observer);
-    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    EXPECT_EQ(status, GeneralError::E_INVALID_ARGS);
 }
 
 /**
@@ -163,18 +166,18 @@ HWTEST_F(AccountDelegateTest, Unsubscribe002, TestSize.Level0)
     auto observer = std::make_shared<AccountObserver>();
     account->Subscribe(observer);
     auto status = account->Unsubscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
     observer->SetName("Unsubscribe002ObserverPre");
     status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
     observer->SetName("Unsubscribe002ObserverAfter");
     status = account->Subscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
     status = account->Unsubscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
     observer->SetName("Unsubscribe002ObserverPre");
     status = account->Unsubscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
 }
 
 /**
@@ -246,7 +249,7 @@ HWTEST_F(AccountDelegateTest, UnsubscribeAccountEvent, TestSize.Level0)
     AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
     AccountDelegate::GetInstance()->BindExecutor(executor);
     auto status = account->Unsubscribe(observer);
-    EXPECT_EQ(status, Status::SUCCESS);
+    EXPECT_EQ(status, GeneralError::E_OK);
 }
 
 /**

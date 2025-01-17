@@ -26,7 +26,7 @@
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
-using AccountDelegate = DistributedKv::AccountDelegate;
+using AccountDelegate = DistributedData::AccountDelegate;
 using DistributedData::UserStatus;
 class UserDelegate {
 public:
@@ -48,7 +48,7 @@ private:
     class LocalUserObserver : public AccountDelegate::Observer {
     public:
         explicit LocalUserObserver(UserDelegate &userDelegate);
-        void OnAccountChanged(const DistributedKv::AccountEventInfo &eventInfo) override;
+        void OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo) override;
         std::string Name() override;
         LevelType GetLevel() override
         {

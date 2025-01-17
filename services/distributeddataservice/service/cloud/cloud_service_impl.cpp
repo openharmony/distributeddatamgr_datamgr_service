@@ -50,13 +50,12 @@
 
 namespace OHOS::CloudData {
 using namespace DistributedData;
-using namespace DistributedKv;
 using namespace std::chrono;
 using namespace SharingUtil;
 using namespace Security::AccessToken;
 using namespace DistributedDataDfx;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-using Account = OHOS::DistributedKv::AccountDelegate;
+using Account = AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 static constexpr uint32_t RESTART_SERVICE_TIME_THRESHOLD = 60;
 static constexpr const char *FT_ENABLE_CLOUD = "ENABLE_CLOUD";

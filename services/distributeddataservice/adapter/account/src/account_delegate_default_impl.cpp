@@ -15,12 +15,13 @@
 #define LOG_TAG "AccountDelegateDefaultImpl"
 
 #include "account_delegate_default_impl.h"
+
 #include "log_print.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedData {
 namespace {
-    constexpr const char *DEFAULT_OHOS_ACCOUNT_UID = ""; // default UID
+constexpr const char *DEFAULT_OHOS_ACCOUNT_UID = ""; // default UID
 }
 __attribute__((used)) static bool g_isInit = AccountDelegateDefaultImpl::Init();
 
@@ -95,5 +96,5 @@ bool AccountDelegateDefaultImpl::Init()
     std::call_once(onceFlag, [&]() { AccountDelegate::RegisterAccountInstance(&defaultAccountDelegate); });
     return true;
 }
-} // namespace DistributedKv
-}  // namespace OHOS
+} // namespace DistributedData
+} // namespace OHOS

@@ -48,7 +48,7 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
     auto user = want.GetIntParam(USER_ID, INVALID_USER);
     if (user == INVALID_USER) {
         std::vector<int32_t> users;
-        DistributedKv::AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+        AccountDelegate::GetInstance()->QueryForegroundUsers(users);
         if (users.empty()) {
             return;
         }

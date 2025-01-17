@@ -44,7 +44,7 @@ using namespace DistributedDataDfx;
 using namespace DistributedKv;
 using namespace SharingUtil;
 using namespace std::chrono;
-using Account = OHOS::DistributedKv::AccountDelegate;
+using Account = OHOS::DistributedData::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
@@ -678,8 +678,8 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
         if (instance == nullptr) {
             return cloudSyncInfos;
         }
-        auto [errCode, cloudInfo] = instance->GetServerInfo(cloud.user, false);
-        cloud = cloudInfo;
+        int32_t errCode = SUCCESS;
+        std::tie(errCode, cloud) = instance->GetServerInfo(cloud.user, false);
         if (!cloud.IsValid()) {
             ZLOGE("cloud is empty, user: %{public}d", cloud.user);
             return cloudSyncInfos;

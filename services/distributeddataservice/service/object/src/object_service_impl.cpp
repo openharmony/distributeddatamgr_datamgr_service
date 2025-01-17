@@ -134,8 +134,8 @@ int32_t ObjectServiceImpl::OnInitialize()
         return OBJECT_INNER_ERROR;
     }
     auto token = IPCSkeleton::GetCallingTokenID();
-    const std::string accountId = DistributedKv::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = DistributedKv::AccountDelegate::GetInstance()->GetUserByToken(token);
+    const std::string accountId = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    const auto userId = DistributedData::AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData saveMeta;
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
@@ -178,7 +178,7 @@ int32_t ObjectServiceImpl::OnInitialize()
 
 int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    if (code == static_cast<uint32_t>(DistributedKv::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+    if (code == static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         Clear();
     }
     return Feature::OnUserChange(code, user, account);

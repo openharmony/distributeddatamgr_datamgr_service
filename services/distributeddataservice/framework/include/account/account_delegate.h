@@ -24,7 +24,7 @@
 #include "visibility.h"
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedData {
 enum class AccountStatus {
     HARMONY_ACCOUNT_LOGIN = 0, // the openHarmony account is logged in
     HARMONY_ACCOUNT_LOGOUT,    // the openHarmony account is logged out
@@ -59,8 +59,8 @@ public:
     };
     using HashFunc = std::string (*)(const void *data, size_t size, bool isUpper);
     API_EXPORT virtual ~AccountDelegate() = default;
-    API_EXPORT virtual Status Subscribe(std::shared_ptr<Observer> observer) = 0;
-    API_EXPORT virtual Status Unsubscribe(std::shared_ptr<Observer> observer) = 0;
+    API_EXPORT virtual int32_t Subscribe(std::shared_ptr<Observer> observer) = 0;
+    API_EXPORT virtual int32_t Unsubscribe(std::shared_ptr<Observer> observer) = 0;
     API_EXPORT virtual std::string GetCurrentAccountId() const = 0;
     API_EXPORT virtual int32_t GetUserByToken(uint32_t tokenId) const = 0;
     API_EXPORT virtual void SubscribeAccountEvent() = 0;

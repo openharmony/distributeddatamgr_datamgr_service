@@ -98,7 +98,7 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
             }
         }
     }
-    
+
     if (!ret) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
@@ -113,6 +113,39 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
     bundleConfig = bundle;
     bundleCache_.Insert(bundleKey, bundle);
     return E_OK;
+}
+
+std::pair<int, std::string> BundleMgrProxy::GetCallerAppIdentifier(
+    const std::string &bundleName, int32_t userId)
+{
+    std::string callerAppIdentifier;
+    std::string callerKey = bundleName + std::to_string(userId);
+    auto it = callerInfoCache_.Find(callerKey);
+    if (it.first) {
+        callerAppIdentifier = it.second;
+        return std::make_pair(E_OK, callerAppIdentifier);
+    }
+    AppExecFwk::BundleInfo bundleInfo;
+    auto bmsClient = GetBundleMgrProxy();
+    if (bmsClient == nullptr) {
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BMS_FAILED);
+        ZLOGE("GetBundleMgrProxy is nullptr!");
+        return std::make_pair(E_BMS_NOT_READY, bundleInfo.signatureInfo.appIdentifier);
+    }
+
+    int ret = bmsClient->GetBundleInfoV9(bundleName,
+        static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_SIGNATURE_INFO), bundleInfo, userId);
+    if (ret != 0) {
+        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
+            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
+        ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d, errcode is %{public}d",
+            bundleName.c_str(), userId, ret);
+        return std::make_pair(E_BUNDLE_NAME_NOT_EXIST, bundleInfo.signatureInfo.appIdentifier);
+    }
+
+    callerInfoCache_.Insert(callerKey, bundleInfo.signatureInfo.appIdentifier);
+    return std::make_pair(ret, bundleInfo.signatureInfo.appIdentifier);
 }
 
 void BundleMgrProxy::OnProxyDied()
@@ -141,6 +174,7 @@ void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId, int32
     } else {
         bundleCache_.Erase(bundleName + std::to_string(userId));
     }
+    callerInfoCache_.Erase(bundleName + std::to_string(userId));
     return;
 }
 
