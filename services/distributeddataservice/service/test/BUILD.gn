@@ -452,9 +452,9 @@ ohos_unittest("KVDBGeneralStoreTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_distributeddb_path}:distributeddb",
     "//third_party/googletest:gtest_main",
@@ -734,8 +734,8 @@ ohos_unittest("ObjectDmsHandlerTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "//third_party/googletest:gtest_main",
   ]
 
@@ -866,14 +866,14 @@ ohos_unittest("MetaDataTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
     "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
@@ -919,9 +919,9 @@ ohos_unittest("UdmfRunTimeStoreTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/service/udmf:udmf_server",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
@@ -1093,9 +1093,9 @@ ohos_unittest("KvdbServiceImplTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
@@ -1240,8 +1240,8 @@ ohos_unittest("PermissionValidatorTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
 
   external_deps = [

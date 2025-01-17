@@ -15,8 +15,10 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("network_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [ "${data_service_path}/service/network",
-                   "${data_service_path}/adapter/include/communicator"]
+  include_dirs = [
+    "${data_service_path}/service/network",
+    "${data_service_path}/adapter/include/communicator",
+  ]
 }
 
 ohos_source_set("distributeddata_network") {
@@ -45,13 +47,15 @@ ohos_source_set("distributeddata_network") {
     "-Oz",
   ]
 
-  deps = ["${data_service_path}/adapter/communicator:distributeddata_communicator"]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
 
   external_deps = [
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
+    "kv_store:datamgr_common",
     "netmanager_base:net_conn_manager_if",
-    "kv_store:datamgr_common"
   ]
 
   subsystem_name = "distributeddatamgr"

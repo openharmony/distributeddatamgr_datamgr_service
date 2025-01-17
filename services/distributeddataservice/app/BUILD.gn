@@ -121,11 +121,11 @@ ohos_shared_library("distributeddataservice") {
 
   configs = [ ":module_private_config" ]
   deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
   ]
 
   external_deps = [

@@ -54,8 +54,8 @@ ohos_source_set("distributeddata_bootstrap") {
 
   external_deps = [
     "hilog:libhilog",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
-    "json:nlohmann_json_static"
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

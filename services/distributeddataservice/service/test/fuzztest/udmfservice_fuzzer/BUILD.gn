@@ -45,10 +45,10 @@ ohos_fuzztest("UdmfServiceFuzzTest") {
   sources = [ "udmfservice_fuzzer.cpp" ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/udmf:udmf_server",
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/udmf:udmf_server",
   ]
 
   external_deps = [

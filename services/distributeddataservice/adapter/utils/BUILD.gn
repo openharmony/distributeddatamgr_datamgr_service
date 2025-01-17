@@ -35,7 +35,7 @@ ohos_source_set("distributeddata_utils") {
     "../include/utils",
     "../include/log",
     "../include/communicator",
-    "../include/dfx"
+    "../include/dfx",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 

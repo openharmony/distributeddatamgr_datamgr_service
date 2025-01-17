@@ -346,12 +346,12 @@ ohos_unittest("ServiceMetaDataTest") {
   ]
 
   deps = [
-    "${data_service_path}/app/src/checker:distributeddata_checker",
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_distributeddb_path}:distributeddb",
     "${kv_store_path}/interfaces/innerkits/distributeddata:distributeddata_inner",

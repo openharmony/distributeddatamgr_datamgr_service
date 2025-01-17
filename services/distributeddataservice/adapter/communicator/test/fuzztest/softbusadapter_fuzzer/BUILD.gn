@@ -26,7 +26,7 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "${data_service_path}/adapter/include/autils",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/communicator/src",
-    "${data_service_path}/framework/include"
+    "${data_service_path}/framework/include",
   ]
 
   fuzz_config_file = "${data_service_path}/adapter/communicator/test/fuzztest/softbusadapter_fuzzer"
@@ -51,7 +51,7 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb"
+    "kv_store:distributeddb",
   ]
 }
 

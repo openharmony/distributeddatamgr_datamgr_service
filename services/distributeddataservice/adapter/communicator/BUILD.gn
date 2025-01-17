@@ -53,9 +53,9 @@ ohos_source_set("distributeddata_communicator") {
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "../dfx:distributeddata_dfx",
-    "${data_service_path}/adapter/utils:distributeddata_utils"
   ]
 
   external_deps = [

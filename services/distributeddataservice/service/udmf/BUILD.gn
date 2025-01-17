@@ -90,6 +90,7 @@ ohos_source_set("udmf_server") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -100,7 +101,6 @@ ohos_source_set("udmf_server") {
     "samgr:samgr_proxy",
     "udmf:udmf_client",
     "udmf:utd_client",
-    "device_manager:devicemanagersdk"
   ]
   cflags_cc = [
     "-fvisibility=hidden",

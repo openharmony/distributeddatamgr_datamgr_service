@@ -120,13 +120,13 @@ ohos_unittest("KvStoreDataServiceTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
     "//third_party/googletest:gtest_main",
   ]
   part_name = "datamgr_service"
@@ -175,12 +175,12 @@ ohos_unittest("SessionManagerTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
     "//third_party/googletest:gtest_main",
@@ -286,13 +286,13 @@ ohos_unittest("KvStoreDataServiceClearTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
     "//third_party/googletest:gtest_main",
   ]
 

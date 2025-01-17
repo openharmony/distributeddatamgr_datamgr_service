@@ -34,7 +34,9 @@ ohos_unittest("CommunicationProviderTest") {
     "kv_store:distributeddata_inner",
   ]
 
-  deps = [ "${data_service_path}/adapter/communicator:distributeddata_communicator" ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -63,7 +65,9 @@ ohos_unittest("DeviceManagerAdapterTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  deps = [ "${data_service_path}/adapter/communicator:distributeddata_communicator" ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -92,7 +96,9 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  deps = [ "${data_service_path}/adapter/communicator:distributeddata_communicator" ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

@@ -62,9 +62,7 @@ ohos_source_set("distributeddata_cloud") {
     "-Oz",
   ]
 
-  deps = [
-    "${data_service_path}/service/network:distributeddata_network",
-  ]
+  deps = [ "${data_service_path}/service/network:distributeddata_network" ]
 
   external_deps = [
     "access_token:libtokenid_sdk",

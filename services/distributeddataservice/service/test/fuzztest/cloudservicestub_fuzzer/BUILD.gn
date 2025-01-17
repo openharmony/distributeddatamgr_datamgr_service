@@ -89,6 +89,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/thread_config.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
@@ -104,16 +105,15 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_service_stub.cpp",
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "cloudservicestub_fuzzer.cpp",
-    "${data_service_path}/service/permission/src/permission_validator.cpp",
   ]
 
   deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/network:distributeddata_network",
     "${kv_store_distributeddb_path}:distributeddb",
-    "${data_service_path}/adapter/account:distributeddata_account"
   ]
 
   external_deps = [
