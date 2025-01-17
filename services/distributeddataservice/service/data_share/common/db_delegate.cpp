@@ -25,7 +25,9 @@
 namespace OHOS::DataShare {
 using Account = DistributedData::AccountDelegate;
 ExecutorPool::TaskId DBDelegate::taskId_ = ExecutorPool::INVALID_TASK_ID;
+ExecutorPool::TaskId DBDelegate::taskIdEncrypt_ = ExecutorPool::INVALID_TASK_ID;
 ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::stores_ = {};
+ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::storesEncrypt_ = {};
 std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
     const std::string &extUri, const std::string &backup)
@@ -36,25 +38,30 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
         return nullptr;
     }
     std::shared_ptr<DBDelegate> store;
-    stores_.Compute(metaData.tokenId,
-        [&metaData, &store, extUri, &backup](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
-            auto it = stores.find(metaData.storeId);
-            if (it != stores.end()) {
-                store = it->second->store_;
-                it->second->time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
-                return !stores.empty();
-            }
-            store = std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backup);
-            if (store->IsInvalid()) {
-                store = nullptr;
-                ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
-                return false;
-            }
-            auto entity = std::make_shared<Entity>(store, metaData);
-            stores.emplace(metaData.storeId, entity);
-            StartTimer();
+    auto storeFunc = [&metaData, &store, extUri, &backup]
+        (auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
+        auto it = stores.find(metaData.storeId);
+        if (it != stores.end()) {
+            store = it->second->store_;
+            it->second->time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
             return !stores.empty();
-        });
+        }
+        store = std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backup);
+        if (store->IsInvalid()) {
+            store = nullptr;
+            ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
+            return false;
+        }
+        auto entity = std::make_shared<Entity>(store, metaData);
+        stores.emplace(metaData.storeId, entity);
+        StartTimer(metaData.isEncrypt);
+        return !stores.empty();
+    };
+    if (metaData.isEncrypt) {
+        storesEncrypt_.Compute(metaData.tokenId, storeFunc);
+    } else {
+        stores_.Compute(metaData.tokenId, storeFunc);
+    }
     return store;
 }
 
@@ -69,7 +76,7 @@ void DBDelegate::Close(const DBDelegate::Filter &filter)
         return;
     }
     std::list<std::shared_ptr<DBDelegate::Entity>> closeStores;
-    stores_.EraseIf([&closeStores, &filter](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
+    auto eraseFunc = [&closeStores, &filter](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
         for (auto it = stores.begin(); it != stores.end();) {
             if (it->second == nullptr || filter(it->second->user)) {
                 closeStores.push_back(it->second);
@@ -79,13 +86,15 @@ void DBDelegate::Close(const DBDelegate::Filter &filter)
             }
         }
         return stores.empty();
-    });
+    };
+    stores_.EraseIf(eraseFunc);
+    storesEncrypt_.EraseIf(eraseFunc);
 }
 
-void DBDelegate::GarbageCollect()
+void DBDelegate::GarbageCollect(bool encrypt)
 {
     std::list<std::shared_ptr<DBDelegate::Entity>> closeStores;
-    stores_.EraseIf([&closeStores](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
+    auto eraseFunc = [&closeStores](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) {
         auto current = std::chrono::steady_clock::now();
         for (auto it = stores.begin(); it != stores.end();) {
             if (it->second->time_ < current) {
@@ -96,28 +105,41 @@ void DBDelegate::GarbageCollect()
             }
         }
         return stores.empty();
-    });
+    };
+    if (encrypt) {
+        storesEncrypt_.EraseIf(eraseFunc);
+    } else {
+        stores_.EraseIf(eraseFunc);
+    }
 }
 
-void DBDelegate::StartTimer()
+void DBDelegate::StartTimer(bool encrypt)
 {
-    if (executor_ == nullptr || taskId_ != Executor::INVALID_TASK_ID) {
+    ExecutorPool::TaskId& dstTaskId = encrypt ? taskIdEncrypt_ : taskId_;
+
+    if (executor_ == nullptr || dstTaskId != Executor::INVALID_TASK_ID) {
         return;
     }
-    taskId_ = executor_->Schedule(
-        []() {
-            GarbageCollect();
-            stores_.DoActionIfEmpty([]() {
-                if (executor_ == nullptr || taskId_ == Executor::INVALID_TASK_ID) {
+    dstTaskId = executor_->Schedule(
+        [encrypt]() {
+            GarbageCollect(encrypt);
+            auto task = [encrypt]() {
+                ExecutorPool::TaskId& dstTaskIdTemp = encrypt ? taskIdEncrypt_ : taskId_;
+                if (executor_ == nullptr || dstTaskIdTemp == Executor::INVALID_TASK_ID) {
                     return;
                 }
-                executor_->Remove(taskId_);
-                ZLOGD_MACRO("remove timer, taskId: %{public}" PRIu64, taskId_);
-                taskId_ = Executor::INVALID_TASK_ID;
-            });
+                executor_->Remove(dstTaskIdTemp);
+                ZLOGD_MACRO("remove timer, taskId: %{public}" PRIu64, dstTaskIdTemp);
+                dstTaskIdTemp = Executor::INVALID_TASK_ID;
+            };
+            if (encrypt) {
+                stores_.DoActionIfEmpty(task);
+            } else {
+                storesEncrypt_.DoActionIfEmpty(task);
+            }
         },
         std::chrono::seconds(INTERVAL), std::chrono::seconds(INTERVAL));
-    ZLOGD_MACRO("start timer, taskId: %{public}" PRIu64, taskId_);
+    ZLOGD_MACRO("start timer, taskId: %{public}" PRIu64, dstTaskId);
 }
 
 DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store, const DistributedData::StoreMetaData &meta)
@@ -130,6 +152,7 @@ DBDelegate::Entity::Entity(std::shared_ptr<DBDelegate> store, const DistributedD
 void DBDelegate::EraseStoreCache(const int32_t tokenId)
 {
     stores_.Erase(tokenId);
+    storesEncrypt_.Erase(tokenId);
 }
 
 std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
