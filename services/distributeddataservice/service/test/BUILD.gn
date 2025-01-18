@@ -51,6 +51,8 @@ config("module_private_config") {
     "${kv_store_distributeddb_path}/include/",
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
   cflags = [ "-Werror" ]
   defines = [
@@ -94,6 +96,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/matrix/src/device_matrix.cpp",
     "${data_service_path}/service/matrix/src/matrix_event.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
@@ -136,8 +139,9 @@ ohos_unittest("CloudDataTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/service/network:distributeddata_network",
-    "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
@@ -185,6 +189,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/matrix/src/device_matrix.cpp",
     "${data_service_path}/service/matrix/src/matrix_event.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
@@ -226,8 +231,9 @@ ohos_unittest("CloudServiceImplTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/service/network:distributeddata_network",
-    "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
@@ -257,7 +263,6 @@ ohos_unittest("CloudTest") {
   ]
 
   deps = [
-    "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
     "mock:distributeddata_mock_static",
@@ -298,7 +303,6 @@ ohos_unittest("ValueProxyServiceTest") {
   deps = [
     "${kv_store_distributeddb_path}:distributeddb",
     "${relational_store_inner_api_path}:native_rdb_static",
-    "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
@@ -320,7 +324,6 @@ ohos_unittest("ConfigFactoryTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -346,7 +349,6 @@ ohos_unittest("DirectoryManagerTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -371,7 +373,6 @@ ohos_unittest("CryptoManagerTest") {
   ]
 
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -401,7 +402,6 @@ ohos_unittest("DeviceMatrixTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
@@ -453,7 +453,8 @@ ohos_unittest("KVDBGeneralStoreTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_distributeddb_path}:distributeddb",
@@ -498,6 +499,8 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "${data_service_path}/service/object/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = []
@@ -513,6 +516,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -523,7 +527,6 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -566,8 +569,7 @@ ohos_unittest("RdbResultSetImplTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${kv_store_distributeddb_path}:distributeddb",
     "${relational_store_inner_api_path}:native_rdb_static",
@@ -628,8 +630,7 @@ ohos_unittest("RdbServiceTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${kv_store_distributeddb_path}:distributeddb",
@@ -666,7 +667,6 @@ ohos_unittest("ObjectAssetLoaderTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
@@ -705,7 +705,6 @@ ohos_unittest("ObjectAssetMachineTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
@@ -713,6 +712,11 @@ ohos_unittest("ObjectAssetMachineTest") {
 }
 
 ohos_unittest("ObjectDmsHandlerTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   module_out_path = module_output_path
   sources = [
     "../object/src/object_dms_handler.cpp",
@@ -732,7 +736,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "//third_party/googletest:gtest_main",
   ]
@@ -762,6 +766,7 @@ ohos_unittest("ObjectManagerTest") {
     "${data_service_path}/service/common",
     "${dataobject_path}/frameworks/innerkitsimpl/include/common",
     "${dataobject_path}/interfaces/innerkits",
+    "${data_service_path}/adapter/include/utils",
   ]
 
   configs = [ ":module_private_config" ]
@@ -783,7 +788,6 @@ ohos_unittest("ObjectManagerTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
@@ -823,7 +827,6 @@ ohos_unittest("ObjectSnapshotTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
@@ -850,6 +853,8 @@ ohos_unittest("MetaDataTest") {
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = [ ":module_private_config" ]
@@ -863,11 +868,13 @@ ohos_unittest("MetaDataTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
@@ -891,6 +898,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
+    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = [ ":module_private_config" ]
@@ -913,8 +921,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/udmf:udmf_server",
@@ -925,6 +932,11 @@ ohos_unittest("UdmfRunTimeStoreTest") {
 }
 
 ohos_unittest("DataShareServiceImplTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   module_out_path = module_output_path
 
   include_dirs = [
@@ -981,6 +993,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "data_share_obs_proxy_test.cpp",
     "data_share_profile_config_test.cpp",
@@ -1023,6 +1036,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
@@ -1032,8 +1046,7 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${kv_store_distributeddb_path}:distributeddb",
@@ -1056,6 +1069,8 @@ ohos_unittest("KvdbServiceImplTest") {
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1080,7 +1095,8 @@ ohos_unittest("KvdbServiceImplTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
@@ -1182,8 +1198,7 @@ ohos_unittest("UdmfCheckerManagerTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -1211,6 +1226,34 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
+}
+
+ohos_unittest("PermissionValidatorTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/framework/include",
+  ]
+
+  sources = [
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
+    "permission_validator_test.cpp",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################
@@ -1274,6 +1317,7 @@ group("unittest") {
     ":DirectoryManagerTest",
     ":DumpHelperTest",
     ":MetaDataTest",
+    ":PermissionValidatorTest",
     ":ValueProxyServiceTest",
   ]
 }

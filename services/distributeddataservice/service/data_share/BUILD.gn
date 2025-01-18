@@ -27,6 +27,7 @@ config("module_public_config") {
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
+    "${data_service_path}/adapter/include/communicator",
     "../common",
     "../crypto/include",
     "../permission/include",
@@ -104,8 +105,8 @@ ohos_source_set("data_share_service") {
   configs = [ ":module_public_config" ]
 
   deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/service/common:distributeddata_common",
-    "../../adapter:distributeddata_adapter",
     "../../framework:distributeddatasvcfwk",
   ]
 
@@ -127,6 +128,7 @@ ohos_source_set("data_share_service") {
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",

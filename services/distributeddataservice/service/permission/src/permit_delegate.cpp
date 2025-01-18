@@ -21,7 +21,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/strategy_meta_data.h"
-#include "permission/permission_validator.h"
+#include "permission_validator.h"
 #include "runtime_config.h"
 #include "store_types.h"
 #include "user_delegate.h"

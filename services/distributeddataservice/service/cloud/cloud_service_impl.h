@@ -26,7 +26,7 @@
 #include "cloud/sharing_center.h"
 #include "cloud/subscription.h"
 #include "cloud_service_stub.h"
-#include "dfx/dfx_types.h"
+#include "dfx_types.h"
 #include "feature/static_acts.h"
 #include "store/general_store.h"
 #include "sync_manager.h"

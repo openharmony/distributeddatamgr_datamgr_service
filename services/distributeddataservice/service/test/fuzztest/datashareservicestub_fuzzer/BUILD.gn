@@ -37,6 +37,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
     "//third_party/json/single_include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   fuzz_config_file =
@@ -101,7 +102,8 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
   ]
 
@@ -125,6 +127,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",

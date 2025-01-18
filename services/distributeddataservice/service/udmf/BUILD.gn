@@ -34,6 +34,7 @@ config("module_public_config") {
     "${udmf_path}/framework/common",
     "${udmf_path}/interfaces/innerkits/common",
     "${udmf_path}/interfaces/innerkits/data",
+    "${data_service_path}/adapter/account/src",
   ]
 }
 
@@ -73,7 +74,6 @@ ohos_source_set("udmf_server") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
   ]
@@ -90,6 +90,7 @@ ohos_source_set("udmf_server") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",

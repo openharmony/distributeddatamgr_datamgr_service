@@ -24,6 +24,10 @@ config("rdb_public_config") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/cloud",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
 }
 
@@ -61,7 +65,6 @@ ohos_source_set("distributeddata_rdb") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/crypto:distributeddata_crypto",
@@ -83,6 +86,7 @@ ohos_source_set("distributeddata_rdb") {
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "resource_management:global_resmgr",

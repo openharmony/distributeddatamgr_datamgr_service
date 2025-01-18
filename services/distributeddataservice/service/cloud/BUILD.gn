@@ -48,7 +48,10 @@ ohos_source_set("distributeddata_cloud") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/network",
     "${data_service_path}/service/permission/include",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include/communicator",
     "sync_strategies",
+    "${data_service_path}/adapter/include/dfx",
   ]
   configs = [ ":cloud_public_config" ]
   cflags = [
@@ -59,14 +62,13 @@ ohos_source_set("distributeddata_cloud") {
     "-Oz",
   ]
 
-  deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/service/network:distributeddata_network",
-  ]
+  deps = [ "${data_service_path}/service/network:distributeddata_network" ]
 
   external_deps = [
     "access_token:libtokenid_sdk",
+    "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:cloud_data_inner",
   ]

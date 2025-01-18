@@ -71,8 +71,9 @@ ohos_shared_library("distributeddatasvc") {
   public_configs = [ ":module_public_config" ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
@@ -83,6 +84,12 @@ ohos_shared_library("distributeddatasvc") {
     "${data_service_path}/service/matrix:distributeddata_matrix",
     "${data_service_path}/service/permission:distributeddata_permit",
   ]
+
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.theme_screenlock_mgr)) {
+    deps +=
+        [ "${data_service_path}/adapter/screenlock:distributeddata_screenlock" ]
+  }
 
   if (datamgr_service_cloud) {
     deps += [ "${data_service_path}/service/cloud:distributeddata_cloud" ]

@@ -17,7 +17,7 @@ config("dfx_public_config") {
   include_dirs = [ "${data_service_path}/adapter/include/dfx" ]
 }
 
-ohos_static_library("distributeddata_dfx_static") {
+ohos_source_set("distributeddata_dfx") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -50,8 +50,6 @@ ohos_static_library("distributeddata_dfx_static") {
     "../include/log",
     "../include/utils",
     "../include/communicator",
-    "${kv_store_common_path}",
-    "${kv_store_path}/interfaces/inner_api/distributeddata/include",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -106,7 +104,7 @@ ohos_static_library("distributeddata_dfx_fault_static") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  deps = [ "${data_service_path}/adapter/utils:distributeddata_utils_static" ]
+  deps = [ "${data_service_path}/adapter/utils:distributeddata_utils" ]
 
   external_deps = [
     "c_utils:utils",

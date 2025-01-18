@@ -28,7 +28,7 @@
 #include "cloud_value_util.h"
 #include "device_manager_adapter.h"
 #include "dfx_types.h"
-#include "dfx/radar_reporter.h"
+#include "radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
