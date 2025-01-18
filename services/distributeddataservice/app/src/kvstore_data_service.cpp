@@ -435,7 +435,6 @@ int32_t KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
         (void)fclose(fp);
         return -1;
     }
-    std::lock_guard<std::mutex> lock(valueMutex_);
     size_t ret = fwrite(content.c_str(), 1, content.length(), fp);
     if (ret != content.length()) {
         ZLOGE("Save config file fwrite() failed!");
@@ -450,8 +449,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
     UniqueFd fd(-1);
     fd = UniqueFd(open(SECRET_KEY_BACKUP_PATH, O_RDONLY));
     std::string replyCode = KvStoreDataService::SetBackupReplyCode(0);
-    if (reply.WriteFileDescriptor(fd) == false ||
-        reply.WriteString(replyCode) == false) {
+    if (!reply.WriteFileDescriptor(fd) || !reply.WriteString(replyCode)) {
         close(fd.Release());
         ZLOGI("OnBackup fail: reply wirte fail");
         return -1;
@@ -461,44 +459,53 @@ int32_t KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
     return 0;
 }
 
+std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta)
+{
+    if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
+        ZLOGE("Secret key meta load failed.");
+        return {};
+    };
+    std::vector<uint8_t> password;
+    if (!CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, password)) {
+        ZLOGE("Secret key decrypt failed.");
+        return {};
+    };
+    auto reEncryptedKey = CryptoManager::GetInstance().BackupKeyEncrypt(password);
+    if (reEncryptedKey.size() == 0) {
+        ZLOGE("Secret key encrypt failed.");
+        return {};
+    };
+    return reEncryptedKey;
+}
+
 bool KvStoreDataService::GetSecretKeyBackup(
     const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
     const std::string &userId, std::string &content)
 {
     SecretKeyBackupData backupInfos;
+    std::string deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     for (const auto& bundleInfo : bundleInfos) {
-        std::string deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         std::string metaPrefix = StoreMetaData::GetKey({ deviceId, userId, "default", bundleInfo.bundleName });
         std::vector<StoreMetaData> StoreMetas;
         if (!MetaDataManager::GetInstance().LoadMeta(metaPrefix, StoreMetas, true)) {
-            ZLOGE("Store meta load failed, bundleName: %{public}s",
-                  bundleInfo.bundleName.c_str());
+            ZLOGW("Store meta load failed, bundleName: %{public}s", bundleInfo.bundleName.c_str());
             continue;
         };
-        
         for (const auto &storeMeta : StoreMetas) {
-            if (!storeMeta.isEncrypt) continue;
+            if (!storeMeta.isEncrypt) {
+                continue;
+            };
             auto key = storeMeta.GetSecretKey();
             SecretKeyMetaData secretKeyMeta;
-            if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
-                ZLOGE("Secret key meta load failed, bundleName: %{public}s, Db: "
-                    "%{public}s, instanceId: %{public}d",
-                    storeMeta.bundleName.c_str(), storeMeta.storeId.c_str(),
+            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta);
+            if (reEncryptedKey.size() == 0) {
+                ZLOGE("Secret key re-encrypt failed, user: %{public}s, bundleName: %{public}s, Db: "
+                    "%{public}s, instanceId: %{public}d", userId.c_str(),
+                    storeMeta.bundleName.c_str(), Anonymous::Change(storeMeta.storeId).c_str(),
                     storeMeta.instanceId);
                 continue;
             };
-            std::vector<uint8_t> password;
-            if (!CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, password)) {
-                ZLOGE("Secret key decrypt failed, bundleName: %{public}s, Db: "
-                    "%{public}s, instanceId: %{public}d",
-                    storeMeta.bundleName.c_str(), storeMeta.storeId.c_str(),
-                    storeMeta.instanceId);
-                continue;
-            };
-            auto reEncryptedKey = CryptoManager::GetInstance().BackupKeyEncrypt(password);
-            
             SecretKeyBackupData::BackupItem item;
-
             item.time = secretKeyMeta.time;
             item.bundleName = bundleInfo.bundleName;
             item.dbName = storeMeta.storeId;
@@ -506,7 +513,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
             item.sKey = DistributedData::Base64::Encode(reEncryptedKey);
             item.storeType = secretKeyMeta.storeType;
             item.user = userId;
-            backupInfos.infos.push_back(item);
+            backupInfos.infos.push_back(std::move(item));
         }
     }
     content = Serializable::Marshall(backupInfos);

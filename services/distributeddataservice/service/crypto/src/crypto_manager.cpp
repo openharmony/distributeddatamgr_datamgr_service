@@ -18,6 +18,7 @@
 
 #include <cstring>
 
+#include "utils/constant.h"
 #include "hks_api.h"
 #include "hks_param.h"
 #include "log_print.h"
@@ -78,7 +79,6 @@ bool AddParams(struct HksParamSet *params, RootKeys type)
 
     HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
     auto ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
-
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
         HksFreeParamSet(&params);
@@ -226,7 +226,6 @@ bool CryptoManager::BackupKeyDecrypt(std::vector<uint8_t> &source, std::vector<u
 
 bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type)
 {
-
     struct HksParamSet *params = nullptr;
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -266,14 +265,15 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
     return true;
 }
 
-void ConvertDecStrToVec(const std::string &inData, std::vector<char>&outData, int size)
+std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
 {
-    std::stringstream ss(inData);
-    std::string token;
-    while (size-- > 0 && getline(ss, token, ',')) {
-        char num = std::stoi(token);
+    std::vector<uint8_t> outData;
+    auto splitedToken = Constant::Split(inData, ",");
+    for (auto &token : splitedToken) {
+        uint8_t num = atoi(token.c_str());
         outData.push_back(num);
     }
+    return outData;
 }
 
 bool BuildImportKeyParams(struct HksParamSet *&params)
@@ -308,19 +308,17 @@ bool CryptoManager::ImportBackupKey(const std::string &key, const std::string &i
 {
     std::lock_guard<std::mutex> lock(mutex_);
     ZLOGI("ImportBackupKey enter.");
-    uint8_t aesKey[KEY_SIZE] = { 0 };
-    std::vector<char> result;
+    uint8_t aesKey[KEY_SIZE] = {0};
 
-    ConvertDecStrToVec(key, result, KEY_SIZE);
+    auto result = ConvertDecStrToVec(key);
     if (result.size() != KEY_SIZE) {
         ZLOGE("ImportKey failed, key length not correct.");
-        (void)memset_s(aesKey, sizeof(aesKey), 0, sizeof(aesKey));
         return false;
     }
     std::copy(result.begin(), result.begin() + KEY_SIZE, aesKey);
     result.clear();
 
-    ConvertDecStrToVec(ivStr, result, AES_256_NONCE_SIZE);
+    result = ConvertDecStrToVec(ivStr);
     if (result.size() != AES_256_NONCE_SIZE) {
         ZLOGE("ImportKey failed, iv length not correct.");
         (void)memset_s(aesKey, sizeof(aesKey), 0, sizeof(aesKey));

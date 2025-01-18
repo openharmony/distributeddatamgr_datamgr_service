@@ -138,7 +138,6 @@ public:
         const std::string &userId, std::string &content);
 
   private:
-    std::mutex valueMutex_;
     bool CheckBackupInfo(MessageParcel &data, CloneBackupInfo &backupInfo);
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
     class KvStoreClientDeathObserverImpl {
