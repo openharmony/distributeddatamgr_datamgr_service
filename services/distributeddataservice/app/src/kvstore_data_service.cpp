@@ -390,7 +390,8 @@ std::string KvStoreDataService::SetBackupReplyCode(int replyCode, const std::str
     return Serializable::Marshall(reply);
 }
 
-bool KvStoreDataService::CheckBackupInfo(MessageParcel &data, CloneBackupInfo &backupInfo) {
+bool KvStoreDataService::CheckBackupInfo(MessageParcel &data, CloneBackupInfo &backupInfo)
+{
     std::string info = data.ReadString();
     bool success = backupInfo.Unmarshal(DistributedData::Serializable::ToJson(info));
     if (!success) {

@@ -68,10 +68,19 @@ config("module_private_config") {
     "-Dprotected=public",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
 }
 
 ohos_unittest("KvStoreDataServiceTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/clone/clone_backup_info.cpp",

@@ -62,6 +62,7 @@ config("module_private_config") {
     "${data_service_path}/service/app_id_mapping/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/dumper/include",
+
     # for ipc_core interfaces.
     "include",
     "src",
