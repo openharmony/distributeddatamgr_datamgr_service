@@ -15,12 +15,12 @@
 #define LOG_TAG "KvStoreDataService"
 #include "kvstore_data_service.h"
 
+#include <chrono>
 #include <fcntl.h>
 #include <fstream>
-#include <sys/stat.h>
-#include <sys/sendfile.h>
-#include <chrono>
 #include <ipc_skeleton.h>
+#include <sys/sendfile.h>
+#include <sys/stat.h>
 #include <thread>
 #include <unistd.h>
 
@@ -79,9 +79,9 @@ using namespace OHOS::Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
-const std::string EXTENSION_BACKUP = "backup";
-const std::string EXTENSION_RESTORE = "restore";
-const std::string SECRET_KEY_BACKUP_PATH =
+constexpr const char* EXTENSION_BACKUP = "backup";
+constexpr const char* EXTENSION_RESTORE = "restore";
+constexpr const char* SECRET_KEY_BACKUP_PATH =
     "/data/service/el1/public/database/distributeddata/"
     "secret_key_backup.conf";
 
@@ -380,7 +380,7 @@ int32_t KvStoreDataService::OnExtension(const std::string& extension, MessagePar
     return 0;
 }
 
-std::string KvStoreDataService::SetBackupReplyCode(int replyCode, const std::string &info = "")
+std::string KvStoreDataService::SetBackupReplyCode(int replyCode, const std::string &info)
 {
     CloneReplyCode reply;
     CloneReplyResult result;
@@ -411,7 +411,7 @@ bool KvStoreDataService::CheckBackupInfo(MessageParcel &data, CloneBackupInfo &b
     return true;
 }
 
-ErrCode KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
+int32_t KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
 {
     CloneBackupInfo backupInfo;
     if (!CheckBackupInfo(data, backupInfo)) {
@@ -428,7 +428,7 @@ ErrCode KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
         return -1;
     };
 
-    FILE *fp = fopen(SECRET_KEY_BACKUP_PATH.c_str(), "w");
+    FILE *fp = fopen(SECRET_KEY_BACKUP_PATH, "w");
 
     if (!fp) {
         ZLOGE("Secret key backup file open failed");
@@ -448,7 +448,7 @@ ErrCode KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
     (void)fclose(fp);
 
     UniqueFd fd(-1);
-    fd = UniqueFd(open(SECRET_KEY_BACKUP_PATH.c_str(), O_RDONLY));
+    fd = UniqueFd(open(SECRET_KEY_BACKUP_PATH, O_RDONLY));
     std::string replyCode = KvStoreDataService::SetBackupReplyCode(0);
     if (reply.WriteFileDescriptor(fd) == false ||
         reply.WriteString(replyCode) == false) {
@@ -513,7 +513,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
     return true;
 }
 
-ErrCode KvStoreDataService::OnRestore(MessageParcel& data, MessageParcel& reply)
+int32_t KvStoreDataService::OnRestore(MessageParcel& data, MessageParcel& reply)
 {
     int32_t result;
     UniqueFd fd(data.ReadFileDescriptor());

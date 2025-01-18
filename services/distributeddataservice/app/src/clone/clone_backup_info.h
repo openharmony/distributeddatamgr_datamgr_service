@@ -45,7 +45,7 @@ struct CloneBackupInfo final : public Serializable {
 struct CloneReplyResult final : public Serializable {
     std::string type = "ErrorInfo";
     std::string errorCode;
-    std::string errorInfo = "";
+    std::string errorInfo;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
 };

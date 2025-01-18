@@ -31,8 +31,8 @@ bool SecretKeyBackupData::Marshal(json &node) const
 
 bool SecretKeyBackupData::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(infos), infos);
-    return true;
+    bool ret = GetValue(node, GET_NAME(infos), infos);
+    return ret;
 }
 
 SecretKeyBackupData::BackupItem::BackupItem()
@@ -58,14 +58,14 @@ bool SecretKeyBackupData::BackupItem::Marshal(json &node) const
 
 bool SecretKeyBackupData::BackupItem::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(bundleName), bundleName);
-    GetValue(node, GET_NAME(dbName), dbName);
-    GetValue(node, GET_NAME(instanceId), instanceId);
-    GetValue(node, GET_NAME(user), user);
-    GetValue(node, GET_NAME(time), time);
-    GetValue(node, GET_NAME(sKey), sKey);
-    GetValue(node, GET_NAME(storeType), storeType);
-    return true;
+    bool ret = GetValue(node, GET_NAME(bundleName), bundleName);
+    ret = GetValue(node, GET_NAME(dbName), dbName) && ret;
+    ret = GetValue(node, GET_NAME(instanceId), instanceId) && ret;
+    ret = GetValue(node, GET_NAME(user), user) && ret;
+    ret = GetValue(node, GET_NAME(time), time) && ret;
+    ret = GetValue(node, GET_NAME(sKey), sKey) && ret;
+    ret = GetValue(node, GET_NAME(storeType), storeType) && ret;
+    return ret;
 }
 
 bool SecretKeyBackupData::BackupItem::IsValid() const

@@ -23,12 +23,12 @@ public:
     struct API_EXPORT BackupItem final : public Serializable {
         std::string bundleName;
         std::string dbName;
-        int32_t instanceId;
         std::string user;
-        int32_t storeType = 0;
-
-        std::vector<uint8_t> time {};
         std::string sKey;
+        int32_t instanceId;
+        int32_t storeType = 0;
+        std::vector<uint8_t> time {};
+
         API_EXPORT BackupItem();
         API_EXPORT ~BackupItem();
         API_EXPORT bool Marshal(json &node) const override;

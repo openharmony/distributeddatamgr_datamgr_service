@@ -202,7 +202,7 @@ bool CryptoManager::BackupKeyDecrypt(std::vector<uint8_t> &source, std::vector<u
     return DecryptInner(source, key, RootKeys::BACKUP_KEY);
 }
 
-bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const RootKeys type)
+bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type)
 {
     struct HksBlob blobNonce;
     struct HksBlob keyName;

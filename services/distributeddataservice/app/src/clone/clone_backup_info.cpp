@@ -16,13 +16,13 @@
 
 namespace OHOS {
 namespace DistributedData {
-const std::string CLONE_INFO_DETAIL = "detail";
-const std::string ENCRYPTION_INFO = "encryption_info";
-const std::string APPLICATION_SELECTION = "application_selection";
-const std::string USER_ID = "userId";
-const std::string ENCRYPTION_SYMKEY = "encryption_symkey";
-const std::string ENCRYPTION_ALGORITHM = "encryption_algname";
-const std::string GCM_PARAMS_IV = "gcmParams_iv";
+constexpr const char* CLONE_INFO_DETAIL = "detail";
+constexpr const char* ENCRYPTION_INFO = "encryption_info";
+constexpr const char* APPLICATION_SELECTION = "application_selection";
+constexpr const char* USER_ID = "userId";
+constexpr const char* ENCRYPTION_SYMKEY = "encryption_symkey";
+constexpr const char* ENCRYPTION_ALGORITHM = "encryption_algname";
+constexpr const char* GCM_PARAMS_IV = "gcmParams_iv";
 bool CloneEncryptionInfo::Unmarshal(const json &node)
 {
     bool res = GetValue(node, ENCRYPTION_SYMKEY, symkey);
@@ -60,7 +60,8 @@ bool CloneBackupInfo::Unmarshal(const json &node)
         return false;
     }
     std::string type;
-    for (size_t i = 0; i < node.size(); i++) {
+    auto size = node.size();
+    for (size_t i = 0; i < size; i++) {
         bool result = GetValue(node[i], GET_NAME(type), type);
         if (!result || type.empty()) {
             continue;
