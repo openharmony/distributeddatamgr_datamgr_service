@@ -33,6 +33,7 @@ public:
     KVSTORE_API FaultReporter* RuntimeFault();
     KVSTORE_API FaultReporter* DatabaseFault();
     KVSTORE_API FaultReporter* CommunicationFault();
+    KVSTORE_API FaultReporter* CloudSyncFault();
 
     KVSTORE_API StatisticReporter<DbStat>* DatabaseStatistic();
     KVSTORE_API StatisticReporter<VisitStat>* VisitStatistic();
@@ -47,6 +48,7 @@ public:
             ServiceFault();
             RuntimeFault();
             DatabaseFault();
+            CloudSyncFault();
             CommunicationFault();
             DatabaseStatistic();
             VisitStatistic();

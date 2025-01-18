@@ -114,3 +114,14 @@ OPEN_DATABASE_FAILED:
   APP_ID: {type: STRING, desc: app id }
   STORE_ID: {type: STRING, desc: store id }
   ERROR_CODE: {type: STRING, desc: error code}
+
+ARKDATA_CLOUD_SYNC_FAULT:
+  __BASE: {type: FAULT, level: CRITICAL, desc: The event is cloud sync fault}
+  FAULT_TIME: {type: INT64, desc: time of fault happened }
+  FAULT_TYPE: {type: STRING, desc: type of cloud sync fault }
+  BUNDLE_NAME: {type: STRING, desc: bundle name }
+  MODULE_NAME: {type: STRING, desc: module name }
+  STORE_NAME: {type: STRING, desc: store name }
+  BUSINESS_TYPE: {type: STRING, desc: business type }
+  ERROR_CODE: {type: INT32, desc: error code }
+  APPENDIX: {type: STRING, desc: such as uid/tokenid }

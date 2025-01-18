@@ -25,6 +25,7 @@
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
+#include "dfx_types.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "kvdb_query.h"
@@ -34,6 +35,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "query_helper.h"
 #include "rdb_cloud.h"
+#include "reporter.h"
 #include "snapshot/bind_event.h"
 #include "types.h"
 #include "user_delegate.h"
@@ -42,12 +44,14 @@
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
 using namespace DistributedDB;
+using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
+static constexpr const char *FT_CLOUD_SYNC = "CLOUD_SYNC";
 constexpr int UUID_WIDTH = 4;
 const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap_ = {
     { DBStatus::OK, GenErr::E_OK },
@@ -378,6 +382,17 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     return delegate_->Sync(syncOption, GetDBProcessCB(async));
 }
 
+void KVDBGeneralStore::Report(const std::string &faultType, int32_t errCode, const std::string &appendix)
+{
+    ArkDataFaultMsg msg = { .faultType = faultType,
+        .bundleName = storeInfo_.bundleName,
+        .moduleName = ModuleName::KV_STORE,
+        .storeName = storeInfo_.storeName,
+        .errorType = errCode + GeneralStore::CLOUD_ERR_OFFSET,
+        .appendixMsg = appendix };
+    Reporter::GetInstance()->CloudSyncFault()->Report(msg);
+}
+
 std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async,
     const SyncParam &syncParam)
 {
@@ -395,6 +410,10 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
             return { GeneralError::E_NOT_SUPPORT, DBStatus::OK };
         }
         dbStatus = CloudSync(devices, dbMode, async, syncParam.wait, syncParam.prepareTraceId);
+        if (dbStatus != DBStatus::OK) {
+            Report(FT_CLOUD_SYNC, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
+                "Cloud sync ret=" + std::to_string(static_cast<int32_t>(dbStatus)));
+        }
     } else {
         if (devices.empty()) {
             ZLOGE("Devices is empty! mode:%{public}d", syncParam.mode);

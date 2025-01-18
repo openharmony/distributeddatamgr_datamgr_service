@@ -29,7 +29,7 @@ public:
     API_EXPORT static CloudServer *GetInstance();
     API_EXPORT static bool RegisterCloudInstance(CloudServer *instance);
 
-    virtual CloudInfo GetServerInfo(int32_t userId, bool needSpaceInfo = true);
+    virtual std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo = true);
     virtual std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundleName);
     virtual int32_t Subscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs);
     virtual int32_t Unsubscribe(int32_t userId, const std::map<std::string, std::vector<Database>> &dbs);

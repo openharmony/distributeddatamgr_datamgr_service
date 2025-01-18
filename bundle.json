@@ -166,6 +166,16 @@
                         ],
                         "header_base": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include"
                     }
+                },
+                {
+                    "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx:distributeddata_dfx_fault_static",
+                    "header": {
+                        "header_files": [
+                            "dfx_types.h",
+                            "reporter.h"
+                        ],
+                        "header_base": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx"
+                    }
                 }
             ],
             "test": [
