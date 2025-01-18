@@ -40,7 +40,7 @@ using StoreMetaData = DistributedData::StoreMetaData;
 namespace OHOS::Test {
 const std::string SECRETKEY_BACKUP_PATH = "/data/service/el1/public/database/backup_test/";
 const std::string SECRETKEY_BACKUP_FILE = SECRETKEY_BACKUP_PATH + "secret_key_backup.conf";
-const std::string NORMAL_CLONE_INFO = 
+const std::string NORMAL_CLONE_INFO =
     "[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"27,"
     "145,118,212,62,156,133,135,50,68,188,239,20,170,227,190,37,142,218,"
     "158,177,32,5,160,13,114,186,141,59,91,44,200\",\"encryption_algname\":"
@@ -49,8 +49,8 @@ const std::string NORMAL_CLONE_INFO =
     "16\"}},{\"type\":\"application_selection\",\"detail\":[{"
     "\"bundleName\":\"com.example.restore_test\",\"accessTokenId\":"
     "536973769}]},{\"type\":\"userId\",\"detail\":\"100\"}]";
-const std::string NORMAL_BACKUP_DATA = 
-    "{\"infos\":[{\"bundleName\":\"com.huawei.example\",\"dbName\":"
+const std::string NORMAL_BACKUP_DATA =
+    "{\"infos\":[{\"bundleName\":\"com.myapp.example\",\"dbName\":"
     "\"storeId\",\"instanceId\":0,\"storeType\":\"1\",\"user\":\"100\","
     "\"sKey\":\"9aJQwx3XD3EN7To2j/I9E9MCzn2+6f/bBqFjOPcY+1pRgx/"
     "XI6jXedyuzEEVdwrc\",\"time\":[50,180,137,103,0,0,0,0]},{"
@@ -86,8 +86,8 @@ void KvStoreDataServiceTest::SetUpTestCase(void)
 
 void KvStoreDataServiceTest::TearDownTestCase(void)
 {
-    remove(SECRETKEY_BACKUP_FILE.c_str());
-    rmdir(SECRETKEY_BACKUP_PATH.c_str());
+    (void)remove(SECRETKEY_BACKUP_FILE.c_str());
+    (void)rmdir(SECRETKEY_BACKUP_PATH.c_str());
 }
 
 void KvStoreDataServiceTest::SetUp(void)
@@ -116,7 +116,7 @@ void UpgradeManagerTest::SetUp(void)
 void UpgradeManagerTest::TearDown(void)
 {}
 
-static int32_t writeContentToFile(const std::string &path, const std::string &content)
+static int32_t WriteContentToFile(const std::string &path, const std::string &content)
 {
     FILE *fp = fopen(path.c_str(), "w");
     if (!fp) {
@@ -714,7 +714,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore002, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     MessageParcel data;
     MessageParcel reply;
-    writeContentToFile(SECRETKEY_BACKUP_FILE, "{}");
+    WriteContentToFile(SECRETKEY_BACKUP_FILE, "{}");
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
@@ -735,7 +735,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore003, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     MessageParcel data;
     MessageParcel reply;
-    writeContentToFile(SECRETKEY_BACKUP_FILE, "{}");
+    WriteContentToFile(SECRETKEY_BACKUP_FILE, "{}");
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
@@ -765,7 +765,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore004, TestSize.Level0)
         "\"dbType\":\"1\",\"user\":\"0\",\"key\":\"9aJQwx3XD3EN7To2j/"
         "I9E9MCzn2+6f/bBqFjOPcY+1pRgx/"
         "XI6jXedyuzEEVdwrc\",\"time\":[50,180,137,103,0,0,0,0]}]}";
-    writeContentToFile(SECRETKEY_BACKUP_FILE, backupData);
+    WriteContentToFile(SECRETKEY_BACKUP_FILE, backupData);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
@@ -793,7 +793,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore005, TestSize.Level0)
         "\"AES256\",\"gcmParams_iv\":\"97,160,201,177,46,37,129,18,112,220,107,"
         "106,25,231,15,15,58,85,31,83,123,216,211,2,222,49,122,72,21,251,83,"
         "16\"}},{\"type\":\"userId\",\"detail\":\"\"}]";
-    writeContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
+    WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
@@ -814,7 +814,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore006, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     MessageParcel data;
     MessageParcel reply;
-    writeContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
+    WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
