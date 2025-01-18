@@ -77,8 +77,13 @@ bool AddParams(struct HksParamSet *params, RootKeys type)
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
     };
 
-    HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
-    auto ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
+    auto ret = HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
+    if (ret != HKS_SUCCESS) {
+        ZLOGE("HksAddParams failed with error %{public}d", ret);
+        HksFreeParamSet(&params);
+        return false;
+    }
+    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
         HksFreeParamSet(&params);
@@ -288,7 +293,12 @@ bool BuildImportKeyParams(struct HksParamSet *&params)
         {.tag = HKS_TAG_KEY_GENERATE_TYPE, .uint32Param = HKS_KEY_GENERATE_TYPE_DEFAULT},
         {.tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT},
     };
-    HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
+    ret = HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
+    if (ret != HKS_SUCCESS) {
+        ZLOGE("HksAddParams failed with error %{public}d", ret);
+        HksFreeParamSet(&params);
+        return false;
+    }
     ret = HksAddParams(params, purposeParam, sizeof(purposeParam) / sizeof(purposeParam[0]));
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
@@ -340,6 +350,8 @@ bool CryptoManager::ImportBackupKey(const std::string &key, const std::string &i
     (void)memset_s(aesKey, sizeof(aesKey), 0, sizeof(aesKey));
     if (ret != HKS_SUCCESS) {
         ZLOGE("ImportKey failed: %{public}d.", ret);
+        HksFreeParamSet(&params);
+        return false;
     }
     HksFreeParamSet(&params);
     return true;
