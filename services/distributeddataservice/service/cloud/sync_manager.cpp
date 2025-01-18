@@ -27,11 +27,13 @@
 #include "cloud/sync_event.h"
 #include "cloud_value_util.h"
 #include "device_manager_adapter.h"
+#include "dfx_types.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "network_adapter.h"
+#include "reporter.h"
 #include "screen/screen_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
@@ -47,6 +49,8 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 constexpr int32_t SYSTEM_USER_ID = 0;
+static constexpr const char *FT_GET_STORE = "GET_STORE";
+static constexpr const char *FT_CALLBACK = "CALLBACK";
 SyncManager::SyncInfo::SyncInfo(
     int32_t user, const std::string &bundleName, const Store &store, const Tables &tables, int32_t triggerMode)
     : user_(user), bundleName_(bundleName), triggerMode_(triggerMode)
@@ -451,6 +455,17 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
     };
 }
 
+void SyncManager::Report(
+    const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix)
+{
+    ArkDataFaultMsg msg = { .faultType = faultType,
+        .bundleName = bundleName,
+        .moduleName = ModuleName::CLOUD_SERVER,
+        .errorType = errCode + GenStore::CLOUD_ERR_OFFSET,
+        .appendixMsg = appendix };
+    Reporter::GetInstance()->CloudSyncFault()->Report(msg);
+}
+
 SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user)
 {
     if (times >= RETRY_TIMES) {
@@ -465,6 +480,8 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
                 "GetRetryer", BizState::END);
             Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
                 dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode });
+            Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
+                "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
             return true;
         };
     }
@@ -480,6 +497,8 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
                 "GetRetryer", BizState::END);
             Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
                 dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode });
+            Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
+                   "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
             return true;
         }
 
@@ -540,6 +559,8 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
         if (cloudDB == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
+            Report(FT_GET_STORE, meta.bundleName, static_cast<int32_t>(Fault::CSF_CONNECT_CLOUD_DB),
+                "ConnectCloudDB failed, database=" + schemaDatabase.name);
             return {};
         }
         if (meta.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN &&
@@ -551,6 +572,8 @@ std::map<uint32_t, GeneralStore::BindInfo> SyncManager::GetBindInfos(const Store
         if (assetLoader == nullptr) {
             ZLOGE("failed, no cloud DB <%{public}d:0x%{public}x %{public}s<->%{public}s>", meta.tokenId, activeUser,
                 Anonymous::Change(schemaDatabase.name).c_str(), Anonymous::Change(schemaDatabase.alias).c_str());
+            Report(FT_GET_STORE, meta.bundleName, static_cast<int32_t>(Fault::CSF_CONNECT_CLOUD_ASSET_LOADER),
+                "ConnectAssetLoader failed, database=" + schemaDatabase.name);
             return {};
         }
         bindInfos.insert_or_assign(activeUser, GeneralStore::BindInfo{ std::move(cloudDB), std::move(assetLoader) });
@@ -655,7 +678,8 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
         if (instance == nullptr) {
             return cloudSyncInfos;
         }
-        cloud = instance->GetServerInfo(cloud.user, false);
+        int32_t errCode = SUCCESS;
+        std::tie(errCode, cloud) = instance->GetServerInfo(cloud.user, false);
         if (!cloud.IsValid()) {
             ZLOGE("cloud is empty, user: %{public}d", cloud.user);
             return cloudSyncInfos;
@@ -770,7 +794,10 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
                                 dbCode, result.begin()->second.changeCount },
             "GetCallback", BizState::END);
         Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, dbCode });
-
+        if (dbCode != 0) {
+            Report(FT_CALLBACK, storeInfo.bundleName, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
+                "callback failed, dbCode=" + std::to_string(dbCode));
+        }
         auto id = GetAccountId(storeInfo.user);
         if (id.empty()) {
             ZLOGD("account id is empty");

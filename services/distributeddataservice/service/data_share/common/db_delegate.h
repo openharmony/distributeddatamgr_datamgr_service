@@ -55,8 +55,8 @@ public:
     virtual std::pair<int64_t, int64_t> DeleteEx(const std::string &tableName,
         const DataSharePredicates &predicate) = 0;
 private:
-    static void GarbageCollect();
-    static void StartTimer();
+    static void GarbageCollect(bool encrypt);
+    static void StartTimer(bool encrypt);
     struct Entity {
         explicit Entity(std::shared_ptr<DBDelegate> store, const DistributedData::StoreMetaData &meta);
         std::shared_ptr<DBDelegate> store_;
@@ -65,9 +65,13 @@ private:
     };
     static constexpr int NO_CHANGE_VERSION = -1;
     static constexpr int64_t INTERVAL = 20; //seconds
+    // Encrypt store of RDB depends on other components, and other components will use datashare,
+    // causing circular dependencies and deadlocks, the encrypt store is separated from the non-encryption store here.
     static ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<Entity>>> stores_;
+    static ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<Entity>>> storesEncrypt_;
     static std::shared_ptr<ExecutorPool> executor_;
     static ExecutorPool::TaskId taskId_;
+    static ExecutorPool::TaskId taskIdEncrypt_;
 };
 
 class Id : public DistributedData::Serializable {

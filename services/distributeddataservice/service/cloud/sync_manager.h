@@ -159,6 +159,8 @@ private:
     TraceIds GetPrepareTraceId(const SyncInfo &info, const CloudInfo &cloud);
     std::pair<bool, StoreMetaData> GetMetaData(const StoreInfo &storeInfo);
     void AddCompensateSync(const StoreMetaData &meta);
+    static void Report(
+        const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;

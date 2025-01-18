@@ -29,6 +29,7 @@
 #include "commonevent/data_sync_event.h"
 #include "communicator/device_manager_adapter.h"
 #include "crypto_manager.h"
+#include "dfx_types.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
@@ -39,6 +40,7 @@
 #include "rdb_query.h"
 #include "rdb_result_set_impl.h"
 #include "relational_store_manager.h"
+#include "reporter.h"
 #include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
@@ -48,6 +50,7 @@ using namespace DistributedDB;
 using namespace NativeRdb;
 using namespace CloudData;
 using namespace std::chrono;
+using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
 using DBSchema = DistributedDB::DataBaseSchema;
@@ -65,6 +68,8 @@ constexpr const LockAction LOCK_ACTION =
 constexpr uint32_t CLOUD_SYNC_FLAG = 1;
 constexpr uint32_t SEARCHABLE_FLAG = 2;
 constexpr uint32_t LOCK_TIMEOUT = 3600; // second
+static constexpr const char *FT_OPEN_STORE = "OPEN_STORE";
+static constexpr const char *FT_CLOUD_SYNC = "CLOUD_SYNC";
 
 static DBSchema GetDBSchema(const Database &database)
 {
@@ -598,6 +603,8 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
         return { ConvertStatus(dbStatus), dbStatus };
     }
+    Report(FT_CLOUD_SYNC, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
+        "Cloud sync ret=" + std::to_string(static_cast<int32_t>(dbStatus)));
     tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
         if (executor != nullptr) {
             executor->Remove(task.taskId);
@@ -882,6 +889,17 @@ int32_t RdbGeneralStore::AddRef()
     return ++ref_;
 }
 
+void RdbGeneralStore::Report(const std::string &faultType, int32_t errCode, const std::string &appendix)
+{
+    ArkDataFaultMsg msg = { .faultType = faultType,
+        .bundleName = storeInfo_.bundleName,
+        .moduleName = ModuleName::RDB_STORE,
+        .storeName = storeInfo_.storeName,
+        .errorType = errCode + GeneralStore::CLOUD_ERR_OFFSET,
+        .appendixMsg = appendix };
+    Reporter::GetInstance()->CloudSyncFault()->Report(msg);
+}
+
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
     const std::vector<Reference> &references)
 {
@@ -897,6 +915,8 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         if (dBStatus != DistributedDB::DBStatus::OK) {
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
                 Anonymous::Change(table).c_str(), dBStatus);
+            Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
+                "SetDistributedTables ret=" + std::to_string(static_cast<int32_t>(dBStatus)));
             return GeneralError::E_ERROR;
         }
     }

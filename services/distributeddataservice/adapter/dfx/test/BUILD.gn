@@ -24,7 +24,7 @@ config("module_dfx_mst_config") {
     "../src/fault",
     "../src/statistic",
     "../../include/log",
-    "../../include/autils",
+    "../../include/utils",
     "../../include/dfx",
   ]
 }
@@ -45,7 +45,12 @@ ohos_unittest("DistributeddataDfxMSTTest") {
     "openssl:libcrypto_shared",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [ "../../dfx:distributeddata_dfx" ]
+  deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "../../dfx:distributeddata_dfx",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_shared",
+  ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -60,7 +65,7 @@ config("module_dfx_config") {
     "../src/fault",
     "../src/statistic",
     "../../include/log",
-    "../../include/autils",
+    "../../include/utils",
     "../../include/dfx",
   ]
 }
@@ -70,6 +75,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
 
   sources = [
     "../src/behaviour/behaviour_reporter_impl.cpp",
+    "../src/fault/cloud_sync_fault_impl.cpp",
     "../src/fault/communication_fault_impl.cpp",
     "../src/fault/database_fault_impl.cpp",
     "../src/fault/fault_reporter.cpp",
@@ -97,6 +103,11 @@ ohos_unittest("DistributeddataDfxUTTest") {
     "openssl:libcrypto_shared",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
+  deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "//third_party/googletest:gtest_main",
+    "//third_party/openssl:libcrypto_shared",
+  ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

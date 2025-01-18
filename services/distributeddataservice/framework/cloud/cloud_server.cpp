@@ -30,9 +30,9 @@ bool CloudServer::RegisterCloudInstance(CloudServer *instance)
     return true;
 }
 
-CloudInfo CloudServer::GetServerInfo(int32_t userId, bool needSpaceInfo)
+std::pair<int32_t, CloudInfo> CloudServer::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
-    return CloudInfo();
+    return { 0, CloudInfo() };
 }
 
 std::pair<int32_t, SchemaMeta> CloudServer::GetAppSchema(int32_t userId, const std::string &bundleName)

@@ -40,6 +40,7 @@ public:
     static void ReportFault(int dfxCode, const FaultMsg &msg, std::shared_ptr<ExecutorPool> executors);
     static void ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::shared_ptr<ExecutorPool> executors);
     static void ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::shared_ptr<ExecutorPool> executors);
+    static void ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, std::shared_ptr<ExecutorPool> executors);
     static void ReportVisitStatistic(int dfxCode, const VisitStat &stat, std::shared_ptr<ExecutorPool> executors);
     static void ReportTrafficStatistic(int dfxCode, const TrafficStat &stat, std::shared_ptr<ExecutorPool> executors);
     static void ReportDatabaseStatistic(int dfxCode, const DbStat &stat, std::shared_ptr<ExecutorPool> executors);

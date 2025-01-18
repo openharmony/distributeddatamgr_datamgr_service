@@ -16,9 +16,12 @@
 #define LOG_TAG "HiViewAdapter"
 
 #include "hiview_adapter.h"
+
 #include <thread>
 #include <unistd.h>
+
 #include "log_print.h"
+#include "time_utils.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
@@ -70,6 +73,7 @@ const std::map<int, std::string> EVENT_COVERT_TABLE = {
     { DfxCodeConstant::DATABASE_REKEY_FAILED, "DATABASE_REKEY_FAILED" },
     { DfxCodeConstant::DATABASE_BEHAVIOUR, "DATABASE_BEHAVIOUR" },
     { DfxCodeConstant::UDMF_DATA_BEHAVIOR, "UDMF_DATA_BEHAVIOR" },
+    { DfxCodeConstant::ARKDATA_CLOUD_SYNC_FAULT, "ARKDATA_CLOUD_SYNC_FAULT" },
 };
 }
 std::mutex HiViewAdapter::visitMutex_;
@@ -197,6 +201,36 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
             params,
             sizeof(params) / sizeof(params[0])
         );
+    });
+    executors->Execute(std::move(task));
+}
+
+void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, std::shared_ptr<ExecutorPool> executors)
+{
+    if (executors == nullptr) {
+        ZLOGW("executors is nullptr!");
+        return;
+    }
+    ExecutorPool::Task task([dfxCode, msg]() {
+        std::string occurTime = TimeUtils::GetCurSysTimeWithMs();
+        std::string bundleName = msg.bundleName;
+        std::string moduleName = msg.moduleName;
+        std::string storeName = msg.storeName;
+        std::string businessType = msg.businessType;
+        std::string appendix = msg.appendixMsg;
+        std::string faultType = msg.faultType;
+        struct HiSysEventParam params[] = {
+            { .name = { "FAULT_TIME" }, .t = HISYSEVENT_STRING, .v = { .s = occurTime.data() }, .arraySize = 0 },
+            { .name = { "FAULT_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = faultType.data() }, .arraySize = 0 },
+            { .name = { "BUNDLE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = bundleName.data() }, .arraySize = 0 },
+            { .name = { "MODULE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = moduleName.data() }, .arraySize = 0 },
+            { .name = { "STORE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = storeName.data() }, .arraySize = 0 },
+            { .name = { "BUSINESS_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = businessType.data() }, .arraySize = 0 },
+            { .name = { "ERROR_CODE" }, .t = HISYSEVENT_INT32, .v = { .i32 = msg.errorType }, .arraySize = 0 },
+            { .name = { "APPENDIX" }, .t = HISYSEVENT_STRING, .v = { .s = appendix.data() }, .arraySize = 0 },
+        };
+        OH_HiSysEvent_Write(DATAMGR_DOMAIN, CoverEventID(dfxCode).c_str(), HISYSEVENT_FAULT, params,
+            sizeof(params) / sizeof(params[0]));
     });
     executors->Execute(std::move(task));
 }

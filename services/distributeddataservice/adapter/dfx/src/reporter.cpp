@@ -18,6 +18,7 @@
 #include "fault/database_fault_impl.h"
 #include "fault/runtime_fault_impl.h"
 #include "fault/service_fault_impl.h"
+#include "fault/cloud_sync_fault_impl.h"
 
 #include "statistic/traffic_statistic_impl.h"
 #include "statistic/visit_statistic_impl.h"
@@ -53,6 +54,13 @@ FaultReporter* Reporter::RuntimeFault()
     static RuntimeFaultImpl runtimeFault;
     runtimeFault.SetThreadPool(executors_);
     return &runtimeFault;
+}
+
+FaultReporter* Reporter::CloudSyncFault()
+{
+    static CloudSyncFaultImpl cloudSyncFault;
+    cloudSyncFault.SetThreadPool(executors_);
+    return &cloudSyncFault;
 }
 
 FaultReporter* Reporter::ServiceFault()
