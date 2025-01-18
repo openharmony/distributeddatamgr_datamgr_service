@@ -23,6 +23,7 @@ constexpr const char* USER_ID = "userId";
 constexpr const char* ENCRYPTION_SYMKEY = "encryption_symkey";
 constexpr const char* ENCRYPTION_ALGORITHM = "encryption_algname";
 constexpr const char* GCM_PARAMS_IV = "gcmParams_iv";
+
 bool CloneEncryptionInfo::Unmarshal(const json &node)
 {
     bool res = GetValue(node, ENCRYPTION_SYMKEY, symkey);
@@ -30,6 +31,7 @@ bool CloneEncryptionInfo::Unmarshal(const json &node)
     res = GetValue(node, GCM_PARAMS_IV, iv) && res;
     return res;
 }
+
 bool CloneEncryptionInfo::Marshal(json &node) const
 {
     return false;

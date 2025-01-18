@@ -132,13 +132,11 @@ public:
     int32_t OnExtension(const std::string& extension, MessageParcel& data, MessageParcel& reply) override;
     int32_t OnBackup(MessageParcel& data, MessageParcel& reply);
     int32_t OnRestore(MessageParcel& data, MessageParcel& reply);
-    static std::string SetBackupReplyCode(int replyCode, const std::string &info = "");
     static bool GetSecretKeyBackup(
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
         const std::string &userId, std::string &content);
 
   private:
-    bool CheckBackupInfo(MessageParcel &data, CloneBackupInfo &backupInfo);
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
     class KvStoreClientDeathObserverImpl {
     public:

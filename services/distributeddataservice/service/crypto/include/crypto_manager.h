@@ -31,10 +31,10 @@ public:
     int32_t GenerateRootKey();
     int32_t CheckRootKey();
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key);
-    std::vector<uint8_t> BackupKeyEncrypt(const std::vector<uint8_t> &key);
+    std::vector<uint8_t> EncryptCloneKey(const std::vector<uint8_t> &key);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
-    bool BackupKeyDecrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
-    bool ImportBackupKey(const std::string &key, const std::string &iv);
+    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
+    bool ImportCloneKey(std::vector<uint8_t> &key, std::vector<uint8_t> &iv);
 
     enum ErrCode : int32_t {
         SUCCESS,

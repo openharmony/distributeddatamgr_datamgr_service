@@ -1384,6 +1384,9 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std
     if (!key && !cloneKey) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. decrypt err", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
+        for (auto &item : password) {
+            item.assign(item.size(), 0);
+        }
         return RDB_ERROR;
     }
     return RDB_OK;
