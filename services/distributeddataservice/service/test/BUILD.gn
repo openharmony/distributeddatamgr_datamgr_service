@@ -52,6 +52,7 @@ config("module_private_config") {
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
   cflags = [ "-Werror" ]
   defines = [

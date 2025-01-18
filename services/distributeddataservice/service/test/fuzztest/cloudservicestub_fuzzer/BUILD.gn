@@ -49,6 +49,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${relational_store_path}/interfaces/inner_api/common_type/include",
     "//third_party/json/single_include",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
 
   fuzz_config_file =
