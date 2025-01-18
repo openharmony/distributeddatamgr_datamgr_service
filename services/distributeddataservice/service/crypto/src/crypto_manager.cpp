@@ -23,6 +23,12 @@
 #include "log_print.h"
 #include "securec.h"
 namespace OHOS::DistributedData {
+std::vector<uint8_t> backupNonce_{};
+std::vector<uint8_t> vecAad_{};
+std::vector<uint8_t> vecBackupKeyAlias_{};
+std::vector<uint8_t> vecNonce_{};
+std::vector<uint8_t> vecRootKeyAlias_{};
+
 CryptoManager::CryptoManager()
 {
     vecRootKeyAlias_ = std::vector<uint8_t>(ROOT_KEY_ALIAS, ROOT_KEY_ALIAS + strlen(ROOT_KEY_ALIAS));
@@ -49,6 +55,37 @@ struct HksParam aes256Param[] = {
     { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
     { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
 };
+
+bool AddParams(struct HksParamSet *params, RootKeys type)
+{
+    struct HksBlob blobNonce;
+    struct HksBlob keyName;
+    if (type == RootKeys::ROOT_KEY) {
+        blobNonce = { uint32_t(vecNonce_.size()), vecNonce_.data() };
+        keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
+    } else if (type == RootKeys::BACKUP_KEY) {
+        blobNonce = { uint32_t(backupNonce_.size()), backupNonce_.data() };
+        keyName = { uint32_t(vecBackupKeyAlias_.size()), vecBackupKeyAlias_.data() };
+    } else {
+        return false;
+    }
+    struct HksBlob blobAad = { uint32_t(vecAad_.size()), vecAad_.data() };
+    struct HksParam hksParam[] = {
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
+        { .tag = HKS_TAG_NONCE, .blob = blobNonce },
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
+    };
+
+    HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
+    auto ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
+
+    if (ret != HKS_SUCCESS) {
+        ZLOGE("HksAddParams failed with error %{public}d", ret);
+        HksFreeParamSet(&params);
+        return false;
+    }
+    return true;
+}
 
 int32_t GetRootKeyParams(HksParamSet *&params)
 {
@@ -140,37 +177,15 @@ std::vector<uint8_t> CryptoManager::BackupKeyEncrypt(const std::vector<uint8_t> 
 
 std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const RootKeys type)
 {
-    struct HksBlob blobNonce;
-    struct HksBlob keyName;
-    if (type == RootKeys::ROOT_KEY) {
-        blobNonce = { uint32_t(vecNonce_.size()), vecNonce_.data() };
-        keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    }
-    if (type == RootKeys::BACKUP_KEY) {
-        blobNonce = { uint32_t(backupNonce_.size()), backupNonce_.data() };
-        keyName = { uint32_t(vecBackupKeyAlias_.size()), vecBackupKeyAlias_.data() };
-    }
-    struct HksBlob blobAad = { uint32_t(vecAad_.size()), vecAad_.data() };
-    struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(key.data()) };
     struct HksParamSet *params = nullptr;
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return {};
     }
-    struct HksParam hksParam[] = {
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
-        { .tag = HKS_TAG_NONCE, .blob = blobNonce },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
-    };
-
-    if (HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0])) != HKS_SUCCESS ||
-        HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0])) != HKS_SUCCESS) {
-        ZLOGE("HksAddParams failed with error %{public}d", ret);
-        HksFreeParamSet(&params);
+    if (!AddParams(params, type)) {
         return {};
     }
-
     ret = HksBuildParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
@@ -180,6 +195,13 @@ std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key
 
     uint8_t cipherBuf[256] = { 0 };
     struct HksBlob cipherText = { sizeof(cipherBuf), cipherBuf };
+    struct HksBlob keyName;
+    if (type == RootKeys::ROOT_KEY) {
+        keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
+    } else if (type == RootKeys::BACKUP_KEY) {
+        keyName = { uint32_t(vecBackupKeyAlias_.size()), vecBackupKeyAlias_.data() };
+    }
+    struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(key.data()) };
     ret = HksEncrypt(&keyName, params, &plainKey, &cipherText);
     (void)HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -204,17 +226,6 @@ bool CryptoManager::BackupKeyDecrypt(std::vector<uint8_t> &source, std::vector<u
 
 bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type)
 {
-    struct HksBlob blobNonce;
-    struct HksBlob keyName;
-    if (type == RootKeys::ROOT_KEY) {
-        blobNonce = { uint32_t(vecNonce_.size()), vecNonce_.data() };
-        keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (type == RootKeys::BACKUP_KEY) {
-        blobNonce = { uint32_t(backupNonce_.size()), backupNonce_.data() };
-        keyName = { uint32_t(vecBackupKeyAlias_.size()), vecBackupKeyAlias_.data() };
-    }
-    struct HksBlob blobAad = { uint32_t(vecAad_.size()), &(vecAad_[0]) };
-    struct HksBlob encryptedKeyBlob = { uint32_t(source.size()), source.data() };
 
     struct HksParamSet *params = nullptr;
     int32_t ret = HksInitParamSet(&params);
@@ -222,16 +233,9 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return false;
     }
-    struct HksParam hksParam[] = {
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
-        { .tag = HKS_TAG_NONCE, .blob = blobNonce },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
-    };
-    if (HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0])) != HKS_SUCCESS ||
-        HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0])) != HKS_SUCCESS) {
-        ZLOGE("HksAddParams failed with error %{public}d", ret);
-        HksFreeParamSet(&params);
-        return false;
+
+    if (!AddParams(params, type)) {
+        return {};
     }
 
     ret = HksBuildParamSet(&params);
@@ -243,6 +247,13 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
 
     uint8_t plainBuf[256] = { 0 };
     struct HksBlob plainKeyBlob = { sizeof(plainBuf), plainBuf };
+    struct HksBlob keyName;
+    if (type == RootKeys::ROOT_KEY) {
+        keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
+    } else if (type == RootKeys::BACKUP_KEY) {
+        keyName = { uint32_t(vecBackupKeyAlias_.size()), vecBackupKeyAlias_.data() };
+    }
+    struct HksBlob encryptedKeyBlob = { uint32_t(source.size()), source.data() };
     ret = HksDecrypt(&keyName, params, &encryptedKeyBlob, &plainKeyBlob);
     (void)HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -320,7 +331,7 @@ bool CryptoManager::ImportBackupKey(const std::string &key, const std::string &i
     struct HksBlob hksKey = { KEY_SIZE, aesKey};
     struct HksParamSet *params = nullptr;
 
-    if (BuildImportKeyParams(params) == false) {
+    if (!BuildImportKeyParams(params)) {
         (void)memset_s(aesKey, sizeof(aesKey), 0, sizeof(aesKey));
         return false;
     }

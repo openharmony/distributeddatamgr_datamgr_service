@@ -21,6 +21,10 @@
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
+enum RootKeys {
+    ROOT_KEY,
+    BACKUP_KEY,
+};
 class API_EXPORT CryptoManager {
 public:
     static CryptoManager &GetInstance();
@@ -38,10 +42,6 @@ public:
         ERROR,
     };
 private:
-    enum RootKeys {
-        ROOT_KEY,
-        BACKUP_KEY,
-    };
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
     static constexpr const char *BACKUP_KEY_ALIAS = "distributed_db_backup_key";
     static constexpr const char *HKS_BLOB_TYPE_NONCE = "Z5s0Bo571KoqwIi6";
@@ -54,11 +54,6 @@ private:
     bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const RootKeys type);
     CryptoManager();
     ~CryptoManager();
-    std::vector<uint8_t> vecRootKeyAlias_{};
-    std::vector<uint8_t> vecBackupKeyAlias_{};
-    std::vector<uint8_t> vecNonce_{};
-    std::vector<uint8_t> vecAad_{};
-    std::vector<uint8_t> backupNonce_{};
     std::mutex mutex_;
 };
 } // namespace OHOS::DistributedData
