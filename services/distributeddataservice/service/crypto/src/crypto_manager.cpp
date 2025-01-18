@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <sstream>
 #define LOG_TAG "CryptoManager"
 #include "crypto_manager.h"
 
@@ -269,7 +268,7 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
     return true;
 }
 
-bool BuildImportKeyParams(struct HksParamSet *&params, HksBlob blobNonce)
+bool BuildImportKeyParams(struct HksParamSet *&params)
 {
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -280,7 +279,6 @@ bool BuildImportKeyParams(struct HksParamSet *&params, HksBlob blobNonce)
         {.tag = HKS_TAG_IS_KEY_ALIAS, .boolParam = true},
         {.tag = HKS_TAG_KEY_GENERATE_TYPE, .uint32Param = HKS_KEY_GENERATE_TYPE_DEFAULT},
         {.tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT},
-        { .tag = HKS_TAG_NONCE, .blob = blobNonce },
     };
     ret = HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
     if (ret != HKS_SUCCESS) {
@@ -306,11 +304,11 @@ bool BuildImportKeyParams(struct HksParamSet *&params, HksBlob blobNonce)
 bool CryptoManager::ImportCloneKey(std::vector<uint8_t> &key, std::vector<uint8_t> &iv)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    ZLOGI("ImportCloneKey enter.");    
-    HksBlob nonce_ = { iv.size(), iv.data() };
+    ZLOGI("ImportCloneKey enter.");
+    backupNonce_ = std::vector<uint8_t>(iv.begin(), iv.end());
     struct HksBlob hksKey = { key.size(), key.data()};
     struct HksParamSet *params = nullptr;
-    if (!BuildImportKeyParams(params, nonce_)) {
+    if (!BuildImportKeyParams(params)) {
         ZLOGE("Build import key params failed.");
         return false;
     }
