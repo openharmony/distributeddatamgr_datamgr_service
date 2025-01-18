@@ -129,9 +129,9 @@ public:
 
     int32_t OnScreenUnlocked(int32_t user);
 
-    int32_t OnExtension(const std::string& extension, MessageParcel& data, MessageParcel& reply) override;
-    int32_t OnBackup(MessageParcel& data, MessageParcel& reply);
-    int32_t OnRestore(MessageParcel& data, MessageParcel& reply);
+    int32_t OnExtension(const std::string &extension, MessageParcel &data, MessageParcel &reply) override;
+    int32_t OnBackup(MessageParcel &data, MessageParcel &reply);
+    int32_t OnRestore(MessageParcel &data, MessageParcel &reply);
     static bool GetSecretKeyBackup(
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
         const std::string &userId, std::string &content);
@@ -186,9 +186,11 @@ public:
 
     void InitExecutor();
 
-    bool ParseBackupSecretKey(UniqueFd &fd, SecretKeyBackupData &backupData);
+    bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
 
-    int32_t RestoreSecretKey(const SecretKeyBackupData &backupData, const CloneBackupInfo &backupInfo);
+    bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId);
+
+    int32_t ReplyForRestore(MessageParcel &reply, int32_t result);
 
     static constexpr int TEN_SEC = 10;
 

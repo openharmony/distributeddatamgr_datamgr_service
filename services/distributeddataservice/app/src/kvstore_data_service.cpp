@@ -372,7 +372,7 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
     Installer::GetInstance().UnsubscribeEvent();
 }
 
-int32_t KvStoreDataService::OnExtension(const std::string& extension, MessageParcel& data, MessageParcel& reply)
+int32_t KvStoreDataService::OnExtension(const std::string &extension, MessageParcel &data, MessageParcel &reply)
 {
     ZLOGI("extension is %{public}s, callingPid:%{public}d.", extension.c_str(), IPCSkeleton::GetCallingPid());
     if (extension == EXTENSION_BACKUP) {
@@ -393,7 +393,7 @@ std::string GetBackupReplyCode(int replyCode, const std::string &info = "")
     return Serializable::Marshall(reply);
 }
 
-bool ParseBackupInfo(MessageParcel& data, CloneBackupInfo &backupInfo)
+bool ParseBackupInfo(MessageParcel &data, CloneBackupInfo &backupInfo)
 {
     std::string info = data.ReadString();
     bool success = backupInfo.Unmarshal(DistributedData::Serializable::ToJson(info));
@@ -444,7 +444,7 @@ bool ImportCloneKey(const std::string &keyStr, const std::string &ivStr)
         iv.assign(iv.size(), 0);
         return false;
     }
-    
+
     if (!CryptoManager::GetInstance().ImportCloneKey(key, iv)) {
         ZLOGE("ImportCloneKey failed.");
         key.assign(key.size(), 0);
@@ -478,7 +478,7 @@ bool WriteBackupInfo(const std::string &content)
     return true;
 }
 
-int32_t KvStoreDataService::OnBackup(MessageParcel& data, MessageParcel& reply)
+int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 {
     CloneBackupInfo backupInfo;
     if (!ParseBackupInfo(data, backupInfo)) {
@@ -576,26 +576,38 @@ bool KvStoreDataService::GetSecretKeyBackup(
     return true;
 }
 
-int32_t KvStoreDataService::OnRestore(MessageParcel& data, MessageParcel& reply)
+int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
 {
-    int32_t result;
-    UniqueFd fd(data.ReadFileDescriptor());
     SecretKeyBackupData backupData;
-    bool res = ParseBackupSecretKey(fd, backupData);
-    if (!res || backupData.infos.size() == 0) {
-        ZLOGE("Parse backup data failed or backup infos is empty! res:%{public}d, size:%{public}zu",
-            res, backupData.infos.size());
-        result = -1;
-    } else {
-        std::string cloneInfo = data.ReadString();
-        CloneBackupInfo backupInfo;
-        backupInfo.Unmarshal(DistributedData::Serializable::ToJson(cloneInfo));
-        cloneInfo.assign(cloneInfo.size(), 0);
-        result = RestoreSecretKey(backupData, backupInfo);
+    if (!ParseSecretKeyFile(data, backupData) || backupData.infos.size() == 0) {
+        ZLOGE("Read backup file failed or infos is empty!");
+        return ReplyForRestore(reply, -1);
+    }
+    CloneBackupInfo backupInfo;
+    bool ret = backupInfo.Unmarshal(DistributedData::Serializable::ToJson(data.ReadString()));
+    if (!ret || backupInfo.userId.empty()) {
+        ZLOGE("Clone info invalid or userId is empty!");
+        return ReplyForRestore(reply, -1);
     }
 
-    close(fd.Release());
-    std::string replyCode = GetBackupReplyCode(0);
+    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey, backupInfo.encryptionInfo.iv)) {
+        return ReplyForRestore(reply, -1);
+    }
+    for (const auto &item : backupData.infos) {
+        if (!item.IsValid() || !RestoreSecretKey(item, backupInfo.userId)) {
+            ZLOGW("Restore secret key failed! bundleName:%{public}s, dbName:%{public}s, instanceId:%{public}d, "
+                "storeType:%{public}d, time.size:%{public}zu, sKey:%{public}s, user:%{public}s",
+                item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.instanceId, item.storeType,
+                item.time.size(), Anonymous::Change(item.sKey).c_str(), item.user.c_str());
+            continue;
+        }
+    }
+    return ReplyForRestore(reply, 0);
+}
+
+int32_t KvStoreDataService::ReplyForRestore(MessageParcel &reply, int32_t result)
+{
+    std::string replyCode = GetBackupReplyCode(result);
     if (!reply.WriteString(replyCode)) {
         ZLOGE("Write reply failed");
         return -1;
@@ -603,59 +615,53 @@ int32_t KvStoreDataService::OnRestore(MessageParcel& data, MessageParcel& reply)
     return result;
 }
 
-bool KvStoreDataService::ParseBackupSecretKey(UniqueFd &fd, SecretKeyBackupData &backupData)
+bool KvStoreDataService::ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData)
 {
+    UniqueFd fd(data.ReadFileDescriptor());
     struct stat statBuf;
     if (fd.Get() < 0 || fstat(fd.Get(), &statBuf) < 0) {
         ZLOGE("Parse backup secret key failed, fd:%{public}d, errno:%{public}d", fd.Get(), errno);
+        close(fd.Release());
         return false;
     }
     char buffer[statBuf.st_size + 1];
     if (read(fd.Get(), buffer, statBuf.st_size + 1) < 0) {
         ZLOGE("Read backup secret key failed. errno:%{public}d", errno);
+        close(fd.Release());
         return false;
     }
+    close(fd.Release());
     std::string secretKeyStr(buffer);
     DistributedData::Serializable::Unmarshall(secretKeyStr, backupData);
     return true;
 }
 
-int32_t KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData &backupData, const CloneBackupInfo &backupInfo)
+bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId)
 {
-    if (backupData.infos.size() == 0 || backupInfo.userId.empty()) {
-        ZLOGE("Restore secret key data invalid! info.size:%{public}zu, userId:%{public}s",
-            backupData.infos.size(), backupInfo.userId.c_str());
-        return -1;
-    }
-    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey, backupInfo.encryptionInfo.iv)) {
-        return -1;
-    }
-    for (const auto &item : backupData.infos) {
-        if (!item.IsValid()) {
-            ZLOGW("Secretkey backup info is invalid! bundleName:%{public}s, dbName:%{public}s, instanceId:%{public}d, "
-                "storeType:%{public}d, time.size:%{public}zu, sKey:%{public}s, user:%{public}s",
-                item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.instanceId, item.storeType,
-                item.time.size(), Anonymous::Change(item.sKey).c_str(), item.user.c_str());
-            continue;
-        }
-        StoreMetaData metaData;
-        metaData.bundleName = item.bundleName;
-        metaData.storeId = item.dbName;
-        metaData.user = item.user == "0" ? "0" : backupInfo.userId;
-        metaData.instanceId = item.instanceId;
-        auto sKey = DistributedData::Base64::Decode(item.sKey);
-        std::vector<uint8_t> rawKey;
-        CryptoManager::GetInstance().DecryptCloneKey(sKey, rawKey);
-
-        SecretKeyMetaData secretKey;
-        secretKey.storeType = item.storeType;
-        secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey);
-        secretKey.time = { item.time.begin(), item.time.end() };
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true);
+    StoreMetaData metaData;
+    metaData.bundleName = item.bundleName;
+    metaData.storeId = item.dbName;
+    metaData.user = item.user == "0" ? "0" : userId;
+    metaData.instanceId = item.instanceId;
+    auto sKey = DistributedData::Base64::Decode(item.sKey);
+    std::vector<uint8_t> rawKey;
+    if (!CryptoManager::GetInstance().DecryptCloneKey(sKey, rawKey)) {
+        ZLOGE("Decrypt by clonekey failed.");
         sKey.assign(sKey.size(), 0);
         rawKey.assign(rawKey.size(), 0);
+        return false;
     }
-    return 0;
+    SecretKeyMetaData secretKey;
+    secretKey.storeType = item.storeType;
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey);
+    secretKey.time = { item.time.begin(), item.time.end() };
+    sKey.assign(sKey.size(), 0);
+    rawKey.assign(rawKey.size(), 0);
+    if (!MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true)) {
+        ZLOGE("Save meta failed.");
+        return false;
+    }
+    return true;
 }
 
 void KvStoreDataService::StartService()

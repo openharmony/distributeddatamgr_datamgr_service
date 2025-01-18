@@ -55,14 +55,14 @@ struct HksParam aes256Param[] = {
     { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
 };
 
-bool AddParams(struct HksParamSet *params, RootKeys type)
+bool AddParams(struct HksParamSet *params, RootKeys type, HksKeyPurpose purpose)
 {
     struct HksBlob blobNonce;
     struct HksBlob keyName;
     if (type == RootKeys::ROOT_KEY) {
         blobNonce = { uint32_t(vecNonce_.size()), vecNonce_.data() };
         keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (type == RootKeys::BACKUP_KEY) {
+    } else if (type == RootKeys::CLONE_KEY) {
         blobNonce = { uint32_t(backupNonce_.size()), backupNonce_.data() };
         keyName = { uint32_t(vecCloneKeyAlias_.size()), vecCloneKeyAlias_.data() };
     } else {
@@ -70,7 +70,7 @@ bool AddParams(struct HksParamSet *params, RootKeys type)
     }
     struct HksBlob blobAad = { uint32_t(vecAad_.size()), vecAad_.data() };
     struct HksParam hksParam[] = {
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = purpose },
         { .tag = HKS_TAG_NONCE, .blob = blobNonce },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
     };
@@ -175,7 +175,7 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
 
 std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key)
 {
-    return EncryptInner(key, RootKeys::BACKUP_KEY);
+    return EncryptInner(key, RootKeys::CLONE_KEY);
 }
 
 std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const RootKeys type)
@@ -186,7 +186,7 @@ std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return {};
     }
-    if (!AddParams(params, type)) {
+    if (!AddParams(params, type, HKS_KEY_PURPOSE_ENCRYPT)) {
         return {};
     }
     ret = HksBuildParamSet(&params);
@@ -201,7 +201,7 @@ std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key
     struct HksBlob keyName;
     if (type == RootKeys::ROOT_KEY) {
         keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (type == RootKeys::BACKUP_KEY) {
+    } else if (type == RootKeys::CLONE_KEY) {
         keyName = { uint32_t(vecCloneKeyAlias_.size()), vecCloneKeyAlias_.data() };
     }
     struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(key.data()) };
@@ -224,7 +224,7 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
 
 bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key)
 {
-    return DecryptInner(source, key, RootKeys::BACKUP_KEY);
+    return DecryptInner(source, key, RootKeys::CLONE_KEY);
 }
 
 bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type)
@@ -236,7 +236,7 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
         return false;
     }
 
-    if (!AddParams(params, type)) {
+    if (!AddParams(params, type, HKS_KEY_PURPOSE_DECRYPT)) {
         return {};
     }
 
@@ -252,7 +252,7 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
     struct HksBlob keyName;
     if (type == RootKeys::ROOT_KEY) {
         keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (type == RootKeys::BACKUP_KEY) {
+    } else if (type == RootKeys::CLONE_KEY) {
         keyName = { uint32_t(vecCloneKeyAlias_.size()), vecCloneKeyAlias_.data() };
     }
     struct HksBlob encryptedKeyBlob = { uint32_t(source.size()), source.data() };

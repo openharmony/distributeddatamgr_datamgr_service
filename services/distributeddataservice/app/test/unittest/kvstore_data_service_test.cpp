@@ -714,13 +714,14 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore002, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     MessageParcel data;
     MessageParcel reply;
-    WriteContentToFile(SECRETKEY_BACKUP_FILE, "{}");
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, "{}"), 0);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
     std::string cloneInfoStr = "[{\"type\":\"application_selection\",\"detail\"";
     data.WriteString(cloneInfoStr);
     EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
 }
 
 /**
@@ -735,7 +736,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore003, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     MessageParcel data;
     MessageParcel reply;
-    WriteContentToFile(SECRETKEY_BACKUP_FILE, "{}");
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, "{}"), 0);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
@@ -765,7 +766,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore004, TestSize.Level0)
         "\"dbType\":\"1\",\"user\":\"0\",\"key\":\"9aJQwx3XD3EN7To2j/"
         "I9E9MCzn2+6f/bBqFjOPcY+1pRgx/"
         "XI6jXedyuzEEVdwrc\",\"time\":[50,180,137,103,0,0,0,0]}]}";
-    WriteContentToFile(SECRETKEY_BACKUP_FILE, backupData);
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, backupData), 0);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
@@ -793,7 +794,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore005, TestSize.Level0)
         "\"AES256\",\"gcmParams_iv\":\"97,160,201,177,46,37,129,18,112,220,107,"
         "106,25,231,15,15,58,85,31,83,123,216,211,2,222,49,122,72,21,251,83,"
         "16\"}},{\"type\":\"userId\",\"detail\":\"\"}]";
-    WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA), 0);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);
@@ -814,7 +815,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore006, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     MessageParcel data;
     MessageParcel reply;
-    WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA);
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA), 0);
     int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
     ASSERT_GE(fd, 0);
     data.WriteFileDescriptor(fd);

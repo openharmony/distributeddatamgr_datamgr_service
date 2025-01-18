@@ -62,6 +62,7 @@ using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *PASTEBOARD_SERVICE = "pasteboard_service";
 static constexpr const char *PASTEBOARD_USER_ID = "100";
+static const size_t SECRET_KEY_COUNT = 2;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
@@ -606,7 +607,9 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         }
         backupPwd.assign(backupPwd.size(), 0);
         return res ? SUCCESS : ERROR;
-    } else if (passwordType == KVDBService::PasswordType::SECRET_KEY) {
+    }
+    if (passwordType == KVDBService::PasswordType::SECRET_KEY) {
+        passwords.reserve(SECRET_KEY_COUNT);
         SecretKeyMetaData secretKey;
         std::vector<uint8_t> password;
         if (MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true) &&

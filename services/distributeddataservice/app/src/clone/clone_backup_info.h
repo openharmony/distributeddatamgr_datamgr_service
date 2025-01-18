@@ -24,7 +24,7 @@ struct CloneEncryptionInfo final : public Serializable {
     std::string iv;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
-    API_EXPORT ~CloneEncryptionInfo();
+    ~CloneEncryptionInfo();
 };
 
 struct CloneBundleInfo final : public Serializable {

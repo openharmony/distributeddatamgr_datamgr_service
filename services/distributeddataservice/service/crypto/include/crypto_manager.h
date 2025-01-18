@@ -23,7 +23,7 @@
 namespace OHOS::DistributedData {
 enum RootKeys {
     ROOT_KEY,
-    BACKUP_KEY,
+    CLONE_KEY,
 };
 class API_EXPORT CryptoManager {
 public:

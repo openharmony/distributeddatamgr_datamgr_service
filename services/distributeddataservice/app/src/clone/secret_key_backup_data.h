@@ -26,22 +26,21 @@ public:
         std::string user;
         std::string sKey;
         int32_t instanceId;
-        int32_t storeType = 0;
-        std::vector<uint8_t> time {};
+        int32_t storeType;
+        std::vector<uint8_t> time;
 
         API_EXPORT BackupItem();
-        API_EXPORT ~BackupItem();
+        ~BackupItem();
         API_EXPORT bool Marshal(json &node) const override;
         API_EXPORT bool Unmarshal(const json &node) override;
         API_EXPORT bool IsValid() const;
     };
     std::vector<BackupItem> infos;
     API_EXPORT SecretKeyBackupData();
-    API_EXPORT ~SecretKeyBackupData();
+    ~SecretKeyBackupData();
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
 };
 } // namespace DistributedData
 } // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_SECRET_KEY_BACKUP_DATA_H
-
