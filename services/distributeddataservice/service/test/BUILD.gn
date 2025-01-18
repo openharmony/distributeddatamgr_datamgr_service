@@ -500,6 +500,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = []
