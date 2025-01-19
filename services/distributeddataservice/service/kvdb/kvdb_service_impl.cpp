@@ -62,6 +62,7 @@ using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *PASTEBOARD_SERVICE = "pasteboard_service";
 static constexpr const char *PASTEBOARD_USER_ID = "100";
+static const size_t SECRET_KEY_COUNT = 2;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
 {
@@ -200,6 +201,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId)
     MetaDataManager::GetInstance().DelMeta(metaData.GetBackupSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetAutoLaunchKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetDebugInfoKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
     PermitDelegate::GetInstance().DelCache(metaData.GetKey());
     AutoCache::GetInstance().CloseStore(tokenId, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
@@ -593,17 +595,36 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<uint8_t> &password,
-    int32_t passwordType)
+Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId,
+    std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
-        return BackupManager::GetInstance().GetPassWord(metaData, password) ? SUCCESS : ERROR;
+        std::vector<uint8_t> backupPwd;
+        bool res = BackupManager::GetInstance().GetPassWord(metaData, backupPwd);
+        if (res) {
+            passwords.emplace_back(backupPwd);
+        }
+        backupPwd.assign(backupPwd.size(), 0);
+        return res ? SUCCESS : ERROR;
     }
     if (passwordType == KVDBService::PasswordType::SECRET_KEY) {
+        passwords.reserve(SECRET_KEY_COUNT);
         SecretKeyMetaData secretKey;
-        MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true);
-        return CryptoManager::GetInstance().Decrypt(secretKey.sKey, password) ? SUCCESS : ERROR;
+        std::vector<uint8_t> password;
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true) &&
+            CryptoManager::GetInstance().Decrypt(secretKey.sKey, password)) {
+            passwords.emplace_back(password);
+            password.assign(password.size(), 0);
+        }
+
+        std::vector<uint8_t> clonePwd;
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true) &&
+            CryptoManager::GetInstance().Decrypt(secretKey.sKey, clonePwd)) {
+            passwords.emplace_back(clonePwd);
+            clonePwd.assign(clonePwd.size(), 0);
+        }
+        return passwords.size() > 0 ? SUCCESS : ERROR;
     }
     ZLOGE("passwordType is invalid, appId:%{public}s, storeId:%{public}s, passwordType:%{public}d",
         appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), passwordType);

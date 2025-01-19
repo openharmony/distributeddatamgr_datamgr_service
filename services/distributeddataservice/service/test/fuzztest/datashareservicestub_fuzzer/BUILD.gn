@@ -54,7 +54,6 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
-    "${data_service_path}/service/data_share/common/base64_utils.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/db_delegate.cpp",
     "${data_service_path}/service/data_share/common/div_strategy.cpp",

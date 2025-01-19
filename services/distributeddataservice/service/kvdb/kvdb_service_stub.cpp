@@ -427,15 +427,19 @@ int32_t KVDBServiceStub::OnGetBackupPassword(
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    std::vector<uint8_t> password;
-    int32_t status = GetBackupPassword(appId, storeId, password, passwordType);
-    if (!ITypesUtil::Marshal(reply, status, password)) {
+    std::vector<std::vector<uint8_t>> passwords;
+    int32_t status = GetBackupPassword(appId, storeId, passwords, passwordType);
+    if (!ITypesUtil::Marshal(reply, status, passwords)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
-        password.assign(password.size(), 0);
+        for (auto &password : passwords) {
+            password.assign(password.size(), 0);
+        }
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
-    password.assign(password.size(), 0);
+    for (auto &password : passwords) {
+        password.assign(password.size(), 0);
+    }
     return ERR_NONE;
 }
 

@@ -36,9 +36,11 @@ config("module_private_config") {
     "${data_service_path}/service/common",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/directory/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/matrix/include",
+    "${data_service_path}/app/src",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/service/kvdb",
     "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
@@ -67,12 +69,23 @@ config("module_private_config") {
     "-Dprotected=public",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
 }
 
 ohos_unittest("KvStoreDataServiceTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
@@ -229,6 +242,8 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
 ohos_unittest("KvStoreDataServiceClearTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",

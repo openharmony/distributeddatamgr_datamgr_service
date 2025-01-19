@@ -100,6 +100,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "store/auto_cache.cpp",
     "thread/thread_manager.cpp",
     "utils/anonymous.cpp",
+    "utils/base64_utils.cpp",
     "utils/block_integer.cpp",
     "utils/constant.cpp",
     "utils/converter.cpp",
