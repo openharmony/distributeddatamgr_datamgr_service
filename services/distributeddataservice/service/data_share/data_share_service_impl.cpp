@@ -622,7 +622,6 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     if (profileInfos.empty()) {
         return;
     }
-    std::map<std::string, AutoLaunchMetaData> maps;
     for (auto &[uri, value] : profileInfos) {
         if (uri.find(EXT_URI_SCHEMA) == std::string::npos) {
             continue;
