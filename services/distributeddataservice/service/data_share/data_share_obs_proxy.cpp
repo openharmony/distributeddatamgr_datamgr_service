@@ -86,7 +86,7 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
     size_t dataSize = changeNode.data_.size();
     // maximum dataSize
     if (dataSize > MAX_DATA_SIZE) {
-        ZLOGE("changeNode size exceeds the maximum limit.");
+        ZLOGE("changeNode size:%{public}zu, exceeds the maximum limit.", dataSize);
         return E_ERROR;
     }
     if (WriteAshmem(changeNode, (void *)&dataSize, INT32_BYTE_LEN, offset) != E_OK) {
@@ -98,20 +98,20 @@ int RdbObserverProxy::SerializeDataIntoAshmem(RdbChangeNode &changeNode)
         size_t uStrLen = changeNode.data_[i].length();
         // maximum strLen
         if (uStrLen > MAX_STR_LEN) {
-            ZLOGE("string length exceeds the maximum limit.");
+            ZLOGE("string length:%{public}zu, exceeds the maximum limit.", uStrLen);
             return E_ERROR;
         }
         int32_t strLen = static_cast<int32_t>(uStrLen);
         // write length int
         if (WriteAshmem(changeNode, (void *)&strLen, INT32_BYTE_LEN, offset) != E_OK) {
-            ZLOGE("failed to write data with index %{public}d, len %{public}d, offset %{public}d.",
-                static_cast<int32_t>(i), INT32_BYTE_LEN, offset);
+            ZLOGE("failed to write data with index %{public}zu, len %{public}d, offset %{public}d.",
+                i, INT32_BYTE_LEN, offset);
             return E_ERROR;
         }
         // write str
         if (WriteAshmem(changeNode, (void *)str, strLen, offset) != E_OK) {
-            ZLOGE("failed to write data with index %{public}d, len %{public}d, offset %{public}d.",
-                static_cast<int32_t>(i), strLen, offset);
+            ZLOGE("failed to write data with index %{public}zu, len %{public}d, offset %{public}d.",
+                i, strLen, offset);
             return E_ERROR;
         }
     }
@@ -126,7 +126,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
     size_t dataSize = changeNode.data_.size();
     // maximum dataSize
     if (dataSize > MAX_DATA_SIZE) {
-        ZLOGE("changeNode size exceeds the maximum limit.");
+        ZLOGE("changeNode size:%{public}zu, exceeds the maximum limit.", dataSize);
         return E_ERROR;
     }
     for (size_t i = 0; i < dataSize; i++) {
@@ -134,7 +134,7 @@ int RdbObserverProxy::PrepareRdbChangeNodeData(RdbChangeNode &changeNode)
         size_t uStrLen = changeNode.data_[i].length();
         // maximum strLen
         if (uStrLen > DATA_SIZE_ASHMEM_TRANSFER_LIMIT) {
-            ZLOGE("string length exceeds the maximum limit.");
+            ZLOGE("string length:%{public}zu, exceeds the maximum limit.", uStrLen);
             return E_ERROR;
         }
         int32_t strLen = static_cast<int32_t>(uStrLen);
