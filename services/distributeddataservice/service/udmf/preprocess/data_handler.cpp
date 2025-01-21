@@ -48,10 +48,10 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
     std::vector<std::string> recordOrder;
     for (const auto &entry : entries) {
         std::string keyStr = { entry.key.begin(), entry.key.end() };
+        auto data = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
         if (keyStr == key) {
             Runtime runtime;
-            auto runtimeTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
-            if (!TLVUtil::ReadTlv(runtime, runtimeTlv, TAG::TAG_RUNTIME)) {
+            if (!TLVUtil::ReadTlv(runtime, data, TAG::TAG_RUNTIME)) {
                 ZLOGE("Unmarshall runtime info failed.");
                 return E_READ_PARCEL_ERROR;
             }
@@ -60,8 +60,7 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
         }
         if (keyStr.find(key) == 0 && keyStr.rfind(UD_KEY_ENTRY_SEPARATOR) == std::string::npos) {
             std::shared_ptr<UnifiedRecord> record;
-            auto recordTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
-            if (!TLVUtil::ReadTlv(record, recordTlv, TAG::TAG_UNIFIED_RECORD)) {
+            if (!TLVUtil::ReadTlv(record, data, TAG::TAG_UNIFIED_RECORD)) {
                 ZLOGE("Unmarshall unified record failed.");
                 return E_READ_PARCEL_ERROR;
             }
@@ -70,28 +69,23 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
             continue;
         }
         if (keyStr.find(key) == 0 && keyStr.rfind(UD_KEY_ENTRY_SEPARATOR) != std::string::npos) {
-            const ValueType value;
             EntryContainer entryContainer;
-            auto recordTlv = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
-            if (!TLVUtil::ReadTlv(entryContainer, recordTlv, TAG::TAG_INNER_ENTRIES)) {
+            if (!TLVUtil::ReadTlv(entryContainer, data, TAG::TAG_INNER_ENTRIES)) {
                 ZLOGE("Unmarshall inner entry failed.");
                 return E_READ_PARCEL_ERROR;
             }
             innerEntries.emplace(keyStr, *entryContainer.GetEntries());
         }
     }
-    for (auto innerEntry : innerEntries) {
-        std::string key = innerEntry.first;
-        std::map<std::string, ValueType> entryValue = innerEntry.second;
+    for (auto &[key, entryValue] : innerEntries) {
         auto idx = key.rfind(UD_KEY_ENTRY_SEPARATOR);
         std::string recordKey = key.substr(0, idx);
         std::string entryUtdId = key.substr(idx + 1);
-        auto record = recordsMap[recordKey];
-        if (entryValue.find(entryUtdId) != entryValue.end() ) {
-            record->AddEntry(entryUtdId, std::move(entryValue.find(entryUtdId)->second));
+        if (recordsMap.find(recordKey) != recordsMap.end() && entryValue.find(entryUtdId) != entryValue.end()) {
+            recordsMap[recordKey]->AddEntry(entryUtdId, std::move(entryValue[entryUtdId]));
         }
     }
-    for (auto key : recordOrder) {
+    for (auto &key : recordOrder) {
         unifiedData.AddRecord(std::move(recordsMap[key]));
     }
     return E_OK;
