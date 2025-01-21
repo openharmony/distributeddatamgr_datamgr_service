@@ -1006,8 +1006,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     DataProviderConfig providerConfig(uri, tokenId);
     auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
     if (errCode != E_OK) {
-        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
-            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
+        ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s,visitedUserId:%{public}d", tokenId,
+            errCode, URIUtils::Anonymous(providerInfo.uri).c_str(), providerInfo.visitedUserId);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
         return std::make_pair(errCode, 0);

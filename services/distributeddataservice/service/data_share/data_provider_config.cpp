@@ -42,7 +42,10 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
     } else {
         auto [success, data] = URIUtils::GetUserFromProxyURI(providerInfo_.uri);
         if (success) {
-            providerInfo_.visitedUserId = static_cast<int32_t>(std::move(data));
+            // if data is -1, it means visiting provider's user
+            providerInfo_.visitedUserId = (data == -1 ? providerInfo_.currentUserId : data);
+        } else {
+            providerInfo_.visitedUserId = -1;
         }
     }
     uriConfig_ = URIUtils::GetUriConfig(providerInfo_.uri);
@@ -212,6 +215,9 @@ std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProvider
 {
     if (providerInfo_.appIndex == -1) {
         return std::make_pair(E_APPINDEX_INVALID, providerInfo_);
+    }
+    if (providerInfo_.visitedUserId == -1) {
+        return std::make_pair(E_INVALID_USER_ID, providerInfo_);
     }
     auto ret = GetFromProxyData();
     if (ret == E_OK) {

@@ -43,6 +43,7 @@ public:
     static std::pair<bool, int32_t> GetUserFromProxyURI(const std::string &uri);
     static bool IsDataProxyURI(const std::string &uri);
     static void FormatUri(std::string &uri);
+    static std::string FormatConstUri(const std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);
     static std::string Anonymous(const std::string &uri);
     static std::map<std::string, std::string> GetQueryParams(const std::string& uri);
