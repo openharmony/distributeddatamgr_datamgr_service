@@ -100,6 +100,7 @@ private:
     using Time = std::chrono::steady_clock::time_point;
     using SyncId = uint64_t;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
+    void InitStoreInfo(const StoreMetaData &meta);
     // GetIntersection and return results in the order of collecter1
     static std::vector<std::string> GetIntersection(std::vector<std::string> &&syncTables,
         const std::set<std::string> &localTables);
