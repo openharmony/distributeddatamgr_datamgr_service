@@ -82,9 +82,9 @@ int32_t ProgressDialog::ShowProgress(const ProgressMessageInfo &message)
     want.SetParam("promptText", message.promptText);
     want.SetParam("remoteDeviceName", message.remoteDeviceName);
     want.SetParam("progressKey", message.progressKey);
-    want.SetParam("signalKey", message.signalKey);
     want.SetParam("isRemote", message.isRemote);
     want.SetParam("windowId", message.windowId);
+    want.SetParam("ipcCallback", message.clientCallback);
     if (message.callerToken != nullptr) {
         want.SetParam("tokenKey", message.callerToken);
     } else {
@@ -93,7 +93,7 @@ int32_t ProgressDialog::ShowProgress(const ProgressMessageInfo &message)
 
     int32_t status = IN_PROCESS_CALL(abilityManager->StartAbility(want));
     if (status != 0) {
-        ZLOGE("Start pasteboard progress failed, status:%{public}d.", status);
+        ZLOGE("Start progress failed, status:%{public}d.", status);
     }
     return status;
 }

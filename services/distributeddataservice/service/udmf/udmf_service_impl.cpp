@@ -839,14 +839,14 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
     asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
 }
 
-int32_t UdmfServiceImpl::InvokeHap(const std::string &progressKey, const std::string &cancelKey)
+int32_t UdmfServiceImpl::InvokeHap(const std::string &progressKey, const sptr<IRemoteObject> &observer)
 {
     ProgressDialog::ProgressMessageInfo message;
     message.promptText = "PromptText_PasteBoard_Local";
     message.remoteDeviceName = "";
     message.isRemote = false;
     message.progressKey = progressKey;
-    message.signalKey = cancelKey;
+    message.clientCallback = observer;
     
     ProgressDialog::FocusedAppInfo appInfo = ProgressDialog::GetInstance().GetFocusedAppInfo();
     message.windowId = appInfo.windowId;
