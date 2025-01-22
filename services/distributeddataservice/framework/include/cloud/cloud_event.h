@@ -39,7 +39,7 @@ public:
         LOCK_CLOUD_CONTAINER,
         UNLOCK_CLOUD_CONTAINER,
         SET_SEARCH_TRIGGER,
-        UPDATE_SCHEMA_FROM_HAP,
+        UPGRADE_SCHEMA_DO_SYNC,
         CLOUD_BUTT
     };
 

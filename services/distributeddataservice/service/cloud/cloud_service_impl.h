@@ -144,6 +144,7 @@ private:
 
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);
+    void DoSync(const Event &event);
 
     Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
@@ -166,8 +167,8 @@ private:
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
 
-    std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
-    int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
+    static std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
+    static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

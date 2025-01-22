@@ -339,7 +339,13 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
         relationships.emplace_back(relationship);
     }
-    return store->SetDistributedTables(tables, type, relationships);
+    auto ret = store->SetDistributedTables(tables, type, relationships);
+    if (ret == GeneralError::E_OK && localMeta.isClearWaterMark) {
+        // TODO clear watermark
+        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA_DO_SYNC, localMeta.GetStoreInfo());
+        EventCenter::GetInstance().PostEvent(std::move(event));
+    }
+    return ret;
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)

@@ -65,6 +65,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(customDir)], customDir);
     SetValue(node[GET_NAME(authType)], authType);
     SetValue(node[GET_NAME(haMode)], haMode);
+    SetValue(node[GET_NAME(isClearWaterMark)], isClearWaterMark);
     return true;
 }
 
@@ -108,6 +109,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(customDir), customDir);
     GetValue(node, GET_NAME(authType), authType);
     GetValue(node, GET_NAME(haMode), haMode);
+    GetValue(node, GET_NAME(isClearWaterMark), isClearWaterMark);
     return true;
 }
 
