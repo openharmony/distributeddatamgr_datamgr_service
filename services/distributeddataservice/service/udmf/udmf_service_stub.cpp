@@ -302,12 +302,16 @@ int32_t UdmfServiceStub::OnInvokeHap(MessageParcel &data, MessageParcel &reply)
 {
     ZLOGD("start");
     std::string progressKey;
-    std::string cancelKey;
-    if (!ITypesUtil::Unmarshal(data, progressKey, cancelKey)) {
+    sptr<IRemoteObject> callback = nullptr;
+    if (!ITypesUtil::Unmarshal(data, progressKey, callback)) {
         ZLOGE("Unmarshal failed");
         return E_READ_PARCEL_ERROR;
     }
-    int32_t status = InvokeHap(progressKey, cancelKey);
+    if (callback == nullptr) {
+        ZLOGE("Callback is null");
+        return E_ERROR;
+    }
+    int32_t status = InvokeHap(progressKey, callback);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status failed, status: %{public}d", status);
         return E_WRITE_PARCEL_ERROR;

@@ -82,13 +82,17 @@ int32_t ProgressDialog::ShowProgress(const ProgressMessageInfo &message)
     want.SetParam("promptText", message.promptText);
     want.SetParam("remoteDeviceName", message.remoteDeviceName);
     want.SetParam("progressKey", message.progressKey);
-    want.SetParam("signalKey", message.signalKey);
     want.SetParam("isRemote", message.isRemote);
     want.SetParam("windowId", message.windowId);
     if (message.callerToken != nullptr) {
         want.SetParam("tokenKey", message.callerToken);
     } else {
         ZLOGW("CallerToken is nullptr.");
+    }
+    if (message.clientCallback != nullptr) {
+        want.SetParam("ipcCallback", message.clientCallback);
+    } else {
+        ZLOGE("clientCallback is nullptr.");
     }
 
     int32_t status = IN_PROCESS_CALL(abilityManager->StartAbility(want));
