@@ -35,7 +35,6 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     std::vector<uint8_t> udKeyBytes = { unifiedKey.begin(), unifiedKey.end() };
     Entry entry = { udKeyBytes, runtimeBytes };
     entries.emplace_back(entry);
-    ZLOGI("MarshalToEntries before build entry");
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
 }
 
@@ -44,7 +43,6 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
 {
     std::map<std::string, std::shared_ptr<UnifiedRecord>> recordsMap;
     std::map<std::string, std::map<std::string, ValueType>> innerEntries;
-    std::vector<std::string> recordOrder;
     for (const auto &entry : entries) {
         std::string keyStr = { entry.key.begin(), entry.key.end() };
         auto data = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
@@ -57,17 +55,22 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
             unifiedData.SetRuntime(runtime);
             continue;
         }
-        if (keyStr.find(key) == 0 && keyStr.rfind(UD_KEY_ENTRY_SEPARATOR) == std::string::npos) {
+        auto isStartWithKey = keyStr.find(key) == 0;
+        if (!isStartWithKey) {
+            continue;
+        }
+        auto isEntryItem = keyStr.rfind(UD_KEY_ENTRY_SEPARATOR) != std::string::npos;
+        if (isStartWithKey && !isEntryItem) {
             std::shared_ptr<UnifiedRecord> record;
             if (!TLVUtil::ReadTlv(record, data, TAG::TAG_UNIFIED_RECORD)) {
                 ZLOGE("Unmarshall unified record failed.");
                 return E_READ_PARCEL_ERROR;
             }
+            unifiedData.AddRecord(record);
             recordsMap.emplace(keyStr, record);
-            recordOrder.push_back(keyStr);
             continue;
         }
-        if (keyStr.find(key) == 0 && keyStr.rfind(UD_KEY_ENTRY_SEPARATOR) != std::string::npos) {
+        if (isStartWithKey && isEntryItem) {
             std::shared_ptr<std::map<std::string, ValueType>> entryContainer = std::make_shared<std::map<std::string, ValueType>>();
             if (!TLVUtil::ReadTlv(entryContainer, data, TAG::TAG_INNER_ENTRIES)) {
                 ZLOGE("Unmarshall inner entry failed.");
@@ -83,9 +86,6 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
         if (recordsMap.find(recordKey) != recordsMap.end() && entryValue.find(entryUtdId) != entryValue.end()) {
             recordsMap[recordKey]->AddEntry(entryUtdId, std::move(entryValue[entryUtdId]));
         }
-    }
-    for (auto &key : recordOrder) {
-        unifiedData.AddRecord(std::move(recordsMap[key]));
     }
     return E_OK;
 }
@@ -103,21 +103,19 @@ Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord
             auto entryTlv = TLVObject(entryBytes);
             const std::shared_ptr<std::map<std::string, ValueType>> entryContainer = std::make_shared<std::map<std::string, ValueType>>();
             entryContainer->insert_or_assign(recordEntry.first, recordEntry.second);
-            ZLOGI("writing before size is %{public}zu.", entryBytes.size());
             if (!TLVUtil::Writing(entryContainer, entryTlv, TAG::TAG_INNER_ENTRIES)) {
                 ZLOGI("Marshall inner entry failed.");
                 return E_WRITE_PARCEL_ERROR;
             }
-            ZLOGI("writing after size is %{public}zu.", entryBytes.size());
             std::vector<uint8_t> keyBytes = { key.begin(), key.end() };
             Entry entry = { keyBytes, entryBytes };
             entries.emplace_back(entry);
         }
         recordEntries->clear();
         std::vector<uint8_t> recordBytes;
-        
         auto recordTlv = TLVObject(recordBytes);
         if (!TLVUtil::Writing(record, recordTlv, TAG::TAG_UNIFIED_RECORD)) {
+            ZLOGI("Marshall unified record failed.");
             return E_WRITE_PARCEL_ERROR;
         }
         std::vector<uint8_t> keyBytes = { recordKey.begin(), recordKey.end() };
