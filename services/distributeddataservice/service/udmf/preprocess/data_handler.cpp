@@ -18,7 +18,6 @@
 #include "log_print.h"
 #include "tlv_object.h"
 #include "tlv_util.h"
-#include "entry_container.h"
 
 namespace OHOS::UDMF {
 constexpr const char *UD_KEY_SEPARATOR = "/";
