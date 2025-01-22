@@ -36,7 +36,7 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     std::vector<uint8_t> udKeyBytes = { unifiedKey.begin(), unifiedKey.end() };
     Entry entry = { udKeyBytes, runtimeBytes };
     entries.emplace_back(entry);
-
+    ZLOGI("MarshalToEntries before build entry");
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
 }
 
@@ -69,12 +69,12 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
             continue;
         }
         if (keyStr.find(key) == 0 && keyStr.rfind(UD_KEY_ENTRY_SEPARATOR) != std::string::npos) {
-            EntryContainer entryContainer;
+            std::shared_ptr<std::map<std::string, ValueType>> entryContainer = std::make_shared<std::map<std::string, ValueType>>();
             if (!TLVUtil::ReadTlv(entryContainer, data, TAG::TAG_INNER_ENTRIES)) {
                 ZLOGE("Unmarshall inner entry failed.");
                 return E_READ_PARCEL_ERROR;
             }
-            innerEntries.emplace(keyStr, *entryContainer.GetEntries());
+            innerEntries.emplace(keyStr, *entryContainer);
         }
     }
     for (auto &[key, entryValue] : innerEntries) {
@@ -94,6 +94,7 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
 Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord>> &records,
     const std::string &unifiedKey, std::vector<Entry> &entries)
 {
+    ZLOGI("BuildEntries  1111");
     for (const auto &record : records) {
         std::string recordKey = unifiedKey + UD_KEY_SEPARATOR + record->GetUid();
         auto recordEntries = record->GetInnerEntries();
@@ -101,12 +102,14 @@ Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord
             std::string key = recordKey + UD_KEY_ENTRY_SEPARATOR + recordEntry.first;
             std::vector<uint8_t> entryBytes;
             auto entryTlv = TLVObject(entryBytes);
-            EntryContainer entryContainer;
-            entryContainer.GetEntries()->insert_or_assign(recordEntry.first, recordEntry.second);
+            const std::shared_ptr<std::map<std::string, ValueType>> entryContainer = std::make_shared<std::map<std::string, ValueType>>();
+            entryContainer->insert_or_assign(recordEntry.first, recordEntry.second);
+            ZLOGI("writing before size is %{public}zu.", entryBytes.size());
             if (!TLVUtil::Writing(entryContainer, entryTlv, TAG::TAG_INNER_ENTRIES)) {
                 ZLOGI("Marshall inner entry failed.");
                 return E_WRITE_PARCEL_ERROR;
             }
+            ZLOGI("writing after size is %{public}zu.", entryBytes.size());
             std::vector<uint8_t> keyBytes = { key.begin(), key.end() };
             Entry entry = { keyBytes, entryBytes };
             entries.emplace_back(entry);
