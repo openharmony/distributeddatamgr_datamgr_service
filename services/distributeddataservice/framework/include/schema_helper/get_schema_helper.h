@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+
 #include "iremote_object.h"
 #include "visibility.h"
 
@@ -24,7 +25,7 @@ namespace OHOS {
 namespace AppExecFwk {
 class IBundleMgr;
 }
-}
+} // namespace OHOS
 
 namespace OHOS::DistributedData {
 struct AppInfo {
@@ -32,16 +33,20 @@ struct AppInfo {
     int32_t userId;
     int32_t appIndex;
 };
+
 class GetSchemaHelper final : public std::enable_shared_from_this<GetSchemaHelper> {
 public:
-    ~GetSchemaHelper();
     API_EXPORT static GetSchemaHelper &GetInstance();
     API_EXPORT std::vector<std::string> GetSchemaFromHap(const std::string &schemaPath, const AppInfo &info);
+
 private:
     GetSchemaHelper() = default;
+    ~GetSchemaHelper();
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
-        explicit ServiceDeathRecipient(std::weak_ptr<GetSchemaHelper> owner) : owner_(owner) {}
+        explicit ServiceDeathRecipient(std::weak_ptr<GetSchemaHelper> owner) : owner_(owner)
+        {
+        }
         void OnRemoteDied(const wptr<IRemoteObject> &object) override
         {
             auto owner = owner_.lock();

@@ -148,9 +148,9 @@ private:
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromServer(int32_t userId);
     static int32_t UpdateCloudInfoFromServer(int32_t user);
+    static std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
 
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
-    std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
     void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(
         const std::string &storeId, const CloudInfo &cloudInfo, const SchemaMeta &schemaMeta);
@@ -187,6 +187,7 @@ private:
 
     static std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
+    static void UpdateClearWaterMark(const HapInfo &hapInfo, std::vector<DistributedData::Database> &databases);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

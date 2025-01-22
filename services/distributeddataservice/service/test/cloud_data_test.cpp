@@ -83,11 +83,13 @@ void AllocHapToken(const HapPolicyParams &policy)
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
+static constexpr const int32_t SCHEMA_VERSION = 101;
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
+static constexpr const char *COM_EXAMPLE_TEST_CLOUD = "com.example.testCloud";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *PERMISSION_CLOUDDATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
@@ -163,7 +165,14 @@ std::pair<int32_t, CloudInfo> CloudServerMock::GetServerInfo(int32_t userId, boo
     appInfo.version = 1;
     appInfo.cloudSwitch = true;
 
+    CloudInfo::AppInfo exampleAppInfo;
+    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.version = 1;
+    exampleAppInfo.cloudSwitch = true;
+
     cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    cloudInfo.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
     return { E_OK, cloudInfo };
 }
 
@@ -243,7 +252,14 @@ void CloudDataTest::InitCloudInfo()
     appInfo.version = 1;
     appInfo.cloudSwitch = true;
 
+    CloudInfo::AppInfo exampleAppInfo;
+    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.version = 1;
+    exampleAppInfo.cloudSwitch = true;
+
     cloudInfo_.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    cloudInfo_.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
 }
 
 void CloudDataTest::SetUpTestCase(void)
@@ -2184,102 +2200,73 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
     DistributedRdb::PredicatesMemo memo;
     rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
 }
-/**
-* @tc.name: OnAppUpdate001
-* @tc.desc: Test the OnAppUpdate with invalid user
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, OnAppUpdate001, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    int32_t invalidUser = -1;
-    int32_t appIndex = 0;
-    auto ret = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, invalidUser, appIndex);
-    EXPECT_EQ(ret, Status::ERROR);
-}
-
-/**
-* @tc.name: OnAppUpdate002
-* @tc.desc: Test the OnAppUpdate with empty bundleName
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, OnAppUpdate002, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    int32_t appIndex = 0;
-    auto ret = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate("", cloudInfo_.user, appIndex);
-    EXPECT_EQ(ret, Status::ERROR);
-}
-
-/**
-* @tc.name: OnAppUpdate003
-* @tc.desc: Test the OnAppUpdate with invalid bundleName
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, OnAppUpdate003, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    std::string bundleName = "INVALID_BUNDLE_NAME";
-    int32_t appIndex = 0;
-    auto ret = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(bundleName, cloudInfo_.user, appIndex);
-    EXPECT_EQ(ret, Status::ERROR);
-}
-
-/**
-* @tc.name: OnAppUpdate004
-* @tc.desc: Test the OnAppUpdate with valid parameter
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, OnAppUpdate004, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    int32_t appIndex = 0;
-    auto ret = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, cloudInfo_.user, appIndex);
-    EXPECT_EQ(ret, Status::SUCCESS);
-}
 
 /**
 * @tc.name: UpdateSchemaFromHap001
-* @tc.desc: Test the UpdateSchemaFromHap with invalid bundleName
+* @tc.desc: Test the UpdateSchemaFromHap with invalid user
 * @tc.type: FUNC
 * @tc.require:
 */
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo info = {
-        .instIndex = 0,
-        .bundleName = TEST_CLOUD_BUNDLE,
-        .user = cloudInfo_.user
-    };
+    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = -1 };
     auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
     EXPECT_EQ(ret, Status::ERROR);
 }
 
 /**
 * @tc.name: UpdateSchemaFromHap002
-* @tc.desc: Test the UpdateSchemaFromHap with valid parameter
+* @tc.desc: Test the UpdateSchemaFromHap with invalid bundleName
 * @tc.type: FUNC
 * @tc.require:
 */
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap002, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = "", .user = cloudInfo_.user };
+    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
+    EXPECT_EQ(ret, Status::ERROR);
+}
+
+/**
+* @tc.name: UpdateSchemaFromHap003
+* @tc.desc: Test the UpdateSchemaFromHap with the schema application is not configured
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo info = {
-        .instIndex = 0,
-        .bundleName = "com.example.testCloud",
-        .user = cloudInfo_.user
+        .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
     };
     auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
     EXPECT_EQ(ret, Status::SUCCESS);
+    SchemaMeta schemaMeta;
+    std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.version, schemaMeta_.version);
+}
+
+/**
+* @tc.name: UpdateSchemaFromHap004
+* @tc.desc: Test the UpdateSchemaFromHap with valid parameter
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo info = {
+        .instIndex = 0, .bundleName = COM_EXAMPLE_TEST_CLOUD, .user = cloudInfo_.user
+    };
+    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
+    EXPECT_EQ(ret, Status::SUCCESS);
+    SchemaMeta schemaMeta;
+    std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.version, SCHEMA_VERSION);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

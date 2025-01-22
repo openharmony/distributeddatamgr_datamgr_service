@@ -41,7 +41,7 @@
 #include "reporter.h"
 #include "relational_store_manager.h"
 #include "runtime_config.h"
-#include "schemahelper/get_schema_helper.h"
+#include "schema_helper/get_schema_helper.h"
 #include "store/auto_cache.h"
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
@@ -1024,52 +1024,81 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
 
 int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    return UpdateCloudInfoFromServer(user);
+    ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
+    auto ret = UpdateCloudInfoFromServer(user);
+    if (ret == E_OK) {
+        StoreInfo info{.bundleName = bundleName,  .instanceId = index, .user = user};
+        EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, info));
+    }
+    return ret;
 }
 
 int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
-    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
-    if (status != SUCCESS) {
-        return status;
-    }
-    if (!cloudInfo.Exist(bundleName, index)) {
-        ZLOGI("bundleName:%{public}s instanceId:%{public}d is not exist", bundleName.c_str(), index);
-        return ERROR;
-    }
+    ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
     HapInfo hapInfo{ .user = user, .instIndex = index, .bundleName = bundleName };
-    std::thread([this, hapInfo]() { UpdateSchemaFromHap(hapInfo); }).detach();
+    std::thread th = std::thread([this, hapInfo]() { UpdateSchemaFromHap(hapInfo); });
+    pthread_setname_np(th.native_handle(), "UpdateSchemaFromHap");
+    th.detach();
     return SUCCESS;
 }
 
 int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
 {
+    ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", hapInfo.bundleName.c_str(), hapInfo.user,
+        hapInfo.instIndex);
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(hapInfo.user);
+    if (status != SUCCESS) {
+        return status;
+    }
+    if (!cloudInfo.Exist(hapInfo.bundleName, hapInfo.instIndex)) {
+        ZLOGI(
+            "bundleName:%{public}s instanceId:%{public}d is not exist", hapInfo.bundleName.c_str(), hapInfo.instIndex);
+        return ERROR;
+    }
+
     std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
     auto [ret, hapSchemaMeta] = GetSchemaFromHap(hapInfo);
     if (ret != SUCCESS) {
-        ZLOGE("get schema from hap failed, schemaKey:%{public}s", schemaKey.c_str());
-        MetaDataManager::GetInstance().DelMeta(schemaKey, true);
-        return ret;
+        auto [status, schemaMeta] = GetAppSchemaFromServer(hapInfo.user, hapInfo.bundleName);
+        if (status != SUCCESS) {
+            MetaDataManager::GetInstance().DelMeta(schemaKey, true);
+            return status;
+        }
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+        return status;
     }
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) ||
         (hapSchemaMeta.version != schemaMeta.version)) {
+        ZLOGI("update schemaMeta newVersion:%{public}d,oldVersion:%{public}d", hapSchemaMeta.version,
+            schemaMeta.version);
         MetaDataManager::GetInstance().SaveMeta(schemaKey, hapSchemaMeta, true);
-        StoreMetaData meta;
-        meta.bundleName = hapInfo.bundleName;
-        meta.user = std::to_string(hapInfo.user);
-        meta.instanceId = hapInfo.instIndex;
-        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        for (const auto &database : hapSchemaMeta.databases) {
-            meta.storeId = database.name;
-            break;
-        }
+        UpdateClearWaterMark(hapInfo, hapSchemaMeta.databases);
+    }
+    return SUCCESS;
+}
+
+void CloudServiceImpl::UpdateClearWaterMark(const HapInfo &hapInfo, std::vector<DistributedData::Database> &databases)
+{
+    if (databases.empty()) {
+        ZLOGE("databases is empty, bundleName:%{public}s", hapInfo.bundleName.c_str());
+        return;
+    }
+
+    StoreMetaData meta;
+    meta.bundleName = hapInfo.bundleName;
+    meta.user = std::to_string(hapInfo.user);
+    meta.instanceId = hapInfo.instIndex;
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    for (const auto &database : databases) {
+        meta.storeId = database.name;
         if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             meta.isClearWaterMark = true;
             MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+            ZLOGI("clear watermark, storeId:%{public}s", meta.GetStoreAlias().c_str());
         }
     }
-    return SUCCESS;
 }
 
 std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
@@ -1078,10 +1107,11 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo 
     AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
     auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
     for (auto &schema : schemas) {
-        if (schemaMeta.Unmarshal(schema)) {
+        if (schemaMeta.Unmarshall(schema)) {
             return { SUCCESS, schemaMeta };
         }
     }
+    ZLOGE("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
     return { ERROR, schemaMeta };
 }
 

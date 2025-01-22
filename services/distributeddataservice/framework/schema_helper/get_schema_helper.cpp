@@ -14,13 +14,14 @@
 */
 
 #define LOG_TAG "SchemaHelper"
-#include "schemahelper/get_schema_helper.h"
+#include "schema_helper/get_schema_helper.h"
+
 #include "bundle_mgr_interface.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
-#include "system_ability_definition.h"
 #include "log_print.h"
 #include "resource_manager.h"
+#include "system_ability_definition.h"
 
 namespace OHOS {
 namespace DistributedData {
@@ -38,12 +39,12 @@ sptr<AppExecFwk::IBundleMgr> GetSchemaHelper::GetBundleMgr()
         ZLOGE("Failed to get system ability mgr.");
         return nullptr;
     }
-    object_ =  systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    object_ = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (object_ == nullptr) {
         ZLOGE("BMS service not ready to complete.");
         return nullptr;
     }
-    deathRecipient_ = new (std::nothrow)GetSchemaHelper::ServiceDeathRecipient(weak_from_this());
+    deathRecipient_ = new (std::nothrow) GetSchemaHelper::ServiceDeathRecipient(weak_from_this());
     if (deathRecipient_ == nullptr) {
         ZLOGE("deathRecipient alloc failed.");
         object_ = nullptr;
@@ -57,7 +58,7 @@ sptr<AppExecFwk::IBundleMgr> GetSchemaHelper::GetBundleMgr()
     }
     return iface_cast<AppExecFwk::IBundleMgr>(object_);
 }
-std::vector<std::string> GetSchemaHelper::GetSchemaFromHap(const std::string &schemaPath,  const AppInfo &info)
+std::vector<std::string> GetSchemaHelper::GetSchemaFromHap(const std::string &schemaPath, const AppInfo &info)
 {
     std::vector<std::string> schemas;
     auto bmsClient = GetBundleMgr();
@@ -67,25 +68,25 @@ std::vector<std::string> GetSchemaHelper::GetSchemaFromHap(const std::string &sc
     }
     OHOS::AppExecFwk::BundleInfo bundleInfo;
     int32_t flag = static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE);
-    auto ret = bmsClient->GetCloneBundleInfo(info.bundleName, flag, info.appIndex, bundleInfo, info.userId);    
+    auto ret = bmsClient->GetCloneBundleInfo(info.bundleName, flag, info.appIndex, bundleInfo, info.userId);
     if (ret != ERR_OK) {
         ZLOGE("GetCloneBundleInfo failed. errCode:%{public}d", ret);
         return schemas;
     }
 
+    std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
+    if (resMgr == nullptr) {
+        ZLOGE("resMgr is nullptr.");
+        return schemas;
+    }
     for (auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
-        std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
-        if (resMgr == nullptr) {
-            ZLOGE("resMgr is nullptr.");
-            return schemas;
-        }
         resMgr->AddResource(hapModuleInfo.hapPath.c_str());
         size_t length = 0;
         std::unique_ptr<uint8_t[]> fileContent;
-        auto retCode = resMgr->GetRawFileFromHap(schemaPath, length, fileContent);
-        if (retCode != ERR_OK) {
-            ZLOGE("GetRawFileFromHap failed. hapPath:%{public}s retCode:%{public}d", hapModuleInfo.hapPath.c_str(), retCode);
-            continue;;
+        auto ret = resMgr->GetRawFileFromHap(schemaPath, length, fileContent);
+        if (ret != ERR_OK) {
+            ZLOGE("GetRawFileFromHap failed. bundleName:%{public}s ret:%{public}d", info.bundleName.c_str(), ret);
+            continue;
         }
         std::string schema(fileContent.get(), fileContent.get() + length);
         schemas.emplace_back(schema);
@@ -116,5 +117,5 @@ GetSchemaHelper &GetSchemaHelper::GetInstance()
     static GetSchemaHelper helper;
     return helper;
 }
-}  // namespace DistributedData
-}  // namespace OHOS
+} // namespace DistributedData
+} // namespace OHOS

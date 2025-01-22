@@ -929,6 +929,20 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
         return GeneralError::E_ERROR;
     }
+    StoreMetaData storeMeta(storeInfo_);
+    storeMeta.deviceId = storeInfo_.deviceId;
+    if (MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKey(), storeMeta, true) && storeMeta.isClearWaterMark) {
+        DistributedDB::ClearMetaDataOption option{ .mode = DistributedDB::ClearMetaDataMode::CLOUD_WATERMARK };
+        auto ret = delegate_->ClearMetaData(option);
+        if (ret != DBStatus::OK) {
+            ZLOGE("clear watermark failed, err:%{public}d", ret);
+            return GeneralError::E_ERROR;
+        }
+        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA_DO_SYNC, storeMeta.GetStoreInfo());
+        EventCenter::GetInstance().PostEvent(std::move(event));
+        ZLOGI("clear watermark success, bundleName:%{public}s, storeName:%{public}s", storeInfo_.bundleName.c_str(),
+            Anonymous::Change(storeInfo_.storeName).c_str());
+    }
     return GeneralError::E_OK;
 }
 

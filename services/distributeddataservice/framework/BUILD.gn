@@ -51,7 +51,6 @@ ohos_shared_library("distributeddatasvcfwk") {
     "account/account_delegate.cpp",
     "app_id_mapping/app_id_mapping_config_manager.cpp",
     "backuprule/backup_rule_manager.cpp",
-    "schemahelper/get_schema_helper.cpp",
     "changeevent/remote_change_event.cpp",
     "checker/checker_manager.cpp",
     "cloud/asset_loader.cpp",
@@ -109,6 +108,10 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/crypto.cpp",
     "utils/ref_count.cpp",
   ]
+
+  if (datamgr_service_cloud) {
+    sources += [ "schema_helper/get_schema_helper.cpp" ]
+  }
   cflags = [
     "-Werror",
     "-Wno-multichar",
@@ -128,12 +131,16 @@ ohos_shared_library("distributeddatasvcfwk") {
     "hilog:libhilog",
     "json:nlohmann_json_static",
     "openssl:libcrypto_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "samgr:samgr_proxy",
-    "ipc:ipc_single",
-    "resource_management:global_resmgr",
   ]
+  if (datamgr_service_cloud) {
+    external_deps += [
+      "bundle_framework:appexecfwk_base",
+      "bundle_framework:appexecfwk_core",
+      "ipc:ipc_single",
+      "resource_management:global_resmgr",
+      "samgr:samgr_proxy",
+    ]
+  }
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
