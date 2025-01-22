@@ -60,8 +60,8 @@ Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<E
 }
 
 Status DataHandler::UnmarshalEntryItem(UnifiedData &unifiedData, const std::vector<Entry> &entries,
-        const std::string &key, std::map<std::string, std::shared_ptr<UnifiedRecord>> &records,
-        std::map<std::string, std::map<std::string, ValueType>> &innerEntries)
+    const std::string &key, std::map<std::string, std::shared_ptr<UnifiedRecord>> &records,
+    std::map<std::string, std::map<std::string, ValueType>> &innerEntries)
 {
     for (const auto &entry : entries) {
         std::string keyStr = { entry.key.begin(), entry.key.end() };
