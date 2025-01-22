@@ -20,7 +20,7 @@
 #include <cinttypes>
 #include <thread>
 
-#include "communicator/device_manager_adapter.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"

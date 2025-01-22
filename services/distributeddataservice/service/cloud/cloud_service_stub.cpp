@@ -19,7 +19,7 @@
 #include "cloud_types_util.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
-#include "permission/permission_validator.h"
+#include "permission_validator.h"
 #include "rdb_types.h"
 #include "tokenid_kit.h"
 #include "utils/anonymous.h"

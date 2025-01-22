@@ -234,5 +234,10 @@ StoreInfo StoreMetaData::GetStoreInfo() const
     info.user = atoi(user.c_str());
     return info;
 }
+
+std::string StoreMetaData::GetCloneSecretKey() const
+{
+    return SecretKeyMetaData::GetCloneKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
 } // namespace DistributedData
 } // namespace OHOS

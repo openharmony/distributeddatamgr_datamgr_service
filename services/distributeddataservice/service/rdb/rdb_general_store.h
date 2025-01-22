@@ -155,6 +155,7 @@ private:
     void RemoveTasks();
     std::pair<int32_t, int32_t> DoCloudSync(const Devices &devices, const DistributedDB::Query &dbQuery,
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
+    void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
 
     ObserverProxy observer_;
     RdbManager manager_;

@@ -64,6 +64,7 @@ using SharingCfm = OHOS::CloudData::SharingUtil::SharingCfm;
 using Confirmation = OHOS::CloudData::Confirmation;
 using CenterCode = OHOS::DistributedData::SharingCenter::SharingCode;
 using Status = OHOS::CloudData::CloudService::Status;
+using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
 using GenErr = OHOS::DistributedData::GeneralError;
 uint64_t g_selfTokenID = 0;
 
@@ -139,7 +140,7 @@ protected:
 
 class CloudServerMock : public CloudServer {
 public:
-    CloudInfo GetServerInfo(int32_t userId, bool needSpaceInfo) override;
+    std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
     std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundleName) override;
     virtual ~CloudServerMock() = default;
     static constexpr uint64_t REMAINSPACE = 1000;
@@ -147,7 +148,7 @@ public:
     static constexpr int32_t INVALID_USER_ID = -1;
 };
 
-CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
+std::pair<int32_t, CloudInfo> CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
@@ -163,7 +164,7 @@ CloudInfo CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
     appInfo.cloudSwitch = true;
 
     cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
-    return cloudInfo;
+    return { E_OK, cloudInfo };
 }
 
 std::pair<int32_t, SchemaMeta> CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundleName)
@@ -313,7 +314,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
 {
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
+    auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));
     SchemaMeta schemaMeta;
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
@@ -1964,18 +1965,18 @@ HWTEST_F(CloudDataTest, DoSubscribe, TestSize.Level0)
     sub.userId = cloudInfo_.user;
     MetaDataManager::GetInstance().SaveMeta(sub.GetKey(), sub, true);
     int user = cloudInfo_.user;
-    auto status = cloudServiceImpl_->DoSubscribe(user);
+    auto status = cloudServiceImpl_->DoSubscribe(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_FALSE(status);
     sub.id = "testId";
     MetaDataManager::GetInstance().SaveMeta(sub.GetKey(), sub, true);
-    status = cloudServiceImpl_->DoSubscribe(user);
+    status = cloudServiceImpl_->DoSubscribe(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_FALSE(status);
     sub.id = TEST_CLOUD_APPID;
     MetaDataManager::GetInstance().SaveMeta(sub.GetKey(), sub, true);
-    status = cloudServiceImpl_->DoSubscribe(user);
+    status = cloudServiceImpl_->DoSubscribe(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_FALSE(status);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
-    status = cloudServiceImpl_->DoSubscribe(user);
+    status = cloudServiceImpl_->DoSubscribe(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_FALSE(status);
 }
 
@@ -2007,7 +2008,7 @@ HWTEST_F(CloudDataTest, IsOn, TestSize.Level0)
 {
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
+    auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
     int32_t instanceId = 0;
     auto ret = cloudInfo.IsOn("", instanceId);
     EXPECT_FALSE(ret);
@@ -2023,7 +2024,7 @@ HWTEST_F(CloudDataTest, IsAllSwitchOff, TestSize.Level0)
 {
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    auto cloudInfo = cloudServerMock->GetServerInfo(user, true);
+    auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
     auto ret = cloudInfo.IsAllSwitchOff();
     EXPECT_FALSE(ret);
 }

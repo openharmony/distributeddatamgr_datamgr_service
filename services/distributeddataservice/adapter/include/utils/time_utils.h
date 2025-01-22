@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,29 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_TIME_UTILS_H
+#define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_TIME_UTILS_H
 
-#ifndef KVSTORE_UTILS_H
-#define KVSTORE_UTILS_H
-
+#include <ctime>
 #include <string>
-#include <atomic>
-#include "visibility.h"
+#include <cstdint>
 
 namespace OHOS {
 namespace DistributedKv {
-class KvStoreUtils {
+class TimeUtils {
 public:
-    // convert the name to the anonymous
-    // the anonymous string is name[0,3]"***"name[end-3, end]
-    // when the anonymous string is shorter than 9, the anonymous is "******"
-    KVSTORE_API static std::string ToBeAnonymous(const std::string &name);
-
-    KVSTORE_API static uint64_t GenerateSequenceId();
-private:
-    static constexpr int MAIN_USER_ID = 0;
-    static constexpr int SYSTEM_UID = 1000;
-    static std::atomic<uint64_t> sequenceId_;
+    static std::string GetCurSysTimeWithMs();
+    static std::string GetTimeWithMs(time_t sec, int64_t nsec);
 };
+
 } // namespace DistributedKv
 } // namespace OHOS
-#endif // KVSTORE_UTILS_H
+#endif

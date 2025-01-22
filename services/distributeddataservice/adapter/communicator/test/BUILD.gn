@@ -22,22 +22,20 @@ ohos_unittest("CommunicationProviderTest") {
 
   sources = [ "./unittest/communication_provider_impl_test.cpp" ]
   include_dirs = [
-    "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/communicator",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "../src",
   ]
   external_deps = [
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
+
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
-    "//third_party/googletest:gtest_main",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -47,30 +45,28 @@ ohos_unittest("DeviceManagerAdapterTest") {
 
   sources = [ "unittest/device_manager_adapter_test.cpp" ]
   include_dirs = [
-    "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/kv_store/frameworks/common",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/communicator",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
     "../src",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
   ]
   deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator:distributeddata_communicator_static",
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp:devicemanagersdk",
-    "//third_party/googletest:gtest_main",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -80,29 +76,28 @@ ohos_unittest("SoftbusAdapterStandardTest") {
 
   sources = [ "unittest/softbus_adapter_standard_test.cpp" ]
   include_dirs = [
-    "${kv_store_path}/frameworks/common",
     "${data_service_path}/adapter/include/autils",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/dfx",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "../src",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
   ]
   deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator_static",
-    "${device_manager_path}/interfaces/inner_kits/native_cpp:devicemanagersdk",
-    "//third_party/googletest:gtest_main",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

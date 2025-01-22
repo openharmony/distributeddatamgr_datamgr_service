@@ -46,12 +46,13 @@ namespace DistributedDataTest {
 
 static void GrantPermissionNative()
 {
-    const char **perms = new const char *[2];
+    const char **perms = new const char *[3];
     perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
     perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
+    perms[2] = "ohos.permission.MONITOR_DEVICE_NETWORK_STATE"; // perms[2] is a permission parameter
     TokenInfoParams infoInstance = {
         .dcapsNum = 0,
-        .permsNum = 2,
+        .permsNum = 3,
         .aclsNum = 0,
         .dcaps = nullptr,
         .perms = perms,

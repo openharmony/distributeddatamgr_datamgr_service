@@ -98,6 +98,7 @@ private:
         const std::string &prepareTraceId);
     void GetIdentifierParams(
         std::vector<std::string> &devices, const std::vector<std::string> &uuids, int32_t authType);
+    void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;

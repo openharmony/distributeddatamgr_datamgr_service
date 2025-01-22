@@ -55,6 +55,7 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using Confirmation = OHOS::CloudData::Confirmation;
 using Status = OHOS::CloudData::CloudService::Status;
+using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
@@ -234,7 +235,7 @@ HWTEST_F(CloudServiceImplTest, UpdateSchema001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest UpdateSchema001 start");
     int user = -1;
-    auto status = cloudServiceImpl_->UpdateSchema(user);
+    auto status = cloudServiceImpl_->UpdateSchema(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_FALSE(status);
 }
 
@@ -278,7 +279,7 @@ HWTEST_F(CloudServiceImplTest, ReleaseUserInfo001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest ReleaseUserInfo001 start");
     int user = 100;
-    auto status = cloudServiceImpl_->ReleaseUserInfo(user);
+    auto status = cloudServiceImpl_->ReleaseUserInfo(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_TRUE(status);
 }
 
@@ -291,7 +292,7 @@ HWTEST_F(CloudServiceImplTest, ReleaseUserInfo001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, DoSubscribe, TestSize.Level0)
 {
     int32_t user = 100;
-    auto status = cloudServiceImpl_->DoSubscribe(user);
+    auto status = cloudServiceImpl_->DoSubscribe(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_TRUE(status);
 }
 

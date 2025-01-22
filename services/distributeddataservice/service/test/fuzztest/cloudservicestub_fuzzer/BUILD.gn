@@ -48,6 +48,8 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${relational_store_path}/interfaces/inner_api/rdb/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
     "//third_party/json/single_include",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
   ]
 
   fuzz_config_file =
@@ -88,6 +90,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/thread_config.cpp",
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "${data_service_path}/service/rdb/cache_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
@@ -106,8 +109,8 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/network:distributeddata_network",

@@ -383,14 +383,18 @@ int32_t RdbServiceStub::OnGetPassword(MessageParcel &data, MessageParcel &reply)
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    std::vector<uint8_t> key;
-    auto status = GetPassword(param, key);
-    if (!ITypesUtil::Marshal(reply, status, key)) {
-        key.assign(key.size(), 0);
+    std::vector<std::vector<uint8_t>> keys;
+    auto status = GetPassword(param, keys);
+    if (!ITypesUtil::Marshal(reply, status, keys)) {
+        for (auto &key : keys) {
+            key.assign(key.size(), 0);
+        }
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
-    key.assign(key.size(), 0);
+    for (auto &key : keys) {
+        key.assign(key.size(), 0);
+    }
     return RDB_OK;
 }
 

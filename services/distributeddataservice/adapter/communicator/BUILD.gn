@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
-ohos_static_library("distributeddata_communicator_static") {
+ohos_source_set("distributeddata_communicator") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -47,20 +47,15 @@ ohos_static_library("distributeddata_communicator_static") {
     "../include/log",
     "../include/autils",
     "../include/utils",
-    "${kv_store_common_path}",
-    "${kv_store_distributeddb_path}/interfaces/include",
-    "${kv_store_distributeddb_path}/include",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
-    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
   deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "../dfx:distributeddata_dfx_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
+    "../dfx:distributeddata_dfx",
   ]
 
   external_deps = [
@@ -69,6 +64,8 @@ ohos_static_library("distributeddata_communicator_static") {
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
   ]
 
   subsystem_name = "distributeddatamgr"

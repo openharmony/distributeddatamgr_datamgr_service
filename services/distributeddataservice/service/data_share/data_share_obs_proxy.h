@@ -30,7 +30,7 @@ public:
 private:
     int PrepareRdbChangeNodeData(RdbChangeNode &changeNode);
     int CreateAshmem(RdbChangeNode &changeNode);
-    int WriteAshmem(RdbChangeNode &changeNode, void *data, int len, int &offset);
+    int WriteAshmem(RdbChangeNode &changeNode, void *data, int32_t len, int32_t &offset);
     int SerializeDataIntoAshmem(RdbChangeNode &changeNode);
     static inline BrokerDelegator<RdbObserverProxy> delegator_;
 };

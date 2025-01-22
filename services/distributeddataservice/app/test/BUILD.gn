@@ -36,9 +36,11 @@ config("module_private_config") {
     "${data_service_path}/service/common",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/directory/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/matrix/include",
+    "${data_service_path}/app/src",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/service/kvdb",
     "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
@@ -54,6 +56,7 @@ config("module_private_config") {
     "../../../../interfaces/innerkits/distributeddata",
     "../../service/dumper/include",
     "//third_party/json/single_include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   if (datamgr_service_power) {
@@ -66,12 +69,23 @@ config("module_private_config") {
     "-Dprotected=public",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
 }
 
 ohos_unittest("KvStoreDataServiceTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
@@ -119,9 +133,8 @@ ohos_unittest("KvStoreDataServiceTest") {
   }
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
@@ -175,11 +188,10 @@ ohos_unittest("SessionManagerTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/broadcaster:distributeddata_broadcaster_static",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/utils:distributeddata_utils_static",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
@@ -219,7 +231,6 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
   deps = [
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter:distributeddata_adapter",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
     "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
@@ -231,6 +242,8 @@ ohos_unittest("KvStoreFlowCtrlManagerTest") {
 ohos_unittest("KvStoreDataServiceClearTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
@@ -288,9 +301,8 @@ ohos_unittest("KvStoreDataServiceClearTest") {
   }
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster_static",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
@@ -360,7 +372,6 @@ ohos_unittest("FeatureStubImplTest") {
   }
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",

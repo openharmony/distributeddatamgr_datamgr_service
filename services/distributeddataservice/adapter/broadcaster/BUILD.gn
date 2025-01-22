@@ -13,7 +13,7 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_static_library("distributeddata_broadcaster_static") {
+ohos_source_set("distributeddata_broadcaster") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -31,8 +31,6 @@ ohos_static_library("distributeddata_broadcaster_static") {
     "../include/broadcaster",
     "../include/log",
     "./src",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
-    "${kv_store_common_path}",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
@@ -45,6 +43,7 @@ ohos_static_library("distributeddata_broadcaster_static") {
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:datamgr_common",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

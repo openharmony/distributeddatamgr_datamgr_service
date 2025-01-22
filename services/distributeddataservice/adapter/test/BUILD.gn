@@ -21,7 +21,6 @@ group("unittest") {
     "../account/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
-    "../permission/test:unittest",
     "../screenlock/test:unittest",
   ]
 }

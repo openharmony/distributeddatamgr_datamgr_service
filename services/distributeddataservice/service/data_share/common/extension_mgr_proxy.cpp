@@ -23,6 +23,9 @@
 #include "log_print.h"
 #include "system_ability_definition.h"
 #include "want.h"
+#include "uri_utils.h"
+#include "datashare_errno.h"
+
 namespace OHOS::DataShare {
 void ExtensionMgrProxy::OnProxyDied()
 {
@@ -53,11 +56,16 @@ int ExtensionMgrProxy::Connect(
     AAFwk::WantParams &wantParams)
 {
     AAFwk::Want want;
-    want.SetUri(uri);
+    auto [success, userId] = URIUtils::GetUserFromProxyURI(uri);
+    if (!success) {
+        return E_INVALID_USER_ID;
+    }
+    want.SetUri(URIUtils::FormatConstUri(uri));
     want.SetParams(wantParams);
     std::lock_guard<std::mutex> lock(mutex_);
     if (ConnectSA()) {
-        int ret = proxy_->ConnectAbilityCommon(want, connect, callerToken, AppExecFwk::ExtensionAbilityType::DATASHARE);
+        int ret = proxy_->ConnectAbilityCommon(want, connect, callerToken, AppExecFwk::ExtensionAbilityType::DATASHARE,
+            userId);
         if (ret != ERR_OK) {
             ZLOGE("ConnectAbilityCommon failed, %{public}d", ret);
         }

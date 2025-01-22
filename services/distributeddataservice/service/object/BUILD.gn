@@ -16,7 +16,11 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 config("object_public_config") {
   visibility = [ ":*" ]
 
-  include_dirs = [ "${data_service_path}/service/common" ]
+  include_dirs = [
+    "${data_service_path}/service/common",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/utils",
+  ]
 }
 
 ohos_source_set("distributeddata_object") {
@@ -60,7 +64,6 @@ ohos_source_set("distributeddata_object") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
@@ -72,6 +75,7 @@ ohos_source_set("distributeddata_object") {
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "dmsfwk:distributed_sdk",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]
 

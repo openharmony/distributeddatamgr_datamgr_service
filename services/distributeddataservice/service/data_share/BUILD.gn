@@ -27,6 +27,7 @@ config("module_public_config") {
     "${datashare_path}/frameworks/native/common/include",
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
+    "${data_service_path}/adapter/include/communicator",
     "../common",
     "../crypto/include",
     "../permission/include",
@@ -46,7 +47,6 @@ ohos_source_set("data_share_service") {
   }
   sources = [
     "common/app_connect_manager.cpp",
-    "common/base64_utils.cpp",
     "common/bundle_mgr_proxy.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
@@ -104,15 +104,13 @@ ohos_source_set("data_share_service") {
   configs = [ ":module_public_config" ]
 
   deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/service/common:distributeddata_common",
-    "../../adapter:distributeddata_adapter",
-    "../../adapter/utils:distributeddata_utils_static",
     "../../framework:distributeddatasvcfwk",
   ]
 
   external_deps = [
     "ability_base:want",
-    "ability_base:zuri",
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
@@ -122,7 +120,6 @@ ohos_source_set("data_share_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
@@ -130,10 +127,10 @@ ohos_source_set("data_share_service") {
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
-    "resource_management:global_resmgr",
     "samgr:samgr_proxy",
     "time_service:time_client",
   ]

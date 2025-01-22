@@ -43,6 +43,8 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${dataobject_path}/interfaces/innerkits",
     "//third_party/json/single_include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/utils",
   ]
 
   fuzz_config_file =
@@ -86,8 +88,8 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${kv_store_distributeddb_path}:distributeddb",

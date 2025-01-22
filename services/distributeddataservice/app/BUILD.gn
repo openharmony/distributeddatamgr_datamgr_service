@@ -62,6 +62,7 @@ config("module_private_config") {
     "${data_service_path}/service/app_id_mapping/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/dumper/include",
+    "${data_service_path}/adapter/include/communicator",
 
     # for ipc_core interfaces.
     "include",
@@ -94,6 +95,8 @@ ohos_shared_library("distributeddataservice") {
   }
   sources = [
     "${data_service_path}/service/common/xcollie.cpp",
+    "src/clone/clone_backup_info.cpp",
+    "src/clone/secret_key_backup_data.cpp",
     "src/db_info_handle_impl.cpp",
     "src/feature_stub_impl.cpp",
     "src/kvstore_account_observer.cpp",
@@ -120,8 +123,7 @@ ohos_shared_library("distributeddataservice") {
 
   configs = [ ":module_private_config" ]
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
-    "${data_service_path}/adapter/utils:distributeddata_utils_static",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -136,6 +138,7 @@ ohos_shared_library("distributeddataservice") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "hicollie:libhicollie",
     "hilog:libhilog",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "base64_utils.h"
+#include "utils/base64_utils.h"
 
 #include <algorithm>
 #include <array>
 
-namespace OHOS::DataShare::Base64 {
+namespace OHOS::DistributedData::Base64 {
 static constexpr const std::string_view BASE64_CHARS = /* NOLINT */
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
@@ -178,4 +178,4 @@ std::vector<uint8_t> Decode(const std::string &encoded)
     }
     return ret;
 }
-} // namespace OHOS::DataShare::Base64
+} // namespace OHOS::DistributedData::Base64

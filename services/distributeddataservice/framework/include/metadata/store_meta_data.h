@@ -91,6 +91,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     API_EXPORT StoreInfo GetStoreInfo() const;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
+    API_EXPORT std::string GetCloneSecretKey() const;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_STORE_META_DATA_H

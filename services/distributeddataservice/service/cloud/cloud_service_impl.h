@@ -26,9 +26,12 @@
 #include "cloud/sharing_center.h"
 #include "cloud/subscription.h"
 #include "cloud_service_stub.h"
+#include "dfx_types.h"
 #include "feature/static_acts.h"
+#include "store/general_store.h"
 #include "sync_manager.h"
 #include "values_bucket.h"
+
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
@@ -90,13 +93,25 @@ private:
         std::shared_ptr<CloudStatic> staticActs_;
     };
     static Factory factory_;
+    enum class CloudSyncScene {
+        ENABLE_CLOUD = 0,
+        DISABLE_CLOUD = 1,
+        SWITCH_ON = 2,
+        SWITCH_OFF = 3,
+        QUERY_SYNC_INFO = 4,
+        USER_CHANGE = 5,
+        USER_UNLOCK = 6,
+        NETWORK_RECOVERY = 7,
+        SERVICE_INIT = 8,
+        ACCOUNT_STOP = 9,
+    };
 
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
     using CloudEvent = DistributedData::CloudEvent;
     using Subscription = DistributedData::Subscription;
-    using Handle = bool (CloudServiceImpl::*)(int32_t);
+    using Handle = bool (CloudServiceImpl::*)(int32_t, CloudSyncScene);
     using Handles = std::deque<Handle>;
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
@@ -111,6 +126,7 @@ private:
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static HapInfo GetHapInfo(uint32_t tokenId);
+    static std::string GetDfxFaultType(CloudSyncScene scene);
 
     static constexpr uint64_t INVALID_SUB_TIME = 0;
     static constexpr int32_t RETRY_TIMES = 3;
@@ -121,12 +137,12 @@ private:
     static constexpr int32_t TIME_BEFORE_SUB = 12 * 60 * 60 * 1000;  // 12hours, ms
     static constexpr int32_t SUBSCRIPTION_INTERVAL = 60 * 60 * 1000; // 1hours
 
-    bool UpdateCloudInfo(int32_t user);
-    bool UpdateSchema(int32_t user);
-    bool DoSubscribe(int32_t user);
-    bool ReleaseUserInfo(int32_t user);
-    bool DoCloudSync(int32_t user);
-    bool StopCloudSync(int32_t user);
+    bool UpdateCloudInfo(int32_t user, CloudSyncScene scene);
+    bool UpdateSchema(int32_t user, CloudSyncScene scene);
+    bool DoSubscribe(int32_t user, CloudSyncScene scene);
+    bool ReleaseUserInfo(int32_t user, CloudSyncScene scene);
+    bool DoCloudSync(int32_t user, CloudSyncScene scene);
+    bool StopCloudSync(int32_t user, CloudSyncScene scene);
 
     static std::pair<int32_t, CloudInfo> GetCloudInfo(int32_t userId);
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);
@@ -146,7 +162,7 @@ private:
     void CloudShare(const Event &event);
     void DoSync(const Event &event);
 
-    Task GenTask(int32_t retry, int32_t user, Handles handles = { WORK_SUB });
+    Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
     void InitSubTask(const Subscription &sub, uint64_t minInterval = 0);
     void Execute(Task task);
@@ -166,6 +182,8 @@ private:
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
+    void Report(const std::string &faultType, DistributedDataDfx::Fault errCode, const std::string &bundleName,
+        const std::string &appendix);
 
     static std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);

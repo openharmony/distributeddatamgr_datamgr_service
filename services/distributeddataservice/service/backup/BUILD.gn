@@ -34,7 +34,10 @@ ohos_source_set("distributeddata_backup") {
     "-Oz",
   ]
 
-  include_dirs = [ "${data_service_path}/service/crypto/include" ]
+  include_dirs = [
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
   configs = [ ":backup_public_config" ]
   public_configs = [ ":backup_public_config" ]
   cflags = [
@@ -46,12 +49,12 @@ ohos_source_set("distributeddata_backup") {
   ]
 
   deps = [
-    "${data_service_path}/adapter:distributeddata_adapter",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/crypto:distributeddata_crypto",
   ]
 
   external_deps = [
+    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]

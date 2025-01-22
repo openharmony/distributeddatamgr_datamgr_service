@@ -70,6 +70,7 @@ using system_clock = std::chrono::system_clock;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
 constexpr uint32_t ALLOW_ONLINE_AUTO_SYNC = 8;
+const size_t KEY_COUNT = 2;
 namespace OHOS::DistributedRdb {
 __attribute__((used)) RdbServiceImpl::Factory RdbServiceImpl::factory_;
 RdbServiceImpl::Factory::Factory()
@@ -715,6 +716,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetBackupSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetAutoLaunchKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetDebugInfoKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetCloneSecretKey(), true);
     return RDB_OK;
 }
 
@@ -1365,7 +1367,7 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<uint8_t> &password)
+int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std::vector<uint8_t>> &password)
 {
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
@@ -1373,16 +1375,24 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<uin
         return RDB_ERROR;
     }
     auto meta = GetStoreMetaData(param);
+    password.resize(KEY_COUNT);
     SecretKeyMetaData secretKey;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKey, true)) {
+    SecretKeyMetaData cloneSecretKey;
+    bool keyMeta = MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKey, true);
+    bool cloneKeyMeta = MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), cloneSecretKey, true);
+    if (!keyMeta && !cloneKeyMeta) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_NO_META;
     }
-
-    if (!CryptoManager::GetInstance().Decrypt(secretKey.sKey, password)) {
+    bool key = CryptoManager::GetInstance().Decrypt(secretKey.sKey, password.at(0));
+    bool cloneKey = CryptoManager::GetInstance().Decrypt(cloneSecretKey.sKey, password.at(1));
+    if (!key && !cloneKey) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. decrypt err", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
+        for (auto &item : password) {
+            item.assign(item.size(), 0);
+        }
         return RDB_ERROR;
     }
     return RDB_OK;
