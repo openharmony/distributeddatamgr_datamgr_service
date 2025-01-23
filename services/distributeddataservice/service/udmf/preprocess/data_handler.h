@@ -25,11 +25,15 @@ using namespace DistributedDB;
 class DataHandler {
 public:
     static Status MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries);
-    static Status UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries, UnifiedData &unifiedData);
+    static Status UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
+        UnifiedData &unifiedData);
 
 private:
     static Status BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord>> &records,
         const std::string &unifiedKey, std::vector<Entry> &entries);
+    static Status UnmarshalEntryItem(UnifiedData &unifiedData, const std::vector<Entry> &entries,
+        const std::string &key, std::map<std::string, std::shared_ptr<UnifiedRecord>> &records,
+        std::map<std::string, std::map<std::string, ValueType>> &innerEntries);
 };
 } // namespace UDMF::OHOS
 #endif // DATA_HANDLER_H
