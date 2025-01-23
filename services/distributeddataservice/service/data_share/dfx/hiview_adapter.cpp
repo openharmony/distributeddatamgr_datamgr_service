@@ -25,13 +25,6 @@ namespace DataShare {
 namespace {
 constexpr char DOMAIN[] = "DISTDATAMGR";
 constexpr const char *EVENT_NAME = "DATA_SHARE_STATISTIC";
-constexpr const char *COLLIE_UID = "COLLIE_UID";
-constexpr const char *CALLER_NAME = "CALLER_NAME";
-constexpr const char *TOTAL_COUNT = "TOTAL_COUNT";
-constexpr const char *SLOW_RQUEST_COUNT = "SLOW_RQUEST_COUNT";
-constexpr const char *MAX_COST_TIME = "MAX_COST_TIME";
-constexpr const char *TOTAL_COST_TIME = "TOTAL_COST_TIME";
-constexpr const char *FUNC_COUNTS = "FUNC_COUNTS";
 constexpr const uint32_t MAX_COLLECT_COUNT = 20;
 constexpr const uint32_t MIN_CALL_COUNT = 1000;
 constexpr const size_t PARAMS_SIZE = 7;
@@ -102,19 +95,19 @@ void HiViewAdapter::InvokeData()
         funcCounts[i] = const_cast<char *>(funcCount.c_str());
     }
 
-    HiSysEventParam callerUid = { .name = { *COLLIE_UID }, .t = HISYSEVENT_INT64_ARRAY,
+    HiSysEventParam callerUid = { .name = "COLLIE_UID", .t = HISYSEVENT_INT64_ARRAY,
         .v = { .array = callerUids }, .arraySize = count };
-    HiSysEventParam callerName = { .name = { *CALLER_NAME }, .t = HISYSEVENT_STRING_ARRAY,
+    HiSysEventParam callerName = { .name = "CALLER_NAME", .t = HISYSEVENT_STRING_ARRAY,
         .v = { .array = callerNames }, .arraySize = count };
-    HiSysEventParam totalCount = { .name = { *TOTAL_COUNT }, .t = HISYSEVENT_INT64_ARRAY,
+    HiSysEventParam totalCount = { .name = "TOTAL_COUNT", .t = HISYSEVENT_INT64_ARRAY,
         .v = { .array = totalCounts }, .arraySize = count };
-    HiSysEventParam slowRequestCount = { .name = { *SLOW_RQUEST_COUNT }, .t = HISYSEVENT_INT64_ARRAY,
+    HiSysEventParam slowRequestCount = { .name = "SLOW_RQUEST_COUNT", .t = HISYSEVENT_INT64_ARRAY,
         .v = { .array = slowRequestCounts }, .arraySize = count };
-    HiSysEventParam maxCostTime = { .name = { *MAX_COST_TIME }, .t = HISYSEVENT_INT64_ARRAY,
+    HiSysEventParam maxCostTime = { .name = "MAX_COST_TIME", .t = HISYSEVENT_INT64_ARRAY,
         .v = { .array = maxCostTimes }, .arraySize = count };
-    HiSysEventParam totalCostTime = { .name = { *TOTAL_COST_TIME }, .t = HISYSEVENT_INT64_ARRAY,
+    HiSysEventParam totalCostTime = { .name = "TOTAL_COST_TIME", .t = HISYSEVENT_INT64_ARRAY,
         .v = { .array = totalCostTimes }, .arraySize = count };
-    HiSysEventParam funcCount = { .name = { *FUNC_COUNTS }, .t = HISYSEVENT_STRING_ARRAY,
+    HiSysEventParam funcCount = { .name = "FUNC_COUNTS", .t = HISYSEVENT_STRING_ARRAY,
         .v = { .array = funcCounts }, .arraySize = count };
     HiSysEventParam params[] = {callerUid, callerName, totalCount, slowRequestCount,
         maxCostTime, totalCostTime, funcCount};

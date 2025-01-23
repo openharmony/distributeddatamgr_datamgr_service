@@ -26,38 +26,36 @@ namespace DataShare {
 namespace {
     constexpr char DOMAIN[] = "DISTDATAMGR";
     constexpr const char *EVENT_NAME = "DISTRIBUTED_DATA_SHARE_FAULT";
-    constexpr const char *FAULT_TIME = "FAULT_TIME";
-    constexpr const char *FAULT_TYPE = "FAULT_TYPE";
-    constexpr const char *BUNDLE_NAME = "BUNDLE_NAME";
-    constexpr const char *MODULE_NAME = "MODULE_NAME";
-    constexpr const char *STORE_NAME = "STORE_NAME";
-    constexpr const char *BUSINESS_TYPE = "BUSINESS_TYPE";
-    constexpr const char *ERROR_CODE = "ERROR_CODE";
-    constexpr const char *APPENDIX = "APPENDIX";
     constexpr const size_t PARAMS_SIZE = 8;
+    // digits for milliseconds
+    constexpr uint8_t MILLSECOND_DIGIT = 3;
 }
 
 void HiViewFaultAdapter::ReportDataFault(const DataShareFaultInfo &faultInfo)
 {
-    auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    auto now = std::chrono::system_clock::now();
+    auto t = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
     ss << std::put_time(std::localtime(&t), "%F %T");
+    // get milliseconds
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    ss << '.' << std::setfill('0') << std::setw(MILLSECOND_DIGIT) << ms.count();
     auto time = ss.str();
-    HiSysEventParam faultTime = { .name = { *FAULT_TIME }, .t = HISYSEVENT_STRING,
+    HiSysEventParam faultTime = { .name = "FAULT_TIME", .t = HISYSEVENT_STRING,
         .v = { .s = const_cast<char*>(time.c_str()) }, .arraySize = 0 };
-    HiSysEventParam faultType = { .name = { *FAULT_TYPE }, .t = HISYSEVENT_STRING,
+    HiSysEventParam faultType = { .name = "FAULT_TYPE", .t = HISYSEVENT_STRING,
         .v = { .s = const_cast<char*>(faultInfo.faultType.c_str()) }, .arraySize = 0 };
-    HiSysEventParam bundleName = { .name = { *BUNDLE_NAME }, .t = HISYSEVENT_STRING,
+    HiSysEventParam bundleName = { .name = "BUNDLE_NAME", .t = HISYSEVENT_STRING,
         .v = { .s = const_cast<char*>(faultInfo.bundleName.c_str()) }, .arraySize = 0 };
-    HiSysEventParam moduleName = { .name = { *MODULE_NAME }, .t = HISYSEVENT_STRING,
+    HiSysEventParam moduleName = { .name = "MODULE_NAME", .t = HISYSEVENT_STRING,
         .v = { .s = const_cast<char*>(faultInfo.moduleName.c_str()) }, .arraySize = 0 };
-    HiSysEventParam storeName = { .name = { *STORE_NAME }, .t = HISYSEVENT_STRING,
+    HiSysEventParam storeName = { .name = "STORE_NAME", .t = HISYSEVENT_STRING,
         .v = { .s = const_cast<char*>(faultInfo.storeName.c_str()) }, .arraySize = 0 };
-    HiSysEventParam businessType = { .name = { *BUSINESS_TYPE }, .t = HISYSEVENT_STRING,
+    HiSysEventParam businessType = { .name = "BUSINESS_TYPE", .t = HISYSEVENT_STRING,
         .v = { .s = const_cast<char*>(faultInfo.businessType.c_str()) }, .arraySize = 0 };
-    HiSysEventParam errorCode = { .name = { *ERROR_CODE }, .t = HISYSEVENT_INT32,
+    HiSysEventParam errorCode = { .name = "ERROR_CODE", .t = HISYSEVENT_INT32,
         .v = { .i32 = faultInfo.errorCode }, .arraySize = 0 };
-    HiSysEventParam appendix = { .name = { *APPENDIX }, .t = HISYSEVENT_STRING,
+    HiSysEventParam appendix = { .name = "APPENDIX", .t = HISYSEVENT_STRING,
         .v = { .s = const_cast<char*>(faultInfo.appendix.c_str()) }, .arraySize = 0 };
     HiSysEventParam params[] = { faultTime, faultType, bundleName, moduleName,
         storeName, businessType, errorCode, appendix };
