@@ -20,7 +20,6 @@
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
 #include "feature/feature_system.h"
-#include "gtest/gtest.h"
 #include "ipc_skeleton.h"
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
@@ -28,6 +27,7 @@
 #include "mock/checker_mock.h"
 #include "mock/db_store_mock.h"
 #include "types.h"
+#include "gtest/gtest.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
@@ -45,7 +45,7 @@ protected:
     struct Result {
         uint16_t mask_ = DeviceMatrix::INVALID_LEVEL;
         std::string deviceId_;
-        Result(){};
+        Result() {};
     };
     static constexpr const char *TEST_DEVICE = "14a0a92a428005db27c40bad46bf145fede38ec37effe0347cd990fcb031f320";
     static constexpr const char *TEST_BUNDLE = "matrix_test";
@@ -54,10 +54,14 @@ protected:
     void InitRemoteMatrixMeta();
     void InitMetaData();
 
-    static inline std::vector<std::pair<std::string, std::string>> staticStores_ = { { "bundle0", "store0" },
-        { "bundle1", "store0" } };
-    static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = { { "bundle0", "store1" },
-        { "bundle3", "store0" } };
+    static inline std::vector<std::pair<std::string, std::string>> staticStores_ = {
+        { "bundle0", "store0" },
+        { "bundle1", "store0" }
+    };
+    static inline std::vector<std::pair<std::string, std::string>> dynamicStores_ = {
+        { "bundle0", "store1" },
+        { "bundle3", "store0" }
+    };
     static BlockData<Result> isFinished_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static uint32_t selfToken_;
@@ -147,12 +151,12 @@ void DeviceMatrixTest::InitMetaData()
 }
 
 /**
-* @tc.name: GetMetaStoreCode
-* @tc.desc: get the meta data store mask code;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: GetMetaStoreCode
+ * @tc.desc: get the meta data store mask code;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, GetMetaStoreCode, TestSize.Level0)
 {
     StoreMetaData meta;
@@ -165,12 +169,12 @@ HWTEST_F(DeviceMatrixTest, GetMetaStoreCode, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetAllCode
-* @tc.desc: get all dynamic store mask code;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: GetAllCode
+ * @tc.desc: get all dynamic store mask code;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, GetAllCode, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
@@ -183,12 +187,12 @@ HWTEST_F(DeviceMatrixTest, GetAllCode, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetOtherStoreCode
-* @tc.desc: get the other store mask code;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: GetOtherStoreCode
+ * @tc.desc: get the other store mask code;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, GetOtherStoreCode, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
@@ -197,12 +201,12 @@ HWTEST_F(DeviceMatrixTest, GetOtherStoreCode, TestSize.Level0)
 }
 
 /**
-* @tc.name: BroadcastMeta
-* @tc.desc: broadcast the meta store change;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: BroadcastMeta
+ * @tc.desc: broadcast the meta store change;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, BroadcastMeta, TestSize.Level0)
 {
     DeviceMatrix::DataLevel level = {
@@ -213,12 +217,12 @@ HWTEST_F(DeviceMatrixTest, BroadcastMeta, TestSize.Level0)
 }
 
 /**
-* @tc.name: BroadcastFirst
-* @tc.desc: broadcast all stores change;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: BroadcastFirst
+ * @tc.desc: broadcast all stores change;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, BroadcastFirst, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
@@ -234,12 +238,12 @@ HWTEST_F(DeviceMatrixTest, BroadcastFirst, TestSize.Level0)
 }
 
 /**
-* @tc.name: BroadcastOthers
-* @tc.desc: broadcast the device profile store change;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: BroadcastOthers
+ * @tc.desc: broadcast the device profile store change;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, BroadcastOthers, TestSize.Level0)
 {
     StoreMetaData meta = metaData_;
@@ -252,12 +256,12 @@ HWTEST_F(DeviceMatrixTest, BroadcastOthers, TestSize.Level0)
 }
 
 /**
-* @tc.name: BroadcastAll
-* @tc.desc: broadcast the all store change;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: BroadcastAll
+ * @tc.desc: broadcast the all store change;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
 {
     DeviceMatrix::DataLevel level = {
@@ -287,12 +291,12 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
 }
 
 /**
-* @tc.name: UpdateMatrixMeta
-* @tc.desc: update the remote matrix meta the all store change;
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: blue sky
-*/
+ * @tc.name: UpdateMatrixMeta
+ * @tc.desc: update the remote matrix meta the all store change;
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: blue sky
+ */
 HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
 {
     MatrixMetaData metaData;
@@ -301,8 +305,8 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
     metaData.deviceId = TEST_DEVICE;
     metaData.origin = MatrixMetaData::Origin::REMOTE_RECEIVED;
     metaData.dynamicInfo = { TEST_BUNDLE, dynamicStores_[0].first };
-    MetaDataManager::GetInstance().Subscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }),
-        [](const std::string &, const std::string &value, int32_t flag) {
+    MetaDataManager::GetInstance().Subscribe(
+        MatrixMetaData::GetPrefix({ TEST_DEVICE }), [](const std::string &, const std::string &value, int32_t flag) {
             if (flag != MetaDataManager::INSERT && flag != MetaDataManager::UPDATE) {
                 return true;
             }
@@ -337,4 +341,340 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
     mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0x0);
     MetaDataManager::GetInstance().Unsubscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }));
+}
+
+/**
+ * @tc.name: Online
+ * @tc.desc: The test equipment is operated both online and offline.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, Online, TestSize.Level0)
+{
+    RefCount refCount;
+    std::string device = "Online";
+    DeviceMatrix::GetInstance().Online(device, refCount);
+
+    DeviceMatrix::GetInstance().Offline(device);
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().Online(device, refCount));
+}
+
+/**
+ * @tc.name: Offline
+ * @tc.desc: Switch between offline and online status of test equipment.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, Offline, TestSize.Level0)
+{
+    RefCount refCount;
+    std::string device = "Offline";
+    DeviceMatrix::GetInstance().Offline(device);
+
+    DeviceMatrix::GetInstance().Online(device, refCount);
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().Offline(device));
+}
+
+/**
+ * @tc.name: OnChanged001
+ * @tc.desc: Test the DeviceMatrix::OnChanged method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, OnChanged001, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.dataType = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnChanged(metaData));
+
+    metaData.dataType = DeviceMatrix::LevelType::BUTT;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnChanged(metaData));
+}
+
+/**
+ * @tc.name: OnChanged002
+ * @tc.desc: Test the DeviceMatrix::OnChanged method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, OnChanged002, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.bundleName = "distributeddata";
+    metaData.tokenId = selfToken_;
+    metaData.storeId = "service_meta";
+    metaData.dataType = 1;
+    auto code = DeviceMatrix::GetInstance().GetCode(metaData);
+    DeviceMatrix::LevelType type = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnChanged(code, type));
+
+    type = DeviceMatrix::LevelType::BUTT;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnChanged(code, type));
+}
+
+/**
+ * @tc.name: OnExchangedd001
+ * @tc.desc: Test the DeviceMatrix::OnExchanged method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, OnExchanged001, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.dataType = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
+    std::string device = "OnExchanged";
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+
+    metaData.dataType = DeviceMatrix::LevelType::BUTT;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+}
+
+/**
+ * @tc.name: OnExchanged002
+ * @tc.desc: Test the DeviceMatrix::OnExchanged method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, OnExchanged002, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.bundleName = "distributeddata";
+    metaData.tokenId = selfToken_;
+    metaData.storeId = "service_meta";
+    metaData.dataType = 1;
+    auto code = DeviceMatrix::GetInstance().GetCode(metaData);
+    DeviceMatrix::LevelType type = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
+    std::string device;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+
+    device = "OnExchanged";
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+
+    type = DeviceMatrix::LevelType::BUTT;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+}
+
+/**
+ * @tc.name: OnExchangedd003
+ * @tc.desc: Test the DeviceMatrix::OnExchanged method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, OnExchangedd003, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.dataType = DeviceMatrix::LevelType::STATICS;
+    std::string device = "OnExchanged";
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+}
+
+/**
+ * @tc.name: GetCode
+ * @tc.desc: Test the DeviceMatrix::GetCode method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, GetCode, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.bundleName = "distributeddata";
+    metaData.tokenId = selfToken_;
+    metaData.storeId = "storeId";
+    metaData.dataType = DeviceMatrix::LevelType::BUTT;
+    auto code = DeviceMatrix::GetInstance().GetCode(metaData);
+    EXPECT_EQ(code, 0);
+}
+
+/**
+ * @tc.name: GetMask001
+ * @tc.desc: Test the DeviceMatrix::GetMask method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, GetMask001, TestSize.Level0)
+{
+    std::string device = "GetMask";
+    DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
+    std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetMask(device, type);
+    EXPECT_EQ(mask.first, false);
+}
+
+/**
+ * @tc.name: GetMask002
+ * @tc.desc: Test the DeviceMatrix::GetMask method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, GetMask002, TestSize.Level0)
+{
+    std::string device = "GetMask";
+    DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
+    RefCount refCount;
+    DeviceMatrix::GetInstance().Online(device, refCount);
+    std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetMask(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::DYNAMIC;
+    mask = DeviceMatrix::GetInstance().GetMask(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::BUTT;
+    mask = DeviceMatrix::GetInstance().GetMask(device, type);
+    EXPECT_EQ(mask.first, false);
+}
+
+/**
+ * @tc.name: GetRemoteMask001
+ * @tc.desc: Test the DeviceMatrix::GetRemoteMask method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, GetRemoteMask001, TestSize.Level0)
+{
+    std::string device = "GetRemoteMask";
+    DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
+    std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetRemoteMask(device, type);
+    EXPECT_EQ(mask.first, false);
+}
+
+/**
+ * @tc.name: GetRemoteMask002
+ * @tc.desc: Test the DeviceMatrix::GetRemoteMask method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, GetRemoteMask002, TestSize.Level0)
+{
+    std::string device = "GetRemoteMask";
+    StoreMetaData meta = metaData_;
+    auto code = DeviceMatrix::GetInstance().GetCode(meta);
+    DeviceMatrix::DataLevel level = {
+        .dynamic = code,
+    };
+    DeviceMatrix::GetInstance().OnBroadcast(device, level);
+
+    DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
+    std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetRemoteMask(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::DYNAMIC;
+    mask = DeviceMatrix::GetInstance().GetRemoteMask(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::BUTT;
+    mask = DeviceMatrix::GetInstance().GetRemoteMask(device, type);
+    EXPECT_EQ(mask.first, false);
+}
+
+/**
+ * @tc.name: GetRecvLevel
+ * @tc.desc: Test the DeviceMatrix::GetRecvLevel method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, GetRecvLevel, TestSize.Level0)
+{
+    std::string device = "GetRemoteMask";
+    DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
+    std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetRecvLevel(device, type);
+    EXPECT_EQ(mask.first, false);
+
+    device = TEST_DEVICE;
+    mask = DeviceMatrix::GetInstance().GetRecvLevel(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::DYNAMIC;
+    mask = DeviceMatrix::GetInstance().GetRecvLevel(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::BUTT;
+    mask = DeviceMatrix::GetInstance().GetRecvLevel(device, type);
+    EXPECT_EQ(mask.first, false);
+}
+
+/**
+ * @tc.name: GetConsLevel
+ * @tc.desc: Test the DeviceMatrix::GetConsLevel method.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, GetConsLevel, TestSize.Level0)
+{
+    std::string device = "GetRemoteMask";
+    DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
+    std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetConsLevel(device, type);
+    EXPECT_EQ(mask.first, false);
+
+    device = TEST_DEVICE;
+    mask = DeviceMatrix::GetInstance().GetConsLevel(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::DYNAMIC;
+    mask = DeviceMatrix::GetInstance().GetConsLevel(device, type);
+    EXPECT_EQ(mask.first, true);
+
+    type = DeviceMatrix::LevelType::BUTT;
+    mask = DeviceMatrix::GetInstance().GetConsLevel(device, type);
+    EXPECT_EQ(mask.first, false);
+}
+
+/**
+ * @tc.name: UpdateLevel
+ * @tc.desc: Test the DeviceMatrix::UpdateLevel method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, UpdateLevel, TestSize.Level0)
+{
+    uint16_t level = 0;
+    DeviceMatrix::LevelType type = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
+    std::string device;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().UpdateLevel(device, level, type));
+
+    device = "OnExchanged";
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().UpdateLevel(device, level, type));
+
+    type = DeviceMatrix::LevelType::BUTT;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().UpdateLevel(device, level, type));
+
+    type = DeviceMatrix::LevelType::STATICS;
+    device = TEST_DEVICE;
+    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().UpdateLevel(device, level, type));
+}
+
+/**
+ * @tc.name: IsDynamic
+ * @tc.desc: Test the DeviceMatrix::IsDynamic method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, IsDynamic, TestSize.Level0)
+{
+    StoreMetaData meta;
+    meta.bundleName = "distributeddata";
+    meta.tokenId = selfToken_;
+    meta.storeId = "service_meta";
+    meta.dataType = DeviceMatrix::LevelType::STATICS;
+    bool isDynamic = DeviceMatrix::GetInstance().IsDynamic(meta);
+    EXPECT_EQ(isDynamic, false);
+
+    meta.dataType = DeviceMatrix::LevelType::DYNAMIC;
+    isDynamic = DeviceMatrix::GetInstance().IsDynamic(meta);
+    EXPECT_EQ(isDynamic, true);
 }
