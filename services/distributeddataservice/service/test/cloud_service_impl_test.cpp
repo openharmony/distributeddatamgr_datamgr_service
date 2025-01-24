@@ -49,6 +49,7 @@
 #include "store/auto_cache.h"
 #include "store/store_info.h"
 #include "token_setproc.h"
+#include "model/component_config.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -207,7 +208,8 @@ HWTEST_F(CloudServiceImplTest, QueryStatistics001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, QueryLastSyncInfo001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest QueryLastSyncInfo start");
-    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    auto [status, result] =
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
 }
@@ -479,6 +481,61 @@ HWTEST_F(CloudServiceImplTest, CheckNotifyConditions, TestSize.Level0)
     cloudInfo.apps.insert_or_assign(TEST_CLOUD_BUNDLE, appInfo);
     status = cloudServiceImpl_->CheckNotifyConditions(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, cloudInfo);
     EXPECT_EQ(status, CloudData::CloudService::CLOUD_DISABLE_SWITCH);
+}
+
+class ComponentConfigTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
+void ComponentConfigTest::SetUpTestCase(void) {}
+
+void ComponentConfigTest::TearDownTestCase() {}
+
+void ComponentConfigTest::SetUp() {}
+
+void ComponentConfigTest::TearDown() {}
+
+/**
+ * @tc.name: CapabilityRange
+ * @tc.desc: test CapabilityRange Marshal function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
+HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
+{
+    DistributedData::ComponentConfig config;
+    config.description = "description";
+    config.lib = "lib";
+    config.constructor = "constructor";
+    config.destructor = "destructor";
+    config.params = "params";
+    Serializable::json node;
+
+    EXPECT_EQ(config.Marshal(node), true);
+    EXPECT_EQ(node["description"], config.description);
+    EXPECT_EQ(node["lib"], config.lib);
+    EXPECT_EQ(node["destructor"], config.constructor);
+    EXPECT_EQ(node["destructor"], config.destructor);
+    EXPECT_EQ(node["params"], config.params);
+
+    DistributedData::ComponentConfig componentConfig;
+    componentConfig.description = "description";
+    componentConfig.lib = "lib";
+    componentConfig.constructor = "constructor";
+    componentConfig.destructor = "destructor";
+    componentConfig.params = "";
+
+    EXPECT_EQ(config.Marshal(node), true);
+    EXPECT_EQ(node["description"], componentConfig.description);
+    EXPECT_EQ(node["lib"], componentConfig.lib);
+    EXPECT_EQ(node["destructor"], componentConfig.constructor);
+    EXPECT_EQ(node["destructor"], componentConfig.destructor);
+    EXPECT_EQ(node["params"], componentConfig.params);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

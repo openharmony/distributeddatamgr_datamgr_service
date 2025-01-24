@@ -428,10 +428,12 @@ HWTEST_F(DeviceMatrixTest, OnExchanged001, TestSize.Level0)
     StoreMetaData metaData;
     metaData.dataType = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
     std::string device = "OnExchanged";
-    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+    EXPECT_NO_FATAL_FAILURE(
+        DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
 
     metaData.dataType = DeviceMatrix::LevelType::BUTT;
-    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+    EXPECT_NO_FATAL_FAILURE(
+        DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
 }
 
 /**
@@ -451,13 +453,16 @@ HWTEST_F(DeviceMatrixTest, OnExchanged002, TestSize.Level0)
     auto code = DeviceMatrix::GetInstance().GetCode(metaData);
     DeviceMatrix::LevelType type = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
     std::string device;
-    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+    EXPECT_NO_FATAL_FAILURE(
+        DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
 
     device = "OnExchanged";
-    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+    EXPECT_NO_FATAL_FAILURE(
+        DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
 
     type = DeviceMatrix::LevelType::BUTT;
-    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+    EXPECT_NO_FATAL_FAILURE(
+        DeviceMatrix::GetInstance().OnExchanged(device, code, type, DeviceMatrix::ChangeType::CHANGE_REMOTE));
 }
 
 /**
@@ -472,7 +477,8 @@ HWTEST_F(DeviceMatrixTest, OnExchangedd003, TestSize.Level0)
     StoreMetaData metaData;
     metaData.dataType = DeviceMatrix::LevelType::STATICS;
     std::string device = "OnExchanged";
-    EXPECT_NO_FATAL_FAILURE(DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
+    EXPECT_NO_FATAL_FAILURE(
+        DeviceMatrix::GetInstance().OnExchanged(device, metaData, DeviceMatrix::ChangeType::CHANGE_REMOTE));
 }
 
 /**
