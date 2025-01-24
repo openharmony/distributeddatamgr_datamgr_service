@@ -77,8 +77,10 @@ bool AllowList::Marshal(json &node) const
 
 bool AllowList::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(appIdentifier), appIdentifier);
-    GetValue(node, GET_NAME(onlyMain), onlyMain);
+    // when onlyMain is invalid, do not get appIdentifier, or if appIdentifier matched, onlyMain may not be expected
+    if (GetValue(node, GET_NAME(onlyMain), onlyMain)) {
+        GetValue(node, GET_NAME(appIdentifier), appIdentifier);
+    }
     return true;
 }
 
