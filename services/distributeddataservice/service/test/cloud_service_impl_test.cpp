@@ -1,17 +1,17 @@
 /*
-* Copyright (c) 2024 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #define LOG_TAG "CloudServiceImplTest"
 #include "cloud_service_impl.h"
 
@@ -41,6 +41,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
+#include "model/component_config.h"
 #include "network_adapter.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
@@ -49,7 +50,6 @@
 #include "store/auto_cache.h"
 #include "store/store_info.h"
 #include "token_setproc.h"
-#include "model/component_config.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -84,17 +84,17 @@ void CloudServiceImplTest::SetUpTestCase(void)
     DeviceManagerAdapter::GetInstance().Init(executor);
 }
 
-void CloudServiceImplTest::TearDownTestCase() {}
+void CloudServiceImplTest::TearDownTestCase() { }
 
-void CloudServiceImplTest::SetUp() {}
+void CloudServiceImplTest::SetUp() { }
 
-void CloudServiceImplTest::TearDown() {}
+void CloudServiceImplTest::TearDown() { }
 
 /**
-* @tc.name: EnableCloud001
-* @tc.desc: Test EnableCloud functions with user is invalid.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: EnableCloud001
+ * @tc.desc: Test EnableCloud functions with user is invalid.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, EnableCloud001, TestSize.Level0)
 {
@@ -106,10 +106,10 @@ HWTEST_F(CloudServiceImplTest, EnableCloud001, TestSize.Level0)
 }
 
 /**
-* @tc.name: DisableCloud001
-* @tc.desc: Test DisableCloud functions with user is invalid.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: DisableCloud001
+ * @tc.desc: Test DisableCloud functions with user is invalid.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, DisableCloud001, TestSize.Level0)
 {
@@ -119,10 +119,10 @@ HWTEST_F(CloudServiceImplTest, DisableCloud001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ChangeAppSwitch001
-* @tc.desc: Test ChangeAppSwitch functions with user is invalid.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: ChangeAppSwitch001
+ * @tc.desc: Test ChangeAppSwitch functions with user is invalid.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, ChangeAppSwitch001, TestSize.Level0)
 {
@@ -133,10 +133,10 @@ HWTEST_F(CloudServiceImplTest, ChangeAppSwitch001, TestSize.Level0)
 }
 
 /**
-* @tc.name: Clean001
-* @tc.desc: Test Clean functions with user is invalid.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: Clean001
+ * @tc.desc: Test Clean functions with user is invalid.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, Clean001, TestSize.Level0)
 {
@@ -148,10 +148,10 @@ HWTEST_F(CloudServiceImplTest, Clean001, TestSize.Level0)
 }
 
 /**
-* @tc.name: NotifyDataChange001
-* @tc.desc: Test the EnableCloud function in case it doesn't get cloudInfo.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: NotifyDataChange001
+ * @tc.desc: Test the EnableCloud function in case it doesn't get cloudInfo.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, NotifyDataChange001, TestSize.Level0)
 {
@@ -161,10 +161,10 @@ HWTEST_F(CloudServiceImplTest, NotifyDataChange001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ExecuteStatistics001
-* @tc.desc: Test the ExecuteStatistics function if the package name does not support CloudSync.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: ExecuteStatistics001
+ * @tc.desc: Test the ExecuteStatistics function if the package name does not support CloudSync.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, ExecuteStatistics001, TestSize.Level0)
 {
@@ -184,10 +184,10 @@ HWTEST_F(CloudServiceImplTest, ExecuteStatistics001, TestSize.Level0)
 }
 
 /**
-* @tc.name: QueryStatistics001
-* @tc.desc: When metadata is not supported store test the QueryStatistics function.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: QueryStatistics001
+ * @tc.desc: When metadata is not supported store test the QueryStatistics function.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, QueryStatistics001, TestSize.Level0)
 {
@@ -200,25 +200,24 @@ HWTEST_F(CloudServiceImplTest, QueryStatistics001, TestSize.Level0)
 }
 
 /**
-* @tc.name: QueryLastSyncInfo001
-* @tc.desc: Test QueryLastSyncInfo functions with invalid parameter.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: QueryLastSyncInfo001
+ * @tc.desc: Test QueryLastSyncInfo functions with invalid parameter.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, QueryLastSyncInfo001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest QueryLastSyncInfo start");
-    auto [status, result] =
-        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
 }
 
 /**
-* @tc.name: OnBind001
-* @tc.desc: Test OnBind functions with invalid parameter.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: OnBind001
+ * @tc.desc: Test OnBind functions with invalid parameter.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, OnBind001, TestSize.Level0)
 {
@@ -228,10 +227,10 @@ HWTEST_F(CloudServiceImplTest, OnBind001, TestSize.Level0)
 }
 
 /**
-* @tc.name: UpdateSchema001
-* @tc.desc: Test UpdateSchema001 functions with invalid parameter.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: UpdateSchema001
+ * @tc.desc: Test UpdateSchema001 functions with invalid parameter.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, UpdateSchema001, TestSize.Level0)
 {
@@ -242,10 +241,10 @@ HWTEST_F(CloudServiceImplTest, UpdateSchema001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetAppSchemaFromServer001
-* @tc.desc: Test GetAppSchemaFromServer functions not support CloudService.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: GetAppSchemaFromServer001
+ * @tc.desc: Test GetAppSchemaFromServer functions not support CloudService.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 {
@@ -257,10 +256,10 @@ HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetCloudInfoFromServer001
-* @tc.desc: Test GetCloudInfoFromServer functions not support CloudService.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: GetCloudInfoFromServer001
+ * @tc.desc: Test GetCloudInfoFromServer functions not support CloudService.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, GetCloudInfoFromServer001, TestSize.Level0)
 {
@@ -272,10 +271,10 @@ HWTEST_F(CloudServiceImplTest, GetCloudInfoFromServer001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ReleaseUserInfo001
-* @tc.desc: Test ReleaseUserInfo functions with invalid parameter.
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: ReleaseUserInfo001
+ * @tc.desc: Test ReleaseUserInfo functions with invalid parameter.
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, ReleaseUserInfo001, TestSize.Level0)
 {
@@ -286,10 +285,10 @@ HWTEST_F(CloudServiceImplTest, ReleaseUserInfo001, TestSize.Level0)
 }
 
 /**
-* @tc.name: DoSubscribe
-* @tc.desc: Test the DoSubscribe with not support CloudService
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: DoSubscribe
+ * @tc.desc: Test the DoSubscribe with not support CloudService
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, DoSubscribe, TestSize.Level0)
 {
@@ -299,10 +298,10 @@ HWTEST_F(CloudServiceImplTest, DoSubscribe, TestSize.Level0)
 }
 
 /**
-* @tc.name: Share001
-* @tc.desc: Test the Share with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: Share001
+ * @tc.desc: Test the Share with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, Share001, TestSize.Level0)
 {
@@ -314,10 +313,10 @@ HWTEST_F(CloudServiceImplTest, Share001, TestSize.Level0)
 }
 
 /**
-* @tc.name: Unshare001
-* @tc.desc: Test the Unshare with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: Unshare001
+ * @tc.desc: Test the Unshare with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, Unshare001, TestSize.Level0)
 {
@@ -329,10 +328,10 @@ HWTEST_F(CloudServiceImplTest, Unshare001, TestSize.Level0)
 }
 
 /**
-* @tc.name: Exit001
-* @tc.desc: Test the Exit with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: Exit001
+ * @tc.desc: Test the Exit with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, Exit001, TestSize.Level0)
 {
@@ -343,10 +342,10 @@ HWTEST_F(CloudServiceImplTest, Exit001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ChangePrivilege001
-* @tc.desc: Test the ChangePrivilege with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: ChangePrivilege001
+ * @tc.desc: Test the ChangePrivilege with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, ChangePrivilege001, TestSize.Level0)
 {
@@ -358,10 +357,10 @@ HWTEST_F(CloudServiceImplTest, ChangePrivilege001, TestSize.Level0)
 }
 
 /**
-* @tc.name: Query001
-* @tc.desc: Test the Query with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: Query001
+ * @tc.desc: Test the Query with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, Query001, TestSize.Level0)
 {
@@ -372,10 +371,10 @@ HWTEST_F(CloudServiceImplTest, Query001, TestSize.Level0)
 }
 
 /**
-* @tc.name: QueryByInvitation001
-* @tc.desc: Test the QueryByInvitation with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: QueryByInvitation001
+ * @tc.desc: Test the QueryByInvitation with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, QueryByInvitation001, TestSize.Level0)
 {
@@ -386,25 +385,25 @@ HWTEST_F(CloudServiceImplTest, QueryByInvitation001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ConfirmInvitation001
-* @tc.desc: Test the ConfirmInvitation with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: ConfirmInvitation001
+ * @tc.desc: Test the ConfirmInvitation with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, ConfirmInvitation001, TestSize.Level0)
 {
     int32_t confirmation = 0;
-    std::tuple<int32_t, std::string, std::string> result{ 0, "", "" };
+    std::tuple<int32_t, std::string, std::string> result { 0, "", "" };
     std::string invitation;
     auto status = cloudServiceImpl_->ConfirmInvitation(invitation, confirmation, result);
     EXPECT_EQ(status, GeneralError::E_ERROR);
 }
 
 /**
-* @tc.name: ChangeConfirmation001
-* @tc.desc: Test the ChangeConfirmation with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: ChangeConfirmation001
+ * @tc.desc: Test the ChangeConfirmation with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, ChangeConfirmation001, TestSize.Level0)
 {
@@ -416,10 +415,10 @@ HWTEST_F(CloudServiceImplTest, ChangeConfirmation001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetSharingHandle001
-* @tc.desc: Test the GetSharingHandle with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: GetSharingHandle001
+ * @tc.desc: Test the GetSharingHandle with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, GetSharingHandle001, TestSize.Level0)
 {
@@ -429,10 +428,10 @@ HWTEST_F(CloudServiceImplTest, GetSharingHandle001, TestSize.Level0)
 }
 
 /**
-* @tc.name: SetCloudStrategy001
-* @tc.desc: Test the SetCloudStrategy with get hapInfo failed
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: SetCloudStrategy001
+ * @tc.desc: Test the SetCloudStrategy with get hapInfo failed
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, SetCloudStrategy001, TestSize.Level0)
 {
@@ -445,10 +444,10 @@ HWTEST_F(CloudServiceImplTest, SetCloudStrategy001, TestSize.Level0)
 }
 
 /**
-* @tc.name: SetGlobalCloudStrategy001
-* @tc.desc: Test the SetGlobalCloudStrategy with get hapInfo failed
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: SetGlobalCloudStrategy001
+ * @tc.desc: Test the SetGlobalCloudStrategy with get hapInfo failed
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, SetGlobalCloudStrategy001, TestSize.Level0)
 {
@@ -461,10 +460,10 @@ HWTEST_F(CloudServiceImplTest, SetGlobalCloudStrategy001, TestSize.Level0)
 }
 
 /**
-* @tc.name: CheckNotifyConditions001
-* @tc.desc: Test the CheckNotifyConditions with invalid parameters
-* @tc.type: FUNC
-* @tc.require:
+ * @tc.name: CheckNotifyConditions001
+ * @tc.desc: Test the CheckNotifyConditions with invalid parameters
+ * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(CloudServiceImplTest, CheckNotifyConditions, TestSize.Level0)
 {
@@ -491,13 +490,13 @@ public:
     void TearDown();
 };
 
-void ComponentConfigTest::SetUpTestCase(void) {}
+void ComponentConfigTest::SetUpTestCase(void) { }
 
-void ComponentConfigTest::TearDownTestCase() {}
+void ComponentConfigTest::TearDownTestCase() { }
 
-void ComponentConfigTest::SetUp() {}
+void ComponentConfigTest::SetUp() { }
 
-void ComponentConfigTest::TearDown() {}
+void ComponentConfigTest::TearDown() { }
 
 /**
  * @tc.name: CapabilityRange
