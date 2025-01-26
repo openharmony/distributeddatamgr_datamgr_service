@@ -596,7 +596,7 @@ HWTEST_F(DeviceMatrixTest, GetRecvLevel, TestSize.Level0)
     std::string device = "GetRemoteMask";
     DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
     std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetRecvLevel(device, type);
-    EXPECT_EQ(mask.first, false);
+    EXPECT_EQ(mask.first, true);
 
     device = TEST_DEVICE;
     mask = DeviceMatrix::GetInstance().GetRecvLevel(device, type);

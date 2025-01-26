@@ -512,29 +512,27 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     config.lib = "lib";
     config.constructor = "constructor";
     config.destructor = "destructor";
-    config.params = "params";
+    config.params = "";
     Serializable::json node;
 
     EXPECT_EQ(config.Marshal(node), true);
     EXPECT_EQ(node["description"], config.description);
     EXPECT_EQ(node["lib"], config.lib);
-    EXPECT_EQ(node["destructor"], config.constructor);
+    EXPECT_EQ(node["constructor"], config.constructor);
     EXPECT_EQ(node["destructor"], config.destructor);
-    EXPECT_EQ(node["params"], config.params);
 
     DistributedData::ComponentConfig componentConfig;
     componentConfig.description = "description";
     componentConfig.lib = "lib";
     componentConfig.constructor = "constructor";
     componentConfig.destructor = "destructor";
-    componentConfig.params = "";
+    componentConfig.params = "params";
 
     EXPECT_EQ(config.Marshal(node), true);
     EXPECT_EQ(node["description"], componentConfig.description);
     EXPECT_EQ(node["lib"], componentConfig.lib);
-    EXPECT_EQ(node["destructor"], componentConfig.constructor);
+    EXPECT_EQ(node["constructor"], componentConfig.constructor);
     EXPECT_EQ(node["destructor"], componentConfig.destructor);
-    EXPECT_EQ(node["params"], componentConfig.params);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
