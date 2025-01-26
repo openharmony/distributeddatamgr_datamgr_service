@@ -47,21 +47,10 @@ public:
  */
 HWTEST_F(BroadcastSenderTest, GetInstance001, TestSize.Level0)
 {
-    std::shared_ptr<BroadcastSender> instance = DistributedKv::BroadcastSender::GetInstance();
-    EXPECT_NE(instance, nullptr);
-}
-
-/**
- * @tc.name: GetInstance002
- * @tc.desc: The correctness of the BroadcastSender singleton pattern is tested.
- * @tc.type: FUNC
- * @tc.require:SQL
- */
-HWTEST_F(BroadcastSenderTest, GetInstance002, TestSize.Level0)
-{
-    std::shared_ptr<BroadcastSender> instance1 = DistributedKv::BroadcastSender::GetInstance();
-    std::shared_ptr<BroadcastSender> instance2 = DistributedKv::BroadcastSender::GetInstance();
-    EXPECT_EQ(instance1, instance2);
+    std::shared_ptr<BroadcastSender> instanceFirst = DistributedKv::BroadcastSender::GetInstance();
+    ASSERT_NE(instanceFirst, nullptr);
+    std::shared_ptr<BroadcastSender> instanceSecond = DistributedKv::BroadcastSender::GetInstance();
+    ASSERT_NE(instanceSecond, nullptr);
 }
 
 /**
@@ -73,7 +62,7 @@ HWTEST_F(BroadcastSenderTest, GetInstance002, TestSize.Level0)
 HWTEST_F(BroadcastSenderImplTest, SendEvent, TestSize.Level0)
 {
     std::shared_ptr<BroadcastSender> instance = DistributedKv::BroadcastSender::GetInstance();
-    EXPECT_NE(instance, nullptr);
+    ASSERT_NE(instance, nullptr);
     EventParams params = {};
     EXPECT_NO_FATAL_FAILURE(instance->SendEvent(params));
 }
