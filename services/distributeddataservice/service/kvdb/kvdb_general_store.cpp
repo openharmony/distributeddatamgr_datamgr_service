@@ -213,13 +213,15 @@ KVDBGeneralStore::~KVDBGeneralStore()
         manager_.CloseKvStore(delegate_);
         delegate_ = nullptr;
     }
-    for (auto &bindInfo : bindInfos_) {
-        if (bindInfo.db_ != nullptr) {
-            bindInfo.db_->Close();
+    {
+        std::unique_lock<decltype(bindMutex_)> lock(bindMutex_);
+        for (auto &[userId, bindInfo] : bindInfos_) {
+            if (bindInfo.db_ != nullptr) {
+                bindInfo.db_->Close();
+            }
         }
+        bindInfos_.clear();
     }
-    bindInfos_.clear();
-    dbClouds_.clear();
 }
 
 int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
@@ -228,30 +230,26 @@ int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, st
 }
 
 int32_t KVDBGeneralStore::Bind(
-    Database &database, const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config)
+    const Database &database, const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config)
 {
     if (bindInfos.empty()) {
         ZLOGW("No cloudDB!");
         return GeneralError::E_OK;
     }
     std::map<std::string, DataBaseSchema> schemas;
+    std::map<std::string, std::shared_ptr<DistributedDB::ICloudDb>> dbClouds{};
     auto dbSchema = GetDBSchema(database);
-    std::set<uint32_t> users;
-    for (auto &[userId, bindInfo] : bindInfos) {
-        if (bindInfo.db_ == nullptr) {
-            return GeneralError::E_INVALID_ARGS;
-        }
-        users.insert(userId);
-        dbClouds_.insert({ std::to_string(userId), std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
-        bindInfos_.insert(std::move(bindInfo));
-        schemas.insert({ std::to_string(userId), dbSchema });
-    }
     {
-        std::unique_lock<std::shared_mutex> lock(bindMutex_);
-        if (users_ == users) {
-            return GeneralError::E_OK;
+        std::unique_lock<decltype(bindMutex_)> lock(bindMutex_);
+        for (auto &[userId, bindInfo] : bindInfos) {
+            if (bindInfo.db_ == nullptr) {
+                return GeneralError::E_INVALID_ARGS;
+            }
+            dbClouds.insert({ std::to_string(userId),
+                std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
+            bindInfos_.insert(std::make_pair(userId, std::move(bindInfo)));
+            schemas.insert({ std::to_string(userId), dbSchema });
         }
-        users_ = users;
     }
     DistributedDB::CloudSyncConfig dbConfig;
     dbConfig.maxUploadCount = config.maxNumber;
@@ -261,7 +259,7 @@ int32_t KVDBGeneralStore::Bind(
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
-    delegate_->SetCloudDB(dbClouds_);
+    delegate_->SetCloudDB(std::move(dbClouds));
     delegate_->SetCloudDbSchema(std::move(schemas));
     delegate_->SetCloudSyncConfig(dbConfig);
     return GeneralError::E_OK;
@@ -270,7 +268,7 @@ int32_t KVDBGeneralStore::Bind(
 bool KVDBGeneralStore::IsBound(uint32_t user)
 {
     std::shared_lock<std::shared_mutex> lock(bindMutex_);
-    return users_.find(user) != users_.end();
+    return bindInfos_.find(user) != bindInfos_.end();
 }
 
 int32_t KVDBGeneralStore::Close(bool isForce)

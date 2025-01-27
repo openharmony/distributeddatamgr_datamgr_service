@@ -231,7 +231,7 @@ int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std
     return GenErr::E_OK;
 }
 
-int32_t RdbGeneralStore::Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
     const CloudConfig &config)
 {
     if (bindInfos.empty()) {

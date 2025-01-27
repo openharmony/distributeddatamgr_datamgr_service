@@ -54,7 +54,7 @@ public:
     static void OnSyncFinish(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode,
         uint32_t traceId);
     void SetExecutor(std::shared_ptr<Executor> executor) override;
-    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+    int32_t Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) override;
     bool IsBound(uint32_t user) override;
     bool IsValid();

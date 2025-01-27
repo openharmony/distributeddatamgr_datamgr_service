@@ -21,7 +21,7 @@ namespace OHOS {
 namespace DistributedData {
 class GeneralStoreMock : public GeneralStore {
 public:
-    int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+    int32_t Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) override;
     bool IsBound(uint32_t user) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;

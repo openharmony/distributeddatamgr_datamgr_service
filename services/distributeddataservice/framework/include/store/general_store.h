@@ -130,7 +130,7 @@ public:
 
     virtual void SetExecutor(std::shared_ptr<Executor> executor) = 0;
 
-    virtual int32_t Bind(Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+    virtual int32_t Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) = 0;
 
     virtual bool IsBound(uint32_t user) = 0;
