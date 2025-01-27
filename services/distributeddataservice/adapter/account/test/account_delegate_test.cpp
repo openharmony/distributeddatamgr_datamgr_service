@@ -16,19 +16,24 @@
 #define LOG_TAG "AccountDelegateTest"
 #include <gtest/gtest.h>
 #include <memory.h>
+#include "accesstoken_kit.h"
 #include "account_delegate.h"
 #include "account_delegate_impl.h"
 #include "account_delegate_normal_impl.h"
 #include "error/general_error.h"
 #include "ipc_skeleton.h"
+#include "log_print.h"
+#include "nativetoken_kit.h"
 #include "ohos_account_kits.h"
 #include "os_account_manager.h"
-#include "log_print.h"
+#include "token_setproc.h"
 
 namespace {
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
 using namespace testing::ext;
+using namespace OHOS::Security::AccessToken;
+
 class AccountObserver : public AccountDelegate::Observer {
 public:
     void OnAccountChanged(const AccountEventInfo &info) override
@@ -53,9 +58,35 @@ private:
     std::string name_ = "accountTestObserver";
 };
 
+void GrantPermissionNative()
+{
+    const char *perms[4] = {
+        "ohos.permission.MANAGE_LOCAL_ACCOUNTS",
+        "ohos.permission.DISTRIBUTED_DATASYNC",
+        "ohos.permission.GET_LOCAL_ACCOUNTS",
+        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS"
+    };
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 4,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    AccessTokenKit::ReloadNativeTokenInfo();
+}
+
 class AccountDelegateTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {}
+    static void SetUpTestCase(void)
+    {
+        GrantPermissionNative();
+    }
     static void TearDownTestCase(void) {}
     void SetUp() {}
     void TearDown() {}

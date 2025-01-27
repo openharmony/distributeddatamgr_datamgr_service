@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 
-#include "accesstoken_kit.h"
+#include "mock/access_token_mock.h"
 #include "auth_delegate.h"
 #include "bootstrap.h"
 #include "crypto_manager.h"
@@ -27,7 +27,7 @@
 #include "kvstore_meta_manager.h"
 #include "kvstore_sync_manager.h"
 #include "log_print.h"
-#include "metadata/meta_data_manager.h"
+#include "mock/meta_data_manager_mock.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
@@ -38,6 +38,7 @@
 using namespace testing::ext;
 using namespace DistributedDB;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using DBPassword = DistributedDB::CipherPassword;
 using DBStatus = DistributedDB::DBStatus;
@@ -49,8 +50,10 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 class UpgradeTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
+    static inline std::shared_ptr<AccessTokenKitMock> accessTokenKitMock = nullptr;
+    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
     void SetUp();
     void TearDown(){};
 protected:
@@ -59,6 +62,22 @@ protected:
     void InitMetaData();
     StoreMetaData metaData_;
 };
+
+void UpgradeTest::SetUpTestCase(void)
+{
+    accessTokenKitMock = std::make_shared<AccessTokenKitMock>();
+    BAccessTokenKit::accessTokenkit = accessTokenKitMock;
+    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+    BMetaDataManager::metaDataManager = metaDataManagerMock;
+}
+
+void UpgradeTest::TearDownTestCase()
+{
+    accessTokenKitMock = nullptr;
+    BAccessTokenKit::accessTokenkit = nullptr;
+    metaDataManagerMock = nullptr;
+    BMetaDataManager::metaDataManager = nullptr;
+}
 
 void UpgradeTest::InitMetaData()
 {
@@ -118,12 +137,25 @@ protected:
 
 class AuthHandlerTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
+    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
     void SetUp(){};
     void TearDown(){};
 protected:
 };
+
+void AuthHandlerTest::SetUpTestCase(void)
+{
+    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+    BMetaDataManager::metaDataManager = metaDataManagerMock;
+}
+
+void AuthHandlerTest::TearDownTestCase()
+{
+    metaDataManagerMock = nullptr;
+    BMetaDataManager::metaDataManager = nullptr;
+}
 
 /**
 * @tc.name: UpdateStore
@@ -661,7 +693,7 @@ HWTEST_F(AuthHandlerTest, AuthHandler, TestSize.Level0)
     aclParams.authType = static_cast<int32_t>(DistributedKv::AuthType::IDENTICAL_ACCOUNT);
     auto result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
     EXPECT_TRUE(result.first);
-    
+
     aclParams.authType = static_cast<int32_t>(DistributedKv::AuthType::DEFAULT);
     result = AuthDelegate::GetInstance()->CheckAccess(localUserId, peerUserId, peerDeviceId, aclParams);
     EXPECT_TRUE(result.first);
