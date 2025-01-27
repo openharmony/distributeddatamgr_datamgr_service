@@ -57,12 +57,47 @@ ohos_unittest("AccountDelegateTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
+ohos_unittest("BroadcastSenderTest") {
+  module_out_path = module_output_path
+
+  sources = [
+    "${data_service_path}/adapter/broadcaster/src/broadcast_sender.cpp",
+    "${data_service_path}/adapter/broadcaster/src/broadcast_sender_impl.cpp",
+    "broadcast_sender_test.cpp",
+  ]
+  include_dirs = [
+    "${data_service_path}/adapter/broadcaster/src/",
+    "${data_service_path}/adapter/include/broadcaster/",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "bundle_framework:appexecfwk_base",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:datamgr_common",
+  ]
+
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
 
   deps = []
 
-  deps += [ ":AccountDelegateTest" ]
+  deps += [
+    ":AccountDelegateTest",
+    ":BroadcastSenderTest",
+  ]
 }
 ###############################################################################

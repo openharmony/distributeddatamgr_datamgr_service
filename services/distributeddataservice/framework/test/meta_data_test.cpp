@@ -13,23 +13,23 @@
  * limitations under the License.
  */
 
-#include "gtest/gtest.h"
-#include "utils/constant.h"
-#include <nlohmann/json.hpp>
 #include "bootstrap.h"
 #include "kvstore_meta_manager.h"
 #include "metadata/appid_meta_data.h"
-#include "metadata/corrupted_meta_data.h"
+#include "metadata/capability_meta_data.h"
 #include "metadata/capability_range.h"
+#include "metadata/corrupted_meta_data.h"
+#include "metadata/matrix_meta_data.h"
 #include "metadata/meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
-#include "metadata/capability_meta_data.h"
 #include "metadata/user_meta_data.h"
-#include "metadata/matrix_meta_data.h"
+#include "utils/constant.h"
+#include "gtest/gtest.h"
+#include <nlohmann/json.hpp>
 using namespace testing::ext;
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
@@ -57,12 +57,12 @@ public:
 };
 
 /**
-* @tc.name: AppIDMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: AppIDMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, AppIDMetaData, TestSize.Level1)
 {
     AppIDMetaData appIdMetaData("appid", "ohos.test.demo");
@@ -92,12 +92,12 @@ HWTEST_F(ServiceMetaDataTest, AppIDMetaData, TestSize.Level1)
 }
 
 /**
-* @tc.name: corruptedMeta
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: corruptedMeta
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, corruptedMeta, TestSize.Level1)
 {
     CorruptedMetaData corruptedMeta("appid", "ohos.test.demo", "test_store");
@@ -130,18 +130,18 @@ HWTEST_F(ServiceMetaDataTest, corruptedMeta, TestSize.Level1)
 }
 
 /**
-* @tc.name: SecretKeyMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: SecretKeyMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData001, TestSize.Level1)
 {
     SecretKeyMetaData secretKeyMeta;
     SecretKeyMetaData secretKeyMetaData;
     secretKeyMeta.storeType = 1;
-    std::initializer_list<std::string> fields = {"time", "skey"};
+    std::initializer_list<std::string> fields = { "time", "skey" };
 
     std::string key = secretKeyMeta.GetKey(fields);
     EXPECT_EQ(key, "SecretKey###time###skey###SINGLE_KEY");
@@ -170,18 +170,18 @@ HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData001, TestSize.Level1)
 }
 
 /**
-* @tc.name: SecretKeyMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: SecretKeyMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData002, TestSize.Level1)
 {
     SecretKeyMetaData secretKeyMeta;
     SecretKeyMetaData secretKeyMetaData;
     secretKeyMeta.storeType = 1;
-    std::initializer_list<std::string> fields = {"time", "skey"};
+    std::initializer_list<std::string> fields = { "time", "skey" };
 
     std::string prefix = secretKeyMeta.GetPrefix(fields);
     EXPECT_EQ(prefix, "SecretKey###time###skey###");
@@ -210,12 +210,12 @@ HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData002, TestSize.Level1)
 }
 
 /**
-* @tc.name: StoreMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
@@ -225,7 +225,7 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
     EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store");
     std::string keylocal = storeMetaData.GetKeyLocal();
     EXPECT_EQ(keylocal, "KvStoreMetaDataLocal######100###default######test_store");
-    std::initializer_list<std::string> fields = {"100", "appid", "test_store"};
+    std::initializer_list<std::string> fields = { "100", "appid", "test_store" };
     std::string keyfields = storeMetaData.GetKey(fields);
     EXPECT_EQ(keyfields, "KvStoreMetaData###100###appid###test_store");
 
@@ -253,12 +253,12 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
 }
 
 /**
-* @tc.name: StoreMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StoreMetaData002, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
@@ -291,12 +291,12 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData002, TestSize.Level1)
 }
 
 /**
-* @tc.name: StoreMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StoreMetaData003, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
@@ -306,7 +306,7 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData003, TestSize.Level1)
     EXPECT_EQ(storealias, "test_store");
     std::string strategykey = storeMetaData.GetStrategyKey();
     EXPECT_EQ(strategykey, "StrategyMetaData######100###default######test_store");
-    std::initializer_list<std::string> fields = {"100", "appid", "test_store"};
+    std::initializer_list<std::string> fields = { "100", "appid", "test_store" };
     std::string prefix = storeMetaData.GetPrefix(fields);
     EXPECT_EQ(prefix, "KvStoreMetaData###100###appid###test_store###");
 
@@ -334,12 +334,12 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData003, TestSize.Level1)
 }
 
 /**
-* @tc.name: StoreMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StoreMetaData004, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
@@ -374,12 +374,12 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData004, TestSize.Level1)
 }
 
 /**
-* @tc.name: StoreMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StoreMetaData005, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
@@ -418,12 +418,12 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData005, TestSize.Level1)
 }
 
 /**
-* @tc.name: StoreMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StoreMetaData006, TestSize.Level1)
 {
     StoreMetaData storemetaData1("100", "appid", "test_store");
@@ -474,12 +474,12 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData006, TestSize.Level1)
 }
 
 /**
-* @tc.name: StoreMetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StoreMetaData007, TestSize.Level1)
 {
     StoreMetaData storemetaData1("100", "appid", "test_store");
@@ -530,12 +530,12 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData007, TestSize.Level1)
 }
 
 /**
-* @tc.name: GetStoreInfo
-* @tc.desc: test StoreMetaData GetStoreInfo function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: GetStoreInfo
+ * @tc.desc: test StoreMetaData GetStoreInfo function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, GetStoreInfo, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
@@ -549,18 +549,18 @@ HWTEST_F(ServiceMetaDataTest, GetStoreInfo, TestSize.Level1)
 }
 
 /**
-* @tc.name: StrategyMeta001
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StrategyMeta001
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StrategyMeta001, TestSize.Level1)
 {
     auto deviceId = "deviceId";
     StrategyMeta strategyMeta(deviceId, "100", "ohos.test.demo", "test_store");
-    std::vector<std::string> local = {"local1"};
-    std::vector<std::string> remote = {"remote1"};
+    std::vector<std::string> local = { "local1" };
+    std::vector<std::string> remote = { "remote1" };
     strategyMeta.capabilityRange.localLabel = local;
     strategyMeta.capabilityRange.remoteLabel = remote;
     strategyMeta.capabilityEnabled = true;
@@ -596,18 +596,18 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta001, TestSize.Level1)
 }
 
 /**
-* @tc.name: StrategyMeta
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: StrategyMeta
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, StrategyMeta002, TestSize.Level1)
 {
     auto deviceId = "deviceId";
     StrategyMeta strategyMeta(deviceId, "100", "ohos.test.demo", "test_store");
-    std::vector<std::string> local = {"local1"};
-    std::vector<std::string> remote = {"remote1"};
+    std::vector<std::string> local = { "local1" };
+    std::vector<std::string> remote = { "remote1" };
     strategyMeta.capabilityRange.localLabel = local;
     strategyMeta.capabilityRange.remoteLabel = remote;
     strategyMeta.capabilityEnabled = true;
@@ -637,12 +637,12 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta002, TestSize.Level1)
 }
 
 /**
-* @tc.name: MetaData
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: MetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
@@ -652,7 +652,7 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
     metaData.storeMetaData = storeMetaData;
     metaData.secretKeyMetaData = secretKeyMetaData;
     metaData.storeType = 1;
-    std::initializer_list<std::string> fields = {"time", "skey"};
+    std::initializer_list<std::string> fields = { "time", "skey" };
     std::string key = metaData.storeMetaData.GetKey();
     std::string secretkey = metaData.secretKeyMetaData.GetKey(fields);
 
@@ -676,12 +676,12 @@ HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
 }
 
 /**
-* @tc.name: CapMetaData
-* @tc.desc: test CapMetaData function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: CapMetaData
+ * @tc.desc: test CapMetaData function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, CapMetaData, TestSize.Level1)
 {
     CapMetaData capMetaData;
@@ -702,12 +702,12 @@ HWTEST_F(ServiceMetaDataTest, CapMetaData, TestSize.Level1)
 }
 
 /**
-* @tc.name: UserMetaData
-* @tc.desc: test UserMetaData function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: UserMetaData
+ * @tc.desc: test UserMetaData function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
 {
     UserMetaData userMetaData;
@@ -744,17 +744,17 @@ HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
 }
 
 /**
-* @tc.name: CapabilityRange
-* @tc.desc: test CapabilityRange function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
+ * @tc.name: CapabilityRange
+ * @tc.desc: test CapabilityRange function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: SQL
+ */
 HWTEST_F(ServiceMetaDataTest, CapabilityRange, TestSize.Level1)
 {
     CapabilityRange capabilityRange;
-    std::vector<std::string> local = {"local1"};
-    std::vector<std::string> remote = {"remote1"};
+    std::vector<std::string> local = { "local1" };
+    std::vector<std::string> remote = { "remote1" };
     capabilityRange.localLabel = local;
     capabilityRange.remoteLabel = remote;
     Serializable::json node1;
@@ -769,12 +769,12 @@ HWTEST_F(ServiceMetaDataTest, CapabilityRange, TestSize.Level1)
 }
 
 /**
-* @tc.name: MatrixMetaData
-* @tc.desc: test MatrixMetaData operator!= function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: nhj
-*/
+ * @tc.name: MatrixMetaData
+ * @tc.desc: test MatrixMetaData operator!= function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: nhj
+ */
 HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
 {
     MatrixMetaData matrixMetaData1;
