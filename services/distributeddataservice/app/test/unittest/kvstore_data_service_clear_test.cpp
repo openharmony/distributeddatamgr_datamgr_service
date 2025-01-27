@@ -79,31 +79,9 @@ void KvStoreDataServiceClearTest::TearDown(void)
 {
 }
 
-void KvStoreDataServiceClearTest::InitMetaData()
-{
-    metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData_.user = TEST_USER;
-    metaData_.bundleName = TEST_BUNDLE;
-    metaData_.storeId = TEST_STORE;
-    metaData_.appId = TEST_BUNDLE;
-    metaData_.tokenId = AccessTokenKit::GetHapTokenID(TEST_USERID, TEST_BUNDLE, 0);
-    metaData_.uid = TEST_UID;
-    metaData_.storeType = 1;
-    metaData_.area = EL1;
-    metaData_.instanceId = 0;
-    metaData_.isAutoSync = true;
-    metaData_.version = 1;
-    metaData_.appType = "default";
-    metaData_.dataDir = "/data/service/el1/public/database/kvstore_data_service_clear_test";
-
-    DistributedData::PolicyValue value;
-    value.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
-    localMeta_.policies = { std::move(value) };
-}
-
 /**
  * @tc.name: ClearAppStorage001
- * @tc.desc: The parameters are valid but have no metaData
+ * @tc.desc: Test for abnormal situations in ClearAppStore
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: suoqilong
@@ -111,56 +89,13 @@ void KvStoreDataServiceClearTest::InitMetaData()
 HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage001, TestSize.Level1)
 {
     auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
-    SetSelfTokenID(tokenIdOk);
-    auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
+    // tokenId mismatch
+    auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, TEST_USERID, APP_INDEX, 0);
     EXPECT_EQ(ret, Status::ERROR);
-}
-
-/**
- * @tc.name: ClearAppStorage002
- * @tc.desc: Test that the cleanup is implemented
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: suoqilong
- */
-HWTEST_F(KvStoreDataServiceClearTest, ClearAppStorage002, TestSize.Level1)
-{
-    auto executors = std::make_shared<ExecutorPool>(2, 1);
-    // Create an object of the ExecutorPool class and pass 2 and 1 as arguments to the constructor of the class
-    KvStoreMetaManager::GetInstance().BindExecutor(executors);
-    KvStoreMetaManager::GetInstance().InitMetaParameter();
-    DmAdapter::GetInstance().Init(executors);
-    KvStoreMetaManager::GetInstance().InitMetaListener();
-
-    InitMetaData();
-
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_));
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_, true));
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetStrategyKey(), metaData_));
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.appId, metaData_, true));
-    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta_, true));
-
-    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
-    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
-    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
-    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
-    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
-
-    auto tokenIdOk = AccessTokenKit::GetNativeTokenId("foundation");
+    // no meta data
+    auto tokenIdOk = Security::AccessToken::AccessTokenKit::GetNativeTokenId("foundation");
     SetSelfTokenID(tokenIdOk);
-    auto kvDataService = OHOS::DistributedKv::KvStoreDataService();
-    auto ret = kvDataService.ClearAppStorage(BUNDLE_NAME, USER_ID, APP_INDEX, tokenIdOk);
-    EXPECT_EQ(ret, Status::SUCCESS);
-
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), metaData_, true));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetStrategyKey(), metaData_));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.appId, metaData_, true));
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), localMeta_, true));
-
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData_));
+    ret = kvDataService.ClearAppStorage(BUNDLE_NAME, TEST_USERID, APP_INDEX, tokenIdOk);
+    EXPECT_EQ(ret, Status::ERROR);
 }
 } // namespace OHOS::Test

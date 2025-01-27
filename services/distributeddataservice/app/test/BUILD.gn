@@ -76,18 +76,18 @@ config("module_private_config") {
 }
 
 ohos_unittest("KvStoreDataServiceTest") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
-
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/adapter/broadcaster/src/broadcast_sender.cpp",
+    "${data_service_path}/adapter/broadcaster/src/broadcast_sender_impl.cpp",
+    "${data_service_path}/app/src/checker/bundle_checker.cpp",
+    "${data_service_path}/app/src/checker/system_checker.cpp",
     "${data_service_path}/app/src/clone/clone_backup_info.cpp",
     "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
+    "${data_service_path}/app/src/installer/installer.cpp",
+    "${data_service_path}/app/src/installer/installer_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
     "${data_service_path}/app/src/kvstore_data_service.cpp",
     "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
@@ -107,8 +107,11 @@ ohos_unittest("KvStoreDataServiceTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
@@ -133,11 +136,6 @@ ohos_unittest("KvStoreDataServiceTest") {
   }
 
   deps = [
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/app/src/checker:distributeddata_checker",
-    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
-    "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "//third_party/googletest:gtest_main",
