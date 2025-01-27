@@ -60,11 +60,12 @@ private:
 
 void GrantPermissionNative()
 {
-    const char **perms = new const char *[4];
-    perms[0] = "ohos.permission.MANAGE_LOCAL_ACCOUNTS";
-    perms[1] = "ohos.permission.DISTRIBUTED_DATASYNC";
-    perms[2] = "ohos.permission.GET_LOCAL_ACCOUNTS"; // The number 2 is an array subscript
-    perms[3] = "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS"; // The number 3 is an array subscript
+    const char *perms[4] = {
+        "ohos.permission.MANAGE_LOCAL_ACCOUNTS",
+        "ohos.permission.DISTRIBUTED_DATASYNC",
+        "ohos.permission.GET_LOCAL_ACCOUNTS",
+        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS"
+    };
     TokenInfoParams infoInstance = {
         .dcapsNum = 0,
         .permsNum = 4,
