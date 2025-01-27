@@ -79,7 +79,6 @@ void GrantPermissionNative()
     uint64_t tokenId = GetAccessTokenId(&infoInstance);
     SetSelfTokenID(tokenId);
     AccessTokenKit::ReloadNativeTokenInfo();
-    delete []perms;
 }
 
 class AccountDelegateTest : public testing::Test {

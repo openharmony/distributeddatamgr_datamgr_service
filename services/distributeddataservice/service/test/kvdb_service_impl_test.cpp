@@ -158,7 +158,7 @@ void KvdbServiceImplTest::TearDown(void)
 void SyncEndCallback(const std::map<std::string, DistributedDB::DBStatus> &statusMap)
 {
     for (const auto &pair : statusMap) {
-        ZLOGI("Key: %{public}s, Status: %{public}d", pair.first, pair.second);
+        ZLOGI("Key: %{public}s, Status: %{public}d", pair.first.c_str(), pair.second);
     }
 }
 

@@ -26,9 +26,10 @@ class BAccessTokenKit {
 public:
     virtual ATokenTypeEnum GetTokenTypeFlag(AccessTokenID) = 0;
     virtual int GetHapTokenInfo(AccessTokenID, HapTokenInfo&) = 0;
-    static inline std::shared_ptr<BAccessTokenKit> accessTokenkit = nullptr;
     BAccessTokenKit() = default;
     virtual ~BAccessTokenKit() = default;
+private:
+    static inline std::shared_ptr<BAccessTokenKit> accessTokenkit = nullptr;
 };
 
 class AccessTokenKitMock : public BAccessTokenKit {
