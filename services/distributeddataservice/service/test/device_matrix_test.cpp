@@ -417,7 +417,7 @@ HWTEST_F(DeviceMatrixTest, OnChanged002, TestSize.Level0)
 }
 
 /**
- * @tc.name: OnExchangedd001
+ * @tc.name: OnExchanged001
  * @tc.desc: Test the DeviceMatrix::OnExchanged method exception scenario.
  * @tc.type: FUNC
  * @tc.require:
