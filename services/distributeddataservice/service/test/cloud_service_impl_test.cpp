@@ -503,7 +503,7 @@ void ComponentConfigTest::TearDown() { }
  * @tc.desc: test CapabilityRange Marshal function
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: suoqilong
  */
 HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
 {

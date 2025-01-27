@@ -43,7 +43,8 @@ public:
  * @tc.name: GetInstance001
  * @tc.desc: Returns a non-null instance correctly.
  * @tc.type: FUNC
- * @tc.require:SQL
+ * @tc.require:
+ * @tc.author: suoqilong
  */
 HWTEST_F(BroadcastSenderTest, GetInstance001, TestSize.Level0)
 {
@@ -57,7 +58,8 @@ HWTEST_F(BroadcastSenderTest, GetInstance001, TestSize.Level0)
  * @tc.name: SendEvent
  * @tc.desc: Verify the SendEvent method for BroadcastSenderImpl.
  * @tc.type: FUNC
- * @tc.require:SQL
+ * @tc.require:
+ * @tc.author: suoqilong
  */
 HWTEST_F(BroadcastSenderImplTest, SendEvent, TestSize.Level0)
 {
