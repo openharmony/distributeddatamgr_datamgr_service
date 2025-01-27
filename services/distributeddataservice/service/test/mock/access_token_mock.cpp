@@ -26,6 +26,11 @@ int AccessTokenKit::GetHapTokenInfo(AccessTokenID tokenID, HapTokenInfo& hapToke
 {
     return BAccessTokenKit::accessTokenkit->GetHapTokenInfo(tokenID, hapTokenInfoRes);
 }
+
+int AccessTokenKit::VerifyAccessToken(AccessTokenID tokenID, const std::string& permissionName)
+{
+    return BAccessTokenKit::accessTokenkit->VerifyAccessToken(tokenID, permissionName);
+}
 }
 }
 }

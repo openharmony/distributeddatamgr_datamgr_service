@@ -479,3 +479,60 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx013, TestSize.Level0)
     }
     FakeHivew::Clear();
 }
+
+/**
+  * @tc.name: Dfx014
+  * @tc.desc: test msg.errorType equals to Fault::DF_DB_CORRUPTED.
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: caozhijun
+  */
+HWTEST_F(DistributeddataDfxUTTest, Dfx014, TestSize.Level0)
+{
+    FakeHivew::Clear();
+    auto dbFault = Reporter::GetInstance()->DatabaseFault();
+    ASSERT_NE(nullptr, dbFault);
+    struct DBFaultMsg msg {.appId = "mYApp", .storeId = "mYDatabase",
+        .moduleName = "dataBase", .errorType = Fault::DF_DB_CORRUPTED};
+    auto repStatus = dbFault->Report(msg);
+    EXPECT_TRUE(repStatus == ReportStatus::SUCCESS);
+    FakeHivew::Clear();
+}
+
+/**
+  * @tc.name: Dfx015
+  * @tc.desc: test msg.errorType equals to Fault::DF_DB_REKEY_FAILED.
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: caozhijun
+  */
+HWTEST_F(DistributeddataDfxUTTest, Dfx015, TestSize.Level0)
+{
+    FakeHivew::Clear();
+    auto dbFault = Reporter::GetInstance()->DatabaseFault();
+    ASSERT_NE(nullptr, dbFault);
+    struct DBFaultMsg msg {.appId = "MyApp", .storeId = "mYDatabase",
+        .moduleName = "DataBase", .errorType = Fault::DF_DB_REKEY_FAILED};
+    auto repStatus = dbFault->Report(msg);
+    EXPECT_TRUE(repStatus == ReportStatus::SUCCESS);
+    FakeHivew::Clear();
+}
+
+/**
+  * @tc.name: Dfx016
+  * @tc.desc: test other error scenario.
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: caozhijun
+  */
+HWTEST_F(DistributeddataDfxUTTest, Dfx016, TestSize.Level0)
+{
+    FakeHivew::Clear();
+    auto dbFault = Reporter::GetInstance()->DatabaseFault();
+    ASSERT_NE(nullptr, dbFault);
+    struct DBFaultMsg msg {.appId = "MyApp", .storeId = "mYDatabase",
+        .moduleName = "DataBase", .errorType = Fault::SF_SERVICE_PUBLISH};
+    auto repStatus = dbFault->Report(msg);
+    EXPECT_TRUE(repStatus == ReportStatus::ERROR);
+    FakeHivew::Clear();
+}
