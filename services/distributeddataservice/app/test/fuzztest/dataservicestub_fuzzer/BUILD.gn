@@ -33,7 +33,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/app/src/backup_rule/include",
     "${data_service_path}/app/src/checker",
-    "${data_service_path}/app/src/flowctrl_manager",
     "${data_service_path}/app/src/security",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/app/src/installer",
@@ -45,7 +44,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/installer",
-    "${data_service_path}/adapter/include/broadcaster",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/adapter/include",
@@ -87,10 +85,8 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
-    "${data_service_path}/app/src/flowctrl_manager:distributeddata_flowctrl",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
