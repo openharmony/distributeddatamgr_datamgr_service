@@ -423,8 +423,7 @@ std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
     auto splitedToken = Constant::Split(inData, ",");
     outData.reserve(splitedToken.size());
     for (auto &token : splitedToken) {
-        uint8_t num = atoi(token.c_str());
-        outData.push_back(num);
+        outData.push_back(static_cast<uint8_t>(atoi(token.c_str())));
     }
     return outData;
 }
