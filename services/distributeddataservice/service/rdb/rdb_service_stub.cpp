@@ -218,7 +218,12 @@ int32_t RdbServiceStub::OnRemoteDoRemoteQuery(MessageParcel& data, MessageParcel
     }
 
     auto [status, resultSet] = RemoteQuery(param, device, sql, selectionArgs);
-    sptr<RdbResultSetStub> object = new RdbResultSetStub(resultSet);
+    sptr<RdbResultSetStub> object = new(std::nothrow) RdbResultSetStub(resultSet);
+    if (object == nullptr) {
+        ZLOGE("Failed to create RdbResultSetStub object.bundleName:%{public}s storeName:%{public}s",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return ERR_NULL_OBJECT;
+    }
     if (!ITypesUtil::Marshal(reply, status, object->AsObject())) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -332,7 +337,12 @@ int32_t RdbServiceStub::OnRemoteQuerySharingResource(MessageParcel& data, Messag
     }
 
     auto [status, resultSet] = QuerySharingResource(param, predicates, columns);
-    sptr<RdbResultSetStub> object = new RdbResultSetStub(resultSet);
+    sptr<RdbResultSetStub> object = new(std::nothrow) RdbResultSetStub(resultSet);
+    if (object == nullptr) {
+        ZLOGE("Failed to create RdbResultSetStub object.bundleName:%{public}s storeName:%{public}s",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return ERR_NULL_OBJECT;
+    }
     if (!ITypesUtil::Marshal(reply, status, object->AsObject())) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
