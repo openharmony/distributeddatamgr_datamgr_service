@@ -250,8 +250,8 @@ int32_t ObjectStoreManager::Retrieve(
     ObjectRecord results{};
     int32_t status = RetrieveFromStore(bundleName, sessionId, results);
     if (status != OBJECT_SUCCESS) {
-        ZLOGI("Retrieve from store failed, status: %{public}d", status);
-        Close();
+        ZLOGI("Retrieve from store failed, status: %{public}d, close after one minute.", status);
+        CloseAfterMinute();
         proxy->Completed(ObjectRecord(), false);
         return status;
     }
