@@ -461,7 +461,6 @@ bool WriteBackupInfo(const std::string &content)
 
     if (!fp) {
         ZLOGE("Secret key backup file open failed");
-        (void)fclose(fp);
         return false;
     }
     size_t ret = fwrite(content.c_str(), 1, content.length(), fp);
