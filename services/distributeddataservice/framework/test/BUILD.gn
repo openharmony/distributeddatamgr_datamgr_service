@@ -347,7 +347,6 @@ ohos_unittest("ServiceMetaDataTest") {
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
-    "${data_service_path}/adapter/broadcaster:distributeddata_broadcaster",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
