@@ -86,6 +86,7 @@ void HiViewAdapter::InvokeData()
     int64_t maxCostTimes[count];
     int64_t totalCostTimes[count];
     char* funcCounts[count];
+    std::vector<std::string> funcCountsHolder(count);
     for (uint32_t i = 0; i < count; i++) {
         CallerTotalInfo &callerTotalInfo = callerTotalInfos[i];
         callerUids[i] = callerTotalInfo.callerUid;
@@ -99,7 +100,8 @@ void HiViewAdapter::InvokeData()
             funcCount += it.first + ":" + std::to_string(it.second) + ",";
         }
         funcCount = funcCount.substr(0, funcCount.size() - 1) + "}";
-        funcCounts[i] = const_cast<char *>(funcCount.c_str());
+        funcCountsHolder[i] = std::move(funcCount);
+        funcCounts[i] = const_cast<char *>(funcCountsHolder[i].c_str());
     }
 
     HiSysEventParam callerUid = { .name = { *COLLIE_UID }, .t = HISYSEVENT_INT64_ARRAY,
