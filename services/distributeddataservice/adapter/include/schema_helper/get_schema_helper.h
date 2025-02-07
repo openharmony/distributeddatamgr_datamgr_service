@@ -19,7 +19,6 @@
 #include <string>
 
 #include "iremote_object.h"
-#include "visibility.h"
 
 namespace OHOS {
 namespace AppExecFwk {
@@ -36,8 +35,8 @@ struct AppInfo {
 
 class GetSchemaHelper final : public std::enable_shared_from_this<GetSchemaHelper> {
 public:
-    API_EXPORT static GetSchemaHelper &GetInstance();
-    API_EXPORT std::vector<std::string> GetSchemaFromHap(const std::string &schemaPath, const AppInfo &info);
+    static GetSchemaHelper &GetInstance();
+    std::vector<std::string> GetSchemaFromHap(const std::string &schemaPath, const AppInfo &info);
 
 private:
     GetSchemaHelper() = default;

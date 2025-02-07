@@ -28,8 +28,6 @@ ohos_source_set("distributeddata_schema_helper") {
 
   include_dirs = [
     "../include/schema_helper",
-    "../include/utils",
-    "${data_service_path}/framework/include",
   ]
 
   external_deps = [
