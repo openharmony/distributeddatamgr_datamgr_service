@@ -60,7 +60,6 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     std::string account = "";
     int32_t authType = 0;
     bool asyncDownloadAsset = false;
-    bool isClearWaterMark = false;
 
     enum StoreType {
         STORE_KV_BEGIN = 0,

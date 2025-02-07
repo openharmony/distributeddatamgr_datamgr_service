@@ -14,7 +14,7 @@
 */
 
 #define LOG_TAG "SchemaHelper"
-#include "schema_helper/get_schema_helper.h"
+#include "get_schema_helper.h"
 
 #include "bundle_mgr_interface.h"
 #include "if_system_ability_manager.h"

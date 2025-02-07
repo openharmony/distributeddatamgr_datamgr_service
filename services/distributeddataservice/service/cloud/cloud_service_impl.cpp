@@ -27,6 +27,7 @@
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
 #include "cloud/sharing_center.h"
+#include "cloud/cloud_water_mark.h"
 #include "cloud_data_translate.h"
 #include "cloud_value_util.h"
 #include "device_manager_adapter.h"
@@ -41,7 +42,7 @@
 #include "reporter.h"
 #include "relational_store_manager.h"
 #include "runtime_config.h"
-#include "schema_helper/get_schema_helper.h"
+#include "get_schema_helper.h"
 #include "store/auto_cache.h"
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
@@ -1085,18 +1086,17 @@ void CloudServiceImpl::UpdateClearWaterMark(const HapInfo &hapInfo, std::vector<
         ZLOGE("databases is empty, bundleName:%{public}s", hapInfo.bundleName.c_str());
         return;
     }
-
-    StoreMetaData meta;
-    meta.bundleName = hapInfo.bundleName;
-    meta.user = std::to_string(hapInfo.user);
-    meta.instanceId = hapInfo.instIndex;
-    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    CloudWaterMark metaData;
+    metaData.bundleName = hapInfo.bundleName;
+    metaData.userId = hapInfo.user;
+    metaData.index = hapInfo.instIndex;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     for (const auto &database : databases) {
-        meta.storeId = database.name;
-        if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            meta.isClearWaterMark = true;
-            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-            ZLOGI("clear watermark, storeId:%{public}s", meta.GetStoreAlias().c_str());
+        metaData.storeId = database.name;
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
+            metaData.isClearWaterMark = true;
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+            ZLOGI("clear watermark, storeId:%{public}s", Anonymous::Change(metaData.storeId).c_str());
         }
     }
 }
@@ -1157,15 +1157,14 @@ void CloudServiceImpl::DoSync(const Event &event)
 {
     auto &cloudEvent = static_cast<const CloudEvent &>(event);
     auto &storeInfo = cloudEvent.GetStoreInfo();
-    StoreMetaData meta(storeInfo);
-    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-        ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-            meta.GetStoreAlias().c_str());
+    CloudWaterMark metaData(storeInfo);
+    if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
+        ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", metaData.bundleName.c_str(),
+            Anonymous::Change(metaData.storeId).c_str());
         return;
     }
-    meta.isClearWaterMark = false;
-    MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+    metaData.isClearWaterMark = false;
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
     SyncManager::SyncInfo info(storeInfo.user, storeInfo.bundleName);
     syncManager_.DoCloudSync(info);
     return;

@@ -12,8 +12,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_GET_SCHEMA_HELPER_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_GET_SCHEMA_HELPER_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_GET_SCHEMA_HELPER_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_GET_SCHEMA_HELPER_H
 
 #include <memory>
 #include <string>
@@ -65,4 +65,4 @@ private:
     sptr<GetSchemaHelper::ServiceDeathRecipient> deathRecipient_;
 };
 } // namespace OHOS::DistributedData
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_GET_SCHEMA_HELPER_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_GET_SCHEMA_HELPER_H

@@ -24,6 +24,7 @@
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_store_types.h"
+#include "cloud/cloud_water_mark.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
@@ -929,16 +930,15 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
         return GeneralError::E_ERROR;
     }
-    StoreMetaData storeMeta(storeInfo_);
-    storeMeta.deviceId = storeInfo_.deviceId;
-    if (MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKey(), storeMeta, true) && storeMeta.isClearWaterMark) {
+    CloudWaterMark metaData(storeInfo_);
+    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
         DistributedDB::ClearMetaDataOption option{ .mode = DistributedDB::ClearMetaDataMode::CLOUD_WATERMARK };
         auto ret = delegate_->ClearMetaData(option);
         if (ret != DBStatus::OK) {
             ZLOGE("clear watermark failed, err:%{public}d", ret);
             return GeneralError::E_ERROR;
         }
-        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA_DO_SYNC, storeMeta.GetStoreInfo());
+        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA_DO_SYNC, storeInfo_);
         EventCenter::GetInstance().PostEvent(std::move(event));
         ZLOGI("clear watermark success, bundleName:%{public}s, storeName:%{public}s", storeInfo_.bundleName.c_str(),
             Anonymous::Change(storeInfo_.storeName).c_str());

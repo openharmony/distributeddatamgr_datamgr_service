@@ -53,6 +53,7 @@ config("module_private_config") {
     "${relational_store_path}/interfaces/inner_api/common_type/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/dfx",
+    "${data_service_path}/adapter/include/schema_helper",
   ]
   cflags = [ "-Werror" ]
   defines = [
@@ -141,6 +142,7 @@ ohos_unittest("CloudDataTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/service/network:distributeddata_network",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
@@ -233,6 +235,7 @@ ohos_unittest("CloudServiceImplTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/service/network:distributeddata_network",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
@@ -1270,6 +1273,8 @@ group("unittest") {
       ":CloudDataTest",
       ":CloudServiceImplTest",
       ":CloudTest",
+      "ohos_test:copy_ohos_test",
+      "testCloud:testCloud",
     ]
   }
 
@@ -1318,8 +1323,6 @@ group("unittest") {
     ":MetaDataTest",
     ":PermissionValidatorTest",
     ":ValueProxyServiceTest",
-    "testCloud:testCloud",
-    "ohos_test:copy_ohos_test",
   ]
 }
 ###############################################################################

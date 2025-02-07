@@ -165,14 +165,7 @@ std::pair<int32_t, CloudInfo> CloudServerMock::GetServerInfo(int32_t userId, boo
     appInfo.version = 1;
     appInfo.cloudSwitch = true;
 
-    CloudInfo::AppInfo exampleAppInfo;
-    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.version = 1;
-    exampleAppInfo.cloudSwitch = true;
-
     cloudInfo.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
-    cloudInfo.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
     return { E_OK, cloudInfo };
 }
 
@@ -252,14 +245,7 @@ void CloudDataTest::InitCloudInfo()
     appInfo.version = 1;
     appInfo.cloudSwitch = true;
 
-    CloudInfo::AppInfo exampleAppInfo;
-    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.version = 1;
-    exampleAppInfo.cloudSwitch = true;
-
     cloudInfo_.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
-    cloudInfo_.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
 }
 
 void CloudDataTest::SetUpTestCase(void)
@@ -2258,6 +2244,15 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level0)
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudInfo::AppInfo exampleAppInfo;
+    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.version = 1;
+    exampleAppInfo.cloudSwitch = true;
+    CloudInfo cloudInfo;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
+    cloudInfo.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
     CloudData::CloudServiceImpl::HapInfo info = {
         .instIndex = 0, .bundleName = COM_EXAMPLE_TEST_CLOUD, .user = cloudInfo_.user
     };

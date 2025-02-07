@@ -64,6 +64,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/cloud_server.cpp",
     "cloud/cloud_share_event.cpp",
     "cloud/cloud_sync_finished_event.cpp",
+    "cloud/cloud_water_mark.cpp",
     "cloud/make_query_event.cpp",
     "cloud/schema_meta.cpp",
     "cloud/sharing_center.cpp",
@@ -109,9 +110,6 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/ref_count.cpp",
   ]
 
-  if (datamgr_service_cloud) {
-    sources += [ "schema_helper/get_schema_helper.cpp" ]
-  }
   cflags = [
     "-Werror",
     "-Wno-multichar",
@@ -132,15 +130,6 @@ ohos_shared_library("distributeddatasvcfwk") {
     "json:nlohmann_json_static",
     "openssl:libcrypto_shared",
   ]
-  if (datamgr_service_cloud) {
-    external_deps += [
-      "bundle_framework:appexecfwk_base",
-      "bundle_framework:appexecfwk_core",
-      "ipc:ipc_single",
-      "resource_management:global_resmgr",
-      "samgr:samgr_proxy",
-    ]
-  }
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
