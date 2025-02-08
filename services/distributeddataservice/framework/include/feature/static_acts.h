@@ -17,16 +17,25 @@
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORK_STATIC_ACTS_H
 #include <cstdio>
 #include <string>
+
 #include "error/general_error.h"
+#include "executor_pool.h"
 #include "visibility.h"
+
 namespace OHOS::DistributedData {
 class API_EXPORT StaticActs {
 public:
+    using Task = ExecutorPool::Task;
     virtual ~StaticActs();
     virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
     virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
     virtual int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index);
     virtual int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId);
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+    void Execute(Task task);
+
+private:
+    std::shared_ptr<ExecutorPool> executors_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_FRAMEWORK_STATIC_ACTS_H

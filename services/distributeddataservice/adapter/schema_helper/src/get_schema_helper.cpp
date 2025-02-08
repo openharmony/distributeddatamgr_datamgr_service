@@ -89,7 +89,7 @@ std::vector<std::string> GetSchemaHelper::GetSchemaFromHap(const std::string &sc
             continue;
         }
         std::string schema(fileContent.get(), fileContent.get() + length);
-        schemas.emplace_back(schema);
+        schemas.emplace_back(std::move(schema));
     }
     return schemas;
 }

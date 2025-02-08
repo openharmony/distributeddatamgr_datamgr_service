@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_WATER_MARK_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_WATER_MARK_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MARK_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MARK_H
 #include "serializable/serializable.h"
 #include "store/store_info.h"
 namespace OHOS::DistributedData {
-class API_EXPORT CloudWaterMark final : public Serializable {
+class API_EXPORT CloudMark final : public Serializable {
 public:
     bool isClearWaterMark = false;
     std::string bundleName;
@@ -26,8 +26,8 @@ public:
     std::string storeId;
     int32_t userId = 0;
     int32_t index = 0;
-    CloudWaterMark() = default;
-    CloudWaterMark(const StoreInfo &info)
+    CloudMark() = default;
+    CloudMark(const StoreInfo &info)
         : bundleName(info.bundleName), deviceId(info.deviceId), storeId(info.storeName), userId(info.user),
           index(info.instanceId)
     {
@@ -39,4 +39,4 @@ public:
 };
 
 } // namespace OHOS::DistributedData
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_WATER_MARK_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MARK_H

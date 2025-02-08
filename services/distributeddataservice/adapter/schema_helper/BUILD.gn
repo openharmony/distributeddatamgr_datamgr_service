@@ -13,6 +13,11 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
+config("module_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [ "../include/schema_helper" ]
+}
+
 ohos_source_set("distributeddata_schema_helper") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -26,10 +31,9 @@ ohos_source_set("distributeddata_schema_helper") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  include_dirs = [
-    "../include/schema_helper",
-  ]
+  include_dirs = [ "../include/schema_helper" ]
 
+  public_configs = [ ":module_public_config" ]
   external_deps = [
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",

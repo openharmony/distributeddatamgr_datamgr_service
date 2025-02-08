@@ -13,30 +13,30 @@
  * limitations under the License.
  */
 
-#include "cloud/cloud_water_mark.h"
+#include "cloud/cloud_mark.h"
 
 namespace OHOS::DistributedData {
 
-static constexpr const char *KEY_PREFIX = "CloudWaterMark";
+static constexpr const char *KEY_PREFIX = "CloudMark";
 static constexpr const char *KEY_SEPARATOR = "###";
-bool CloudWaterMark::Marshal(Serializable::json &node) const
+bool CloudMark::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(isClearWaterMark)], isClearWaterMark);
     return true;
 }
 
-bool CloudWaterMark::Unmarshal(const Serializable::json &node)
+bool CloudMark::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(isClearWaterMark), isClearWaterMark);
     return true;
 }
 
-std::string CloudWaterMark::GetKey()
+std::string CloudMark::GetKey()
 {
     return GetKey({ deviceId, std::to_string(userId), "default", bundleName, storeId, std::to_string(index) });
 }
 
-std::string CloudWaterMark::GetKey(const std::initializer_list<std::string> &fields)
+std::string CloudMark::GetKey(const std::initializer_list<std::string> &fields)
 {
     std::string prefix = KEY_PREFIX;
     for (const auto &field : fields) {

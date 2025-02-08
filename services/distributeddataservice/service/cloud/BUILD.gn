@@ -52,7 +52,6 @@ ohos_source_set("distributeddata_cloud") {
     "${data_service_path}/adapter/include/communicator",
     "sync_strategies",
     "${data_service_path}/adapter/include/dfx",
-    "${data_service_path}/adapter/include/schema_helper",
   ]
   configs = [ ":cloud_public_config" ]
   cflags = [

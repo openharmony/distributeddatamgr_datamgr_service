@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_INFO_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_INFO_H
+#include <optional>
 #include "metadata/store_meta_data.h"
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {
@@ -52,6 +53,7 @@ public:
     bool IsOn(const std::string &bundleName, int32_t instanceId = 0) const;
     bool IsAllSwitchOff() const;
     static std::string GetPrefix(const std::initializer_list<std::string> &field);
+    std::optional<AppInfo> GetAppInfo(const std::string &bundleName) const;
 
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

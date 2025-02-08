@@ -17,5 +17,6 @@ ohos_copy("copy_ohos_test") {
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
   sources = [ "./ohos_test.xml" ]
-  outputs = [ "$root_out_dir/tests/unittest/datamgr_service/resource/ohos_test.xml" ]
+  outputs =
+      [ "$root_out_dir/tests/unittest/datamgr_service/resource/ohos_test.xml" ]
 }
