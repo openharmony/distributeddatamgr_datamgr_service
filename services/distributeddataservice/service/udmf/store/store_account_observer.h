@@ -19,7 +19,7 @@
 namespace OHOS {
 namespace UDMF {
 class RuntimeStoreAccountObserver : public DistributedData::AccountDelegate::Observer {
-    void OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo) override;
+    void OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo, int32_t timeout) override;
     // must specify unique name for observer
     std::string Name() override
     {

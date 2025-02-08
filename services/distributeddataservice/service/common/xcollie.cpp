@@ -15,10 +15,17 @@
 #include "xcollie.h"
 
 namespace OHOS::DistributedData {
-XCollie::XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds,
-    std::function<void(void *)> func, void *arg)
+XCollie::XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds, std::function<void(void *)> func,
+    void *arg)
 {
-    id_ = HiviewDFX::XCollie::GetInstance().SetTimer(tag, timeoutSeconds, func, arg, flag);
+    uint32_t xCollieFlag = 0;
+    if ((flag & XCOLLIE_LOG) == XCOLLIE_LOG) {
+        xCollieFlag |= HiviewDFX::XCOLLIE_FLAG_LOG;
+    }
+    if ((flag & XCOLLIE_RECOVERY) == XCOLLIE_RECOVERY) {
+        xCollieFlag |= HiviewDFX::XCOLLIE_FLAG_RECOVERY;
+    }
+    id_ = HiviewDFX::XCollie::GetInstance().SetTimer(tag, timeoutSeconds, func, arg, xCollieFlag);
 }
 XCollie::~XCollie()
 {

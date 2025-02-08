@@ -48,7 +48,7 @@ private:
     class LocalUserObserver : public AccountDelegate::Observer {
     public:
         explicit LocalUserObserver(UserDelegate &userDelegate);
-        void OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo) override;
+        void OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo, int32_t timeout) override;
         std::string Name() override;
         LevelType GetLevel() override
         {

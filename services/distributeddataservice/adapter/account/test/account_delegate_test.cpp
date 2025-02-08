@@ -36,7 +36,7 @@ using namespace OHOS::Security::AccessToken;
 
 class AccountObserver : public AccountDelegate::Observer {
 public:
-    void OnAccountChanged(const AccountEventInfo &info) override
+    void OnAccountChanged(const AccountEventInfo &info, int32_t timeout) override
     {
     }
     // must specify unique name for observer

@@ -25,13 +25,12 @@
 
 namespace OHOS {
 namespace DistributedData {
-using EventCallback = std::function<void(AccountEventInfo &account)>;
 class AccountDelegateImpl : public AccountDelegate {
 public:
     ~AccountDelegateImpl();
     int32_t Subscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
     int32_t Unsubscribe(std::shared_ptr<Observer> observer) override __attribute__((no_sanitize("cfi")));
-    void NotifyAccountChanged(const AccountEventInfo &accountEventInfo);
+    void NotifyAccountChanged(const AccountEventInfo &accountEventInfo, int32_t timeout = 0);
     bool RegisterHashFunc(HashFunc hash) override;
 
 protected:
