@@ -1,0 +1,49 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+config("module_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [ "../include/schema_helper" ]
+}
+
+ohos_source_set("distributeddata_schema_helper") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+  sources = [ "src/get_schema_helper.cpp" ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  include_dirs = [ "../include/schema_helper" ]
+
+  public_configs = [ ":module_public_config" ]
+  external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "kv_store:datamgr_common",
+    "resource_management:global_resmgr",
+    "samgr:samgr_proxy",
+  ]
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}

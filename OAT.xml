@@ -64,6 +64,13 @@ Note:If the text contains special characters, please escape them according to th
                 <filteritem type="filename" name="*.ha|*.hap|*.rpk" desc="valid and invalid bundle files for tests"/>
                 <filteritem type="filepath" name="figures/.*" desc="Self-developed image"/>
             </filefilter>
+            <filefilter name="binaryFileTypePolicyFilter" desc="Filters for binary file policies">
+                <filteritem type="filename" name="*.png" desc="png for hap"/>
+                <filteritem type="filepath" name="services/distributeddataservice/service/test/testCloud/AppScope/resources/base/media/app_icon.png"
+                            desc="png for unittest"/>
+                <filteritem type="filepath" name="services/distributeddataservice/service/test/testCloud/entry/src/main/resources/base/media/icon.png"
+                            desc="png for unittest"/>
+            </filefilter>
         </filefilterlist>
     </oatconfig>
 </configuration>

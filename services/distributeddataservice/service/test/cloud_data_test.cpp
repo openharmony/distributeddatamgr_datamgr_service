@@ -83,11 +83,13 @@ void AllocHapToken(const HapPolicyParams &policy)
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
+static constexpr const int32_t SCHEMA_VERSION = 101;
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
+static constexpr const char *COM_EXAMPLE_TEST_CLOUD = "com.example.testCloud";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *PERMISSION_CLOUDDATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
@@ -95,6 +97,7 @@ static constexpr const char *PERMISSION_GET_NETWORK_INFO = "ohos.permission.GET_
 static constexpr const char *PERMISSION_DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
 static constexpr const char *PERMISSION_ACCESS_SERVICE_DM = "ohos.permission.ACCESS_SERVICE_DM";
 static constexpr const char *PERMISSION_MANAGE_LOCAL_ACCOUNTS = "ohos.permission.MANAGE_LOCAL_ACCOUNTS";
+static constexpr const char *PERMISSION_GET_BUNDLE_INFO = "ohos.permission.GET_BUNDLE_INFO_PRIVILEGED";
 PermissionDef GetPermissionDef(const std::string &permission)
 {
     PermissionDef def = { .permissionName = permission,
@@ -258,12 +261,13 @@ void CloudDataTest::SetUpTestCase(void)
         .domain = "test.domain",
         .permList = { GetPermissionDef(PERMISSION_CLOUDDATA_CONFIG), GetPermissionDef(PERMISSION_GET_NETWORK_INFO),
             GetPermissionDef(PERMISSION_DISTRIBUTED_DATASYNC), GetPermissionDef(PERMISSION_ACCESS_SERVICE_DM),
-            GetPermissionDef(PERMISSION_MANAGE_LOCAL_ACCOUNTS) },
+            GetPermissionDef(PERMISSION_MANAGE_LOCAL_ACCOUNTS), GetPermissionDef(PERMISSION_GET_BUNDLE_INFO) },
         .permStateList = { GetPermissionStateFull(PERMISSION_CLOUDDATA_CONFIG),
             GetPermissionStateFull(PERMISSION_GET_NETWORK_INFO),
             GetPermissionStateFull(PERMISSION_DISTRIBUTED_DATASYNC),
             GetPermissionStateFull(PERMISSION_ACCESS_SERVICE_DM),
-            GetPermissionStateFull(PERMISSION_MANAGE_LOCAL_ACCOUNTS)} };
+            GetPermissionStateFull(PERMISSION_MANAGE_LOCAL_ACCOUNTS),
+            GetPermissionStateFull(PERMISSION_GET_BUNDLE_INFO)} };
     g_selfTokenID = GetSelfTokenID();
     AllocHapToken(policy);
     size_t max = 12;
@@ -2181,6 +2185,83 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
         .isAutoSync = true };
     DistributedRdb::PredicatesMemo memo;
     rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+}
+
+/**
+* @tc.name: UpdateSchemaFromHap001
+* @tc.desc: Test the UpdateSchemaFromHap with invalid user
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = -1 };
+    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
+    EXPECT_EQ(ret, Status::ERROR);
+}
+
+/**
+* @tc.name: UpdateSchemaFromHap002
+* @tc.desc: Test the UpdateSchemaFromHap with invalid bundleName
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap002, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = "", .user = cloudInfo_.user };
+    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
+    EXPECT_EQ(ret, Status::ERROR);
+}
+
+/**
+* @tc.name: UpdateSchemaFromHap003
+* @tc.desc: Test the UpdateSchemaFromHap with the schema application is not configured
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo info = {
+        .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+    };
+    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
+    EXPECT_EQ(ret, Status::SUCCESS);
+    SchemaMeta schemaMeta;
+    std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.version, schemaMeta_.version);
+}
+
+/**
+* @tc.name: UpdateSchemaFromHap004
+* @tc.desc: Test the UpdateSchemaFromHap with valid parameter
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudInfo::AppInfo exampleAppInfo;
+    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
+    exampleAppInfo.version = 1;
+    exampleAppInfo.cloudSwitch = true;
+    CloudInfo cloudInfo;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
+    cloudInfo.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
+    CloudData::CloudServiceImpl::HapInfo info = {
+        .instIndex = 0, .bundleName = COM_EXAMPLE_TEST_CLOUD, .user = cloudInfo_.user
+    };
+    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
+    EXPECT_EQ(ret, Status::SUCCESS);
+    SchemaMeta schemaMeta;
+    std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.version, SCHEMA_VERSION);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

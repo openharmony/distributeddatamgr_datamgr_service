@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+ohos_hap("testCloud") {
+  hap_profile = "entry/src/main/module.json"
+  hap_name = "testCloud"
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+  final_hap_path =
+      "$root_out_dir/tests/unittest/datamgr_service/resource/${hap_name}.hap"
+  testonly = true
+  deps = [
+    ":testCloud_ets_assets",
+    ":testCloud_ets_resources",
+  ]
+  certificate_profile = "signature/openharmony_sx.p7b"
+}
+
+ohos_js_assets("testCloud_ets_assets") {
+  source_dir = "entry/src/main/ets"
+  hap_profile = "entry/src/main/module.json"
+}
+
+ohos_app_scope("testCloud_app_profile") {
+  app_profile = "AppScope/app.json"
+  sources = [ "AppScope/resources" ]
+}
+
+ohos_resources("testCloud_ets_resources") {
+  sources = [ "entry/src/main/resources" ]
+  deps = [ ":testCloud_app_profile" ]
+  hap_profile = "entry/src/main/module.json"
+}
