@@ -114,7 +114,7 @@ CloudServiceImpl::CloudServiceImpl()
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
 {
     XCollie xcollie(
-        __FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY, RESTART_SERVICE_TIME_THRESHOLD);
+        __FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY, RESTART_SERVICE_TIME_THRESHOLD);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     auto [status, cloudInfo] = GetCloudInfo(user);
@@ -152,7 +152,7 @@ void CloudServiceImpl::Report(
 
 int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     ReleaseUserInfo(user, CloudSyncScene::DISABLE_CLOUD);
@@ -178,7 +178,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 
 int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     CloudSyncScene scene;
@@ -430,7 +430,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std::string &extraData, int32_t userId)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     ExtraData exData;
     if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty() || !exData.Unmarshall(extraData)) {
         ZLOGE("invalid args, eventId:%{public}s, user:%{public}d, extraData is %{public}s", eventId.c_str(),
@@ -665,7 +665,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
 
 int32_t CloudServiceImpl::OnInitialize()
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     NetworkAdapter::GetInstance().RegOnNetworkChange();
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
     Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT,
@@ -703,7 +703,7 @@ int32_t CloudServiceImpl::OnBind(const BindInfo &info)
 
 int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     int32_t userId = atoi(user.c_str());
     ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
         Anonymous::Change(account).c_str());
@@ -729,7 +729,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
 
 int32_t CloudServiceImpl::OnReady(const std::string &device)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         return SUCCESS;
     }
@@ -1312,7 +1312,7 @@ std::string CloudServiceImpl::GetDfxFaultType(CloudSyncScene scene)
 
 int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1333,7 +1333,7 @@ int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participant
 
 int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1354,7 +1354,7 @@ int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participa
 
 int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1377,7 +1377,7 @@ int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t,
 int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const Participants &participants,
     Results &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1399,7 +1399,7 @@ int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const P
 
 int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1418,7 +1418,7 @@ int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &res
 
 int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, QueryResults &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, invitation:%{public}s", Anonymous::Change(invitation).c_str());
@@ -1438,7 +1438,7 @@ int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, Query
 int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32_t confirmation,
     std::tuple<int32_t, std::string, std::string> &result)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, invitation:%{public}s, confirmation:%{public}d",
@@ -1462,7 +1462,7 @@ int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32
 int32_t CloudServiceImpl::ChangeConfirmation(const std::string &sharingRes, int32_t confirmation,
     std::pair<int32_t, std::string> &result)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
