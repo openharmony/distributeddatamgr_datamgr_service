@@ -42,6 +42,7 @@ config("module_public_config") {
     "${kv_store_distributeddb_path}/interfaces/include/",
     "${kv_store_distributeddb_path}/interfaces/include/relational",
   ]
+  cflags = [ "-Wno-c99-designator" ]
 }
 
 ohos_shared_library("distributeddatasvc") {
