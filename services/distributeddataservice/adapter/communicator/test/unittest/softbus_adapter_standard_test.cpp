@@ -104,6 +104,25 @@ HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange02, TestSize.Level0)
 }
 
 /**
+* @tc.name: StartWatchDeviceChange03
+* @tc.desc:the observer is nullptr
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange03, TestSize.Level1)
+{
+    ZLOGI("begin.");
+    PipeInfo appId;
+    appId.pipeId = "appId06";
+    appId.userId = "groupId06";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    SoftBusAdapter::GetInstance()->StartWatchDataChange(nullptr, appId);
+    auto status = SoftBusAdapter::GetInstance()->StartWatchDataChange(nullptr, appId);
+    EXPECT_EQ(Status::INVALID_ARGUMENT, status);
+}
+
+/**
 * @tc.name: StopWatchDataChange
 * @tc.desc: stop watch data change
 * @tc.type: FUNC
@@ -115,6 +134,8 @@ HWTEST_F(SoftbusAdapterStandardTest, StopWatchDataChange, TestSize.Level0)
     PipeInfo appId;
     appId.pipeId = "appId";
     appId.userId = "groupId";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
     auto status = SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, appId);
     EXPECT_EQ(status, Status::SUCCESS);
@@ -158,6 +179,33 @@ HWTEST_F(SoftbusAdapterStandardTest, SendData, TestSize.Level1)
     auto status = SoftBusAdapter::GetInstance()->SendData(id, di, data, 11, { MessageType::DEFAULT });
     EXPECT_NE(status.first, Status::SUCCESS);
     SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, id);
+    delete dataListener;
+}
+
+/**
+* @tc.name: SendData01
+* @tc.desc: parse sent data
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(SoftbusAdapterStandardTest, SendData01, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo pipe01;
+    pipe01.pipeId = "appId";
+    pipe01.userId = "groupId";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    auto secRegister = SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, pipe01);
+    EXPECT_EQ(Status::SUCCESS, secRegister);
+    std::string content = "";
+    const uint8_t *t = reinterpret_cast<const uint8_t*>(content.c_str());
+    DeviceId di = {"DeviceId"};
+    DataInfo data = { const_cast<uint8_t *>(t), static_cast<uint32_t>(content.length())};
+    auto status = SoftBusAdapter::GetInstance()->SendData(pipe01, di, data, 10, { MessageType::FILE });
+    EXPECT_NE(status.first, Status::ERROR);
+    EXPECT_EQ(status.first, Status::RATE_LIMIT);
+    SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, pipe01);
     delete dataListener;
 }
 
@@ -217,5 +265,157 @@ HWTEST_F(SoftbusAdapterStandardTest, IsSameStartedOnPeer, TestSize.Level1)
     SoftBusAdapter::GetInstance()->SetMessageTransFlag(id, true);
     auto status = SoftBusAdapter::GetInstance()->IsSameStartedOnPeer(id, di);
     EXPECT_EQ(status, true);
+}
+
+/**
+* @tc.name: ReuseConnect
+* @tc.desc: reuse connect
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, ReuseConnect, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo pipe;
+    pipe.pipeId = "appId";
+    pipe.userId = "groupId";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, pipe);
+    DeviceId device = {"DeviceId"};
+    auto reuse = SoftBusAdapter::GetInstance()->ReuseConnect(pipe, device);
+    EXPECT_EQ(reuse, Status::NOT_SUPPORT);
+    SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, pipe);
+    delete dataListener;
+}
+
+/**
+* @tc.name: GetConnect
+* @tc.desc: get connect
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, GetConnect, TestSize.Level1)
+{
+    const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
+    PipeInfo pipe;
+    pipe.pipeId = "appId01";
+    pipe.userId = "groupId01";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    SoftBusAdapter::GetInstance()->StartWatchDataChange(dataListener, pipe);
+    DeviceId device = {"DeviceId01"};
+    std::shared_ptr<SoftBusClient> conn = nullptr;
+    auto reuse = SoftBusAdapter::GetInstance()->GetConnect(pipe, device, 1);
+    EXPECT_NE(reuse, nullptr);
+    SoftBusAdapter::GetInstance()->StopWatchDataChange(dataListener, pipe);
+    delete dataListener;
+}
+
+/**
+* @tc.name: Broadcast
+* @tc.desc: broadcast
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, Broadcast, TestSize.Level1)
+{
+    PipeInfo id;
+    id.pipeId = "appId";
+    id.userId = "groupId";
+    LevelInfo level;
+    level.dynamic = 1;
+    level.statics = 1;
+    level.switches = 1;
+    level.switchesLen = 1;
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    SoftBusAdapter::GetInstance()->SetMessageTransFlag(id, true);
+    auto status = SoftBusAdapter::GetInstance()->Broadcast(id, level);
+    EXPECT_EQ(status, Status::ERROR);
+}
+
+/**
+* @tc.name: OpenConnect
+* @tc.desc: open connect
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, OpenConnect, TestSize.Level1)
+{
+    DeviceId device = {"DeviceId"};
+    std::shared_ptr<SoftBusClient> conn = nullptr;
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    auto status = SoftBusAdapter::GetInstance()->OpenConnect(conn, device);
+    EXPECT_NE(status.first, Status::SUCCESS);
+    EXPECT_EQ(status.first, Status::RATE_LIMIT);
+    EXPECT_EQ(status.second, 0);
+}
+
+/**
+* @tc.name: CloseSession
+* @tc.desc: close session
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, CloseSession, TestSize.Level1)
+{
+    std::string networkId = "networkId";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    auto status = SoftBusAdapter::GetInstance()->CloseSession(networkId);
+    EXPECT_EQ(status, false);
+}
+
+/**
+* @tc.name: CloseSession01
+* @tc.desc: close session
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, CloseSession01, TestSize.Level1)
+{
+    std::string networkId = "";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    auto status = SoftBusAdapter::GetInstance()->CloseSession(networkId);
+    EXPECT_EQ(status, false);
+}
+
+/**
+* @tc.name: GetPeerSocketInfo
+* @tc.desc: get socket info
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, GetPeerSocketInfo, TestSize.Level1)
+{
+    AppDistributedKv::SoftBusAdapter::ServerSocketInfo info;
+    info.name = "kv";
+    info.networkId= "192.168.1.1";
+    info.pkgName = "test";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    auto status = SoftBusAdapter::GetInstance()->GetPeerSocketInfo(-1, info);
+    EXPECT_EQ(status, false);
+}
+
+/**
+* @tc.name: GetPeerSocketInfo
+* @tc.desc: get socket info
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(SoftbusAdapterStandardTest, GetPeerSocketInfo01, TestSize.Level1)
+{
+    AppDistributedKv::SoftBusAdapter::ServerSocketInfo info;
+    info.name = "service";
+    info.networkId= "192.168.1.1";
+    info.pkgName = "test";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    auto status = SoftBusAdapter::GetInstance()->GetPeerSocketInfo(1, info);
+    EXPECT_EQ(status, false);
 }
 } // namespace OHOS::Test
