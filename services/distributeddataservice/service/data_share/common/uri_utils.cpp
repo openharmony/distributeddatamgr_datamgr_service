@@ -77,6 +77,23 @@ bool URIUtils::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex
     return true;
 }
 
+std::pair<bool, int32_t> URIUtils::GetUserFromProxyURI(const std::string &uri)
+{
+    auto queryParams = URIUtils::GetQueryParams(uri);
+    if (queryParams[USER_PARAM].empty()) {
+        // -1 is placeholder for visit provider's user
+        return std::make_pair(true, -1);
+    }
+    auto [success, data] = URIUtils::Strtoul(queryParams[USER_PARAM]);
+    if (!success) {
+        return std::make_pair(false, -1);
+    }
+    if (data < 0 || data > INT32_MAX) {
+        return std::make_pair(false, -1);
+    }
+    return std::make_pair(true, data);
+}
+
 void URIUtils::FormatUri(std::string &uri)
 {
     auto pos = uri.find_last_of('?');
@@ -85,6 +102,16 @@ void URIUtils::FormatUri(std::string &uri)
     }
 
     uri.resize(pos);
+}
+
+std::string URIUtils::FormatConstUri(const std::string &uri)
+{
+    auto pos = uri.find_last_of('?');
+    if (pos == std::string::npos) {
+        return uri;
+    }
+
+    return uri.substr(0, pos);
 }
 
 __attribute__((no_sanitize("cfi"))) UriConfig URIUtils::GetUriConfig(const std::string &uri)
