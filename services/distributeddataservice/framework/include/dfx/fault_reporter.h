@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H
-#define DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H
+#ifndef DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
+#define DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
 
 #include "dfx_types.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
-class BehaviourReporter {
+class FaultReporter {
 public:
-    KVSTORE_API virtual ReportStatus Report(const BehaviourMsg &msg) = 0;
-    KVSTORE_API virtual ReportStatus UDMFReport(const UdmfBehaviourMsg &msg) = 0;
-    KVSTORE_API virtual ~BehaviourReporter() {}
+    API_EXPORT virtual ReportStatus Report(const FaultMsg &msg) = 0;
+    API_EXPORT virtual ReportStatus Report(const CommFaultMsg &msg) = 0;
+    API_EXPORT virtual ReportStatus Report(const DBFaultMsg &ms) = 0;
+    API_EXPORT virtual ReportStatus Report(const ArkDataFaultMsg &msg){ return ReportStatus::SUCCESS; };
+    API_EXPORT virtual ~FaultReporter() {}
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS
-#endif // DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H
+#endif // DISTRIBUTEDDATAMGR_FAULT_REPORTER_H

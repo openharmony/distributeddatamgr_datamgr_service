@@ -23,8 +23,8 @@ namespace DistributedDataDfx {
 template<typename T>
 class StatisticReporter {
 public:
-    KVSTORE_API virtual ReportStatus Report(const T &stat) = 0;
-    KVSTORE_API virtual ~StatisticReporter() {}
+    API_EXPORT virtual ReportStatus Report(const T &stat) = 0;
+    API_EXPORT virtual ~StatisticReporter() {}
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS

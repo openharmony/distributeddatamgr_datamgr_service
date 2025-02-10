@@ -110,7 +110,7 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     }
     msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
-    Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
+    Reporter::GetInstance()->GetBehaviourReporter()->UDMFReport(msg);
     return res;
 }
 
@@ -187,7 +187,7 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     }
     msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
-    Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
+    Reporter::GetInstance()->GetBehaviourReporter()->UDMFReport(msg);
     return res;
 }
 

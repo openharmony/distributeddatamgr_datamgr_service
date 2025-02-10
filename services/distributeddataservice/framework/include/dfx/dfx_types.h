@@ -176,7 +176,7 @@ struct UdmfBehaviourMsg {
 struct VisitStat {
     std::string appId;
     std::string interfaceName;
-    KVSTORE_API std::string GetKey() const
+    API_EXPORT std::string GetKey() const
     {
         return appId + interfaceName;
     }
@@ -187,7 +187,7 @@ struct TrafficStat {
     std::string deviceId;
     int sendSize;
     int receivedSize;
-    KVSTORE_API std::string GetKey() const
+    API_EXPORT std::string GetKey() const
     {
         return appId + deviceId;
     }
@@ -200,7 +200,7 @@ struct DbStat {
     int dbSize;
     std::shared_ptr<DistributedKv::DbMetaCallbackDelegate> delegate;
 
-    KVSTORE_API std::string GetKey() const
+    API_EXPORT std::string GetKey() const
     {
         return userId + appId + storeId;
     }
@@ -221,7 +221,7 @@ struct ApiPerformanceStat {
     uint64_t costTime;
     uint64_t averageTime;
     uint64_t worstTime;
-    KVSTORE_API std::string GetKey() const
+    API_EXPORT std::string GetKey() const
     {
         return interfaceName;
     }

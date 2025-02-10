@@ -43,11 +43,10 @@ ohos_source_set("distributeddata_communicator") {
 
   include_dirs = [
     "../include/communicator",
-    "../include/dfx",
-    "../include/log",
-    "../include/autils",
     "../include/utils",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/dfx",
+    "${data_service_path}/framework/include/utils",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]

@@ -32,9 +32,9 @@ struct StoreInfo {
 };
 class DbMetaCallbackDelegate {
 public:
-    KVSTORE_API virtual ~DbMetaCallbackDelegate() {}
-    KVSTORE_API virtual bool GetKvStoreDiskSize(const std::string &storeId, uint64_t &size) = 0;
-    KVSTORE_API virtual void GetKvStoreKeys(std::vector<StoreInfo> &entries) = 0;
+    API_EXPORT virtual ~DbMetaCallbackDelegate() {}
+    API_EXPORT virtual bool GetKvStoreDiskSize(const std::string &storeId, uint64_t &size) = 0;
+    API_EXPORT virtual void GetKvStoreKeys(std::vector<StoreInfo> &entries) = 0;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

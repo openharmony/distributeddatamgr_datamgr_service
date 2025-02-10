@@ -285,7 +285,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx008, TestSize.Level0)
      * @tc.steps: step1. get database fault report instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto behavior = Reporter::GetInstance()->BehaviourReporter();
+    auto behavior = Reporter::GetInstance()->GetBehaviourReporter();
     EXPECT_NE(nullptr, behavior);
     struct BehaviourMsg msg{.userId = "user008", .appId = "myApp08", .storeId = "storeTest08",
                             .behaviourType = BehaviourType::DATABASE_BACKUP, .extensionInfo="test111"};
@@ -391,7 +391,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx011, TestSize.Level0)
      * @tc.steps: step1. get database fault report instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto UdmfBehavior = Reporter::GetInstance()->BehaviourReporter();
+    auto UdmfBehavior = Reporter::GetInstance()->GetBehaviourReporter();
     EXPECT_NE(nullptr, UdmfBehavior);
     struct UdmfBehaviourMsg UdMsg{"myApp", "channel", 200, "dataType", "operation", "result"};
     auto repStatus = UdmfBehavior->UDMFReport(UdMsg);

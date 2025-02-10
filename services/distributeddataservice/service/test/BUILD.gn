@@ -52,7 +52,6 @@ config("module_private_config") {
     "${relational_store_path}/interfaces/inner_api/cloud_data/include",
     "${relational_store_path}/interfaces/inner_api/common_type/include",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
   cflags = [ "-Werror" ]
   defines = [
@@ -502,7 +501,6 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = []
@@ -856,7 +854,6 @@ ohos_unittest("MetaDataTest") {
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = [ ":module_private_config" ]
@@ -900,7 +897,6 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1078,7 +1074,6 @@ ohos_unittest("KvdbServiceImplTest") {
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
 
   configs = [ ":module_private_config" ]

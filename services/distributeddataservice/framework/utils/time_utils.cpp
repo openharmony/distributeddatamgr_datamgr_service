@@ -21,7 +21,7 @@
 #include <sstream>
 
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedData {
 constexpr int MAX_TIME_BUF_LEN = 32;
 constexpr int MILLISECONDS_LEN = 3;
 constexpr int NANO_TO_MILLI = 1000000;
@@ -45,5 +45,5 @@ std::string TimeUtils::GetTimeWithMs(time_t sec, int64_t nsec)
     oss << buffer << '.' << std::setfill('0') << std::setw(MILLISECONDS_LEN) << (nsec / NANO_TO_MILLI) % MILLI_PRE_SEC;
     return oss.str();
 }
-} // namespace DistributedKv
+} // namespace DistributedData
 } // namespace OHOS
