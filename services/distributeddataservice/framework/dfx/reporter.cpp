@@ -23,6 +23,7 @@ bool Reporter::RegisterReporterInstance(Reporter *instance)
     if (instance_ != nullptr) {
         return false;
     }
+    instance_ = instance;
     return true;
 }
 

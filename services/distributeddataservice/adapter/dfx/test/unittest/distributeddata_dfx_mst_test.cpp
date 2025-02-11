@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <openssl/sha.h>
 #include "reporter.h"
+#include "reporter_impl.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedDataDfx;
@@ -29,18 +30,24 @@ public:
     void SetUp();
 
     void TearDown();
+private:
+    static Reporter* reporter_;
 };
+Reporter* DistributedataDfxMSTTest::reporter_ = nullptr;
 
 void DistributedataDfxMSTTest::SetUpTestCase()
 {
     size_t max = 12;
     size_t min = 5;
-    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
+    reporter_ = Reporter::GetInstance();
+    ASSERT_NE(nullptr, reporter_);
+    reporter_->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
 }
 
 void DistributedataDfxMSTTest::TearDownTestCase()
 {
-    Reporter::GetInstance()->SetThreadPool(nullptr);
+    reporter_->SetThreadPool(nullptr);
+    reporter_ = nullptr;
 }
 
 void DistributedataDfxMSTTest::SetUp() {}
@@ -60,7 +67,7 @@ HWTEST_F(DistributedataDfxMSTTest, Dfx001, TestSize.Level0)
      * @tc.steps: step1. getcommunicationFault instance
      * @tc.expected: step1. Expect instance is not null.
      */
-    auto comFault = Reporter::GetInstance()->CommunicationFault();
+    auto comFault = reporter_->CommunicationFault();
     EXPECT_NE(nullptr, comFault);
     struct CommFaultMsg msg{.userId = "user001", .appId = "myApp", .storeId = "storeTest"};
     msg.deviceId.push_back("device001");

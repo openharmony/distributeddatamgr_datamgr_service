@@ -23,6 +23,7 @@ config("module_dfx_mst_config") {
     "../src",
     "../src/fault",
     "../src/statistic",
+    "${data_service_path}/adapter/include/dfx",
   ]
 }
 
@@ -60,6 +61,7 @@ config("module_dfx_config") {
     "../src",
     "../src/fault",
     "../src/statistic",
+    "${data_service_path}/adapter/include/dfx",
   ]
 }
 
