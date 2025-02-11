@@ -31,17 +31,17 @@ AccountDelegateImpl::~AccountDelegateImpl()
     observerMap_.Clear();
 }
 
-void AccountDelegateImpl::NotifyAccountChanged(const AccountEventInfo &accountEventInfo)
+void AccountDelegateImpl::NotifyAccountChanged(const AccountEventInfo &accountEventInfo, int32_t timeout)
 {
-    observerMap_.ForEach([&accountEventInfo](const auto &key, auto &val) {
+    observerMap_.ForEach([&accountEventInfo, timeout](const auto &key, auto &val) {
         if (val->GetLevel() == AccountDelegate::Observer::LevelType::HIGH) {
-            val->OnAccountChanged(accountEventInfo);
+            val->OnAccountChanged(accountEventInfo, timeout);
         }
         return false;
     });
-    observerMap_.ForEach([&accountEventInfo](const auto &key, auto &val) {
+    observerMap_.ForEach([&accountEventInfo, timeout](const auto &key, auto &val) {
         if (val->GetLevel() == AccountDelegate::Observer::LevelType::LOW) {
-            val->OnAccountChanged(accountEventInfo);
+            val->OnAccountChanged(accountEventInfo, timeout);
         }
         return false;
     });

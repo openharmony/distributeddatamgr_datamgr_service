@@ -243,7 +243,7 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device
 
 int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (!CheckAccess(param.bundleName_, "")) {
         ZLOGE("bundleName:%{public}s. Permission error", param.bundleName_.c_str());
         return RDB_ERROR;
@@ -694,7 +694,7 @@ int32_t RdbServiceImpl::UnregisterAutoSyncCallback(const RdbSyncerParam& param,
 
 int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_));
     RdbSyncerParam tmpParam = param;
@@ -760,7 +760,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(StoreI
 
 int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -793,7 +793,7 @@ void RdbServiceImpl::SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &par
 
 int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -1246,7 +1246,7 @@ int RdbServiceImpl::DoDataChangeSync(const StoreInfo &storeInfo, const RdbChange
 int32_t RdbServiceImpl::NotifyDataChange(
     const RdbSyncerParam &param, const RdbChangedData &rdbChangedData, const RdbNotifyConfig &rdbNotifyConfig)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -1317,7 +1317,7 @@ bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotify
 
 int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearchable)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -1514,7 +1514,7 @@ int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const Rdb
 
 int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto meta = GetStoreMetaData(param);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto uid = IPCSkeleton::GetCallingUid();

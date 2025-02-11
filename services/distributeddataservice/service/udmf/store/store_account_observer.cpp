@@ -26,7 +26,7 @@ namespace OHOS {
 namespace UDMF {
 using namespace DistributedKv;
 using namespace DistributedData;
-void RuntimeStoreAccountObserver::OnAccountChanged(const AccountEventInfo &eventInfo)
+void RuntimeStoreAccountObserver::OnAccountChanged(const AccountEventInfo &eventInfo, int32_t timeout)
 {
     ZLOGI("account event begin. status is %{public}d.", eventInfo.status);
     if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_DELETE) {

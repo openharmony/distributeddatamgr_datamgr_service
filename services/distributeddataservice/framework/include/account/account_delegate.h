@@ -51,7 +51,7 @@ public:
             LOW,
         };
         API_EXPORT virtual ~Observer() = default;
-        API_EXPORT virtual void OnAccountChanged(const AccountEventInfo &eventInfo) = 0;
+        API_EXPORT virtual void OnAccountChanged(const AccountEventInfo &eventInfo, int32_t timeout = 0) = 0;
 
         // must specify unique name for observer
         API_EXPORT virtual std::string Name() = 0;
