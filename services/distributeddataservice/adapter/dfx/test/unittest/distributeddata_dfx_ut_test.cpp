@@ -16,7 +16,6 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "reporter.h"
-#include "reporter_impl.h"
 #include "fake_hiview.h"
 #include "value_hash.h"
 
@@ -32,8 +31,6 @@ public:
     void SetUp();
 
     void TearDown();
-
-private:
     static Reporter* reporter_;
 };
 

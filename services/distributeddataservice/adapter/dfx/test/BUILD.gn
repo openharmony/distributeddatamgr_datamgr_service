@@ -23,7 +23,6 @@ config("module_dfx_mst_config") {
     "../src",
     "../src/fault",
     "../src/statistic",
-    "${data_service_path}/adapter/include/dfx",
   ]
 }
 
@@ -45,6 +44,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
   ]
@@ -61,7 +61,6 @@ config("module_dfx_config") {
     "../src",
     "../src/fault",
     "../src/statistic",
-    "${data_service_path}/adapter/include/dfx",
   ]
 }
 
@@ -86,6 +85,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",

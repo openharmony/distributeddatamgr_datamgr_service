@@ -16,7 +16,6 @@
 #include <gtest/gtest.h>
 #include <openssl/sha.h>
 #include "reporter.h"
-#include "reporter_impl.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedDataDfx;
@@ -30,7 +29,6 @@ public:
     void SetUp();
 
     void TearDown();
-private:
     static Reporter* reporter_;
 };
 Reporter* DistributedataDfxMSTTest::reporter_ = nullptr;
