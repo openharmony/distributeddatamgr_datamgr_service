@@ -1060,7 +1060,7 @@ bool DataShareServiceImpl::CheckAllowList(const uint32_t &currentUserId, const u
         return true;
     }
     std::string callerBundleName;
-    int32_t callerAppIndex;
+    int32_t callerAppIndex = 0;
     auto [success, type] = GetCallerInfo(callerBundleName, callerAppIndex);
     if (!success) {
         ZLOGE("Get caller info failed, token:0x%{public}x", callerTokenId);
