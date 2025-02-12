@@ -212,7 +212,7 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, 
         return;
     }
     ExecutorPool::Task task([dfxCode, msg]() {
-        std::string occurTime = TimeUtils::GetCurSysTimeWithMs();
+        std::string occurTime = DistributedData::TimeUtils::GetCurSysTimeWithMs();
         std::string bundleName = msg.bundleName;
         std::string moduleName = msg.moduleName;
         std::string storeName = msg.storeName;

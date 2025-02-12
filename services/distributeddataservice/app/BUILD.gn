@@ -47,7 +47,6 @@ config("module_private_config") {
     "${data_service_path}/adapter/include/installer",
     "${data_service_path}/adapter/include/broadcaster",
     "${data_service_path}/adapter/include/utils",
-    "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/framework/include",

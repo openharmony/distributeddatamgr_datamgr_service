@@ -25,9 +25,9 @@ config("rdb_public_config") {
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/cloud",
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/dfx",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
 }
 

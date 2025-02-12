@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H
-#define DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H
+#ifndef DISTRIBUTEDDATAMGR_STATISTIC_REPORTER_H
+#define DISTRIBUTEDDATAMGR_STATISTIC_REPORTER_H
 
 #include "dfx_types.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
-class BehaviourReporter {
+template<typename T>
+class StatisticReporter {
 public:
-    KVSTORE_API virtual ReportStatus Report(const BehaviourMsg &msg) = 0;
-    KVSTORE_API virtual ReportStatus UDMFReport(const UdmfBehaviourMsg &msg) = 0;
-    KVSTORE_API virtual ~BehaviourReporter() {}
+    API_EXPORT virtual ReportStatus Report(const T &stat) = 0;
+    API_EXPORT virtual ~StatisticReporter() {}
 };
 }  // namespace DistributedDataDfx
 }  // namespace OHOS
-#endif // DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H
+#endif // DISTRIBUTEDDATAMGR_STATISTIC_REPORTER_H

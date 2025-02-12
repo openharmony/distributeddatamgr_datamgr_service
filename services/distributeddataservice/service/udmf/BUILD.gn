@@ -18,9 +18,9 @@ config("module_public_config") {
 
   include_dirs = [
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/dfx",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/account",
-    "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",

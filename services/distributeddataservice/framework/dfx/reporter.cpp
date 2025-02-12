@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,19 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_STATISTIC_REPORTER_H
-#define DISTRIBUTEDDATAMGR_STATISTIC_REPORTER_H
-
-#include "dfx_types.h"
+#include "reporter.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
-template<typename T>
-class StatisticReporter {
-public:
-    KVSTORE_API virtual ReportStatus Report(const T &stat) = 0;
-    KVSTORE_API virtual ~StatisticReporter() {}
-};
-}  // namespace DistributedDataDfx
-}  // namespace OHOS
-#endif // DISTRIBUTEDDATAMGR_STATISTIC_REPORTER_H
+Reporter *Reporter::instance_ = nullptr;
+bool Reporter::RegisterReporterInstance(Reporter *instance)
+{
+    if (instance_ != nullptr) {
+        return false;
+    }
+    instance_ = instance;
+    return true;
+}
+
+Reporter* Reporter::GetInstance()
+{
+    return instance_;
+}
+} // namespace DistributedDataDfx
+} // namespace OHOS

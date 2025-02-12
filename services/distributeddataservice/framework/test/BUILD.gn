@@ -326,7 +326,6 @@ ohos_unittest("ServiceMetaDataTest") {
     "${data_service_path}/service/kvdb",
     "//third_party/json/single_include",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
 
   external_deps = [

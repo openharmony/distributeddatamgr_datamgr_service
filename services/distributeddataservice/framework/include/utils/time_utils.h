@@ -19,14 +19,16 @@
 #include <string>
 #include <cstdint>
 
+#include "visibility.h"
+
 namespace OHOS {
-namespace DistributedKv {
+namespace DistributedData {
 class TimeUtils {
 public:
-    static std::string GetCurSysTimeWithMs();
-    static std::string GetTimeWithMs(time_t sec, int64_t nsec);
+    API_EXPORT static std::string GetCurSysTimeWithMs();
+    API_EXPORT static std::string GetTimeWithMs(time_t sec, int64_t nsec);
 };
 
-} // namespace DistributedKv
+} // namespace DistributedData
 } // namespace OHOS
 #endif

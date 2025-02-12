@@ -22,9 +22,7 @@ ohos_unittest("CommunicationProviderTest") {
 
   sources = [ "./unittest/communication_provider_impl_test.cpp" ]
   include_dirs = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/communicator",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx",
+    "${data_service_path}/adapter/include/communicator",
     "../src",
   ]
   external_deps = [
@@ -45,9 +43,8 @@ ohos_unittest("DeviceManagerAdapterTest") {
 
   sources = [ "unittest/device_manager_adapter_test.cpp" ]
   include_dirs = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/communicator",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/dfx",
     "../src",
   ]
   external_deps = [
@@ -76,9 +73,8 @@ ohos_unittest("SoftbusAdapterStandardTest") {
 
   sources = [ "unittest/softbus_adapter_standard_test.cpp" ]
   include_dirs = [
-    "${data_service_path}/adapter/include/autils",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
+    "${data_service_path}/framework/include/dfx",
     "../src",
   ]
   external_deps = [
@@ -100,21 +96,6 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
-}
-
-###############################################################################
-config("module_comm_config") {
-  visibility = [ ":*" ]
-
-  include_dirs = [
-    "./unittest/communicator",
-    "./unittest/communicator/include",
-    "//commonlibrary/c_utils/base/include",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata/include",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/communicator",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/autils",
-  ]
 }
 
 ###############################################################################
