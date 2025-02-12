@@ -43,7 +43,8 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
-#include "network_adapter.h"
+#include "network_delegate.h"
+#include "network_delegate_mock.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
 #include "rdb_service_impl.h"
@@ -138,6 +139,7 @@ protected:
     static StoreMetaData metaData_;
     static CloudInfo cloudInfo_;
     static DistributedData::CheckerMock checker_;
+    static NetworkDelegateMock delegate_;
 };
 
 class CloudServerMock : public CloudServer {
@@ -189,6 +191,7 @@ CloudInfo CloudDataTest::cloudInfo_;
 std::shared_ptr<CloudData::CloudServiceImpl> CloudDataTest::cloudServiceImpl_ =
     std::make_shared<CloudData::CloudServiceImpl>();
 DistributedData::CheckerMock CloudDataTest::checker_;
+NetworkDelegateMock CloudDataTest::delegate_;
 
 void CloudDataTest::InitMetaData()
 {
@@ -279,10 +282,10 @@ void CloudDataTest::SetUpTestCase(void)
     Bootstrap::GetInstance().LoadCheckers();
     auto dmExecutor = std::make_shared<ExecutorPool>(max, min);
     DeviceManagerAdapter::GetInstance().Init(dmExecutor);
+    NetworkDelegate::RegisterNetworkInstance(&delegate_);
     InitCloudInfo();
     InitMetaData();
     InitSchemaMeta();
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
 }
 
 void CloudDataTest::TearDownTestCase()
@@ -1836,14 +1839,10 @@ HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
 {
     int32_t userId = CloudServerMock::INVALID_USER_ID;
     std::string bundleName;
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::NONE);
-    NetworkAdapter::GetInstance().expireTime_ =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
-            .count() +
-        1000;
+    delegate_.isNetworkAvailable_ = false;
     auto [status, meta] = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
     EXPECT_EQ(status, CloudData::CloudService::NETWORK_ERROR);
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
+    delegate_.isNetworkAvailable_ = true;
     std::tie(status, meta) = cloudServiceImpl_->GetAppSchemaFromServer(userId, bundleName);
     EXPECT_EQ(status, CloudData::CloudService::SCHEMA_INVALID);
     userId = 100;
@@ -1892,15 +1891,11 @@ HWTEST_F(CloudDataTest, GetCloudInfo001, TestSize.Level0)
     int32_t userId = 1000;
     auto [status, cloudInfo] = cloudServiceImpl_->GetCloudInfo(userId);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::NONE);
-    NetworkAdapter::GetInstance().expireTime_ =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
-            .count() +
-        1000;
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    delegate_.isNetworkAvailable_ = false;
     std::tie(status, cloudInfo) = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
     EXPECT_EQ(status, CloudData::CloudService::NETWORK_ERROR);
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
+    delegate_.isNetworkAvailable_ = true;
 }
 
 /**

@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "NetworkAdapter"
-#include "network_adapter.h"
+#define LOG_TAG "NetworkDelegateNormalImpl"
+
+#include "network_delegate_normal_impl.h"
 
 #include "device_manager_adapter.h"
 #include "log_print.h"
@@ -22,23 +23,26 @@
 #include "net_handle.h"
 namespace OHOS::DistributedData {
 using namespace OHOS::NetManagerStandard;
-static NetworkAdapter::NetworkType Convert(NetManagerStandard::NetBearType bearType)
+__attribute__((used)) static bool g_isInit = NetworkDelegateNormalImpl::Init();
+static NetworkDelegateNormalImpl::NetworkType Convert(NetManagerStandard::NetBearType bearType)
 {
     switch (bearType) {
         case NetManagerStandard::BEARER_WIFI:
-            return NetworkAdapter::WIFI;
+            return NetworkDelegate::WIFI;
         case NetManagerStandard::BEARER_CELLULAR:
-            return NetworkAdapter::CELLULAR;
+            return NetworkDelegate::CELLULAR;
         case NetManagerStandard::BEARER_ETHERNET:
-            return NetworkAdapter::ETHERNET;
+            return NetworkDelegate::ETHERNET;
         default:
-            return NetworkAdapter::OTHER;
+            return NetworkDelegate::OTHER;
     }
 }
 
 class NetConnCallbackObserver : public NetConnCallbackStub {
 public:
-    explicit NetConnCallbackObserver(NetworkAdapter &netAdapter) : netAdapter_(netAdapter) {}
+    explicit NetConnCallbackObserver(NetworkDelegateNormalImpl &delegate) : delegate_(delegate)
+    {
+    }
     ~NetConnCallbackObserver() override = default;
     int32_t NetAvailable(sptr<NetHandle> &netHandle) override;
     int32_t NetCapabilitiesChange(sptr<NetHandle> &netHandle, const sptr<NetAllCapabilities> &netAllCap) override;
@@ -48,7 +52,7 @@ public:
     int32_t NetBlockStatusChange(sptr<NetHandle> &netHandle, bool blocked) override;
 
 private:
-    NetworkAdapter &netAdapter_;
+    NetworkDelegateNormalImpl &delegate_;
 };
 
 int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle> &netHandle)
@@ -60,7 +64,7 @@ int32_t NetConnCallbackObserver::NetAvailable(sptr<NetManagerStandard::NetHandle
 int32_t NetConnCallbackObserver::NetUnavailable()
 {
     ZLOGI("OnNetworkUnavailable");
-    netAdapter_.SetNet(NetworkAdapter::NONE);
+    delegate_.SetNet(NetworkDelegateNormalImpl::NONE);
     return 0;
 }
 
@@ -72,9 +76,9 @@ int32_t NetConnCallbackObserver::NetCapabilitiesChange(sptr<NetHandle> &netHandl
         return 0;
     }
     if (netAllCap->netCaps_.count(NetManagerStandard::NET_CAPABILITY_VALIDATED) && !netAllCap->bearerTypes_.empty()) {
-        netAdapter_.SetNet(Convert(*netAllCap->bearerTypes_.begin()));
+        delegate_.SetNet(Convert(*netAllCap->bearerTypes_.begin()));
     } else {
-        netAdapter_.SetNet(NetworkAdapter::NONE);
+        delegate_.SetNet(NetworkDelegateNormalImpl::NONE);
     }
     return 0;
 }
@@ -89,7 +93,7 @@ int32_t NetConnCallbackObserver::NetConnectionPropertiesChange(sptr<NetHandle> &
 int32_t NetConnCallbackObserver::NetLost(sptr<NetHandle> &netHandle)
 {
     ZLOGI("OnNetLost");
-    netAdapter_.SetNet(NetworkAdapter::NONE);
+    delegate_.SetNet(NetworkDelegateNormalImpl::NONE);
     return 0;
 }
 
@@ -99,22 +103,16 @@ int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle
     return 0;
 }
 
-NetworkAdapter::NetworkAdapter()
-    : cloudDmInfo({ "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 })
+NetworkDelegateNormalImpl::NetworkDelegateNormalImpl()
+    : cloudDmInfo_({ "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 })
 {
 }
 
-NetworkAdapter::~NetworkAdapter()
+NetworkDelegateNormalImpl::~NetworkDelegateNormalImpl()
 {
 }
 
- NetworkAdapter &NetworkAdapter::GetInstance()
-{
-    static NetworkAdapter adapter;
-    return adapter;
-}
-
-void NetworkAdapter::RegOnNetworkChange()
+void NetworkDelegateNormalImpl::RegOnNetworkChange()
 {
     static std::atomic_bool flag = false;
     if (flag.exchange(true)) {
@@ -134,7 +132,7 @@ void NetworkAdapter::RegOnNetworkChange()
     }
 }
 
-bool NetworkAdapter::IsNetworkAvailable()
+bool NetworkDelegateNormalImpl::IsNetworkAvailable()
 {
     if (defaultNetwork_ != NONE || expireTime_ > GetTimeStamp()) {
         return defaultNetwork_ != NONE;
@@ -142,7 +140,7 @@ bool NetworkAdapter::IsNetworkAvailable()
     return RefreshNet() != NONE;
 }
 
-NetworkAdapter::NetworkType NetworkAdapter::SetNet(NetworkType netWorkType)
+NetworkDelegateNormalImpl::NetworkType NetworkDelegateNormalImpl::SetNet(NetworkType netWorkType)
 {
     auto oldNet = defaultNetwork_;
     bool ready = oldNet == NONE && netWorkType != NONE && (GetTimeStamp() - netLostTime_) > NET_LOST_DURATION;
@@ -153,15 +151,15 @@ NetworkAdapter::NetworkType NetworkAdapter::SetNet(NetworkType netWorkType)
     defaultNetwork_ = netWorkType;
     expireTime_ = GetTimeStamp() + EFFECTIVE_DURATION;
     if (ready) {
-        DeviceManagerAdapter::GetInstance().OnReady(cloudDmInfo);
+        DeviceManagerAdapter::GetInstance().OnReady(cloudDmInfo_);
     }
     if (offline) {
-        DeviceManagerAdapter::GetInstance().Offline(cloudDmInfo);
+        DeviceManagerAdapter::GetInstance().Offline(cloudDmInfo_);
     }
     return netWorkType;
 }
 
-NetworkAdapter::NetworkType NetworkAdapter::GetNetworkType(bool retrieve)
+NetworkDelegate::NetworkType NetworkDelegateNormalImpl::GetNetworkType(bool retrieve)
 {
     if (!retrieve) {
         return defaultNetwork_;
@@ -169,7 +167,7 @@ NetworkAdapter::NetworkType NetworkAdapter::GetNetworkType(bool retrieve)
     return RefreshNet();
 }
 
-NetworkAdapter::NetworkType NetworkAdapter::RefreshNet()
+NetworkDelegateNormalImpl::NetworkType NetworkDelegateNormalImpl::RefreshNet()
 {
     NetHandle handle;
     auto status = NetConnClient::GetInstance().GetDefaultNet(handle);
@@ -184,4 +182,12 @@ NetworkAdapter::NetworkType NetworkAdapter::RefreshNet()
     }
     return SetNet(Convert(*capabilities.bearerTypes_.begin()));
 }
+
+bool NetworkDelegateNormalImpl::Init()
+{
+    static NetworkDelegateNormalImpl delegate;
+    static std::once_flag onceFlag;
+    std::call_once(onceFlag, [&]() { NetworkDelegate::RegisterNetworkInstance(&delegate); });
+    return true;
 }
+} // namespace OHOS::DistributedData

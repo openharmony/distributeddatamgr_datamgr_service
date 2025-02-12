@@ -18,7 +18,7 @@
 #include "network_sync_strategy.h"
 
 #include "device_manager_adapter.h"
-#include "network_adapter.h"
+#include "network/network_delegate.h"
 #include "error/general_error.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -53,8 +53,11 @@ NetworkSyncStrategy::~NetworkSyncStrategy()
 
 int32_t NetworkSyncStrategy::CheckSyncAction(const StoreInfo &storeInfo)
 {
-    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         return E_NETWORK_ERROR;
+    }
+    if (storeInfo.user == 0) {
+        return E_OK;
     }
     if (storeInfo.user != user_) {
         strategies_.Clear();
@@ -103,15 +106,15 @@ std::string NetworkSyncStrategy::GetKey(int32_t user, const std::string &bundleN
 
 bool NetworkSyncStrategy::Check(uint32_t strategy)
 {
-    auto networkType = NetworkAdapter::GetInstance().GetNetworkType();
-    if (networkType == NetworkAdapter::NONE) {
-        networkType = NetworkAdapter::GetInstance().GetNetworkType(true);
+    auto networkType = NetworkDelegate::GetInstance()->GetNetworkType();
+    if (networkType == NetworkDelegate::NONE) {
+        networkType = NetworkDelegate::GetInstance()->GetNetworkType(true);
     }
     switch (networkType) {
-        case NetworkAdapter::WIFI:
-        case NetworkAdapter::ETHERNET:
+        case NetworkDelegate::WIFI:
+        case NetworkDelegate::ETHERNET:
             return (strategy & WIFI) == WIFI;
-        case NetworkAdapter::CELLULAR:
+        case NetworkDelegate::CELLULAR:
             return (strategy & CELLULAR) == CELLULAR;
         default:
             ZLOGD("verification failed! strategy:%{public}d, networkType:%{public}d", strategy, networkType);

@@ -42,7 +42,8 @@
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "model/component_config.h"
-#include "network_adapter.h"
+#include "network_delegate.h"
+#include "network_delegate_mock.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
 #include "rdb_service_impl.h"
@@ -72,9 +73,11 @@ public:
     void TearDown();
 
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
+    static NetworkDelegateMock delegate_;
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =
     std::make_shared<CloudData::CloudServiceImpl>();
+NetworkDelegateMock CloudServiceImplTest::delegate_;
 
 void CloudServiceImplTest::SetUpTestCase(void)
 {
@@ -82,6 +85,7 @@ void CloudServiceImplTest::SetUpTestCase(void)
     size_t min = 5;
     auto executor = std::make_shared<ExecutorPool>(max, min);
     DeviceManagerAdapter::GetInstance().Init(executor);
+    NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
 void CloudServiceImplTest::TearDownTestCase() { }
@@ -249,7 +253,6 @@ HWTEST_F(CloudServiceImplTest, UpdateSchema001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest GetAppSchemaFromServer001 start");
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
     int user = -1;
     auto [status, result] = cloudServiceImpl_->GetAppSchemaFromServer(user, TEST_CLOUD_BUNDLE);
     EXPECT_EQ(status, CloudData::CloudService::SERVER_UNAVAILABLE);
@@ -264,7 +267,6 @@ HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, GetCloudInfoFromServer001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest GetCloudInfoFromServer001 start");
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
     int user = -1;
     auto [status, result] = cloudServiceImpl_->GetCloudInfoFromServer(user);
     EXPECT_EQ(status, CloudData::CloudService::SERVER_UNAVAILABLE);

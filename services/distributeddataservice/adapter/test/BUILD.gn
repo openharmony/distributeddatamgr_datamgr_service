@@ -12,6 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//build/ohos_var.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("unittest") {
   testonly = true
@@ -23,6 +24,10 @@ group("unittest") {
     "../dfx/test:unittest",
     "../screenlock/test:unittest",
   ]
+
+  if (datamgr_service_cloud) {
+    deps += [ "../network/test:unittest" ]
+  }
 }
 
 group("fuzztest") {

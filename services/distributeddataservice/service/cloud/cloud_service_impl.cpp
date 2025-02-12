@@ -37,7 +37,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "network_adapter.h"
+#include "network/network_delegate.h"
 #include "rdb_types.h"
 #include "reporter.h"
 #include "relational_store_manager.h"
@@ -673,7 +673,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
 int32_t CloudServiceImpl::OnInitialize()
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    NetworkAdapter::GetInstance().RegOnNetworkChange();
+    NetworkDelegate::GetInstance()->RegOnNetworkChange();
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
     Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT,
         { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
@@ -745,7 +745,7 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
     if (users.empty()) {
         return SUCCESS;
     }
-    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         return NETWORK_ERROR;
     }
     for (auto user : users) {
@@ -788,7 +788,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
-    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         ZLOGD("network is not available");
         return { NETWORK_ERROR, cloudInfo };
     }
@@ -883,7 +883,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
 std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
 {
     SchemaMeta schemaMeta;
-    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         ZLOGD("network is not available");
         return { NETWORK_ERROR, schemaMeta };
     }
@@ -921,7 +921,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, CloudS
         if (retry >= RETRY_TIMES || executor == nullptr || works.empty()) {
             return;
         }
-        if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+        if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
             ZLOGD("network is not available");
             return;
         }
