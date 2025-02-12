@@ -396,6 +396,62 @@ HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo, TestSize.Level0)
 
 /**
 * @tc.name: GetDeviceInfo
+* @tc.desc: get device info
+* @tc.type: FUNC
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo01, TestSize.Level0)
+{
+    auto executors = std::make_shared<OHOS::ExecutorPool>(0, 0);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    OHOS::DistributedHardware::DmDeviceInfo deviceInfo = {
+        .deviceId = "123",
+        .deviceName = "asda",
+        .deviceTypeId = 1,
+        .networkId = "",
+    };
+    DeviceInfo info;
+    info.uuid = "ohos.test.uuid";
+    info.udid = "ohos.test.udid";
+    info.networkId = "ohos.test.networkId";
+    info.deviceName = "ohos.test.deviceName";
+    info.deviceType = 1;
+    info.osType = 1;
+    info.authForm = 1;
+    auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(deviceInfo, info);
+    EXPECT_EQ(dvInfo, false);
+}
+
+/**
+* @tc.name: GetDeviceInfo
+* @tc.desc: get device info
+* @tc.type: FUNC
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo02, TestSize.Level0)
+{
+    auto executors = std::make_shared<OHOS::ExecutorPool>(0, 0);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    OHOS::DistributedHardware::DmDeviceInfo deviceInfo = {
+        .deviceId = "123",
+        .deviceName = "asda",
+        .deviceTypeId = 1,
+        .networkId = "14569",
+    };
+    DeviceInfo info;
+    info.uuid = "";
+    info.udid = "";
+    info.networkId = "ohos.test.networkId";
+    info.deviceName = "ohos.test.deviceName";
+    info.deviceType = 1;
+    info.osType = 1;
+    info.authForm = 1;
+    auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(deviceInfo, info);
+    EXPECT_EQ(dvInfo, false);
+}
+
+/**
+* @tc.name: GetDeviceInfo
 * @tc.desc: get device info, the id is invalid
 * @tc.type: FUNC
 * @tc.author: nhj
@@ -418,4 +474,152 @@ HWTEST_F(DeviceManagerAdapterTest, GetOnlineDevices, TestSize.Level0)
     EXPECT_TRUE(onInfos.empty());
 }
 
+/**
+* @tc.name: Online
+* @tc.desc: test OnDeviceOnline function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(DeviceManagerAdapterTest, Online, TestSize.Level0)
+{
+    DeviceManagerAdapter DeviceManagerAdapterTest;
+    OHOS::DistributedHardware::DmDeviceInfo deviceInfo({ "cloudDeviceId",
+        "cloudDeviceName", 0, "cloudNetworkId", 0 });
+    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.Online(deviceInfo));
+}
+
+/**
+* @tc.name: Offline
+* @tc.desc: test Offline function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(DeviceManagerAdapterTest, Offline, TestSize.Level0)
+{
+    DeviceManagerAdapter DeviceManagerAdapterTest;
+    OHOS::DistributedHardware::DmDeviceInfo info01 = {
+        .deviceId = "123",
+        .deviceName = "asda",
+        .deviceTypeId = 1,
+        .networkId = "14569",
+    };
+    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.Offline(info01));
+}
+
+/**
+* @tc.name: OnChanged
+* @tc.desc: test OnChanged function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(DeviceManagerAdapterTest, OnChanged, TestSize.Level0)
+{
+    DeviceManagerAdapter DeviceManagerAdapterTest;
+    OHOS::DistributedHardware::DmDeviceInfo deviceInfo({ "cloudDeviceId",
+        "cloudDeviceName", 1, "cloudNetworkId", 1 });
+    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.OnChanged(deviceInfo));
+}
+
+/**
+* @tc.name: OnReady
+* @tc.desc: test OnReady function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(DeviceManagerAdapterTest, OnReady, TestSize.Level0)
+{
+    DeviceManagerAdapter DeviceManagerAdapterTest;
+    OHOS::DistributedHardware::DmDeviceInfo info = {
+        .deviceId = "111",
+        .deviceName = "device",
+        .deviceTypeId = 1,
+        .networkId = "12345",
+    };
+    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.OnReady(info));
+}
+
+/**
+* @tc.name: SaveDeviceInfo
+* @tc.desc: test SaveDeviceInfo function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(DeviceManagerAdapterTest, SaveDeviceInfo, TestSize.Level0)
+{
+    DeviceManagerAdapter DeviceManagerAdapterTest;
+    DeviceInfo info1;
+    info1.uuid = "";
+    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.SaveDeviceInfo(info1, DeviceChangeType::DEVICE_OFFLINE));
+
+    DeviceInfo info;
+    info.uuid = "ohos.test.uuid";
+    info.udid = "ohos.test.udid";
+    info.networkId = "ohos.test.networkId";
+    info.deviceName = "ohos.test.deviceName";
+    info.deviceType = 1;
+    info.osType = 1;
+    info.authForm = 1;
+    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.SaveDeviceInfo(info, DeviceChangeType::DEVICE_ONLINE));
+}
+
+/**
+* @tc.name: GetEncryptedUuidByNetworkId
+* @tc.desc: get uuid by networkId, the networkId is invalid
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetEncryptedUuidByNetworkId, TestSize.Level0)
+{
+    auto uuid = DeviceManagerAdapter::GetInstance().GetEncryptedUuidByNetworkId(EMPTY_DEVICE_ID);
+    EXPECT_TRUE(uuid.empty());
+    uuid = DeviceManagerAdapter::GetInstance().GetEncryptedUuidByNetworkId(INVALID_DEVICE_ID);
+    EXPECT_TRUE(uuid.empty());
+}
+
+/**
+* @tc.name: GetEncryptedUuidByNetworkId
+* @tc.desc: get uuid by networkId
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetEncryptedUuidByNetworkId01, TestSize.Level0)
+{
+    auto result = DeviceManagerAdapter::GetInstance().GetEncryptedUuidByNetworkId("");
+    EXPECT_EQ(result, "");
+}
+
+/**
+* @tc.name: IsSameAccount
+* @tc.desc: test IsSameAccount function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(DeviceManagerAdapterTest, IsSameAccount, TestSize.Level0)
+{
+    std::string networkId = "";
+    auto status = DeviceManagerAdapter::GetInstance().IsSameAccount(networkId);
+    EXPECT_EQ(status, false);
+}
+
+/**
+* @tc.name: IsSameAccount
+* @tc.desc: test IsSameAccount function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: nhj
+*/
+HWTEST_F(DeviceManagerAdapterTest, IsSameAccount01, TestSize.Level0)
+{
+    std::string networkId = "test_network_id";
+    auto status = DeviceManagerAdapter::GetInstance().IsSameAccount(networkId);
+    EXPECT_EQ(status, false);
+}
 } // namespace
