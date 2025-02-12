@@ -57,7 +57,7 @@ public:
  * @tc.name: SetQueryNodesTest
  * @tc.desc: Set and query nodes.
  * @tc.type: FUNC
- * @tc.require: AR000F8N0
+ * @tc.require:
  */
 HWTEST_F(GeneralValueTest, SetQueryNodesTest, TestSize.Level2)
 {
