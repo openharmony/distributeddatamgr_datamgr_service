@@ -85,7 +85,7 @@ std::vector<std::string> GetSchemaHelper::GetSchemaFromHap(const std::string &sc
         std::unique_ptr<uint8_t[]> fileContent;
         auto ret = resMgr->GetRawFileFromHap(schemaPath, length, fileContent);
         if (ret != ERR_OK) {
-            ZLOGE("GetRawFileFromHap failed. bundleName:%{public}s ret:%{public}d", info.bundleName.c_str(), ret);
+            ZLOGD("GetRawFileFromHap failed. bundleName:%{public}s ret:%{public}d", info.bundleName.c_str(), ret);
             continue;
         }
         std::string schema(fileContent.get(), fileContent.get() + length);
