@@ -25,7 +25,6 @@
 #include "checker_manager.h"
 #include "dfx_types.h"
 #include "distributed_kv_data_manager.h"
-#include "file.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
 #include "preprocess_utils.h"
@@ -80,6 +79,7 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     ZLOGD("start");
     int32_t res = E_OK;
     UdmfBehaviourMsg msg;
+    std::string types;
     auto find = UD_INTENTION_MAP.find(option.intention);
     msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
     msg.operation = "insert";
@@ -93,7 +93,13 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     }
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
-    msg.dataType = unifiedData.GetTypes();
+
+    for (const auto &record : unifiedData.GetRecords()) {
+        for (const auto &type : record->GetUtdIds()) {
+            types.append("-").append(type);
+        }
+    }
+    msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
     return res;
@@ -142,7 +148,6 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_DB_ERROR;
     }
 
-    UdmfConversion::InitValueObject(unifiedData);
     if (store->Put(unifiedData) != E_OK) {
         ZLOGE("Put unified data failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
@@ -157,6 +162,7 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     ZLOGD("start");
     int32_t res = E_OK;
     UdmfBehaviourMsg msg;
+    std::string types;
     auto find = UD_INTENTION_MAP.find(query.intention);
     msg.channel = find == UD_INTENTION_MAP.end() ? "invalid" : find->second;
     msg.operation = "insert";
@@ -170,7 +176,12 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     }
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
-    msg.dataType = unifiedData.GetTypes();
+    for (const auto &record : unifiedData.GetRecords()) {
+        for (const auto &type : record->GetUtdIds()) {
+            types.append("-").append(type);
+        }
+    }
+    msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->BehaviourReporter()->UDMFReport(msg);
     return res;
@@ -259,64 +270,76 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
 int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifiedData)
 {
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-    auto records = unifiedData.GetRecords();
-    if (unifiedData.GetRuntime() == nullptr) {
-        return E_DB_ERROR;
-    }
-    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
-    if (localDeviceId != sourceDeviceId) {
-        SetRemoteUri(query, records);
+    std::vector<Uri> allUri;
+    int32_t verifyRes = ProcessCrossDeviceData(unifiedData, allUri);
+    if (verifyRes != E_OK) {
+        ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
+        return verifyRes;
     }
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         ZLOGE("GetHapBundleNameByToken fail, key=%{public}s, tokenId=%{private}d.", query.key.c_str(), query.tokenId);
         return E_ERROR;
     }
+    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
     if (localDeviceId == sourceDeviceId && query.tokenId == unifiedData.GetRuntime()->tokenId) {
         ZLOGW("No need to grant uri permissions, queryKey=%{public}s.", query.key.c_str());
         return E_OK;
     }
-    std::vector<Uri> allUri;
-    for (auto record : records) {
-        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
-            if (file->GetUri().empty()) {
-                ZLOGW("Get uri is empty, key=%{public}s.", query.key.c_str());
-                continue;
-            }
-            Uri uri(file->GetUri());
-            std::string scheme = uri.GetScheme();
-            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-                ZLOGW("Get authority is empty or uri scheme not equals to file, key=%{public}s.", query.key.c_str());
-                continue;
-            }
-            allUri.push_back(uri);
-        }
-    }
     if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
-        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, E_NO_PERMISSION);
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
-              bundleName.c_str(), query.key.c_str());
+            bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
     }
     return E_OK;
 }
 
-void UdmfServiceImpl::SetRemoteUri(const QueryOption &query, std::vector<std::shared_ptr<UnifiedRecord>> &records)
+int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris)
 {
-    for (auto record : records) {
-        if (record != nullptr && PreProcessUtils::IsFileType(record->GetType())) {
-            auto file = static_cast<File *>(record.get());
-            std::string remoteUri = file->GetRemoteUri();
-            if (remoteUri.empty()) {
-                ZLOGW("Get remoteUri is empyt, key=%{public}s.", query.key.c_str());
-                continue;
-            }
-            file->SetUri(remoteUri); // cross dev, need dis path.
-        }
+    if (unifiedData.GetRuntime() == nullptr) {
+        ZLOGE("Get runtime empty!");
+        return E_DB_ERROR;
     }
+    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
+    auto records = unifiedData.GetRecords();
+    bool hasError = false;
+    PreProcessUtils::ProcessFileType(records, [&] (std::shared_ptr<Object> obj) {
+        if (hasError) {
+            return false;
+        }
+        std::string oriUri;
+        obj->GetValue(ORI_URI, oriUri);
+        if (oriUri.empty()) {
+            ZLOGW("Get uri is empty.");
+            return false;
+        }
+        Uri uri(oriUri);
+        std::string scheme = uri.GetScheme();
+        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+        if (localDeviceId != sourceDeviceId) {
+            std::string remoteUri;
+            obj->GetValue(REMOTE_URI, remoteUri);
+            if (remoteUri.empty() && scheme == FILE_SCHEME) {
+                ZLOGE("when cross devices, remote uri is required!");
+                hasError = true;
+                return false;
+            }
+            if (!remoteUri.empty()) {
+                obj->value_.insert_or_assign(ORI_URI, remoteUri); // cross dev, need dis path.
+                uri = Uri(remoteUri);
+                scheme = uri.GetScheme();
+                std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+            }
+        }
+        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+            ZLOGW("Get authority is empty or uri scheme not equals to file.");
+            return false;
+        }
+        uris.push_back(uri);
+        return true;
+    });
+    return hasError ? E_ERROR : E_OK;
 }
 
 int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)
@@ -381,7 +404,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     for (auto &record : unifiedData.GetRecords()) {
         record->SetUid(PreProcessUtils::GenerateId());
     }
-    UdmfConversion::InitValueObject(unifiedData);
     if (store->Update(unifiedData) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -495,7 +517,6 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         return E_DB_ERROR;
     }
     data.GetRuntime()->privileges.emplace_back(privilege);
-    UdmfConversion::InitValueObject(data);
     if (store->Update(data) != E_OK) {
         ZLOGE("Update unified data failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
@@ -510,12 +531,16 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
     if (!key.IsValid()) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::FAILED, E_INVALID_PARAMETERS, BizState::DFX_END);
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
 
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
@@ -523,11 +548,9 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     if (store->Sync(devices) != E_OK) {
         ZLOGE("Store sync failed, intention: %{public}s.", key.intention.c_str());
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_ABNORMAL_END);
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
         return E_DB_ERROR;
     }
-    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-        BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_NORMAL_END);
     return E_OK;
 }
 
