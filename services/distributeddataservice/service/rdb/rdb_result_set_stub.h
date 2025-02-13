@@ -20,6 +20,7 @@
 
 #include "irdb_result_set.h"
 #include "result_set.h"
+#include "rdb_result_set_impl.h"
 
 namespace OHOS::DistributedRdb {
 class RdbResultSetStub : public IRemoteStub<IRdbResultSet> {
@@ -50,6 +51,8 @@ private:
 
     static bool CheckInterfaceToken(MessageParcel &data);
     using RequestHandle = int (RdbResultSetStub::*)(MessageParcel &, MessageParcel &);
+RDB_UTILS_PUSH_WARNING
+RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
     static constexpr RequestHandle HANDLERS[Code::CMD_MAX] = {
         [Code::CMD_GET_ALL_COLUMN_NAMES] = &RdbResultSetStub::OnGetAllColumnNames,
         [Code::CMD_GET_COLUMN_COUNT] = &RdbResultSetStub::OnGetColumnCount,
@@ -70,6 +73,7 @@ private:
         [Code::CMD_GET_SIZE] = &RdbResultSetStub::OnGetSize,
         [Code::CMD_CLOSE] = &RdbResultSetStub::OnClose
     };
+RDB_UTILS_POP_WARNING
     std::shared_ptr<NativeRdb::ResultSet> resultSet_;
 };
 } // namespace OHOS::DistributedRdb

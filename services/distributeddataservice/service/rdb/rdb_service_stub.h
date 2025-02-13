@@ -20,6 +20,7 @@
 #include "rdb_service.h"
 #include "rdb_notifier.h"
 #include "feature/feature_system.h"
+#include "rdb_result_set_impl.h"
 
 namespace OHOS::DistributedRdb {
 using RdbServiceCode = OHOS::DistributedRdb::RelationalStore::RdbServiceInterfaceCode;
@@ -79,6 +80,8 @@ private:
     int32_t OnVerifyPromiseInfo(MessageParcel& data, MessageParcel& reply);
 
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
+RDB_UTILS_PUSH_WARNING
+RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
     static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)] = {
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_TABLE)] =
             &RdbServiceStub::OnRemoteObtainDistributedTableName,
@@ -114,6 +117,7 @@ private:
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_VERIFY_PROMISE_INFO)] =
             &RdbServiceStub::OnVerifyPromiseInfo
     };
+RDB_UTILS_POP_WARNING
 };
 } // namespace OHOS::DistributedRdb
 #endif

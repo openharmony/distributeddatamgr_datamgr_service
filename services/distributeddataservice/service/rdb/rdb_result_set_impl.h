@@ -25,7 +25,15 @@
 #include "value_proxy.h"
 #include "store/general_value.h"
 
+#define RDB_UTILS_PUSH_WARNING _Pragma("GCC diagnostic push")
+#define RDB_UTILS_POP_WARNING _Pragma("GCC diagnostic pop")
+#define RDB_UTILS_DISABLE_WARNING_INTERNAL2(warningName) #warningName
+#define RDB_UTILS_DISABLE_WARNING(warningName) \
+    _Pragma(                                     \
+        RDB_UTILS_DISABLE_WARNING_INTERNAL2(GCC diagnostic ignored warningName))
+
 namespace OHOS::DistributedRdb {
+
 class RdbResultSetImpl final : public NativeRdb::ResultSet {
 public:
     using ValueProxy = DistributedData::ValueProxy;
@@ -85,6 +93,8 @@ private:
     };
 
     mutable std::shared_mutex mutex_ {};
+RDB_UTILS_PUSH_WARNING
+RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
     static constexpr ColumnType COLUMNTYPES[DistributedData::TYPE_MAX] = {
         [DistributedData::TYPE_INDEX<std::monostate>] = ColumnType::TYPE_NULL,
         [DistributedData::TYPE_INDEX<int64_t>] = ColumnType::TYPE_INTEGER,
@@ -95,6 +105,7 @@ private:
         [DistributedData::TYPE_INDEX<DistributedData::Asset>] = ColumnType::TYPE_BLOB,
         [DistributedData::TYPE_INDEX<DistributedData::Assets>] = ColumnType::TYPE_BLOB,
     };
+RDB_UTILS_POP_WARNING
     std::shared_ptr<DistributedData::Cursor> resultSet_;
     std::atomic<int32_t> current_ = -1;
     int32_t count_ = 0;
