@@ -213,7 +213,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     }
     int count = resultSetCount.fetch_add(1);
     ZLOGD_MACRO("start query %{public}d", count);
-    if (count > MAX_RESULTSET_COUNT && IsLimit(count, callingPid, callingTokenId)) {
+    if (count >= MAX_RESULTSET_COUNT && IsLimit(count, callingPid, callingTokenId)) {
         resultSetCount--;
         return std::make_pair(E_RESULTSET_BUSY, nullptr);
     }
