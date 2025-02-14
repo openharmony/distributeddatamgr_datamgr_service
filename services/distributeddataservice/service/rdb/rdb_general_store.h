@@ -80,6 +80,7 @@ public:
     int32_t RegisterDetailProgressObserver(DetailAsync async) override;
     int32_t UnregisterDetailProgressObserver() override;
     int32_t Close(bool isForce = false) override;
+    void SetConfig(const StoreConfig &storeConfig) override;
     int32_t AddRef() override;
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;

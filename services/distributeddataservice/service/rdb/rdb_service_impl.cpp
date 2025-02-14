@@ -314,9 +314,9 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
               Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
+    Database dataBase;
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
         UpdateSyncMeta(meta, localMeta);
-        Database dataBase;
         if (RdbSchemaConfig::GetDistributedSchema(localMeta, dataBase) && !dataBase.name.empty() &&
             !dataBase.bundleName.empty()) {
             MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true);
@@ -339,6 +339,12 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     for (const auto &reference : references) {
         DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
         relationships.emplace_back(relationship);
+    }
+    if (MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true)) {
+       GeneralStore::DistributedTableMode tableMode = GeneralStore::DistributedTableMode::COLLABORATION;
+       GeneralStore::StoreConfig config;
+       config.tableMode = tableMode;
+       store->SetConfig(config);
     }
     return store->SetDistributedTables(tables, type, relationships);
 }
