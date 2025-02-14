@@ -340,13 +340,18 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
         relationships.emplace_back(relationship);
     }
-    if (MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true)) {
+    if (!dataBase.GetKey().empty() && MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true)) {
+        SetDistributedTableMode(store);
+    }
+    return store->SetDistributedTables(tables, type, relationships);
+}
+
+void RdbServiceImpl::SetDistributedTableMode(std::shared_ptr<DistributedData::GeneralStore> &store)
+{
        GeneralStore::DistributedTableMode tableMode = GeneralStore::DistributedTableMode::COLLABORATION;
        GeneralStore::StoreConfig config;
        config.tableMode = tableMode;
        store->SetConfig(config);
-    }
-    return store->SetDistributedTables(tables, type, relationships);
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)

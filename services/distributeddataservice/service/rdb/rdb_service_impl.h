@@ -60,6 +60,8 @@ public:
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
         const std::vector<Reference> &references, bool isRebuild, int32_t type = DISTRIBUTED_DEVICE) override;
 
+    void SetDistributedTableMode(std::shared_ptr<DistributedData::GeneralStore> &store);
+
     std::pair<int32_t, std::shared_ptr<ResultSet>> RemoteQuery(const RdbSyncerParam& param, const std::string& device,
         const std::string& sql, const std::vector<std::string>& selectionArgs) override;
 
