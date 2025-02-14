@@ -348,10 +348,10 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
 
 void RdbServiceImpl::SetDistributedTableMode(std::shared_ptr<DistributedData::GeneralStore> &store)
 {
-       GeneralStore::DistributedTableMode tableMode = GeneralStore::DistributedTableMode::COLLABORATION;
-       GeneralStore::StoreConfig config;
-       config.tableMode = tableMode;
-       store->SetConfig(config);
+    GeneralStore::DistributedTableMode tableMode = GeneralStore::DistributedTableMode::COLLABORATION;
+    GeneralStore::StoreConfig config;
+    config.tableMode = tableMode;
+    store->SetConfig(config);
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
