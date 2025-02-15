@@ -947,6 +947,24 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
+void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+     if (delegate_ == nullptr) {
+        ZLOGE("database already closed!, tableMode is :%{public}d",
+              storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
+    }
+    if (storeConfig.tableMode.has_value()) {
+        RelationalStoreDelegate::StoreConfig config;
+        if (storeConfig.tableMode == DistributedTableMode::COLLABORATION) {
+            config.tableMode = DistributedDB::DistributedTableMode::COLLABORATION;
+        } else if (storeConfig.tableMode == DistributedTableMode::SPLIT_BY_DEVICE) {
+            config.tableMode = DistributedDB::DistributedTableMode::SPLIT_BY_DEVICE;
+        }
+        delegate_->SetStoreConfig(config);
+    }
+}
+
 int32_t RdbGeneralStore::SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
     const std::set<std::string> &extendColNames, bool isForceUpgrade)
 {
