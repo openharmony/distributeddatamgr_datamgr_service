@@ -1055,8 +1055,6 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName
 
 int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
 {
-    ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", hapInfo.bundleName.c_str(), hapInfo.user,
-        hapInfo.instIndex);
     auto [status, cloudInfo] = GetCloudInfoFromMeta(hapInfo.user);
     if (status != SUCCESS) {
         return status;
@@ -1086,11 +1084,10 @@ int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
 void CloudServiceImpl::UpdateClearWaterMark(
     const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta)
 {
-    ZLOGI("update schemaMeta newVersion:%{public}d,oldVersion:%{public}d", newSchemaMeta.version, schemaMeta.version);
     if (newSchemaMeta.version == schemaMeta.version) {
         return;
     }
-
+    ZLOGI("update schemaMeta newVersion:%{public}d,oldVersion:%{public}d", newSchemaMeta.version, schemaMeta.version);
     CloudMark metaData;
     metaData.bundleName = hapInfo.bundleName;
     metaData.userId = hapInfo.user;
@@ -1107,7 +1104,8 @@ void CloudServiceImpl::UpdateClearWaterMark(
             metaData.storeId = database.name;
             metaData.isClearWaterMark = true;
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-            ZLOGI("clear watermark, storeId:%{public}s", Anonymous::Change(metaData.storeId).c_str());
+            ZLOGI("clear watermark, storeId:%{public}s, newVersion:%{public}d, oldVersion:%{public}d",
+                Anonymous::Change(metaData.storeId).c_str(), database.version, dbMap[database.name]);
         }
     }
 }
@@ -1122,7 +1120,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo 
             return { SUCCESS, schemaMeta };
         }
     }
-    ZLOGE("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
     return { ERROR, schemaMeta };
 }
 
