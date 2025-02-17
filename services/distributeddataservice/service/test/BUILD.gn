@@ -997,6 +997,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_service_impl_test.cpp",
     "data_share_service_stub_test.cpp",
     "data_share_subscriber_managers_test.cpp",
+    "data_share_types_util_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
