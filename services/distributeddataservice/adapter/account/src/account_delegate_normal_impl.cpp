@@ -196,7 +196,7 @@ ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
 {
     return [this, retry] {
         auto result = OsAccountManager::SubscribeOsAccount(accountSubscriber_);
-        if (result) {
+        if (result == ERR_OK) {
             ZLOGI("success to register subscriber.");
             return;
         }
@@ -214,7 +214,7 @@ AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
 {
     ZLOGD("destruct");
     auto res = OsAccountManager::UnsubscribeOsAccount(accountSubscriber_);
-    if (!res) {
+    if (res != ERR_OK) {
         ZLOGW("unregister account event fail res:%d", res);
     }
 }
@@ -222,7 +222,7 @@ AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
 void AccountDelegateNormalImpl::UnsubscribeAccountEvent()
 {
     auto res = OsAccountManager::UnsubscribeOsAccount(accountSubscriber_);
-    if (!res) {
+    if (res != ERR_OK) {
         ZLOGW("unregister account event fail res:%d", res);
     }
 }
