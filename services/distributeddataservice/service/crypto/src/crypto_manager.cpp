@@ -16,6 +16,7 @@
 #include "crypto_manager.h"
 
 #include <cstring>
+#include <string>
 
 #include "hks_api.h"
 #include "hks_param.h"
@@ -52,28 +53,31 @@ struct HksParam aes256Param[] = {
     { .tag = HKS_TAG_DIGEST, .uint32Param = HKS_DIGEST_NONE },
     { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
     { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-    { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
 };
 
-bool AddParams(struct HksParamSet *params, RootKeys type, HksKeyPurpose purpose)
+bool AddHksParams(struct HksParamSet *params, CryptoManager::ParamConfig paramConfig)
 {
     struct HksBlob blobNonce;
     struct HksBlob keyName;
-    if (type == RootKeys::ROOT_KEY) {
+    if (paramConfig.keyType == RootKeys::ROOT_KEY) {
         blobNonce = { uint32_t(vecNonce_.size()), vecNonce_.data() };
         keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (type == RootKeys::CLONE_KEY) {
+    } else if (paramConfig.keyType == RootKeys::CLONE_KEY) {
         blobNonce = { uint32_t(backupNonce_.size()), backupNonce_.data() };
         keyName = { uint32_t(vecCloneKeyAlias_.size()), vecCloneKeyAlias_.data() };
     } else {
         return false;
     }
     struct HksBlob blobAad = { uint32_t(vecAad_.size()), vecAad_.data() };
-    struct HksParam hksParam[] = {
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = purpose },
+    std::vector<HksParam> hksParam = {
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = paramConfig.purpose },
         { .tag = HKS_TAG_NONCE, .blob = blobNonce },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = paramConfig.storageLevel },
     };
+    if (paramConfig.storageLevel > HKS_AUTH_STORAGE_LEVEL_DE) {
+        hksParam.emplace_back(HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::stoi(paramConfig.userId) });
+    }
 
     auto ret = HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
     if (ret != HKS_SUCCESS) {
@@ -81,7 +85,7 @@ bool AddParams(struct HksParamSet *params, RootKeys type, HksKeyPurpose purpose)
         HksFreeParamSet(&params);
         return false;
     }
-    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
+    ret = HksAddParams(params, hksParam.data(), hksParam.size());
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
         HksFreeParamSet(&params);
@@ -90,26 +94,28 @@ bool AddParams(struct HksParamSet *params, RootKeys type, HksKeyPurpose purpose)
     return true;
 }
 
-int32_t GetRootKeyParams(HksParamSet *&params)
+int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId)
 {
-    ZLOGI("GetRootKeyParams.");
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return ret;
     }
 
-    struct HksParam hksParam[] = {
+    std::vector<HksParam> hksParam = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
         { .tag = HKS_TAG_DIGEST, .uint32Param = 0 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = storageLevel },
     };
+    if (storageLevel > HKS_AUTH_STORAGE_LEVEL_DE) {
+        hksParam.emplace_back(HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::stoi(userId) });
+    }
 
-    ret = HksAddParams(params, hksParam, sizeof(hksParam) / sizeof(hksParam[0]));
+    ret = HksAddParams(params, hksParam.data(), hksParam.size());
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksAddParams failed with error %{public}d", ret);
         HksFreeParamSet(&params);
@@ -126,32 +132,43 @@ int32_t GetRootKeyParams(HksParamSet *&params)
 
 int32_t CryptoManager::GenerateRootKey()
 {
-    ZLOGI("GenerateRootKey.");
+    return GenerateRootKey(HKS_AUTH_STORAGE_LEVEL_DE, DEFAULT_USER) == HKS_SUCCESS ? ErrCode::SUCCESS : ErrCode::ERROR;
+}
+
+int32_t CryptoManager::GenerateRootKey(uint32_t storageLevel, const std::string &userId)
+{
+    ZLOGI("GenerateRootKey, storageLevel=%{public}u, userId=%{public}s", storageLevel, userId.c_str());
     struct HksParamSet *params = nullptr;
-    int32_t ret = GetRootKeyParams(params);
+    int32_t ret = GetRootKeyParams(params, storageLevel, userId);
     if (ret != HKS_SUCCESS) {
-        ZLOGE("GetRootKeyParams failed with error %{public}d", ret);
+        ZLOGE("GetRootKeyParams failed with error %{public}d, storageLevel:%{public}u, userId:%{public}s", ret,
+            storageLevel, userId.c_str());
         return ErrCode::ERROR;
     }
     struct HksBlob rootKeyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
     ret = HksGenerateKey(&rootKeyName, params, nullptr);
     HksFreeParamSet(&params);
     if (ret == HKS_SUCCESS) {
-        ZLOGI("GenerateRootKey Succeed.");
+        ZLOGI("GenerateRootKey Succeed. storageLevel:%{public}u, userId:%{public}s", storageLevel, userId.c_str());
         return ErrCode::SUCCESS;
     }
-
-    ZLOGE("HksGenerateKey failed with error %{public}d", ret);
+    ZLOGE("HksGenerateKey failed with error %{public}d, storageLevel:%{public}u, userId:%{public}s",
+        ret, storageLevel, userId.c_str());
     return ErrCode::ERROR;
 }
 
 int32_t CryptoManager::CheckRootKey()
 {
     ZLOGI("CheckRootKey.");
+    return CheckRootKey(HKS_AUTH_STORAGE_LEVEL_DE, DEFAULT_USER);
+}
+
+int32_t CryptoManager::CheckRootKey(uint32_t storageLevel, const std::string &userId)
+{
     struct HksParamSet *params = nullptr;
-    int32_t ret = GetRootKeyParams(params);
+    int32_t ret = GetRootKeyParams(params, storageLevel, userId);
     if (ret != HKS_SUCCESS) {
-        ZLOGE("GetRootKeyParams failed with error %{public}d", ret);
+        ZLOGE("GetRootKeyParams failed with error %{public}d, storageLevel: %{public}u", ret, storageLevel);
         return ErrCode::ERROR;
     }
 
@@ -161,32 +178,73 @@ int32_t CryptoManager::CheckRootKey()
     if (ret == HKS_SUCCESS) {
         return ErrCode::SUCCESS;
     }
-    ZLOGE("HksKeyExist failed with error %{public}d", ret);
+    ZLOGE("HksKeyExist failed with error %{public}d, storageLevel: %{public}u", ret, storageLevel);
     if (ret == HKS_ERROR_NOT_EXIST) {
         return ErrCode::NOT_EXIST;
     }
     return ErrCode::ERROR;
 }
 
-std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
+uint32_t CryptoManager::GetStorageLevel(int32_t area)
 {
-    return EncryptInner(key, RootKeys::ROOT_KEY);
+    if (area >= EL4 && area <= EL5) {
+        return HKS_AUTH_STORAGE_LEVEL_ECE;
+    }
+    if (area >= EL2 && area <= EL3) {
+        return HKS_AUTH_STORAGE_LEVEL_CE;
+    }
+    return HKS_AUTH_STORAGE_LEVEL_DE;
 }
 
-std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key)
+int32_t CryptoManager::PrepareRootKey(uint32_t storageLevel, const std::string &userId)
 {
-    return EncryptInner(key, RootKeys::CLONE_KEY);
+    if (storageLevel == HKS_AUTH_STORAGE_LEVEL_DE) {
+        return ErrCode::SUCCESS;
+    }
+    auto status = CheckRootKey(storageLevel, userId);
+    if (status == ErrCode::SUCCESS) {
+        return ErrCode::SUCCESS;
+    }
+    if (status == ErrCode::NOT_EXIST && GenerateRootKey(storageLevel, userId) == ErrCode::SUCCESS) {
+        ZLOGI("GenerateRootKey success.");
+        return ErrCode::SUCCESS;
+    }
+    ZLOGW("GenerateRootKey failed, storageLevel:%{public}u, userId:%{public}s, status:%{public}d", storageLevel,
+        userId.c_str(), status);
+    return status;
 }
 
-std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const RootKeys type)
+std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId)
 {
+    return EncryptInner(key, RootKeys::ROOT_KEY, area, userId);
+}
+
+std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key, int32_t area, const std::string &userId)
+{
+    return EncryptInner(key, RootKeys::CLONE_KEY, area, userId);
+}
+
+std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const RootKeys type,
+   int32_t area, const std::string &userId)
+{
+    uint32_t storageLevel = GetStorageLevel(area);
+    if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
+        return {};
+    }
+
     struct HksParamSet *params = nullptr;
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
         return {};
     }
-    if (!AddParams(params, type, HKS_KEY_PURPOSE_ENCRYPT)) {
+    ParamConfig paramConfig = {
+        .keyType = type,
+        .purpose = HKS_KEY_PURPOSE_ENCRYPT,
+        .storageLevel = storageLevel,
+        .userId = userId
+    };
+    if (!AddHksParams(params, paramConfig)) {
         return {};
     }
     ret = HksBuildParamSet(&params);
@@ -217,18 +275,22 @@ std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key
     return encryptedKey;
 }
 
-bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key)
+bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId)
 {
-    return DecryptInner(source, key, RootKeys::ROOT_KEY);
+    return DecryptInner(source, key, RootKeys::ROOT_KEY, area, userId);
 }
 
-bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key)
+bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId)
 {
-    return DecryptInner(source, key, RootKeys::CLONE_KEY);
+    return DecryptInner(source, key, RootKeys::CLONE_KEY, area, userId);
 }
 
-bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type)
+bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type, int32_t area, const std::string &userId)
 {
+    uint32_t storageLevel = GetStorageLevel(area);
+    if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
+        return false;
+    }
     struct HksParamSet *params = nullptr;
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -236,8 +298,14 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
         return false;
     }
 
-    if (!AddParams(params, type, HKS_KEY_PURPOSE_DECRYPT)) {
-        return {};
+    ParamConfig paramConfig = {
+        .keyType = type,
+        .purpose = HKS_KEY_PURPOSE_DECRYPT,
+        .storageLevel = storageLevel,
+        .userId = userId
+    };
+    if (!AddHksParams(params, paramConfig)) {
+        return false;
     }
 
     ret = HksBuildParamSet(&params);
@@ -279,6 +347,7 @@ bool BuildImportKeyParams(struct HksParamSet *&params)
         {.tag = HKS_TAG_IS_KEY_ALIAS, .boolParam = true},
         {.tag = HKS_TAG_KEY_GENERATE_TYPE, .uint32Param = HKS_KEY_GENERATE_TYPE_DEFAULT},
         {.tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT},
+        {.tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE},
     };
     ret = HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
     if (ret != HKS_SUCCESS) {

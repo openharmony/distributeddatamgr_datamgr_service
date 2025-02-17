@@ -33,7 +33,7 @@
 #include "communication_provider.h"
 #include "communicator_context.h"
 #include "config_factory.h"
-#include "crypto_manager.h"
+#include "crypto_upgrade.h"
 #include "db_info_handle_impl.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -79,6 +79,7 @@ using namespace OHOS::Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
+using CryptoUpgrade = DistributedData::CryptoUpgrade;
 constexpr const char* EXTENSION_BACKUP = "backup";
 constexpr const char* EXTENSION_RESTORE = "restore";
 constexpr const char* SECRET_KEY_BACKUP_PATH =
@@ -519,21 +520,23 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
     return 0;
 }
 
-std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta)
+std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
+    const StoreMetaData &metaData)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
         ZLOGE("Secret key meta load failed.");
         return {};
     };
     std::vector<uint8_t> password;
-    if (!CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, password)) {
+    if (!CryptoUpgrade::GetInstance().Decrypt(metaData, secretKeyMeta, password)) {
         ZLOGE("Secret key decrypt failed.");
         return {};
     };
-    auto reEncryptedKey = CryptoManager::GetInstance().EncryptCloneKey(password);
+    auto reEncryptedKey = CryptoManager::GetInstance().EncryptCloneKey(
+        password, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     if (reEncryptedKey.size() == 0) {
-        ZLOGE("Secret key encrypt failed.");
-        return {};
+      ZLOGE("Secret key encrypt failed.");
+      return {};
     };
     return reEncryptedKey;
 }
@@ -557,7 +560,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
             };
             auto key = storeMeta.GetSecretKey();
             SecretKeyMetaData secretKeyMeta;
-            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta);
+            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, storeMeta);
             if (reEncryptedKey.size() == 0) {
                 ZLOGE("Secret key re-encrypt failed, user: %{public}s, bundleName: %{public}s, Db: "
                     "%{public}s, instanceId: %{public}d", userId.c_str(),
@@ -649,7 +652,7 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     metaData.instanceId = item.instanceId;
     auto sKey = DistributedData::Base64::Decode(item.sKey);
     std::vector<uint8_t> rawKey;
-    if (!CryptoManager::GetInstance().DecryptCloneKey(sKey, rawKey)) {
+    if (!CryptoManager::GetInstance().DecryptCloneKey(sKey, rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER)) {
         ZLOGE("Decrypt by clonekey failed.");
         sKey.assign(sKey.size(), 0);
         rawKey.assign(rawKey.size(), 0);
@@ -657,7 +660,7 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     }
     SecretKeyMetaData secretKey;
     secretKey.storeType = item.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey);
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     secretKey.time = { item.time.begin(), item.time.end() };
     sKey.assign(sKey.size(), 0);
     rawKey.assign(rawKey.size(), 0);

@@ -27,7 +27,10 @@ ohos_source_set("distributeddata_crypto") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [ "src/crypto_manager.cpp" ]
+  sources = [
+    "src/crypto_manager.cpp",
+    "src/crypto_upgrade.cpp"
+  ]
 
   cflags_cc = [
     "-fvisibility=hidden",

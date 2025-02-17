@@ -21,7 +21,7 @@
 #include <iostream>
 
 #include "backuprule/backup_rule_manager.h"
-#include "crypto_manager.h"
+#include "crypto_upgrade.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
@@ -135,7 +135,11 @@ void BackupManager::DoBackup(const StoreMetaData &meta)
     std::vector<uint8_t> decryptKey;
     SecretKeyMetaData secretKey;
     if (MetaDataManager::GetInstance().LoadMeta(key, secretKey, true)) {
-        CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptKey);
+        ZLOGE("MARK--DoBackup, AREA:%{public}d, user:%{public}s", meta.area, meta.user.c_str());
+        CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, decryptKey);
+        if (secretKey.area < 0) {
+            MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
+        }
     }
     auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta);
     std::string backupFullPath = backupPath + "/" + AUTO_BACKUP_NAME;
@@ -298,10 +302,12 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
 
 bool BackupManager::GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password)
 {
-    std::string key = meta.GetBackupSecretKey();
     SecretKeyMetaData secretKey;
-    MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
-    return CryptoManager::GetInstance().Decrypt(secretKey.sKey, password);
+    StoreMetaData metaData;
+    MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true);
+    MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true);
+    ZLOGE("MARK--GetPassWord, AREA:%{public}d, user:%{public}s", meta.area, meta.user.c_str());
+    return CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, password);
 }
 
 bool BackupManager::IsFileExist(const std::string &path)

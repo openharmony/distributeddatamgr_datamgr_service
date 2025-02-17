@@ -22,7 +22,7 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
-#include "crypto_manager.h"
+#include "crypto_upgrade.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "dfx_types.h"
@@ -51,6 +51,7 @@ using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
+using CryptoUpgrade = DistributedData::CryptoUpgrade;
 static constexpr const char *FT_CLOUD_SYNC = "CLOUD_SYNC";
 constexpr int UUID_WIDTH = 4;
 const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap_ = {
@@ -110,7 +111,10 @@ KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData
     auto storeKey = data.GetSecretKey();
     MetaDataManager::GetInstance().LoadMeta(storeKey, secretKey, true);
     std::vector<uint8_t> password;
-    CryptoManager::GetInstance().Decrypt(secretKey.sKey, password);
+    StoreMetaData metaData;
+    MetaDataManager::GetInstance().LoadMeta(data.GetKey(), metaData, true);
+    ZLOGE("MARK--KVDBGeneralStore::GetDBPassword, AREA:%{public}d, user:%{public}s", metaData.area, metaData.user.c_str());
+    CryptoUpgrade::GetInstance().Decrypt(metaData, secretKey, password);
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
     return dbPassword;

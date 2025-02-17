@@ -88,20 +88,6 @@ Upgrade::DBStatus Upgrade::ExportStore(const StoreMeta &old, const StoreMeta &me
     return DBStatus::OK;
 }
 
-void Upgrade::UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &password)
-{
-    if (!meta.isEncrypt) {
-        return;
-    }
-
-    SecretKeyMetaData secretKey;
-    secretKey.storeType = meta.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(password);
-    auto time = system_clock::to_time_t(system_clock::now());
-    secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
-    MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true);
-}
-
 Upgrade::DBStatus Upgrade::UpdateUuid(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd)
 {
     auto kvStore = GetDBStore(meta, pwd);

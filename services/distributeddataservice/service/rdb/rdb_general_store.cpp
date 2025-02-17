@@ -29,7 +29,7 @@
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
 #include "communicator/device_manager_adapter.h"
-#include "crypto_manager.h"
+#include "crypto_upgrade.h"
 #include "dfx_types.h"
 #include "device_manager_adapter.h"
 #include "eventcenter/event_center.h"
@@ -58,6 +58,7 @@ using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using CryptoUpgrade = DistributedData::CryptoUpgrade;
 
 constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
@@ -167,7 +168,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
         SecretKeyMetaData secretKeyMeta;
         MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
         std::vector<uint8_t> decryptKey;
-        CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        CryptoUpgrade::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey);
         option.passwd.SetValue(decryptKey.data(), decryptKey.size());
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         option.isEncryptedDb = meta.isEncrypt;
