@@ -46,10 +46,10 @@ public:
     Status BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options) override;
     Status AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
         const std::vector<uint8_t> &password) override;
-    Status Delete(const AppId &appId, const StoreId &storeId) override;
-    Status Close(const AppId &appId, const StoreId &storeId) override;
+    Status Delete(const AppId &appId, const StoreId &storeId, int32_t subUser) override;
+    Status Close(const AppId &appId, const StoreId &storeId, int32_t subUser) override;
     Status CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status Sync(const AppId &appId, const StoreId &storeId, SyncInfo &syncInfo) override;
+    Status Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo) override;
     Status RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifier> notifier) override;
     Status UnregServiceNotifier(const AppId &appId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
@@ -60,8 +60,10 @@ public:
         const std::vector<std::string> &remote) override;
     Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status Subscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
-    Status Unsubscribe(const AppId &appId, const StoreId &storeId, sptr<IKvStoreObserver> observer) override;
+    Status Subscribe(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        sptr<IKvStoreObserver> observer) override;
+    Status Unsubscribe(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        sptr<IKvStoreObserver> observer) override;
     Status GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<std::vector<uint8_t>> &passwords,
         int32_t passwordType) override;
     Status NotifyDataChange(const AppId &appId, const StoreId &storeId, uint64_t delay) override;
@@ -75,7 +77,8 @@ public:
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
-    Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, const std::string &device) override;
+    Status RemoveDeviceData(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        const std::string &device) override;
 
 private:
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
@@ -116,7 +119,7 @@ private:
 
     void Init();
     void AddOptions(const Options &options, StoreMetaData &metaData);
-    StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId);
+    StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData GetDistributedDataMeta(const std::string &deviceId);
     StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
@@ -140,7 +143,8 @@ private:
     DBResult HandleGenBriefDetails(const DistributedData::GenDetails &details);
     ProgressDetail HandleGenDetails(const DistributedData::GenDetails &details);
     void OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, ProgressDetail &&detail);
-    DistributedData::AutoCache::Watchers GetWatchers(uint32_t tokenId, const std::string &storeId);
+    DistributedData::AutoCache::Watchers GetWatchers(uint32_t tokenId, const std::string &userId,
+        const std::string &storeId);
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
@@ -153,6 +157,7 @@ private:
     Status ConvertDbStatusNative(DBStatus status);
     bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
         const StoreMetaData &storeMeta);
+    std::string GenerateKey(const std::string &userId, const std::string &storeId) const;
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
