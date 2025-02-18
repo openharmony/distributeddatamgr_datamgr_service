@@ -41,7 +41,6 @@
 #include "bootstrap.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "udmf_dialog.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -838,25 +837,5 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
     std::lock_guard<std::mutex> lock(mutex_);
     asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
 }
-
-int32_t UdmfServiceImpl::InvokeHap(const std::string &progressKey, const sptr<IRemoteObject> &observer)
-{
-    ProgressDialog::ProgressMessageInfo message;
-    message.promptText = "PromptText_PasteBoard_Local";
-    message.remoteDeviceName = "";
-    message.isRemote = false;
-    message.progressKey = progressKey;
-    message.clientCallback = observer;
-    
-    ProgressDialog::FocusedAppInfo appInfo = ProgressDialog::GetInstance().GetFocusedAppInfo();
-    message.windowId = appInfo.windowId;
-    message.callerToken = appInfo.abilityToken;
-    auto status = ProgressDialog::GetInstance().ShowProgress(message);
-    if (status != E_OK) {
-        ZLOGE("ShowProgress fail, status:%{public}d", status);
-    }
-    return E_OK;
-}
-
 } // namespace UDMF
 } // namespace OHOS

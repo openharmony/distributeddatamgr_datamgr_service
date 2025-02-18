@@ -67,8 +67,7 @@ private:
         &UdmfServiceStub::OnGetAppShareOption,
         &UdmfServiceStub::OnRemoveAppShareOption,
         &UdmfServiceStub::OnObtainAsynProcess,
-        &UdmfServiceStub::OnClearAsynProcessByKey,
-        &UdmfServiceStub::OnInvokeHap
+        &UdmfServiceStub::OnClearAsynProcessByKey
     };
 };
 } // namespace UDMF
