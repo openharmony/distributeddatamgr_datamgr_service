@@ -338,7 +338,6 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     }
     
     auto dataBase = HandleDistributedType(param, meta, localMeta, type);
-
     auto store = GetStore(param);
     if (store == nullptr) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
