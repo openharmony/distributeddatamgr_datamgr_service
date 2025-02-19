@@ -292,7 +292,7 @@ void RdbServiceImpl::UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaDa
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
     }
 }
-DataBase RdbServiceImpl::HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta, StoreMetaData &localMeta,
+Database RdbServiceImpl::HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta, StoreMetaData &localMeta,
     int32_t type)
 {
     Database dataBase;

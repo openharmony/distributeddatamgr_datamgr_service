@@ -231,7 +231,7 @@ private:
 
     void UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaData &localMeta);
 
-    DataBase HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta, StoreMetaData &localMeta,
+    Database HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta, StoreMetaData &localMeta,
         int32_t type);
 
     static Factory factory_;
