@@ -45,6 +45,7 @@ public:
         std::string type = "rdb";
         std::string backup;
         std::string extensionUri;
+        bool isFromExtension = false;
         bool singleton = false;
         bool hasExtension = false;
         bool allowEmptyPermission = false;

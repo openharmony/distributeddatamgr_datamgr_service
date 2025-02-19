@@ -149,6 +149,7 @@ int DataProviderConfig::GetFromExtensionProperties(const ProfileInfo &profileInf
 
 int DataProviderConfig::GetFromExtension()
 {
+    providerInfo_.isFromExtension = true;
     if (!GetFromUriPath()) {
         ZLOGE("Uri path failed! uri:%{public}s", URIUtils::Anonymous(providerInfo_.uri).c_str());
         return E_URI_NOT_EXIST;
