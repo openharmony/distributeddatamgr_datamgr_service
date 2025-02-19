@@ -440,10 +440,10 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
 void SyncManager::ReportSyncEvent(const SyncEvent &evt, BizState bizState, int32_t code)
 {
     SyncStage syncStage = SyncStage::START;
-	auto &storeInfo = evt.GetStoreInfo();
+    auto &storeInfo = evt.GetStoreInfo();
     if (bizState == BizState::BEGIN) {
         syncStage = SyncStage::START;
-        RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, 
+        RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC,
             storeInfo.syncId, evt.GetTriggerMode()}, "GetSyncHandler", bizState);
     } else {
         syncStage = SyncStage::END;

@@ -292,8 +292,8 @@ void RdbServiceImpl::UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaDa
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
     }
 }
-Database RdbServiceImpl::HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta, StoreMetaData &localMeta,
-    int32_t type)
+Database RdbServiceImpl::HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta,
+    StoreMetaData &localMeta, int32_t type)
 {
     Database dataBase;
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
