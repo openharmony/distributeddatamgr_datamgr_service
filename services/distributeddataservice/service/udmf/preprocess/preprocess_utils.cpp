@@ -121,7 +121,7 @@ bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleNa
             return true;
         }
     }
-    ZLOGE("GetHapBundleNameByToken faild");
+    ZLOGE("Get bundle name faild");
     return false;
 }
 
@@ -160,7 +160,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
         std::shared_ptr<Object> detailObj;
         obj->GetValue(DETAILS, detailObj);
         if (detailObj == nullptr) {
-            ZLOGE("Not contain details for object!");
+            ZLOGE("No details for object");
             return false;
         }
         UDDetails details = ObjectUtils::ConvertToUDDetails(detailObj);
@@ -189,14 +189,14 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         std::string oriUri;
         obj->GetValue(ORI_URI, oriUri);
         if (oriUri.empty()) {
-            ZLOGW("Get uri empty, plase check the uri.");
+            ZLOGW("URI is empty, please check");
             return false;
         }
         Uri uri(oriUri);
         std::string scheme = uri.GetScheme();
         std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
         if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-            ZLOGW("Get uri authority empty or uri scheme not equals to file.");
+            ZLOGW("Empty URI authority or scheme not file");
             return false;
         }
         uris.push_back(oriUri);
@@ -205,7 +205,7 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
     if (!uris.empty()) {
         ZLOGI("Read to check uri authorization");
         if (!CheckUriAuthorization(uris, tokenId)) {
-            ZLOGE("CheckUriAuthorization failed, bundleName:%{public}s, tokenId: %{public}d, uris size:%{public}zu.",
+            ZLOGE("UriAuth check failed:bundleName:%{public}s,tokenId:%{public}d,uris size:%{public}zu",
                   data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                 BizScene::SET_DATA, SetDataStage::VERIFY_SHARE_PERMISSIONS, StageRes::FAILED, E_NO_PERMISSION);
@@ -288,7 +288,7 @@ bool PreProcessUtils::IsNetworkingEnabled()
 {
     std::vector<AppDistributedKv::DeviceInfo> devInfos =
         DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
-    ZLOGI("DM remote devices count is %{public}u.", static_cast<uint32_t>(devInfos.size()));
+    ZLOGI("Remote devices count:%{public}u", static_cast<uint32_t>(devInfos.size()));
     if (devInfos.empty()) {
         return false;
     }

@@ -17,7 +17,7 @@
 
 namespace OHOS {
 namespace UDMF {
-const std::string DATA_CHECKER = "DataChecker";
+constexpr const char *DATA_CHECKER = "DataChecker";
 CheckerManager &CheckerManager::GetInstance()
 {
     static CheckerManager instance;
