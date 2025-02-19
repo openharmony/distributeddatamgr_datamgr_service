@@ -58,7 +58,14 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         std::string bundleName = want.GetElement().GetBundleName();
         int32_t userId = want.GetIntParam(USER_ID, -1);
         int32_t appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
-        ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d", bundleName.c_str(), userId, appIndex);
+        int32_t newAppIndex = want.GetIntParam(APP_INDEX, 0);
+        ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d, newAppIndex:%{public}d",
+            bundleName.c_str(), userId, appIndex, newAppIndex);
+        // appIndex's key in want is "appIndex", the value of the elder key "sandbox_app_index" is unsure,
+        // to avoid effecting historical function, passing non-zero value to the function
+        if (appIndex == 0 && newAppIndex != 0) {
+            appIndex = newAppIndex;
+        }
         (this->*(it->second))(bundleName, userId, appIndex);
     }
 }
