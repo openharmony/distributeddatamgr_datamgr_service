@@ -18,6 +18,7 @@
 #include <mutex>
 #include <cstdint>
 #include <vector>
+#include "hks_param.h"
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
@@ -35,7 +36,8 @@ public:
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
     std::vector<uint8_t> EncryptCloneKey(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
+    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
+        const std::string &userId);
     bool ImportCloneKey(std::vector<uint8_t> &key, std::vector<uint8_t> &iv);
     struct ParamConfig {
         RootKeys keyType;
@@ -69,8 +71,13 @@ private:
     int32_t CheckRootKey(uint32_t storageLevel, const std::string &userId);
     uint32_t GetStorageLevel(int32_t area);
     int32_t PrepareRootKey(uint32_t storageLevel, const std::string &userId);
-    std::vector<uint8_t> EncryptInner(const std::vector<uint8_t> &key, const RootKeys type, int32_t area, const std::string &userId);
-    bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const RootKeys type, int32_t area, const std::string &userId);
+    std::vector<uint8_t> EncryptInner(const std::vector<uint8_t> &key, const RootKeys type, int32_t area,
+        const std::string &userId);
+    bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const RootKeys type, int32_t area,
+        const std::string &userId);
+    bool AddHksParams(HksParamSet *params, CryptoManager::ParamConfig paramConfig);
+    int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId);
+    bool BuildImportKeyParams(HksParamSet *&params);
     CryptoManager();
     ~CryptoManager();
     std::mutex mutex_;

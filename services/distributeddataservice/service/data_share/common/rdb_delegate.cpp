@@ -84,7 +84,6 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
             return std::make_pair(E_DB_NOT_EXIST, config);
         }
         std::vector<uint8_t> decryptKey;
-        ZLOGE("MARK--RdbDelegate::GetConfig, AREA:%{public}d, user:%{public}s", meta.area, meta.user.c_str());
         if (!DistributedData::CryptoUpgrade::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey)) {
             return std::make_pair(E_ERROR, config);
         };

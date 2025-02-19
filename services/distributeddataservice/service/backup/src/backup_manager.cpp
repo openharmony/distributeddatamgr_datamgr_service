@@ -135,7 +135,6 @@ void BackupManager::DoBackup(const StoreMetaData &meta)
     std::vector<uint8_t> decryptKey;
     SecretKeyMetaData secretKey;
     if (MetaDataManager::GetInstance().LoadMeta(key, secretKey, true)) {
-        ZLOGE("MARK--DoBackup, AREA:%{public}d, user:%{public}s", meta.area, meta.user.c_str());
         CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, decryptKey);
         if (secretKey.area < 0) {
             MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
@@ -306,7 +305,6 @@ bool BackupManager::GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> 
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true);
     MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true);
-    ZLOGE("MARK--GetPassWord, AREA:%{public}d, user:%{public}s", meta.area, meta.user.c_str());
     return CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, password);
 }
 

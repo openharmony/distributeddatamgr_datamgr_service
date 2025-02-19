@@ -29,7 +29,7 @@ public:
         CLONE_SECRET_KEY,
     };
     static CryptoUpgrade &GetInstance();
-    void UpdatePassword(const StoreMetaData &meta, const std::vector<uint8_t> &password,
+    bool UpdatePassword(const StoreMetaData &meta, const std::vector<uint8_t> &password,
         SecretKeyType secretKeyType = LOCAL_SECRET_KEY);
     bool Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secretKeyMeta, std::vector<uint8_t> &key,
         SecretKeyType secretKeyType = LOCAL_SECRET_KEY);

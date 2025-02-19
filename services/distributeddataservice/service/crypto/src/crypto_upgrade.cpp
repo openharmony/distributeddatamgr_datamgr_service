@@ -28,13 +28,12 @@ CryptoUpgrade &CryptoUpgrade::GetInstance()
     return instance;
 }
 
-void CryptoUpgrade::UpdatePassword(const StoreMetaData &meta, const std::vector<uint8_t> &password,
+bool CryptoUpgrade::UpdatePassword(const StoreMetaData &meta, const std::vector<uint8_t> &password,
     SecretKeyType secretKeyType)
 {
     if (!meta.isEncrypt) {
-        return;
+        return false;
     }
-    ZLOGE("mark-- Encrypt, area:%{public}d, userId:%{public}s", meta.area, meta.user.c_str());
     SecretKeyMetaData secretKey;
     secretKey.storeType = meta.storeType;
     secretKey.area = meta.area;
@@ -42,9 +41,9 @@ void CryptoUpgrade::UpdatePassword(const StoreMetaData &meta, const std::vector<
     auto time = system_clock::to_time_t(system_clock::now());
     secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
     if (secretKeyType == LOCAL_SECRET_KEY) {
-        MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true);
+        return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true);
     } else {
-        MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true);
+        return MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true);
     }
 }
 
@@ -52,6 +51,7 @@ bool CryptoUpgrade::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secret
     SecretKeyType secretKeyType)
 {
     if (secretKeyMeta.area < 0) {
+        ZLOGI("Decrypt old secret key");
         if (CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER)) {
             StoreMetaData metaData;
             if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true)) {
@@ -61,7 +61,6 @@ bool CryptoUpgrade::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secret
             return true;
         }
     } else {
-        ZLOGE("mark---GetBackupPassword, area:%{public}d, user:%{public}s", secretKeyMeta.area, meta.user.c_str());
         return CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, key, meta.area, meta.user);
     }
     return false;

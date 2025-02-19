@@ -29,7 +29,7 @@ ohos_source_set("distributeddata_crypto") {
   }
   sources = [
     "src/crypto_manager.cpp",
-    "src/crypto_upgrade.cpp"
+    "src/crypto_upgrade.cpp",
   ]
 
   cflags_cc = [

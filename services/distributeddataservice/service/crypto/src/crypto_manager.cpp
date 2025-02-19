@@ -19,7 +19,6 @@
 #include <string>
 
 #include "hks_api.h"
-#include "hks_param.h"
 #include "log_print.h"
 #include "securec.h"
 namespace OHOS::DistributedData {
@@ -55,7 +54,7 @@ struct HksParam aes256Param[] = {
     { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
 };
 
-bool AddHksParams(struct HksParamSet *params, CryptoManager::ParamConfig paramConfig)
+bool CryptoManager::AddHksParams(HksParamSet *params, CryptoManager::ParamConfig paramConfig)
 {
     struct HksBlob blobNonce;
     struct HksBlob keyName;
@@ -76,7 +75,8 @@ bool AddHksParams(struct HksParamSet *params, CryptoManager::ParamConfig paramCo
         { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = paramConfig.storageLevel },
     };
     if (paramConfig.storageLevel > HKS_AUTH_STORAGE_LEVEL_DE) {
-        hksParam.emplace_back(HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::stoi(paramConfig.userId) });
+        hksParam.emplace_back(
+            HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::stoi(paramConfig.userId) });
     }
 
     auto ret = HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
@@ -94,7 +94,7 @@ bool AddHksParams(struct HksParamSet *params, CryptoManager::ParamConfig paramCo
     return true;
 }
 
-int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId)
+int32_t CryptoManager::GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId)
 {
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -219,13 +219,14 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
     return EncryptInner(key, RootKeys::ROOT_KEY, area, userId);
 }
 
-std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key, int32_t area, const std::string &userId)
+std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key, int32_t area,
+    const std::string &userId)
 {
     return EncryptInner(key, RootKeys::CLONE_KEY, area, userId);
 }
 
 std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const RootKeys type,
-   int32_t area, const std::string &userId)
+    int32_t area, const std::string &userId)
 {
     uint32_t storageLevel = GetStorageLevel(area);
     if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
@@ -275,17 +276,20 @@ std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key
     return encryptedKey;
 }
 
-bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId)
+bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
+    const std::string &userId)
 {
     return DecryptInner(source, key, RootKeys::ROOT_KEY, area, userId);
 }
 
-bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId)
+bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
+    const std::string &userId)
 {
     return DecryptInner(source, key, RootKeys::CLONE_KEY, area, userId);
 }
 
-bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type, int32_t area, const std::string &userId)
+bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type, int32_t area,
+    const std::string &userId)
 {
     uint32_t storageLevel = GetStorageLevel(area);
     if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
@@ -336,7 +340,7 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
     return true;
 }
 
-bool BuildImportKeyParams(struct HksParamSet *&params)
+bool CryptoManager::BuildImportKeyParams(struct HksParamSet *&params)
 {
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {

@@ -19,7 +19,6 @@
 #include <cinttypes>
 
 #include "accesstoken_kit.h"
-#include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "kvdb_general_store.h"

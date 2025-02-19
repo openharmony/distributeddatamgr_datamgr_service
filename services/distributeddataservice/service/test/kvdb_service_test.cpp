@@ -192,12 +192,9 @@ HWTEST_F(UpgradeTest, UpdateStore, TestSize.Level0)
     };
     upgrade.cleaner_ = cleaner;
     upgrade.exporter_ = nullptr;
-    upgrade.UpdatePassword(metaData_, password);
     dbStatus = upgrade.UpdateStore(oldMeta, metaData_, password);
     EXPECT_EQ(dbStatus, DBStatus::NOT_SUPPORT);
 
-    metaData_.isEncrypt = true;
-    upgrade.UpdatePassword(metaData_, password);
     EXPECT_TRUE(upgrade.RegisterExporter(oldMeta.version, exporter));
     EXPECT_TRUE(upgrade.RegisterCleaner(oldMeta.version, cleaner));
     dbStatus = upgrade.UpdateStore(oldMeta, metaData_, password);

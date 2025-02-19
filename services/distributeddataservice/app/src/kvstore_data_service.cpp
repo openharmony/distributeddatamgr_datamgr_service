@@ -50,7 +50,6 @@
 #include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "metadata/secret_key_meta_data.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -520,7 +519,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
     return 0;
 }
 
-std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
+std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
     const StoreMetaData &metaData)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
@@ -535,8 +534,8 @@ std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &sec
     auto reEncryptedKey = CryptoManager::GetInstance().EncryptCloneKey(
         password, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     if (reEncryptedKey.size() == 0) {
-      ZLOGE("Secret key encrypt failed.");
-      return {};
+        ZLOGE("Secret key encrypt failed.");
+        return {};
     };
     return reEncryptedKey;
 }

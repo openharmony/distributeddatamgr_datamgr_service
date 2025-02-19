@@ -30,6 +30,7 @@
 #include "kvstore_device_listener.h"
 #include "kvstore_meta_manager.h"
 #include "kvstore_data_service_stub.h"
+#include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "reporter.h"
 #include "runtime_config.h"
@@ -132,7 +133,7 @@ public:
     int32_t OnExtension(const std::string &extension, MessageParcel &data, MessageParcel &reply) override;
     int32_t OnBackup(MessageParcel &data, MessageParcel &reply);
     int32_t OnRestore(MessageParcel &data, MessageParcel &reply);
-    static bool GetSecretKeyBackup(
+    bool GetSecretKeyBackup(
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
         const std::string &userId, std::string &content);
 
@@ -185,6 +186,9 @@ public:
     void LoadConfigs();
 
     void InitExecutor();
+
+    std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
+        const StoreMetaData &metaData);
 
     bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
 

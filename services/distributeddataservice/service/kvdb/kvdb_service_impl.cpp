@@ -596,7 +596,7 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, // todo需要把area信息带上？
+Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId,
     std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId);
@@ -613,7 +613,6 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         passwords.reserve(SECRET_KEY_COUNT);
         SecretKeyMetaData secretKey;
         std::vector<uint8_t> password;
-        ZLOGE("mark---GetBackupPassword");
         if (MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true) &&
             CryptoUpgrade::GetInstance().Decrypt(metaData, secretKey, password)) {
             passwords.emplace_back(password);

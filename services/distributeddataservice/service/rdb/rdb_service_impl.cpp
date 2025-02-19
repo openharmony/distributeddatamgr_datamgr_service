@@ -26,7 +26,7 @@
 #include "cloud/make_query_event.h"
 #include "cloud/schema_meta.h"
 #include "communicator/device_manager_adapter.h"
-#include "crypto_manager.h"
+#include "crypto_upgrade.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
@@ -899,7 +899,8 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
 {
     SecretKeyMetaData newSecretKey;
     newSecretKey.storeType = meta.storeType;
-    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param.password_, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER/*todo*/);
+    newSecretKey.area = meta.area;
+    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param.password_, meta.area, meta.user);
     if (newSecretKey.sKey.empty()) {
         ZLOGE("encrypt work key error.");
         return RDB_ERROR;
@@ -948,7 +949,7 @@ bool RdbServiceImpl::GetDBPassword(const StoreMetaData &metaData, DistributedDB:
     DistributedData::SecretKeyMetaData secretKeyMeta;
     MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
     std::vector<uint8_t> decryptKey;
-    CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    CryptoUpgrade::GetInstance().Decrypt(metaData, secretKeyMeta, decryptKey);
     if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         ZLOGE("Set secret key value failed. len is (%{public}d)", int32_t(decryptKey.size()));
@@ -1382,8 +1383,9 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std
             Anonymous::Change(param.storeName_).c_str());
         return RDB_NO_META;
     }
-    bool key = CryptoManager::GetInstance().Decrypt(secretKey.sKey, password.at(0), DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
-    bool cloneKey = CryptoManager::GetInstance().Decrypt(cloneSecretKey.sKey, password.at(1), DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    bool key = CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, password.at(0));
+    bool cloneKey = CryptoUpgrade::GetInstance().Decrypt(
+        meta, cloneSecretKey, password.at(1), CryptoUpgrade::CLONE_SECRET_KEY);
     if (!key && !cloneKey) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. decrypt err", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());

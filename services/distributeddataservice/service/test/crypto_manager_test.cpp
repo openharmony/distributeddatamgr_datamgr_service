@@ -35,9 +35,9 @@ protected:
 
 static const uint32_t KEY_LENGTH = 32;
 static const uint32_t ENCRYPT_KEY_LENGTH = 48;
-static constexpr int32_t TEST_USERID = 100;
 static constexpr int32_t EL2 = 2;
 static constexpr int32_t EL4 = 4;
+static constexpr const char *TEST_USERID = "100";
 std::vector<uint8_t> CryptoManagerTest::randomKey;
 void CryptoManagerTest::SetUpTestCase(void)
 {
@@ -120,7 +120,7 @@ HWTEST_F(CryptoManagerTest, Encrypt002, TestSize.Level0)
 * @tc.require:
 * @tc.author: yanhui
 */
-HWTEST_F(CryptoManager Test, Encrypt003, TestSize.Level0)
+HWTEST_F(CryptoManagerTest, Encrypt003, TestSize.Level0)
 {
     auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL2, DEFAULT_USER);
     EXPECT_TRUE(encryptKey.empty());
@@ -136,7 +136,8 @@ HWTEST_F(CryptoManager Test, Encrypt003, TestSize.Level0)
 HWTEST_F(CryptoManagerTest, Encrypt004, TestSize.Level0)
 {
     auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL2, TEST_USERID);
-    auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL4, TEST_USERID);
+    EXPECT_TRUE(encryptKey.empty());
+    encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL4, TEST_USERID);
     EXPECT_TRUE(encryptKey.empty());
 }
 

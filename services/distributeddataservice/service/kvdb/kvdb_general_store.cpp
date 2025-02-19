@@ -113,7 +113,6 @@ KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData
     std::vector<uint8_t> password;
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(data.GetKey(), metaData, true);
-    ZLOGE("MARK--KVDBGeneralStore::GetDBPassword, AREA:%{public}d, user:%{public}s", metaData.area, metaData.user.c_str());
     CryptoUpgrade::GetInstance().Decrypt(metaData, secretKey, password);
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
