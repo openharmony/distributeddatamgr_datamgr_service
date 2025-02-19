@@ -20,6 +20,7 @@ config("module_private_config") {
     "${data_service_path}/adapter/include/communicator",
     "../../../framework/include/",
     "../../../service/rdb/",
+    "./",
   ]
 
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
@@ -39,7 +40,10 @@ ohos_static_library("distributeddata_mock_static") {
     "db_store_mock.cpp",
     "general_store_mock.cpp",
     "kv_store_nb_delegate_mock.cpp",
+    "network_delegate_mock.cpp",
   ]
+
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   external_deps = [
     "kv_store:distributeddata_mgr",

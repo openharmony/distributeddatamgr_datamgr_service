@@ -36,6 +36,7 @@ config("module_public_config") {
     "include",
     "${data_service_path}/framework/include/account",
     "${data_service_path}/framework/include/dfx",
+    "${data_service_path}/framework/include/network",
     "${kv_store_common_path}",
   ]
 }
@@ -97,6 +98,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/switches_meta_data.cpp",
     "metadata/user_meta_data.cpp",
     "metadata/version_meta_data.cpp",
+    "network/network_delegate.cpp",
     "screen/screen_manager.cpp",
     "serializable/serializable.cpp",
     "snapshot/bind_event.cpp",
