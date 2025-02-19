@@ -24,11 +24,9 @@
 #include "cloud/cloud_report.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
-#include "cloud/sync_event.h"
 #include "cloud_value_util.h"
 #include "device_manager_adapter.h"
 #include "dfx_types.h"
-#include "radar_reporter.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -411,12 +409,15 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 prepareTraceId.c_str());
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId);
         }
+        if (!meta.enableCloud) {
+            ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s", meta.storeId.c_str(),
+                prepareTraceId.c_str());
+            return DoExceptionalCallback(async, details, storeInfo, prepareTraceId, E_CLOUD_DISABLED);
+        }
         ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
               storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
               meta.asyncDownloadAsset);
-        RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, storeInfo.syncId,
-            evt.GetTriggerMode() }, "GetSyncHandler", BizState::BEGIN);
-        Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::START, E_OK });
+        ReportSyncEvent(evt, BizState::BEGIN, E_OK);
         SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation(), MODE_DEFAULT, prepareTraceId };
         syncParam.asyncDownloadAsset = meta.asyncDownloadAsset;
         auto [status, dbCode] = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
@@ -430,12 +431,26 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             UpdateFinishSyncInfo({ GetAccountId(storeInfo.user), storeInfo.bundleName, "" }, storeInfo.syncId, E_ERROR);
             if (status != GeneralError::E_NOT_SUPPORT) {
                 auto code = dbCode == 0 ? GenStore::CLOUD_ERR_OFFSET + status : dbCode;
-                RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
-                    evt.GetTriggerMode(), code }, "GetSyncHandler", BizState::END);
-                Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, code });
+                ReportSyncEvent(evt, BizState::END, code);
             }
         }
     };
+}
+
+void SyncManager::ReportSyncEvent(const SyncEvent &evt, BizState bizState, int32_t code)
+{
+    SyncStage syncStage = SyncStage::START;
+	auto &storeInfo = evt.GetStoreInfo();
+    if (bizState == BizState::BEGIN) {
+        syncStage = SyncStage::START;
+        RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC, 
+            storeInfo.syncId, evt.GetTriggerMode()}, "GetSyncHandler", bizState);
+    } else {
+        syncStage = SyncStage::END;
+        RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC,
+            storeInfo.syncId, evt.GetTriggerMode(), code}, "GetSyncHandler", bizState);
+    }
+    Report({evt.GetUser(), storeInfo.bundleName, evt.GetPrepareTraceId(), syncStage, code});
 }
 
 std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
@@ -846,15 +861,15 @@ std::vector<SchemaMeta> SyncManager::GetSchemaMeta(const CloudInfo &cloud, const
 }
 
 void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo,
-    const std::string &prepareTraceId)
+    const std::string &prepareTraceId, int32_t code)
 {
     if (async) {
-        details[SyncInfo::DEFAULT_ID].code = E_ERROR;
+        details[SyncInfo::DEFAULT_ID].code = code;
         async(details);
     }
     QueryKey queryKey{ GetAccountId(storeInfo.user), storeInfo.bundleName, "" };
-    UpdateFinishSyncInfo(queryKey, storeInfo.syncId, E_ERROR);
-    Report({ storeInfo.user, storeInfo.bundleName, prepareTraceId, SyncStage::END, E_ERROR });
+    UpdateFinishSyncInfo(queryKey, storeInfo.syncId, code);
+    Report({ storeInfo.user, storeInfo.bundleName, prepareTraceId, SyncStage::END, code });
 }
 
 bool SyncManager::InitDefaultUser(int32_t &user)

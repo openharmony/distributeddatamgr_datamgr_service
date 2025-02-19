@@ -231,6 +231,9 @@ private:
 
     void UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaData &localMeta);
 
+    DataBase HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta, StoreMetaData &localMeta,
+        int32_t type);
+
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
