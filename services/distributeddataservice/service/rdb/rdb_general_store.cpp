@@ -926,9 +926,9 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
         return GeneralError::E_ERROR;
     }
-    std::pair<bool, Database> tableData = GetDistributedSchema(observer_.meta_);
-    if (delegate_ != nullptr && tableData.first) {
-        delegate_->SetDistributedSchema(GetGaussDistributedSchema(tableData.second));
+    auto [exist, database] = GetDistributedSchema(observer_.meta_);
+    if (exist) {
+        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database));
     }
     CloudMark metaData(storeInfo_);
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
