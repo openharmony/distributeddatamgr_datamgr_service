@@ -228,11 +228,7 @@ private:
     
     bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
         DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
-
-    void UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaData &localMeta);
-
-    Database HandleDistributedType(const RdbSyncerParam &param, const StoreMetaData &meta, StoreMetaData &localMeta,
-        int32_t type);
+    void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, DistributedData::AutoCache::Store &store);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

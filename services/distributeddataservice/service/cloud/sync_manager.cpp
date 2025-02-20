@@ -410,7 +410,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId);
         }
         if (!meta.enableCloud) {
-            ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s", meta.storeId.c_str(),
+            ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s", meta.GetStoreAlias().c_str(),
                 prepareTraceId.c_str());
             return DoExceptionalCallback(async, details, storeInfo, prepareTraceId, E_CLOUD_DISABLED);
         }
