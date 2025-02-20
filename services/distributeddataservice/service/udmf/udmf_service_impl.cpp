@@ -33,6 +33,7 @@
 #include "uri.h"
 #include "udmf_conversion.h"
 #include "udmf_radar_reporter.h"
+#include "device_manager_adapter.h"
 #include "utils/anonymous.h"
 #include "bootstrap.h"
 #include "metadata/store_meta_data.h"
