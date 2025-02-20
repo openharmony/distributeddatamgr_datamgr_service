@@ -38,6 +38,61 @@ ohos_unittest("CommunicationProviderTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
+ohos_unittest("CommunicatorContextTest") {
+  module_out_path = module_output_path
+
+  sources = [ "unittest/communicator_context_test.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  include_dirs = [
+    "../src",
+    "../../include/communicator",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "dsoftbus:softbus_client",
+    "googletest:gtest_main",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
+ohos_unittest("CommunicatorDataBufferTest") {
+  module_out_path = module_output_path
+
+  sources = [ "unittest/data_buffer_test.cpp" ]
+  include_dirs = [ "../src" ]
+  external_deps = [
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "dsoftbus:softbus_client",
+    "googletest:gtest_main",
+    "kv_store:distributeddata_inner",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
 ohos_unittest("DeviceManagerAdapterTest") {
   module_out_path = module_output_path
 
@@ -98,6 +153,32 @@ ohos_unittest("SoftbusAdapterStandardTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
+ohos_unittest("SoftbusClientTest") {
+  module_out_path = module_output_path
+
+  sources = [ "unittest/softbus_client_test.cpp" ]
+  include_dirs = [
+    "${data_service_path}/adapter/include/autils",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
+    "../src",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "dsoftbus:softbus_client",
+    "kv_store:distributeddata_inner",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -106,8 +187,11 @@ group("unittest") {
 
   deps += [
     ":CommunicationProviderTest",
+    ":CommunicatorContextTest",
+    ":CommunicatorDataBufferTest",
     ":DeviceManagerAdapterTest",
     ":SoftbusAdapterStandardTest",
+    ":SoftbusClientTest",
   ]
 }
 ###############################################################################
