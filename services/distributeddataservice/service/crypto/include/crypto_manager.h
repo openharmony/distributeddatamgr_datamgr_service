@@ -34,16 +34,15 @@ public:
     int32_t GenerateRootKey();
     int32_t CheckRootKey();
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    std::vector<uint8_t> EncryptCloneKey(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
+    std::vector<uint8_t> EncryptCloneKey(const std::vector<uint8_t> &key);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
-        const std::string &userId);
+    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
     bool ImportCloneKey(std::vector<uint8_t> &key, std::vector<uint8_t> &iv);
     struct ParamConfig {
         RootKeys keyType;
         uint32_t purpose;
         uint32_t storageLevel;
-        const std::string &userId;
+        std::string userId;
     };
     enum Area : int32_t {
         EL0,

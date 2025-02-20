@@ -59,7 +59,7 @@ using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using CommContext = OHOS::DistributedData::CommunicatorContext;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
-using CryptoUpgrade = DistributedData::CryptoUpgrade;
+
 static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *PASTEBOARD_SERVICE = "pasteboard_service";
 static constexpr const char *PASTEBOARD_USER_ID = "100";

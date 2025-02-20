@@ -140,7 +140,7 @@ int32_t CryptoManager::GenerateRootKey(uint32_t storageLevel, const std::string 
     ZLOGI("GenerateRootKey, storageLevel=%{public}u, userId=%{public}s", storageLevel, userId.c_str());
     struct HksParamSet *params = nullptr;
     int32_t ret = GetRootKeyParams(params, storageLevel, userId);
-    if (ret != HKS_SUCCESS) {
+    if (ret != HKS_SUCCESS || params == nullptr) {
         ZLOGE("GetRootKeyParams failed with error %{public}d, storageLevel:%{public}u, userId:%{public}s", ret,
             storageLevel, userId.c_str());
         return ErrCode::ERROR;
@@ -219,10 +219,9 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
     return EncryptInner(key, RootKeys::ROOT_KEY, area, userId);
 }
 
-std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key, int32_t area,
-    const std::string &userId)
+std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key)
 {
-    return EncryptInner(key, RootKeys::CLONE_KEY, area, userId);
+    return EncryptInner(key, RootKeys::CLONE_KEY, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
 }
 
 std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const RootKeys type,
@@ -282,10 +281,9 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
     return DecryptInner(source, key, RootKeys::ROOT_KEY, area, userId);
 }
 
-bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
-    const std::string &userId)
+bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key)
 {
-    return DecryptInner(source, key, RootKeys::CLONE_KEY, area, userId);
+    return DecryptInner(source, key, RootKeys::CLONE_KEY, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
 }
 
 bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type, int32_t area,

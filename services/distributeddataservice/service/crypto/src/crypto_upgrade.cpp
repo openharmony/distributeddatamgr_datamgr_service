@@ -61,7 +61,7 @@ bool CryptoUpgrade::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secret
             return true;
         }
     } else {
-        return CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, key, meta.area, meta.user);
+        return CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, key, secretKeyMeta.area, meta.user);
     }
     return false;
 }

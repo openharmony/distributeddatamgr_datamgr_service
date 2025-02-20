@@ -303,8 +303,10 @@ bool BackupManager::GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> 
 {
     SecretKeyMetaData secretKey;
     StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true);
-    MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true);
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true) ||
+        !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true)) {
+        return false;
+    }
     return CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, password);
 }
 

@@ -78,7 +78,6 @@ using namespace OHOS::Security::AccessToken;
 using KvStoreDelegateManager = DistributedDB::KvStoreDelegateManager;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
-using CryptoUpgrade = DistributedData::CryptoUpgrade;
 constexpr const char* EXTENSION_BACKUP = "backup";
 constexpr const char* EXTENSION_RESTORE = "restore";
 constexpr const char* SECRET_KEY_BACKUP_PATH =
@@ -531,8 +530,7 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
         ZLOGE("Secret key decrypt failed.");
         return {};
     };
-    auto reEncryptedKey = CryptoManager::GetInstance().EncryptCloneKey(
-        password, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    auto reEncryptedKey = CryptoManager::GetInstance().EncryptCloneKey(password);
     if (reEncryptedKey.size() == 0) {
         ZLOGE("Secret key encrypt failed.");
         return {};
@@ -651,7 +649,7 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     metaData.instanceId = item.instanceId;
     auto sKey = DistributedData::Base64::Decode(item.sKey);
     std::vector<uint8_t> rawKey;
-    if (!CryptoManager::GetInstance().DecryptCloneKey(sKey, rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER)) {
+    if (!CryptoManager::GetInstance().DecryptCloneKey(sKey, rawKey)) {
         ZLOGE("Decrypt by clonekey failed.");
         sKey.assign(sKey.size(), 0);
         rawKey.assign(rawKey.size(), 0);

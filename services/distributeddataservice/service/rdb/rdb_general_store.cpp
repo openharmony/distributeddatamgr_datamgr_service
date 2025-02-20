@@ -58,7 +58,7 @@ using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-using CryptoUpgrade = DistributedData::CryptoUpgrade;
+
 
 constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";

@@ -51,7 +51,7 @@ using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
-using CryptoUpgrade = DistributedData::CryptoUpgrade;
+
 static constexpr const char *FT_CLOUD_SYNC = "CLOUD_SYNC";
 constexpr int UUID_WIDTH = 4;
 const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap_ = {
