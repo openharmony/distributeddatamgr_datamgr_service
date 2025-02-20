@@ -29,7 +29,7 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     std::vector<uint8_t> runtimeBytes;
     auto runtimeTlv = TLVObject(runtimeBytes);
     if (!TLVUtil::Writing(*unifiedData.GetRuntime(), runtimeTlv, TAG::TAG_RUNTIME)) {
-        ZLOGE("Marshall runtime info failed, dataPrefix: %{public}s.", unifiedKey.c_str());
+        ZLOGE("Runtime info marshalling failed:%{public}s", unifiedKey.c_str());
         return E_WRITE_PARCEL_ERROR;
     }
     std::vector<uint8_t> udKeyBytes = { unifiedKey.begin(), unifiedKey.end() };

@@ -39,7 +39,7 @@ Status LifeCycleManager::OnGot(const UnifiedKey &key)
 {
     auto findPolicy = intentionPolicy_.find(key.intention);
     if (findPolicy == intentionPolicy_.end()) {
-        ZLOGE("Invalid intention, intention: %{public}s.", key.intention.c_str());
+        ZLOGE("Invalid intention:%{public}s", key.intention.c_str());
         return E_INVALID_PARAMETERS;
     }
     auto policy = findPolicy->second;
@@ -47,7 +47,7 @@ Status LifeCycleManager::OnGot(const UnifiedKey &key)
         policy->OnGot(key);
     });
     if (taskId == ExecutorPool::INVALID_TASK_ID) {
-        ZLOGE("OnGot task execute failed.");
+        ZLOGE("Task execution failed");
         return E_ERROR;
     }
     return E_OK;

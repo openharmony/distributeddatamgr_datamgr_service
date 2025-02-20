@@ -83,7 +83,7 @@ int32_t UdmfServiceStub::OnGetData(MessageParcel &data, MessageParcel &reply)
     UnifiedData unifiedData;
     int32_t status = GetData(query, unifiedData);
     if (!ITypesUtil::Marshal(reply, status, unifiedData)) {
-        ZLOGE("Marshal status or unifiedData failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
@@ -102,7 +102,7 @@ int32_t UdmfServiceStub::OnGetBatchData(MessageParcel &data, MessageParcel &repl
     std::vector<UnifiedData> unifiedDataSet;
     int32_t status = GetBatchData(query, unifiedDataSet);
     if (!ITypesUtil::Marshal(reply, status, unifiedDataSet)) {
-        ZLOGE("Marshal status or unifiedDataSet failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
@@ -121,7 +121,7 @@ int32_t UdmfServiceStub::OnUpdateData(MessageParcel &data, MessageParcel &reply)
     query.tokenId = token;
     int32_t status = UpdateData(query, unifiedData);
     if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
@@ -140,7 +140,7 @@ int32_t UdmfServiceStub::OnDeleteData(MessageParcel &data, MessageParcel &reply)
     std::vector<UnifiedData> unifiedDataSet;
     int32_t status = DeleteData(query, unifiedDataSet);
     if (!ITypesUtil::Marshal(reply, status, unifiedDataSet)) {
-        ZLOGE("Marshal status or unifiedDataSet failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
@@ -229,7 +229,7 @@ int32_t UdmfServiceStub::OnSetAppShareOption(MessageParcel &data, MessageParcel 
     }
     int32_t status = SetAppShareOption(intention, shareOption);
     if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal OnSetAppShareOption status failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
@@ -245,7 +245,7 @@ int32_t UdmfServiceStub::OnGetAppShareOption(MessageParcel &data, MessageParcel 
     }
     int32_t status = GetAppShareOption(intention, shareOption);
     if (!ITypesUtil::Marshal(reply, status, shareOption)) {
-        ZLOGE("Marshal OnGetAppShareOption status failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
@@ -260,7 +260,7 @@ int32_t UdmfServiceStub::OnRemoveAppShareOption(MessageParcel &data, MessageParc
     }
     int32_t status = RemoveAppShareOption(intention);
     if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal OnRemoveAppShareOption status failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
@@ -292,7 +292,7 @@ int32_t UdmfServiceStub::OnClearAsynProcessByKey(MessageParcel &data, MessagePar
     }
     int32_t status = ClearAsynProcessByKey(businessUdKey);
     if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal status failed, status: %{public}d", status);
+        ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;

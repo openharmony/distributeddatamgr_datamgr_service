@@ -27,11 +27,11 @@ Status LifeCyclePolicy::OnGot(const UnifiedKey &key)
 {
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
-        ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
+        ZLOGE("Get store failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
     if (store->Delete(key.key) != E_OK) {
-        ZLOGE("Remove data failed, intention: %{public}s.", key.intention.c_str());
+        ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
     return E_OK;
@@ -41,11 +41,11 @@ Status LifeCyclePolicy::OnStart(const std::string &intention)
 {
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
-        ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
+        ZLOGE("Store get failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
     if (store->Clear() != E_OK) {
-        ZLOGE("Remove data failed, intention: %{public}s.", intention.c_str());
+        ZLOGE("Data removal failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
     return E_OK;
@@ -55,17 +55,17 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
 {
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
-        ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
+        ZLOGE("Store get failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
     std::vector<std::string> timeoutKeys;
     auto status = GetTimeoutKeys(store, INTERVAL, timeoutKeys);
     if (status != E_OK) {
-        ZLOGE("Get timeout keys failed.");
+        ZLOGE("Timeout keys get failed");
         return E_DB_ERROR;
     }
     if (store->DeleteBatch(timeoutKeys) != E_OK) {
-        ZLOGE("Remove data failed, intention: %{public}s.", intention.c_str());
+        ZLOGE("Data removal failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
     return E_OK;
@@ -87,7 +87,7 @@ Status LifeCyclePolicy::GetTimeoutKeys(
     auto curTime = PreProcessUtils::GetTimestamp();
     for (const auto &data : datas) {
         if (data.GetRuntime() == nullptr) {
-            ZLOGD("Runtime data is null.");
+            ZLOGD("Runtime is null");
             return E_DB_ERROR;
         }
         if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
