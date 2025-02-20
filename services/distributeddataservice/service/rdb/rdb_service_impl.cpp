@@ -280,7 +280,7 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
     return store;
 }
 
-void RdbServiceImpl::UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, DistributedData::AutoCache::Store &store)
+void RdbServiceImpl::UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store &store)
 {
     StoreMetaData syncMeta;
     bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
