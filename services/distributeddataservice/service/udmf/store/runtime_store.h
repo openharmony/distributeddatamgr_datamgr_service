@@ -23,6 +23,8 @@
 
 namespace OHOS {
 namespace UDMF {
+using DevNameMap = std::map<std::string, std::string>;
+using DevSyncProcessMap = std::map<std::string, DistributedDB::DeviceSyncProcess>;
 class API_EXPORT RuntimeStore final : public Store {
 public:
     explicit RuntimeStore(const std::string &storeId);
@@ -34,6 +36,7 @@ public:
     Status Delete(const std::string &key) override;
     Status DeleteBatch(const std::vector<std::string> &unifiedKeys) override;
     Status Sync(const std::vector<std::string> &devices) override;
+    Status Sync(const std::vector<std::string> &devices, ProcessCallback callback) override;
     Status Clear() override;
     Status GetBatchData(const std::string &dataPrefix, std::vector<UnifiedData> &unifiedDataSet) override;
     Status PutLocal(const std::string &key, const std::string &value) override;
@@ -60,6 +63,8 @@ private:
     bool GetDetailsFromUData(UnifiedData &data, UDDetails &details);
     Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
+    void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
+        const DevNameMap &deviceNameMap);
 };
 } // namespace UDMF
 } // namespace OHOS

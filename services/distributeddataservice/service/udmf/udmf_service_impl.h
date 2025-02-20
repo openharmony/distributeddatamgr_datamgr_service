@@ -53,8 +53,10 @@ public:
     int32_t RemoveAppShareOption(const std::string &intention) override;
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &bindInfo) override;
+    int32_t ObtainAsynProcess(AsyncProcessInfo &processInfo) override;
+    int32_t ClearAsynProcessByKey(const std::string &businessUdKey) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
-
+    int32_t InvokeHap(const std::string &progressKey, const sptr<IRemoteObject> &observer) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
@@ -64,6 +66,8 @@ private:
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
     int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
+    bool HasDatahubPriviledge(const std::string &bundleName);
+    void RegisterAsyncProcessInfo(const std::string &businessUdKey);
 
     class Factory {
     public:
@@ -76,6 +80,9 @@ private:
     static Factory factory_;
     std::map<std::string, Privilege> privilegeCache_;
     std::shared_ptr<ExecutorPool> executors_;
+
+    std::mutex mutex_;
+    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
 };
 } // namespace UDMF
 } // namespace OHOS

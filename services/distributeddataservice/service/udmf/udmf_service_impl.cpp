@@ -37,7 +37,8 @@
 #include "bootstrap.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "device_manager_adapter.h"
+#include "udmf_dialog.h"
+
 namespace OHOS {
 namespace UDMF {
 using namespace Security::AccessToken;
@@ -52,6 +53,7 @@ constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
 constexpr const char *MANAGE_UDMF_APP_SHARE_OPTION = "ohos.permission.MANAGE_UDMF_APP_SHARE_OPTION";
+constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -140,11 +142,6 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed, intention: %{public}s.", intention.c_str());
-        return E_DB_ERROR;
-    }
-
-    if (!UnifiedDataUtils::IsPersist(intention) && store->Clear() != E_OK) {
-        ZLOGE("Clear store failed, intention: %{public}s.", intention.c_str());
         return E_DB_ERROR;
     }
 
@@ -372,7 +369,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     }
     std::string bundleName;
     PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
-    if (key.bundleName != bundleName) {
+    if (key.bundleName != bundleName && !HasDatahubPriviledge(bundleName)) {
         ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
@@ -395,7 +392,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     if (runtime == nullptr) {
         return E_DB_ERROR;
     }
-    if (runtime->tokenId != query.tokenId) {
+    if (runtime->tokenId != query.tokenId && !HasDatahubPriviledge(bundleName)) {
         ZLOGE("update data failed, query option tokenId not equals data's tokenId");
         return E_INVALID_PARAMETERS;
     }
@@ -536,7 +533,7 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
-
+    RegisterAsyncProcessInfo(query.key);
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
@@ -544,8 +541,20 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Get store failed, intention: %{public}s.", key.intention.c_str());
         return E_DB_ERROR;
     }
-
-    if (store->Sync(devices) != E_OK) {
+    auto callback = [this, query](AsyncProcessInfo &syncInfo) {
+        if (query.key.empty()) {
+            return;
+        }
+        syncInfo.businessUdKey = query.key;
+        std::lock_guard<std::mutex> lock(mutex_);
+        asyncProcessInfoMap_.insert_or_assign(syncInfo.businessUdKey, syncInfo);
+        ZLOGD("store.Sync: name=%{public}s, id=%{public}u, status=%{public}u, total=%{public}u, finish=%{public}u",
+            syncInfo.srcDevName.c_str(), syncInfo.syncId, syncInfo.syncStatus,
+            syncInfo.syncTotal, syncInfo.syncFinished);
+    };
+    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+        BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
+    if (store->Sync(devices, callback) != E_OK) {
         ZLOGE("Store sync failed, intention: %{public}s.", key.intention.c_str());
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
@@ -635,7 +644,7 @@ int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, int32_t
     std::string appShareOption;
     int32_t ret = store->GetLocal(std::to_string(accessTokenIDEx), appShareOption);
     if (ret != E_OK) {
-        ZLOGE("GetAppShareOption empty, intention: %{public}s.", intention.c_str());
+        ZLOGW("GetAppShareOption empty, intention: %{public}s.", intention.c_str());
         return ret;
     }
     ZLOGI("GetAppShareOption, intention: %{public}s, appShareOption:%{public}s.",
@@ -723,6 +732,40 @@ int32_t UdmfServiceImpl::OnBind(const BindInfo &bindInfo)
     return 0;
 }
 
+int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
+{
+    if (processInfo.businessUdKey.empty()) {
+        return E_INVALID_PARAMETERS;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (asyncProcessInfoMap_.empty()) {
+        processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
+        processInfo.srcDevName = "Local";
+        return E_OK;
+    }
+    auto it = asyncProcessInfoMap_.find(processInfo.businessUdKey);
+    if (it == asyncProcessInfoMap_.end()) {
+        processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
+        processInfo.srcDevName = "Local";
+        return E_OK;
+    }
+    auto asyncProcessInfo = asyncProcessInfoMap_.at(processInfo.businessUdKey);
+    processInfo.syncStatus = asyncProcessInfo.syncStatus;
+    processInfo.srcDevName = asyncProcessInfo.srcDevName;
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::ClearAsynProcessByKey(const std::string & businessUdKey)
+{
+    ZLOGI("ClearAsynProcessByKey begin.");
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (asyncProcessInfoMap_.find(businessUdKey) == asyncProcessInfoMap_.end()) {
+        return E_OK;
+    }
+    asyncProcessInfoMap_.erase(businessUdKey);
+    return E_OK;
+}
+
 int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
 {
     ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
@@ -773,5 +816,39 @@ bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t c
     }
     return true;
 }
+
+bool UdmfServiceImpl::HasDatahubPriviledge(const std::string &bundleName)
+{
+    uint64_t accessTokenIDEx = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenIDEx);
+    return std::find(std::begin(HAP_LIST), std::end(HAP_LIST), bundleName) != std::end(HAP_LIST) && isSystemApp;
+}
+
+void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
+{
+    AsyncProcessInfo info;
+    std::lock_guard<std::mutex> lock(mutex_);
+    asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
+}
+
+int32_t UdmfServiceImpl::InvokeHap(const std::string &progressKey, const sptr<IRemoteObject> &observer)
+{
+    ProgressDialog::ProgressMessageInfo message;
+    message.promptText = "PromptText_PasteBoard_Local";
+    message.remoteDeviceName = "";
+    message.isRemote = false;
+    message.progressKey = progressKey;
+    message.clientCallback = observer;
+    
+    ProgressDialog::FocusedAppInfo appInfo = ProgressDialog::GetInstance().GetFocusedAppInfo();
+    message.windowId = appInfo.windowId;
+    message.callerToken = appInfo.abilityToken;
+    auto status = ProgressDialog::GetInstance().ShowProgress(message);
+    if (status != E_OK) {
+        ZLOGE("ShowProgress fail, status:%{public}d", status);
+    }
+    return E_OK;
+}
+
 } // namespace UDMF
 } // namespace OHOS

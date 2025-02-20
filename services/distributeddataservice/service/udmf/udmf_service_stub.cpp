@@ -265,5 +265,59 @@ int32_t UdmfServiceStub::OnRemoveAppShareOption(MessageParcel &data, MessageParc
     }
     return E_OK;
 }
+
+int32_t UdmfServiceStub::OnObtainAsynProcess(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGD("start");
+    AsyncProcessInfo processInfo;
+    if (!ITypesUtil::Unmarshal(data, processInfo)) {
+        ZLOGE("Unmarshal processInfo failed");
+        return E_READ_PARCEL_ERROR;
+    }
+    int32_t status = ObtainAsynProcess(processInfo);
+    if (!ITypesUtil::Marshal(reply, status, processInfo)) {
+        ZLOGE("Marshal status or processInfo failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceStub::OnClearAsynProcessByKey(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGD("start");
+    std::string businessUdKey;
+    if (!ITypesUtil::Unmarshal(data, businessUdKey)) {
+        ZLOGE("Unmarshal businessUdKey failed!");
+        return E_READ_PARCEL_ERROR;
+    }
+    int32_t status = ClearAsynProcessByKey(businessUdKey);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceStub::OnInvokeHap(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGD("start");
+    std::string progressKey;
+    sptr<IRemoteObject> callback = nullptr;
+    if (!ITypesUtil::Unmarshal(data, progressKey, callback)) {
+        ZLOGE("Unmarshal failed");
+        return E_READ_PARCEL_ERROR;
+    }
+    if (callback == nullptr) {
+        ZLOGE("Callback is null");
+        return E_ERROR;
+    }
+    int32_t status = InvokeHap(progressKey, callback);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status failed, status: %{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
 } // namespace UDMF
 } // namespace OHOS
