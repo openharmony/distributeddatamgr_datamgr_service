@@ -280,7 +280,7 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
     return store;
 }
 
-void RdbServiceImpl::UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store &store)
+void RdbServiceImpl::UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store)
 {
     StoreMetaData syncMeta;
     bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
@@ -332,9 +332,10 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         if (localMeta.asyncDownloadAsset != param.asyncDownloadAsset_ || localMeta.enableCloud != param.enableCloud_) {
             localMeta.asyncDownloadAsset = param.asyncDownloadAsset_;
             localMeta.enableCloud = param.enableCloud_;
-            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset?[%{public}d], "
-                "enableCloud?[%{public}d]", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(),
-                localMeta.asyncDownloadAsset, localMeta.enableCloud);
+            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
+                "%{public}d],enableCloud? [%{public}d -> %{public}d]", param.bundleName_.c_str(),
+                Anonymous::Change(param.storeName_).c_str(), localMeta.asyncDownloadAsset, param.asyncDownloadAsset_,
+                localMeta.enableCloud, param.enableCloud_);
             MetaDataManager::GetInstance().SaveMeta(localMeta.GetKey(), localMeta, true);
         }
     }
