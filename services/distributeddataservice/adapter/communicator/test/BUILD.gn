@@ -58,6 +58,7 @@ ohos_unittest("CommunicatorContextTest") {
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "googletest:gtest_main",
+    "hilog:libhilog",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
@@ -81,6 +82,7 @@ ohos_unittest("CommunicatorDataBufferTest") {
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "googletest:gtest_main",
+    "hilog:libhilog",
     "kv_store:distributeddata_inner",
   ]
   cflags = [
@@ -167,7 +169,10 @@ ohos_unittest("SoftbusClientTest") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
+    "googletest:gtest_main",
+    "hilog:libhilog",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
   cflags = [
     "-Dprivate=public",
