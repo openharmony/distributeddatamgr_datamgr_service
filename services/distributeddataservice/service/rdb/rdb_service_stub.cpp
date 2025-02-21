@@ -75,6 +75,25 @@ int32_t RdbServiceStub::OnAfterOpen(MessageParcel &data, MessageParcel &reply)
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnReportStatistic(MessageParcel& data, MessageParcel& reply)
+{
+    RdbSyncerParam param;
+    RdbStatEvent statEvent;
+    if (!ITypesUtil::Unmarshal(data, param, statEvent)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+ 
+    auto status = ReportStatistic(param, statEvent);
+ 
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
 int32_t RdbServiceStub::OnDelete(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
