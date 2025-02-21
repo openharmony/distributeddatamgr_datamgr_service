@@ -1192,6 +1192,11 @@ bool DataShareServiceImpl::VerifyPermission(const std::string &bundleName, const
             return false;
         }
     } else {
+        Security::AccessToken::HapTokenInfo tokenInfo;
+        auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+        if (result == Security::AccessToken::RET_SUCCESS && tokenInfo.bundleName == bundleName) {
+            return true;
+        }
         // Provider from ProxyData, which does not allow empty permissions and cannot be access without configured
         if (permission.empty()) {
             ZLOGE("Permission empty! token:0x%{public}x, bundleName:%{public}s", tokenId, bundleName.c_str());
