@@ -16,6 +16,7 @@
 #define OHOS_DISTRIBUTEDDATA_SERVICE_TEST_DB_STORE_MOCK_H
 #include "kv_store_nb_delegate.h"
 #include "concurrent_map.h"
+#include "store_types.h"
 namespace OHOS {
 namespace DistributedData {
 class DBStoreMock : public DistributedDB::KvStoreNbDelegate {
@@ -46,6 +47,8 @@ public:
     using GenerateCloudVersionCallback = DistributedDB::GenerateCloudVersionCallback;
     using CloudSyncConfig = DistributedDB::CloudSyncConfig;
     using DataInterceptor = DistributedDB::DataInterceptor;
+    using DeviceSyncOption = DistributedDB::DeviceSyncOption;
+    using DeviceSyncProcessCallback = DistributedDB::DeviceSyncProcessCallback;
     DBStatus Get(const Key &key, Value &value) const override;
     DBStatus GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const override;
     DBStatus GetEntries(const Key &keyPrefix, KvStoreResultSet *&resultSet) const override;
@@ -110,6 +113,8 @@ public:
     DBStatus SetCloudSyncConfig(const CloudSyncConfig &config) override;
     DBStatus SetReceiveDataInterceptor(const DataInterceptor &interceptor) override;
     DBStatus GetDeviceEntries(const std::string &device, std::vector<Entry> &entries) const override;
+    DBStatus Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess) override;
+    DBStatus CancelSync(uint32_t syncId) override;
 private:
     static const uint32_t DEFAULT_SIZE = 0;
     DBStatus Get(ConcurrentMap<Key, Value> &store, const Key &key, Value &value) const;

@@ -371,5 +371,15 @@ DBStatus DBStoreMock::GetDeviceEntries(const std::string &device, std::vector<En
 {
     return NOT_SUPPORT;
 }
+
+DBStatus DBStoreMock::Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess)
+{
+    return NOT_SUPPORT;
+}
+
+DBStatus DBStoreMock::CancelSync(uint32_t syncId)
+{
+    return NOT_SUPPORT;
+};
 } // namespace DistributedData
 } // namespace OHOS
