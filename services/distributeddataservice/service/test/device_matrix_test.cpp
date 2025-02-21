@@ -684,3 +684,49 @@ HWTEST_F(DeviceMatrixTest, IsDynamic, TestSize.Level0)
     isDynamic = DeviceMatrix::GetInstance().IsDynamic(meta);
     EXPECT_EQ(isDynamic, true);
 }
+
+/**
+ * @tc.name: IsValid
+ * @tc.desc: Test the DeviceMatrix::IsValid method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(DeviceMatrixTest, IsValid, TestSize.Level0)
+{
+    DistributedData::DeviceMatrix::DataLevel dataLevel;
+    EXPECT_EQ(dataLevel.IsValid(), false);
+
+    dataLevel.dynamic = 0;
+    dataLevel.statics = 0;
+    dataLevel.switches = 0;
+    dataLevel.switchesLen = 0;
+    EXPECT_EQ(dataLevel.IsValid(), true);
+}
+
+class MatrixEventTest : public testing::Test {
+public:
+    static void SetUpTestCase(void){};
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
+};
+
+/**
+ * @tc.name: IsValid
+ * @tc.desc: Test the DeviceMatrix::IsValid method exception scenario.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: suoqilong
+ */
+HWTEST_F(MatrixEventTest, IsValid, TestSize.Level0)
+{
+    DistributedData::MatrixEvent::MatrixData matrixData;
+    EXPECT_EQ(matrixData.IsValid(), false);
+
+    matrixData.dynamic = 0;
+    matrixData.statics = 0;
+    matrixData.switches = 0;
+    matrixData.switchesLen = 0;
+    EXPECT_EQ(matrixData.IsValid(), true);
+}
