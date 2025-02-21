@@ -329,11 +329,11 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
         UpdateMeta(meta, localMeta, store);
     } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
-            "%{public}d],enableCloud? [%{public}d -> %{public}d]", param.bundleName_.c_str(),
-            Anonymous::Change(param.storeName_).c_str(), localMeta.asyncDownloadAsset, param.asyncDownloadAsset_,
-            localMeta.enableCloud, param.enableCloud_);
         if (localMeta.asyncDownloadAsset != param.asyncDownloadAsset_ || localMeta.enableCloud != param.enableCloud_) {
+            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
+                "%{public}d],enableCloud? [%{public}d -> %{public}d]", param.bundleName_.c_str(),
+                Anonymous::Change(param.storeName_).c_str(), localMeta.asyncDownloadAsset, param.asyncDownloadAsset_,
+                localMeta.enableCloud, param.enableCloud_);
             localMeta.asyncDownloadAsset = param.asyncDownloadAsset_;
             localMeta.enableCloud = param.enableCloud_;
             MetaDataManager::GetInstance().SaveMeta(localMeta.GetKey(), localMeta, true);
