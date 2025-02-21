@@ -149,7 +149,6 @@ HWTEST_F(SoftbusClientTest, UpdateExpireTime, TestSize.Level0)
     auto expireTime = client->CalcExpireTime();
     EXPECT_NO_FATAL_FAILURE(client->UpdateExpireTime(true));
     EXPECT_LT(expireTime, client->expireTime_);
-    expireTime = client->CalcExpireTime();
     EXPECT_NO_FATAL_FAILURE(client->UpdateExpireTime(false));
     EXPECT_LT(expireTime, client->expireTime_);
 }
