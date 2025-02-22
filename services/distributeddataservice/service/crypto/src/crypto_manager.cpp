@@ -326,8 +326,8 @@ bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<ui
     return DecryptInner(source, key, CLONE_SECRET_KEY, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
 }
 
-bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, SecretKeyType type, int32_t area,
-    const std::string &userId)
+bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, SecretKeyType type,
+    int32_t area, const std::string &userId)
 {
     uint32_t storageLevel = GetStorageLevel(area);
     if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {

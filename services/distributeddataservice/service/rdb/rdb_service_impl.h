@@ -231,6 +231,8 @@ private:
         DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
     void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
 
+    bool DeleteCloneSecretKey(const StoreMetaData &meta);
+
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

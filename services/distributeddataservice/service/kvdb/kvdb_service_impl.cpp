@@ -745,7 +745,12 @@ Status KVDBServiceImpl::AfterCreate(
     appIdMeta.appId = metaData.appId;
     MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     SaveLocalMetaData(options, metaData);
-    CryptoManager::GetInstance().UpdateSecretKey(metaData, password);
+    if (metaData.isEncrypt && CryptoManager::GetInstance().UpdateSecretKey(metaData, password)) {
+        SecretKeyMetaData secretKey;
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true)) {
+            MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
+        }
+    }
     ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
         "isCreated:%{public}d dataType:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
         metaData.instanceId, metaData.storeType, metaData.dataDir.c_str(), isCreated, metaData.dataType);

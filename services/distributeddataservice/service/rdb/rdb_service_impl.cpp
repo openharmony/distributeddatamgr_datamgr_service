@@ -843,12 +843,12 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     if (param.isEncrypt_ && !param.password_.empty()) {
-        auto ret = SetSecretKey(param, meta);
-        if (ret != RDB_OK) {
+        if (SetSecretKey(param, meta) != RDB_OK) {
             ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
                   meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
             return RDB_ERROR;
         }
+        DeleteCloneSecretKey(meta);
     }
     GetCloudSchema(param);
     return RDB_OK;
@@ -914,6 +914,15 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
     auto time = system_clock::to_time_t(system_clock::now());
     newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
     return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
+}
+
+bool RdbServiceImpl::DeleteCloneSecretKey(const StoreMetaData &meta)
+{
+    SecretKeyMetaData secretKey;
+    if (MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), secretKey, true)) {
+        return MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
+    }
+    return true;
 }
 
 int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &old)
