@@ -1200,8 +1200,7 @@ bool DataShareServiceImpl::VerifyPermission(const std::string &bundleName, const
         // Provider from ProxyData, which does not allow empty permissions and cannot be access without configured
         if (permission.empty()) {
             ZLOGE("Permission empty! token:0x%{public}x, bundleName:%{public}s", tokenId, bundleName.c_str());
-            // But currently it is allowed to be empty
-            return true;
+            return false;
         }
         // If the permission is NO_PERMISSION, access is also allowed
         if (permission != NO_PERMISSION && !PermitDelegate::VerifyPermission(permission, tokenId)) {
