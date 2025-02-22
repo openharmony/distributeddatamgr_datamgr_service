@@ -117,6 +117,7 @@ private:
     using StaticActs = DistributedData::StaticActs;
     using DBStatus = DistributedDB::DBStatus;
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
+    using AutoCache = DistributedData::AutoCache;
     struct SyncAgent {
         SyncAgent() = default;
         explicit SyncAgent(const std::string &bundleName);
@@ -228,8 +229,7 @@ private:
     
     bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
         DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
-
-    void UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaData &localMeta);
+    void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

@@ -1028,9 +1028,9 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
     std::string permission = isRead ? providerInfo.readPermission : providerInfo.writePermission;
-    if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
-        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
-            tokenId, permission.c_str(), URIUtils::Anonymous(providerInfo.uri).c_str());
+    if (!VerifyPermission(providerInfo.bundleName, permission, providerInfo.isFromExtension, tokenId)) {
+        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s,isFromExtension:%{public}d,uri:%{public}s",
+            tokenId, permission.c_str(), providerInfo.isFromExtension, URIUtils::Anonymous(providerInfo.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
@@ -1181,5 +1181,33 @@ void DataShareServiceImpl::ReportExcuteFault(uint32_t callingTokenId, DataProvid
     DataShareFaultInfo faultInfo = {CURD_FAILED, providerInfo.bundleName, providerInfo.moduleName,
         providerInfo.storeName, func, errCode, appendix};
     HiViewFaultAdapter::ReportDataFault(faultInfo);
+}
+
+bool DataShareServiceImpl::VerifyPermission(const std::string &bundleName, const std::string &permission,
+    bool isFromExtension, const int32_t tokenId)
+{
+    // Provider from extension, allows empty permissions, not configured to allow access.
+    if (isFromExtension) {
+        if (!permission.empty() && !PermitDelegate::VerifyPermission(permission, tokenId)) {
+            return false;
+        }
+    } else {
+        Security::AccessToken::HapTokenInfo tokenInfo;
+        auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+        if (result == Security::AccessToken::RET_SUCCESS && tokenInfo.bundleName == bundleName) {
+            return true;
+        }
+        // Provider from ProxyData, which does not allow empty permissions and cannot be access without configured
+        if (permission.empty()) {
+            ZLOGE("Permission empty! token:0x%{public}x, bundleName:%{public}s", tokenId, bundleName.c_str());
+            // But currently it is allowed to be empty
+            return true;
+        }
+        // If the permission is NO_PERMISSION, access is also allowed
+        if (permission != NO_PERMISSION && !PermitDelegate::VerifyPermission(permission, tokenId)) {
+            return false;
+        }
+    }
+    return true;
 }
 } // namespace OHOS::DataShare

@@ -93,8 +93,7 @@
                 "openssl",
                 "json",
                 "dmsfwk",
-                "data_object",
-                "window_manager"
+                "data_object"
             ],
             "third_party": [
                 "libuv",

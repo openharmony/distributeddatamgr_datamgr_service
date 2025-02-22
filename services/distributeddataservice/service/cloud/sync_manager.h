@@ -20,6 +20,7 @@
 #include "cloud/cloud_info.h"
 #include "cloud/sync_strategy.h"
 #include "cloud_types.h"
+#include "cloud/sync_event.h"
 #include "concurrent_map.h"
 #include "eventcenter/event.h"
 #include "executor_pool.h"
@@ -28,6 +29,7 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "utils/ref_count.h"
+#include "radar_reporter.h"
 
 namespace OHOS::CloudData {
 class SyncManager {
@@ -145,8 +147,8 @@ private:
         const StoreInfo &storeInfo, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
     std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry, const TraceIds &traceIds);
-    void DoExceptionalCallback(
-        const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo, const std::string &prepareTraceId);
+    void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo,
+        const std::string &prepareTraceId, int32_t code = GeneralError::E_ERROR);
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
         Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
@@ -161,6 +163,7 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static void Report(
         const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix);
+    void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState, int32_t code);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;

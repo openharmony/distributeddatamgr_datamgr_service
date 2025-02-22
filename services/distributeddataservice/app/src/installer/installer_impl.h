@@ -33,6 +33,7 @@ using InstallEventCallback = void (InstallEventSubscriber::*)
 private:
     static constexpr const char *USER_ID = "userId";
     static constexpr const char *SANDBOX_APP_INDEX = "sandbox_app_index";
+    static constexpr const char *APP_INDEX = "appIndex";
     void OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
     void OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex);
     void OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex);

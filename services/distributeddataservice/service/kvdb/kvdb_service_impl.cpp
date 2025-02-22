@@ -49,6 +49,7 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
+#include "network/network_delegate.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -966,6 +967,9 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     if (instance == nullptr) {
         return Status::CLOUD_DISABLED;
     }
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
+        return Status::NETWORK_ERROR;
+    }
     std::vector<int32_t> users;
     if (meta.user != StoreMetaData::ROOT_USER) {
         users.push_back(std::atoi(meta.user.c_str()));
@@ -1071,6 +1075,11 @@ bool KVDBServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
         }
         auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
         if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuid);
+        if ((localMask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
             isAfterMeta = true;
             break;
         }
