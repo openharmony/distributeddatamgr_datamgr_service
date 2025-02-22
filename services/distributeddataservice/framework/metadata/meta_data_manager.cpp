@@ -290,7 +290,7 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
     return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
 }
 
-bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete complete)
+bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait)
 {
     if (!inited_ || devices.empty()) {
         return false;
@@ -301,7 +301,7 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
             results.insert_or_assign(uuid, static_cast<int32_t>(status));
         }
         complete(results);
-    });
+    }, wait);
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d", status);
         CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);

@@ -425,8 +425,15 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
     }
     auto store = GetStore(param);
     if (store == nullptr) {
-        ZLOGE("store is null");
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
+    }
+    StoreMetaData meta = GetStoreMetaData(param);
+    std::vector<std::string> devices = {DmAdapter::GetInstance().ToUUID(device)};
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
     }
     RdbQuery rdbQuery;
     rdbQuery.MakeRemoteQuery(DmAdapter::GetInstance().ToUUID(device), sql, ValueProxy::Convert(selectionArgs));
