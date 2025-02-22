@@ -20,8 +20,10 @@
 
 #include "hks_api.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
 #include "securec.h"
 namespace OHOS::DistributedData {
+using system_clock = std::chrono::system_clock;
 std::vector<uint8_t> backupNonce_{};
 std::vector<uint8_t> vecAad_{};
 std::vector<uint8_t> vecCloneKeyAlias_{};
@@ -58,10 +60,10 @@ bool CryptoManager::AddHksParams(HksParamSet *params, CryptoManager::ParamConfig
 {
     struct HksBlob blobNonce;
     struct HksBlob keyName;
-    if (paramConfig.keyType == RootKeys::ROOT_KEY) {
+    if (paramConfig.keyType == LOCAL_SECRET_KEY) {
         blobNonce = { uint32_t(vecNonce_.size()), vecNonce_.data() };
         keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (paramConfig.keyType == RootKeys::CLONE_KEY) {
+    } else if (paramConfig.keyType == CLONE_SECRET_KEY) {
         blobNonce = { uint32_t(backupNonce_.size()), backupNonce_.data() };
         keyName = { uint32_t(vecCloneKeyAlias_.size()), vecCloneKeyAlias_.data() };
     } else {
@@ -216,15 +218,15 @@ int32_t CryptoManager::PrepareRootKey(uint32_t storageLevel, const std::string &
 
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId)
 {
-    return EncryptInner(key, RootKeys::ROOT_KEY, area, userId);
+    return EncryptInner(key, LOCAL_SECRET_KEY, area, userId);
 }
 
 std::vector<uint8_t> CryptoManager::EncryptCloneKey(const std::vector<uint8_t> &key)
 {
-    return EncryptInner(key, RootKeys::CLONE_KEY, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    return EncryptInner(key, CLONE_SECRET_KEY, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
 }
 
-std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const RootKeys type,
+std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key, const SecretKeyType type,
     int32_t area, const std::string &userId)
 {
     uint32_t storageLevel = GetStorageLevel(area);
@@ -257,9 +259,9 @@ std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key
     uint8_t cipherBuf[256] = { 0 };
     struct HksBlob cipherText = { sizeof(cipherBuf), cipherBuf };
     struct HksBlob keyName;
-    if (type == RootKeys::ROOT_KEY) {
+    if (type == LOCAL_SECRET_KEY) {
         keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (type == RootKeys::CLONE_KEY) {
+    } else if (type == CLONE_SECRET_KEY) {
         keyName = { uint32_t(vecCloneKeyAlias_.size()), vecCloneKeyAlias_.data() };
     }
     struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(key.data()) };
@@ -275,18 +277,56 @@ std::vector<uint8_t> CryptoManager::EncryptInner(const std::vector<uint8_t> &key
     return encryptedKey;
 }
 
+bool CryptoManager::UpdateSecretKey(const StoreMetaData &meta, const std::vector<uint8_t> &key,
+    SecretKeyType secretKeyType)
+{
+    if (!meta.isEncrypt) {
+        return false;
+    }
+    SecretKeyMetaData secretKey;
+    secretKey.storeType = meta.storeType;
+    secretKey.area = meta.area;
+    secretKey.sKey = Encrypt(key, meta.area, meta.user);
+    auto time = system_clock::to_time_t(system_clock::now());
+    secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
+    if (secretKeyType == LOCAL_SECRET_KEY) {
+        return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true);
+    } else {
+        return MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true);
+    }
+}
+
+bool CryptoManager::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secretKeyMeta, std::vector<uint8_t> &key,
+    SecretKeyType secretKeyType)
+{
+    if (secretKeyMeta.area < 0) {
+        ZLOGI("Decrypt old secret key");
+        if (Decrypt(secretKeyMeta.sKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER)) {
+            StoreMetaData metaData;
+            if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true)) {
+                ZLOGI("Upgrade secret key");
+                UpdateSecretKey(metaData, key, secretKeyType);
+            }
+            return true;
+        }
+    } else {
+        return Decrypt(secretKeyMeta.sKey, key, secretKeyMeta.area, meta.user);
+    }
+    return false;
+}
+
 bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
     const std::string &userId)
 {
-    return DecryptInner(source, key, RootKeys::ROOT_KEY, area, userId);
+    return DecryptInner(source, key, LOCAL_SECRET_KEY, area, userId);
 }
 
 bool CryptoManager::DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key)
 {
-    return DecryptInner(source, key, RootKeys::CLONE_KEY, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    return DecryptInner(source, key, CLONE_SECRET_KEY, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
 }
 
-bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, RootKeys type, int32_t area,
+bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, SecretKeyType type, int32_t area,
     const std::string &userId)
 {
     uint32_t storageLevel = GetStorageLevel(area);
@@ -320,9 +360,9 @@ bool CryptoManager::DecryptInner(std::vector<uint8_t> &source, std::vector<uint8
     uint8_t plainBuf[256] = { 0 };
     struct HksBlob plainKeyBlob = { sizeof(plainBuf), plainBuf };
     struct HksBlob keyName;
-    if (type == RootKeys::ROOT_KEY) {
+    if (type == LOCAL_SECRET_KEY) {
         keyName = { uint32_t(vecRootKeyAlias_.size()), vecRootKeyAlias_.data() };
-    } else if (type == RootKeys::CLONE_KEY) {
+    } else if (type == CLONE_SECRET_KEY) {
         keyName = { uint32_t(vecCloneKeyAlias_.size()), vecCloneKeyAlias_.data() };
     }
     struct HksBlob encryptedKeyBlob = { uint32_t(source.size()), source.data() };

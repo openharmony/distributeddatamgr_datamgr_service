@@ -27,7 +27,7 @@
 #include "cloud/cloud_server.h"
 #include "communication_provider.h"
 #include "communicator_context.h"
-#include "crypto_upgrade.h"
+#include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
@@ -615,14 +615,14 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         SecretKeyMetaData secretKey;
         std::vector<uint8_t> password;
         if (MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true) &&
-            CryptoUpgrade::GetInstance().Decrypt(metaData, secretKey, password)) {
+            CryptoManager::GetInstance().Decrypt(metaData, secretKey, password)) {
             passwords.emplace_back(password);
             password.assign(password.size(), 0);
         }
 
         std::vector<uint8_t> clonePwd;
         if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true) &&
-            CryptoUpgrade::GetInstance().Decrypt(metaData, secretKey, clonePwd, CryptoUpgrade::CLONE_SECRET_KEY)) {
+            CryptoManager::GetInstance().Decrypt(metaData, secretKey, clonePwd, CryptoManager::CLONE_SECRET_KEY)) {
             passwords.emplace_back(clonePwd);
             clonePwd.assign(clonePwd.size(), 0);
         }
@@ -745,7 +745,7 @@ Status KVDBServiceImpl::AfterCreate(
     appIdMeta.appId = metaData.appId;
     MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     SaveLocalMetaData(options, metaData);
-    CryptoUpgrade::GetInstance().UpdatePassword(metaData, password);
+    CryptoManager::GetInstance().UpdateSecretKey(metaData, password);
     ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
         "isCreated:%{public}d dataType:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
         metaData.instanceId, metaData.storeType, metaData.dataDir.c_str(), isCreated, metaData.dataType);

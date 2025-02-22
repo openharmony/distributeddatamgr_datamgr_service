@@ -21,7 +21,7 @@
 #include <iostream>
 
 #include "backuprule/backup_rule_manager.h"
-#include "crypto_upgrade.h"
+#include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
@@ -135,7 +135,7 @@ void BackupManager::DoBackup(const StoreMetaData &meta)
     std::vector<uint8_t> decryptKey;
     SecretKeyMetaData secretKey;
     if (MetaDataManager::GetInstance().LoadMeta(key, secretKey, true)) {
-        CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, decryptKey);
+        CryptoManager::GetInstance().Decrypt(meta, secretKey, decryptKey);
         if (secretKey.area < 0) {
             MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
         }
@@ -302,12 +302,10 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
 bool BackupManager::GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password)
 {
     SecretKeyMetaData secretKey;
-    StoreMetaData metaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true) ||
-        !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true)) {
         return false;
     }
-    return CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, password);
+    return CryptoManager::GetInstance().Decrypt(meta, secretKey, password);
 }
 
 bool BackupManager::IsFileExist(const std::string &path)

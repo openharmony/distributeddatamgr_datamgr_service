@@ -22,7 +22,7 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
-#include "crypto_upgrade.h"
+#include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "dfx_types.h"
@@ -113,7 +113,7 @@ KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData
     std::vector<uint8_t> password;
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(data.GetKey(), metaData, true);
-    CryptoUpgrade::GetInstance().Decrypt(metaData, secretKey, password);
+    CryptoManager::GetInstance().Decrypt(metaData, secretKey, password);
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
     return dbPassword;

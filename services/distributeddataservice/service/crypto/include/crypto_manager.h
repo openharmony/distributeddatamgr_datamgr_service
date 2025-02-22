@@ -15,31 +15,25 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_CRYPTO_CRYPTO_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_SERVICE_CRYPTO_CRYPTO_MANAGER_H
 
-#include <mutex>
 #include <cstdint>
+#include <mutex>
 #include <vector>
 #include "hks_param.h"
+#include "metadata/secret_key_meta_data.h"
+#include "metadata/store_meta_data.h"
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
-enum RootKeys {
-    ROOT_KEY,
-    CLONE_KEY,
-};
 static constexpr int32_t DEFAULT_ENCRYPTION_LEVEL = 1;
 static constexpr const char *DEFAULT_USER = "0";
 class API_EXPORT CryptoManager {
 public:
-    static CryptoManager &GetInstance();
-    int32_t GenerateRootKey();
-    int32_t CheckRootKey();
-    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    std::vector<uint8_t> EncryptCloneKey(const std::vector<uint8_t> &key);
-    bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
-    bool ImportCloneKey(std::vector<uint8_t> &key, std::vector<uint8_t> &iv);
+    enum SecretKeyType {
+        LOCAL_SECRET_KEY,
+        CLONE_SECRET_KEY,
+    };
     struct ParamConfig {
-        RootKeys keyType;
+        SecretKeyType keyType;
         uint32_t purpose;
         uint32_t storageLevel;
         std::string userId;
@@ -52,6 +46,19 @@ public:
         EL4,
         EL5
     };
+    static CryptoManager &GetInstance();
+    int32_t GenerateRootKey();
+    int32_t CheckRootKey();
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
+    std::vector<uint8_t> EncryptCloneKey(const std::vector<uint8_t> &key);
+    bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
+    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
+    bool ImportCloneKey(std::vector<uint8_t> &key, std::vector<uint8_t> &iv);
+    bool UpdateSecretKey(const StoreMetaData &meta, const std::vector<uint8_t> &password,
+        SecretKeyType secretKeyType = LOCAL_SECRET_KEY);
+    bool Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secretKeyMeta, std::vector<uint8_t> &key,
+        SecretKeyType secretKeyType = LOCAL_SECRET_KEY);
+
     enum ErrCode : int32_t {
         SUCCESS,
         NOT_EXIST,
@@ -70,9 +77,9 @@ private:
     int32_t CheckRootKey(uint32_t storageLevel, const std::string &userId);
     uint32_t GetStorageLevel(int32_t area);
     int32_t PrepareRootKey(uint32_t storageLevel, const std::string &userId);
-    std::vector<uint8_t> EncryptInner(const std::vector<uint8_t> &key, const RootKeys type, int32_t area,
+    std::vector<uint8_t> EncryptInner(const std::vector<uint8_t> &key, const SecretKeyType type, int32_t area,
         const std::string &userId);
-    bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const RootKeys type, int32_t area,
+    bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const SecretKeyType type, int32_t area,
         const std::string &userId);
     bool AddHksParams(HksParamSet *params, CryptoManager::ParamConfig paramConfig);
     int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId);

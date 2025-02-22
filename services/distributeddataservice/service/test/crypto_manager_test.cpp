@@ -17,7 +17,7 @@
 
 #include <random>
 
-#include "crypto_upgrade.h"
+#include "crypto_manager.h"
 #include "gtest/gtest.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -63,28 +63,6 @@ std::vector<uint8_t> CryptoManagerTest::Random(uint32_t len)
         key[i] = static_cast<uint8_t>(distribution(randomDevice));
     }
     return key;
-}
-
-class CryptoUpgradeTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp(){};
-    void TearDown(){};
-
-protected:
-    static std::vector<uint8_t> randomKey;
-};
-std::vector<uint8_t> CryptoUpgradeTest::randomKey;
-
-void CryptoUpgradeTest::SetUpTestCase(void)
-{
-    randomKey = CryptoManagerTest::Random(KEY_LENGTH);
-}
-
-void CryptoUpgradeTest::TearDownTestCase(void)
-{
-    randomKey.assign(randomKey.size(), 0);
 }
 
 /**
@@ -251,13 +229,13 @@ HWTEST_F(CryptoManagerTest, DecryptKey004, TestSize.Level0)
 * @tc.require:
 * @tc.author: yanhui
 */
-HWTEST_F(CryptoUpgradeTest, Decrypt001, TestSize.Level0)
+HWTEST_F(CryptoManagerTest, Decrypt001, TestSize.Level0)
 {
     SecretKeyMetaData secretKeyMeta;
     StoreMetaData metaData;
     std::vector<uint8_t> key;
     secretKeyMeta.sKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
-    auto result = CryptoUpgrade::GetInstance().Decrypt(metaData, secretKeyMeta, key);
+    auto result = CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, key);
     EXPECT_TRUE(result);
 }
 
@@ -268,14 +246,14 @@ HWTEST_F(CryptoUpgradeTest, Decrypt001, TestSize.Level0)
 * @tc.require:
 * @tc.author: yanhui
 */
-HWTEST_F(CryptoUpgradeTest, Decrypt002, TestSize.Level0)
+HWTEST_F(CryptoManagerTest, Decrypt002, TestSize.Level0)
 {
     SecretKeyMetaData secretKeyMeta;
     secretKeyMeta.area = 1;
     StoreMetaData metaData;
     std::vector<uint8_t> key;
     secretKeyMeta.sKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
-    auto result = CryptoUpgrade::GetInstance().Decrypt(metaData, secretKeyMeta, key);
+    auto result = CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, key);
     EXPECT_TRUE(result);
     for (int8_t i = 0; i < randomKey.size(); i++) {
         EXPECT_EQ(randomKey[i], key[i]);
@@ -289,11 +267,11 @@ HWTEST_F(CryptoUpgradeTest, Decrypt002, TestSize.Level0)
 * @tc.require:
 * @tc.author: yanhui
 */
-HWTEST_F(CryptoUpgradeTest, UpdatePassword001, TestSize.Level0)
+HWTEST_F(CryptoManagerTest, UpdatePassword001, TestSize.Level0)
 {
     StoreMetaData metaData;
     std::vector<uint8_t> key;
-    EXPECT_FALSE(CryptoUpgrade::GetInstance().UpdatePassword(metaData, key));
+    EXPECT_FALSE(CryptoManager::GetInstance().UpdateSecretKey(metaData, key));
 }
 
 /**
@@ -303,14 +281,14 @@ HWTEST_F(CryptoUpgradeTest, UpdatePassword001, TestSize.Level0)
 * @tc.require:
 * @tc.author: yanhui
 */
-HWTEST_F(CryptoUpgradeTest, UpdatePassword002, TestSize.Level0)
+HWTEST_F(CryptoManagerTest, UpdatePassword002, TestSize.Level0)
 {
     StoreMetaData metaData;
     metaData.isEncrypt = true;
     metaData.area = DEFAULT_ENCRYPTION_LEVEL;
     // MetaDataManager not initialized
-    EXPECT_FALSE(CryptoUpgrade::GetInstance().UpdatePassword(metaData, randomKey));
-    EXPECT_FALSE(CryptoUpgrade::GetInstance().UpdatePassword(metaData, randomKey, CryptoUpgrade::CLONE_SECRET_KEY));
+    EXPECT_FALSE(CryptoManager::GetInstance().UpdateSecretKey(metaData, randomKey));
+    EXPECT_FALSE(CryptoManager::GetInstance().UpdateSecretKey(metaData, randomKey, CryptoManager::CLONE_SECRET_KEY));
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

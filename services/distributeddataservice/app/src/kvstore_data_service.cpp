@@ -33,7 +33,7 @@
 #include "communication_provider.h"
 #include "communicator_context.h"
 #include "config_factory.h"
-#include "crypto_upgrade.h"
+#include "crypto_manager.h"
 #include "db_info_handle_impl.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -526,7 +526,7 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
         return {};
     };
     std::vector<uint8_t> password;
-    if (!CryptoUpgrade::GetInstance().Decrypt(metaData, secretKeyMeta, password)) {
+    if (!CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, password)) {
         ZLOGE("Secret key decrypt failed.");
         return {};
     };

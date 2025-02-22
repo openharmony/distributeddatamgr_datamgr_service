@@ -26,7 +26,7 @@
 #include "cloud/make_query_event.h"
 #include "cloud/schema_meta.h"
 #include "communicator/device_manager_adapter.h"
-#include "crypto_upgrade.h"
+#include "crypto_manager.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
@@ -955,7 +955,7 @@ bool RdbServiceImpl::GetDBPassword(const StoreMetaData &metaData, DistributedDB:
     DistributedData::SecretKeyMetaData secretKeyMeta;
     MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
     std::vector<uint8_t> decryptKey;
-    CryptoUpgrade::GetInstance().Decrypt(metaData, secretKeyMeta, decryptKey);
+    CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, decryptKey);
     if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         ZLOGE("Set secret key value failed. len is (%{public}d)", int32_t(decryptKey.size()));
@@ -1389,9 +1389,9 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std
             Anonymous::Change(param.storeName_).c_str());
         return RDB_NO_META;
     }
-    bool key = CryptoUpgrade::GetInstance().Decrypt(meta, secretKey, password.at(0));
-    bool cloneKey = CryptoUpgrade::GetInstance().Decrypt(
-        meta, cloneSecretKey, password.at(1), CryptoUpgrade::CLONE_SECRET_KEY);
+    bool key = CryptoManager::GetInstance().Decrypt(meta, secretKey, password.at(0));
+    bool cloneKey = CryptoManager::GetInstance().Decrypt(
+        meta, cloneSecretKey, password.at(1), CryptoManager::CLONE_SECRET_KEY);
     if (!key && !cloneKey) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. decrypt err", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
