@@ -614,14 +614,14 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         SecretKeyMetaData secretKey;
         std::vector<uint8_t> password;
         if (MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true) &&
-            CryptoManager::GetInstance().Decrypt(secretKey.sKey, password)) {
+            CryptoManager::GetInstance().Decrypt(metaData, secretKey, password)) {
             passwords.emplace_back(password);
             password.assign(password.size(), 0);
         }
 
         std::vector<uint8_t> clonePwd;
         if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true) &&
-            CryptoManager::GetInstance().Decrypt(secretKey.sKey, clonePwd)) {
+            CryptoManager::GetInstance().Decrypt(metaData, secretKey, clonePwd, CryptoManager::CLONE_SECRET_KEY)) {
             passwords.emplace_back(clonePwd);
             clonePwd.assign(clonePwd.size(), 0);
         }
@@ -744,7 +744,12 @@ Status KVDBServiceImpl::AfterCreate(
     appIdMeta.appId = metaData.appId;
     MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     SaveLocalMetaData(options, metaData);
-    Upgrade::GetInstance().UpdatePassword(metaData, password);
+    if (metaData.isEncrypt && CryptoManager::GetInstance().UpdateSecretKey(metaData, password)) {
+        SecretKeyMetaData secretKey;
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true)) {
+            MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
+        }
+    }
     ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
         "isCreated:%{public}d dataType:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
         metaData.instanceId, metaData.storeType, metaData.dataDir.c_str(), isCreated, metaData.dataType);

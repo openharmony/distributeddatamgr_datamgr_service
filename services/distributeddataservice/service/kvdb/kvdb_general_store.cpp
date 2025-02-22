@@ -110,7 +110,9 @@ KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData
     auto storeKey = data.GetSecretKey();
     MetaDataManager::GetInstance().LoadMeta(storeKey, secretKey, true);
     std::vector<uint8_t> password;
-    CryptoManager::GetInstance().Decrypt(secretKey.sKey, password);
+    StoreMetaData metaData;
+    MetaDataManager::GetInstance().LoadMeta(data.GetKey(), metaData, true);
+    CryptoManager::GetInstance().Decrypt(metaData, secretKey, password);
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
     return dbPassword;

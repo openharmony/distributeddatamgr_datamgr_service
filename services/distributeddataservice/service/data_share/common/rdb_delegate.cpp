@@ -84,7 +84,7 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
             return std::make_pair(E_DB_NOT_EXIST, config);
         }
         std::vector<uint8_t> decryptKey;
-        if (!DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey)) {
+        if (!DistributedData::CryptoManager::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey)) {
             return std::make_pair(E_ERROR, config);
         };
         config.SetEncryptKey(decryptKey);

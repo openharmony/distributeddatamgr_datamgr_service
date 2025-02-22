@@ -181,7 +181,7 @@ HWTEST_F(KVDBGeneralStoreStubTest, GetPasswordTest002, TestSize.Level0)
     std::vector<uint8_t> randomKey01 = Random(KEY_LENGTH);
     SecretKeyMetaData secretKey;
     secretKey.storeType = metaData.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey01);
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey01, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     ASSERT_EQ(secretKey.sKey.size(), ENCRYPT_KEY_LENGTH);
     ASSERT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData.GetSecretKey(), secretKey, true));
 

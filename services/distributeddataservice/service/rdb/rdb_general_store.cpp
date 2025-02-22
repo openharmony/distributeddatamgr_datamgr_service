@@ -167,7 +167,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
         SecretKeyMetaData secretKeyMeta;
         MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
         std::vector<uint8_t> decryptKey;
-        CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        CryptoManager::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey);
         option.passwd.SetValue(decryptKey.data(), decryptKey.size());
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         option.isEncryptedDb = meta.isEncrypt;

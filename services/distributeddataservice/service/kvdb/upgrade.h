@@ -41,7 +41,6 @@ public:
 
     DBStatus UpdateStore(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd);
     DBStatus ExportStore(const StoreMeta &old, const StoreMeta &meta);
-    void UpdatePassword(const StoreMeta &meta, const std::vector<uint8_t> &password);
     DBStatus UpdateUuid(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd);
     API_EXPORT std::string GetEncryptedUuidByMeta(const StoreMeta &meta);
 
