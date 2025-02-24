@@ -714,7 +714,7 @@ public:
 
 /**
  * @tc.name: IsValid
- * @tc.desc: Test the DeviceMatrix::IsValid method exception scenario.
+ * @tc.desc: Test the MatrixEvent::IsValid method exception scenario.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: suoqilong
