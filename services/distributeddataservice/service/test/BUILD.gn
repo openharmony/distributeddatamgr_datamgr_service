@@ -1327,6 +1327,12 @@ ohos_unittest("PermitDelegateMockTest") {
     "-Dprotected=public",
   ]
 
+  cflags_cc = cflags
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
+
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/utils:distributeddata_utils",
@@ -1343,6 +1349,101 @@ ohos_unittest("PermitDelegateMockTest") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+  ]
+}
+
+ohos_unittest("BootStrapMockTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  include_dirs = [
+    "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/bootstrap/include/",
+    "${data_service_path}/service/config/include/",
+    "${data_service_path}/service/config/include/model",
+  ]
+
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
+    "${data_service_path}/service/config/src/model/backup_config.cpp",
+    "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
+    "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/directory_config.cpp",
+    "${data_service_path}/service/config/src/model/global_config.cpp",
+    "${data_service_path}/service/config/src/model/network_config.cpp",
+    "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/config/src/model/thread_config.cpp",
+    "bootstrap_mock_test.cpp",
+    "mock/config_factory_mock.cpp",
+  ]
+
+  external_deps = [
+    "bundle_framework:appexecfwk_core",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [ "../../framework:distributeddatasvcfwk" ]
+
+  cflags = [
+    "-Werror",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  cflags_cc = cflags
+
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
+}
+
+ohos_unittest("QueryHelperUnitTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/service/kvdb",
+  ]
+
+  sources = [
+    "${data_service_path}/service/kvdb/query_helper.cpp",
+    "query_helper_test.cpp",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
   ]
 }
 
@@ -1396,6 +1497,7 @@ group("unittest") {
       ":KVDBGeneralStoreAbnormalTest",
       ":KVDBGeneralStoreTest",
       ":KvdbServiceImplTest",
+      ":QueryHelperUnitTest",
     ]
   }
 
@@ -1404,6 +1506,7 @@ group("unittest") {
   }
 
   deps += [
+    ":BootStrapMockTest",
     ":CryptoManagerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
