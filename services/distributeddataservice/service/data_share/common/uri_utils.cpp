@@ -30,7 +30,6 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
     std::vector<std::string> splitUri;
     SplitStr(uriTemp.GetPath(), "/", splitUri);
     if (splitUri.size() < PARAM_SIZE) {
-        ZLOGE("Invalid uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
         return false;
     }
 

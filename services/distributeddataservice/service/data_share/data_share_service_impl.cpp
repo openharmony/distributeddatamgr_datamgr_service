@@ -891,6 +891,9 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
     }
     int32_t currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     UriInfo uriInfo;
+    // GetInfoFromUri will first perform a four-part URI check. Only if the URI contains more than four parts
+    // is it necessary to continue to check the SilentProxyEnable status. The URI part length is used as an
+    // indicator to determine whether the SilentProxyEnable status needs to be checked.
     if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
         return E_OK;
     }
