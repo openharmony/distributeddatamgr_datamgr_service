@@ -848,7 +848,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
                   meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
             return RDB_ERROR;
         }
-        DeleteCloneSecretKey(meta);
+        UpgradeCloneSecretKey(meta);
     }
     GetCloudSchema(param);
     return RDB_OK;
@@ -916,11 +916,14 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
     return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
 }
 
-bool RdbServiceImpl::DeleteCloneSecretKey(const StoreMetaData &meta)
+bool RdbServiceImpl::UpgradeCloneSecretKey(const StoreMetaData &meta)
 {
     SecretKeyMetaData secretKey;
-    if (MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), secretKey, true)) {
-        return MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
+    if (MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), secretKey, true) && secretKey.area < 0) {
+        std::vector<uint8_t> clonePwd;
+        // Update the encryption method for the key
+        CryptoManager::GetInstance().Decrypt(meta, secretKey, clonePwd, CryptoManager::CLONE_SECRET_KEY);
+        clonePwd.assign(clonePwd.size(), 0);
     }
     return true;
 }
