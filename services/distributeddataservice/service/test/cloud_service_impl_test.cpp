@@ -517,7 +517,6 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     config.params = "";
     Serializable::json node;
     EXPECT_EQ(config.params.empty(), true);
-    Serializable::json node;
 
     EXPECT_EQ(config.Marshal(node), true);
     EXPECT_EQ(node["description"], config.description);
@@ -531,10 +530,10 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     componentConfig.constructor = "constructor";
     componentConfig.destructor = "destructor";
     componentConfig.params = "params";
+    Serializable::json node1;
     EXPECT_EQ(componentConfig.params.empty(), false);
 
-    EXPECT_EQ(config.Marshal(node), true);
-    EXPECT_EQ(componentConfig.Marshal(node), true);
+    EXPECT_EQ(componentConfig.Marshal(node1), true);
     EXPECT_EQ(node["description"], componentConfig.description);
     EXPECT_EQ(node["lib"], componentConfig.lib);
     EXPECT_EQ(node["constructor"], componentConfig.constructor);
