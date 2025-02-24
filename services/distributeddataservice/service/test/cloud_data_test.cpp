@@ -22,6 +22,7 @@
 #include "checker_mock.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
+#include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_report.h"
 #include "cloud/cloud_server.h"
 #include "cloud/cloud_share_event.h"
@@ -60,6 +61,7 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Querykey = OHOS::CloudData::QueryKey;
+using QueryLastResults = OHOS::CloudData::QueryLastResults;
 using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
 using SharingCfm = OHOS::CloudData::SharingUtil::SharingCfm;
 using Confirmation = OHOS::CloudData::Confirmation;
@@ -88,6 +90,7 @@ static constexpr const int32_t SCHEMA_VERSION = 101;
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
+static constexpr const char *TEST_CLOUD_STORE_1 = "test_cloud_store_1";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
 static constexpr const char *COM_EXAMPLE_TEST_CLOUD = "com.example.testCloud";
@@ -483,7 +486,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo003, TestSize.Level0)
 
 /**
 * @tc.name: QueryLastSyncInfo004
-* @tc.desc: The query last sync info interface failed when switch is close.
+* @tc.desc: The query last sync info interface
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -499,12 +502,15 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
 }
 
 /**
 * @tc.name: QueryLastSyncInfo005
-* @tc.desc: The query last sync info interface failed when app cloud switch is close.
+* @tc.desc: The query last sync info interface
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -523,12 +529,15 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code = E_CLOUD_DISABLED);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
 }
 
 /**
 * @tc.name: QueryLastSyncInfo006
-* @tc.desc: The query last sync info interface failed when schema is invalid.
+* @tc.desc: The query last sync info interface
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -546,6 +555,316 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo006, TestSize.Level0)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(result.empty());
+}
+
+/**
+* @tc.name: QueryLastSyncInfo007
+* @tc.desc: The query last sync info interface
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo007, TestSize.Level0)
+{
+    int32_t user = 100;
+    int64_t startTime = 123456789;
+    int64_t finishTime = 123456799;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    lastSyncInfo.startTime = startTime;
+    lastSyncInfo.finishTime = finishTime;
+    lastSyncInfo.syncStatus = 1;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true);
+    
+    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfos, true);
+    EXPECT_TRUE(!lastSyncInfos.empty());
+
+    CloudData::SyncManager sync;
+    QueryLastResults result;
+    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1 } },
+                                         result);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(!result.empty());
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == -1);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime == startTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime == finishTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
+}
+
+/**
+* @tc.name: QueryLastSyncInfo008
+* @tc.desc: The query last sync info interface
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo008, TestSize.Level0)
+{
+    int32_t user = 100;
+    int64_t startTime = 123456789;
+        int64_t finishTime = 123456799;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    lastSyncInfo.startTime = startTime;
+    lastSyncInfo.finishTime = finishTime;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.code = 0;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true);
+    CloudLastSyncInfo lastSyncInfo1;
+    lastSyncInfo1.id = TEST_CLOUD_ID;
+    lastSyncInfo1.storeId = TEST_CLOUD_DATABASE_ALIAS_2;
+    lastSyncInfo1.startTime = startTime;
+    lastSyncInfo1.finishTime = finishTime;
+    lastSyncInfo1.syncStatus = 1;
+    lastSyncInfo1.code = 0;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo1, true);
+    
+    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        ""), lastSyncInfos, true);
+    EXPECT_TRUE(!lastSyncInfos.empty());
+
+    CloudData::SyncManager sync;
+    QueryLastResults result;
+    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1 },
+                                           { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_2} },
+                                         result);
+
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.size() == 2);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime == startTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime == finishTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
+
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].code == 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].startTime == startTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].finishTime == finishTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].syncStatus == 1);
+}
+
+/**
+* @tc.name: QueryLastSyncInfo009
+* @tc.desc: The query last sync info interface failed when schema is invalid.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo009, TestSize.Level0)
+{
+    int32_t user = 100;
+    int64_t startTime = 123456789;
+        int64_t finishTime = 123456799;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    lastSyncInfo.startTime = startTime;
+    lastSyncInfo.finishTime = finishTime;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.code = 0;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true);
+    CloudLastSyncInfo lastSyncInfo1;
+    lastSyncInfo1.id = TEST_CLOUD_ID;
+    lastSyncInfo1.storeId = TEST_CLOUD_DATABASE_ALIAS_2;
+    lastSyncInfo1.startTime = startTime;
+    lastSyncInfo1.finishTime = finishTime;
+    lastSyncInfo1.syncStatus = 1;
+    lastSyncInfo1.code = 0;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo1, true);
+    
+    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE, ""),
+        lastSyncInfos, true);
+    EXPECT_TRUE(!lastSyncInfos.empty());
+
+    CloudData::SyncManager sync;
+    QueryLastResults result;
+    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_2} },
+                                         result);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.size() == 1);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].code == 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].startTime == startTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].finishTime == finishTime);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].syncStatus == 1);
+}
+
+/**
+* @tc.name: QueryLastSyncInfo010
+* @tc.desc: The query last sync info interface failed
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo010, TestSize.Level0)
+{
+    int32_t user = 100;
+    int64_t startTime = 123456789;
+        int64_t finishTime = 123456799;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    lastSyncInfo.startTime = startTime;
+    lastSyncInfo.finishTime = finishTime;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.code = 0;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true);
+    CloudLastSyncInfo lastSyncInfo1;
+    lastSyncInfo1.id = TEST_CLOUD_ID;
+    lastSyncInfo1.storeId = TEST_CLOUD_DATABASE_ALIAS_2;
+    lastSyncInfo1.startTime = startTime;
+    lastSyncInfo1.finishTime = finishTime;
+    lastSyncInfo1.syncStatus = 1;
+    lastSyncInfo1.code = 0;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo1, true);
+    
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    QueryLastResults result;
+    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "1234"} },
+                                         result);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+* @tc.name: QueryLastSyncInfo011
+* @tc.desc: The query last sync info interface
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo011, TestSize.Level0)
+{
+    schemaMeta_.databases[1].name = TEST_CLOUD_STORE_1;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
+    int32_t user = 100;
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    info.syncId_ = 0;
+    CloudInfo cloud;
+    cloud.user = info.user_;
+    auto cloudSyncInfos = sync.GetCloudSyncInfo(info, cloud);
+    sync.UpdateStartSyncInfo(cloudSyncInfos);
+    QueryLastResults result;
+    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE },
+                                           { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE_1} },
+                                         result);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.size() == 2);
+    EXPECT_TRUE(result[TEST_CLOUD_STORE].code == 0);
+    EXPECT_TRUE(result[TEST_CLOUD_STORE].startTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_STORE].finishTime == 0);
+    EXPECT_TRUE(result[TEST_CLOUD_STORE].syncStatus == 0);
+
+    EXPECT_TRUE(result[TEST_CLOUD_STORE_1].code == 0);
+    EXPECT_TRUE(result[TEST_CLOUD_STORE_1].startTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_STORE_1].finishTime == 0);
+    EXPECT_TRUE(result[TEST_CLOUD_STORE_1].syncStatus == 0);
+}
+
+/**
+* @tc.name: QueryLastSyncInfo012
+* @tc.desc: The query last sync info interface failed.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, QueryLastSyncInfo012, TestSize.Level0)
+{
+    int32_t user = 100;
+    int64_t startTime = 123456789;
+    int64_t finishTime = 123456799;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    lastSyncInfo.startTime = startTime;
+    lastSyncInfo.finishTime = finishTime;
+    lastSyncInfo.syncStatus = 1;
+    MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true);
+    
+    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+         TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfos, true);
+    EXPECT_TRUE(!lastSyncInfos.empty());
+
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    QueryLastResults result;
+    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "1234"} },
+                                         result);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+* @tc.name: GetStores
+* @tc.desc: Test GetStores function
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetStores, TestSize.Level0)
+{
+    auto cloudServerMock = std::make_shared<CloudServerMock>();
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
+    SchemaMeta schemaMeta;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
+    EXPECT_TRUE(!schemaMeta.GetStores().empty());
+}
+
+/**
+* @tc.name: UpdateStartSyncInfo
+* @tc.desc: Test UpdateStartSyncInfo
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UpdateStartSyncInfo, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    CloudInfo cloud;
+    cloud.user = info.user_;
+    auto cloudSyncInfos = sync.GetCloudSyncInfo(info, cloud);
+    sync.UpdateStartSyncInfo(cloudSyncInfos);
+    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+         ""), lastSyncInfos, true);
+    EXPECT_TRUE(!lastSyncInfos.empty());
+    printf("code: %d", lastSyncInfos[0].code);
+    EXPECT_TRUE(lastSyncInfos[0].code == -1);
+    EXPECT_TRUE(lastSyncInfos[0].startTime != 0);
+    EXPECT_TRUE(lastSyncInfos[0].finishTime != 0);
+    EXPECT_TRUE(lastSyncInfos[0].syncStatus == 1);
+}
+
+/**
+* @tc.name: UpdateStartSyncInfo
+* @tc.desc: Test UpdateStartSyncInfo
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UpdateFinishSyncInfo, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    CloudInfo cloud;
+    cloud.user = info.user_;
+    auto cloudSyncInfos = sync.GetCloudSyncInfo(info, cloud);
+    sync.UpdateStartSyncInfo(cloudSyncInfos);
+    sync.UpdateFinishSyncInfo({ user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1 }, 0, 0);
+    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
+         ""), lastSyncInfos, true);
+    EXPECT_TRUE(!lastSyncInfos.empty());
 }
 
 /**
@@ -1517,7 +1836,9 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
     std::map<std::string, std::string> traceIds;
     auto task = sync.GetPostEventTask(schemas, cloudInfo_, info, true, traceIds);
     task();
-    EXPECT_TRUE(sync.lastSyncInfos_.Empty());
+    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, "test", "test"), lastSyncInfos, true);
+    EXPECT_TRUE(lastSyncInfos.size() == 0);
 }
 
 /**
@@ -1613,7 +1934,7 @@ HWTEST_F(CloudDataTest, GetCloudSyncInfo, TestSize.Level0)
     cloud.enableCloud = false;
     CloudData::SyncManager::SyncInfo info(cloudInfo_.user);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
-    info.bundleName_ = "test";
+    info.bundleName_ = TEST_CLOUD_BUNDLE;
     auto ret = sync.GetCloudSyncInfo(info, cloud);
     EXPECT_TRUE(!ret.empty());
 }

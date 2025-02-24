@@ -49,7 +49,6 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
-using namespace CloudData;
 using namespace std::chrono;
 using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;

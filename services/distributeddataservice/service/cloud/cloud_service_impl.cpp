@@ -645,7 +645,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
         databases = schema.databases;
         for (const auto &database : schema.databases) {
             if (storeId.empty() || database.alias == storeId) {
-                queryKeys.push_back({ id, bundleName, database.name });
+                queryKeys.push_back({ user, id, bundleName, database.name });
             }
         }
         if (queryKeys.empty()) {

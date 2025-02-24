@@ -156,4 +156,13 @@ bool SchemaMeta::IsValid() const
 {
     return !bundleName.empty() && !databases.empty();
 }
+
+std::vector<std::string> SchemaMeta::GetStores()
+{
+    std::vector<std::string> stores;
+    for (const auto &it : databases) {
+        stores.push_back(it.name);
+    }
+    return stores;
+}
 } // namespace OHOS::DistributedData
