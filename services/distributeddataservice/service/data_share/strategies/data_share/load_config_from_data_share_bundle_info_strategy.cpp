@@ -107,6 +107,7 @@ bool LoadConfigFromDataShareBundleInfoStrategy::LoadConfigFromUri(std::shared_pt
 {
     UriInfo uriInfo;
     if (!URIUtils::GetInfoFromURI(context->uri, uriInfo)) {
+        ZLOGE("Invalid uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
         return false;
     }
     context->calledBundleName = std::move(uriInfo.bundleName);
