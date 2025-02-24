@@ -17,7 +17,6 @@
 #define LOG_TAG "RouteHeadHandler"
 #include <chrono>
 #include <cinttypes>
-#include "account/account_delegate.h"
 #include "auth_delegate.h"
 #include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
@@ -61,14 +60,6 @@ void RouteHeadHandlerImpl::Init()
         return;
     }
     if (!DmAdapter::GetInstance().IsOHOSType(deviceId_) && userId_ != DEFAULT_USERID) {
-        userId_ = DEFAULT_USERID;
-    }
-    StoreMetaData metaData;
-    metaData.deviceId = deviceId_;
-    metaData.user = DEFAULT_USERID;
-    metaData.bundleName = appId_;
-    metaData.storeId = storeId_;
-    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
         userId_ = DEFAULT_USERID;
     }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
@@ -220,19 +211,6 @@ bool RouteHeadHandlerImpl::ParseHeadData(
     ZLOGD("valid session:appId:%{public}s, srcDevId:%{public}s, srcUser:%{public}u, trgDevId:%{public}s,",
           session_.appId.c_str(), Anonymous::Change(session_.sourceDeviceId).c_str(),
           session_.sourceUserId, Anonymous::Change(session_.targetDeviceId).c_str());
-    if (std::to_string(peer.userId) == DEFAULT_USERID) {
-        StoreMetaData metaData;
-        metaData.deviceId = local.deviceId;
-        metaData.user = peer.userId;
-        metaData.bundleName = local.appId;
-        metaData.storeId = local.storeId;
-        if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
-            int foregroundUserId = 0;
-            AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
-            users.emplace_back(std::to_string(foregroundUserId));
-            return true;
-        }
-    }
     for (const auto &item : session_.targetUserIds) {
         local.userId = item;
         if (SessionManager::GetInstance().CheckSession(local, peer)) {
