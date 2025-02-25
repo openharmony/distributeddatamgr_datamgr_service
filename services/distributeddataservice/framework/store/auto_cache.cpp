@@ -66,7 +66,8 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
     if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
         disables_.ContainIf(meta.tokenId,
             [&meta](const std::set<std::string> &stores) -> bool { return stores.count(meta.storeId) != 0; })) {
-        ZLOGW("storeType is invalid or store is disabled,user:%{public}s,bundleName:%{public}s,storeName:%{public}s",
+        ZLOGW("storeType is invalid or store is disabled, user:%{public}s, bundleName:%{public}s, "
+              "storeName:%{public}s",
             meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return { E_ERROR, store };
     }
@@ -83,19 +84,19 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
     stores_.Compute(meta.tokenId,
         [this, &meta, &watchers, &store](auto &, std::map<std::string, Delegate> &stores) -> bool {
             if (disableStores_.count(meta.dataDir) != 0) {
-                ZLOGW("store is closing,tokenId:0x%{public}x,user:%{public}s,bundleName:%{public}s,storeId:%{public}s",
+                ZLOGW("store is closing, tokenId:0x%{public}x user:%{public}s"
+                      "bundleName:%{public}s storeName:%{public}s",
                     meta.tokenId, meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
                 return !stores.empty();
             }
             auto it = stores.find(meta.storeId);
-            if (it != stores.end() && it->second.GetUser() == atoi(meta.user.c_str())) {
+            if (it != stores.end()) {
                 if (!watchers.empty()) {
                     it->second.SetObservers(watchers);
                 }
                 store = it->second;
                 return !stores.empty();
             }
-            stores.erase(meta.storeId);
             auto *dbStore = creators_[meta.storeType](meta);
             if (dbStore == nullptr) {
                 ZLOGE("creator failed. storeName:%{public}s", meta.GetStoreAlias().c_str());
