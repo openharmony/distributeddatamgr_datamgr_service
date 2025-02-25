@@ -86,7 +86,8 @@
                 "file_api",
                 "openssl",
                 "json",
-                "dmsfwk"
+                "dmsfwk",
+                "window_manager"
             ],
             "third_party": [
                 "libuv",
