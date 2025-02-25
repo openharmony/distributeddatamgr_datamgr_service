@@ -85,6 +85,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
     "${data_service_path}/service/rdb/rdb_cursor.cpp",
     "${data_service_path}/service/rdb/rdb_general_store.cpp",
+    "${data_service_path}/service/rdb/rdb_hiview_adapter.cpp",
     "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
     "${data_service_path}/service/rdb/rdb_query.cpp",
     "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
