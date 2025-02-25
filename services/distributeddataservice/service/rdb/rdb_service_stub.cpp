@@ -84,9 +84,7 @@ int32_t RdbServiceStub::OnReportStatistic(MessageParcel& data, MessageParcel& re
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
- 
     auto status = ReportStatistic(param, statEvent);
- 
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

@@ -37,7 +37,7 @@ private:
 
 private:
   std::atomic<bool> running_ = false;
-  const int WAIT_TIME = 60 * 60 * 24; // 24h
+  const int waitTime = 60 * 60 * 24; // 24h
 };
 } // namespace OHOS::DistributedRdb
 #endif // DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H

@@ -72,7 +72,7 @@ void RdbHiViewAdapter::InvokeSync()
     const char* storeNameArray[count];
     for (uint32_t i = 0; i < count; ++i) {
         bundleNameArray[i] = bundleNames[i].c_str();
-        storeNameArray[i] = StoreNames[i].c_str();
+        storeNameArray[i] = storeNames[i].c_str();
     }
     HiSysEventParam params[] = {
         { .name = "TYPE", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = statTypes }, .arraySize = count },
@@ -84,7 +84,7 @@ void RdbHiViewAdapter::InvokeSync()
     };
     auto size = sizeof(params) / sizeof(params[0]);
     OH_HiSysEvent_Write(DISTRIBUTED_DATAMGR, STATISTIC_EVENT, HISYSEVENT_STATISTIC, params, size);
- }
+}
   
 void RdbHiViewAdapter::StartTimerThread()
 {
@@ -94,9 +94,9 @@ void RdbHiViewAdapter::StartTimerThread()
     if (running_.exchange(true)) {
         return;
     }
-    auto interval = std::chrono::seconds(WAIT_TIME);
+    auto interval = std::chrono::seconds(waitTime);
     auto fun = [this]() {
-         InvokeSync();
+        InvokeSync();
     };
     executors_->Schedule(fun, interval);
 }
