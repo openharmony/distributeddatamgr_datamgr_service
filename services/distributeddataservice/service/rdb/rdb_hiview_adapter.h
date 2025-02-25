@@ -12,31 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
- #ifndef DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H
- #define DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H
-  
- #include "executor_pool.h"
- #include "hisysevent.h"
- #include "concurrent_map.h"
- #include "rdb_types.h"
-  
- namespace OHOS::DistributedRdb {
-  
- class RdbHiViewAdapter {
- public:
-     static RdbHiViewAdapter &GetInstance();
-     void ReportStatistic(const RdbStatEvent &stat);
-     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
- private:
-     std::shared_ptr<ExecutorPool> executors_ = nullptr;
-     ConcurrentMap<RdbStatEvent, uint32_t> statEventMap;
-     void InvokeSync();
-     void StartTimerThread();
-  
- private:
-     std::atomic<bool> running_ = false;
-     const int WAIT_TIME = 60 * 60 * 24; // 24h
- };
- }  // namespace DistributedRdb
- #endif // DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H
+
+#ifndef DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H
+#define DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H
+
+#include "concurrent_map.h"
+#include "executor_pool.h"
+#include "hisysevent.h"
+#include "rdb_types.h"
+
+namespace OHOS::DistributedRdb {
+
+class RdbHiViewAdapter {
+public:
+  static RdbHiViewAdapter &GetInstance();
+  void ReportStatistic(const RdbStatEvent &stat);
+  void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+
+private:
+  std::shared_ptr<ExecutorPool> executors_ = nullptr;
+  ConcurrentMap<RdbStatEvent, uint32_t> statEventMap;
+  void InvokeSync();
+  void StartTimerThread();
+
+private:
+  std::atomic<bool> running_ = false;
+  const int WAIT_TIME = 60 * 60 * 24; // 24h
+};
+} // namespace OHOS::DistributedRdb
+#endif // DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H
