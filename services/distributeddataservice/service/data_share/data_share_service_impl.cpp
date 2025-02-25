@@ -64,6 +64,8 @@ using DumpManager = OHOS::DistributedData::DumpManager;
 using ProviderInfo = DataProviderConfig::ProviderInfo;
 using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
+// decimal base
+static constexpr int DECIMAL_BASE = 10;
 class DataShareServiceImpl::SystemAbilityStatusChangeListener
     : public SystemAbilityStatusChangeStub {
 public:
@@ -615,7 +617,19 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     const std::string &deviceId)
 {
     std::map<std::string, ProfileInfo> profileInfos;
-    if (!DataShareProfileConfig::GetProfileInfo(bundleName, std::stoi(userId), profileInfos)) {
+    char *endptr = nullptr;
+    errno = 0;
+    long userIdLong = strtol(userId.c_str(), &endptr, DECIMAL_BASE);
+    if (endptr == nullptr || endptr == userId.c_str() || *endptr != '\0') {
+        ZLOGE("UserId:%{public}s is invalid", userId.c_str());
+        return;
+    }
+    if (errno == ERANGE || userIdLong >= INT32_MAX || userIdLong <= INT32_MIN) {
+        ZLOGE("UserId:%{public}s is out of range", userId.c_str());
+        return;
+    }
+    int32_t currentUserId = static_cast<int32_t>(userIdLong);
+    if (!DataShareProfileConfig::GetProfileInfo(bundleName, currentUserId, profileInfos)) {
         ZLOGE("Get profileInfo failed.");
         return;
     }
