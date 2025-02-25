@@ -111,8 +111,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
     auto callBack = [&uri, &valuesBucket, this, &callingTokenId, &func](ProviderInfo &providerInfo,
         DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
-        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
-            func, callingTokenId);
+        TimeoutReport timeoutReport({providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName, func,
+            callingTokenId}, true);
         auto [errCode, ret] = dbDelegate->InsertEx(providerInfo.tableName, valuesBucket);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
@@ -120,6 +120,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
+        timeoutReport.Report();
         return std::make_pair(errCode, ret);
     };
     return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
@@ -158,8 +159,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
     auto callBack = [&uri, &predicate, &valuesBucket, this, &callingTokenId, &func](ProviderInfo &providerInfo,
         DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
-        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
-            func, callingTokenId);
+        TimeoutReport timeoutReport({providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName, func,
+            callingTokenId}, true);
         auto [errCode, ret] = dbDelegate->UpdateEx(providerInfo.tableName, predicate, valuesBucket);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
@@ -167,6 +168,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
+        timeoutReport.Report();
         return std::make_pair(errCode, ret);
     };
     return ExecuteEx(uri, extUri, callingTokenId, false, callBack);
@@ -185,8 +187,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
     auto callBack = [&uri, &predicate, this, &callingTokenId, &func](ProviderInfo &providerInfo,
         DistributedData::StoreMetaData &metaData,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
-        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
-            func, callingTokenId);
+        TimeoutReport timeoutReport({providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName, func,
+            callingTokenId}, true);
         auto [errCode, ret] = dbDelegate->DeleteEx(providerInfo.tableName, predicate);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri);
@@ -194,6 +196,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
+        timeoutReport.Report();
         return std::make_pair(errCode, ret);
     };
     return ExecuteEx(uri, extUri, callingTokenId, false, callBack);
@@ -215,14 +218,15 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
     auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid, &callingTokenId, &func, this]
         (ProviderInfo &providerInfo, DistributedData::StoreMetaData &,
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
-        RdbTimeCostInfo rdbTimeCostInfo(providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName,
-            func, callingTokenId);
+        TimeoutReport timeoutReport({providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName, func,
+            callingTokenId}, true);
         auto [err, result] = dbDelegate->Query(providerInfo.tableName,
             predicates, columns, callingPid, callingTokenId);
         if (err != E_OK) {
             ReportExcuteFault(callingTokenId, providerInfo, err, func);
         }
         resultSet = std::move(result);
+        timeoutReport.Report();
         return std::make_pair(err, E_OK);
     };
     auto [errVal, status] = ExecuteEx(uri, extUri, callingTokenId, true, callBack);

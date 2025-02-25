@@ -23,6 +23,8 @@
 #include "log_print.h"
 #include "system_ability_definition.h"
 #include "uri_utils.h"
+#include "ipc_skeleton.h"
+#include "hiview_fault_adapter.h"
 
 namespace OHOS::DataShare {
 sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
@@ -75,19 +77,18 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
     }
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BMS_FAILED);
         ZLOGE("GetBundleMgrProxy is nullptr!");
         return E_BMS_NOT_READY;
     }
     AppExecFwk::BundleInfo bundleInfo;
     bool ret;
+    TimeoutReport timeoutReport({bundleName, "", "", __FUNCTION__, 0});
     if (appIndex == 0) {
         ret = bmsClient->GetBundleInfo(
             bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo, userId);
     } else {
-        ret = bmsClient->GetCloneBundleInfo(
-            bundleName, static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_EXTENSION_ABILITY) |
+        ret = bmsClient->GetCloneBundleInfo(bundleName,
+            static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_EXTENSION_ABILITY) |
             static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE),
             appIndex, bundleInfo, userId);
         // when there is no error, the former function returns 1 while the new function returns 0
@@ -98,10 +99,8 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
             }
         }
     }
-
+    timeoutReport.Report(std::to_string(userId), IPCSkeleton::GetCallingPid(), appIndex);
     if (!ret) {
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::GET_BMS,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::GET_BUNDLE_INFP_FAILED);
         ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
         return E_BUNDLE_NAME_NOT_EXIST;
     }
