@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <typeinfo>
 #include "meta_data_manager_mock.h"
 
 namespace OHOS::DistributedData {
-
+using namespace std;
 OHOS::DistributedData::MetaDataManager &OHOS::DistributedData::MetaDataManager::GetInstance()
 {
     static MetaDataManager instance;
