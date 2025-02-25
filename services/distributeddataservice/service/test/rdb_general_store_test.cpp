@@ -998,6 +998,8 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_ERROR);
     result = store->ConvertStatus(DBStatus::CLOUD_DISABLED);
     EXPECT_EQ(result, GeneralError::E_CLOUD_DISABLED);
+    result = store->ConvertStatus(DBStatus::CLOUD_SYNC_TASK_MERGED);
+    EXPECT_EQ(result, GeneralError::E_SYNC_TASK_MERGED);
 }
 
 /**

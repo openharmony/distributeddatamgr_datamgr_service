@@ -271,6 +271,8 @@ HWTEST_F(RdbAssetLoaderTest, ConvertStatus, TestSize.Level0)
     EXPECT_EQ(status, DistributedDB::DBStatus::OK);
     status = RdbAssetLoader::ConvertStatus(DistributedRdb::RdbAssetLoader::AssetStatus::STATUS_BUTT);
     EXPECT_EQ(status, DistributedDB::DBStatus::CLOUD_ERROR);
+    status = RdbAssetLoader::ConvertStatus(DistributedRdb::RdbAssetLoader::AssetStatus::STATUS_SKIP_ASSET);
+    EXPECT_EQ(status, DistributedDB::DBStatus::SKIP_ASSET);
 }
 
 /**
