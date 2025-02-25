@@ -93,6 +93,37 @@ ohos_unittest("DistributeddataDfxUTTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
+ohos_unittest("HiViewAdapterDfxTest") {
+  module_out_path = module_output_path
+  include_dirs = [ "${data_service_path}/adapter/include/communicator" ]
+  sources = [ "./unittest/hiview_adapter_dfx_test.cpp" ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+  configs = [ ":module_dfx_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "datamgr_service:distributeddatasvcfwk",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "openssl:libcrypto_shared",
+  ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -101,6 +132,7 @@ group("unittest") {
   deps += [
     ":DistributeddataDfxMSTTest",
     ":DistributeddataDfxUTTest",
+    ":HiViewAdapterDfxTest",
   ]
 }
 ###############################################################################
