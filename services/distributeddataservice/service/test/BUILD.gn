@@ -1047,6 +1047,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
+    "init:libbegetutil",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
