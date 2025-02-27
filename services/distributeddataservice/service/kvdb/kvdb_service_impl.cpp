@@ -544,12 +544,12 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
     if (observer == nullptr) {
         return INVALID_ARGUMENT;
     }
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
     ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(),
-        Anonymous::Change(storeId.storeId).c_str(), metaData.tokenId);
+        Anonymous::Change(storeId.storeId).c_str(), tokenId);
     bool isCreate = false;
-    auto key = GenerateKey(metaData.user, storeId.storeId);
-    syncAgents_.Compute(metaData.tokenId, [&appId, &key, &observer, &isCreate](auto &, SyncAgent &agent) {
+    auto key = GenerateKey(std::to_string(subUser), storeId.storeId);
+    syncAgents_.Compute(tokenId, [&appId, &key, &observer, &isCreate](auto &, SyncAgent &agent) {
         if (agent.pid_ != IPCSkeleton::GetCallingPid()) {
             agent.ReInit(IPCSkeleton::GetCallingPid(), appId);
         }
@@ -560,8 +560,7 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
         return true;
     });
     if (isCreate) {
-        AutoCache::GetInstance().SetObserver(metaData.tokenId, storeId,
-            GetWatchers(metaData.tokenId, metaData.user, storeId));
+        AutoCache::GetInstance().SetObserver(tokenId, storeId, GetWatchers(tokenId, std::to_string(subUser), storeId));
     }
     return SUCCESS;
 }
@@ -569,12 +568,12 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
 Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, int32_t subUser,
     sptr<IKvStoreObserver> observer)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
     ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(),
-        Anonymous::Change(storeId.storeId).c_str(), metaData.tokenId);
+        Anonymous::Change(storeId.storeId).c_str(), tokenId);
     bool destroyed = false;
-    auto key = GenerateKey(metaData.user, storeId.storeId);
-    syncAgents_.ComputeIfPresent(metaData.tokenId, [&appId, &key, &observer, &destroyed](auto &, SyncAgent &agent) {
+    auto key = GenerateKey(std::to_string(subUser), storeId.storeId);
+    syncAgents_.ComputeIfPresent(tokenId, [&appId, &key, &observer, &destroyed](auto &, SyncAgent &agent) {
         auto iter = agent.watchers_.find(key);
         if (iter == agent.watchers_.end()) {
             return true;
@@ -592,8 +591,7 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
         return true;
     });
     if (destroyed) {
-        AutoCache::GetInstance().SetObserver(metaData.tokenId, storeId,
-            GetWatchers(metaData.tokenId, metaData.user, storeId));
+        AutoCache::GetInstance().SetObserver(tokenId, storeId, GetWatchers(tokenId, std::to_string(subUser), storeId));
     }
     return SUCCESS;
 }
