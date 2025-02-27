@@ -750,15 +750,22 @@ ohos_unittest("ObjectDmsHandlerTest") {
 ohos_unittest("ObjectManagerTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "../object/src/object_asset_loader.cpp",
     "../object/src/object_asset_machine.cpp",
     "../object/src/object_callback_proxy.cpp",
     "../object/src/object_data_listener.cpp",
+    "../object/src/object_dms_handler.cpp",
     "../object/src/object_manager.cpp",
+    "../object/src/object_service_impl.cpp",
+    "../object/src/object_service_stub.cpp",
     "../object/src/object_snapshot.cpp",
+    "../object/src/object_types_utils.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
     "object_manager_test.cpp",
+    "object_service_impl_test.cpp",
+    "object_service_stub_test.cpp",
   ]
 
   include_dirs = [
@@ -773,6 +780,7 @@ ohos_unittest("ObjectManagerTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
     "data_object:distributeddataobject_impl",
