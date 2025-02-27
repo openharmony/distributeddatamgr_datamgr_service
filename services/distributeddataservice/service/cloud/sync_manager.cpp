@@ -998,7 +998,7 @@ QueryLastResults SyncManager::GetLastSyncInfoFromMeta(const QueryKey &queryKey)
         ZLOGE("load last sync info fail, bundleName: %{public}s", queryKey.bundleName.c_str());
         return results;
     }
-    if (queryKey.accountId != lastSyncInfo.id || (!queryKey.storeId.empty() && 
+    if (queryKey.accountId != lastSyncInfo.id || (!queryKey.storeId.empty() &&
         queryKey.storeId != lastSyncInfo.storeId)) {
         return results;
     }
