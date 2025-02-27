@@ -285,6 +285,16 @@ bool AccountDelegateNormalImpl::Init()
     return true;
 }
 
+bool AccountDelegateNormalImpl::IsOsAccountForeground(int32_t userId)
+{
+    bool isForeground = false;
+    if (AccountSA::OsAccountManager::IsOsAccountForeground(userId, isForeground) != 0) {
+        ZLOGE("check IsOsAccountForeground error, userId:%{public}d", userId);
+        return false;
+    }
+    return isForeground;
+}
+
 bool AccountDelegateNormalImpl::IsDeactivating(int userId)
 {
     auto [success, res] = userDeactivating_.Find(userId);

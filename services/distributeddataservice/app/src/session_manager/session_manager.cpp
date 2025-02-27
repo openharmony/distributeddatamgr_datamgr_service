@@ -32,6 +32,7 @@
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using Account = AccountDelegate;
 SessionManager &SessionManager::GetInstance()
 {
     static SessionManager instance;
@@ -149,7 +150,11 @@ bool SessionManager::CheckSession(const SessionPoint &from, const SessionPoint &
     }
     auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId,
         to.userId, to.deviceId, aclParams);
-    return isPermitted;
+    bool isForeground = false;
+    if (isPermitted) {
+        isForeground = Account::GetInstance()->IsOsAccountForeground(from.userId);
+    }
+    return isPermitted && isForeground;
 }
 
 bool Session::Marshal(json &node) const
