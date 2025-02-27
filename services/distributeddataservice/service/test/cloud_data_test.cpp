@@ -20,6 +20,7 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
+#include "cloud/cloud_mark.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_report.h"
@@ -2257,6 +2258,120 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level0)
     std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
     ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
     EXPECT_EQ(schemaMeta.version, SCHEMA_VERSION);
+}
+
+/**
+* @tc.name: UpdateClearWaterMark001
+* @tc.desc: Test UpdateClearWaterMark001 the database.version not found.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateClearWaterMark001, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo hapInfo = {
+       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+    };
+    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
+    SchemaMeta schemaMeta;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.version = 1;
+    schemaMeta.databases.push_back(database);
+    
+    SchemaMeta::Database database1;
+    database1.name = "test_cloud_store1";
+    database1.version = 2;
+    SchemaMeta newSchemaMeta;
+    newSchemaMeta.version = 0;
+    newSchemaMeta.databases.push_back(database1);
+    cloudServiceImpl_->UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
+
+    CloudMark metaData;
+    metaData.bundleName = hapInfo.bundleName;
+    metaData.userId = hapInfo.user;
+    metaData.index = hapInfo.instIndex;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.storeId = database1.name;
+    ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
+    EXPECT_FALSE(metaData.isClearWaterMark);
+}
+
+/**
+* @tc.name: UpdateClearWaterMark002
+* @tc.desc: Test UpdateClearWaterMark002 the same database.version
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateClearWaterMark002, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo hapInfo = {
+       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+    };
+    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
+    SchemaMeta schemaMeta;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.version = 1;
+    schemaMeta.databases.push_back(database);
+    
+    SchemaMeta::Database database1;
+    database1.name = TEST_CLOUD_STORE;
+    database1.version = 1;
+    SchemaMeta newSchemaMeta;
+    newSchemaMeta.version = 0;
+    newSchemaMeta.databases.push_back(database1);
+    cloudServiceImpl_->UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
+
+    CloudMark metaData;
+    metaData.bundleName = hapInfo.bundleName;
+    metaData.userId = hapInfo.user;
+    metaData.index = hapInfo.instIndex;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.storeId = database1.name;
+    ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
+    EXPECT_FALSE(metaData.isClearWaterMark);
+}
+/**
+* @tc.name: UpdateClearWaterMark003
+* @tc.desc: Test UpdateClearWaterMark003 the different database.version
+* @tc.type: FUNC
+* @tc.require:
+*/
+
+HWTEST_F(CloudDataTest, UpdateClearWaterMark003, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudData::CloudServiceImpl::HapInfo hapInfo = {
+       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+    };
+    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
+    SchemaMeta schemaMeta;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.version = 1;
+    schemaMeta.databases.push_back(database);
+    
+    SchemaMeta::Database database1;
+    database1.name = TEST_CLOUD_STORE;
+    database1.version = 2;
+    SchemaMeta newSchemaMeta;
+    newSchemaMeta.version = 0;
+    newSchemaMeta.databases.push_back(database1);
+    cloudServiceImpl_->UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
+
+    CloudMark metaData;
+    metaData.bundleName = hapInfo.bundleName;
+    metaData.userId = hapInfo.user;
+    metaData.index = hapInfo.instIndex;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.storeId = database1.name;
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
+    EXPECT_TRUE(metaData.isClearWaterMark);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
