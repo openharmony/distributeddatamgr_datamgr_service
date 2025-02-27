@@ -1062,6 +1062,7 @@ ohos_unittest("KvdbServiceImplTest") {
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "kvdb_service_impl_test.cpp",
+    "kvdb_service_stub_unittest.cpp",
     "kvdb_service_test.cpp",
     "mock/access_token_mock.cpp",
     "mock/checker_mock.cpp",
