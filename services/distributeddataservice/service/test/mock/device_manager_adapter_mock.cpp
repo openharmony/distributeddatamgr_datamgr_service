@@ -41,4 +41,20 @@ bool OHOS::DistributedData::DeviceManagerAdapter::IsOHOSType(const std::string &
     }
     return BDeviceManagerAdapter::deviceManagerAdapter->IsOHOSType(id);
 }
+
+bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return false;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->IsSameAccount(accCaller, accCallee);
+}
+
+bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return false;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->CheckAccessControl(accCaller, accCallee);
+}
 }
