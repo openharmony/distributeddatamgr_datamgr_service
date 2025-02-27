@@ -920,7 +920,10 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
     SecretKeyMetaData newSecretKey;
     newSecretKey.storeType = meta.storeType;
     newSecretKey.area = meta.area;
-    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param.password_, meta.area, meta.user);
+    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(
+        param.password_, meta.area, meta.user,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     if (newSecretKey.sKey.empty()) {
         ZLOGE("encrypt work key error.");
         return RDB_ERROR;

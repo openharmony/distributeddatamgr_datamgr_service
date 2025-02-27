@@ -133,6 +133,7 @@ public:
     int32_t OnExtension(const std::string &extension, MessageParcel &data, MessageParcel &reply) override;
     int32_t OnBackup(MessageParcel &data, MessageParcel &reply);
     int32_t OnRestore(MessageParcel &data, MessageParcel &reply);
+    bool WriteBackupInfo(const std::string &content, const std::string &backupPath);
     bool GetSecretKeyBackup(
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
         const std::string &userId, std::string &content);
@@ -193,6 +194,9 @@ public:
     bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
 
     bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId);
+    bool ImportCloneKey(const std::string &keyStr, const std::string &ivStr);
+    
+    std::string GetBackupReplyCode(int replyCode, const std::string &info = "");
 
     int32_t ReplyForRestore(MessageParcel &reply, int32_t result);
 
@@ -206,6 +210,11 @@ public:
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
     std::shared_ptr<ExecutorPool> executors_;
+    std::vector<uint8_t> cloneNonce_{};
+    inline static std::vector<uint8_t> cloneKeyAlias_ = [] {
+        const std::string str = "distributed_db_backup_key";
+        return std::vector<uint8_t>(str.begin(), str.end());
+    }();
     static constexpr int VERSION_WIDTH = 11;
     static constexpr const char *INDENTATION = "    ";
     static constexpr int32_t FORMAT_BLANK_SIZE = 32;

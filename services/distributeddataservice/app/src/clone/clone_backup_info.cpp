@@ -16,19 +16,11 @@
 
 namespace OHOS {
 namespace DistributedData {
-constexpr const char* CLONE_INFO_DETAIL = "detail";
-constexpr const char* ENCRYPTION_INFO = "encryption_info";
-constexpr const char* APPLICATION_SELECTION = "application_selection";
-constexpr const char* USER_ID = "userId";
-constexpr const char* ENCRYPTION_SYMKEY = "encryption_symkey";
-constexpr const char* ENCRYPTION_ALGORITHM = "encryption_algname";
-constexpr const char* GCM_PARAMS_IV = "gcmParams_iv";
-
 bool CloneEncryptionInfo::Unmarshal(const json &node)
 {
-    bool res = GetValue(node, ENCRYPTION_SYMKEY, symkey);
-    res = GetValue(node, ENCRYPTION_ALGORITHM, algName) && res;
-    res = GetValue(node, GCM_PARAMS_IV, iv) && res;
+    bool res = GetValue(node, GET_NAME(encryption_symkey), encryption_symkey);
+    res = GetValue(node, GET_NAME(encryption_algname), encryption_algname) && res;
+    res = GetValue(node, GET_NAME(gcmParams_iv), gcmParams_iv) && res;
     return res;
 }
 
@@ -39,9 +31,9 @@ bool CloneEncryptionInfo::Marshal(json &node) const
 
 CloneEncryptionInfo::~CloneEncryptionInfo()
 {
-    symkey.assign(symkey.size(), 0);
-    algName.assign(algName.size(), 0);
-    iv.assign(iv.size(), 0);
+    encryption_symkey.assign(encryption_symkey.size(), 0);
+    encryption_algname.assign(encryption_algname.size(), 0);
+    gcmParams_iv.assign(gcmParams_iv.size(), 0);
 }
 
 bool CloneBundleInfo::Unmarshal(const json &node)
@@ -68,12 +60,12 @@ bool CloneBackupInfo::Unmarshal(const json &node)
         if (!result || type.empty()) {
             continue;
         }
-        if (type == ENCRYPTION_INFO) {
-            GetValue(node[i], CLONE_INFO_DETAIL, encryptionInfo);
-        } else if (type == APPLICATION_SELECTION) {
-            GetValue(node[i], CLONE_INFO_DETAIL, bundleInfos);
-        } else if (type == USER_ID) {
-            GetValue(node[i], CLONE_INFO_DETAIL, userId);
+        if (type == GET_NAME(encryption_info)) {
+            GetValue(node[i], "detail", encryption_info);
+        } else if (type == GET_NAME(application_selection)) {
+            GetValue(node[i], "detail", application_selection);
+        } else if (type == GET_NAME(userId)) {
+            GetValue(node[i], "detail", userId);
         }
     }
     return true;

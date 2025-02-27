@@ -100,7 +100,10 @@ HWTEST_F(CryptoManagerTest, CheckRootKey, TestSize.Level0)
 */
 HWTEST_F(CryptoManagerTest, Encrypt001, TestSize.Level0)
 {
-    auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_EQ(encryptKey.size(), ENCRYPT_KEY_LENGTH);
     encryptKey.assign(encryptKey.size(), 0);
 }
@@ -114,7 +117,10 @@ HWTEST_F(CryptoManagerTest, Encrypt001, TestSize.Level0)
 */
 HWTEST_F(CryptoManagerTest, Encrypt002, TestSize.Level0)
 {
-    auto encryptKey = CryptoManager::GetInstance().Encrypt({ }, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(
+        {}, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_TRUE(encryptKey.empty());
 }
 
@@ -127,15 +133,27 @@ HWTEST_F(CryptoManagerTest, Encrypt002, TestSize.Level0)
 */
 HWTEST_F(CryptoManagerTest, Encrypt003, TestSize.Level0)
 {
-    auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL2, DEFAULT_USER);
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, EL2, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_TRUE(encryptKey.empty());
-    encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL4, DEFAULT_USER);
+    encryptKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, EL4, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_TRUE(encryptKey.empty());
 
-    encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL2, TEST_USERID);
+    encryptKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, EL2, TEST_USERID,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     // check interact across local accounts permission failed
     EXPECT_TRUE(encryptKey.empty());
-    encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, EL4, TEST_USERID);
+    encryptKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, EL4, TEST_USERID,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     // check interact across local accounts permission failed
     EXPECT_TRUE(encryptKey.empty());
 }
@@ -149,10 +167,17 @@ HWTEST_F(CryptoManagerTest, Encrypt003, TestSize.Level0)
 */
 HWTEST_F(CryptoManagerTest, Encrypt004, TestSize.Level0)
 {
-    auto encryptKey = CryptoManager::GetInstance().EncryptCloneKey(randomKey);
+    const std::string str = "distributed_db_backup_key";
+    auto cloneKey = std::vector<uint8_t>(str.begin(), str.end());
+    std::vector<uint8_t> nonce{};
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, cloneKey, nonce);
     EXPECT_TRUE(encryptKey.empty());
     std::vector<uint8_t> key;
-    auto result = CryptoManager::GetInstance().DecryptCloneKey(encryptKey, key);
+
+    auto result = CryptoManager::GetInstance().Decrypt(
+        encryptKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, cloneKey,
+        nonce);
     ASSERT_FALSE(result);
 }
 
@@ -165,9 +190,15 @@ HWTEST_F(CryptoManagerTest, Encrypt004, TestSize.Level0)
 */
 HWTEST_F(CryptoManagerTest, DecryptKey001, TestSize.Level0)
 {
-    auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     std::vector<uint8_t> key;
-    auto result = CryptoManager::GetInstance().Decrypt(encryptKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    auto result = CryptoManager::GetInstance().Decrypt(
+        encryptKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_TRUE(result);
     EXPECT_EQ(key.size(), KEY_LENGTH);
     encryptKey.assign(encryptKey.size(), 0);
@@ -183,7 +214,10 @@ HWTEST_F(CryptoManagerTest, DecryptKey001, TestSize.Level0)
 HWTEST_F(CryptoManagerTest, DecryptKey002, TestSize.Level0)
 {
     std::vector<uint8_t> key;
-    auto result = CryptoManager::GetInstance().Decrypt(randomKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    auto result = CryptoManager::GetInstance().Decrypt(
+        randomKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_FALSE(result);
     EXPECT_TRUE(key.empty());
 }
@@ -199,7 +233,10 @@ HWTEST_F(CryptoManagerTest, DecryptKey003, TestSize.Level0)
 {
     std::vector<uint8_t> srcKey {};
     std::vector<uint8_t> key;
-    auto result = CryptoManager::GetInstance().Decrypt(srcKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    auto result = CryptoManager::GetInstance().Decrypt(
+        srcKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_FALSE(result);
     EXPECT_TRUE(key.empty());
 }
@@ -214,10 +251,16 @@ HWTEST_F(CryptoManagerTest, DecryptKey003, TestSize.Level0)
 HWTEST_F(CryptoManagerTest, DecryptKey004, TestSize.Level0)
 {
     std::vector<uint8_t> key;
-    auto result = CryptoManager::GetInstance().Decrypt(randomKey, key, EL2, DEFAULT_USER);
+    auto result = CryptoManager::GetInstance().Decrypt(
+        randomKey, key, EL2, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_FALSE(result);
     EXPECT_TRUE(key.empty());
-    result = CryptoManager::GetInstance().Decrypt(randomKey, key, EL4, DEFAULT_USER);
+    result = CryptoManager::GetInstance().Decrypt(
+        randomKey, key, EL4, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     EXPECT_FALSE(result);
     EXPECT_TRUE(key.empty());
 }
@@ -234,7 +277,10 @@ HWTEST_F(CryptoManagerTest, Decrypt001, TestSize.Level0)
     SecretKeyMetaData secretKeyMeta;
     StoreMetaData metaData;
     std::vector<uint8_t> key;
-    secretKeyMeta.sKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    secretKeyMeta.sKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     auto result = CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, key);
     EXPECT_TRUE(result);
 }
@@ -252,7 +298,10 @@ HWTEST_F(CryptoManagerTest, Decrypt002, TestSize.Level0)
     secretKeyMeta.area = 1;
     StoreMetaData metaData;
     std::vector<uint8_t> key;
-    secretKeyMeta.sKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    secretKeyMeta.sKey = CryptoManager::GetInstance().Encrypt(
+        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
+        CryptoManager::GetInstance().vecRootKeyAlias_,
+        CryptoManager::GetInstance().vecNonce_);
     auto result = CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, key);
     EXPECT_TRUE(result);
     for (int8_t i = 0; i < randomKey.size(); i++) {

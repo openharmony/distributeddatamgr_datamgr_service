@@ -72,7 +72,8 @@
       {
         "version": 50331653,
         "pattern": "/data/{type}/{area}/{userId}/database/{bundleName}/{hapName}/{store}/{customDir}",
-        "metaPath": "/data/service/el1/public/database/distributeddata/meta"
+        "metaPath": "/data/service/el1/public/database/distributeddata/meta",
+        "cloneBackupPath": "/data/service/el1/{userId}/distributeddata/secret_key_backup.conf"
       }
     ]
   },
