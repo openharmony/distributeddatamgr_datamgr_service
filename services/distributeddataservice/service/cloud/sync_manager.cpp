@@ -710,10 +710,11 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
         ZLOGE("load schema fail, bundleName: %{public}s", info.bundleName_.c_str());
+        return cloudSyncInfos;
     }
     auto stores = schemaMeta.GetStores();
-    for (const auto &storeId : stores) {
-        QueryKey queryKey{ cloud.user, cloud.id,  info.bundleName_, storeId };
+    for (auto &storeId : stores) {
+        QueryKey queryKey{ cloud.user, cloud.id, info.bundleName_, std::move(storeId) };
         cloudSyncInfos.emplace_back(std::make_tuple(std::move(queryKey), info.syncId_));
     }
     return cloudSyncInfos;
@@ -753,7 +754,10 @@ int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, Q
         if (results.find(queryKey.storeId) != results.end()) {
             continue;
         }
-        GetLastSyncInfo(queryKey, results);
+        auto lastResults = GetLastSyncInfoFromMeta(queryKey);
+        for (auto &it : lastResults) {
+            results.insert(std::make_pair(std::move(it.first), std::move(it.second)));
+        }
     }
     return SUCCESS;
 }
@@ -777,7 +781,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
     if (!NeedSaveSyncInfo(queryKey)) {
         return;
     }
-    lastSyncInfos_.ComputeIfPresent(queryKey, [queryKey, syncId, code](auto &key,
+    lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key,
         std::map<SyncId, CloudSyncInfo> &val) {
         auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         for (auto iter = val.begin(); iter != val.end();) {
@@ -786,7 +790,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
                 iter = val.erase(iter);
             } else if (iter->first == syncId) {
                 auto finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-                SaveLastSyncInfo(queryKey, iter->second.startTime, finishTime, code);
+                SaveLastSyncInfo(key, iter->second.startTime, finishTime, code);
                 iter = val.erase(iter);
             } else {
                 iter++;
@@ -985,21 +989,23 @@ void SyncManager::AddCompensateSync(const StoreMetaData &meta)
         });
 }
 
-void SyncManager::GetLastSyncInfo(const QueryKey &queryKey, QueryLastResults &results)
+QueryLastResults SyncManager::GetLastSyncInfoFromMeta(const QueryKey &queryKey)
 {
-    std::vector<CloudLastSyncInfo> lastSyncInfos;
+    QueryLastResults results;
+    CloudLastSyncInfo lastSyncInfo;
     if (!MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(queryKey.user, queryKey.bundleName,
-        queryKey.storeId), lastSyncInfos, true)) {
+        queryKey.storeId), lastSyncInfo, true)) {
         ZLOGE("load last sync info fail, bundleName: %{public}s", queryKey.bundleName.c_str());
+        return results;
     }
-    for (auto &it : lastSyncInfos) {
-        if (queryKey.accountId != it.id || (!queryKey.storeId.empty() && queryKey.storeId != it.storeId)) {
-            continue;
-        }
-        CloudSyncInfo syncInfo = { .startTime = it.startTime, .finishTime = it.finishTime,
-                                   .code = it.code, .syncStatus = it.syncStatus };
-        results.insert({ std::move(it.storeId), std::move(syncInfo)});
+    if (queryKey.accountId != lastSyncInfo.id || (!queryKey.storeId.empty() && 
+        queryKey.storeId != lastSyncInfo.storeId)) {
+        return results;
     }
+    CloudSyncInfo syncInfo = { .startTime = lastSyncInfo.startTime, .finishTime = lastSyncInfo.finishTime,
+                               .code = lastSyncInfo.code, .syncStatus = lastSyncInfo.syncStatus };
+    results.insert({ std::move(queryKey.storeId), std::move(syncInfo)});
+    return results;
 }
 
 void SyncManager::SaveLastSyncInfo(const QueryKey &queryKey, int64_t startTime, int64_t finishTime, int32_t code)

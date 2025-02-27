@@ -164,7 +164,7 @@ private:
     static void Report(
         const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix);
     void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState, int32_t code);
-    void GetLastSyncInfo(const QueryKey &queryKey, QueryLastResults &results);
+    QueryLastResults GetLastSyncInfoFromMeta(const QueryKey &queryKey);
     static void SaveLastSyncInfo(const QueryKey &queryKey, int64_t startTime, int64_t finishTime, int32_t code);
 
     static std::atomic<uint32_t> genId_;
