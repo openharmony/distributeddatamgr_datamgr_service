@@ -1008,7 +1008,7 @@ std::pair<std::string, CloudLastSyncInfo> SyncManager::GetLastSyncInfoFromMeta(c
         queryKey.storeId != lastSyncInfo.storeId)) {
         return { "", lastSyncInfo };;
     }
-    return { queryKey.storeId, lastSyncInfo };;;
+    return { queryKey.storeId, std::move(lastSyncInfo) };
 }
 
 void SyncManager::SaveLastSyncInfo(const QueryKey &queryKey, int64_t startTime, int64_t finishTime, int32_t code)
