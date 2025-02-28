@@ -484,6 +484,28 @@ HWTEST_F(CloudServiceImplTest, CheckNotifyConditions, TestSize.Level0)
     EXPECT_EQ(status, CloudData::CloudService::CLOUD_DISABLE_SWITCH);
 }
 
+/**
+ * @tc.name: GetDfxFaultType
+ * @tc.desc: test GetDfxFaultType function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, GetDfxFaultType, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::ENABLE_CLOUD), "ENABLE_CLOUD");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::DISABLE_CLOUD), "DISABLE_CLOUD");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SWITCH_ON), "SWITCH_ON");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SWITCH_OFF), "SWITCH_OFF");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::QUERY_SYNC_INFO), "QUERY_SYNC_INFO");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::USER_CHANGE), "USER_CHANGE");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::USER_UNLOCK), "USER_UNLOCK");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::NETWORK_RECOVERY), "NETWORK_RECOVERY");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SERVICE_INIT), "SERVICE_INIT");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::ACCOUNT_STOP), "SYNC_TASK");
+}
+
 class ComponentConfigTest : public testing::Test {
 public:
     static void SetUpTestCase(void);

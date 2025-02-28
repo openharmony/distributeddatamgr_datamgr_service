@@ -66,11 +66,16 @@ public:
 
 class ScreenManagerTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
+    static void SetUpTestCase(void);
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
 };
+
+void ScreenManagerTest::SetUpTestCase()
+{
+    ScreenManager::GetInstance()->BindExecutor(nullptr);
+}
 
 class MockGeneralWatcher : public DistributedData::GeneralWatcher {
 public:
