@@ -18,6 +18,7 @@
 
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
+#include "cloud/cloud_last_sync_info.h"
 #include "cloud/sync_strategy.h"
 #include "cloud_types.h"
 #include "cloud/sync_event.h"
@@ -34,6 +35,7 @@
 namespace OHOS::CloudData {
 class SyncManager {
 public:
+    using CloudLastSyncInfo = DistributedData::CloudLastSyncInfo;
     using GenAsync = DistributedData::GenAsync;
     using GenStore = DistributedData::GeneralStore;
     using GenQuery = DistributedData::GenQuery;
@@ -96,7 +98,7 @@ public:
     int32_t Bind(std::shared_ptr<ExecutorPool> executor);
     int32_t DoCloudSync(SyncInfo syncInfo);
     int32_t StopCloudSync(int32_t user = 0);
-    int32_t QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results);
+    std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys);
     void Report(const ReportParam &reportParam);
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
@@ -152,8 +154,8 @@ private:
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
         Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
-    static void GetLastResults(
-        const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results);
+    static std::map<std::string, CloudLastSyncInfo> GetLastResults(
+        const std::string &storeId, std::map<SyncId, CloudLastSyncInfo> &infos);
     void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
     bool NeedSaveSyncInfo(const QueryKey &queryKey);
     std::function<void(const Event &)> GetLockChangeHandler();
@@ -164,7 +166,7 @@ private:
     static void Report(
         const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix);
     void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState, int32_t code);
-    QueryLastResults GetLastSyncInfoFromMeta(const QueryKey &queryKey);
+    std::pair<std::string, CloudLastSyncInfo> GetLastSyncInfoFromMeta(const QueryKey &queryKey);
     static void SaveLastSyncInfo(const QueryKey &queryKey, int64_t startTime, int64_t finishTime, int32_t code);
 
     static std::atomic<uint32_t> genId_;
@@ -172,7 +174,7 @@ private:
     ConcurrentMap<uint64_t, TaskId> actives_;
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
-    ConcurrentMap<QueryKey, std::map<SyncId, CloudSyncInfo>> lastSyncInfos_;
+    ConcurrentMap<QueryKey, std::map<SyncId, CloudLastSyncInfo>> lastSyncInfos_;
     std::set<std::string> kvApps_;
     ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
 };

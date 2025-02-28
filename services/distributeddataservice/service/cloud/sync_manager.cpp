@@ -20,7 +20,6 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
-#include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_lock_event.h"
 #include "cloud/cloud_report.h"
 #include "cloud/cloud_server.h"
@@ -720,14 +719,16 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
     return cloudSyncInfos;
 }
 
-void SyncManager::GetLastResults(
-    const std::string &storeId, std::map<SyncId, CloudSyncInfo> &infos, QueryLastResults &results)
+std::map<std::string, CloudLastSyncInfo> SyncManager::GetLastResults(
+    const std::string &storeId, std::map<SyncId, CloudLastSyncInfo> &infos)
 {
+    std::map<std::string, CloudLastSyncInfo> lastSyncInfos;
     for (auto &[key, info] : infos) {
         if (info.code != -1) {
-            results.insert(std::pair<std::string, CloudSyncInfo>(storeId, info));
+            lastSyncInfos.insert(std::pair<std::string, CloudLastSyncInfo>(storeId, info));
         }
     }
+    return lastSyncInfos;
 }
 
 bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
@@ -741,25 +742,26 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     return true;
 }
 
-int32_t SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys, QueryLastResults &results)
+std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys)
 {
+    std::map<std::string, CloudLastSyncInfo> lastSyncInfoMap;
     for (const auto &queryKey : queryKeys) {
         std::string storeId = queryKey.storeId;
         QueryKey key{ queryKey.user, queryKey.accountId, queryKey.bundleName, queryKey.storeId };
         lastSyncInfos_.ComputeIfPresent(
-            key, [&storeId, &results](auto &key, std::map<SyncId, CloudSyncInfo> &vals) {
-                GetLastResults(storeId, vals, results);
+            key, [&storeId, &lastSyncInfoMap](auto &key, std::map<SyncId, CloudLastSyncInfo> &vals) {
+                lastSyncInfoMap = GetLastResults(storeId, vals);
                 return !vals.empty();
             });
-        if (results.find(queryKey.storeId) != results.end()) {
+        if (lastSyncInfoMap.find(queryKey.storeId) != lastSyncInfoMap.end()) {
             continue;
         }
-        auto lastResults = GetLastSyncInfoFromMeta(queryKey);
-        for (auto &it : lastResults) {
-            results.insert(std::make_pair(std::move(it.first), std::move(it.second)));
+        auto [storeName, syncInfo] = GetLastSyncInfoFromMeta(queryKey);
+        if (!storeName.empty()) {
+            lastSyncInfoMap.insert(std::make_pair(std::move(storeName), std::move(syncInfo)));
         }
     }
-    return SUCCESS;
+    return { SUCCESS, lastSyncInfoMap };
 }
 
 void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
@@ -769,8 +771,12 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
         if (!NeedSaveSyncInfo(queryKey)) {
             continue;
         }
-        lastSyncInfos_.Compute(queryKey, [id = syncId, startTime](auto &, std::map<SyncId, CloudSyncInfo> &val) {
-            val[id] = { .startTime = startTime, .code = 0, .syncStatus = SyncStatus::RUNNING };
+        lastSyncInfos_.Compute(queryKey, [id = syncId, startTime](auto &key, std::map<SyncId, CloudLastSyncInfo> &val) {
+            CloudLastSyncInfo syncInfo;
+            syncInfo.id = key.accountId;
+            syncInfo.storeId = key.storeId;
+            syncInfo.startTime = startTime;
+            val[id] = std::move(syncInfo);
             return !val.empty();
         });
     }
@@ -782,7 +788,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
         return;
     }
     lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key,
-        std::map<SyncId, CloudSyncInfo> &val) {
+        std::map<SyncId, CloudLastSyncInfo> &val) {
         auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         for (auto iter = val.begin(); iter != val.end();) {
             bool isExpired = ((now - iter->second.startTime) >= EXPIRATION_TIME) && iter->second.code == -1;
@@ -989,24 +995,20 @@ void SyncManager::AddCompensateSync(const StoreMetaData &meta)
         });
 }
 
-QueryLastResults SyncManager::GetLastSyncInfoFromMeta(const QueryKey &queryKey)
+std::pair<std::string, CloudLastSyncInfo> SyncManager::GetLastSyncInfoFromMeta(const QueryKey &queryKey)
 {
-    QueryLastResults results;
     CloudLastSyncInfo lastSyncInfo;
     if (!MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(queryKey.user, queryKey.bundleName,
         queryKey.storeId), lastSyncInfo, true)) {
         ZLOGE("load last sync info fail, bundleName: %{public}s, user:%{public}d",
               queryKey.bundleName.c_str(), queryKey.user);
-        return results;
+        return { "", lastSyncInfo };
     }
     if (queryKey.accountId != lastSyncInfo.id || (!queryKey.storeId.empty() &&
         queryKey.storeId != lastSyncInfo.storeId)) {
-        return results;
+        return { "", lastSyncInfo };;
     }
-    CloudSyncInfo syncInfo = { .startTime = lastSyncInfo.startTime, .finishTime = lastSyncInfo.finishTime,
-                               .code = lastSyncInfo.code, .syncStatus = lastSyncInfo.syncStatus };
-    results.insert({ std::move(queryKey.storeId), std::move(syncInfo)});
-    return results;
+    return { queryKey.storeId, lastSyncInfo };;;
 }
 
 void SyncManager::SaveLastSyncInfo(const QueryKey &queryKey, int64_t startTime, int64_t finishTime, int32_t code)
