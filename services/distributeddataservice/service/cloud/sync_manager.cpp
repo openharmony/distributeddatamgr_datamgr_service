@@ -709,7 +709,7 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
     auto schemaKey = CloudInfo::GetSchemaKey(cloud.user, info.bundleName_);
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
-        ZLOGE("load schema fail, bundleName: %{public}s", info.bundleName_.c_str());
+        ZLOGE("load schema fail, bundleName: %{public}s, user %{public}d", info.bundleName_.c_str(), info.user_);
         return cloudSyncInfos;
     }
     auto stores = schemaMeta.GetStores();
@@ -995,7 +995,8 @@ QueryLastResults SyncManager::GetLastSyncInfoFromMeta(const QueryKey &queryKey)
     CloudLastSyncInfo lastSyncInfo;
     if (!MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(queryKey.user, queryKey.bundleName,
         queryKey.storeId), lastSyncInfo, true)) {
-        ZLOGE("load last sync info fail, bundleName: %{public}s", queryKey.bundleName.c_str());
+        ZLOGE("load last sync info fail, bundleName: %{public}s, user:%{public}d",
+              queryKey.bundleName.c_str(), queryKey.user);
         return results;
     }
     if (queryKey.accountId != lastSyncInfo.id || (!queryKey.storeId.empty() &&
@@ -1019,7 +1020,8 @@ void SyncManager::SaveLastSyncInfo(const QueryKey &queryKey, int64_t startTime, 
     lastSyncInfo.syncStatus = SyncStatus::FINISHED;
     if (!MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(queryKey.user,
         queryKey.bundleName, queryKey.storeId), lastSyncInfo, true)) {
-        ZLOGE("save cloud last info fail, bundleName: %{public}s", queryKey.bundleName.c_str());
+        ZLOGE("save cloud last info fail, bundleName: %{public}s, user:%{public}d",
+              queryKey.bundleName.c_str(), queryKey.user);
     }
 }
 } // namespace OHOS::CloudData
