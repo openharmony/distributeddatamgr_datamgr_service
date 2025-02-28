@@ -645,7 +645,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
         }
         databases = schema.databases;
         for (const auto &database : schema.databases) {
-            if (storeId.empty() || database.alias == storeId) {
+            if (storeId.empty() || database.name == storeId) {
                 queryKeys.push_back({ user, id, bundleName, database.name });
             }
         }
@@ -658,7 +658,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     auto [ret, lastSyncinfos] = syncManager_.QueryLastSyncInfo(queryKeys);
     ZLOGI("code:%{public}d, id:%{public}s, bundleName:%{public}s, storeId:%{public}s, size:%{public}d", ret,
         Anonymous::Change(id).c_str(), bundleName.c_str(), Anonymous::Change(storeId).c_str(),
-        static_cast<int32_t>(results.size()));
+        static_cast<int32_t>(lastSyncinfos.size()));
     if (lastSyncinfos.empty()) {
         return { ret, results };
     }

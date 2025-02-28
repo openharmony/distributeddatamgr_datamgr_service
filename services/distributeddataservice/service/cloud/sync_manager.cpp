@@ -719,16 +719,17 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
     return cloudSyncInfos;
 }
 
-std::map<std::string, CloudLastSyncInfo> SyncManager::GetLastResults(
-    const std::string &storeId, std::map<SyncId, CloudLastSyncInfo> &infos)
+std::pair<int32_t, CloudLastSyncInfo> SyncManager::GetLastResults(std::map<SyncId, CloudLastSyncInfo> &infos)
 {
-    std::map<std::string, CloudLastSyncInfo> lastSyncInfos;
+    int32_t ret = E_ERROR;
+    CloudLastSyncInfo lastSyncInfo;
     for (auto &[key, info] : infos) {
         if (info.code != -1) {
-            lastSyncInfos.insert(std::pair<std::string, CloudLastSyncInfo>(storeId, info));
+            ret = SUCCESS;
+            lastSyncInfo = info;
         }
     }
-    return lastSyncInfos;
+    return { ret, lastSyncInfo };
 }
 
 bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
@@ -751,7 +752,10 @@ std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryL
         QueryKey key{ queryKey.user, queryKey.accountId, queryKey.bundleName, queryKey.storeId };
         lastSyncInfos_.ComputeIfPresent(
             key, [&storeId, &lastSyncInfoMap](auto &key, std::map<SyncId, CloudLastSyncInfo> &vals) {
-                lastSyncInfoMap = GetLastResults(storeId, vals);
+                auto [status, syncInfo] = GetLastResults(vals);
+                if (status == SUCCESS) {
+                    lastSyncInfoMap.insert(std::make_pair(std::move(storeId), std::move(syncInfo)));
+                }
                 return !vals.empty();
             });
         if (lastSyncInfoMap.find(queryKey.storeId) != lastSyncInfoMap.end()) {

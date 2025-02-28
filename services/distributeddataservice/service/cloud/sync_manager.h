@@ -155,8 +155,7 @@ private:
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
         Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
-    static std::map<std::string, CloudLastSyncInfo> GetLastResults(
-        const std::string &storeId, std::map<SyncId, CloudLastSyncInfo> &infos);
+    static std::pair<int32_t, CloudLastSyncInfo> GetLastResults(std::map<SyncId, CloudLastSyncInfo> &infos);
     void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
     bool NeedSaveSyncInfo(const QueryKey &queryKey);
     std::function<void(const Event &)> GetLockChangeHandler();
