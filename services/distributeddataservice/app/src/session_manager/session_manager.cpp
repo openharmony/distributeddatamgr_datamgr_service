@@ -66,6 +66,8 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
         ZLOGE("get send auth params failed:%{public}s", Anonymous::Change(targetDeviceId).c_str());
         return session;
     }
+
+    std::vector<uint32_t> targetUsers {};
     for (const auto &user : users) {
         aclParams.accCallee.userId = user.id;
         auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(from.userId, user.id,
@@ -73,13 +75,14 @@ Session SessionManager::GetSession(const SessionPoint &from, const std::string &
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
             if (it == session.targetUserIds.end() && isSameAccount) {
-                session.targetUserIds.insert(session.targetUserIds.begin(), user.id);
+                session.targetUserIds.push_back(user.id);
             }
             if (it == session.targetUserIds.end() && !isSameAccount) {
-                session.targetUserIds.push_back(user.id);
+                targetUsers.push_back(user.id);
             }
         }
     }
+    session.targetUserIds.insert(session.targetUserIds.end(), targetUsers.begin(), targetUsers.end());
     ZLOGD("access to peer users:%{public}s", DistributedData::Serializable::Marshall(session.targetUserIds).c_str());
     return session;
 }
