@@ -171,4 +171,24 @@ HWTEST_F(AutoCacheTest, operatorStore, TestSize.Level2)
     EXPECT_EQ(ret, GeneralError::E_OK);
     EXPECT_EQ(delegate.GetUser(), user);
 }
+
+/**
+* @tc.name: GetMeta
+* @tc.desc: AutoCache Delegate operator GetMeta()
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, GetMeta, TestSize.Level2)
+{
+    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    ASSERT_NE(store, nullptr);
+    AutoCache::Watchers watchers;
+    int32_t user = 0;
+    StoreMetaData meta;
+    meta.enableCloud = true;
+    AutoCache::Delegate delegate(store, watchers, user, meta);
+    auto newMate = delegate.GetMeta();
+    ASSERT_TRUE(newMate.enableCloud);
+}
 } // namespace OHOS::Test

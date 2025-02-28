@@ -86,9 +86,12 @@ void AllocHapToken(const HapPolicyParams &policy)
 namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const int32_t SCHEMA_VERSION = 101;
+static constexpr const int32_t EVT_USER = 102;
+static constexpr const char *TEST_TRACE_ID = "123456789";
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
+static constexpr const char *TEST_CLOUD_STORE_1 = "test_cloud_store1";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
 static constexpr const char *COM_EXAMPLE_TEST_CLOUD = "com.example.testCloud";
@@ -387,6 +390,7 @@ HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
         if (store != nullptr) {
             std::map<std::string, Value> entry = { { "inserted", 1 }, { "updated", 2 }, { "normal", 3 } };
             store->MakeCursor(entry);
+            store->SetEqualIdentifier("", "");
         }
         return store;
     };
@@ -2272,16 +2276,15 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark001, TestSize.Level0)
     CloudData::CloudServiceImpl::HapInfo hapInfo = {
        .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
     };
-    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
-    SchemaMeta schemaMeta;
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
     SchemaMeta::Database database;
     database.name = TEST_CLOUD_STORE;
     database.version = 1;
+    SchemaMeta schemaMeta;
+    schemaMeta.version = 1;
     schemaMeta.databases.push_back(database);
     
     SchemaMeta::Database database1;
-    database1.name = "test_cloud_store1";
+    database1.name = TEST_CLOUD_STORE_1;
     database1.version = 2;
     SchemaMeta newSchemaMeta;
     newSchemaMeta.version = 0;
@@ -2295,7 +2298,6 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark001, TestSize.Level0)
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = database1.name;
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
-    EXPECT_FALSE(metaData.isClearWaterMark);
 }
 
 /**
@@ -2310,12 +2312,11 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark002, TestSize.Level0)
     CloudData::CloudServiceImpl::HapInfo hapInfo = {
        .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
     };
-    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
-    SchemaMeta schemaMeta;
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
     SchemaMeta::Database database;
     database.name = TEST_CLOUD_STORE;
     database.version = 1;
+    SchemaMeta schemaMeta;
+    schemaMeta.version = 1;
     schemaMeta.databases.push_back(database);
     
     SchemaMeta::Database database1;
@@ -2333,27 +2334,25 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark002, TestSize.Level0)
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = database1.name;
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
-    EXPECT_FALSE(metaData.isClearWaterMark);
 }
+
 /**
 * @tc.name: UpdateClearWaterMark003
 * @tc.desc: Test UpdateClearWaterMark003 the different database.version
 * @tc.type: FUNC
 * @tc.require:
 */
-
 HWTEST_F(CloudDataTest, UpdateClearWaterMark003, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo hapInfo = {
        .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
     };
-    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
-    SchemaMeta schemaMeta;
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
     SchemaMeta::Database database;
     database.name = TEST_CLOUD_STORE;
     database.version = 1;
+    SchemaMeta schemaMeta;
+    schemaMeta.version = 1;
     schemaMeta.databases.push_back(database);
     
     SchemaMeta::Database database1;
@@ -2372,6 +2371,26 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark003, TestSize.Level0)
     metaData.storeId = database1.name;
     ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
     EXPECT_TRUE(metaData.isClearWaterMark);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
+}
+
+/**
+* @tc.name: GetPrepareTraceId
+* @tc.desc: Test GetPrepareTraceId && GetUser
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, GetPrepareTraceId, TestSize.Level0)
+{
+    SyncParam syncParam;
+    syncParam.prepareTraceId = TEST_TRACE_ID;
+    syncParam.user = EVT_USER;
+    auto async = [](const GenDetails &details) {};
+    SyncEvent::EventInfo eventInfo(syncParam, true, nullptr, async);
+    StoreInfo storeInfo;
+    SyncEvent evt(storeInfo, std::move(eventInfo));
+    EXPECT_EQ(evt.GetUser(), EVT_USER);
+    EXPECT_EQ(evt.GetPrepareTraceId(), TEST_TRACE_ID);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
