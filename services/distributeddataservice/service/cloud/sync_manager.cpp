@@ -742,7 +742,8 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     return true;
 }
 
-std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys)
+std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(
+    const std::vector<QueryKey> &queryKeys)
 {
     std::map<std::string, CloudLastSyncInfo> lastSyncInfoMap;
     for (const auto &queryKey : queryKeys) {
@@ -776,6 +777,7 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
             syncInfo.id = key.accountId;
             syncInfo.storeId = key.storeId;
             syncInfo.startTime = startTime;
+            syncInfo.code = 0;
             val[id] = std::move(syncInfo);
             return !val.empty();
         });
@@ -1006,7 +1008,7 @@ std::pair<std::string, CloudLastSyncInfo> SyncManager::GetLastSyncInfoFromMeta(c
     }
     if (queryKey.accountId != lastSyncInfo.id || (!queryKey.storeId.empty() &&
         queryKey.storeId != lastSyncInfo.storeId)) {
-        return { "", lastSyncInfo };;
+        return { "", lastSyncInfo };
     }
     return { queryKey.storeId, std::move(lastSyncInfo) };
 }

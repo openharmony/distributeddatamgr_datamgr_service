@@ -98,7 +98,8 @@ public:
     int32_t Bind(std::shared_ptr<ExecutorPool> executor);
     int32_t DoCloudSync(SyncInfo syncInfo);
     int32_t StopCloudSync(int32_t user = 0);
-    std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> QueryLastSyncInfo(const std::vector<QueryKey> &queryKeys);
+    std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> QueryLastSyncInfo(
+        const std::vector<QueryKey> &queryKeys);
     void Report(const ReportParam &reportParam);
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
