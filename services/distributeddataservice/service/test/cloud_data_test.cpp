@@ -583,9 +583,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo007, TestSize.Level0)
     EXPECT_TRUE(!lastSyncInfos.empty());
 
     CloudData::SyncManager sync;
-    QueryLastResults result;
-    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1 } },
-                                         result);
+    auto [status, result] = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
+                                                       TEST_CLOUD_DATABASE_ALIAS_1 } });
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
     EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == -1);
@@ -630,10 +629,9 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo008, TestSize.Level0)
     EXPECT_TRUE(!lastSyncInfos.empty());
 
     CloudData::SyncManager sync;
-    QueryLastResults result;
-    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1 },
-                                           { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_2} },
-                                         result);
+    auto [status, result] = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_1 }, { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
+        TEST_CLOUD_DATABASE_ALIAS_2} });
 
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(result.size() == 2);
@@ -684,9 +682,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo009, TestSize.Level0)
     EXPECT_TRUE(!lastSyncInfos.empty());
 
     CloudData::SyncManager sync;
-    QueryLastResults result;
-    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_2} },
-                                         result);
+    auto [status, result] = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
+                                                       TEST_CLOUD_DATABASE_ALIAS_2} });
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(result.size() == 1);
     EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_2].code == 0);
@@ -727,9 +724,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo010, TestSize.Level0)
     
     CloudData::SyncManager sync;
     CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
-    QueryLastResults result;
-    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "1234"} },
-                                         result);
+    auto [status, result] = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "1234"} });
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(result.empty());
 }
@@ -752,10 +747,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo011, TestSize.Level0)
     cloud.user = info.user_;
     auto cloudSyncInfos = sync.GetCloudSyncInfo(info, cloud);
     sync.UpdateStartSyncInfo(cloudSyncInfos);
-    QueryLastResults result;
-    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE },
-                                           { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE_1} },
-                                         result);
+    auto [status, result] = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE },
+                                           { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE_1} });
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(result.size() == 2);
     EXPECT_TRUE(result[TEST_CLOUD_STORE].code == 0);
@@ -796,9 +789,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo012, TestSize.Level0)
 
     CloudData::SyncManager sync;
     CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
-    QueryLastResults result;
-    auto status = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "1234"} },
-                                         result);
+    auto [status, result] = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "1234"} });
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(result.empty());
 }
