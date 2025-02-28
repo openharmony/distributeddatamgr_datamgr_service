@@ -24,9 +24,11 @@ class RouteHeadHandler : public DistributedDB::ExtendHeaderHandle {
 public:
     using ExtendInfo = DistributedDB::ExtendInfo;
     using DBStatus = DistributedDB::DBStatus;
+    using UserInfo = DistributedDB::UserInfo;
 
-    virtual bool ParseHeadData(
-        const uint8_t *data, uint32_t totalLen, uint32_t &headSize, std::vector<std::string> &users) = 0;
+    virtual bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize) = 0;
+    virtual bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
+        std::vector<UserInfo> &userInfos) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_EXTEND_HEAD_HANDLER_H

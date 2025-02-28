@@ -148,12 +148,13 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(routeHeadSize);
     sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
 
-    std::vector<std::string> users;
+    std::vector<DistributedDB::UserInfo> users;
     auto recvHandler = RouteHeadHandlerImpl::Create({});
     ASSERT_NE(recvHandler, nullptr);
     uint32_t parseSize = 1;
-    recvHandler->ParseHeadData(data.get(), routeHeadSize, parseSize, users);
+    recvHandler->ParseHeadDataLen(data.get(), routeHeadSize, parseSize);
     EXPECT_EQ(routeHeadSize, parseSize);
+    recvHandler->ParseHeadDataUser(data.get(), routeHeadSize, "", users);
     ASSERT_EQ(users.size(), 0);
 }
 } // namespace

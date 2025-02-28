@@ -20,6 +20,7 @@
 #include "log_print.h"
 #include "softbus_adapter.h"
 #include "process_communicator_impl.h"
+#include "utils/anonymous.h"
 namespace OHOS {
 namespace AppDistributedKv {
 using namespace DistributedDB;
@@ -250,10 +251,8 @@ std::shared_ptr<ExtendHeaderHandle> ProcessCommunicatorImpl::GetExtendHeaderHand
     return {};
 }
 
-DBStatus ProcessCommunicatorImpl::CheckAndGetDataHeadInfo(
-    const uint8_t *data, uint32_t dataLen, uint32_t &headLen, std::vector<std::string> &users)
+DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength)
 {
-    ZLOGD("begin");
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");
         return DBStatus::DB_ERROR;
@@ -263,16 +262,36 @@ DBStatus ProcessCommunicatorImpl::CheckAndGetDataHeadInfo(
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    auto ret = handler->ParseHeadData(data, dataLen, headLen, users);
+    auto ret = handler->ParseHeadDataLen(data, totalLen, headLength);
     if (!ret) {
-        ZLOGD("illegal head format");
+        ZLOGE("illegal head format, dataLen:%{public}u, headLength:%{public}u", totalLen, headLength);
         return DBStatus::INVALID_FORMAT;
     }
-    if (users.empty()) {
+    return DBStatus::OK;
+}
+
+DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t totalLen, const std::string &label,
+    std::vector<UserInfo> &userInfos)
+{
+    if (routeHeadHandlerCreator_ == nullptr) {
+        ZLOGE("header handler creator not registered");
+        return DBStatus::DB_ERROR;
+    }
+    auto handler = routeHeadHandlerCreator_({});
+    if (handler == nullptr) {
+        ZLOGE("failed to get header handler");
+        return DBStatus::DB_ERROR;
+    }
+    auto ret = handler->ParseHeadDataUser(data, totalLen, label, userInfos);
+    if (!ret) {
+        ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s", totalLen, Anonymous::Change(label).c_str());
+        return DBStatus::INVALID_FORMAT;
+    }
+    if (userInfos.empty()) {
         ZLOGW("no valid user");
         return DBStatus::NO_PERMISSION;
     }
-    ZLOGD("ok, result:%{public}zu, user:%{public}s", users.size(), users.front().c_str());
+    ZLOGD("ok, userInfos.size:%{public}zu", userInfos.size());
     return DBStatus::OK;
 }
 
