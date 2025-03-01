@@ -721,15 +721,11 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
 
 std::pair<int32_t, CloudLastSyncInfo> SyncManager::GetLastResults(std::map<SyncId, CloudLastSyncInfo> &infos)
 {
-    int32_t ret = E_ERROR;
-    CloudLastSyncInfo lastSyncInfo;
-    for (auto &[key, info] : infos) {
-        if (info.code != -1) {
-            ret = SUCCESS;
-            lastSyncInfo = info;
-        }
+    auto iter = infos.rbegin();
+    if (iter != infos.rend() && iter->second.code != -1) {
+        return { SUCCESS, std::move(iter->second) };
     }
-    return { ret, lastSyncInfo };
+    return { E_ERROR, {} };
 }
 
 bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
