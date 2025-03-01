@@ -667,7 +667,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
         if (iter != lastSyncInfos.end()) {
             CloudSyncInfo syncInfo = { .startTime = iter->second.startTime, .finishTime = iter->second.finishTime,
                                        .code = iter->second.code, .syncStatus = iter->second.syncStatus };
-            results.insert(std::move(database.alias), std::move(syncInfo));
+            results.insert({ std::move(database.alias), std::move(syncInfo) });
         }
     }
     return { ret, results };
