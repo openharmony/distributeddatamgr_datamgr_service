@@ -632,8 +632,9 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         return true;
     });
     if (isCreate) {
+        auto subUser = SetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_));
+            GetWatchers(tokenId, param.storeName_), subUser);
     }
     return RDB_OK;
 }
@@ -661,8 +662,9 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         return true;
     });
     if (destroyed) {
+        auto subUser = SetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_));
+            GetWatchers(tokenId, param.storeName_), subUser);
     }
     return RDB_OK;
 }
@@ -715,7 +717,8 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_));
+    auto subUser = SetSubUser(param.subUser_);
+    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_), subUser);
     RdbSyncerParam tmpParam = param;
     HapTokenInfo hapTokenInfo;
     AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
@@ -892,7 +895,11 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.bundleName = param.bundleName_;
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = RemoveSuffix(param.storeName_);
-    metaData.user = std::to_string(user);
+    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
+        metaData.user = std::to_string(param.subUser_);
+    } else {
+        metaData.user = std::to_string(user);
+    }
     metaData.storeType = param.type_;
     metaData.securityLevel = param.level_;
     metaData.area = param.area_;
@@ -1377,7 +1384,8 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Disable(tokenId, storeId);
+    auto userId = SetSubUser(param.subUser_);
+    AutoCache::GetInstance().Disable(tokenId, storeId, userId);
     return RDB_OK;
 }
 
@@ -1385,7 +1393,8 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Enable(tokenId, storeId);
+    auto userId = SetSubUser(param.subUser_);
+    AutoCache::GetInstance().Enable(tokenId, storeId, userId);
     return RDB_OK;
 }
 
@@ -1579,5 +1588,14 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     return RDB_OK;
+}
+
+std::string RdbServiceImpl::SetSubUser(const int32_t subUser)
+{
+    std::string userId = "";
+    if (AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID()) != TOKEN_HAP && subUser != 0) {
+        userId = std::to_string(subUser);
+    }
+    return userId;
 }
 } // namespace OHOS::DistributedRdb
