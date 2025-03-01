@@ -662,15 +662,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     if (lastSyncInfos.empty()) {
         return { ret, results };
     }
-    for (const auto &database : databases) {
-        auto iter = lastSyncInfos.find(database.name);
-        if (iter != lastSyncInfos.end()) {
-            CloudSyncInfo syncInfo = { .startTime = iter->second.startTime, .finishTime = iter->second.finishTime,
-                                       .code = iter->second.code, .syncStatus = iter->second.syncStatus };
-            results.insert({ std::move(database.alias), std::move(syncInfo) });
-        }
-    }
-    return { ret, results };
+    return { ret, AssembleLastResults(databases, lastSyncInfos) };
 }
 
 int32_t CloudServiceImpl::OnInitialize()
@@ -1697,5 +1689,20 @@ int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
 {
     syncManager_.OnScreenUnlocked(user);
     return E_OK;
+}
+
+QueryLastResults CloudServiceImpl::AssembleLastResults(const std::vector<Database> &databases,
+    const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos)
+{
+    QueryLastResults results;
+    for (const auto &database : databases) {
+        auto iter = lastSyncInfos.find(database.name);
+        if (iter != lastSyncInfos.end()) {
+            CloudSyncInfo syncInfo = { .startTime = iter->second.startTime, .finishTime = iter->second.finishTime,
+                                       .code = iter->second.code, .syncStatus = iter->second.syncStatus };
+            results.insert({ database.alias, std::move(syncInfo) });
+        }
+    }
+    return results;
 }
 } // namespace OHOS::CloudData

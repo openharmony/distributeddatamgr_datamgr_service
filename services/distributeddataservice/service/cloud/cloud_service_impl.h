@@ -189,6 +189,8 @@ private:
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
+    QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
+                                         const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
