@@ -49,7 +49,7 @@ Session SessionManager::GetSession(const SessionPoint &local, const std::string 
     session.targetDeviceId = targetDeviceId;
     auto users = UserDelegate::GetInstance().GetRemoteUserStatus(targetDeviceId);
     // system service
-    if (from.userId == UserDelegate::SYSTEM_USER) {
+    if (local.userId == UserDelegate::SYSTEM_USER) {
         session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
     }
     
