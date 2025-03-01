@@ -49,16 +49,8 @@ Session SessionManager::GetSession(const SessionPoint &local, const std::string 
     session.targetDeviceId = targetDeviceId;
     auto users = UserDelegate::GetInstance().GetRemoteUserStatus(targetDeviceId);
     // system service
-    if (local.userId == UserDelegate::SYSTEM_USER) {
-        StoreMetaData metaData;
-        metaData.deviceId = local.deviceId;
-        metaData.user = std::to_string(local.userId);
-        metaData.bundleName = local.appId;
-        metaData.storeId = local.storeId;
-        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData) &&
-            CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData)) == local.appId) {
-            session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
-        }
+    if (from.userId == UserDelegate::SYSTEM_USER) {
+        session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
     }
     
     AclParams aclParams;

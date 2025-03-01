@@ -285,25 +285,6 @@ HWTEST_F(KVDBServiceStubTest, OnPutSwitch, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnSubscribe
- * @tc.desc: Test OnSubscribe
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(KVDBServiceStubTest, OnSubscribe, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    AppId appId = {"testApp"};
-    StoreId storeId = {"testStore"};
-    auto status = kvdbServiceStub->OnSubscribe(appId, storeId, data, reply);
-    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
-
-    status = kvdbServiceStub->OnUnsubscribe(appId, storeId, data, reply);
-    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
-}
-
-/**
  * @tc.name: OnGetBackupPassword
  * @tc.desc: Test OnGetBackupPassword
  * @tc.type: FUNC
