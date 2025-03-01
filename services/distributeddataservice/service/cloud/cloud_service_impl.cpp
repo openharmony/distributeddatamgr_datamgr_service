@@ -645,7 +645,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
         }
         databases = schema.databases;
         for (const auto &database : schema.databases) {
-            if (storeId.empty() || database.name == storeId) {
+            if (storeId.empty() || database.alias == storeId) {
                 queryKeys.push_back({ user, id, bundleName, database.name });
             }
         }
@@ -655,17 +655,20 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
         }
     }
 
-    auto [ret, lastSyncinfos] = syncManager_.QueryLastSyncInfo(queryKeys);
+    auto [ret, lastSyncInfos] = syncManager_.QueryLastSyncInfo(queryKeys);
     ZLOGI("code:%{public}d, id:%{public}s, bundleName:%{public}s, storeId:%{public}s, size:%{public}d", ret,
         Anonymous::Change(id).c_str(), bundleName.c_str(), Anonymous::Change(storeId).c_str(),
-        static_cast<int32_t>(lastSyncinfos.size()));
-    if (lastSyncinfos.empty()) {
+        static_cast<int32_t>(lastSyncInfos.size()));
+    if (lastSyncInfos.empty()) {
         return { ret, results };
     }
-    for (auto &it : lastSyncinfos) {
-        CloudSyncInfo syncInfo = { .startTime = it.second.startTime, .finishTime = it.second.finishTime,
-                                   .code = it.second.code, .syncStatus = it.second.syncStatus };
-        results.insert({ std::move(it.first), std::move(syncInfo)});
+    for (const auto &database : databases) {
+        auto iter = lastSyncInfos.find(database.name);
+        if (iter != lastSyncInfos.end()) {
+            CloudSyncInfo syncInfo = { .startTime = iter->second.startTime, .finishTime = iter->second.finishTime,
+                                       .code = iter->second.code, .syncStatus = iter->second.syncStatus };
+            results.insert(std::move(database.alias), std::move(syncInfo));
+        }
     }
     return { ret, results };
 }

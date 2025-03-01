@@ -452,7 +452,7 @@ HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
 HWTEST_F(CloudDataTest, QueryLastSyncInfo001, TestSize.Level0)
 {
     auto [status, result] =
-        cloudServiceImpl_->QueryLastSyncInfo("accountId", TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+        cloudServiceImpl_->QueryLastSyncInfo("accountId", TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(result.empty());
 }
@@ -466,7 +466,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo001, TestSize.Level0)
 HWTEST_F(CloudDataTest, QueryLastSyncInfo002, TestSize.Level0)
 {
     auto [status, result] =
-        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, "bundleName", TEST_CLOUD_STORE);
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, "bundleName", TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::Status::INVALID_ARGUMENT);
     EXPECT_TRUE(result.empty());
 }
@@ -499,13 +499,13 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
     sleep(1);
 
     auto [status, result] =
-        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].code == E_BLOCKED_BY_NETWORK_STRATEGY);
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].startTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].finishTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].syncStatus == 1);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
 }
 
 /**
@@ -526,13 +526,13 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
     sleep(1);
 
     auto [status, result] =
-        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].code == E_BLOCKED_BY_NETWORK_STRATEGY);
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].startTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].finishTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_STORE].syncStatus == 1);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
 }
 
 /**
@@ -741,7 +741,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo011, TestSize.Level0)
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
     int32_t user = 100;
     CloudData::SyncManager sync;
-    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     info.syncId_ = 0;
     CloudInfo cloud;
     cloud.user = info.user_;
