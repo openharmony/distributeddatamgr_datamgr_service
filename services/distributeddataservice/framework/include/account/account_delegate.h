@@ -76,7 +76,7 @@ public:
     API_EXPORT virtual std::string GetUnencryptedAccountId(int32_t userId = 0) const = 0;
     API_EXPORT static AccountDelegate *GetInstance();
     API_EXPORT static bool RegisterAccountInstance(AccountDelegate *instance);
-    API_EXPORT virtual bool IsOsAccountForeground(int32_t userId) = 0;
+    API_EXPORT virtual bool IsUserForeground(int32_t userId) = 0;
 
 private:
     static AccountDelegate *instance_;

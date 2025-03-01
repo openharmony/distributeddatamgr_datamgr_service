@@ -49,7 +49,7 @@ public:
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
     std::string GetUnencryptedAccountId(int32_t userId = 0) const override;
     bool QueryForegroundUserId(int &foregroundUserId) override;
-    bool IsOsAccountForeground(int32_t userId) override;
+    bool IsUserForeground(int32_t userId) override;
     static bool Init();
 
 private:

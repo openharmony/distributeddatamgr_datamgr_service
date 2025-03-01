@@ -155,7 +155,7 @@ bool SessionManager::CheckSession(const SessionPoint &local, const SessionPoint 
         peer.userId, peer.deviceId, aclParams);
     bool isForeground = false;
     if (isPermitted) {
-        isForeground = Account::GetInstance()->IsOsAccountForeground(local.userId);
+        isForeground = Account::GetInstance()->IsUserForeground(local.userId);
     }
     return isPermitted && isForeground;
 }
