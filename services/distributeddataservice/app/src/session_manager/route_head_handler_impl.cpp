@@ -17,6 +17,7 @@
 #define LOG_TAG "RouteHeadHandler"
 #include <chrono>
 #include <cinttypes>
+#include "account/account_delegate.h"
 #include "auth_delegate.h"
 #include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
@@ -33,6 +34,7 @@ namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
 using namespace std::chrono;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
+using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
@@ -59,8 +61,19 @@ void RouteHeadHandlerImpl::Init()
     if (deviceId_.empty()) {
         return;
     }
-    if (!DmAdapter::GetInstance().IsOHOSType(deviceId_) && userId_ != DEFAULT_USERID) {
-        userId_ = DEFAULT_USERID;
+    if (userId_ != DEFAULT_USERID) {
+        if (!DmAdapter::GetInstance().IsOHOSType(deviceId_)) {
+            userId_ = DEFAULT_USERID;
+        } else {
+            StoreMetaData metaData;
+            metaData.deviceId = deviceId_;
+            metaData.user = DEFAULT_USERID;
+            metaData.bundleName = appId_;
+            metaData.storeId = storeId_;
+            if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+                userId_ = DEFAULT_USERID;
+            }
+        }
     }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
         static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_ };
@@ -194,17 +207,65 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     return true;
 }
 
-bool RouteHeadHandlerImpl::ParseHeadData(
-    const uint8_t *data, uint32_t len, uint32_t &headSize, std::vector<std::string> &users)
+bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize)
 {
-    auto ret = UnPackData(data, len, headSize);
-    if (!ret) {
-        headSize = 0;
+    if (data == nullptr) {
+        ZLOGE("invalid input data, totalLen:%{public}d", totalLen);
         return false;
     }
-    auto time =
-        static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    RouteHead head = { 0 };
+    auto ret = UnPackDataHead(data, totalLen, head);
+    headSize = ret ? sizeof(RouteHead) + head.dataLen : 0;
+    ZLOGI("unpacked data size:%{public}u, ret:%{public}d", headSize, ret);
+    return ret;
+}
+
+std::string RouteHeadHandlerImpl::ParseStoreId(const std::string &deviceId, const std::string &label)
+{
+    std::vector<StoreMetaData> metaData;
+    auto prefix = StoreMetaData::GetPrefix({ deviceId });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
+        return "";
+    }
+    for (const auto &storeMeta : metaData) {
+        auto labelTag = DBManager::GetKvStoreIdentifier("", storeMeta.appId, storeMeta.storeId, true);
+        if (labelTag != label) {
+            continue;
+        }
+        return storeMeta.storeId;
+    }
+    return "";
+}
+
+bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
+    std::vector<UserInfo> &userInfos)
+{
+    uint32_t headSize = 0;
+    auto ret = UnPackData(data, totalLen, headSize);
+    if (!ret) {
+        return false;
+    }
+    auto time = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     ZLOGI("unpacked size:%{public}u times %{public}" PRIu64 ".", headSize, time);
+
+    if (DmAdapter::GetInstance().IsOHOSType(session_.sourceDeviceId)) {
+        auto storeId = ParseStoreId(session_.targetDeviceId, label);
+        if (!storeId.empty() && std::to_string(session_.sourceUserId) == DEFAULT_USERID) {
+            StoreMetaData metaData;
+            metaData.deviceId = session_.targetDeviceId;
+            metaData.user = DEFAULT_USERID;
+            metaData.bundleName = session_.appId;
+            metaData.storeId = storeId;
+            if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+                int foregroundUserId = 0;
+                AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+                UserInfo userInfo = { .receiveUser = std::to_string(foregroundUserId) };
+                userInfos.emplace_back(userInfo);
+                return true;
+            }
+        }
+    }
+
     // flip the local and peer ends
     SessionPoint local { .deviceId = session_.targetDeviceId, .appId = session_.appId };
     SessionPoint peer { .deviceId = session_.sourceDeviceId, .userId = session_.sourceUserId, .appId = session_.appId };
@@ -214,7 +275,8 @@ bool RouteHeadHandlerImpl::ParseHeadData(
     for (const auto &item : session_.targetUserIds) {
         local.userId = item;
         if (SessionManager::GetInstance().CheckSession(local, peer)) {
-            users.emplace_back(std::to_string(item));
+            UserInfo userInfo = { .receiveUser = std::to_string(item) };
+            userInfos.emplace_back(userInfo);
         }
     }
     return true;
