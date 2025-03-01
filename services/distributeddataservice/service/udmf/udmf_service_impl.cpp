@@ -276,7 +276,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
 {
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
     std::vector<Uri> allUri;
-    int32_t verifyRes = ProcessCrossDeviceData(unifiedData, allUri);
+    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, allUri);
     if (verifyRes != E_OK) {
         ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
         return verifyRes;
@@ -299,14 +299,13 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris)
+int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData, std::vector<Uri> &uris)
 {
     if (unifiedData.GetRuntime() == nullptr) {
         ZLOGE("Get runtime empty!");
         return E_DB_ERROR;
     }
-    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
+    bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
     auto records = unifiedData.GetRecords();
     bool hasError = false;
     PreProcessUtils::ProcessFileType(records, [&] (std::shared_ptr<Object> obj) {
@@ -322,7 +321,7 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::v
         Uri uri(oriUri);
         std::string scheme = uri.GetScheme();
         std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (localDeviceId != sourceDeviceId) {
+        if (!isLocal) {
             std::string remoteUri;
             obj->GetValue(REMOTE_URI, remoteUri);
             if (remoteUri.empty() && scheme == FILE_SCHEME) {
@@ -344,6 +343,7 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(UnifiedData &unifiedData, std::v
         uris.push_back(uri);
         return true;
     });
+    PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal, uris);
     return hasError ? E_ERROR : E_OK;
 }
 
