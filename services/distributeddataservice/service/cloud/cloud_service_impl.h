@@ -35,6 +35,7 @@
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
+    using CloudLastSyncInfo = DistributedData::CloudLastSyncInfo;
     using StoreMetaData = DistributedData::StoreMetaData;
     using StoreInfo = DistributedData::StoreInfo;
     CloudServiceImpl();
@@ -106,6 +107,7 @@ private:
         ACCOUNT_STOP = 9,
     };
 
+    using Database = DistributedData::Database;
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
