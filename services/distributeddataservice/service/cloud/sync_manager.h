@@ -166,8 +166,8 @@ private:
     static void Report(
         const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix);
     void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState, int32_t code);
-    std::pair<std::string, CloudLastSyncInfo> GetLastSyncInfoFromMeta(const QueryKey &queryKey);
-    static void SaveLastSyncInfo(const QueryKey &queryKey, int64_t startTime, int64_t finishTime, int32_t code);
+    std::pair<int32_t , CloudLastSyncInfo> GetLastSyncInfoFromMeta(const QueryKey &queryKey);
+    static void SaveLastSyncInfo(const QueryKey &queryKey, CloudLastSyncInfo &&info);
 
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
