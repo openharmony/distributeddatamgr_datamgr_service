@@ -632,7 +632,7 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         return true;
     });
     if (isCreate) {
-        auto subUser = SetSubUser(param.subUser_);
+        auto subUser = GetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
             GetWatchers(tokenId, param.storeName_), subUser);
     }
@@ -662,7 +662,7 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         return true;
     });
     if (destroyed) {
-        auto subUser = SetSubUser(param.subUser_);
+        auto subUser = GetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
             GetWatchers(tokenId, param.storeName_), subUser);
     }
@@ -717,7 +717,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto subUser = SetSubUser(param.subUser_);
+    auto subUser = GetSubUser(param.subUser_);
     AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_), subUser);
     RdbSyncerParam tmpParam = param;
     HapTokenInfo hapTokenInfo;
@@ -1384,7 +1384,7 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    auto userId = SetSubUser(param.subUser_);
+    auto userId = GetSubUser(param.subUser_);
     AutoCache::GetInstance().Disable(tokenId, storeId, userId);
     return RDB_OK;
 }
@@ -1393,7 +1393,7 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    auto userId = SetSubUser(param.subUser_);
+    auto userId = GetSubUser(param.subUser_);
     AutoCache::GetInstance().Enable(tokenId, storeId, userId);
     return RDB_OK;
 }
@@ -1590,7 +1590,7 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-std::string RdbServiceImpl::SetSubUser(const int32_t subUser)
+std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
 {
     std::string userId = "";
     if (AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID()) != TOKEN_HAP && subUser != 0) {

@@ -208,7 +208,7 @@ private:
 
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
-    static std::string SetSubUser(const int32_t subUser);
+    static std::string GetSubUser(const int32_t subUser);
 
     static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
