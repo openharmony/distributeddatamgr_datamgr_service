@@ -294,12 +294,13 @@ int32_t KVDBServiceStub::OnSetSyncParam(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
     KvSyncParam syncParam;
-    if (!ITypesUtil::Unmarshal(data, syncParam.allowedDelayMs)) {
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, syncParam.allowedDelayMs, subUser)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = SetSyncParam(appId, storeId, syncParam);
+    int32_t status = SetSyncParam(appId, storeId, subUser, syncParam);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -311,8 +312,14 @@ int32_t KVDBServiceStub::OnSetSyncParam(
 int32_t KVDBServiceStub::OnGetSyncParam(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, subUser)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     KvSyncParam syncParam;
-    int32_t status = GetSyncParam(appId, storeId, syncParam);
+    int32_t status = GetSyncParam(appId, storeId, subUser, syncParam);
     if (!ITypesUtil::Marshal(reply, status, syncParam.allowedDelayMs)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -324,7 +331,13 @@ int32_t KVDBServiceStub::OnGetSyncParam(
 int32_t KVDBServiceStub::OnEnableCap(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    int32_t status = EnableCapability(appId, storeId);
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, subUser)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = EnableCapability(appId, storeId, subUser);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -336,7 +349,13 @@ int32_t KVDBServiceStub::OnEnableCap(
 int32_t KVDBServiceStub::OnDisableCap(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
-    int32_t status = DisableCapability(appId, storeId);
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, subUser)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = DisableCapability(appId, storeId, subUser);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -350,12 +369,13 @@ int32_t KVDBServiceStub::OnSetCapability(
 {
     std::vector<std::string> local;
     std::vector<std::string> remote;
-    if (!ITypesUtil::Unmarshal(data, local, remote)) {
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, local, remote, subUser)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = SetCapability(appId, storeId, local, remote);
+    int32_t status = SetCapability(appId, storeId, subUser, local, remote);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -368,12 +388,13 @@ int32_t KVDBServiceStub::OnAddSubInfo(const AppId &appId, const StoreId &storeId
     MessageParcel &reply)
 {
     SyncInfo syncInfo;
-    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query)) {
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query, subUser)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = AddSubscribeInfo(appId, storeId, syncInfo);
+    int32_t status = AddSubscribeInfo(appId, storeId, subUser, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -386,12 +407,13 @@ int32_t KVDBServiceStub::OnRmvSubInfo(const AppId &appId, const StoreId &storeId
     MessageParcel &reply)
 {
     SyncInfo syncInfo;
-    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query)) {
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.devices, syncInfo.query, subUser)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = RmvSubscribeInfo(appId, storeId, syncInfo);
+    int32_t status = RmvSubscribeInfo(appId, storeId, subUser, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -444,13 +466,14 @@ int32_t KVDBServiceStub::OnGetBackupPassword(
     const AppId &appId, const StoreId &storeId, MessageParcel &data, MessageParcel &reply)
 {
     int32_t passwordType;
-    if (!ITypesUtil::Unmarshal(data, passwordType)) {
+    int32_t subUser;
+    if (!ITypesUtil::Unmarshal(data, passwordType, subUser)) {
         ZLOGE("Unmarshal type failed, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     std::vector<std::vector<uint8_t>> passwords;
-    int32_t status = GetBackupPassword(appId, storeId, passwords, passwordType);
+    int32_t status = GetBackupPassword(appId, storeId, subUser, passwords, passwordType);
     if (!ITypesUtil::Marshal(reply, status, passwords)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());

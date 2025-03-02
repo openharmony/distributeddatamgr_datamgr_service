@@ -52,20 +52,23 @@ public:
     Status Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo) override;
     Status RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifier> notifier) override;
     Status UnregServiceNotifier(const AppId &appId) override;
-    Status SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam) override;
-    Status GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam) override;
-    Status EnableCapability(const AppId &appId, const StoreId &storeId) override;
-    Status DisableCapability(const AppId &appId, const StoreId &storeId) override;
-    Status SetCapability(const AppId &appId, const StoreId &storeId, const std::vector<std::string> &local,
-        const std::vector<std::string> &remote) override;
-    Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
+    Status SetSyncParam(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        const KvSyncParam &syncParam) override;
+    Status GetSyncParam(const AppId &appId, const StoreId &storeId, int32_t subUser, KvSyncParam &syncParam) override;
+    Status EnableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser) override;
+    Status DisableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser) override;
+    Status SetCapability(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        const std::vector<std::string> &local, const std::vector<std::string> &remote) override;
+    Status AddSubscribeInfo(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        const SyncInfo &syncInfo) override;
+    Status RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        const SyncInfo &syncInfo) override;
     Status Subscribe(const AppId &appId, const StoreId &storeId, int32_t subUser,
         sptr<IKvStoreObserver> observer) override;
     Status Unsubscribe(const AppId &appId, const StoreId &storeId, int32_t subUser,
         sptr<IKvStoreObserver> observer) override;
-    Status GetBackupPassword(const AppId &appId, const StoreId &storeId, std::vector<std::vector<uint8_t>> &passwords,
-        int32_t passwordType) override;
+    Status GetBackupPassword(const AppId &appId, const StoreId &storeId, int32_t subUser,
+        std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType) override;
     Status NotifyDataChange(const AppId &appId, const StoreId &storeId, uint64_t delay) override;
     Status PutSwitch(const AppId &appId, const SwitchData &data) override;
     Status GetSwitch(const AppId &appId, const std::string &networkId, SwitchData &data) override;
@@ -121,7 +124,7 @@ private:
     void AddOptions(const Options &options, StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData GetDistributedDataMeta(const std::string &deviceId);
-    StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId);
+    StrategyMeta GetStrategyMeta(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     int32_t GetInstIndex(uint32_t tokenId, const AppId &appId);
     bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
     Status DoCloudSync(const StoreMetaData &meta, const SyncInfo &syncInfo);
@@ -131,7 +134,7 @@ private:
     Status DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta, const SyncInfo &info,
         const SyncEnd &complete, int32_t type);
     Status DoComplete(const StoreMetaData &meta, const SyncInfo &info, RefCount refCount, const DBResult &dbResult);
-    uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId);
+    uint32_t GetSyncDelayTime(uint32_t delay, const StoreId &storeId, const std::string &subUser = "");
     Status ConvertDbStatus(DBStatus status) const;
     Status ConvertGeneralErr(GeneralError error) const;
     DBMode ConvertDBMode(SyncMode syncMode) const;

@@ -481,10 +481,10 @@ HWTEST_F(KvdbServiceImplTest, SetSyncParamTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     OHOS::DistributedKv::KvSyncParam syncparam;
-    auto status = kvdbServiceImpl_->SetSyncParam(appId, storeId, syncparam);
+    auto status = kvdbServiceImpl_->SetSyncParam(appId, storeId, 0, syncparam);
     ASSERT_EQ(status, Status::SUCCESS);
     syncparam.allowedDelayMs = DistributedKv::KvStoreSyncManager::SYNC_MAX_DELAY_MS + 1;
-    status = kvdbServiceImpl_->SetSyncParam(appId, storeId, syncparam);
+    status = kvdbServiceImpl_->SetSyncParam(appId, storeId, 0, syncparam);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
 }
 
@@ -501,7 +501,7 @@ HWTEST_F(KvdbServiceImplTest, GetSyncParamTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     OHOS::DistributedKv::KvSyncParam syncparam;
-    auto status = kvdbServiceImpl_->GetSyncParam(appId, storeId, syncparam);
+    auto status = kvdbServiceImpl_->GetSyncParam(appId, storeId, 0, syncparam);
     ZLOGI("GetSyncParamTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
@@ -519,11 +519,11 @@ HWTEST_F(KvdbServiceImplTest, EnableCapabilityTest001, TestSize.Level0)
     ASSERT_EQ(status1, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    auto status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::ILLEGAL_STATE);
 }
 
@@ -736,12 +736,12 @@ HWTEST_F(KvdbServiceImplTest, DisableCapabilityTest001, TestSize.Level0)
     ASSERT_EQ(status1, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->DisableCapability(appId, storeId);
+    auto status = kvdbServiceImpl_->DisableCapability(appId, storeId, 0);
     ZLOGI("DisableCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::ILLEGAL_STATE);
 }
 
@@ -761,12 +761,12 @@ HWTEST_F(KvdbServiceImplTest, SetCapabilityTest001, TestSize.Level0)
     std::vector<std::string> remote;
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->SetCapability(appId, storeId, local, remote);
+    auto status = kvdbServiceImpl_->SetCapability(appId, storeId, 0, local, remote);
     ZLOGI("SetCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::ILLEGAL_STATE);
 }
 
@@ -786,7 +786,7 @@ HWTEST_F(KvdbServiceImplTest, AddSubscribeInfoTest001, TestSize.Level0)
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->AddSubscribeInfo(appId, storeId, syncInfo);
+    auto status = kvdbServiceImpl_->AddSubscribeInfo(appId, storeId, 0, syncInfo);
     ZLOGI("AddSubscribeInfoTest001 status = :%{public}d", status);
     ASSERT_NE(status, Status::SUCCESS);
 }
@@ -804,7 +804,7 @@ HWTEST_F(KvdbServiceImplTest, RmvSubscribeInfoTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     SyncInfo syncInfo;
-    auto status = kvdbServiceImpl_->RmvSubscribeInfo(appId, storeId, syncInfo);
+    auto status = kvdbServiceImpl_->RmvSubscribeInfo(appId, storeId, 0, syncInfo);
     ZLOGI("RmvSubscribeInfoTest001 status = :%{public}d", status);
     ASSERT_NE(status, Status::SUCCESS);
 }
@@ -866,13 +866,13 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest001, TestSize.Level0)
     ASSERT_EQ(status, Status::SUCCESS);
     std::vector<std::vector<uint8_t>> password;
     status = kvdbServiceImpl_->GetBackupPassword
-        (appId, storeId, password, DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
     ASSERT_EQ(status, Status::ERROR);
     status = kvdbServiceImpl_->GetBackupPassword
-        (appId, storeId, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
     ASSERT_EQ(status, Status::ERROR);
     status = kvdbServiceImpl_->GetBackupPassword
-        (appId, storeId, password, DistributedKv::KVDBService::PasswordType::BUTTON);
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::BUTTON);
     ASSERT_EQ(status, Status::ERROR);
 }
 

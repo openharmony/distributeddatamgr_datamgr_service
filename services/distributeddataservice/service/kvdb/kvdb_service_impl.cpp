@@ -203,7 +203,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32
     MetaDataManager::GetInstance().DelMeta(metaData.GetDebugInfoKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
     PermitDelegate::GetInstance().DelCache(metaData.GetKey());
-    AutoCache::GetInstance().CloseStore(metaData.tokenId, storeId);
+    AutoCache::GetInstance().CloseStore(metaData.tokenId, storeId, metaData.user);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
     return SUCCESS;
@@ -215,7 +215,7 @@ Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId, int32_
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
-    AutoCache::GetInstance().CloseStore(metaData.tokenId, storeId);
+    AutoCache::GetInstance().CloseStore(metaData.tokenId, storeId, metaData.user);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
     return SUCCESS;
@@ -245,7 +245,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
+    auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
         DeviceMatrix::GetInstance().OnChanged(metaData);
         StoreMetaDataLocal localMeta;
@@ -442,7 +442,8 @@ ProgressDetail KVDBServiceImpl::HandleGenDetails(const GenDetails &details)
     return progressDetail;
 }
 
-Status KVDBServiceImpl::SetSyncParam(const AppId &appId, const StoreId &storeId, const KvSyncParam &syncParam)
+Status KVDBServiceImpl::SetSyncParam(const AppId &appId, const StoreId &storeId, int32_t subUser,
+    const KvSyncParam &syncParam)
 {
     if (syncParam.allowedDelayMs > 0 && syncParam.allowedDelayMs < KvStoreSyncManager::SYNC_MIN_DELAY_MS) {
         return Status::INVALID_ARGUMENT;
@@ -450,29 +451,32 @@ Status KVDBServiceImpl::SetSyncParam(const AppId &appId, const StoreId &storeId,
     if (syncParam.allowedDelayMs > KvStoreSyncManager::SYNC_MAX_DELAY_MS) {
         return Status::INVALID_ARGUMENT;
     }
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    syncAgents_.Compute(tokenId, [&appId, &storeId, &syncParam](auto &key, SyncAgent &value) {
+    StoreMetaData meta = GetStoreMetaData(appId, storeId, subUser);
+    auto key = GenerateKey(meta.user, storeId.storeId);
+    syncAgents_.Compute(meta.tokenId, [&appId, &key, &syncParam](auto &, SyncAgent &value) {
         if (value.pid_ != IPCSkeleton::GetCallingPid()) {
             value.ReInit(IPCSkeleton::GetCallingPid(), appId);
         }
-        value.delayTimes_[storeId] = syncParam.allowedDelayMs;
+        value.delayTimes_[key] = syncParam.allowedDelayMs;
         return true;
     });
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::GetSyncParam(const AppId &appId, const StoreId &storeId, KvSyncParam &syncParam)
+Status KVDBServiceImpl::GetSyncParam(const AppId &appId, const StoreId &storeId, int32_t subUser,
+    KvSyncParam &syncParam)
 {
     syncParam.allowedDelayMs = 0;
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    syncAgents_.ComputeIfPresent(tokenId, [&appId, &storeId, &syncParam](auto &key, SyncAgent &value) {
+    StoreMetaData meta = GetStoreMetaData(appId, storeId, subUser);
+    auto key = GenerateKey(meta.user, storeId.storeId);
+    syncAgents_.ComputeIfPresent(meta.tokenId, [&appId, &key, &syncParam](auto &, SyncAgent &value) {
         if (value.pid_ != IPCSkeleton::GetCallingPid()) {
             ZLOGW("agent already changed! old pid:%{public}d, new pid:%{public}d, appId:%{public}s",
                 IPCSkeleton::GetCallingPid(), value.pid_, appId.appId.c_str());
             return true;
         }
 
-        auto it = value.delayTimes_.find(storeId);
+        auto it = value.delayTimes_.find(key);
         if (it != value.delayTimes_.end()) {
             syncParam.allowedDelayMs = it->second;
         }
@@ -481,9 +485,9 @@ Status KVDBServiceImpl::GetSyncParam(const AppId &appId, const StoreId &storeId,
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &storeId)
+Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId);
+    StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId, subUser);
     if (strategyMeta.instanceId < 0) {
         return ILLEGAL_STATE;
     }
@@ -493,9 +497,9 @@ Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &stor
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &storeId)
+Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId);
+    StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId, subUser);
     if (strategyMeta.instanceId < 0) {
         return ILLEGAL_STATE;
     }
@@ -505,10 +509,10 @@ Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &sto
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::SetCapability(const AppId &appId, const StoreId &storeId,
+Status KVDBServiceImpl::SetCapability(const AppId &appId, const StoreId &storeId, int32_t subUser,
     const std::vector<std::string> &local, const std::vector<std::string> &remote)
 {
-    StrategyMeta strategy = GetStrategyMeta(appId, storeId);
+    StrategyMeta strategy = GetStrategyMeta(appId, storeId, subUser);
     if (strategy.instanceId < 0) {
         return ILLEGAL_STATE;
     }
@@ -519,21 +523,23 @@ Status KVDBServiceImpl::SetCapability(const AppId &appId, const StoreId &storeId
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::AddSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
+Status KVDBServiceImpl::AddSubscribeInfo(const AppId &appId, const StoreId &storeId, int32_t subUser,
+    const SyncInfo &syncInfo)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
+    auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SUBSCRIBE),
         std::bind(&KVDBServiceImpl::DoComplete, this, metaData, syncInfo, RefCount(), std::placeholders::_1));
 }
 
-Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
+Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &storeId, int32_t subUser,
+    const SyncInfo &syncInfo)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    auto delay = GetSyncDelayTime(syncInfo.delay, storeId);
+    auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(
             &KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_UNSUBSCRIBE),
@@ -563,7 +569,7 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
     });
     if (isCreate) {
         AutoCache::GetInstance().SetObserver(metaData.tokenId, storeId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user));
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.user);
     }
     return SUCCESS;
 }
@@ -595,15 +601,15 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
     });
     if (destroyed) {
         AutoCache::GetInstance().SetObserver(metaData.tokenId, storeId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user));
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.user);
     }
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId,
+Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, int32_t subUser,
     std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
         std::vector<uint8_t> backupPwd;
         bool res = BackupManager::GetInstance().GetPassWord(metaData, backupPwd);
@@ -656,7 +662,7 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
             return Status::ERROR;
         }
     }
-    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, storeId);
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, storeId, meta.user);
     for (auto store : stores) {
         store->SetConfig({ storeConfig.cloudConfig.enableCloud });
     }
@@ -921,10 +927,11 @@ StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreI
     return metaData;
 }
 
-StrategyMeta KVDBServiceImpl::GetStrategyMeta(const AppId &appId, const StoreId &storeId)
+StrategyMeta KVDBServiceImpl::GetStrategyMeta(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto userId = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    auto userId = (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP && subUser != 0) ? subUser :
+        AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
     StrategyMeta strategyMeta(deviceId, std::to_string(userId), appId.appId, storeId.storeId);
     strategyMeta.instanceId = GetInstIndex(tokenId, appId);
@@ -1233,7 +1240,7 @@ Status KVDBServiceImpl::ConvertDbStatusNative(DBStatus status)
     }
 }
 
-uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeId)
+uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeId, const std::string &subUser)
 {
     if (delay != 0) {
         return std::min(std::max(delay, KvStoreSyncManager::SYNC_MIN_DELAY_MS), KvStoreSyncManager::SYNC_MAX_DELAY_MS);
@@ -1244,8 +1251,9 @@ uint32_t KVDBServiceImpl::GetSyncDelayTime(uint32_t delay, const StoreId &storeI
         return delay;
     }
     delay = KvStoreSyncManager::SYNC_DEFAULT_DELAY_MS;
-    syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [&delay, &storeId](auto &, SyncAgent &agent) {
-        auto it = agent.delayTimes_.find(storeId);
+    auto key = GenerateKey(subUser, storeId);
+    syncAgents_.ComputeIfPresent(IPCSkeleton::GetCallingTokenID(), [&delay, &key](auto &, SyncAgent &agent) {
+        auto it = agent.delayTimes_.find(key);
         if (it != agent.delayTimes_.end() && it->second != 0) {
             delay = it->second;
         }
