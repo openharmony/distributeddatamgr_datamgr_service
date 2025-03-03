@@ -149,6 +149,9 @@ bool SessionManager::CheckSession(const SessionPoint &local, const SessionPoint 
     if (isPermitted) {
         isForeground = Account::GetInstance()->IsUserForeground(local.userId);
     }
+    if (local.userId == 0) {
+        isForeground = true;
+    }
     return isPermitted && isForeground;
 }
 
