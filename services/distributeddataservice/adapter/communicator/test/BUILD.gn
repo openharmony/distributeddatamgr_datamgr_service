@@ -172,6 +172,8 @@ ohos_unittest("ProcessCommunicatorImplTest") {
     "-Dprotected=public",
   ]
 
+  cflags_cc = [ "-fexceptions" ]
+
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
