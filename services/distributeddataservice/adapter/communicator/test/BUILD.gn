@@ -184,6 +184,36 @@ ohos_unittest("SoftbusClientTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
+ohos_unittest("AppPipeMgrServiceTest") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "${data_service_path}/adapter/include/autils",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/dfx",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/framework/include/dfx",
+    "../src",
+  ]
+  sources = [ "unittest/app_pipe_mgr_service_test.cpp" ]
+  external_deps = [
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "dsoftbus:softbus_client",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -191,6 +221,7 @@ group("unittest") {
   deps = []
 
   deps += [
+    ":AppPipeMgrServiceTest",
     ":CommunicationProviderTest",
     ":CommunicatorContextTest",
     ":CommunicatorDataBufferTest",
