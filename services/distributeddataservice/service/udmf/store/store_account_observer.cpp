@@ -21,7 +21,6 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "ipc_skeleton.h"
-#include "store_cache.h"
 
 namespace OHOS {
 namespace UDMF {
