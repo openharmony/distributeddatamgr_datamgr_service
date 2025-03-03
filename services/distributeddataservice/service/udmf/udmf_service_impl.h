@@ -55,6 +55,7 @@ public:
     int32_t ObtainAsynProcess(AsyncProcessInfo &processInfo) override;
     int32_t ClearAsynProcessByKey(const std::string &businessUdKey) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
