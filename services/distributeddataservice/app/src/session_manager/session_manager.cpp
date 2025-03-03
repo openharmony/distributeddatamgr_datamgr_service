@@ -145,14 +145,10 @@ bool SessionManager::CheckSession(const SessionPoint &local, const SessionPoint 
     }
     auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(local.userId,
         peer.userId, peer.deviceId, aclParams);
-    bool isForeground = false;
-    if (isPermitted) {
-        isForeground = Account::GetInstance()->IsUserForeground(local.userId);
+    if (isPermitted && local.userId != UserDelegate::SYSTEM_USER) {
+        isPermitted = Account::GetInstance()->IsUserForeground(local.userId);
     }
-    if (local.userId == UserDelegate::SYSTEM_USER) {
-        isForeground = true;
-    }
-    return isPermitted && isForeground;
+    return isPermitted;
 }
 
 bool Session::Marshal(json &node) const
