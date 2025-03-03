@@ -836,5 +836,14 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
     std::lock_guard<std::mutex> lock(mutex_);
     asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
 }
+
+int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
+{
+    ZLOGI("UdmfServiceImpl user change, code:%{public}u", code);
+    if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+        StoreCache::GetInstance().CloseStores();
+    }
+    return Feature::OnUserChange(code, user, account);
+}
 } // namespace UDMF
 } // namespace OHOS
