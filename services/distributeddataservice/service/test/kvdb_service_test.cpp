@@ -34,9 +34,15 @@
 #include "query_helper.h"
 #include "upgrade.h"
 #include "user_delegate.h"
+#include "change_notification.h"
+#include "iremote_broker.h"
+#include "ikvstore_observer.h"
+#include "iremote_proxy.h"
+#include "types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
+using namespace OHOS;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -107,6 +113,30 @@ public:
     void TearDown(){};
 protected:
 };
+
+class IKvStoreObserverMock : public IRemoteProxy<OHOS::DistributedKv::IKvStoreObserver> {
+public:
+    explicit IKvStoreObserverMock(const sptr<IRemoteObject> &impl);
+    ~IKvStoreObserverMock() = default;
+    void OnChange(const OHOS::DistributedKv::ChangeNotification &changeNotification) override;
+    void OnChange(const OHOS::DistributedKv::DataOrigin &origin,
+        OHOS::DistributedKv::IKvStoreObserver::Keys &&keys) override;
+};
+
+IKvStoreObserverMock::IKvStoreObserverMock(const sptr<IRemoteObject> &impl) : IRemoteProxy<IKvStoreObserver>(impl)
+{
+}
+
+void IKvStoreObserverMock::OnChange(const OHOS::DistributedKv::ChangeNotification &changeNotification)
+{
+    return;
+}
+
+void IKvStoreObserverMock::OnChange(const OHOS::DistributedKv::DataOrigin &origin,
+    OHOS::DistributedKv::IKvStoreObserver::Keys &&keys)
+{
+    return;
+}
 
 class KVDBWatcherTest : public testing::Test {
 public:
@@ -313,7 +343,7 @@ HWTEST_F(KvStoreSyncManagerTest, GetTimeoutSyncOps, TestSize.Level0)
     EXPECT_TRUE(syncManager.scheduleSyncOps_.empty());
     auto kvStatus = syncManager.GetTimeoutSyncOps(currentTime, syncOps);
     EXPECT_EQ(kvStatus, false);
-    syncManager.realtimeSyncingOps_.push_back(syncOp);
+    syncManager.realtimeSyncingOps_.emplace_back(syncOp);
     kvStatus = syncManager.GetTimeoutSyncOps(currentTime, syncOps);
     EXPECT_EQ(kvStatus, false);
     syncManager.realtimeSyncingOps_ = syncOps;
@@ -321,7 +351,7 @@ HWTEST_F(KvStoreSyncManagerTest, GetTimeoutSyncOps, TestSize.Level0)
     kvStatus = syncManager.GetTimeoutSyncOps(currentTime, syncOps);
     EXPECT_EQ(kvStatus, false);
 
-    syncManager.realtimeSyncingOps_.push_back(syncOp);
+    syncManager.realtimeSyncingOps_.emplace_back(syncOp);
     syncManager.scheduleSyncOps_.insert(std::make_pair(syncOp.beginTime, syncOp));
     EXPECT_TRUE(!syncManager.realtimeSyncingOps_.empty());
     EXPECT_TRUE(!syncManager.scheduleSyncOps_.empty());
@@ -350,6 +380,76 @@ HWTEST_F(KVDBWatcherTest, KVDBWatcher, TestSize.Level0)
     GeneralWatcher::ChangeData data;
     result = watcher->OnChange(origin, fields, std::move(data));
     EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: OnChange001
+* @tc.desc: OnChange test function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: suoqilong
+ */
+HWTEST_F(KVDBWatcherTest, OnChange001, TestSize.Level0)
+{
+    GeneralWatcher::Origin origin;
+    origin.store = "store";
+    GeneralWatcher::PRIFields primaryFields = {{"primaryFields1", "primaryFields2"}};
+    GeneralWatcher::ChangeInfo values;
+    values["store"][OP_INSERT].emplace_back(std::string("values1"));
+    values["store"][OP_INSERT].emplace_back(11LL);
+    values["store"][OP_INSERT].emplace_back(1.11);
+    values["store"][OP_UPDATE].emplace_back(std::string("values2"));
+    values["store"][OP_UPDATE].emplace_back(22LL);
+    values["store"][OP_UPDATE].emplace_back(2.22);
+    values["store"][OP_DELETE].emplace_back(std::string("values3"));
+    values["store"][OP_DELETE].emplace_back(33LL);
+    values["store"][OP_DELETE].emplace_back(3.33);
+    std::shared_ptr<KVDBWatcher> watcher = std::make_shared<KVDBWatcher>();
+    sptr<OHOS::DistributedKv::IKvStoreObserver> observer = nullptr;
+    watcher->SetObserver(observer);
+    EXPECT_EQ(watcher->observer_, nullptr);
+    auto result = watcher->OnChange(origin, primaryFields, std::move(values));
+    EXPECT_EQ(result, GeneralError::E_NOT_INIT);
+
+    sptr<IRemoteObject> impl_;
+    sptr<OHOS::DistributedKv::IKvStoreObserver> observers = new (std::nothrow) IKvStoreObserverMock(impl_);
+    watcher->SetObserver(observers);
+    EXPECT_NE(watcher->observer_, nullptr);
+    auto results = watcher->OnChange(origin, primaryFields, std::move(values));
+    EXPECT_EQ(results, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: OnChange002
+* @tc.desc: OnChange test function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: suoqilong
+ */
+HWTEST_F(KVDBWatcherTest, OnChange002, TestSize.Level0)
+{
+    GeneralWatcher::Origin origin;
+    origin.store = "store";
+    GeneralWatcher::Fields fields;
+    GeneralWatcher::ChangeData datas;
+    datas["store"][OP_INSERT].push_back({11LL});
+    datas["store"][OP_INSERT].push_back({1.11});
+    datas["store"][OP_INSERT].push_back({std::string("datas1")});
+    datas["store"][OP_INSERT].push_back({Bytes({1, 2, 3})});
+    datas["store"][OP_UPDATE].push_back({22LL});
+    datas["store"][OP_UPDATE].push_back({2.22});
+    datas["store"][OP_UPDATE].push_back({std::string("datas2")});
+    datas["store"][OP_UPDATE].push_back({Bytes({4, 5, 6})});
+    datas["store"][OP_DELETE].push_back({33LL});
+    datas["store"][OP_DELETE].push_back({3.33});
+    datas["store"][OP_DELETE].push_back({std::string("datas3")});
+    datas["store"][OP_DELETE].push_back({Bytes({7, 8, 9})});
+    std::shared_ptr<KVDBWatcher> watcher = std::make_shared<KVDBWatcher>();
+    sptr<OHOS::DistributedKv::IKvStoreObserver> observer = nullptr;
+    watcher->SetObserver(observer);
+    EXPECT_EQ(watcher->observer_, nullptr);
+    auto result = watcher->OnChange(origin, fields, std::move(datas));
+    EXPECT_EQ(result, GeneralError::E_NOT_INIT);
 }
 
 /**

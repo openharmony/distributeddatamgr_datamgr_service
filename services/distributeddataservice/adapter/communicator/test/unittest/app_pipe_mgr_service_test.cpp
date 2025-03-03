@@ -14,9 +14,8 @@
  */
 #define LOG_TAG "AppPipeMgrServiceTest"
 
-#include <gtest/gtest.h>
-
 #include "app_pipe_mgr.h"
+#include <gtest/gtest.h>
 #include "kvstore_utils.h"
 #include "reporter.h"
 #include "types.h"
