@@ -96,8 +96,9 @@ void StoreCache::CloseStores()
 {
     std::unique_lock<std::mutex> lock(taskMutex_);
     stores_.ForEach([](const auto &key, std::shared_ptr<Store> &storePtr) {
-        ZLOGI("CloseStores, stores:%{public}s", key.c_str());
-        storePtr->Close();
+        if (storePtr != nullptr) {
+            storePtr->Close();
+        }
         return false;
     });
     stores_.Clear();
