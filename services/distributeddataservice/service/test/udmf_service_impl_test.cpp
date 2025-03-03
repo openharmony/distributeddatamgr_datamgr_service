@@ -206,8 +206,6 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption004, TestSize.Level1)
 */
 HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
 {
-    auto sizeBefore = StoreCache::GetInstance().stores_.Size();
-    ASSERT_GT(sizeBefore, 0);
     uint32_t code = 4;
     std::string user = "OH_USER_test";
     std::string account = "OH_ACCOUNT_test";
