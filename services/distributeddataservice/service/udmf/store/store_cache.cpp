@@ -95,12 +95,7 @@ void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 void StoreCache::CloseStores()
 {
     std::unique_lock<std::mutex> lock(taskMutex_);
-    stores_.ForEach([](const auto &key, std::shared_ptr<Store> &storePtr) {
-        if (storePtr != nullptr) {
-            storePtr->Close();
-        }
-        return false;
-    });
+    ZLOGI("CloseStores, stores size:%{public}zu", stores_.Size());
     stores_.Clear();
 }
 } // namespace UDMF
