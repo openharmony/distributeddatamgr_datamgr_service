@@ -125,6 +125,62 @@ ohos_unittest("DeviceManagerAdapterTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
+ohos_unittest("ProcessCommunicatorImplTest") {
+  module_out_path = module_output_path
+
+  sources = [
+    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
+    "../src/communication_provider_impl.cpp",
+    "../src/communication_provider_impl.h",
+    "../src/communicator_context.cpp",
+    "../src/data_buffer.cpp",
+    "../src/process_communicator_impl.cpp",
+    "../src/softbus_adapter.h",
+    "../src/softbus_adapter_standard.cpp",
+    "../src/softbus_client.cpp",
+    "../src/softbus_client.h",
+    "unittest/process_communicator_impl_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/dfx",
+    "${data_service_path}/service/test/mock",
+    "../src",
+    "../../include/communicator",
+    "../../include/utils",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/dfx",
+    "${data_service_path}/framework/include/utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "dsoftbus:softbus_client",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "../../dfx:distributeddata_dfx",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
 ohos_unittest("SoftbusAdapterStandardTest") {
   module_out_path = module_output_path
 
@@ -195,6 +251,7 @@ group("unittest") {
     ":CommunicatorContextTest",
     ":CommunicatorDataBufferTest",
     ":DeviceManagerAdapterTest",
+    ":ProcessCommunicatorImplTest",
     ":SoftbusAdapterStandardTest",
     ":SoftbusClientTest",
   ]
