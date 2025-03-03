@@ -235,7 +235,7 @@ HWTEST_F(ProcessCommunicatorImplTest, RegOnSendAble, TestSize.Level0)
 {
     ASSERT_NE(communicator_, nullptr);
     OnSendAble sendAbleCallback = nullptr;
-    EXPECT_NO_THROW(communicator_->RegOnSendAble(sendAbleCallback));
+    EXPECT_NO_FATAL_FAILURE(communicator_->RegOnSendAble(sendAbleCallback));
 }
 
 /**
@@ -314,9 +314,9 @@ HWTEST_F(ProcessCommunicatorImplTest, OnMessage, TestSize.Level0)
     pipeInfo.userId = "OnMessageTest02";
     auto myOnDeviceChange = [](const DeviceInfos &devInfo, const uint8_t *data, uint32_t length) {};
     communicator_->onDataReceiveHandler_ = nullptr;
-    EXPECT_NO_THROW(communicator_->OnMessage(deviceInfo, ptr, size, pipeInfo));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnMessage(deviceInfo, ptr, size, pipeInfo));
     communicator_->onDataReceiveHandler_ = myOnDeviceChange;
-    EXPECT_NO_THROW(communicator_->OnMessage(deviceInfo, ptr, size, pipeInfo));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnMessage(deviceInfo, ptr, size, pipeInfo));
 }
 
 /**
@@ -331,14 +331,14 @@ HWTEST_F(ProcessCommunicatorImplTest, OnDeviceChanged, TestSize.Level0)
     ASSERT_NE(communicator_, nullptr);
     DeviceInfo deviceInfo;
     deviceInfo.uuid = "cloudDeviceUuid";
-    EXPECT_NO_THROW(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_ONREADY));
-    EXPECT_NO_THROW(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_ONREADY));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE));
     deviceInfo.uuid = "OnDeviceChangedTest";
     communicator_->onDeviceChangeHandler_ = nullptr;
-    EXPECT_NO_THROW(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE));
     auto myOnDeviceChange = [](const DeviceInfos &devInfo, bool isOnline) {};
     communicator_->onDeviceChangeHandler_ = myOnDeviceChange;
-    EXPECT_NO_THROW(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE));
 }
 
 /**
@@ -354,10 +354,10 @@ HWTEST_F(ProcessCommunicatorImplTest, OnSessionReady, TestSize.Level0)
     DeviceInfo deviceInfo;
     deviceInfo.uuid = "OnSessionReadyTest";
     communicator_->sessionListener_ = nullptr;
-    EXPECT_NO_THROW(communicator_->OnSessionReady(deviceInfo, 1));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnSessionReady(deviceInfo, 1));
     auto myOnSendAble = [](const DeviceInfos &deviceInfo, int deviceCommErrCode) {};
     communicator_->sessionListener_ = myOnSendAble;
-    EXPECT_NO_THROW(communicator_->OnSessionReady(deviceInfo, 1));
+    EXPECT_NO_FATAL_FAILURE(communicator_->OnSessionReady(deviceInfo, 1));
 }
 
 /**
