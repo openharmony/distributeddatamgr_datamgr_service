@@ -91,5 +91,14 @@ void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
     executorPool_ = executors;
 }
+
+void StoreCache::CloseStores()
+{
+    stores_.ForEach([](const auto &key, std::shared_ptr<Store> &storePtr) {
+        ZLOGI("CloseStores, stores:%{public}s", key.c_str());
+        storePtr->Close();
+        return false;
+    });
+}
 } // namespace UDMF
 } // namespace OHOS

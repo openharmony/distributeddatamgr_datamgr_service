@@ -21,6 +21,7 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "ipc_skeleton.h"
+#include "store_cache.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -42,6 +43,9 @@ void RuntimeStoreAccountObserver::OnAccountChanged(const AccountEventInfo &event
         metaData.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(metaData);
         std::string userPath = metaData.dataDir.append("/").append(eventInfo.userId);
         DistributedData::DirectoryManager::GetInstance().DeleteDirectory(userPath.c_str());
+    } else if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED) {
+        ZLOGI("foreground user change , start to close stores");
+        StoreCache::GetInstance().CloseStores();
     }
 }
 
