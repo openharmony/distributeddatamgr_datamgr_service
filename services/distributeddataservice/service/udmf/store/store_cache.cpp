@@ -94,7 +94,6 @@ void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 
 void StoreCache::CloseStores()
 {
-    std::unique_lock<std::mutex> lock(taskMutex_);
     ZLOGI("CloseStores, stores size:%{public}zu", stores_.Size());
     stores_.Clear();
 }
