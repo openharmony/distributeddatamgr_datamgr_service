@@ -410,6 +410,13 @@ HWTEST_F(KVDBWatcherTest, OnChange001, TestSize.Level0)
     EXPECT_EQ(watcher->observer_, nullptr);
     auto result = watcher->OnChange(origin, primaryFields, std::move(values));
     EXPECT_EQ(result, GeneralError::E_NOT_INIT);
+
+    sptr<IRemoteObject> impl_;
+    sptr<OHOS::DistributedKv::IKvStoreObserver> observers = new (std::nothrow) IKvStoreObserverMock(impl_);
+    watcher->SetObserver(observers);
+    EXPECT_NE(watcher->observer_, nullptr);
+    auto results = watcher->OnChange(origin, primaryFields, std::move(values));
+    EXPECT_EQ(results, GeneralError::E_OK);
 }
 
 /**
