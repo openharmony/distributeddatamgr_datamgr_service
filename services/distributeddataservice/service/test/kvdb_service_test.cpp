@@ -114,15 +114,6 @@ public:
 protected:
 };
 
-class IKvStoreObserverMock : public IRemoteProxy<OHOS::DistributedKv::IKvStoreObserver> {
-public:
-    explicit IKvStoreObserverMock(const sptr<IRemoteObject> &impl);
-    ~IKvStoreObserverMock() = default;
-    void OnChange(const OHOS::DistributedKv::ChangeNotification &changeNotification) override;
-    void OnChange(const OHOS::DistributedKv::DataOrigin &origin,
-        OHOS::DistributedKv::IKvStoreObserver::Keys &&keys) override;
-};
-
 class KVDBWatcherTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
