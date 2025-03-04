@@ -15,11 +15,11 @@
 #define LOG_TAG "AppPipeMgrServiceTest"
 
 #include "app_pipe_mgr.h"
-#include <gtest/gtest.h>
 #include "kvstore_utils.h"
+#include "log_print.h"
 #include "reporter.h"
 #include "types.h"
-#include "log_print.h"
+#include <gtest/gtest.h>
 
 namespace OHOS::Test {
 using namespace testing::ext;

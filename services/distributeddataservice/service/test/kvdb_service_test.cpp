@@ -15,30 +15,30 @@
 
 #include <gtest/gtest.h>
 
-#include "mock/access_token_mock.h"
 #include "auth_delegate.h"
 #include "bootstrap.h"
+#include "change_notification.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
+#include "ikvstore_observer.h"
+#include "iremote_broker.h"
+#include "iremote_proxy.h"
 #include "kvdb_general_store.h"
 #include "kvdb_notifier_proxy.h"
 #include "kvdb_watcher.h"
 #include "kvstore_meta_manager.h"
 #include "kvstore_sync_manager.h"
 #include "log_print.h"
-#include "mock/meta_data_manager_mock.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "mock/access_token_mock.h"
+#include "mock/meta_data_manager_mock.h"
 #include "query_helper.h"
+#include "types.h"
 #include "upgrade.h"
 #include "user_delegate.h"
-#include "change_notification.h"
-#include "iremote_broker.h"
-#include "ikvstore_observer.h"
-#include "iremote_proxy.h"
-#include "types.h"
 
 using namespace testing::ext;
 using namespace DistributedDB;
