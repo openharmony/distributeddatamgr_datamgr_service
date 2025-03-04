@@ -31,6 +31,7 @@ public:
     std::shared_ptr<Store> GetStore(std::string intention);
     static StoreCache &GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+    void CloseStores();
 
 private:
     StoreCache() {}

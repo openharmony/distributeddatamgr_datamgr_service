@@ -92,6 +92,7 @@ public:
     bool Unmarshal(const json &node) override;
     bool IsValid() const;
     Database GetDataBase(const std::string &storeId);
+    std::vector<std::string> GetStores();
 };
 
 // Table mode of device data sync time

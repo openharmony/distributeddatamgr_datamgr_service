@@ -183,7 +183,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
     std::vector<uint8_t> randomKey = Random(KEY_LENGTH);
     SecretKeyMetaData secretKey;
     secretKey.storeType = metaData_.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey);
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     EXPECT_EQ(secretKey.sKey.size(), ENCRYPT_KEY_LENGTH);
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true));
 

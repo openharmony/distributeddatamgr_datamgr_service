@@ -343,23 +343,7 @@ uint32_t SoftBusAdapter::GetMtuSize(const DeviceId &deviceId)
 
 uint32_t SoftBusAdapter::GetTimeout(const DeviceId &deviceId)
 {
-    uint32_t interval = DEFAULT_TIMEOUT;
-    connects_.ComputeIfPresent(deviceId.deviceId, [&interval](auto, auto &connects) {
-        uint32_t time = 0;
-        for (auto conn : connects) {
-            if (conn == nullptr) {
-                continue;
-            }
-            if (time < conn->GetTimeout()) {
-                time = conn->GetTimeout();
-            }
-        }
-        if (time != 0) {
-            interval = time;
-        }
-        return true;
-    });
-    return interval;
+    return DEFAULT_TIMEOUT;
 }
 
 std::string SoftBusAdapter::DelConnect(int32_t socket, bool isForce)

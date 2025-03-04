@@ -484,6 +484,28 @@ HWTEST_F(CloudServiceImplTest, CheckNotifyConditions, TestSize.Level0)
     EXPECT_EQ(status, CloudData::CloudService::CLOUD_DISABLE_SWITCH);
 }
 
+/**
+ * @tc.name: GetDfxFaultType
+ * @tc.desc: test GetDfxFaultType function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, GetDfxFaultType, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::ENABLE_CLOUD), "ENABLE_CLOUD");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::DISABLE_CLOUD), "DISABLE_CLOUD");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SWITCH_ON), "SWITCH_ON");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SWITCH_OFF), "SWITCH_OFF");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::QUERY_SYNC_INFO), "QUERY_SYNC_INFO");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::USER_CHANGE), "USER_CHANGE");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::USER_UNLOCK), "USER_UNLOCK");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::NETWORK_RECOVERY), "NETWORK_RECOVERY");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SERVICE_INIT), "SERVICE_INIT");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::ACCOUNT_STOP), "SYNC_TASK");
+}
+
 class ComponentConfigTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -516,6 +538,7 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     config.destructor = "destructor";
     config.params = "";
     Serializable::json node;
+    EXPECT_EQ(config.params.empty(), true);
 
     EXPECT_EQ(config.Marshal(node), true);
     EXPECT_EQ(node["description"], config.description);
@@ -529,8 +552,10 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     componentConfig.constructor = "constructor";
     componentConfig.destructor = "destructor";
     componentConfig.params = "params";
+    Serializable::json node1;
+    EXPECT_EQ(componentConfig.params.empty(), false);
 
-    EXPECT_EQ(config.Marshal(node), true);
+    EXPECT_EQ(componentConfig.Marshal(node1), true);
     EXPECT_EQ(node["description"], componentConfig.description);
     EXPECT_EQ(node["lib"], componentConfig.lib);
     EXPECT_EQ(node["constructor"], componentConfig.constructor);

@@ -35,6 +35,7 @@
 namespace OHOS::CloudData {
 class CloudServiceImpl : public CloudServiceStub {
 public:
+    using CloudLastSyncInfo = DistributedData::CloudLastSyncInfo;
     using StoreMetaData = DistributedData::StoreMetaData;
     using StoreInfo = DistributedData::StoreInfo;
     CloudServiceImpl();
@@ -106,6 +107,7 @@ private:
         ACCOUNT_STOP = 9,
     };
 
+    using Database = DistributedData::Database;
     using CloudInfo = DistributedData::CloudInfo;
     using SchemaMeta = DistributedData::SchemaMeta;
     using Event = DistributedData::Event;
@@ -189,6 +191,8 @@ private:
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
+    QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
+                                         const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

@@ -135,7 +135,10 @@ void BackupManager::DoBackup(const StoreMetaData &meta)
     std::vector<uint8_t> decryptKey;
     SecretKeyMetaData secretKey;
     if (MetaDataManager::GetInstance().LoadMeta(key, secretKey, true)) {
-        CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptKey);
+        CryptoManager::GetInstance().Decrypt(meta, secretKey, decryptKey);
+        if (secretKey.area < 0) {
+            MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
+        }
     }
     auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta);
     std::string backupFullPath = backupPath + "/" + AUTO_BACKUP_NAME;
@@ -298,10 +301,11 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
 
 bool BackupManager::GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password)
 {
-    std::string key = meta.GetBackupSecretKey();
     SecretKeyMetaData secretKey;
-    MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
-    return CryptoManager::GetInstance().Decrypt(secretKey.sKey, password);
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true)) {
+        return false;
+    }
+    return CryptoManager::GetInstance().Decrypt(meta, secretKey, password);
 }
 
 bool BackupManager::IsFileExist(const std::string &path)
