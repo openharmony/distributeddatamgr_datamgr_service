@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 
-#define LOG_TAG "UdmfServiceStubTest"
+#define LOG_TAG "UdmfServiceStubMockTest"
 #include "udmf_service_stub.h"
 #include "udmf_service_impl.h"
 #include "udmf_types_util.h"
@@ -22,7 +22,7 @@
 using namespace OHOS::DistributedData;
 namespace OHOS::UDMF {
 using namespace testing::ext;
-class UdmfServiceStubTest : public testing::Test {
+class UdmfServiceStubMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void) {}
     static void TearDownTestCase(void) {}
@@ -36,7 +36,7 @@ public:
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnRemoteRequest001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnRemoteRequest001, TestSize.Level1)
 {
     uint32_t code = 17; // invalid code
     MessageParcel data;
@@ -52,13 +52,13 @@ HWTEST_F(UdmfServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnSetData001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnSetData001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnSetData(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -67,13 +67,13 @@ HWTEST_F(UdmfServiceStubTest, OnSetData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnGetData001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnGetData001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnGetData(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -82,13 +82,13 @@ HWTEST_F(UdmfServiceStubTest, OnGetData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnGetBatchData001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnGetBatchData001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnGetBatchData(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -97,13 +97,13 @@ HWTEST_F(UdmfServiceStubTest, OnGetBatchData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnUpdateData001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnUpdateData001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnUpdateData(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -112,13 +112,13 @@ HWTEST_F(UdmfServiceStubTest, OnUpdateData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnDeleteData001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnDeleteData001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnDeleteData(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -127,13 +127,13 @@ HWTEST_F(UdmfServiceStubTest, OnDeleteData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnGetSummary001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnGetSummary001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnGetSummary(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -142,13 +142,13 @@ HWTEST_F(UdmfServiceStubTest, OnGetSummary001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnAddPrivilege001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnAddPrivilege001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnAddPrivilege(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -157,13 +157,13 @@ HWTEST_F(UdmfServiceStubTest, OnAddPrivilege001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnIsRemoteData001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnIsRemoteData001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnIsRemoteData(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -172,13 +172,13 @@ HWTEST_F(UdmfServiceStubTest, OnIsRemoteData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnSetAppShareOption001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnSetAppShareOption001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnSetAppShareOption(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -187,13 +187,13 @@ HWTEST_F(UdmfServiceStubTest, OnSetAppShareOption001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnGetAppShareOption001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnGetAppShareOption001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnGetAppShareOption(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -202,13 +202,13 @@ HWTEST_F(UdmfServiceStubTest, OnGetAppShareOption001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnRemoveAppShareOption001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnRemoveAppShareOption001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnRemoveAppShareOption(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -217,13 +217,13 @@ HWTEST_F(UdmfServiceStubTest, OnRemoveAppShareOption001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnObtainAsynProcess001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnObtainAsynProcess001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnObtainAsynProcess(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 
 /**
@@ -232,12 +232,27 @@ HWTEST_F(UdmfServiceStubTest, OnObtainAsynProcess001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceStubTest, OnClearAsynProcessByKey001, TestSize.Level1)
+HWTEST_F(UdmfServiceStubMockTest, OnClearAsynProcessByKey001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnClearAsynProcessByKey(data, reply);
-    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
+}
+
+/**
+* @tc.name:OnSync001
+* @tc.desc: Abnormal test of OnSync, data is invalid
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubMockTest, OnSync001, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    UdmfServiceImpl udmfServiceImpl;
+    int ret = udmfServiceImpl.OnSync(data, reply);
+    EXPECT_EQ(ret, E_WRITE_PARCEL_ERROR);
 }
 }; // namespace UDMF
