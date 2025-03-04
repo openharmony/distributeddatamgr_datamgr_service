@@ -338,9 +338,6 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             localMeta.enableCloud = param.enableCloud_;
             MetaDataManager::GetInstance().SaveMeta(localMeta.GetKey(), localMeta, true);
         }
-        if (localMeta.enableCloud) {
-            GetCloudSchema(param);
-        }
     }
     std::vector<DistributedData::Reference> relationships;
     for (const auto &reference : references) {
@@ -863,10 +860,11 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         }
         DeleteCloneSecretKey(meta);
     }
+    GetSchema(param);
     return RDB_OK;
 }
 
-void RdbServiceImpl::GetCloudSchema(const RdbSyncerParam &param)
+void RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
 {
     if (executors_ != nullptr) {
         StoreInfo storeInfo;
