@@ -198,6 +198,10 @@ int32_t CryptoManager::PrepareRootKey(uint32_t storageLevel, const std::string &
         userId.c_str(), status);
     return status;
 }
+std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId)
+{
+    return Encrypt(key, area, userId, vecRootKeyAlias_, vecNonce_);
+}
 
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId,
                                             std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce)
@@ -281,6 +285,12 @@ bool CryptoManager::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secret
         return Decrypt(secretKeyMeta.sKey, key, secretKeyMeta.area, meta.user, vecRootKeyAlias_, vecNonce_);
     }
     return false;
+}
+
+bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
+    const std::string &userId)
+{
+    return Decrypt(source, key, area, userId, vecRootKeyAlias_, vecNonce_);
 }
 
 bool CryptoManager::Decrypt(std::vector<uint8_t> &source,

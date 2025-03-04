@@ -49,10 +49,12 @@ public:
     static CryptoManager &GetInstance();
     int32_t GenerateRootKey();
     int32_t CheckRootKey();
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area,
                                  const std::string &userId,
                                  std::vector<uint8_t> &keyAlias,
                                  std::vector<uint8_t> &nonce);
+    bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key,
                  int32_t area, const std::string &userId,
                  std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce);
@@ -68,9 +70,6 @@ public:
         NOT_EXIST,
         ERROR,
     };
-    std::vector<uint8_t> vecRootKeyAlias_{};
-    std::vector<uint8_t> vecNonce_{};
-    std::vector<uint8_t> vecAad_{};
 private:
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
     static constexpr const char *HKS_BLOB_TYPE_NONCE = "Z5s0Bo571KoqwIi6";
@@ -91,6 +90,9 @@ private:
     int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId);
     bool BuildImportKeyParams(HksParamSet *&params);
     CryptoManager();
+    std::vector<uint8_t> vecRootKeyAlias_{};
+    std::vector<uint8_t> vecNonce_{};
+    std::vector<uint8_t> vecAad_{};
     ~CryptoManager();
     std::mutex mutex_;
 };

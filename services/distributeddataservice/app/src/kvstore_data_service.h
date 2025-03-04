@@ -195,6 +195,7 @@ public:
 
     bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId);
     bool ImportCloneKey(const std::string &keyStr, const std::string &ivStr);
+    void DeleteCloneKey();
     
     std::string GetBackupReplyCode(int replyCode, const std::string &info = "");
 
@@ -211,10 +212,7 @@ public:
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
     std::shared_ptr<ExecutorPool> executors_;
     std::vector<uint8_t> cloneNonce_{};
-    inline static std::vector<uint8_t> cloneKeyAlias_ = [] {
-        const std::string str = "distributed_db_backup_key";
-        return std::vector<uint8_t>(str.begin(), str.end());
-    }();
+    std::vector<uint8_t> cloneKeyAlias_{};
     static constexpr int VERSION_WIDTH = 11;
     static constexpr const char *INDENTATION = "    ";
     static constexpr int32_t FORMAT_BLANK_SIZE = 32;

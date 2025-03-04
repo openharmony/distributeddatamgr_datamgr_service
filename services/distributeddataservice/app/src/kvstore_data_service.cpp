@@ -408,6 +408,8 @@ std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
 
 bool KvStoreDataService::ImportCloneKey(const std::string &keyStr, const std::string &ivStr)
 {
+    const std::string str = "distributed_db_backup_key";
+    cloneKeyAlias_ = std::vector<uint8_t>(str.begin(), str.end());
     auto key = ConvertDecStrToVec(keyStr);
     if (key.size() != KEY_SIZE) {
         key.assign(key.size(), 0);
@@ -429,6 +431,12 @@ bool KvStoreDataService::ImportCloneKey(const std::string &keyStr, const std::st
     key.assign(key.size(), 0);
     iv.assign(iv.size(), 0);
     return true;
+}
+
+void KvStoreDataService::DeleteCloneKey()
+{
+    CryptoManager::GetInstance().DeleteKey(cloneKeyAlias_);
+    cloneKeyAlias_.clear();
 }
 
 bool KvStoreDataService::WriteBackupInfo(const std::string &content, const std::string &backupPath)
@@ -453,7 +461,7 @@ bool KvStoreDataService::WriteBackupInfo(const std::string &content, const std::
 int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 {
     CloneBackupInfo backupInfo;
-    if (!backupInfo.Unmarshal(DistributedData::Serializable::ToJson(data.ReadString())) ||
+    if (!backupInfo.Unmarshal(data.ReadString()) ||
         backupInfo.application_selection.empty() || backupInfo.userId.empty()) {
         return -1;
     }
@@ -464,10 +472,10 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 
     std::string content;
     if (!GetSecretKeyBackup(backupInfo.application_selection, backupInfo.userId, content)) {
-        CryptoManager::GetInstance().DeleteKey(cloneKeyAlias_);
+        DeleteCloneKey();
         return -1;
     };
-    CryptoManager::GetInstance().DeleteKey(cloneKeyAlias_);
+    DeleteCloneKey();
 
     std::string backupPath;
     if (!DirectoryManager::GetInstance().GetCloneBackupPath(backupInfo.userId, backupPath)) {
@@ -554,13 +562,13 @@ int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
         return ReplyForRestore(reply, -1);
     }
     CloneBackupInfo backupInfo;
-    bool ret = backupInfo.Unmarshal(DistributedData::Serializable::ToJson(data.ReadString()));
+    bool ret = backupInfo.Unmarshal(data.ReadString());
     if (!ret || backupInfo.userId.empty()) {
         return ReplyForRestore(reply, -1);
     }
 
     if (!ImportCloneKey(backupInfo.encryption_info.encryption_symkey, backupInfo.encryption_info.gcmParams_iv)) {
-        CryptoManager::GetInstance().DeleteKey(cloneKeyAlias_);
+        DeleteCloneKey();
         return ReplyForRestore(reply, -1);
     }
     for (const auto &item : backupData.infos) {
@@ -568,7 +576,7 @@ int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
             continue;
         }
     }
-    CryptoManager::GetInstance().DeleteKey(cloneKeyAlias_);
+    DeleteCloneKey();
     return ReplyForRestore(reply, 0);
 }
 
@@ -619,15 +627,11 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     }
     SecretKeyMetaData secretKey;
     secretKey.storeType = item.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(
-        rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
-        CryptoManager::GetInstance().vecRootKeyAlias_,
-        CryptoManager::GetInstance().vecNonce_);
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     secretKey.time = { item.time.begin(), item.time.end() };
     sKey.assign(sKey.size(), 0);
     rawKey.assign(rawKey.size(), 0);
     if (!MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true)) {
-        ZLOGE("Save meta failed.");
         return false;
     }
     return true;

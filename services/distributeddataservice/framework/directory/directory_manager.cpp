@@ -98,6 +98,7 @@ bool DirectoryManager::GetCloneBackupPath(const std::string &userId, std::string
     size_t pos = path.find(pattern);
     if (pos != std::string::npos) {
         path.replace(pos, pattern.length(), userId);
+        CreateDirectory(path.substr(0, path.rfind('/')));
         return true;
     }
     return false;

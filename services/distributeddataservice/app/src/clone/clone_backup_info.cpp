@@ -50,22 +50,23 @@ bool CloneBundleInfo::Marshal(json &node) const
 
 bool CloneBackupInfo::Unmarshal(const json &node)
 {
-    if (!node.is_array()) {
+    auto items = DistributedData::Serializable::ToJson(node);
+    if (!items.is_array()) {
         return false;
     }
     std::string type;
-    auto size = node.size();
+    auto size = items.size();
     for (size_t i = 0; i < size; i++) {
-        bool result = GetValue(node[i], GET_NAME(type), type);
+        bool result = GetValue(items[i], GET_NAME(type), type);
         if (!result || type.empty()) {
             continue;
         }
         if (type == GET_NAME(encryption_info)) {
-            GetValue(node[i], "detail", encryption_info);
+            GetValue(items[i], "detail", encryption_info);
         } else if (type == GET_NAME(application_selection)) {
-            GetValue(node[i], "detail", application_selection);
+            GetValue(items[i], "detail", application_selection);
         } else if (type == GET_NAME(userId)) {
-            GetValue(node[i], "detail", userId);
+            GetValue(items[i], "detail", userId);
         }
     }
     return true;
