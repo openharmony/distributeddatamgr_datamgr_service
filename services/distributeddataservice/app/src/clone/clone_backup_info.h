@@ -19,9 +19,9 @@
 namespace OHOS {
 namespace DistributedData {
 struct CloneEncryptionInfo final : public Serializable {
-    std::string encryption_symkey;
-    std::string encryption_algname;
-    std::string gcmParams_iv;
+    std::string symkey;
+    std::string algName;
+    std::string iv;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
     ~CloneEncryptionInfo();
@@ -35,8 +35,8 @@ struct CloneBundleInfo final : public Serializable {
 };
 
 struct CloneBackupInfo final : public Serializable {
-    CloneEncryptionInfo encryption_info;
-    std::vector<CloneBundleInfo> application_selection;
+    CloneEncryptionInfo encryptionInfo;
+    std::vector<CloneBundleInfo> bundleInfos;
     std::string userId;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;

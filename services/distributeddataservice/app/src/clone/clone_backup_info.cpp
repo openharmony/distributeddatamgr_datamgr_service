@@ -18,9 +18,9 @@ namespace OHOS {
 namespace DistributedData {
 bool CloneEncryptionInfo::Unmarshal(const json &node)
 {
-    bool res = GetValue(node, GET_NAME(encryption_symkey), encryption_symkey);
-    res = GetValue(node, GET_NAME(encryption_algname), encryption_algname) && res;
-    res = GetValue(node, GET_NAME(gcmParams_iv), gcmParams_iv) && res;
+    bool res = GetValue(node, "encryption_symkey", symkey);
+    res = GetValue(node, "encryption_algname", algName) && res;
+    res = GetValue(node, "gcmParams_iv", iv) && res;
     return res;
 }
 
@@ -31,9 +31,9 @@ bool CloneEncryptionInfo::Marshal(json &node) const
 
 CloneEncryptionInfo::~CloneEncryptionInfo()
 {
-    encryption_symkey.assign(encryption_symkey.size(), 0);
-    encryption_algname.assign(encryption_algname.size(), 0);
-    gcmParams_iv.assign(gcmParams_iv.size(), 0);
+    symkey.assign(symkey.size(), 0);
+    algName.assign(algName.size(), 0);
+    iv.assign(iv.size(), 0);
 }
 
 bool CloneBundleInfo::Unmarshal(const json &node)
@@ -61,11 +61,11 @@ bool CloneBackupInfo::Unmarshal(const json &node)
         if (!result || type.empty()) {
             continue;
         }
-        if (type == GET_NAME(encryption_info)) {
-            GetValue(items[i], "detail", encryption_info);
-        } else if (type == GET_NAME(application_selection)) {
-            GetValue(items[i], "detail", application_selection);
-        } else if (type == GET_NAME(userId)) {
+        if (type == "encryption_info") {
+            GetValue(items[i], "detail", encryptionInfo);
+        } else if (type == "application_selection") {
+            GetValue(items[i], "detail", bundleInfos);
+        } else if (type == "userId") {
             GetValue(items[i], "detail", userId);
         }
     }

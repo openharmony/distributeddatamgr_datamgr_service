@@ -408,15 +408,18 @@ std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
 
 bool KvStoreDataService::ImportCloneKey(const std::string &keyStr, const std::string &ivStr)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     const std::string str = "distributed_db_backup_key";
     cloneKeyAlias_ = std::vector<uint8_t>(str.begin(), str.end());
     auto key = ConvertDecStrToVec(keyStr);
     if (key.size() != KEY_SIZE) {
+        ZLOGE("ImportKey failed, key size not correct, key size:%{public}zu", key.size());
         key.assign(key.size(), 0);
         return false;
     }
     auto iv = ConvertDecStrToVec(ivStr);
     if (iv.size() != AES_256_NONCE_SIZE) {
+        ZLOGE("ImportKey failed, iv size not correct, iv size:%{public}zu", iv.size());
         key.assign(key.size(), 0);
         iv.assign(iv.size(), 0);
         return false;
@@ -444,10 +447,12 @@ bool KvStoreDataService::WriteBackupInfo(const std::string &content, const std::
     FILE *fp = fopen(backupPath.c_str(), "w");
 
     if (!fp) {
+        ZLOGE("Secret key backup file fopen failed, path: %{public}s, errno: %{public}d", backupPath.c_str(), errno);
         return false;
     }
     size_t ret = fwrite(content.c_str(), 1, content.length(), fp);
     if (ret != content.length()) {
+        ZLOGE("Secret key backup file fwrite failed, path: %{public}s, errno: %{public}d", backupPath.c_str(), errno);
         (void)fclose(fp);
         return false;
     }
@@ -462,16 +467,16 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 {
     CloneBackupInfo backupInfo;
     if (!backupInfo.Unmarshal(data.ReadString()) ||
-        backupInfo.application_selection.empty() || backupInfo.userId.empty()) {
+        backupInfo.bundleInfos.empty() || backupInfo.userId.empty()) {
         return -1;
     }
 
-    if (!ImportCloneKey(backupInfo.encryption_info.encryption_symkey, backupInfo.encryption_info.gcmParams_iv)) {
+    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey, backupInfo.encryptionInfo.iv)) {
         return -1;
     }
 
     std::string content;
-    if (!GetSecretKeyBackup(backupInfo.application_selection, backupInfo.userId, content)) {
+    if (!GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, content)) {
         DeleteCloneKey();
         return -1;
     };
@@ -508,9 +513,9 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
     if (!CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, password)) {
         return {};
     };
+    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias_, .nonce = cloneNonce_ };
     auto reEncryptedKey = CryptoManager::GetInstance().Encrypt(
-        password, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, cloneKeyAlias_,
-        cloneNonce_);
+        password, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams);
     password.assign(password.size(), 0);
     if (reEncryptedKey.size() == 0) {
         return {};
@@ -567,7 +572,7 @@ int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
         return ReplyForRestore(reply, -1);
     }
 
-    if (!ImportCloneKey(backupInfo.encryption_info.encryption_symkey, backupInfo.encryption_info.gcmParams_iv)) {
+    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey, backupInfo.encryptionInfo.iv)) {
         DeleteCloneKey();
         return ReplyForRestore(reply, -1);
     }
@@ -619,8 +624,8 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     metaData.instanceId = item.instanceId;
     auto sKey = DistributedData::Base64::Decode(item.sKey);
     std::vector<uint8_t> rawKey;
-    if (!CryptoManager::GetInstance().Decrypt(sKey, rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER,
-        cloneKeyAlias_, cloneNonce_)) {
+    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias_, .nonce = cloneNonce_ };
+    if (!CryptoManager::GetInstance().Decrypt(sKey, rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams)) {
         sKey.assign(sKey.size(), 0);
         rawKey.assign(rawKey.size(), 0);
         return false;

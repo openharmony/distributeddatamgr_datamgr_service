@@ -222,6 +222,7 @@ public:
     static constexpr pid_t INVALID_UID = -1;
     static constexpr pid_t INVALID_PID = -1;
     static constexpr uint32_t INVALID_TOKEN = 0;
+    std::mutex mutex_;
 };
 }
 #endif  // KVSTORE_DATASERVICE_H

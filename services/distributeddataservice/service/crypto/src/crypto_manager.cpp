@@ -55,7 +55,8 @@ bool CryptoManager::AddHksParams(HksParamSet *params, CryptoManager::ParamConfig
     struct HksBlob blobAad = { uint32_t(vecAad_.size()), vecAad_.data() };
     std::vector<HksParam> hksParam = {
         { .tag = HKS_TAG_PURPOSE, .uint32Param = paramConfig.purpose },
-        { .tag = HKS_TAG_NONCE, .blob = { uint32_t(paramConfig.nonce.size()), paramConfig.nonce.data() } },
+        { .tag = HKS_TAG_NONCE,
+            .blob = { uint32_t(paramConfig.nonce.size()), const_cast<uint8_t *>(paramConfig.nonce.data()) } },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
         { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = paramConfig.storageLevel },
     };
@@ -200,11 +201,12 @@ int32_t CryptoManager::PrepareRootKey(uint32_t storageLevel, const std::string &
 }
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId)
 {
-    return Encrypt(key, area, userId, vecRootKeyAlias_, vecNonce_);
+    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
+    return Encrypt(key, area, userId, encryptParams);
 }
 
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId,
-                                            std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce)
+    EncryptParams &encryptParams)
 {
     uint32_t storageLevel = GetStorageLevel(area);
     if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
@@ -218,7 +220,7 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
         return {};
     }
     ParamConfig paramConfig = {
-        .nonce = nonce,
+        .nonce = encryptParams.nonce,
         .purpose = HKS_KEY_PURPOSE_ENCRYPT,
         .storageLevel = storageLevel,
         .userId = userId
@@ -235,7 +237,9 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
 
     uint8_t cipherBuf[256] = { 0 };
     struct HksBlob cipherText = { sizeof(cipherBuf), cipherBuf };
-    struct HksBlob keyName = { uint32_t(keyAlias.size()), keyAlias.data() };
+    struct HksBlob keyName = {
+        uint32_t(encryptParams.keyAlias.size()),
+        const_cast<uint8_t *>(encryptParams.keyAlias.data())};
     struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(key.data()) };
     ret = HksEncrypt(&keyName, params, &plainKey, &cipherText);
     (void)HksFreeParamSet(&params);
@@ -256,9 +260,10 @@ bool CryptoManager::UpdateSecretKey(const StoreMetaData &meta, const std::vector
         return false;
     }
     SecretKeyMetaData secretKey;
+    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
     secretKey.storeType = meta.storeType;
     secretKey.area = meta.area;
-    secretKey.sKey = Encrypt(key, meta.area, meta.user, vecRootKeyAlias_, vecNonce_);
+    secretKey.sKey = Encrypt(key, meta.area, meta.user, encryptParams);
     auto time = system_clock::to_time_t(system_clock::now());
     secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
     if (secretKeyType == LOCAL_SECRET_KEY) {
@@ -271,9 +276,10 @@ bool CryptoManager::UpdateSecretKey(const StoreMetaData &meta, const std::vector
 bool CryptoManager::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secretKeyMeta, std::vector<uint8_t> &key,
     SecretKeyType secretKeyType)
 {
+    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
     if (secretKeyMeta.area < 0) {
         ZLOGI("Decrypt old secret key");
-        if (Decrypt(secretKeyMeta.sKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, vecRootKeyAlias_, vecNonce_)) {
+        if (Decrypt(secretKeyMeta.sKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams)) {
             StoreMetaData metaData;
             if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true)) {
                 ZLOGI("Upgrade secret key");
@@ -282,7 +288,7 @@ bool CryptoManager::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secret
             return true;
         }
     } else {
-        return Decrypt(secretKeyMeta.sKey, key, secretKeyMeta.area, meta.user, vecRootKeyAlias_, vecNonce_);
+        return Decrypt(secretKeyMeta.sKey, key, secretKeyMeta.area, meta.user, encryptParams);
     }
     return false;
 }
@@ -290,12 +296,12 @@ bool CryptoManager::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secret
 bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
     const std::string &userId)
 {
-    return Decrypt(source, key, area, userId, vecRootKeyAlias_, vecNonce_);
+    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
+    return Decrypt(source, key, area, userId, encryptParams);
 }
 
-bool CryptoManager::Decrypt(std::vector<uint8_t> &source,
-                            std::vector<uint8_t> &key, int32_t area, const std::string &userId,
-                            std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce)
+bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key,
+    int32_t area, const std::string &userId, EncryptParams &encryptParams)
 {
     uint32_t storageLevel = GetStorageLevel(area);
     if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
@@ -309,7 +315,7 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source,
     }
 
     ParamConfig paramConfig = {
-        .nonce = nonce,
+        .nonce = encryptParams.nonce,
         .purpose = HKS_KEY_PURPOSE_DECRYPT,
         .storageLevel = storageLevel,
         .userId = userId
@@ -328,8 +334,9 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source,
     uint8_t plainBuf[256] = { 0 };
     struct HksBlob plainKeyBlob = { sizeof(plainBuf), plainBuf };
     struct HksBlob encryptedKeyBlob = { uint32_t(source.size()), source.data() };
-    struct HksBlob keyName = { uint32_t(keyAlias.size()), keyAlias.data() };
-    
+    struct HksBlob keyName = { uint32_t(encryptParams.keyAlias.size()),
+        const_cast<uint8_t *>(encryptParams.keyAlias.data()) };
+
     ret = HksDecrypt(&keyName, params, &encryptedKeyBlob, &plainKeyBlob);
     (void)HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -376,16 +383,16 @@ bool CryptoManager::BuildImportKeyParams(struct HksParamSet *&params)
     return true;
 }
 
-bool CryptoManager::ImportKey(std::vector<uint8_t> &key, std::vector<uint8_t> &keyAlias)
+bool CryptoManager::ImportKey(const std::vector<uint8_t> &key, const std::vector<uint8_t> &keyAlias)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    struct HksBlob hksKey = { key.size(), key.data()};
+    struct HksBlob hksKey = { key.size(), const_cast<uint8_t *>(key.data()) };
     struct HksParamSet *params = nullptr;
     if (!BuildImportKeyParams(params)) {
         return false;
     }
 
-    struct HksBlob keyName = { uint32_t(keyAlias.size()), keyAlias.data() };
+    struct HksBlob keyName = { uint32_t(keyAlias.size()), const_cast<uint8_t *>(keyAlias.data()) };
     int32_t ret = HksImportKey(&keyName, params, &hksKey);
     if (ret != HKS_SUCCESS) {
         ZLOGE("Import key failed: %{public}d.", ret);
@@ -396,9 +403,9 @@ bool CryptoManager::ImportKey(std::vector<uint8_t> &key, std::vector<uint8_t> &k
     return true;
 }
 
-bool CryptoManager::DeleteKey(std::vector<uint8_t> &keyAlias)
+bool CryptoManager::DeleteKey(const std::vector<uint8_t> &keyAlias)
 {
-    struct HksBlob keyName = { uint32_t(keyAlias.size()), keyAlias.data() };
+    struct HksBlob keyName = { uint32_t(keyAlias.size()), const_cast<uint8_t *>(keyAlias.data()) };
     struct HksParamSet *params = nullptr;
     if (!BuildImportKeyParams(params)) {
         return false;

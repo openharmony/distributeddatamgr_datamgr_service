@@ -33,10 +33,14 @@ public:
         CLONE_SECRET_KEY,
     };
     struct ParamConfig {
-        std::vector<uint8_t> &nonce;
+        const std::vector<uint8_t> &nonce;
         uint32_t purpose;
         uint32_t storageLevel;
         std::string userId;
+    };
+    struct EncryptParams {
+        const std::vector<uint8_t> &keyAlias;
+        const std::vector<uint8_t> &nonce;
     };
     enum Area : int32_t {
         EL0,
@@ -50,16 +54,15 @@ public:
     int32_t GenerateRootKey();
     int32_t CheckRootKey();
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area,
-                                 const std::string &userId,
-                                 std::vector<uint8_t> &keyAlias,
-                                 std::vector<uint8_t> &nonce);
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key,
+        int32_t area, const std::string &userId, EncryptParams &params
+    );
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key,
-                 int32_t area, const std::string &userId,
-                 std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce);
-    bool ImportKey(std::vector<uint8_t> &key, std::vector<uint8_t> &keyAlias);
-    bool DeleteKey(std::vector<uint8_t> &keyAlias);
+        int32_t area, const std::string &userId, EncryptParams &params
+    );
+    bool ImportKey(const std::vector<uint8_t> &key, const std::vector<uint8_t> &keyAlias);
+    bool DeleteKey(const std::vector<uint8_t> &keyAlias);
     bool UpdateSecretKey(const StoreMetaData &meta, const std::vector<uint8_t> &password,
         SecretKeyType secretKeyType = LOCAL_SECRET_KEY);
     bool Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secretKeyMeta, std::vector<uint8_t> &key,

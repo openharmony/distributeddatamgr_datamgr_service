@@ -152,14 +152,14 @@ HWTEST_F(CryptoManagerTest, Encrypt004, TestSize.Level0)
     const std::string str = "distributed_db_backup_key";
     auto cloneKey = std::vector<uint8_t>(str.begin(), str.end());
     std::vector<uint8_t> nonce{};
+    CryptoManager::EncryptParams params = { .keyAlias = cloneKey, .nonce = nonce };
     auto encryptKey = CryptoManager::GetInstance().Encrypt(
-        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, cloneKey, nonce);
+        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, params);
     EXPECT_TRUE(encryptKey.empty());
     std::vector<uint8_t> key;
 
     auto result = CryptoManager::GetInstance().Decrypt(
-        encryptKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, cloneKey,
-        nonce);
+        encryptKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, params);
     ASSERT_FALSE(result);
 }
 
