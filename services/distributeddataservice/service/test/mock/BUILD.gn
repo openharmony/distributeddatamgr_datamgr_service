@@ -41,6 +41,7 @@ ohos_static_library("distributeddata_mock_static") {
     "general_store_mock.cpp",
     "kv_store_nb_delegate_mock.cpp",
     "network_delegate_mock.cpp",
+    "screen_lock_mock.cpp",
   ]
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]

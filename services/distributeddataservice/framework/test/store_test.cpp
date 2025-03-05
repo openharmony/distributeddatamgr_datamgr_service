@@ -25,6 +25,7 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
+#include "screen_lock_mock.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -47,12 +48,21 @@ public:
 
 class AutoCacheTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
+    static void SetUpTestCase(void);
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
+protected:
+    static std::shared_ptr<ScreenLockMock> mock_;
 };
 
+
+void AutoCacheTest::SetUpTestCase(void)
+{
+    ScreenManager::RegisterInstance(mock_);
+}
+
+std::shared_ptr<ScreenLockMock> AutoCacheTest::mock_ = std::make_shared<ScreenLockMock>();
 /**
  * @tc.name: SetQueryNodesTest
  * @tc.desc: Set and query nodes.
@@ -190,5 +200,46 @@ HWTEST_F(AutoCacheTest, GetMeta, TestSize.Level2)
     AutoCache::Delegate delegate(store, watchers, user, meta);
     auto newMate = delegate.GetMeta();
     ASSERT_TRUE(newMate.enableCloud);
+}
+
+/**
+* @tc.name: GetDBStore
+* @tc.desc: AutoCache GetDBStore
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, GetDBStore, TestSize.Level2)
+{
+    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
+        return new (std::nothrow) GeneralStoreMock();
+    };
+    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
+    AutoCache::Watchers watchers;
+    StoreMetaData meta;
+    meta.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
+    mock_->isLocked_ = true;
+    meta.area = GeneralStore::EL4;
+    EXPECT_EQ(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL1;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL2;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL3;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL5;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+
+    mock_->isLocked_ = false;
+    meta.area = GeneralStore::EL4;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL1;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL2;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL3;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
+    meta.area = GeneralStore::EL5;
+    EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
 }
 } // namespace OHOS::Test
