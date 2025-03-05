@@ -112,6 +112,8 @@ public:
 
     int32_t GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo) override;
 
+    int32_t GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::RdbDfxInfo &dfxInfo) override;
+
     int32_t VerifyPromiseInfo(const RdbSyncerParam &param) override;
 
 private:
@@ -225,6 +227,8 @@ private:
     StoreInfo GetStoreInfo(const RdbSyncerParam &param);
 
     int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+
+    int32_t SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
     int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 

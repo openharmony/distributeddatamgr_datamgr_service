@@ -94,6 +94,7 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
             MetaDataManager::GetInstance().DelMeta(meta.GetBackupSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
             PermitDelegate::GetInstance().DelCache(meta.GetKey());
         }

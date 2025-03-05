@@ -196,6 +196,11 @@ std::string StoreMetaData::GetDebugInfoKey() const
     return StoreDebugInfo::GetPrefix({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
+std::string StoreMetaData::GetDfxInfoKey() const
+{
+    return StoreDfxInfo::GetPrefix({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
 std::string StoreMetaData::GetStoreAlias() const
 {
     return Anonymous::Change(storeId);

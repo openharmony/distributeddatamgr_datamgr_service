@@ -730,6 +730,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetBackupSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetAutoLaunchKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetDebugInfoKey(), true);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetDfxInfoKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetCloneSecretKey(), true);
     return RDB_OK;
 }
@@ -825,9 +826,8 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     if (!isCreated || meta != old) {
         Upgrade(param, old);
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
@@ -842,15 +842,15 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 
     SaveDebugInfo(meta, param);
     SavePromiseInfo(meta, param);
+    SaveDfxInfo(meta, param);
 
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
     if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
         ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-              "area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType, meta.storeType,
-            old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         return RDB_ERROR;
     }
     if (param.isEncrypt_ && !param.password_.empty()) {
@@ -1548,6 +1548,43 @@ int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSy
         debugMeta.fileInfos.insert(std::pair{name, fileInfo});
     }
     MetaDataManager::GetInstance().SaveMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::RdbDfxInfo &dfxInfo)
+{
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto metaData = GetStoreMetaData(param);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
+    if (!isCreated) {
+        ZLOGI("bundleName:%{public}s, storeName:%{public}s. no meta data", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_OK;
+    }
+    DistributedData::StoreDfxInfo dfxMeta;
+    isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetDfxInfoKey(), dfxMeta, true);
+    if (!isCreated) {
+        ZLOGI("bundleName:%{public}s, storeName:%{public}s. no dfx meta data", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_OK;
+    }
+    dfxInfo.lastOpenTime_ = dfxMeta.lastOpenTime;
+    DistributedData::AccountDelegate *instance = DistributedData::AccountDelegate::GetInstance();
+    if (instance != nullptr) {
+        (void)instance->QueryForegroundUserId(dfxInfo.curUserId_);
+    }
+    return RDB_OK;
+}
+
+int32_t RdbServiceImpl::SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param)
+{
+    DistributedData::StoreDfxInfo dfxMeta;
+    dfxMeta.lastOpenTime = param.dfxInfo_.lastOpenTime_;
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetDfxInfoKey(), dfxMeta, true);
     return RDB_OK;
 }
 

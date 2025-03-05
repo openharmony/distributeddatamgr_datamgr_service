@@ -841,6 +841,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.appId, true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
+                MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
                 PermitDelegate::GetInstance().DelCache(meta.GetKey());
             }
@@ -1040,6 +1041,7 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
             MetaDataManager::GetInstance().DelMeta(meta.GetBackupSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.appId, true);
             MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
             PermitDelegate::GetInstance().DelCache(meta.GetKey());
         }

@@ -79,6 +79,8 @@ private:
 
     int32_t OnGetDebugInfo(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnGetDfxInfo(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnVerifyPromiseInfo(MessageParcel& data, MessageParcel& reply);
 
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
@@ -120,6 +122,7 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
             &RdbServiceStub::OnVerifyPromiseInfo,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REPORT_STAT)] =
             &RdbServiceStub::OnReportStatistic,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DFX_INFO)] = &RdbServiceStub::OnGetDfxInfo,
     };
 RDB_UTILS_POP_WARNING
 };

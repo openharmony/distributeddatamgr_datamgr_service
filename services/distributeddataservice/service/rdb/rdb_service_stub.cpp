@@ -470,6 +470,22 @@ int32_t RdbServiceStub::OnGetDebugInfo(MessageParcel &data, MessageParcel &reply
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnGetDfxInfo(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    RdbDfxInfo dfxInfo;
+    auto status = GetDfxInfo(param, dfxInfo);
+    if (!ITypesUtil::Marshal(reply, status, dfxInfo)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
 int32_t RdbServiceStub::OnVerifyPromiseInfo(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
