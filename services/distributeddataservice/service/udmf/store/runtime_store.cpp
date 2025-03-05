@@ -16,20 +16,12 @@
 
 #include "runtime_store.h"
 
-#include <algorithm>
-#include <vector>
-#include <unistd.h>
-#include <sys/stat.h>
-
 #include "data_handler.h"
 #include "log_print.h"
 #include "ipc_skeleton.h"
 #include "unified_data_helper.h"
 #include "udmf_radar_reporter.h"
-#include "unified_meta.h"
-#include "tlv_util.h"
 #include "account/account_delegate.h"
-#include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/appid_meta_data.h"
 #include "device_manager_adapter.h"

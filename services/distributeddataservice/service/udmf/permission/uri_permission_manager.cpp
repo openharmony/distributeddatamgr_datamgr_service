@@ -19,7 +19,6 @@
 #include "log_print.h"
 #include "preprocess_utils.h"
 #include "uri_permission_manager_client.h"
-#include "want.h"
 
 namespace OHOS {
 namespace UDMF {

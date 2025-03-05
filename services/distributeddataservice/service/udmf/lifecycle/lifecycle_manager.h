@@ -15,15 +15,7 @@
 #ifndef UDMF_LIFECYCLE_MANAGER_H
 #define UDMF_LIFECYCLE_MANAGER_H
 
-#include <chrono>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include "clean_on_startup.h"
 #include "clean_on_timeout.h"
-#include "executor_pool.h"
 
 namespace OHOS {
 namespace UDMF {

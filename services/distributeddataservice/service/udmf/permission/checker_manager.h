@@ -16,8 +16,6 @@
 #ifndef UDMF_CHECKER_MANAGER_H
 #define UDMF_CHECKER_MANAGER_H
 
-#include <vector>
-
 #include "concurrent_map.h"
 #include "unified_types.h"
 

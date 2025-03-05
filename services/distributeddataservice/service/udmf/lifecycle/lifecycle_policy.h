@@ -15,12 +15,7 @@
 #ifndef UDMF_LIFECYCLE_POLICY_H
 #define UDMF_LIFECYCLE_POLICY_H
 
-#include <algorithm>
-#include <chrono>
-#include <memory>
-
 #include "store_cache.h"
-#include "unified_key.h"
 
 namespace OHOS {
 namespace UDMF {

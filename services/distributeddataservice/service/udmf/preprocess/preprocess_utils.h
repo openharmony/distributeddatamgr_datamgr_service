@@ -15,13 +15,7 @@
 #ifndef UDMF_PREPROCESS_UTILS_H
 #define UDMF_PREPROCESS_UTILS_H
 
-#include <bitset>
-#include <random>
-#include <string>
-#include <vector>
-
 #include "unified_data.h"
-#include "unified_meta.h"
 
 namespace OHOS {
 namespace UDMF {

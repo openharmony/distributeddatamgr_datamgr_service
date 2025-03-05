@@ -15,10 +15,8 @@
 #define LOG_TAG "RuntimeStoreAccountObserver"
 
 #include "store_account_observer.h"
-#include "runtime_store.h"
 #include "log_print.h"
 #include "directory/directory_manager.h"
-#include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "ipc_skeleton.h"
 
