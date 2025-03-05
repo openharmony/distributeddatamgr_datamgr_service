@@ -136,7 +136,7 @@ public:
     bool WriteBackupInfo(const std::string &content, const std::string &backupPath);
     bool GetSecretKeyBackup(
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
-        const std::string &userId, std::string &content);
+        const std::string &userId, const std::vector<uint8_t> &iv, std::string &content);
 
   private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
@@ -189,12 +189,13 @@ public:
     void InitExecutor();
 
     std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
-        const StoreMetaData &metaData);
+        const StoreMetaData &metaData, const std::vector<uint8_t> &iv);
 
     bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
 
-    bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId);
-    bool ImportCloneKey(const std::string &keyStr, const std::string &ivStr);
+    bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId,
+        const std::vector<uint8_t> &iv);
+    bool ImportCloneKey(const std::string &keyStr);
     void DeleteCloneKey();
     
     std::string GetBackupReplyCode(int replyCode, const std::string &info = "");
@@ -211,8 +212,6 @@ public:
     ConcurrentMap<std::string, sptr<DistributedData::FeatureStubImpl>> features_;
     std::shared_ptr<KvStoreDeviceListener> deviceInnerListener_;
     std::shared_ptr<ExecutorPool> executors_;
-    std::vector<uint8_t> cloneNonce_{};
-    std::vector<uint8_t> cloneKeyAlias_{};
     static constexpr int VERSION_WIDTH = 11;
     static constexpr const char *INDENTATION = "    ";
     static constexpr int32_t FORMAT_BLANK_SIZE = 32;
@@ -222,7 +221,6 @@ public:
     static constexpr pid_t INVALID_UID = -1;
     static constexpr pid_t INVALID_PID = -1;
     static constexpr uint32_t INVALID_TOKEN = 0;
-    std::mutex mutex_;
 };
 }
 #endif  // KVSTORE_DATASERVICE_H

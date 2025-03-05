@@ -39,8 +39,8 @@ public:
         std::string userId;
     };
     struct EncryptParams {
-        const std::vector<uint8_t> &keyAlias;
-        const std::vector<uint8_t> &nonce;
+        const std::vector<uint8_t> keyAlias;
+        const std::vector<uint8_t> nonce;
     };
     enum Area : int32_t {
         EL0,
@@ -53,13 +53,16 @@ public:
     static CryptoManager &GetInstance();
     int32_t GenerateRootKey();
     int32_t CheckRootKey();
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key);
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, const EncryptParams &encryptParams);
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key,
-        int32_t area, const std::string &userId, EncryptParams &params
+        int32_t area, const std::string &userId, const EncryptParams &encryptParams
     );
+    bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const EncryptParams &encryptParams);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key,
-        int32_t area, const std::string &userId, EncryptParams &params
+        int32_t area, const std::string &userId, const EncryptParams &encryptParams
     );
     bool ImportKey(const std::vector<uint8_t> &key, const std::vector<uint8_t> &keyAlias);
     bool DeleteKey(const std::vector<uint8_t> &keyAlias);

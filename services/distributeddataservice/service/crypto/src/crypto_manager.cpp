@@ -205,8 +205,19 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
     return Encrypt(key, area, userId, encryptParams);
 }
 
+std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
+{
+    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
+    return Encrypt(key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams);
+}
+
+std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, const EncryptParams &encryptParams)
+{
+    return Encrypt(key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams);
+}
+
 std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId,
-    EncryptParams &encryptParams)
+    const EncryptParams &encryptParams)
 {
     uint32_t storageLevel = GetStorageLevel(area);
     if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
@@ -300,8 +311,13 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
     return Decrypt(source, key, area, userId, encryptParams);
 }
 
+bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const EncryptParams &encryptParams)
+{
+    return Decrypt(source, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams);
+}
+
 bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key,
-    int32_t area, const std::string &userId, EncryptParams &encryptParams)
+    int32_t area, const std::string &userId, const EncryptParams &encryptParams)
 {
     uint32_t storageLevel = GetStorageLevel(area);
     if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {

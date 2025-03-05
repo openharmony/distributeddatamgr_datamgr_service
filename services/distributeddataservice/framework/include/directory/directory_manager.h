@@ -30,20 +30,19 @@ public:
         uint32_t version = 0;
         std::string pattern;
         std::string metaPath;
-        std::string cloneBackupPath;
+        std::string clonePath;
     };
     API_EXPORT static DirectoryManager &GetInstance();
     API_EXPORT std::string GetStorePath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetSecretKeyPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetStoreBackupPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
+    API_EXPORT std::string GetClonePath(const std::string &userId, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetMetaStorePath(uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetMetaBackupPath(uint32_t version = INVALID_VERSION);
     API_EXPORT std::vector<uint32_t> GetVersions();
     API_EXPORT void Initialize(const std::vector<Strategy> &strategies);
     API_EXPORT bool CreateDirectory(const std::string &path) const;
     API_EXPORT bool DeleteDirectory(const char* path);
-    API_EXPORT bool GetCloneBackupPath(const std::string &userId, std::string &path,
-        uint32_t version = INVALID_VERSION);
 
 private:
     using Action = std::string (DirectoryManager::*)(const StoreMetaData &) const;
@@ -51,7 +50,7 @@ private:
         bool autoCreate = false;
         uint32_t version;
         std::string metaPath;
-        std::string cloneBackupPath;
+        std::string clonePath;
         std::vector<std::string> path;
         std::vector<Action> pipes;
     };
