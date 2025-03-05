@@ -33,12 +33,11 @@
 #include "uri.h"
 #include "udmf_conversion.h"
 #include "udmf_radar_reporter.h"
-#include "device_manager_adapter.h"
 #include "utils/anonymous.h"
 #include "bootstrap.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "udmf_dialog.h"
+#include "device_manager_adapter.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -96,7 +95,6 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     }
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
-
     for (const auto &record : unifiedData.GetRecords()) {
         for (const auto &type : record->GetUtdIds()) {
             types.append("-").append(type);
@@ -830,25 +828,6 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
     AsyncProcessInfo info;
     std::lock_guard<std::mutex> lock(mutex_);
     asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
-}
-
-int32_t UdmfServiceImpl::InvokeHap(const std::string &progressKey, const sptr<IRemoteObject> &observer)
-{
-    ProgressDialog::ProgressMessageInfo message;
-    message.promptText = "PromptText_PasteBoard_Local";
-    message.remoteDeviceName = "";
-    message.isRemote = false;
-    message.progressKey = progressKey;
-    message.clientCallback = observer;
-    
-    ProgressDialog::FocusedAppInfo appInfo = ProgressDialog::GetInstance().GetFocusedAppInfo();
-    message.windowId = appInfo.windowId;
-    message.callerToken = appInfo.abilityToken;
-    auto status = ProgressDialog::GetInstance().ShowProgress(message);
-    if (status != E_OK) {
-        ZLOGE("ShowProgress fail, status:%{public}d", status);
-    }
-    return E_OK;
 }
 
 } // namespace UDMF

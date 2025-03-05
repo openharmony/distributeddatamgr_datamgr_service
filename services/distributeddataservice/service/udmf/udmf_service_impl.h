@@ -56,7 +56,6 @@ public:
     int32_t ObtainAsynProcess(AsyncProcessInfo &processInfo) override;
     int32_t ClearAsynProcessByKey(const std::string &businessUdKey) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
-    int32_t InvokeHap(const std::string &progressKey, const sptr<IRemoteObject> &observer) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
@@ -64,10 +63,10 @@ private:
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
-    int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
     bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
+    int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
 
     class Factory {
     public:

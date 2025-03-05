@@ -257,7 +257,7 @@ Status RuntimeStore::Sync(const std::vector<std::string> &devices)
         }
         if (dbStatus != DBStatus::OK) {
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, dbStatus, BizState::DFX_END);
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, dbStatus);
         } else {
             RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
                 BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::SUCCESS, BizState::DFX_END);
