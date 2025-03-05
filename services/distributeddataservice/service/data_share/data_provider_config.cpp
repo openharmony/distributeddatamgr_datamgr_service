@@ -20,10 +20,13 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "config_factory.h"
 #include "datashare_errno.h"
 #include "hap_token_info.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "strategies/general/load_config_common_strategy.h"
+#include "tokenid_kit.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
 
@@ -225,11 +228,29 @@ std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProvider
         GetMetaDataFromUri();
         return std::make_pair(ret, providerInfo_);
     }
+    if (ret != E_URI_NOT_EXIST) {
+        return std::make_pair(ret, providerInfo_);
+    }
+    auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    Security::AccessToken::HapTokenInfo tokenInfo;
+    auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(IPCSkeleton::GetCallingTokenID(), tokenInfo);
+    if (!Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)
+        || (result == Security::AccessToken::RET_SUCCESS && !IsInExtList(tokenInfo.bundleName))) {
+        ZLOGE("The URI in the extension, is not allowed for silent access.! ret: %{public}d, bundleName: %{public}s,"
+            "uri: %{public}s", ret, tokenInfo.bundleName.c_str(), providerInfo_.uri.c_str());
+        return std::make_pair(ret, providerInfo_);
+    }
     ret = GetFromExtension();
     if (ret != E_OK) {
         ZLOGE("Get providerInfo failed! ret: %{public}d, uri: %{public}s",
             ret, URIUtils::Anonymous(providerInfo_.uri).c_str());
     }
     return std::make_pair(ret, providerInfo_);
+}
+
+bool DataProviderConfig::IsInExtList(const std::string &bundleName)
+{
+    auto extNames = ConfigFactory::GetInstance().GetDataShareExtNames();
+    return std::find(extNames.begin(), extNames.end(), bundleName) != extNames.end();
 }
 } // namespace OHOS::DataShare
