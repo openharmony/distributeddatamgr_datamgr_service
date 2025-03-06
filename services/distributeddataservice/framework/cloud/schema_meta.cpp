@@ -136,6 +136,7 @@ bool Field::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(alias), alias);
     GetValue(node, GET_NAME(type), type);
     GetValue(node, GET_NAME(primary), primary);
+    GetValue(node, GET_NAME(primaryKey), primary);
     GetValue(node, GET_NAME(nullable), nullable);
     GetValue(node, GET_NAME(columnName), colName);
     GetValue(node, GET_NAME(notNull), nullable);
