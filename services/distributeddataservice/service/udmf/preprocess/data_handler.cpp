@@ -16,7 +16,6 @@
 
 #include "data_handler.h"
 #include "log_print.h"
-#include "tlv_object.h"
 #include "tlv_util.h"
 
 namespace OHOS::UDMF {

@@ -14,12 +14,9 @@
  */
 #define LOG_TAG "StoreCache"
 #include "store_cache.h"
-#include <chrono>
-#include <string>
 
 #include "log_print.h"
 #include "runtime_store.h"
-#include "unified_meta.h"
 #include "account/account_delegate.h"
 
 namespace OHOS {

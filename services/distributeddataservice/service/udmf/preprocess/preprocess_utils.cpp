@@ -16,23 +16,17 @@
 
 #include "preprocess_utils.h"
 
-#include <random>
 #include <sstream>
 
 #include "dds_trace.h"
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
-#include "bundlemgr/bundle_mgr_client_impl.h"
 #include "device_manager_adapter.h"
-#include "error_code.h"
-#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
 #include "remote_file_share.h"
-#include "uri.h"
 #include "utils/crypto.h"
-#include "want.h"
 #include "uri_permission_manager_client.h"
 namespace OHOS {
 namespace UDMF {

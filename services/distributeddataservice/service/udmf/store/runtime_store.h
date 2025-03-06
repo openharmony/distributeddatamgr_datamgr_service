@@ -19,7 +19,6 @@
 #include "store.h"
 #include "kv_store_delegate_manager.h"
 #include "metadata/store_meta_data.h"
-#include "visibility.h"
 
 namespace OHOS {
 namespace UDMF {

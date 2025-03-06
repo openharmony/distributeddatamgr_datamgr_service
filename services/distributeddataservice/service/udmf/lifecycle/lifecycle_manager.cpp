@@ -16,9 +16,6 @@
 
 #include "lifecycle_manager.h"
 
-#include <algorithm>
-#include <cinttypes>
-
 #include "log_print.h"
 
 namespace OHOS {
