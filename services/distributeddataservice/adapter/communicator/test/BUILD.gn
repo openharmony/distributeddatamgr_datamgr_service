@@ -130,6 +130,10 @@ ohos_unittest("ProcessCommunicatorImplTest") {
 
   sources = [
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
+    "../src/app_pipe_handler.cpp",
+    "../src/app_pipe_handler.h",
+    "../src/app_pipe_mgr.cpp",
+    "../src/app_pipe_mgr.h",
     "../src/communication_provider_impl.cpp",
     "../src/communication_provider_impl.h",
     "../src/communicator_context.cpp",
