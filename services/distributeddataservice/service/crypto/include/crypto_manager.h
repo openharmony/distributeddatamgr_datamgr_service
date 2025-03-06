@@ -33,7 +33,7 @@ public:
         CLONE_SECRET_KEY,
     };
     struct ParamConfig {
-        const std::vector<uint8_t> &nonce;
+        const std::vector<uint8_t> nonce;
         uint32_t purpose;
         uint32_t storageLevel;
         std::string userId;

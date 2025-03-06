@@ -413,22 +413,25 @@ bool KvStoreDataService::ImportCloneKey(const std::string &keyStr)
     if (key.size() != KEY_SIZE) {
         ZLOGE("ImportKey failed, key size not correct, key size:%{public}zu", key.size());
         key.assign(key.size(), 0);
+        std::fill(keyStr.begin(), keyStr.end(), '\0');
         return false;
     }
-
-    auto cloneKeyAlias_ = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
-    if (!CryptoManager::GetInstance().ImportKey(key, cloneKeyAlias_)) {
+    
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    if (!CryptoManager::GetInstance().ImportKey(key, cloneKeyAlias)) {
         key.assign(key.size(), 0);
+        std::fill(keyStr.begin(), keyStr.end(), '\0');
         return false;
     }
+    std::fill(keyStr.begin(), keyStr.end(), '\0');
     key.assign(key.size(), 0);
     return true;
 }
 
 void KvStoreDataService::DeleteCloneKey()
 {
-    auto cloneKeyAlias_ = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
-    CryptoManager::GetInstance().DeleteKey(cloneKeyAlias_);
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    CryptoManager::GetInstance().DeleteKey(cloneKeyAlias);
 }
 
 bool KvStoreDataService::WriteBackupInfo(const std::string &content, const std::string &backupPath)
@@ -463,7 +466,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
     if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
         return -1;
     }
-    
+
     auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
     if (iv.size() != AES_256_NONCE_SIZE) {
         ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
@@ -511,8 +514,8 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
         return {};
     };
 
-    auto cloneKeyAlias_ = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
-    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias_, .nonce = iv };
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
     auto reEncryptedKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
     password.assign(password.size(), 0);
     if (reEncryptedKey.size() == 0) {
@@ -569,16 +572,16 @@ int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
     if (!ret || backupInfo.userId.empty()) {
         return ReplyForRestore(reply, -1);
     }
-
-    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
-        DeleteCloneKey();
-        return ReplyForRestore(reply, -1);
-    }
     
     auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
     if (iv.size() != AES_256_NONCE_SIZE) {
         ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
         return false;
+    }
+
+    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
+        DeleteCloneKey();
+        return ReplyForRestore(reply, -1);
     }
 
     for (const auto &item : backupData.infos) {
@@ -631,9 +634,11 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     auto sKey = DistributedData::Base64::Decode(item.sKey);
     std::vector<uint8_t> rawKey;
     
-    auto cloneKeyAlias_ = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
-    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias_, .nonce = iv };
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
     if (!CryptoManager::GetInstance().Decrypt(sKey, rawKey, encryptParams)) {
+        ZLOGE("Decrypt failed, bundleName:%{public}s, storeName:%{public}s, storeType:%{public}d",
+            item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.storeType);
         sKey.assign(sKey.size(), 0);
         rawKey.assign(rawKey.size(), 0);
         return false;
