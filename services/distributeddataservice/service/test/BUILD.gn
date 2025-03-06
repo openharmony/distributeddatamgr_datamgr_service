@@ -1428,7 +1428,11 @@ ohos_unittest("BootStrapMockTest") {
     "kv_store:distributeddata_inner",
   ]
 
-  deps = [ "../../framework:distributeddatasvcfwk" ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/service/backup:distributeddata_backup",
+    "../../framework:distributeddatasvcfwk",
+  ]
 
   cflags = [
     "-Werror",
@@ -1530,6 +1534,98 @@ ohos_unittest("AuthDelegateMockTest") {
   ]
 }
 
+ohos_unittest("UpgradeMockTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator/",
+    "${data_service_path}/framework/include/",
+    "${data_service_path}/service/bootstrap/include/",
+    "${data_service_path}/service/crypto/include/",
+    "${data_service_path}/service/kvdb/",
+    "${data_service_path}/service/matrix/include/",
+    "${data_service_path}/service/rdb/",
+    "${data_service_path}/service/test/mock",
+  ]
+
+  sources = [
+    "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
+    "${data_service_path}/service/kvdb/upgrade.cpp",
+    "mock/access_token_mock.cpp",
+    "upgrade_mock_test.cpp",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "huks:libhukssdk",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/crypto:distributeddata_crypto",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
+    "${data_service_path}/service/rdb:distributeddata_rdb",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  cflags_cc = cflags
+}
+
+ohos_unittest("UserDelegateMockTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator/",
+    "${data_service_path}/framework/include/",
+    "${data_service_path}/service/kvdb/",
+    "${data_service_path}/service/test/mock",
+  ]
+
+  sources = [
+    "${data_service_path}/service/kvdb/user_delegate.cpp",
+    "mock/account_delegate_mock.cpp",
+    "mock/device_manager_adapter_mock.cpp",
+    "user_delegate_mock_test.cpp",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+  ]
+
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  cflags_cc = cflags
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -1583,6 +1679,8 @@ group("unittest") {
       ":KVDBGeneralStoreTest",
       ":KvdbServiceImplTest",
       ":QueryHelperUnitTest",
+      ":UpgradeMockTest",
+      ":UserDelegateMockTest",
     ]
   }
 
