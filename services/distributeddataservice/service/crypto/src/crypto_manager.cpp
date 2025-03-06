@@ -50,7 +50,7 @@ struct HksParam aes256Param[] = {
     { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
 };
 
-bool CryptoManager::AddHksParams(HksParamSet *params, CryptoManager::ParamConfig paramConfig)
+bool CryptoManager::AddHksParams(HksParamSet *params, const ParamConfig &paramConfig)
 {
     struct HksBlob blobAad = { uint32_t(vecAad_.size()), vecAad_.data() };
     std::vector<HksParam> hksParam = {

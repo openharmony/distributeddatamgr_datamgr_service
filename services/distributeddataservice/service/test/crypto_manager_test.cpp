@@ -153,13 +153,11 @@ HWTEST_F(CryptoManagerTest, Encrypt004, TestSize.Level0)
     auto cloneKey = std::vector<uint8_t>(str.begin(), str.end());
     std::vector<uint8_t> nonce{};
     CryptoManager::EncryptParams params = { .keyAlias = cloneKey, .nonce = nonce };
-    auto encryptKey = CryptoManager::GetInstance().Encrypt(
-        randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, params);
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(randomKey, params);
     EXPECT_TRUE(encryptKey.empty());
     std::vector<uint8_t> key;
 
-    auto result = CryptoManager::GetInstance().Decrypt(
-        encryptKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, params);
+    auto result = CryptoManager::GetInstance().Decrypt(encryptKey, key, params);
     ASSERT_FALSE(result);
 }
 

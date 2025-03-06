@@ -33,14 +33,14 @@ public:
         CLONE_SECRET_KEY,
     };
     struct ParamConfig {
-        const std::vector<uint8_t> nonce;
+        std::vector<uint8_t> nonce;
         uint32_t purpose;
         uint32_t storageLevel;
         std::string userId;
     };
     struct EncryptParams {
-        const std::vector<uint8_t> keyAlias;
-        const std::vector<uint8_t> nonce;
+        std::vector<uint8_t> keyAlias;
+        std::vector<uint8_t> nonce;
     };
     enum Area : int32_t {
         EL0,
@@ -92,7 +92,7 @@ private:
         const std::string &userId);
     bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
         const std::string &userId, std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce);
-    bool AddHksParams(HksParamSet *params, CryptoManager::ParamConfig paramConfig);
+    bool AddHksParams(HksParamSet *params, const ParamConfig &paramConfig);
     int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId);
     bool BuildImportKeyParams(HksParamSet *&params);
     CryptoManager();

@@ -413,17 +413,14 @@ bool KvStoreDataService::ImportCloneKey(const std::string &keyStr)
     if (key.size() != KEY_SIZE) {
         ZLOGE("ImportKey failed, key size not correct, key size:%{public}zu", key.size());
         key.assign(key.size(), 0);
-        std::fill(keyStr.begin(), keyStr.end(), '\0');
         return false;
     }
-    
+
     auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
     if (!CryptoManager::GetInstance().ImportKey(key, cloneKeyAlias)) {
         key.assign(key.size(), 0);
-        std::fill(keyStr.begin(), keyStr.end(), '\0');
         return false;
     }
-    std::fill(keyStr.begin(), keyStr.end(), '\0');
     key.assign(key.size(), 0);
     return true;
 }
@@ -464,14 +461,16 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
     }
 
     if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return -1;
     }
+    std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
 
     auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
     if (iv.size() != AES_256_NONCE_SIZE) {
         ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
         iv.assign(iv.size(), 0);
-        return false;
+        return -1;
     }
 
     std::string content;
@@ -576,13 +575,15 @@ int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
     auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
     if (iv.size() != AES_256_NONCE_SIZE) {
         ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
-        return false;
+        return ReplyForRestore(reply, -1);
     }
 
     if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         DeleteCloneKey();
         return ReplyForRestore(reply, -1);
     }
+    std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
 
     for (const auto &item : backupData.infos) {
         if (!item.IsValid() || !RestoreSecretKey(item, backupInfo.userId, iv)) {
