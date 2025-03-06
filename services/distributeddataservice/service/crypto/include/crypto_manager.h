@@ -33,10 +33,14 @@ public:
         CLONE_SECRET_KEY,
     };
     struct ParamConfig {
-        SecretKeyType keyType;
+        std::vector<uint8_t> nonce;
         uint32_t purpose;
         uint32_t storageLevel;
         std::string userId;
+    };
+    struct EncryptParams {
+        std::vector<uint8_t> keyAlias;
+        std::vector<uint8_t> nonce;
     };
     enum Area : int32_t {
         EL0,
@@ -49,11 +53,19 @@ public:
     static CryptoManager &GetInstance();
     int32_t GenerateRootKey();
     int32_t CheckRootKey();
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key);
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, const EncryptParams &encryptParams);
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    std::vector<uint8_t> EncryptCloneKey(const std::vector<uint8_t> &key);
+    std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &key,
+        int32_t area, const std::string &userId, const EncryptParams &encryptParams
+    );
+    bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const EncryptParams &encryptParams);
     bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area, const std::string &userId);
-    bool DecryptCloneKey(std::vector<uint8_t> &source, std::vector<uint8_t> &key);
-    bool ImportCloneKey(std::vector<uint8_t> &key, std::vector<uint8_t> &iv);
+    bool Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key,
+        int32_t area, const std::string &userId, const EncryptParams &encryptParams
+    );
+    bool ImportKey(const std::vector<uint8_t> &key, const std::vector<uint8_t> &keyAlias);
+    bool DeleteKey(const std::vector<uint8_t> &keyAlias);
     bool UpdateSecretKey(const StoreMetaData &meta, const std::vector<uint8_t> &password,
         SecretKeyType secretKeyType = LOCAL_SECRET_KEY);
     bool Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secretKeyMeta, std::vector<uint8_t> &key,
@@ -66,7 +78,6 @@ public:
     };
 private:
     static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
-    static constexpr const char *BACKUP_KEY_ALIAS = "distributed_db_backup_key";
     static constexpr const char *HKS_BLOB_TYPE_NONCE = "Z5s0Bo571KoqwIi6";
     static constexpr const char *HKS_BLOB_TYPE_AAD = "distributeddata";
     static constexpr int KEY_SIZE = 32;
@@ -79,12 +90,15 @@ private:
     int32_t PrepareRootKey(uint32_t storageLevel, const std::string &userId);
     std::vector<uint8_t> EncryptInner(const std::vector<uint8_t> &key, const SecretKeyType type, int32_t area,
         const std::string &userId);
-    bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const SecretKeyType type, int32_t area,
-        const std::string &userId);
-    bool AddHksParams(HksParamSet *params, CryptoManager::ParamConfig paramConfig);
+    bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
+        const std::string &userId, std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce);
+    bool AddHksParams(HksParamSet *params, const ParamConfig &paramConfig);
     int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId);
     bool BuildImportKeyParams(HksParamSet *&params);
     CryptoManager();
+    std::vector<uint8_t> vecRootKeyAlias_{};
+    std::vector<uint8_t> vecNonce_{};
+    std::vector<uint8_t> vecAad_{};
     ~CryptoManager();
     std::mutex mutex_;
 };

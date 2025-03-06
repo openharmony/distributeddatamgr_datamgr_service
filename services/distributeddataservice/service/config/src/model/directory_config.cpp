@@ -22,6 +22,7 @@ bool DirectoryConfig::DirectoryStrategy::Marshal(json &node) const
     SetValue(node[GET_NAME(pattern)], pattern);
     SetValue(node[GET_NAME(metaPath)], metaPath);
     SetValue(node[GET_NAME(autoCreate)], autoCreate);
+    SetValue(node[GET_NAME(clonePath)], clonePath);
     return true;
 }
 
@@ -31,6 +32,7 @@ bool DirectoryConfig::DirectoryStrategy::Unmarshal(const json &node)
     GetValue(node, GET_NAME(pattern), pattern);
     GetValue(node, GET_NAME(metaPath), metaPath);
     GetValue(node, GET_NAME(autoCreate), autoCreate);
+    GetValue(node, GET_NAME(clonePath), clonePath);
     return true;
 }
 
