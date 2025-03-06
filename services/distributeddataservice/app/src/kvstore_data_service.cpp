@@ -457,6 +457,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
     CloneBackupInfo backupInfo;
     if (!backupInfo.Unmarshal(data.ReadString()) ||
         backupInfo.bundleInfos.empty() || backupInfo.userId.empty()) {
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return -1;
     }
 
@@ -569,12 +570,14 @@ int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
     CloneBackupInfo backupInfo;
     bool ret = backupInfo.Unmarshal(data.ReadString());
     if (!ret || backupInfo.userId.empty()) {
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return ReplyForRestore(reply, -1);
     }
     
     auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
     if (iv.size() != AES_256_NONCE_SIZE) {
         ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return ReplyForRestore(reply, -1);
     }
 
@@ -650,10 +653,7 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     secretKey.time = { item.time.begin(), item.time.end() };
     sKey.assign(sKey.size(), 0);
     rawKey.assign(rawKey.size(), 0);
-    if (!MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true)) {
-        return false;
-    }
-    return true;
+    return MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true);
 }
 
 void KvStoreDataService::StartService()
