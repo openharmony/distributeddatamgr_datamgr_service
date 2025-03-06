@@ -22,6 +22,7 @@
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
+#include "cloud/cloud_server.h"
 #include "device_manager_adapter.h"
 #include "distributed_kv_data_manager.h"
 #include "event_center.h"
@@ -33,6 +34,8 @@
 #include "log_print.h"
 #include "mock/access_token_mock.h"
 #include "mock/meta_data_manager_mock.h"
+#include "network_delegate.h"
+#include "network_delegate_mock.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "types.h"
@@ -91,6 +94,12 @@ public:
 
 protected:
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
+    static NetworkDelegateMock delegate_;
+};
+
+class CloudServerMock : public CloudServer {
+public:
+    virtual ~CloudServerMock() = default;
 };
 
 OHOS::DistributedKv::DistributedKvDataManager KvdbServiceImplTest::manager;
@@ -100,6 +109,7 @@ UserId KvdbServiceImplTest::userId;
 AppId KvdbServiceImplTest::appId;
 StoreId KvdbServiceImplTest::storeId64;
 StoreId KvdbServiceImplTest::storeId65;
+NetworkDelegateMock KvdbServiceImplTest::delegate_;
 
 void KvdbServiceImplTest::RemoveAllStore(DistributedKvDataManager &manager)
 {
@@ -131,6 +141,7 @@ void KvdbServiceImplTest::SetUpTestCase(void)
     BAccessTokenKit::accessTokenkit = accTokenMock;
     metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
     BMetaDataManager::metaDataManager = metaDataManagerMock;
+    NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
 void KvdbServiceImplTest::TearDownTestCase()
@@ -1237,6 +1248,23 @@ HWTEST_F(KvdbServiceImplTest, GetSyncMode, TestSize.Level0)
     EXPECT_EQ(status, SyncMode::PULL);
     status = kvdbServiceImpl_->GetSyncMode(false, false);
     EXPECT_EQ(status, SyncMode::PUSH_PULL);
+}
+
+/**
+* @tc.name: DoCloudSync01
+* @tc.desc: DoCloudSync01 function test.
+* @tc.type: FUNC
+* @tc.author: */
+HWTEST_F(KvdbServiceImplTest, DoCloudSync01, TestSize.Level0)
+{
+    delegate_.isNetworkAvailable_ = false;
+    auto cloudServerMock = new  CloudServerMock();
+    CloudServer::RegisterCloudInstance(cloudServerMock);
+    StoreMetaData metaData;
+    metaData.enableCloud = true;
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, OHOS::DistributedKv::Status::NETWORK_ERROR);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
