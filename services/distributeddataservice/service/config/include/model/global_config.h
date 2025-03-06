@@ -40,7 +40,6 @@ public:
     CloudConfig *cloud = nullptr;
     std::vector<AppIdMappingConfig> *appIdMapping = nullptr;
     ThreadConfig *thread = nullptr;
-    std::vector<std::string> dataShareExtNames;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
