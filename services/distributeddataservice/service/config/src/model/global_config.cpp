@@ -30,7 +30,6 @@ bool GlobalConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(cloud)], cloud);
     SetValue(node[GET_NAME(appIdMapping)], appIdMapping);
     SetValue(node[GET_NAME(thread)], thread);
-    SetValue(node[GET_NAME(dataShareExtNames)], dataShareExtNames);
     return true;
 }
 
@@ -48,7 +47,6 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(cloud), cloud);
     GetValue(node, GET_NAME(appIdMapping), appIdMapping);
     GetValue(node, GET_NAME(thread), thread);
-    GetValue(node, GET_NAME(dataShareExtNames), dataShareExtNames);
     return true;
 }
 
