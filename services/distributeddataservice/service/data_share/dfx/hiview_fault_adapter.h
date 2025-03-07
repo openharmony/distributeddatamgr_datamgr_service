@@ -21,6 +21,7 @@
 #include <string>
 #include "accesstoken_kit.h"
 #include "hisysevent_c.h"
+
 namespace OHOS {
 namespace DataShare {
 struct DataShareFaultInfo {
@@ -33,21 +34,30 @@ struct DataShareFaultInfo {
     std::string appendix;
 };
 
-struct RdbTimeCostInfo {
-    std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
-    std::string bundleName;
-    std::string moduleName;
-    std::string storeName;
-    std::string businessType;
-    int32_t errorCode = 0;
-    uint64_t callingTokenId;
+// TimeoutReport is used for recording the time usage of multiple interfaces;
+// It can set up a timeout threshold, and when the time usage exceeds this threshold, will print log;
+// If want to record DFX fault report, need to set needFaultReport to true (default is false);
+// In the future, it can be separeted to diffent function in order to achieve these functions.
+struct TimeoutReport {
+    struct DfxInfo {
+        std::string bundleName;
+        std::string moduleName;
+        std::string storeName;
+        std::string businessType;
+        uint64_t callingTokenId;
+    };
 
-    explicit RdbTimeCostInfo(const std::string &bundleName, const std::string &moduleName,
-        const std::string &storeName, const std::string &businessType,
-        uint64_t tokenId) : bundleName(bundleName), moduleName(moduleName),
-        storeName(storeName), businessType(businessType), callingTokenId(tokenId)
+    DfxInfo dfxInfo;
+    int32_t errorCode = 0;
+    bool needFaultReport;
+    std::chrono::time_point<std::chrono::steady_clock> start = std::chrono::steady_clock::now();
+    explicit TimeoutReport(const DfxInfo &dfxInfo, bool needFaultReport = false)
+        : dfxInfo(dfxInfo), needFaultReport(needFaultReport)
     {}
-    ~RdbTimeCostInfo();
+    void Report();
+    void Report(const std::string &user, uint32_t callingPid, int32_t appIndex = -1, int32_t instanceId = -1);
+    void DFXReport(const std::chrono::milliseconds &duration);
+    ~TimeoutReport() = default;
 };
 
 
@@ -61,6 +71,7 @@ inline const char* TIME_OUT = "TIME_OUT";
 inline const char* RESULTSET_FULL = "RESULTSET_FULL";
 inline const char* CURD_FAILED = "CURD_FAILED";
 inline const std::chrono::milliseconds TIME_OUT_MS = std::chrono::milliseconds(300);
+inline const std::chrono::milliseconds DFX_TIME_OUT_MS = std::chrono::milliseconds(2000);
 }
 }
 #endif

@@ -34,6 +34,7 @@
 #include "want_params.h"
 #include "db_delegate.h"
 #include "log_debug.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 32;
@@ -108,7 +109,10 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
         return;
     }
     DefaultOpenCallback callback;
+    TimeoutReport timeoutReport({meta.bundleName, "", meta.storeId, __FUNCTION__, 0});
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    timeoutReport.Report(meta.user, callingPid, -1, meta.instanceId);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
