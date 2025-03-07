@@ -16,12 +16,7 @@
 #ifndef UDMF_URI_PERMISSION_MANAGER_H
 #define UDMF_URI_PERMISSION_MANAGER_H
 
-#include <memory>
-#include <string>
-
-#include "concurrent_map.h"
 #include "error_code.h"
-#include "executor_pool.h"
 #include "uri.h"
 
 namespace OHOS {

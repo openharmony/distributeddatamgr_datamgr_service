@@ -80,9 +80,7 @@ using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 using DmAdapter = DistributedData::DeviceManagerAdapter;
 constexpr const char* EXTENSION_BACKUP = "backup";
 constexpr const char* EXTENSION_RESTORE = "restore";
-constexpr const char* SECRET_KEY_BACKUP_PATH =
-    "/data/service/el1/public/database/distributeddata/"
-    "secret_key_backup.conf";
+constexpr const char* CLONE_KEY_ALIAS = "distributed_db_backup_key";
 
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
@@ -388,7 +386,7 @@ int32_t KvStoreDataService::OnExtension(const std::string &extension, MessagePar
     return 0;
 }
 
-std::string GetBackupReplyCode(int replyCode, const std::string &info = "")
+std::string KvStoreDataService::GetBackupReplyCode(int replyCode, const std::string &info)
 {
     CloneReplyCode reply;
     CloneReplyResult result;
@@ -396,30 +394,6 @@ std::string GetBackupReplyCode(int replyCode, const std::string &info = "")
     result.errorInfo = info;
     reply.resultInfo.push_back(std::move(result));
     return Serializable::Marshall(reply);
-}
-
-bool ParseBackupInfo(MessageParcel &data, CloneBackupInfo &backupInfo)
-{
-    std::string info = data.ReadString();
-    bool success = backupInfo.Unmarshal(DistributedData::Serializable::ToJson(info));
-    if (!success) {
-        ZLOGE("parse backup json failed.");
-        return false;
-    }
-    return true;
-}
-
-bool CheckBackupInfo(CloneBackupInfo &backupInfo)
-{
-    if (backupInfo.bundleInfos.empty()) {
-        ZLOGE("bundle empty.");
-        return false;
-    }
-    if (backupInfo.userId.empty()) {
-        ZLOGE("userId invalid");
-        return false;
-    }
-    return true;
 }
 
 std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
@@ -433,44 +407,41 @@ std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
     return outData;
 }
 
-bool ImportCloneKey(const std::string &keyStr, const std::string &ivStr)
+bool KvStoreDataService::ImportCloneKey(const std::string &keyStr)
 {
     auto key = ConvertDecStrToVec(keyStr);
     if (key.size() != KEY_SIZE) {
-        ZLOGE("ImportKey failed, key length not correct.");
+        ZLOGE("ImportKey failed, key size not correct, key size:%{public}zu", key.size());
         key.assign(key.size(), 0);
-        return false;
-    }
-    auto iv = ConvertDecStrToVec(ivStr);
-    if (iv.size() != AES_256_NONCE_SIZE) {
-        ZLOGE("ImportKey failed, iv length not correct.");
-        key.assign(key.size(), 0);
-        iv.assign(iv.size(), 0);
         return false;
     }
 
-    if (!CryptoManager::GetInstance().ImportCloneKey(key, iv)) {
-        ZLOGE("ImportCloneKey failed.");
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    if (!CryptoManager::GetInstance().ImportKey(key, cloneKeyAlias)) {
         key.assign(key.size(), 0);
-        iv.assign(iv.size(), 0);
         return false;
     }
     key.assign(key.size(), 0);
-    iv.assign(iv.size(), 0);
     return true;
 }
 
-bool WriteBackupInfo(const std::string &content)
+void KvStoreDataService::DeleteCloneKey()
 {
-    FILE *fp = fopen(SECRET_KEY_BACKUP_PATH, "w");
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    CryptoManager::GetInstance().DeleteKey(cloneKeyAlias);
+}
+
+bool KvStoreDataService::WriteBackupInfo(const std::string &content, const std::string &backupPath)
+{
+    FILE *fp = fopen(backupPath.c_str(), "w");
 
     if (!fp) {
-        ZLOGE("Secret key backup file open failed");
+        ZLOGE("Secret key backup file fopen failed, path: %{public}s, errno: %{public}d", backupPath.c_str(), errno);
         return false;
     }
     size_t ret = fwrite(content.c_str(), 1, content.length(), fp);
     if (ret != content.length()) {
-        ZLOGE("Save config file fwrite() failed!");
+        ZLOGE("Secret key backup file fwrite failed, path: %{public}s, errno: %{public}d", backupPath.c_str(), errno);
         (void)fclose(fp);
         return false;
     }
@@ -484,29 +455,43 @@ bool WriteBackupInfo(const std::string &content)
 int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 {
     CloneBackupInfo backupInfo;
-    if (!ParseBackupInfo(data, backupInfo)) {
+    if (!backupInfo.Unmarshal(data.ReadString()) ||
+        backupInfo.bundleInfos.empty() || backupInfo.userId.empty()) {
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return -1;
     }
 
-    if (!CheckBackupInfo(backupInfo)) {
+    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return -1;
     }
+    std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
 
-    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey, backupInfo.encryptionInfo.iv)) {
+    auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
+    if (iv.size() != AES_256_NONCE_SIZE) {
+        ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
+        iv.assign(iv.size(), 0);
         return -1;
     }
 
     std::string content;
-    if (!GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, content)) {
+    if (!GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, iv, content)) {
+        DeleteCloneKey();
         return -1;
     };
+    DeleteCloneKey();
 
-    if (!WriteBackupInfo(content)) {
+    std::string backupPath = DirectoryManager::GetInstance().GetClonePath(backupInfo.userId);
+    if (backupPath.empty()) {
+        ZLOGE("GetClonePath failed, userId:%{public}s errno: %{public}d", backupInfo.userId.c_str(), errno);
+        return -1;
+    }
+    if (!WriteBackupInfo(content, backupPath)) {
         return -1;
     }
 
     UniqueFd fd(-1);
-    fd = UniqueFd(open(SECRET_KEY_BACKUP_PATH, O_RDONLY));
+    fd = UniqueFd(open(backupPath.c_str(), O_RDONLY));
     std::string replyCode = GetBackupReplyCode(0);
     if (!reply.WriteFileDescriptor(fd) || !reply.WriteString(replyCode)) {
         close(fd.Release());
@@ -519,20 +504,21 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 }
 
 std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
-    const StoreMetaData &metaData)
+    const StoreMetaData &metaData, const std::vector<uint8_t> &iv)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
-        ZLOGE("Secret key meta load failed.");
         return {};
     };
     std::vector<uint8_t> password;
     if (!CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, password)) {
-        ZLOGE("Secret key decrypt failed.");
         return {};
     };
-    auto reEncryptedKey = CryptoManager::GetInstance().EncryptCloneKey(password);
+
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
+    auto reEncryptedKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
+    password.assign(password.size(), 0);
     if (reEncryptedKey.size() == 0) {
-        ZLOGE("Secret key encrypt failed.");
         return {};
     };
     return reEncryptedKey;
@@ -540,7 +526,7 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
 
 bool KvStoreDataService::GetSecretKeyBackup(
     const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
-    const std::string &userId, std::string &content)
+    const std::string &userId, const std::vector<uint8_t> &iv, std::string &content)
 {
     SecretKeyBackupData backupInfos;
     std::string deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
@@ -548,7 +534,6 @@ bool KvStoreDataService::GetSecretKeyBackup(
         std::string metaPrefix = StoreMetaData::GetKey({ deviceId, userId, "default", bundleInfo.bundleName });
         std::vector<StoreMetaData> StoreMetas;
         if (!MetaDataManager::GetInstance().LoadMeta(metaPrefix, StoreMetas, true)) {
-            ZLOGW("Store meta load failed, bundleName: %{public}s", bundleInfo.bundleName.c_str());
             continue;
         };
         for (const auto &storeMeta : StoreMetas) {
@@ -557,12 +542,8 @@ bool KvStoreDataService::GetSecretKeyBackup(
             };
             auto key = storeMeta.GetSecretKey();
             SecretKeyMetaData secretKeyMeta;
-            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, storeMeta);
+            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, storeMeta, iv);
             if (reEncryptedKey.size() == 0) {
-                ZLOGE("Secret key re-encrypt failed, user: %{public}s, bundleName: %{public}s, Db: "
-                    "%{public}s, instanceId: %{public}d", userId.c_str(),
-                    storeMeta.bundleName.c_str(), Anonymous::Change(storeMeta.storeId).c_str(),
-                    storeMeta.instanceId);
                 continue;
             };
             SecretKeyBackupData::BackupItem item;
@@ -585,28 +566,35 @@ int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
 {
     SecretKeyBackupData backupData;
     if (!ParseSecretKeyFile(data, backupData) || backupData.infos.size() == 0) {
-        ZLOGE("Read backup file failed or infos is empty!");
         return ReplyForRestore(reply, -1);
     }
     CloneBackupInfo backupInfo;
-    bool ret = backupInfo.Unmarshal(DistributedData::Serializable::ToJson(data.ReadString()));
+    bool ret = backupInfo.Unmarshal(data.ReadString());
     if (!ret || backupInfo.userId.empty()) {
-        ZLOGE("Clone info invalid or userId is empty!");
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
+        return ReplyForRestore(reply, -1);
+    }
+    
+    auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
+    if (iv.size() != AES_256_NONCE_SIZE) {
+        ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return ReplyForRestore(reply, -1);
     }
 
-    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey, backupInfo.encryptionInfo.iv)) {
+    if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
+        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
+        DeleteCloneKey();
         return ReplyForRestore(reply, -1);
     }
+    std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
+
     for (const auto &item : backupData.infos) {
-        if (!item.IsValid() || !RestoreSecretKey(item, backupInfo.userId)) {
-            ZLOGW("Restore secret key failed! bundleName:%{public}s, dbName:%{public}s, instanceId:%{public}d, "
-                "storeType:%{public}d, time.size:%{public}zu, sKey:%{public}s, user:%{public}s",
-                item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.instanceId, item.storeType,
-                item.time.size(), Anonymous::Change(item.sKey).c_str(), item.user.c_str());
+        if (!item.IsValid() || !RestoreSecretKey(item, backupInfo.userId, iv)) {
             continue;
         }
     }
+    DeleteCloneKey();
     return ReplyForRestore(reply, 0);
 }
 
@@ -614,7 +602,6 @@ int32_t KvStoreDataService::ReplyForRestore(MessageParcel &reply, int32_t result
 {
     std::string replyCode = GetBackupReplyCode(result);
     if (!reply.WriteString(replyCode)) {
-        ZLOGE("Write reply failed");
         return -1;
     }
     return result;
@@ -641,7 +628,8 @@ bool KvStoreDataService::ParseSecretKeyFile(MessageParcel &data, SecretKeyBackup
     return true;
 }
 
-bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId)
+bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId,
+    const std::vector<uint8_t> &iv)
 {
     StoreMetaData metaData;
     metaData.bundleName = item.bundleName;
@@ -650,8 +638,12 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     metaData.instanceId = item.instanceId;
     auto sKey = DistributedData::Base64::Decode(item.sKey);
     std::vector<uint8_t> rawKey;
-    if (!CryptoManager::GetInstance().DecryptCloneKey(sKey, rawKey)) {
-        ZLOGE("Decrypt by clonekey failed.");
+    
+    auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
+    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
+    if (!CryptoManager::GetInstance().Decrypt(sKey, rawKey, encryptParams)) {
+        ZLOGE("Decrypt failed, bundleName:%{public}s, storeName:%{public}s, storeType:%{public}d",
+            item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.storeType);
         sKey.assign(sKey.size(), 0);
         rawKey.assign(rawKey.size(), 0);
         return false;
@@ -667,11 +659,7 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     secretKey.time = { item.time.begin(), item.time.end() };
     sKey.assign(sKey.size(), 0);
     rawKey.assign(rawKey.size(), 0);
-    if (!MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true)) {
-        ZLOGE("Save meta failed.");
-        return false;
-    }
-    return true;
+    return MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true);
 }
 
 void KvStoreDataService::StartService()

@@ -17,6 +17,9 @@
 
 #include <gmock/gmock.h>
 #include "metadata/meta_data_manager.h"
+#include "metadata/strategy_meta_data.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/appid_meta_data.h"
 
 namespace OHOS::DistributedData {
 class BMetaDataManager {

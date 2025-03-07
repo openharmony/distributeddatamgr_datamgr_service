@@ -14,12 +14,9 @@
  */
 #define LOG_TAG "StoreCache"
 #include "store_cache.h"
-#include <chrono>
-#include <string>
 
 #include "log_print.h"
 #include "runtime_store.h"
-#include "unified_meta.h"
 #include "account/account_delegate.h"
 
 namespace OHOS {
@@ -90,6 +87,12 @@ void StoreCache::GarbageCollect()
 void StoreCache::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
     executorPool_ = executors;
+}
+
+void StoreCache::CloseStores()
+{
+    ZLOGI("CloseStores, stores size:%{public}zu", stores_.Size());
+    stores_.Clear();
 }
 } // namespace UDMF
 } // namespace OHOS

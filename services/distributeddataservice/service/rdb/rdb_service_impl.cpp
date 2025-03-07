@@ -425,8 +425,15 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
     }
     auto store = GetStore(param);
     if (store == nullptr) {
-        ZLOGE("store is null");
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
+    }
+    StoreMetaData meta = GetStoreMetaData(param);
+    std::vector<std::string> devices = {DmAdapter::GetInstance().ToUUID(device)};
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
     }
     RdbQuery rdbQuery;
     rdbQuery.MakeRemoteQuery(DmAdapter::GetInstance().ToUUID(device), sql, ValueProxy::Convert(selectionArgs));
@@ -622,8 +629,9 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         return true;
     });
     if (isCreate) {
+        auto subUser = GetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_));
+            GetWatchers(tokenId, param.storeName_), subUser);
     }
     return RDB_OK;
 }
@@ -651,8 +659,9 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         return true;
     });
     if (destroyed) {
+        auto subUser = GetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_));
+            GetWatchers(tokenId, param.storeName_), subUser);
     }
     return RDB_OK;
 }
@@ -705,7 +714,8 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_));
+    auto subUser = GetSubUser(param.subUser_);
+    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_), subUser);
     RdbSyncerParam tmpParam = param;
     HapTokenInfo hapTokenInfo;
     AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
@@ -850,11 +860,11 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         }
         UpgradeCloneSecretKey(meta);
     }
-    GetCloudSchema(param);
+    GetSchema(param);
     return RDB_OK;
 }
 
-void RdbServiceImpl::GetCloudSchema(const RdbSyncerParam &param)
+void RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
 {
     if (executors_ != nullptr) {
         StoreInfo storeInfo;
@@ -883,7 +893,11 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.bundleName = param.bundleName_;
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = RemoveSuffix(param.storeName_);
-    metaData.user = std::to_string(user);
+    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
+        metaData.user = std::to_string(param.subUser_);
+    } else {
+        metaData.user = std::to_string(user);
+    }
     metaData.storeType = param.type_;
     metaData.securityLevel = param.level_;
     metaData.area = param.area_;
@@ -1371,7 +1385,8 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Disable(tokenId, storeId);
+    auto userId = GetSubUser(param.subUser_);
+    AutoCache::GetInstance().Disable(tokenId, storeId, userId);
     return RDB_OK;
 }
 
@@ -1379,7 +1394,8 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Enable(tokenId, storeId);
+    auto userId = GetSubUser(param.subUser_);
+    AutoCache::GetInstance().Enable(tokenId, storeId, userId);
     return RDB_OK;
 }
 
@@ -1573,5 +1589,14 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     return RDB_OK;
+}
+
+std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
+{
+    std::string userId = "";
+    if (AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID()) != TOKEN_HAP && subUser != 0) {
+        userId = std::to_string(subUser);
+    }
+    return userId;
 }
 } // namespace OHOS::DistributedRdb

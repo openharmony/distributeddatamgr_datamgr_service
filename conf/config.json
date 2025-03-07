@@ -72,7 +72,8 @@
       {
         "version": 50331653,
         "pattern": "/data/{type}/{area}/{userId}/database/{bundleName}/{hapName}/{store}/{customDir}",
-        "metaPath": "/data/service/el1/public/database/distributeddata/meta"
+        "metaPath": "/data/service/el1/public/database/distributeddata/meta",
+        "clonePath": "/data/service/el2/{userId}/database/distributeddata/secret_key_backup.conf"
       }
     ]
   },
@@ -85,5 +86,6 @@
     "schedularInternal" : 1800,
     "backupInternal" : 36000,
     "backupNumber" : 20
-  }
+  },
+  "dataShareExtNames": []
 }

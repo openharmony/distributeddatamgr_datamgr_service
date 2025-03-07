@@ -49,7 +49,6 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
-using namespace CloudData;
 using namespace std::chrono;
 using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
@@ -116,6 +115,7 @@ static DistributedSchema GetGaussDistributedSchema(const Database &database)
             DistributedField dbField;
             dbField.colName = field.colName;
             dbField.isP2pSync = IsExistence(field.colName, table.deviceSyncFields);
+            dbField.isSpecified = field.primary;
             dbTable.fields.push_back(std::move(dbField));
         }
     }
@@ -922,7 +922,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
     }
     auto status = delegate_->SetReference(properties);
-    if (status != DistributedDB::DBStatus::OK) {
+    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
         return GeneralError::E_ERROR;
     }

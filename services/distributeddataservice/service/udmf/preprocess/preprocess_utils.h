@@ -15,13 +15,7 @@
 #ifndef UDMF_PREPROCESS_UTILS_H
 #define UDMF_PREPROCESS_UTILS_H
 
-#include <bitset>
-#include <random>
-#include <string>
-#include <vector>
-
 #include "unified_data.h"
-#include "unified_meta.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -40,6 +34,11 @@ public:
     static bool IsNetworkingEnabled();
     static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
         std::function<bool(std::shared_ptr<Object>)> callback);
+    static void GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<std::string> &uris);
+    static void ClearHtmlDfsUris(UnifiedData &data);
+    static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<Uri> &uris);
+    static void ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
+        bool isLocal, std::vector<std::string> &uris);
 private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);
     static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);

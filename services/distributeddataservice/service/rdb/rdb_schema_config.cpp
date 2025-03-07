@@ -31,7 +31,7 @@ namespace OHOS::DistributedRdb {
 using namespace OHOS::Global::Resource;
 using namespace OHOS::DistributedData;
 using Serializable = DistributedData::Serializable;
-constexpr const char *SCHEMA_PATH = "arkdata/schema/schema.json";
+constexpr const char *SCHEMA_PATH = "arkdata/schema/sync_schema.json";
 
 bool RdbSchemaConfig::GetDistributedSchema(const StoreMetaData &meta, Database &database)
 {

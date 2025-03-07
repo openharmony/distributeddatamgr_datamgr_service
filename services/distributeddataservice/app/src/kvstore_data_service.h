@@ -133,9 +133,10 @@ public:
     int32_t OnExtension(const std::string &extension, MessageParcel &data, MessageParcel &reply) override;
     int32_t OnBackup(MessageParcel &data, MessageParcel &reply);
     int32_t OnRestore(MessageParcel &data, MessageParcel &reply);
+    bool WriteBackupInfo(const std::string &content, const std::string &backupPath);
     bool GetSecretKeyBackup(
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
-        const std::string &userId, std::string &content);
+        const std::string &userId, const std::vector<uint8_t> &iv, std::string &content);
 
   private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
@@ -188,11 +189,16 @@ public:
     void InitExecutor();
 
     std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
-        const StoreMetaData &metaData);
+        const StoreMetaData &metaData, const std::vector<uint8_t> &iv);
 
     bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
 
-    bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId);
+    bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId,
+        const std::vector<uint8_t> &iv);
+    bool ImportCloneKey(const std::string &keyStr);
+    void DeleteCloneKey();
+    
+    std::string GetBackupReplyCode(int replyCode, const std::string &info = "");
 
     int32_t ReplyForRestore(MessageParcel &reply, int32_t result);
 

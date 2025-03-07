@@ -62,6 +62,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/cloud_event.cpp",
     "cloud/cloud_extra_data.cpp",
     "cloud/cloud_info.cpp",
+    "cloud/cloud_last_sync_info.cpp",
     "cloud/cloud_lock_event.cpp",
     "cloud/cloud_mark.cpp",
     "cloud/cloud_report.cpp",
