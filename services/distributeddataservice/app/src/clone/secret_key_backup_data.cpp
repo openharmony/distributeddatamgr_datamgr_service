@@ -53,6 +53,7 @@ bool SecretKeyBackupData::BackupItem::Marshal(json &node) const
     SetValue(node[GET_NAME(time)], time);
     SetValue(node[GET_NAME(sKey)], sKey);
     SetValue(node[GET_NAME(storeType)], storeType);
+    SetValue(node[GET_NAME(area)], area);
     return true;
 }
 
@@ -65,6 +66,7 @@ bool SecretKeyBackupData::BackupItem::Unmarshal(const json &node)
     ret = GetValue(node, GET_NAME(time), time) && ret;
     ret = GetValue(node, GET_NAME(sKey), sKey) && ret;
     ret = GetValue(node, GET_NAME(storeType), storeType) && ret;
+    ret = GetValue(node, GET_NAME(area), area) && ret;
     return ret;
 }
 

@@ -554,6 +554,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
             item.sKey = DistributedData::Base64::Encode(reEncryptedKey);
             item.storeType = secretKeyMeta.storeType;
             item.user = userId;
+            item.area = storeMeta.area;
             backupInfos.infos.push_back(std::move(item));
         }
     }
@@ -649,7 +650,12 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     }
     SecretKeyMetaData secretKey;
     secretKey.storeType = item.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey);
+    if (item.area < 0) {
+        secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
+    } else {
+        secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, item.area, userId);
+        secretKey.area = item.area;
+    }
     secretKey.time = { item.time.begin(), item.time.end() };
     sKey.assign(sKey.size(), 0);
     rawKey.assign(rawKey.size(), 0);

@@ -756,8 +756,12 @@ Status KVDBServiceImpl::AfterCreate(
     SaveLocalMetaData(options, metaData);
     if (metaData.isEncrypt && CryptoManager::GetInstance().UpdateSecretKey(metaData, password)) {
         SecretKeyMetaData secretKey;
-        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true)) {
-            MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true) &&
+            secretKey.area < 0) {
+            std::vector<uint8_t> clonePwd;
+            // Update the encryption method for the key
+            CryptoManager::GetInstance().Decrypt(metaData, secretKey, clonePwd, CryptoManager::CLONE_SECRET_KEY);
+            clonePwd.assign(clonePwd.size(), 0);
         }
     }
     ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
