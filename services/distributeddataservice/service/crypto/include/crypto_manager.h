@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <mutex>
 #include <vector>
-#include "hks_param.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "visibility.h"
@@ -92,9 +91,6 @@ private:
         const std::string &userId);
     bool DecryptInner(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
         const std::string &userId, std::vector<uint8_t> &keyAlias, std::vector<uint8_t> &nonce);
-    bool AddHksParams(HksParamSet *params, const ParamConfig &paramConfig);
-    int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId);
-    bool BuildImportKeyParams(HksParamSet *&params);
     CryptoManager();
     std::vector<uint8_t> vecRootKeyAlias_{};
     std::vector<uint8_t> vecNonce_{};

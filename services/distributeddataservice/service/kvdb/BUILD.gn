@@ -77,7 +77,6 @@ ohos_source_set("distributeddata_kvdb") {
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "huks:libhukssdk",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
