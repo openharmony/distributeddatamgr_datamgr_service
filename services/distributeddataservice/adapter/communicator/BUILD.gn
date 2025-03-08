@@ -63,6 +63,7 @@ ohos_source_set("distributeddata_communicator") {
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]
