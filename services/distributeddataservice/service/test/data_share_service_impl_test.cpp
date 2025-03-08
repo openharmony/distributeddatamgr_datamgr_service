@@ -456,42 +456,4 @@ HWTEST_F(DataShareServiceImplTest, OnInitialize, TestSize.Level1)
     auto result = dataShareServiceImpl.OnInitialize();
     EXPECT_EQ(result, 0);
 }
-
-/**
-* @tc.name: NotifyObserver
-* @tc.desc: test NotifyObserver no GetCallerBundleName scene
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, NotifyObserver, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    std::string uri = SLIENT_ACCESS_URI;
-    sptr<OHOS::IRemoteObject> remoteObj;
-    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
-    AccessTokenKit::DeleteToken(tokenId);
-
-    auto result = dataShareServiceImpl.RegisterObserver(uri, remoteObj);
-    EXPECT_EQ(result, ERR_INVALID_VALUE);
-    dataShareServiceImpl.NotifyObserver(uri);
-    result = dataShareServiceImpl.UnregisterObserver(uri, remoteObj);
-    EXPECT_EQ(result, ERR_INVALID_VALUE);
-}
-
-/**
-* @tc.name: RegisterObserver
-* @tc.desc: test RegisterObserver abnormal scene
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceImplTest, RegisterObserver, TestSize.Level1)
-{
-    DataShareServiceImpl dataShareServiceImpl;
-    sptr<OHOS::IRemoteObject> remoteObj;
-    auto result = dataShareServiceImpl.RegisterObserver("", remoteObj);
-    EXPECT_EQ(result, ERR_INVALID_VALUE);
-    dataShareServiceImpl.NotifyObserver("");
-    result = dataShareServiceImpl.UnregisterObserver("", remoteObj);
-    EXPECT_EQ(result, ERR_INVALID_VALUE);
-}
 } // namespace OHOS::Test

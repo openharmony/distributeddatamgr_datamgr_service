@@ -402,36 +402,12 @@ int32_t DataShareServiceStub::OnGetSilentProxyStatus(MessageParcel &data, Messag
 
 int32_t DataShareServiceStub::OnRegisterObserver(MessageParcel &data, MessageParcel &reply)
 {
-    std::string uri;
-    sptr<IRemoteObject> remoteObj;
-    if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
-        ZLOGE("Unmarshal failed,uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
-        return IPC_STUB_INVALID_DATA_ERR;
-    }
-    int32_t status = RegisterObserver(uri, remoteObj);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal failed,status:0x%{public}x,uri:%{public}s", status,
-            DistributedData::Anonymous::Change(uri).c_str());
-        return IPC_STUB_WRITE_PARCEL_ERR;
-    }
-    return E_OK;
+    return DATA_SHARE_ERROR;
 }
 
 int32_t DataShareServiceStub::OnUnregisterObserver(MessageParcel &data, MessageParcel &reply)
 {
-    std::string uri;
-    sptr<IRemoteObject> remoteObj;
-    if (!ITypesUtil::Unmarshal(data, uri, remoteObj)) {
-        ZLOGE("Unmarshal failed,uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
-        return IPC_STUB_INVALID_DATA_ERR;
-    }
-    int32_t status = UnregisterObserver(uri, remoteObj);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        ZLOGE("Marshal failed,status:0x%{public}x,uri:%{public}s", status,
-            DistributedData::Anonymous::Change(uri).c_str());
-        return IPC_STUB_WRITE_PARCEL_ERR;
-    }
-    return E_OK;
+    return DATA_SHARE_ERROR;
 }
 
 void DataShareServiceStub::SetServiceReady()

@@ -936,79 +936,13 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
 int32_t DataShareServiceImpl::RegisterObserver(const std::string &uri,
     const sptr<OHOS::IRemoteObject> &remoteObj)
 {
-    XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
-                    XCollie::XCOLLIE_LOG);
-    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
-    DataProviderConfig providerConfig(uri, callerTokenId);
-    auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
-    if (errCode != E_OK) {
-        ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
-            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
-    }
-    if (!CheckAllowList(providerInfo.currentUserId, callerTokenId, providerInfo.allowLists)) {
-        ZLOGE("CheckAllowList failed, permission denied! token:0x%{public}x, uri:%{public}s",
-            callerTokenId, URIUtils::Anonymous(providerInfo.uri).c_str());
-        return ERROR;
-    }
-    if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
-            callerTokenId, URIUtils::Anonymous(uri).c_str());
-    }
-    if (!providerInfo.readPermission.empty() &&
-        !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
-        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
-            callerTokenId, providerInfo.readPermission.c_str(),
-            URIUtils::Anonymous(providerInfo.uri).c_str());
-    }
-    auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
-    if (obServer == nullptr) {
-        ZLOGE("ObServer is nullptr, uri: %{public}s", URIUtils::Anonymous(uri).c_str());
-        return ERR_INVALID_VALUE;
-    }
-    auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
-    if (obsMgrClient == nullptr) {
-        return ERROR;
-    }
-    return obsMgrClient->RegisterObserver(Uri(uri), obServer);
+    return ERROR;
 }
 
 int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     const sptr<OHOS::IRemoteObject> &remoteObj)
 {
-    XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
-                    XCollie::XCOLLIE_LOG);
-    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
-    DataProviderConfig providerConfig(uri, callerTokenId);
-    auto [errCode, providerInfo] = providerConfig.GetProviderInfo();
-    if (errCode != E_OK) {
-        ZLOGE("ProviderInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", callerTokenId,
-            errCode, URIUtils::Anonymous(providerInfo.uri).c_str());
-    }
-    if (!CheckAllowList(providerInfo.currentUserId, callerTokenId, providerInfo.allowLists)) {
-        ZLOGE("CheckAllowList failed, permission denied! token:0x%{public}x, uri:%{public}s",
-            callerTokenId, URIUtils::Anonymous(providerInfo.uri).c_str());
-        return ERROR;
-    }
-    if (!providerInfo.allowEmptyPermission && providerInfo.readPermission.empty()) {
-        ZLOGE("reject permission, tokenId:0x%{public}x, uri:%{public}s",
-            callerTokenId, URIUtils::Anonymous(uri).c_str());
-    }
-    if (!providerInfo.readPermission.empty() &&
-        !PermitDelegate::VerifyPermission(providerInfo.readPermission, callerTokenId)) {
-        ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s, uri:%{public}s",
-            callerTokenId, providerInfo.readPermission.c_str(),
-            URIUtils::Anonymous(providerInfo.uri).c_str());
-    }
-    auto obsMgrClient = AAFwk::DataObsMgrClient::GetInstance();
-    if (obsMgrClient == nullptr) {
-        return ERROR;
-    }
-    auto obServer = iface_cast<AAFwk::IDataAbilityObserver>(remoteObj);
-    if (obServer == nullptr) {
-        ZLOGE("ObServer is nullptr, uri: %{public}s", URIUtils::Anonymous(uri).c_str());
-        return ERR_INVALID_VALUE;
-    }
-    return obsMgrClient->UnregisterObserver(Uri(uri), obServer);
+    return ERROR;
 }
 
 bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId, int32_t visitedUserId,
