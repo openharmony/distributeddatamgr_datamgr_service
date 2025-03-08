@@ -19,6 +19,7 @@
 #include <string>
 
 #include "hks_api.h"
+#include "hks_param.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "securec.h"
@@ -50,9 +51,10 @@ struct HksParam aes256Param[] = {
     { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
 };
 
-bool CryptoManager::AddHksParams(HksParamSet *params, const ParamConfig &paramConfig)
+bool AddHksParams(HksParamSet *params, const CryptoManager::ParamConfig &paramConfig,
+    const std::vector<uint8_t> &vecAad)
 {
-    struct HksBlob blobAad = { uint32_t(vecAad_.size()), vecAad_.data() };
+    struct HksBlob blobAad = { uint32_t(vecAad.size()), const_cast<uint8_t *>(vecAad.data()) };
     std::vector<HksParam> hksParam = {
         { .tag = HKS_TAG_PURPOSE, .uint32Param = paramConfig.purpose },
         { .tag = HKS_TAG_NONCE,
@@ -80,7 +82,7 @@ bool CryptoManager::AddHksParams(HksParamSet *params, const ParamConfig &paramCo
     return true;
 }
 
-int32_t CryptoManager::GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId)
+int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std::string &userId)
 {
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -236,7 +238,7 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
         .storageLevel = storageLevel,
         .userId = userId
     };
-    if (!AddHksParams(params, paramConfig)) {
+    if (!AddHksParams(params, paramConfig, vecAad_)) {
         return {};
     }
     ret = HksBuildParamSet(&params);
@@ -336,7 +338,7 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
         .storageLevel = storageLevel,
         .userId = userId
     };
-    if (!AddHksParams(params, paramConfig)) {
+    if (!AddHksParams(params, paramConfig, vecAad_)) {
         return false;
     }
 
@@ -365,7 +367,7 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
     return true;
 }
 
-bool CryptoManager::BuildImportKeyParams(struct HksParamSet *&params)
+bool BuildImportKeyParams(struct HksParamSet *&params)
 {
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {

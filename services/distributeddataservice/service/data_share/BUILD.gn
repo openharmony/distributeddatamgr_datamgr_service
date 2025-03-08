@@ -125,7 +125,6 @@ ohos_source_set("data_share_service") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "huks:libhukssdk",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
