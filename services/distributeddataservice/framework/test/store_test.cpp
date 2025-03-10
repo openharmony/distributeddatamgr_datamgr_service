@@ -203,6 +203,24 @@ HWTEST_F(AutoCacheTest, GetMeta, TestSize.Level2)
 }
 
 /**
+* @tc.name: GetArea
+* @tc.desc: AutoCache Delegate operator GetArea()
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, GetArea, TestSize.Level2)
+{
+    AutoCache::Watchers watchers;
+    int32_t user = 0;
+    StoreMetaData meta;
+    meta.area = GeneralStore::EL1;
+    AutoCache::Delegate delegate(nullptr, watchers, user, meta);
+    auto newArea = delegate.GetArea();
+    ASSERT_EQ(newArea, GeneralStore::EL1);
+}
+
+/**
 * @tc.name: GetDBStore
 * @tc.desc: AutoCache GetDBStore
 * @tc.type: FUNC
