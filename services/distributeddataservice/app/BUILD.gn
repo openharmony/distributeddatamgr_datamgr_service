@@ -74,12 +74,16 @@ config("module_private_config") {
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-fdata-sections",
+    "-ffunction-sections",
   ]
 
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
   ]
+
+  ldflags = [ "-Wl,--gc-sections" ]
 }
 
 ohos_shared_library("distributeddataservice") {
