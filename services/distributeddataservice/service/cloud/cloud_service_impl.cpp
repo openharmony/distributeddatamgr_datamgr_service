@@ -61,7 +61,7 @@ using namespace DistributedDataDfx;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
-static constexpr uint32_t RESTART_SERVICE_TIME_THRESHOLD = 60;
+static constexpr uint32_t RESTART_SERVICE_TIME_THRESHOLD = 120;
 static constexpr const char *FT_ENABLE_CLOUD = "ENABLE_CLOUD";
 static constexpr const char *FT_DISABLE_CLOUD = "DISABLE_CLOUD";
 static constexpr const char *FT_SWITCH_ON = "SWITCH_ON";
