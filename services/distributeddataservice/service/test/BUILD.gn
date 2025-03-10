@@ -1111,6 +1111,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
+    "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
   ]
 }
