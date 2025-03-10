@@ -32,6 +32,9 @@ bool CorruptReporter::CreateCorruptedFlag(const std::string &path, const std::st
         return false;
     }
     std::string flagFileName = path + "/" + dbName + DB_CORRUPTED_POSTFIX;
+    if (access(flagFileName.c_str(), F_OK) == 0) {
+        return true;
+    }
     int fd = creat(flagFileName.c_str(), S_IRWXU | S_IRWXG);
     if (fd == -1) {
         ZLOGW("Create corrupted flag fail, flagFileName:%{public}s, errno:%{public}d",
