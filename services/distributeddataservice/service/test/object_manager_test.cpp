@@ -537,13 +537,13 @@ HWTEST_F(ObjectManagerTest, SyncOnStore001, TestSize.Level0)
 }
 
 /**
-* @tc.name: RevokeSaveToStore001
+* @tc.name: RetrieveFromStore001
 * @tc.desc: RetrieveFromStore test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
 */
-HWTEST_F(ObjectManagerTest, RevokeSaveToStore001, TestSize.Level0)
+HWTEST_F(ObjectManagerTest, RetrieveFromStore001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
     DistributedDB::KvStoreNbDelegateMock mockDelegate;

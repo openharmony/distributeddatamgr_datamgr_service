@@ -135,7 +135,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
 * @tc.desc: Transfer event
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: nhj
+* @tc.author: whj
 */
 HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
 {
@@ -152,6 +152,26 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
     ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
     ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
+}
+
+/**
+* @tc.name: DFAPostEvent001
+* @tc.desc: DFAPostEvent invalid eventId test
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectAssetMachineTest, DFAPostEvent001, TestSize.Level0)
+{
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_2", asset };
+    changedAssets_[uri_].status = STATUS_UPLOADING;
+    auto ret = machine->DFAPostEvent(EVENT_BUTT, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(ret, GeneralError::E_ERROR);
 }
 
 /**
@@ -176,6 +196,9 @@ HWTEST_F(ObjectAssetMachineTest, StatusUpload001, TestSize.Level0)
 
     machine->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
     ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+    // dotransfer
+    machine->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
 }
 
 /**
@@ -229,7 +252,7 @@ HWTEST_F(ObjectAssetMachineTest, StatusUpload002, TestSize.Level0)
 * @tc.desc: No conflict scenarios: normal cloud sync.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: nhj
+* @tc.author: whj
 */
 HWTEST_F(ObjectAssetMachineTest, StatusDownload001, TestSize.Level0)
 {
