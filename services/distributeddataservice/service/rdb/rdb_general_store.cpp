@@ -1180,6 +1180,10 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         auto &info = changeInfo[data.tableName][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
+            if (priData.empty()) {
+                ZLOGW("priData is empty, i =%{public}d", i);
+                continue;
+            }
             Convert(std::move(*(priData.begin())), value);
             if (notifyFlag || origin != DBOrigin::ORIGIN_CLOUD || i != DistributedDB::OP_DELETE) {
                 info.push_back(std::move(value));
