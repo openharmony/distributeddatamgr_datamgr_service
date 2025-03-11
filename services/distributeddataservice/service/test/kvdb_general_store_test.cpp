@@ -43,7 +43,7 @@ using DBStoreMock = OHOS::DistributedData::DBStoreMock;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using SecurityLevel = OHOS::DistributedKv::SecurityLevel;
 using KVDBGeneralStore = OHOS::DistributedKv::KVDBGeneralStore;
-using DMAdapter =  OHOS::DistributedData::DeviceManagerAdapter;
+using DMAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
 using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
@@ -1037,6 +1037,5 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest, TestSize.Level0)
     EXPECT_EQ(store6->delegate_, nullptr);
     delete store6;
 }
-
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
