@@ -51,35 +51,29 @@ void RdbHiViewAdapter::InvokeSync()
     }
 
     uint32_t statTypes[count];
-    std::string bundleNames[count];
-    std::string storeNames[count];
+    const char* bundleNames[count];
+    const char* storeNames[count];
     uint32_t subTypes[count];
     uint32_t costTimes[count];
     uint32_t occurTimes[count];
     uint32_t index = 0;
 
-    statEvents.EraseIf([&statTypes, &bundleNames, &storeNames, &subTypes, &costTimes, &occurTimes, &index](
+    statEvents.ForEach([&statTypes, &bundleNames, &storeNames, &subTypes, &costTimes, &occurTimes, &index](
         const RdbStatEvent &key, uint32_t &value) {
         statTypes[index] = key.statType;
-        bundleNames[index] = key.bundleName;
-        storeNames[index] = key.storeName;
+        bundleNames[index] = key.bundleName.c_str();
+        storeNames[index] = key.storeName.c_str();
         subTypes[index] = key.subType;
         costTimes[index] = key.costTime;
         occurTimes[index] = value;
         index++;
-        return true;
+        return false;
     });
 
-    const char* bundleNameArray[count];
-    const char* storeNameArray[count];
-    for (uint32_t i = 0; i < count; ++i) {
-        bundleNameArray[i] = bundleNames[i].c_str();
-        storeNameArray[i] = storeNames[i].c_str();
-    }
     HiSysEventParam params[] = {
         { .name = "TYPE", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = statTypes }, .arraySize = count },
-        { .name = "BUNDLE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = bundleNameArray }, .arraySize = count },
-        { .name = "STORE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = storeNameArray }, .arraySize = count },
+        { .name = "BUNDLE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = bundleNames }, .arraySize = count },
+        { .name = "STORE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = storeNames }, .arraySize = count },
         { .name = "PARAM_TYPE1", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = subTypes }, .arraySize = count },
         { .name = "PARAM_TYPE2", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = costTimes }, .arraySize = count },
         { .name = "TIMES", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = occurTimes }, .arraySize = count },
