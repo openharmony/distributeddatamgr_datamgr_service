@@ -635,7 +635,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::strin
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             if (priData.empty()) {
-                ZLOGW("priData is empty, store:%{public}s table:%{public}s data change from :%{public}s, i=%{public}s",
+                ZLOGW("priData is empty, store:%{public}s table:%{public}s data change from :%{public}s, i=%{public}d",
                     Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
                     Anonymous::Change(originalId).c_str(), i);
                 continue;
