@@ -102,6 +102,8 @@ public:
 
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
+    int32_t ReportStatistic(const RdbSyncerParam &param, const RdbStatEvent &statEvent) override;
+
     int32_t GetPassword(const RdbSyncerParam &param, std::vector<std::vector<uint8_t>> &password) override;
 
     std::pair<int32_t, uint32_t> LockCloudContainer(const RdbSyncerParam &param) override;

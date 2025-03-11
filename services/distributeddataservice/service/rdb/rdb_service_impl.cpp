@@ -55,6 +55,7 @@
 #include "xcollie.h"
 #include "permit_delegate.h"
 #include "bootstrap.h"
+#include "rdb_hiview_adapter.h"
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -864,6 +865,17 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
+int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam& param, const RdbStatEvent &statEvent)
+{
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    RdbHiViewAdapter::GetInstance().ReportStatistic(statEvent);
+    return RDB_OK;
+}
+
 void RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
 {
     if (executors_ != nullptr) {
@@ -1021,6 +1033,7 @@ std::pair<int32_t, int32_t> RdbServiceImpl::GetInstIndexAndUser(uint32_t tokenId
 int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
+    RdbHiViewAdapter::GetInstance().SetThreadPool(executors_);
     return 0;
 }
 
