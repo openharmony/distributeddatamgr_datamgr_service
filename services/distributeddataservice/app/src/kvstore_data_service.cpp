@@ -50,7 +50,6 @@
 #include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "metadata/secret_key_meta_data.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -519,14 +518,15 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
     return 0;
 }
 
-std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta)
+std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
+    const StoreMetaData &metaData)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
         ZLOGE("Secret key meta load failed.");
         return {};
     };
     std::vector<uint8_t> password;
-    if (!CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, password)) {
+    if (!CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, password)) {
         ZLOGE("Secret key decrypt failed.");
         return {};
     };
@@ -557,7 +557,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
             };
             auto key = storeMeta.GetSecretKey();
             SecretKeyMetaData secretKeyMeta;
-            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta);
+            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, storeMeta);
             if (reEncryptedKey.size() == 0) {
                 ZLOGE("Secret key re-encrypt failed, user: %{public}s, bundleName: %{public}s, Db: "
                     "%{public}s, instanceId: %{public}d", userId.c_str(),
@@ -657,7 +657,7 @@ bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem 
     }
     SecretKeyMetaData secretKey;
     secretKey.storeType = item.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey);
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     secretKey.time = { item.time.begin(), item.time.end() };
     sKey.assign(sKey.size(), 0);
     rawKey.assign(rawKey.size(), 0);

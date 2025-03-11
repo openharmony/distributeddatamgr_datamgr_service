@@ -50,12 +50,12 @@ public:
 class SessionManager {
 public:
     static SessionManager &GetInstance();
-    Session GetSession(const SessionPoint &from, const std::string &targetDeviceId) const;
-    bool CheckSession(const SessionPoint &from, const SessionPoint &to) const;
+    Session GetSession(const SessionPoint &local, const std::string &targetDeviceId) const;
+    bool CheckSession(const SessionPoint &local, const SessionPoint &peer) const;
 private:
-    bool GetSendAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+    bool GetSendAuthParams(const SessionPoint &local, const std::string &targetDeviceId,
         AclParams &aclParams) const;
-    bool GetRecvAuthParams(const SessionPoint &from, const std::string &targetDeviceId,
+    bool GetRecvAuthParams(const SessionPoint &local, const std::string &targetDeviceId,
         AclParams &aclParams, int peerUser) const;
 };
 } // namespace OHOS::DistributedData

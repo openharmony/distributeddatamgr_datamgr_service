@@ -143,6 +143,7 @@ ohos_shared_library("distributeddataservice") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",

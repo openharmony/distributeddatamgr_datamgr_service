@@ -55,6 +55,7 @@ public:
     int32_t ObtainAsynProcess(AsyncProcessInfo &processInfo) override;
     int32_t ClearAsynProcessByKey(const std::string &businessUdKey) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
@@ -62,7 +63,7 @@ private:
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
-    int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
+    int32_t ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData, std::vector<Uri> &uris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
     bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);

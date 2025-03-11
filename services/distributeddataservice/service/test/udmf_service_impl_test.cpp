@@ -197,4 +197,23 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption004, TestSize.Level1)
     int32_t ret = udmfServiceImpl.SetAppShareOption(intention, shareOption);
     EXPECT_EQ(ret, E_INVALID_PARAMETERS);
 }
+
+/**
+* @tc.name: OnUserChangeTest001
+* @tc.desc: OnUserChange test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
+{
+    uint32_t code = 4;
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    UdmfServiceImpl udmfServiceImpl;
+    auto status = udmfServiceImpl.OnUserChange(code, user, account);
+    ASSERT_EQ(status, E_OK);
+    auto sizeAfter = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(sizeAfter, 0);
+}
+
 }; // namespace UDMF

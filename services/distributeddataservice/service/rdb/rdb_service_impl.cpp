@@ -426,8 +426,15 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
     }
     auto store = GetStore(param);
     if (store == nullptr) {
-        ZLOGE("store is null");
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
+    }
+    StoreMetaData meta = GetStoreMetaData(param);
+    std::vector<std::string> devices = {DmAdapter::GetInstance().ToUUID(device)};
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
     }
     RdbQuery rdbQuery;
     rdbQuery.MakeRemoteQuery(DmAdapter::GetInstance().ToUUID(device), sql, ValueProxy::Convert(selectionArgs));
@@ -623,8 +630,9 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         return true;
     });
     if (isCreate) {
+        auto subUser = GetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_));
+            GetWatchers(tokenId, param.storeName_), subUser);
     }
     return RDB_OK;
 }
@@ -652,8 +660,9 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         return true;
     });
     if (destroyed) {
+        auto subUser = GetSubUser(param.subUser_);
         AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_));
+            GetWatchers(tokenId, param.storeName_), subUser);
     }
     return RDB_OK;
 }
@@ -706,7 +715,8 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_));
+    auto subUser = GetSubUser(param.subUser_);
+    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_), subUser);
     RdbSyncerParam tmpParam = param;
     HapTokenInfo hapTokenInfo;
     AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
@@ -844,14 +854,14 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     if (param.isEncrypt_ && !param.password_.empty()) {
-        auto ret = SetSecretKey(param, meta);
-        if (ret != RDB_OK) {
+        if (SetSecretKey(param, meta) != RDB_OK) {
             ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
                   meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
             return RDB_ERROR;
         }
+        DeleteCloneSecretKey(meta);
     }
-    GetCloudSchema(param);
+    GetSchema(param);
     return RDB_OK;
 }
 
@@ -866,7 +876,7 @@ int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam& param, const RdbSt
     return RDB_OK;
 }
 
-void RdbServiceImpl::GetCloudSchema(const RdbSyncerParam &param)
+void RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
 {
     if (executors_ != nullptr) {
         StoreInfo storeInfo;
@@ -895,7 +905,11 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.bundleName = param.bundleName_;
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = RemoveSuffix(param.storeName_);
-    metaData.user = std::to_string(user);
+    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
+        metaData.user = std::to_string(param.subUser_);
+    } else {
+        metaData.user = std::to_string(user);
+    }
     metaData.storeType = param.type_;
     metaData.securityLevel = param.level_;
     metaData.area = param.area_;
@@ -917,7 +931,8 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
 {
     SecretKeyMetaData newSecretKey;
     newSecretKey.storeType = meta.storeType;
-    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param.password_);
+    newSecretKey.area = meta.area;
+    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param.password_, meta.area, meta.user);
     if (newSecretKey.sKey.empty()) {
         ZLOGE("encrypt work key error.");
         return RDB_ERROR;
@@ -925,6 +940,15 @@ int32_t RdbServiceImpl::SetSecretKey(const RdbSyncerParam &param, const StoreMet
     auto time = system_clock::to_time_t(system_clock::now());
     newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
     return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
+}
+
+bool RdbServiceImpl::DeleteCloneSecretKey(const StoreMetaData &meta)
+{
+    SecretKeyMetaData secretKey;
+    if (MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), secretKey, true)) {
+        return MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
+    }
+    return true;
 }
 
 int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &old)
@@ -966,7 +990,7 @@ bool RdbServiceImpl::GetDBPassword(const StoreMetaData &metaData, DistributedDB:
     DistributedData::SecretKeyMetaData secretKeyMeta;
     MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
     std::vector<uint8_t> decryptKey;
-    CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+    CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, decryptKey);
     if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         ZLOGE("Set secret key value failed. len is (%{public}d)", int32_t(decryptKey.size()));
@@ -1371,7 +1395,8 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Disable(tokenId, storeId);
+    auto userId = GetSubUser(param.subUser_);
+    AutoCache::GetInstance().Disable(tokenId, storeId, userId);
     return RDB_OK;
 }
 
@@ -1379,7 +1404,8 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Enable(tokenId, storeId);
+    auto userId = GetSubUser(param.subUser_);
+    AutoCache::GetInstance().Enable(tokenId, storeId, userId);
     return RDB_OK;
 }
 
@@ -1401,8 +1427,9 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std
             Anonymous::Change(param.storeName_).c_str());
         return RDB_NO_META;
     }
-    bool key = CryptoManager::GetInstance().Decrypt(secretKey.sKey, password.at(0));
-    bool cloneKey = CryptoManager::GetInstance().Decrypt(cloneSecretKey.sKey, password.at(1));
+    bool key = CryptoManager::GetInstance().Decrypt(meta, secretKey, password.at(0));
+    bool cloneKey = CryptoManager::GetInstance().Decrypt(
+        meta, cloneSecretKey, password.at(1), CryptoManager::CLONE_SECRET_KEY);
     if (!key && !cloneKey) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. decrypt err", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -1572,5 +1599,14 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     return RDB_OK;
+}
+
+std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
+{
+    std::string userId = "";
+    if (AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID()) != TOKEN_HAP && subUser != 0) {
+        userId = std::to_string(subUser);
+    }
+    return userId;
 }
 } // namespace OHOS::DistributedRdb

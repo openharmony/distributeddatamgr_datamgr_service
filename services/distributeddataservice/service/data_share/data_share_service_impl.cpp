@@ -64,6 +64,8 @@ using DumpManager = OHOS::DistributedData::DumpManager;
 using ProviderInfo = DataProviderConfig::ProviderInfo;
 using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
+// decimal base
+static constexpr int DECIMAL_BASE = 10;
 class DataShareServiceImpl::SystemAbilityStatusChangeListener
     : public SystemAbilityStatusChangeStub {
 public:
@@ -615,7 +617,19 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     const std::string &deviceId)
 {
     std::map<std::string, ProfileInfo> profileInfos;
-    if (!DataShareProfileConfig::GetProfileInfo(bundleName, std::stoi(userId), profileInfos)) {
+    char *endptr = nullptr;
+    errno = 0;
+    long userIdLong = strtol(userId.c_str(), &endptr, DECIMAL_BASE);
+    if (endptr == nullptr || endptr == userId.c_str() || *endptr != '\0') {
+        ZLOGE("UserId:%{public}s is invalid", userId.c_str());
+        return;
+    }
+    if (errno == ERANGE || userIdLong >= INT32_MAX || userIdLong <= INT32_MIN) {
+        ZLOGE("UserId:%{public}s is out of range", userId.c_str());
+        return;
+    }
+    int32_t currentUserId = static_cast<int32_t>(userIdLong);
+    if (!DataShareProfileConfig::GetProfileInfo(bundleName, currentUserId, profileInfos)) {
         ZLOGE("Get profileInfo failed.");
         return;
     }
@@ -891,6 +905,9 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
     }
     int32_t currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
     UriInfo uriInfo;
+    // GetInfoFromUri will first perform a four-part URI check. Only if the URI contains more than four parts
+    // is it necessary to continue to check the SilentProxyEnable status. The URI part length is used as an
+    // indicator to determine whether the SilentProxyEnable status needs to be checked.
     if (!URIUtils::GetInfoFromURI(uri, uriInfo)) {
         return E_OK;
     }
@@ -1192,11 +1209,15 @@ bool DataShareServiceImpl::VerifyPermission(const std::string &bundleName, const
             return false;
         }
     } else {
+        Security::AccessToken::HapTokenInfo tokenInfo;
+        auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+        if (result == Security::AccessToken::RET_SUCCESS && tokenInfo.bundleName == bundleName) {
+            return true;
+        }
         // Provider from ProxyData, which does not allow empty permissions and cannot be access without configured
         if (permission.empty()) {
             ZLOGE("Permission empty! token:0x%{public}x, bundleName:%{public}s", tokenId, bundleName.c_str());
-            // But currently it is allowed to be empty
-            return true;
+            return false;
         }
         // If the permission is NO_PERMISSION, access is also allowed
         if (permission != NO_PERMISSION && !PermitDelegate::VerifyPermission(permission, tokenId)) {

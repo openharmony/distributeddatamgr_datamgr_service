@@ -49,7 +49,6 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
-using namespace CloudData;
 using namespace std::chrono;
 using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
@@ -167,7 +166,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
         SecretKeyMetaData secretKeyMeta;
         MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
         std::vector<uint8_t> decryptKey;
-        CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        CryptoManager::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey);
         option.passwd.SetValue(decryptKey.data(), decryptKey.size());
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         option.isEncryptedDb = meta.isEncrypt;
@@ -922,7 +921,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
     }
     auto status = delegate_->SetReference(properties);
-    if (status != DistributedDB::DBStatus::OK) {
+    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
         return GeneralError::E_ERROR;
     }

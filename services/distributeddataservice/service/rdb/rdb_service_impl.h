@@ -170,10 +170,10 @@ private:
 
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
-    
+
     int DoAutoSync(
         const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tableNames);
-    
+
     std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices);
     int DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase);
 
@@ -186,7 +186,7 @@ private:
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
-    
+
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);
 
     void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
@@ -210,9 +210,11 @@ private:
 
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
+    static std::string GetSubUser(const int32_t subUser);
+
     static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
-    void GetCloudSchema(const RdbSyncerParam &param);
+    void GetSchema(const RdbSyncerParam &param);
 
     void SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param);
 
@@ -228,10 +230,12 @@ private:
 
     int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
-    
+
     bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
         DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
     void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
+
+    bool DeleteCloneSecretKey(const StoreMetaData &meta);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
