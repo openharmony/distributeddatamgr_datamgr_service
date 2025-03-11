@@ -31,13 +31,11 @@ public:
 
 private:
   std::shared_ptr<ExecutorPool> executors_ = nullptr;
-  ConcurrentMap<RdbStatEvent, uint32_t> statEventMap;
+  ConcurrentMap<RdbStatEvent, uint32_t> statEvents_;
   void InvokeSync();
   void StartTimerThread();
-
-private:
   std::atomic<bool> running_ = false;
-  const int waitTime = 60 * 60 * 24; // 24h
+  constexpr int32_t WAIT_TIME = 60 * 60 * 24; // 24h
 };
 } // namespace OHOS::DistributedRdb
 #endif // DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H

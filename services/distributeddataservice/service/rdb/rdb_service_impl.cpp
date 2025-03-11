@@ -857,6 +857,11 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 
 int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam& param, const RdbStatEvent &statEvent)
 {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
     RdbHiViewAdapter::GetInstance().ReportStatistic(statEvent);
     return RDB_OK;
 }

@@ -35,7 +35,7 @@ void RdbHiViewAdapter::ReportStatistic(const RdbStatEvent &stat)
     if (executors_ == nullptr) {
         return;
     }
-    statEventMap.Compute(stat, [&stat, this](const RdbStatEvent &key, uint32_t &value) {
+    statEvents_.Compute(stat, [&stat](const RdbStatEvent &key, uint32_t &value) {
         value++;
         return true;
     });
@@ -43,7 +43,8 @@ void RdbHiViewAdapter::ReportStatistic(const RdbStatEvent &stat)
   
 void RdbHiViewAdapter::InvokeSync()
 {
-    uint32_t count = statEventMap.Size();
+    auto statEvents = std::move(statEvents_);
+    uint32_t count = statEvents.Size();
     if (count == 0) {
         return;
     }
@@ -56,7 +57,7 @@ void RdbHiViewAdapter::InvokeSync()
     uint32_t occurTimes[count];
     uint32_t index = 0;
 
-    statEventMap.EraseIf([&statTypes, &bundleNames, &storeNames, &subTypes, &costTimes, &occurTimes, &index](
+    statEvents.EraseIf([&statTypes, &bundleNames, &storeNames, &subTypes, &costTimes, &occurTimes, &index](
         const RdbStatEvent &key, uint32_t &value) {
         statTypes[index] = key.statType;
         bundleNames[index] = key.bundleName;
