@@ -1181,11 +1181,9 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
             if (priData.empty()) {
-                ZLOGW("priData is empty, store:%{public}s table:%{public}s data change "
-                "from :%{public}s, i=%{public}s",
-                Anonymous::Change(storeId_).c_str(),
-                Anonymous::Change(data.tableName).c_str(),
-                Anonymous::Change(originalId).c_str(), i);
+                ZLOGW("priData is empty, store:%{public}s table:%{public}s data change from :%{public}s, i=%{public}s",
+                    Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
+                    Anonymous::Change(originalId).c_str(), i);
                 continue;
             }
             Convert(std::move(*(priData.begin())), value);
