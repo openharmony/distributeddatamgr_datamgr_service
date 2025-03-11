@@ -23,6 +23,7 @@ namespace OHOS::DistributedRdb {
   
 static constexpr const char *DISTRIBUTED_DATAMGR = "DISTDATAMGR";
 static constexpr const char *STATISTIC_EVENT = "RDB_STATISTIC";
+constexpr int32_t WAIT_TIME = 60 * 60 * 24; // 24h
   
 RdbHiViewAdapter& RdbHiViewAdapter::GetInstance()
 {
@@ -95,7 +96,7 @@ void RdbHiViewAdapter::StartTimerThread()
     if (running_.exchange(true)) {
         return;
     }
-    auto interval = std::chrono::seconds(waitTime);
+    auto interval = std::chrono::seconds(WAIT_TIME);
     auto fun = [this]() {
         InvokeSync();
     };

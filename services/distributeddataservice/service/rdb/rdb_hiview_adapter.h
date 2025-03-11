@@ -35,7 +35,6 @@ private:
   void InvokeSync();
   void StartTimerThread();
   std::atomic<bool> running_ = false;
-  constexpr int32_t WAIT_TIME = 60 * 60 * 24; // 24h
 };
 } // namespace OHOS::DistributedRdb
 #endif // DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H
