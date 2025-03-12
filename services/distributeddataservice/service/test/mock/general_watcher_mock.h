@@ -14,12 +14,11 @@
  */
 #ifndef OHOS_DISTRIBUTEDDATA_SERVICE_TEST_GENERAL_WATCH_MOCK_H
 #define OHOS_DISTRIBUTEDDATA_SERVICE_TEST_GENERAL_WATCH_MOCK_H
-
-#include "store/general_value.h"
+#include "rdb_query.h"
 #include "store/general_watcher.h"
 
 namespace OHOS::DistributedData {
-class MockQuery : public GenQuery {
+class MockQuery : public DistributedRdb::RdbQuery {
 public:
     ~MockQuery() = default;
     static constexpr uint64_t TYPE_ID = 0x20000001;
@@ -28,6 +27,9 @@ public:
     bool IsEqual(uint64_t tid) override;
 
     std::vector<std::string> GetTables() override;
+    const std::string GetStatement();
+    void MakeRemoteQuery(const std::string &devices, const std::string &sql, DistributedData::Values &&args);
+    void MakeQuery(const DistributedRdb::PredicatesMemo &predicates);
 };
 
 class MockGeneralWatcher : public DistributedData::GeneralWatcher {
@@ -36,5 +38,5 @@ public:
 
     int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
 };
-} // OHOS::DistributedData
+} // namespace OHOS::DistributedData
 #endif

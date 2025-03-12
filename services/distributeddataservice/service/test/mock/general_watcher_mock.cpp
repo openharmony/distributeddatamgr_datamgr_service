@@ -25,6 +25,24 @@ std::vector<std::string> MockQuery::GetTables()
     return tables_;
 }
 
+const std::string GetStatement()
+{
+    return "AS distributed_log";
+}
+
+void MockQuery::MakeRemoteQuery(const std::string &devices, const std::string &sql, Values &&args)
+{
+    isRemote_ = true;
+    devices_ = { devices };
+    sql_ = sql;
+    args_ = std::move(args);
+}
+
+void MockQuery::MakeQuery(const DistributedRdb::PredicatesMemo &predicates)
+{
+    devices_ = predicates.devices_;
+    tables_ = predicates.tables_;
+}
 int32_t MockGeneralWatcher::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {
     return GeneralError::E_OK;
@@ -34,4 +52,4 @@ int32_t MockGeneralWatcher::OnChange(const Origin &origin, const Fields &fields,
 {
     return GeneralError::E_OK;
 }
-} // OHOS::DistributedData
+} // namespace OHOS::DistributedData

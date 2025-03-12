@@ -21,6 +21,9 @@
 
 #include "bootstrap.h"
 #include "cloud/schema_meta.h"
+#include "error/general_error.h"
+#include "errors.h"
+#include "eventcenter/event_center.h"
 #include "gtest/gtest.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -30,6 +33,9 @@
 #include "mock/general_watcher_mock.h"
 #include "rdb_query.h"
 #include "store/general_store.h"
+#include "store/general_value.h"
+#include "store_observer.h"
+#include "store_types.h"
 #include "types.h"
 
 using namespace testing::ext;
@@ -79,6 +85,7 @@ void RdbGeneralStoreTest::InitMetaData()
     metaData_.storeId = STORE_NAME;
     metaData_.dataDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/rdb";
     metaData_.securityLevel = DistributedKv::SecurityLevel::S2;
+    metaData_.isSearchable = true;
 }
 
 class MockRelationalStoreDelegate : public DistributedDB::RelationalStoreDelegate {
@@ -243,6 +250,7 @@ public:
         return;
     }
 };
+
 
 /**
 * @tc.name: BindSnapshots001
@@ -689,6 +697,57 @@ HWTEST_F(RdbGeneralStoreTest, Query002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: Query003
+ * @tc.desc: Test remote query with invalid device count
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+
+    MockQuery query;
+    const std::string devices = "device1";
+    const std::string sql;
+    Values args;
+    query.MakeRemoteQuery(devices, sql, std::move(args));
+    query.lastResult = true;
+    std::string table = "test_table";
+    MockRelationalStoreDelegate mockDelegate;
+    store->delegate_ = &mockDelegate;
+    auto [err, cursor] = store->Query(table, query);
+
+    EXPECT_EQ(err, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: Query004
+ * @tc.desc: Test successful remote query
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Query004, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+
+    MockQuery query;
+    const std::string devices = "device1";
+    const std::string sql;
+    Values args;
+    query.MakeRemoteQuery(devices, sql, std::move(args));
+    query.lastResult = true;
+
+    MockRelationalStoreDelegate mockDelegate;
+    store->delegate_ = &mockDelegate;
+
+    std::string table = "test_table";
+    auto [err, cursor] = store->Query(table, query);
+
+    EXPECT_EQ(err, GeneralError::E_OK);
+    EXPECT_NE(cursor, nullptr);
+}
+
+/**
 * @tc.name: MergeMigratedData
 * @tc.desc: RdbGeneralStore MergeMigratedData function test
 * @tc.type: FUNC
@@ -735,6 +794,59 @@ HWTEST_F(RdbGeneralStoreTest, Sync, TestSize.Level1)
 }
 
 /**
+* @tc.name: Sync
+* @tc.desc: RdbGeneralStore Sync CLOUD_TIME_FIRST test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, Sync001, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    GeneralStore::Devices devices;
+    MockQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::CLOUD_TIME_FIRST;
+
+    MockRelationalStoreDelegate mockDelegate;
+    store->delegate_ = &mockDelegate;
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+    syncParam.mode = GeneralStore::NEARBY_END;
+    std::tie(result1, result2) = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_ERROR);
+    syncParam.mode = GeneralStore::NEARBY_PULL_PUSH;
+    std::tie(result1, result2) = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: Sync
+* @tc.desc: RdbGeneralStore Sync DistributedTable test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, Sync002, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    GeneralStore::Devices devices;
+    RdbQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+
+    MockRelationalStoreDelegate mockDelegate;
+    mockDelegate.CreateDistributedTable("naturalbase_rdb_test");
+    mockDelegate.CreateDistributedTable("naturalbase_rdb_name");
+    store->delegate_ = &mockDelegate;
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
 * @tc.name: PreSharing
 * @tc.desc: RdbGeneralStore PreSharing function test
 * @tc.type: FUNC
@@ -752,6 +864,46 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing, TestSize.Level1)
 }
 
 /**
+* @tc.name: PreSharing
+* @tc.desc: RdbGeneralStore PreSharing function test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, PreSharing001, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockQuery query;
+    query.lastResult = true;
+    auto [errCode, result] = store->PreSharing(query);
+    EXPECT_EQ(errCode, GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name: PreSharing
+* @tc.desc: RdbGeneralStore PreSharing function test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockQuery query;
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+    predicates.tables_ = { "tables1" };
+    query.lastResult = true;
+    query.MakeQuery(predicates);
+    auto [errCode, result] = store->PreSharing(query);
+    EXPECT_EQ(errCode, GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
 * @tc.name: ExtractExtend
 * @tc.desc: RdbGeneralStore ExtractExtend function test
 * @tc.type: FUNC
@@ -763,7 +915,8 @@ HWTEST_F(RdbGeneralStoreTest, ExtractExtend, TestSize.Level1)
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     RdbGeneralStore::VBucket extend = { { "#gid", { "0000000" } }, { "#flag", { true } },
-        { "#value", { int64_t(100) } }, { "#float", { double(100) } }, { "#cloud_gid", { "cloud_gid" } } };
+        { "#value", { int64_t(100) } }, { "#float", { double(100) } }, { "#cloud_gid", { "cloud_gid" } },
+        { "cloud_gid", { "" } } };
     DistributedData::VBuckets extends = { { extend } };
     auto result = store->ExtractExtend(extends);
     EXPECT_EQ(result.size(), extends.size());
@@ -861,6 +1014,49 @@ HWTEST_F(RdbGeneralStoreTest, OnChange, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_OK);
     store->observer_.OnChange(data);
     store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
+    result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
+    EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: OnChange001
+* @tc.desc: RdbGeneralStore OnChange function test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, OnChange001, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher watcher;
+    MockStoreChangedData data;
+    DistributedDB::ChangedData changedData;
+    changedData.primaryData[0] = { { std::monostate{}, 42, 3.14, "hello", true },
+        { Bytes{ 1, 2, 3, 4 },
+            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999",
+                static_cast<uint32_t>(AssetOpType::NO_CHANGE), static_cast<uint32_t>(AssetStatus::NORMAL), 0 },
+            Bytes{ 5, 6, 7, 8 } },
+        { int64_t(-123), 2.718, 100, 0.001 } };
+    changedData.primaryData[1] = { { std::monostate{}, 42, 3.14, "hello", true },
+        { Bytes{ 1, 2, 3, 4 },
+            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999",
+                static_cast<uint32_t>(AssetOpType::NO_CHANGE), static_cast<uint32_t>(AssetStatus::NORMAL), 0 },
+            Bytes{ 5, 6, 7, 8 } },
+        { int64_t(-123), 2.718, 100, 0.001 } };
+    changedData.primaryData[2] = { { "DELETE#ALL_CLOUDDATA", std::monostate{}, 42, 3.14, "hello", true },
+        { Bytes{ 1, 2, 3, 4 },
+            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999",
+                static_cast<uint32_t>(AssetOpType::NO_CHANGE), static_cast<uint32_t>(AssetStatus::NORMAL), 0 },
+            Bytes{ 5, 6, 7, 8 } },
+        { int64_t(-123), 2.718, 100, 0.001 } };
+    changedData.field = { "name", "age" };
+    changedData.tableName = "test";
+    auto result = store->Watch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    store->observer_.OnChange(data);
+    store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
+    store->observer_.OnChange(DistributedDB::Origin::ORIGIN_LOCAL, "originalId", std::move(changedData));
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
@@ -1162,6 +1358,25 @@ HWTEST_F(RdbGeneralStoreTest, GetCBTest, TestSize.Level1)
     DistributedRdb::RdbGeneralStore::SyncId syncId = 1;
     auto result = store->GetCB(syncId);
     ASSERT_NE(result, nullptr);
+}
+
+/**
+* @tc.name: UpdateDBStatus
+* @tc.desc: UpdateDBStatus test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(RdbGeneralStoreTest, UpdateDBStatus, TestSize.Level1)
+{
+    auto store = new (std::nothrow) RdbGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    auto result = store->UpdateDBStatus();
+    EXPECT_EQ(result, E_ALREADY_CLOSED);
+    MockRelationalStoreDelegate mockDelegate;
+    store->delegate_ = &mockDelegate;
+    result = store->UpdateDBStatus();
+    EXPECT_EQ(result, E_OK);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
