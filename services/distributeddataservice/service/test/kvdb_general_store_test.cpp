@@ -49,7 +49,6 @@ using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 namespace OHOS::Test {
 namespace DistributedDataTest {
-
 class KVDBGeneralStoreTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -797,7 +796,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::CLOUD_BEGIN;
-    uint32_t highMode = GeneralStore::HighMode::AUTO_SYNC_MODE;
+    uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
     auto mixMode = GeneralStore::MixMode(syncMode, highMode);
     std::string kvQuery = "querytest";
     DistributedKv::KVDBQuery query(kvQuery);
@@ -805,6 +804,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
     syncParam.mode = mixMode;
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
+    EXPECT_NE(store->delegate_, nullptr);
     auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret.first, GeneralError::E_NOT_SUPPORT);
     GeneralStore::StoreConfig storeConfig;
@@ -825,6 +825,8 @@ HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret.first, GeneralError::E_INVALID_ARGS);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 
@@ -847,6 +849,7 @@ HWTEST_F(KVDBGeneralStoreTest, SetEqualIdentifier, TestSize.Level0)
     store->SetEqualIdentifier(appId01, storeId01, account);
     EXPECT_EQ(uuids.empty(), false);
     EXPECT_EQ(sameAccountDevs.empty(), false);
+    delete store;
 }
 
 /**
@@ -858,7 +861,7 @@ HWTEST_F(KVDBGeneralStoreTest, SetEqualIdentifier, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, GetIdentifierParams001, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr)
+    ASSERT_NE(store, nullptr);
     std::vector<std::string> sameAccountDevs{"account01", "account02", "account03"};
     std::vector<std::string> uuids{"uuidtest01", "uuidtest02", "uuidtest03"};
     store->GetIdentifierParams(sameAccountDevs, uuids, 1); //
@@ -867,6 +870,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetIdentifierParams001, TestSize.Level0)
         EXPECT_EQ(DMAdapter::GetInstance().GetAuthType(devId), 0); //
     }
     EXPECT_EQ(sameAccountDevs.empty(), false);
+    delete store;
 }
 
 /**
@@ -885,6 +889,7 @@ HWTEST_F(KVDBGeneralStoreTest, ConvertStatus001, TestSize.Level0)
     DBStatus unknownStatus = static_cast<DBStatus>(0xDEAD);
     ret = store->ConvertStatus(unknownStatus);
     EXPECT_EQ(ret, GeneralError::E_ERROR);
+    delete store;
 }
 
 /**
@@ -907,6 +912,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBProcessCB, TestSize.Level0)
     auto callback = store->GetDBProcessCB(async);
     callback(processes);
     EXPECT_TRUE(asyncCalled);
+    delete store;
 }
 
 /**
@@ -946,6 +952,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBProcessCB002, TestSize.Level0)
     EXPECT_EQ(async, nullptr);
     auto callback = store->GetDBProcessCB(async);
     callback(processes);
+    delete store;
 }
 
 /**
@@ -989,6 +996,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloseTest001, TestSize.Level0)
     bool isForce = false;
     ret = store->Close(isForce);
     EXPECT_EQ(ret, DBStatus::OK);
+    delete store;
 }
 
 /**
