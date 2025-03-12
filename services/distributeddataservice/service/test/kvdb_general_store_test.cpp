@@ -858,6 +858,7 @@ HWTEST_F(KVDBGeneralStoreTest, SetEqualIdentifier, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, GetIdentifierParams001, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr)
     std::vector<std::string> sameAccountDevs{"account01", "account02", "account03"};
     std::vector<std::string> uuids{"uuidtest01", "uuidtest02", "uuidtest03"};
     store->GetIdentifierParams(sameAccountDevs, uuids, 1); //
