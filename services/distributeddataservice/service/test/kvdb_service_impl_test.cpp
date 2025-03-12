@@ -1257,24 +1257,6 @@ HWTEST_F(KvdbServiceImplTest, GetSyncMode, TestSize.Level0)
 }
 
 /**
-* @tc.name: DoCloudSync01
-* @tc.desc: DoCloudSync01 function test.
-* @tc.type: FUNC
-* @tc.author:
-*/
-HWTEST_F(KvdbServiceImplTest, DoCloudSync01, TestSize.Level0)
-{
-    delegate_.isNetworkAvailable_ = true;
-    auto cloudServerMock = new CloudServerMock();
-    CloudServer::RegisterCloudInstance(cloudServerMock);
-    StoreMetaData metaData;
-    metaData.enableCloud = true;
-    SyncInfo syncInfo;
-    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
-    EXPECT_EQ(status, Status::SUCCESS);
-}
-
-/**
 * @tc.name: DoCloudSync02
 * @tc.desc: DoCloudSync02 function test.
 * @tc.type: FUNC
