@@ -33,6 +33,7 @@ public:
     virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual bool IsSameAccount(const AccessCaller &, const AccessCallee &) = 0;
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
+    virtual DeviceInfo GetLocalDevice() = 0;
     static inline std::shared_ptr<BDeviceManagerAdapter> deviceManagerAdapter = nullptr;
     BDeviceManagerAdapter() = default;
     virtual ~BDeviceManagerAdapter() = default;
@@ -47,6 +48,7 @@ public:
     MOCK_METHOD(Status, StopWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(bool, IsSameAccount, (const AccessCaller &, const AccessCallee &));
     MOCK_METHOD(bool, CheckAccessControl, (const AccessCaller &, const AccessCallee &));
+    MOCK_METHOD(DeviceInfo, GetLocalDevice, ());
 };
 
 } // namespace DistributedData

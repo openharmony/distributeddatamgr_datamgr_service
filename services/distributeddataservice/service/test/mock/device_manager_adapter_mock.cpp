@@ -84,4 +84,17 @@ std::vector<DeviceInfo> OHOS::DistributedData::DeviceManagerAdapter::GetRemoteDe
     }
     return BDeviceManagerAdapter::deviceManagerAdapter->GetRemoteDevices();
 }
+
+DeviceInfo DeviceManagerAdapter::GetLocalDevice()
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        DeviceInfo info;
+        return info;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetLocalDevice();
+}
+
+DeviceManagerAdapter::~DeviceManagerAdapter()
+{
+}
 }

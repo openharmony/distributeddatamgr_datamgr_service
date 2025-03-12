@@ -15,6 +15,7 @@
 
 #include "bootstrap.h"
 #include <gtest/gtest.h>
+#include <memory>
 
 namespace OHOS::DistributedData {
 using namespace testing;
@@ -65,6 +66,8 @@ HWTEST_F(BootStrapMockTest, GetMetaDBName, testing::ext::TestSize.Level0)
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCloud();
     Bootstrap::GetInstance().LoadAppIdMappings();
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(0, 1);
+    Bootstrap::GetInstance().LoadBackup(executors);
     EXPECT_TRUE(metaDbName == BootStrapMockTest::defaultMeta);
 }
 }
