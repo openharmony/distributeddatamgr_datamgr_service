@@ -820,7 +820,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
     ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret.first, GeneralError::E_INVALID_ARGS);
 
-    syncMode = GeneralStore::SyncMode:: NEARBY_PULL;
+    syncMode = GeneralStore::SyncMode::NEARBY_PULL;
     mixMode = GeneralStore::MixMode(syncMode, highMode);
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
