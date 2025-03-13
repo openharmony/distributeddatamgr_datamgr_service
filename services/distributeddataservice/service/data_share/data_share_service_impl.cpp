@@ -57,6 +57,7 @@
 #include "utils/anonymous.h"
 #include "xcollie.h"
 #include "log_debug.h"
+#include "parameters.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -952,7 +953,8 @@ bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId,
     if (currentUserId == 0 || currentUserId == visitedUserId) {
         return true;
     }
-    return PermitDelegate::VerifyPermission(acrossAccountsPermission, callerTokenId);
+    return system::GetBoolParameter(CONNECT_SUPPORT_CROSS_USER, false) &&
+        PermitDelegate::VerifyPermission(acrossAccountsPermission, callerTokenId);
 }
 
 std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const std::string &extUri,
