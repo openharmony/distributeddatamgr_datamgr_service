@@ -102,7 +102,7 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
     timeoutReport.Report(std::to_string(userId), IPCSkeleton::GetCallingPid(), appIndex);
     if (!ret) {
         ZLOGE("GetBundleInfo failed!bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
-        return E_BUNDLE_NAME_NOT_EXIST;
+        return E_ERROR;
     }
     auto [errCode, bundle] = ConvertToDataShareBundle(bundleInfo);
     if (errCode != E_OK) {
