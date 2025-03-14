@@ -1234,6 +1234,85 @@ ohos_unittest("UdmfServiceStubTest") {
   ]
 }
 
+ohos_unittest("UdmfServiceStubMockTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/framework/account/account_delegate.cpp",
+    "${data_service_path}/framework/checker/checker_manager.cpp",
+    "${data_service_path}/framework/dfx/reporter.cpp",
+    "${data_service_path}/framework/directory/directory_manager.cpp",
+    "${data_service_path}/framework/feature/feature_system.cpp",
+    "${data_service_path}/framework/metadata/appid_meta_data.cpp",
+    "${data_service_path}/framework/metadata/auto_launch_meta_data.cpp",
+    "${data_service_path}/framework/metadata/capability_range.cpp",
+    "${data_service_path}/framework/metadata/meta_data_manager.cpp",
+    "${data_service_path}/framework/metadata/secret_key_meta_data.cpp",
+    "${data_service_path}/framework/metadata/store_debug_info.cpp",
+    "${data_service_path}/framework/metadata/store_meta_data.cpp",
+    "${data_service_path}/framework/metadata/store_meta_data_local.cpp",
+    "${data_service_path}/framework/metadata/strategy_meta_data.cpp",
+    "${data_service_path}/framework/serializable/serializable.cpp",
+    "${data_service_path}/framework/utils/anonymous.cpp",
+    "${data_service_path}/framework/utils/constant.cpp",
+    "${data_service_path}/framework/utils/corrupt_reporter.cpp",
+    "${data_service_path}/framework/utils/crypto.cpp",
+    "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
+    "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
+    "${data_service_path}/service/udmf/permission/checker_manager.cpp",
+    "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
+    "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
+    "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
+    "${data_service_path}/service/udmf/store/runtime_store.cpp",
+    "${data_service_path}/service/udmf/store/store_account_observer.cpp",
+    "${data_service_path}/service/udmf/store/store_cache.cpp",
+    "${data_service_path}/service/udmf/udmf_service_impl.cpp",
+    "${data_service_path}/service/udmf/udmf_service_stub.cpp",
+    "udmf_service_stub_mock_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/test/mock",
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/framework/include/dfx",
+    "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/account",
+    "${data_service_path}/service/udmf/store",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [ "${data_service_path}/service:distributeddatasvc" ]
+
+  external_deps = [
+    "ability_base:zuri",
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+    "udmf:udmf_client",
+  ]
+}
+
 ohos_unittest("UdmfCheckerManagerTest") {
   module_out_path = module_output_path
   sources = [
@@ -1662,6 +1741,7 @@ group("unittest") {
       ":UdmfCheckerManagerTest",
       ":UdmfRunTimeStoreTest",
       ":UdmfServiceImplTest",
+      ":UdmfServiceStubMockTest",
       ":UdmfServiceStubTest",
     ]
   }
