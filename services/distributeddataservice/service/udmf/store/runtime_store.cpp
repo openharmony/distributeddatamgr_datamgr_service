@@ -35,9 +35,7 @@ using namespace RadarReporter;
 using namespace DistributedDB;
 using Anonymous = OHOS::DistributedData::Anonymous;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-
-constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
-static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
+constexpr const char *SUMMARY_SUFIX = "#summary";
 
 RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
 {
@@ -121,45 +119,20 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
-bool RuntimeStore::GetDetailsFromUData(UnifiedData &data, UDDetails &details)
+Status RuntimeStore::PutSummary(const std::string &key, const Summary &summary)
 {
-    auto records = data.GetRecords();
-    if (records.size() != TEMP_UDATA_RECORD_SIZE) {
-        return false;
+    UpdateTime();
+    Value value;
+    auto status = DataHandler::MarshalToEntries(summary, value);
+    if (status != E_OK) {
+        ZLOGE("Marshal summary failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        return status;
     }
-    if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {
-        return false;
-    }
-    auto obj = std::get<std::shared_ptr<Object>>(records[0]->GetOriginValue());
-    if (obj == nullptr) {
-        ZLOGE("ValueType is not Object!");
-        return false;
-    }
-    std::shared_ptr<Object> detailObj;
-    obj->GetValue(DETAILS, detailObj);
-        if (detailObj == nullptr) {
-            ZLOGE("Not contain details for object!");
-            return false;
-        }
-    auto result = ObjectUtils::ConvertToUDDetails(detailObj);
-    if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
-        return false;
-    }
-    details = result;
-    return true;
-}
-
-Status RuntimeStore::GetSummaryFromDetails(const UDDetails &details, Summary &summary)
-{
-    for (auto &item : details) {
-        if (item.first != TEMP_UNIFIED_DATA_FLAG) {
-            auto int64Value = std::get_if<int64_t>(&item.second);
-            if (int64Value != nullptr) {
-                auto size = std::get<int64_t>(item.second);
-                summary.summary[item.first] = size;
-                summary.totalSize += size;
-            }
-        }
+    auto summaryKey = key + SUMMARY_SUFIX;
+    auto res = kvStore_->Put({summaryKey.begin(), summaryKey.end()}, value);
+    if (res != OK) {
+        ZLOGE("Put failed, key:%{public}s, status:%{public}d", key.c_str(), res);
+        return E_DB_ERROR;
     }
     return E_OK;
 }
@@ -167,17 +140,52 @@ Status RuntimeStore::GetSummaryFromDetails(const UDDetails &details, Summary &su
 Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
 {
     UpdateTime();
-    UnifiedData unifiedData;
-    if (Get(key, unifiedData) != E_OK) {
-        ZLOGE("Get unified data failed, dataPrefix: %{public}s", key.c_str());
+    Value value;
+    auto summaryKey = key + SUMMARY_SUFIX;
+    auto res = kvStore_->Get({summaryKey.begin(), summaryKey.end()}, value);
+    if (res != OK || value.empty()) {
+        ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
         return E_DB_ERROR;
     }
-
-    UDDetails details {};
-    if (GetDetailsFromUData(unifiedData, details)) {
-        return GetSummaryFromDetails(details, summary);
+    auto status = DataHandler::UnmarshalEntries(value, summary);
+    if (status != E_OK) {
+        ZLOGE("Unmarshal summary failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        return status;
     }
-    UnifiedDataHelper::GetSummary(unifiedData, summary);
+    return E_OK;
+}
+
+Status RuntimeStore::PutRuntime(const std::string &key, const Runtime &runtime)
+{
+    UpdateTime();
+    Value value;
+    auto status = DataHandler::MarshalToEntries(runtime, value);
+    if (status != E_OK) {
+        ZLOGE("Marshal runtime failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        return status;
+    }
+    auto res = kvStore_->Put({key.begin(), key.end()}, value);
+    if (res != OK) {
+        ZLOGE("Put failed, key:%{public}s, status:%{public}d", key.c_str(), res);
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
+{
+    UpdateTime();
+    Value value;
+    auto res = kvStore_->Get({key.begin(), key.end()}, value);
+    if (res != OK || value.empty()) {
+        ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
+        return E_DB_ERROR;
+    }
+    auto status = DataHandler::UnmarshalEntries(value, runtime);
+    if (status != E_OK) {
+        ZLOGE("Unmarshal runtime failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        return status;
+    }
     return E_OK;
 }
 

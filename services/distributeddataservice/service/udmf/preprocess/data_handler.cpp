@@ -136,4 +136,45 @@ Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord
     }
     return E_OK;
 }
+
+Status DataHandler::MarshalToEntries(const Summary &summary, Value &value)
+{
+    auto summaryTlv = TLVObject(value);
+    if (!TLVUtil::Writing(summary, summaryTlv, TAG::TAG_SUMMARY)) {
+        ZLOGE("Marshall summary failed.");
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+Status DataHandler::UnmarshalEntries(const Value &value, Summary &summary)
+{
+    auto data = TLVObject(const_cast<std::vector<uint8_t> &>(value));
+    if (!TLVUtil::ReadTlv(summary, data, TAG::TAG_SUMMARY)) {
+        ZLOGE("Unmarshall summary failed.");
+        return E_READ_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+Status DataHandler::MarshalToEntries(const Runtime &runtime, Value &value)
+{
+    auto runtimeTlv = TLVObject(value);
+    if (!TLVUtil::Writing(runtime, runtimeTlv, TAG::TAG_RUNTIME)) {
+        ZLOGE("Marshall runtime failed.");
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+Status DataHandler::UnmarshalEntries(const Value &value, Runtime &runtime)
+{
+    auto data = TLVObject(const_cast<std::vector<uint8_t> &>(value));
+    if (!TLVUtil::ReadTlv(runtime, data, TAG::TAG_RUNTIME)) {
+        ZLOGE("Unmarshall runtime failed.");
+        return E_READ_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
 } // namespace UDMF::OHOS

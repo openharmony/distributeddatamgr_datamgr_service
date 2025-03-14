@@ -26,6 +26,10 @@ public:
     static Status MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries);
     static Status UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
         UnifiedData &unifiedData);
+    static Status MarshalToEntries(const Summary &summary, Value &value);
+    static Status UnmarshalEntries(const Value &value, Summary &summary);
+    static Status MarshalToEntries(const Runtime &runtime, Value &value);
+    static Status UnmarshalEntries(const Value &value, Runtime &runtime);
 
 private:
     static Status BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord>> &records,

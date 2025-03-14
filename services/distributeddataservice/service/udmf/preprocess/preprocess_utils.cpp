@@ -40,6 +40,10 @@ constexpr const char *FILE_SCHEME_PREFIX = "file://";
 constexpr const char *DOCS_LOCAL_TAG = "/docs/";
 static constexpr uint32_t DOCS_LOCAL_PATH_SUBSTR_START_INDEX = 1;
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
+constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
+static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
+static constexpr uint32_t PREFIX_LEN = 24;
+static constexpr uint32_t INDEX_LEN = 8;
 using namespace OHOS::DistributedDataDfx;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
@@ -400,6 +404,61 @@ void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, b
     if (isLocal) {
         PreProcessUtils::ClearHtmlDfsUris(data);
     }
+}
+
+void PreProcessUtils::SetRecordUid(UnifiedData &data)
+{
+    uint32_t index = 0;
+    auto prefix = PreProcessUtils::GenerateId().substr(0, PREFIX_LEN);
+    for (const auto &record : data.GetRecords()) {
+        std::ostringstream oss;
+        oss << std::setw(INDEX_LEN) << std::setfill('0') << index;
+        record->SetUid(prefix + oss.str());
+        index++;
+    }
+}
+
+bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &details)
+{
+    auto records = data.GetRecords();
+    if (records.size() != TEMP_UDATA_RECORD_SIZE) {
+        return false;
+    }
+    if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {
+        return false;
+    }
+    auto obj = std::get<std::shared_ptr<Object>>(records[0]->GetOriginValue());
+    if (obj == nullptr) {
+        ZLOGE("ValueType is not Object!");
+        return false;
+    }
+    std::shared_ptr<Object> detailObj;
+    obj->GetValue(DETAILS, detailObj);
+        if (detailObj == nullptr) {
+            ZLOGE("Not contain details for object!");
+            return false;
+        }
+    auto result = ObjectUtils::ConvertToUDDetails(detailObj);
+    if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
+        return false;
+    }
+    details = result;
+    return true;
+}
+
+Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary &summary)
+{
+    for (auto &item : details) {
+        if (item.first != TEMP_UNIFIED_DATA_FLAG) {
+            auto int64Value = std::get_if<int64_t>(&item.second);
+            if (int64Value != nullptr) {
+                auto size = std::get<int64_t>(item.second);
+                summary.summary[item.first] = size;
+                summary.totalSize += size;
+            }
+        }
+    }
+    return E_OK;
 }
 } // namespace UDMF
 } // namespace OHOS
