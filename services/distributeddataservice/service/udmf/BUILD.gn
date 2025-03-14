@@ -81,6 +81,7 @@ ohos_source_set("udmf_server") {
     "app_file_service:remote_file_share_native",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
