@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
-module_output_path = "datamgr_service/distributeddatafwk"
+module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
 
 ###############################################################################
 ohos_unittest("AccountDelegateTest") {
