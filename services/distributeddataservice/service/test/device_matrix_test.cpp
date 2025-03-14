@@ -350,7 +350,7 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, Online, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, Online, TestSize.Level1)
 {
     RefCount refCount;
     std::string device = "Online";
@@ -367,7 +367,7 @@ HWTEST_F(DeviceMatrixTest, Online, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, Offline, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, Offline, TestSize.Level1)
 {
     RefCount refCount;
     std::string device = "Offline";
@@ -384,7 +384,7 @@ HWTEST_F(DeviceMatrixTest, Offline, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, OnBroadcast, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, OnBroadcast, TestSize.Level1)
 {
     std::string device;
     DeviceMatrix::DataLevel dataLevel;
@@ -416,7 +416,7 @@ HWTEST_F(DeviceMatrixTest, OnBroadcast, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, ConvertStatics, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, ConvertStatics, TestSize.Level1)
 {
     DeviceMatrix deviceMatrix;
     DistributedData::MatrixMetaData meta;
@@ -444,7 +444,7 @@ HWTEST_F(DeviceMatrixTest, ConvertStatics, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, SaveSwitches, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, SaveSwitches, TestSize.Level1)
 {
     DeviceMatrix deviceMatrix;
     std::string device;
@@ -470,7 +470,7 @@ HWTEST_F(DeviceMatrixTest, SaveSwitches, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, Broadcast, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, Broadcast, TestSize.Level1)
 {
     DeviceMatrix deviceMatrix;
     DeviceMatrix::DataLevel dataLevel;
@@ -498,7 +498,7 @@ HWTEST_F(DeviceMatrixTest, Broadcast, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, UpdateConsistentMeta, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, UpdateConsistentMeta, TestSize.Level1)
 {
     DeviceMatrix deviceMatrix;
     std::string device = "device";
@@ -524,7 +524,7 @@ HWTEST_F(DeviceMatrixTest, UpdateConsistentMeta, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, OnChanged001, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, OnChanged001, TestSize.Level1)
 {
     StoreMetaData metaData;
     metaData.dataType = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
@@ -551,7 +551,7 @@ HWTEST_F(DeviceMatrixTest, OnChanged001, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, OnChanged002, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, OnChanged002, TestSize.Level1)
 {
     StoreMetaData metaData;
     metaData.bundleName = "distributeddata";
@@ -578,7 +578,7 @@ HWTEST_F(DeviceMatrixTest, OnChanged002, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, OnExchanged001, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, OnExchanged001, TestSize.Level1)
 {
     StoreMetaData metaData;
     metaData.bundleName = "distributeddata";
@@ -607,7 +607,7 @@ HWTEST_F(DeviceMatrixTest, OnExchanged001, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, OnExchanged002, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, OnExchanged002, TestSize.Level1)
 {
     StoreMetaData metaData;
     metaData.dataType = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
@@ -627,7 +627,7 @@ HWTEST_F(DeviceMatrixTest, OnExchanged002, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, OnExchanged003, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, OnExchanged003, TestSize.Level1)
 {
     StoreMetaData metaData;
     metaData.bundleName = "distributeddata";
@@ -650,7 +650,7 @@ HWTEST_F(DeviceMatrixTest, OnExchanged003, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, GetCode, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetCode, TestSize.Level1)
 {
     StoreMetaData metaData;
     metaData.bundleName = "distributeddata";
@@ -668,7 +668,7 @@ HWTEST_F(DeviceMatrixTest, GetCode, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, GetMask001, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetMask001, TestSize.Level1)
 {
     std::string device = "GetMask";
     DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
@@ -683,7 +683,7 @@ HWTEST_F(DeviceMatrixTest, GetMask001, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, GetMask002, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetMask002, TestSize.Level1)
 {
     std::string device = "GetMask";
     DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
@@ -708,7 +708,7 @@ HWTEST_F(DeviceMatrixTest, GetMask002, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, GetRemoteMask001, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetRemoteMask001, TestSize.Level1)
 {
     std::string device = "GetRemoteMask";
     DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
@@ -723,7 +723,7 @@ HWTEST_F(DeviceMatrixTest, GetRemoteMask001, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, GetRemoteMask002, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetRemoteMask002, TestSize.Level1)
 {
     std::string device = "GetRemoteMask";
     StoreMetaData meta = metaData_;
@@ -753,7 +753,7 @@ HWTEST_F(DeviceMatrixTest, GetRemoteMask002, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, GetRecvLevel, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetRecvLevel, TestSize.Level1)
 {
     std::string device = "GetRemoteMask";
     DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
@@ -780,7 +780,7 @@ HWTEST_F(DeviceMatrixTest, GetRecvLevel, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, GetConsLevel, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, GetConsLevel, TestSize.Level1)
 {
     std::string device = "GetRemoteMask";
     DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
@@ -807,7 +807,7 @@ HWTEST_F(DeviceMatrixTest, GetConsLevel, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, UpdateLevel, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, UpdateLevel, TestSize.Level1)
 {
     uint16_t level = 0;
     DeviceMatrix::LevelType type = static_cast<DeviceMatrix::LevelType>(DeviceMatrix::LevelType::STATICS - 1);
@@ -832,7 +832,7 @@ HWTEST_F(DeviceMatrixTest, UpdateLevel, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, IsDynamic, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, IsDynamic, TestSize.Level1)
 {
     StoreMetaData meta;
     meta.bundleName = "distributeddata";
@@ -866,7 +866,7 @@ HWTEST_F(DeviceMatrixTest, IsDynamic, TestSize.Level0)
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(DeviceMatrixTest, IsValid, TestSize.Level0)
+HWTEST_F(DeviceMatrixTest, IsValid, TestSize.Level1)
 {
     DistributedData::DeviceMatrix::DataLevel dataLevel;
     EXPECT_EQ(dataLevel.IsValid(), false);
@@ -893,7 +893,7 @@ public:
  * @tc.require:
  * @tc.author: suoqilong
  */
-HWTEST_F(MatrixEventTest, IsValid, TestSize.Level0)
+HWTEST_F(MatrixEventTest, IsValid, TestSize.Level1)
 {
     DistributedData::MatrixEvent::MatrixData matrixData;
     EXPECT_EQ(matrixData.IsValid(), false);
