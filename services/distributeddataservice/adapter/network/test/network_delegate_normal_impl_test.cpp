@@ -12,14 +12,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-// #define LOG_TAG "NetworkDelegateNormalImplTest"
 
 #include "network_delegate.h"
 #include "network_delegate_normal_impl.h"
 #include "network_delegate_normal_impl.cpp"
 #include <gtest/gtest.h>
 #include <unistd.h>
-// #include "log_print.h"
 
 using namespace testing::ext;
 using namespace std;
@@ -54,10 +52,10 @@ void NetworkDelegateNormalImplTest::TearDown()
 
 /**
 * @tc.name: GetNetworkType001
-* @tc.desc: GetNetworkType test.
+* @tc.desc: GetNetworkType testing exception branching scenarios.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: suoqilong
 */
 HWTEST_F(NetworkDelegateNormalImplTest, GetNetworkType001, TestSize.Level1)
 {
@@ -70,10 +68,10 @@ HWTEST_F(NetworkDelegateNormalImplTest, GetNetworkType001, TestSize.Level1)
 
 /**
 * @tc.name: GetNetworkType002
-* @tc.desc: GetNetworkType test.
+* @tc.desc: GetNetworkType testing normal branching scenarios.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: suoqilong
 */
 HWTEST_F(NetworkDelegateNormalImplTest, GetNetworkType002, TestSize.Level1)
 {
@@ -86,10 +84,10 @@ HWTEST_F(NetworkDelegateNormalImplTest, GetNetworkType002, TestSize.Level1)
 
 /**
 * @tc.name: IsNetworkAvailable
-* @tc.desc: IsNetworkAvailable test.
+* @tc.desc: IsNetworkAvailable testing different branching scenarios.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: suoqilong
 */
 HWTEST_F(NetworkDelegateNormalImplTest, IsNetworkAvailable, TestSize.Level1)
 {
@@ -126,10 +124,10 @@ HWTEST_F(NetworkDelegateNormalImplTest, IsNetworkAvailable, TestSize.Level1)
 
 /**
 * @tc.name: NetCapabilitiesChange001
-* @tc.desc: NetCapabilitiesChange test.
+* @tc.desc: NetCapabilitiesChange testing different branching scenarios.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: suoqilong
 */
 HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange001, TestSize.Level1)
 {
@@ -152,10 +150,10 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange001, TestSize.Level
 
 /**
 * @tc.name: NetCapabilitiesChange002
-* @tc.desc: NetCapabilitiesChange test.
+* @tc.desc: NetCapabilitiesChange testing different branching scenarios.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: suoqilong
 */
 HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange002, TestSize.Level1)
 {
@@ -192,10 +190,10 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange002, TestSize.Level
 
 /**
 * @tc.name: Convert
-* @tc.desc: Convert test.
+* @tc.desc: Convert testing different branching scenarios.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: suoqilong
 */
 HWTEST_F(NetworkDelegateNormalImplTest, Convert, TestSize.Level1)
 {

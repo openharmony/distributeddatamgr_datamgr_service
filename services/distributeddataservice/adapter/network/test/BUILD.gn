@@ -62,12 +62,11 @@ ohos_unittest("NetworkDelegateNormalImplTest") {
     "${data_service_path}/adapter/network/src",
     "${data_service_path}/adapter/include",
   ]
+
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-
-  # deps = [ "../:distributeddata_network" ]
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
