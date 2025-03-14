@@ -69,5 +69,17 @@ struct API_EXPORT StoreMetaDataLocal final : public Serializable {
 private:
     static constexpr const char *KEY_PREFIX = "KvStoreMetaDataLocal";
 };
+
+struct API_EXPORT StoreDfxInfo final : public Serializable {
+    std::string lastOpenTime;
+    API_EXPORT StoreDfxInfo() = default;
+    API_EXPORT ~StoreDfxInfo() = default;
+    API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
+    bool Marshal(Serializable::json &node) const override;
+    bool Unmarshal(const Serializable::json &node) override;
+
+private:
+    static constexpr const char *KEY_PREFIX = "StoreDfxInfo";
+};
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_STORE_META_DATA_LOCAL_H
