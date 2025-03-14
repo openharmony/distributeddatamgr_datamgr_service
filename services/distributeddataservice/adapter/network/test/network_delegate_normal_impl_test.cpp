@@ -96,7 +96,7 @@ HWTEST_F(NetworkDelegateNormalImplTest, IsNetworkAvailable, TestSize.Level1)
     EXPECT_FALSE(ret);
 
     DmDeviceInfo& info = const_cast<DmDeviceInfo &>(delegate.cloudDmInfo_);
-    std::memset_s(info.networkId, 0, sizeof(info.networkId));
+    std::fill(info.networkId, info.networkId + sizeof(info.networkId), '\0');
     NetworkDelegateNormalImpl::NetworkType netWorkType = NetworkDelegate::NetworkType::NONE;
     NetworkDelegateNormalImpl::NetworkType status = delegate.SetNet(netWorkType);
     EXPECT_EQ(status, NetworkDelegate::NONE);
@@ -146,6 +146,10 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange001, TestSize.Level
     netAllCap = new (std::nothrow) NetAllCapabilities();
     status = observer->NetCapabilitiesChange(netHandle, netAllCap);
     EXPECT_EQ(status, 0);
+
+    delete observer;
+    delete netHandle;
+    delete netAllCap;
 }
 
 /**
@@ -159,7 +163,7 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange002, TestSize.Level
 {
     NetworkDelegateNormalImpl delegate;
     DmDeviceInfo& info = const_cast<DmDeviceInfo &>(delegate.cloudDmInfo_);
-    std::memset_s(info.networkId, 0, sizeof(info.networkId));
+    std::fill(info.networkId, info.networkId + sizeof(info.networkId), '\0');
     sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(delegate);
     sptr<NetManagerStandard::NetHandle> netHandle = new (std::nothrow) NetHandle();
     sptr<NetManagerStandard::NetAllCapabilities> netAllCap = new (std::nothrow) NetAllCapabilities();
@@ -186,6 +190,11 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange002, TestSize.Level
     EXPECT_TRUE(!netAllCaps->bearerTypes_.empty());
     status = observer->NetCapabilitiesChange(netHandle, netAllCaps);
     EXPECT_EQ(status, 0);
+
+    delete observer;
+    delete netHandle;
+    delete netAllCap;
+    delete netAllCaps;
 }
 
 /**
