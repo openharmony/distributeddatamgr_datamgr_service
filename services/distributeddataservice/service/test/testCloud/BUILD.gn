@@ -18,8 +18,7 @@ ohos_hap("testCloud") {
   hap_name = "testCloud"
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
-  final_hap_path =
-      "$root_out_dir/tests/unittest/datamgr_service/resource/${hap_name}.hap"
+  final_hap_path = "$root_out_dir/tests/unittest/datamgr_service/datamgr_service/resource/${hap_name}.hap"
   testonly = true
   deps = [
     ":testCloud_ets_assets",
