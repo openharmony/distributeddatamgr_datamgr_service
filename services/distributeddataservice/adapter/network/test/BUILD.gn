@@ -47,12 +47,52 @@ ohos_unittest("NetworkDelegateTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
+ohos_unittest("NetworkDelegateNormalImplTest") {
+  module_out_path = module_output_path
+
+  sources = [
+    "${data_service_path}/framework/network/network_delegate.cpp",
+    "network_delegate_normal_impl_test.cpp",
+  ]
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/network",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/network/src",
+    "${data_service_path}/adapter/include",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:datamgr_common",
+    "netmanager_base:net_conn_manager_if",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
 
   deps = []
 
-  deps += [ ":NetworkDelegateTest" ]
+  deps += [
+    ":NetworkDelegateNormalImplTest",
+    ":NetworkDelegateTest",
+  ]
 }
 ###############################################################################

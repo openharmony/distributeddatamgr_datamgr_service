@@ -394,6 +394,11 @@ ohos_unittest("DeviceMatrixTest") {
 
   configs = [ ":module_private_config" ]
 
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
   external_deps = [
     "ability_base:base",
     "ability_base:want",
