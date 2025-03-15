@@ -28,6 +28,7 @@
 #include "bootstrap.h"
 #include "directory/directory_manager.h"
 #include "utils/anonymous.h"
+#include "preprocess_utils.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -101,6 +102,7 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     if (status != E_OK) {
         return status;
     }
+    PutSummary(unifiedData, entries);
     return PutEntries(entries);
 }
 
@@ -119,9 +121,17 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
-Status RuntimeStore::PutSummary(const std::string &key, const Summary &summary)
+Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &entries)
 {
     UpdateTime();
+    UDDetails details {};
+    Summary summary;
+    if (PreProcessUtils::GetDetailsFromUData(data, details)) {
+        return PreProcessUtils::GetSummaryFromDetails(details, summary);
+    }
+    UnifiedDataHelper::GetSummary(data, summary);
+
+    auto key = data.GetRuntime()->key.GetUnifiedKey();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
     if (status != E_OK) {
@@ -129,11 +139,7 @@ Status RuntimeStore::PutSummary(const std::string &key, const Summary &summary)
         return status;
     }
     auto summaryKey = key + SUMMARY_SUFIX;
-    auto res = kvStore_->Put({summaryKey.begin(), summaryKey.end()}, value);
-    if (res != OK) {
-        ZLOGE("Put failed, key:%{public}s, status:%{public}d", key.c_str(), res);
-        return E_DB_ERROR;
-    }
+    entries.push_back({{summaryKey.begin(), summaryKey.end()}, value});
     return E_OK;
 }
 
@@ -144,8 +150,18 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
     auto summaryKey = key + SUMMARY_SUFIX;
     auto res = kvStore_->Get({summaryKey.begin(), summaryKey.end()}, value);
     if (res != OK || value.empty()) {
-        ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
-        return E_DB_ERROR;
+        ZLOGW("Get stored summary failed, key: %{public}s, status:%{public}d", key.c_str(), res);
+        UnifiedData unifiedData;
+        if (Get(key, unifiedData) != E_OK) {
+            ZLOGE("Get unified data failed, key: %{public}s", key.c_str());
+            return E_DB_ERROR;
+        }
+        UDDetails details {};
+        if (PreProcessUtils::GetDetailsFromUData(unifiedData, details)) {
+            return PreProcessUtils::GetSummaryFromDetails(details, summary);
+        }
+        UnifiedDataHelper::GetSummary(unifiedData, summary);
+        return E_OK;
     }
     auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
     if (status != E_OK) {

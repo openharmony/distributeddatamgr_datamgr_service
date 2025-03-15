@@ -30,7 +30,6 @@ public:
     ~RuntimeStore();
     Status Put(const UnifiedData &unifiedData) override;
     Status Get(const std::string &key, UnifiedData &unifiedData) override;
-    Status PutSummary(const std::string &key, const Summary &summary) override;
     Status GetSummary(const std::string &key, Summary &summary) override;
     Status Update(const UnifiedData &unifiedData) override;
     Status Delete(const std::string &key) override;
@@ -65,6 +64,7 @@ private:
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
+    Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
 };
 } // namespace UDMF
 } // namespace OHOS

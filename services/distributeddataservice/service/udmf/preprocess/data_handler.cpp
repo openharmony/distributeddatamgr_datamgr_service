@@ -21,6 +21,7 @@
 namespace OHOS::UDMF {
 constexpr const char *UD_KEY_SEPARATOR = "/";
 constexpr const char *UD_KEY_ENTRY_SEPARATOR = "#";
+constexpr const char *VERSION_SUFIX = "/version";
 
 Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries)
 {
@@ -34,6 +35,14 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     std::vector<uint8_t> udKeyBytes = { unifiedKey.begin(), unifiedKey.end() };
     Entry entry = { udKeyBytes, runtimeBytes };
     entries.emplace_back(entry);
+
+    Value VersionBytes;
+    if (MarshalToEntries(unifiedData.GetSdkVersion(), VersionBytes, TAG::TAG_VERSION) != E_OK) {
+        ZLOGE("Version marshalling failed:%{public}s", unifiedKey.c_str());
+        return E_WRITE_PARCEL_ERROR;
+    }
+    auto versionKey = unifiedKey + VERSION_SUFIX;
+    entries.push_back({ { versionKey.begin(), versionKey.end() }, VersionBytes });
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
 }
 
@@ -72,6 +81,15 @@ Status DataHandler::UnmarshalEntryItem(UnifiedData &unifiedData, const std::vect
                 return E_READ_PARCEL_ERROR;
             }
             unifiedData.SetRuntime(runtime);
+            continue;
+        }
+        if (keyStr == key + VERSION_SUFIX) {
+            std::string version;
+            if (UnmarshalEntries(entry.value, version, TAG::TAG_VERSION) != E_OK) {
+                ZLOGE("Unmarshall version failed.");
+                return E_READ_PARCEL_ERROR;
+            }
+            unifiedData.SetSdkVersion(version);
             continue;
         }
         auto isStartWithKey = keyStr.find(key) == 0;

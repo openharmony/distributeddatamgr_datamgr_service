@@ -422,9 +422,11 @@ bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &de
 {
     auto records = data.GetRecords();
     if (records.size() != TEMP_UDATA_RECORD_SIZE) {
+        ZLOGE("Data has multiple records.size:%{public}d", records.size());
         return false;
     }
     if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {
+        ZLOGE("Record is not file.");
         return false;
     }
     auto obj = std::get<std::shared_ptr<Object>>(records[0]->GetOriginValue());
@@ -434,10 +436,10 @@ bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &de
     }
     std::shared_ptr<Object> detailObj;
     obj->GetValue(DETAILS, detailObj);
-        if (detailObj == nullptr) {
-            ZLOGE("Not contain details for object!");
-            return false;
-        }
+    if (detailObj == nullptr) {
+        ZLOGE("Not contain details for object!");
+        return false;
+    }
     auto result = ObjectUtils::ConvertToUDDetails(detailObj);
     if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
         return false;

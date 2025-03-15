@@ -133,11 +133,6 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
                   unifiedData.GetRuntime()->createPackage.c_str());
             return ret;
         }
-        ret = SetSummary(unifiedData);
-        if (ret != E_OK) {
-            ZLOGE("Set summary failed, key: %{public}s.", key.c_str());
-            return ret;
-        }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
 
@@ -837,26 +832,5 @@ int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
     return Feature::OnUserChange(code, user, account);
 }
 
-int32_t UdmfServiceImpl::SetSummary(const UnifiedData &data) const
-{
-    UnifiedKey key = data.GetRuntime()->key;
-    auto store = StoreCache::GetInstance().GetStore(key.intention);
-    if (store == nullptr) {
-        ZLOGE("Get store failed, key:%{public}s", key.GetUnifiedKey().c_str());
-        return E_DB_ERROR;
-    }
-
-    UDDetails details {};
-    Summary summary;
-    if (PreProcessUtils::GetDetailsFromUData(data, details)) {
-        return PreProcessUtils::GetSummaryFromDetails(details, summary);
-    }
-    UnifiedDataHelper::GetSummary(data, summary);
-    auto status = store->PutSummary(key.GetUnifiedKey(), summary);
-    if (status != E_OK) {
-        ZLOGE("Put summary failed, status:%{public}d, key:%{public}s.", status, key.GetUnifiedKey().c_str());
-    }
-    return status;
-}
 } // namespace UDMF
 } // namespace OHOS
