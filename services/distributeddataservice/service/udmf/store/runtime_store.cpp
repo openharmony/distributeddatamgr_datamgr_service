@@ -123,7 +123,7 @@ Status RuntimeStore::PutSummary(const std::string &key, const Summary &summary)
 {
     UpdateTime();
     Value value;
-    auto status = DataHandler::MarshalToEntries(summary, value);
+    auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
     if (status != E_OK) {
         ZLOGE("Marshal summary failed, key: %{public}s, status:%{public}d", key.c_str(), status);
         return status;
@@ -147,7 +147,7 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
         ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
         return E_DB_ERROR;
     }
-    auto status = DataHandler::UnmarshalEntries(value, summary);
+    auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
     if (status != E_OK) {
         ZLOGE("Unmarshal summary failed, key: %{public}s, status:%{public}d", key.c_str(), status);
         return status;
@@ -159,7 +159,7 @@ Status RuntimeStore::PutRuntime(const std::string &key, const Runtime &runtime)
 {
     UpdateTime();
     Value value;
-    auto status = DataHandler::MarshalToEntries(runtime, value);
+    auto status = DataHandler::MarshalToEntries(runtime, value, TAG::TAG_RUNTIME);
     if (status != E_OK) {
         ZLOGE("Marshal runtime failed, key: %{public}s, status:%{public}d", key.c_str(), status);
         return status;
@@ -181,11 +181,11 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
         ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
         return E_DB_ERROR;
     }
-    auto status = DataHandler::UnmarshalEntries(value, runtime);
+    auto status = DataHandler::UnmarshalEntries(value, runtime, TAG::TAG_RUNTIME);
     if (status != E_OK) {
         ZLOGE("Unmarshal runtime failed, key: %{public}s, status:%{public}d", key.c_str(), status);
         return status;
-    }
+    } 
     return E_OK;
 }
 
