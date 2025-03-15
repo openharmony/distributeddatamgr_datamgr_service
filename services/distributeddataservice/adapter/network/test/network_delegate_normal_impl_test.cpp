@@ -146,10 +146,6 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange001, TestSize.Level
     netAllCap = new (std::nothrow) NetAllCapabilities();
     status = observer->NetCapabilitiesChange(netHandle, netAllCap);
     EXPECT_EQ(status, 0);
-
-    delete observer;
-    delete netHandle;
-    delete netAllCap;
 }
 
 /**
@@ -190,11 +186,6 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange002, TestSize.Level
     EXPECT_TRUE(!netAllCaps->bearerTypes_.empty());
     status = observer->NetCapabilitiesChange(netHandle, netAllCaps);
     EXPECT_EQ(status, 0);
-
-    delete observer;
-    delete netHandle;
-    delete netAllCap;
-    delete netAllCaps;
 }
 
 /**
