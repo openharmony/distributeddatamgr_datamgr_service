@@ -423,7 +423,7 @@ bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &de
 {
     auto records = data.GetRecords();
     if (records.size() != TEMP_UDATA_RECORD_SIZE) {
-        ZLOGE("Data has multiple records.size:%{public}d", records.size());
+        ZLOGE("Data has multiple records.size:%{public}zu", records.size());
         return false;
     }
     if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {

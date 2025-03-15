@@ -58,7 +58,6 @@ private:
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
     bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
-    int32_t SetSummary(const UnifiedData &data) const;
 
     class Factory {
     public:
