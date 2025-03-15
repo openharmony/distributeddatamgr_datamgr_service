@@ -831,6 +831,5 @@ int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
     }
     return Feature::OnUserChange(code, user, account);
 }
-
 } // namespace UDMF
 } // namespace OHOS
