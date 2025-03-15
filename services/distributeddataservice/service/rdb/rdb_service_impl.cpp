@@ -828,6 +828,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
             "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
             meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+        TryUpdateDeviceId(param, old, meta);
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
@@ -1648,5 +1649,28 @@ std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
         userId = std::to_string(subUser);
     }
     return userId;
+}
+
+int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta)
+{
+    StoreMetaData syncMeta;
+    if (oldMeta.isNeedUpdateDeviceId && oldMeta.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN &&
+        oldMeta.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END &&
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta)) {
+        auto store = GetStore(param);
+        if (store == nullptr) {
+            ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
+                Anonymous::Change(param.storeName_).c_str());
+            return RDB_ERROR;
+        }
+        auto errCode = store->OperateDataStatus();
+        if (errCode == RDB_OK) {
+            meta.isNeedUpdateDeviceId = false;
+        } else {
+            meta.isNeedUpdateDeviceId = true;
+            ZLOGE("OperateDataStatus failed errCode %{public}d", errCode);
+        }
+    }
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

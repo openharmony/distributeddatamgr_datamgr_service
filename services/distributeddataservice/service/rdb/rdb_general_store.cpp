@@ -1338,4 +1338,9 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
         return;
     };
 }
+
+int32_t RdbGeneralStore::OperateDataStatus()
+{
+    return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
+}
 } // namespace OHOS::DistributedRdb

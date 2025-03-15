@@ -197,6 +197,11 @@ public:
     virtual std::pair<int32_t, uint32_t> LockCloudDB() = 0;
 
     virtual int32_t UnLockCloudDB() = 0;
+
+    virtual int32_t OperateDataStatus()
+    {
+        return 0;
+    }
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

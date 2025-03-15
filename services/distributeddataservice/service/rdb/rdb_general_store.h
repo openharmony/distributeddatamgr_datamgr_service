@@ -88,6 +88,7 @@ public:
     int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
+    int32_t RdbGeneralStore::OperateDataStatus();
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);

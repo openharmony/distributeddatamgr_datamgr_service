@@ -620,6 +620,13 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         return res ? SUCCESS : ERROR;
     }
     if (passwordType == KVDBService::PasswordType::SECRET_KEY) {
+        StoreMetaData meta;
+        MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), meta, true);
+        if (meta.isNeedUpdateDeviceId) {
+            ZLOGW("device already update uuid, appId:%{public}s, storeId:%{public}s",
+                appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+            return ERROR;
+        }
         passwords.reserve(SECRET_KEY_COUNT);
         SecretKeyMetaData secretKey;
         std::vector<uint8_t> password;
@@ -733,6 +740,7 @@ Status KVDBServiceImpl::AfterCreate(
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta, true);
     Status status = SUCCESS;
     if (isCreated && oldMeta != metaData) {
+        Upgrade::GetInstance().UpdateDeviceId(oldMeta, metaData, password);
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
         ZLOGI("update status:%{public}d appId:%{public}s storeId:%{public}s inst:%{public}d "
               "type:%{public}d->%{public}d dir:%{public}s dataType:%{public}d->%{public}d",

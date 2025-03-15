@@ -46,6 +46,12 @@
 #include "utils/crypto.h"
 #include "utils/ref_count.h"
 #include "utils/converter.h"
+#include "metadata/matrix_meta_data.h"
+#include "metadata/switches_meta_data.h"
+#include "utils/constant.h"
+#include "metadata/user_meta_data.h"
+#include "metadata/deviceid_pair_meta_data.h"
+#include "metadata/strategy_meta_data.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -134,6 +140,11 @@ void KvStoreMetaManager::InitMetaData()
         ZLOGI("get meta failed.");
         return;
     }
+    if (IsMetaDeviceIdChanged()) {
+        UpdateLocalMetaDeviceId();
+        UpdateSyncMetaDeviceId();
+    }
+
     auto uid = getuid();
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     const std::string accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
@@ -553,6 +564,167 @@ void KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::OnDeviceChanged(const A
 AppDistributedKv::ChangeLevelType KvStoreMetaManager::DBInfoDeviceChangeListenerImpl::GetChangeLevelType() const
 {
     return AppDistributedKv::ChangeLevelType::MIN;
+}
+
+bool KvStoreMetaManager::IsMetaDeviceIdChanged()
+{
+    DeviceIDMetaData meta;
+    auto localUUID = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+        meta.currentUUID = localUUID;
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+    } else {
+        std::string currentUUID = localUUID;
+        if (!currentUUID.empty() && meta.currentUUID != currentUUID) {
+            meta.oldUUID = meta.currentUUID;
+            oldUUID_ = meta.currentUUID;
+            meta.currentUUID = currentUUID;
+            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+            ZLOGI("meta changed! curruuid:%{public}s, olduuid:%{public}s, cache:%{public}s",
+                meta.currentUUID.c_str(), meta.oldUUID.c_str(), oldUUID_.c_str());
+            return true;
+        }
+    }
+    return false;
+}
+
+void KvStoreMetaManager::UpdateLocalMetaDeviceId()
+{
+    std::vector<StoreMetaData> localStoreMetas;
+    auto currentUuid = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), localStoreMetas, true);
+    for (auto &localStoreMeta : localStoreMetas) {
+        StoreMetaData oldMeta = localStoreMeta;
+        localStoreMeta.deviceId = currentUuid;
+        localStoreMeta.isNeedUpdateDeviceId = true;
+        MetaDataManager::GetInstance().SaveMeta(localStoreMeta.GetKey(), localStoreMeta, true);
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey(), true);
+    }
+
+    std::vector<MatrixMetaData> localMatrixMetas;
+    MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({}), localMatrixMetas, true);
+    for (auto &localMatrixMeta : localMatrixMetas) {
+        if (localMatrixMeta.origin != MatrixMetaData::Origin::LOCAL) {
+            continue;
+        }
+        MatrixMetaData oldMeta = localMatrixMeta;
+        localMatrixMeta.deviceId = currentUuid;
+        MetaDataManager::GetInstance().SaveMeta(localMatrixMeta.GetKey(), localMatrixMeta, true);
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey(), true);
+    }
+
+    std::vector<SwitchesMetaData> localSwitchesMetaDatas;
+    MetaDataManager::GetInstance().LoadMeta(SwitchesMetaData::GetPrefix({}), localSwitchesMetaDatas, true);
+    for (auto &localSwitchesMetaData : localSwitchesMetaDatas) {
+        if (localSwitchesMetaData.deviceId != oldUUID_) {
+            continue;
+        }
+        SwitchesMetaData oldMeta = localSwitchesMetaData;
+        localSwitchesMetaData.deviceId = currentUuid;
+        MetaDataManager::GetInstance().SaveMeta(localSwitchesMetaData.GetKey(), localSwitchesMetaData, true);
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey(), true);
+    }
+
+    std::string prefix = "AutoLaunchMetaData";
+    std::vector<MetaDataManager::Entry> localAutoLaunchMetaDatas;
+    MetaDataManager::GetInstance().GetEntries(prefix, localAutoLaunchMetaDatas, true);
+    for (const auto &localautoLaunchMetaData : localAutoLaunchMetaDatas) {
+        std::string metaKey(localautoLaunchMetaData.key.begin(), localautoLaunchMetaData.key.end());
+        std::string value(localautoLaunchMetaData.value.begin(), localautoLaunchMetaData.value.end());
+        auto tokens = Constant::SplitWithSeparator(metaKey, Constant::KEY_SEPARATOR);
+        if (tokens.size() > 1) {
+            tokens[1] = currentUuid;
+        }
+        auto newKey = vectorToString(tokens);
+        MetaDataManager::GetInstance().SaveMeta(newKey, value, true);
+        MetaDataManager::GetInstance().DelMeta(metaKey, true);
+    }
+
+    prefix = "KvStoreMetaDataLocal";
+    std::vector<MetaDataManager::Entry> kvStoreMetaDataLocals;
+    MetaDataManager::GetInstance().GetEntries(prefix, kvStoreMetaDataLocals, true);
+    for (const auto &kvStoreMetaDataLocal : kvStoreMetaDataLocals) {
+        std::string metaKey(kvStoreMetaDataLocal.key.begin(), kvStoreMetaDataLocal.key.end());
+        std::string value(kvStoreMetaDataLocal.value.begin(), kvStoreMetaDataLocal.value.end());
+        auto tokens = Constant::SplitWithSeparator(metaKey, Constant::KEY_SEPARATOR);
+        if (tokens.size() > 1) {
+            tokens[1] = currentUuid;
+        }
+        auto newKey = vectorToString(tokens);
+        MetaDataManager::GetInstance().SaveMeta(newKey, value, true);
+        MetaDataManager::GetInstance().DelMeta(metaKey, true);
+    }
+}
+
+void KvStoreMetaManager::UpdateSyncMetaDeviceId()
+{
+    std::vector<StoreMetaData> syncStoreMetas;
+    auto currentUuid = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), syncStoreMetas);
+    for (auto &syncStoreMeta : syncStoreMetas) {
+        if (syncStoreMeta.deviceId != oldUUID_) {
+            continue;
+        }
+        StoreMetaData oldMeta = syncStoreMeta;
+        syncStoreMeta.deviceId = currentUuid;
+        MetaDataManager::GetInstance().SaveMeta(syncStoreMeta.GetKey(), syncStoreMeta);
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    }
+
+    std::string prefix = "CapabilityMeta";
+    std::vector<MetaDataManager::Entry> syncCapabilityMetas;
+    MetaDataManager::GetInstance().GetEntries(prefix, syncCapabilityMetas);
+    for (const auto &syncCapabilityMeta : syncCapabilityMetas) {
+        std::string metaKey(syncCapabilityMeta.key.begin(), syncCapabilityMeta.key.end());
+        std::string value(syncCapabilityMeta.value.begin(), syncCapabilityMeta.value.end());
+        auto tokens = Constant::Split(metaKey, Constant::KEY_SEPARATOR);
+        if (tokens.size() <= 1 || tokens[1] != oldUUID_) {
+            continue;
+        }
+        tokens[1] = currentUuid;
+        auto newKey = vectorToString(tokens);
+        MetaDataManager::GetInstance().SaveMeta(newKey, value);
+        MetaDataManager::GetInstance().DelMeta(metaKey);
+    }
+
+    std::vector<MatrixMetaData> syncMatrixMetas;
+    MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({}), syncMatrixMetas);
+    for (auto &syncMatrixMeta : syncMatrixMetas) {
+        if (syncMatrixMeta.deviceId != oldUUID_) {
+            continue;
+        }
+        MatrixMetaData oldMeta = syncMatrixMeta;
+        syncMatrixMeta.deviceId = currentUuid;
+        MetaDataManager::GetInstance().SaveMeta(syncMatrixMeta.GetKey(), syncMatrixMeta);
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    }
+
+    prefix = "StrategyMetaData";
+    std::vector<MetaDataManager::Entry> synctrategyMetas;
+    MetaDataManager::GetInstance().GetEntries(prefix, synctrategyMetas);
+    for (const auto &synctrategyMeta : synctrategyMetas) {
+        std::string metaKey(synctrategyMeta.key.begin(), synctrategyMeta.key.end());
+        std::string value(synctrategyMeta.value.begin(), synctrategyMeta.value.end());
+        auto tokens = Constant::SplitWithSeparator(metaKey, Constant::KEY_SEPARATOR);
+        if (tokens.size() <= 1 || tokens[1] != oldUUID_) {
+            continue;
+        }
+        tokens[1] = currentUuid;
+        auto newKey = vectorToString(tokens);
+        MetaDataManager::GetInstance().SaveMeta(newKey, value);
+        MetaDataManager::GetInstance().DelMeta(metaKey);
+    }
+
+    std::vector<UserMetaData> syncUserMetas;
+    MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(""), syncUserMetas);
+    for (auto &syncUserMeta : syncUserMetas) {
+        if (syncUserMeta.deviceId != oldUUID_) {
+            continue;
+        }
+        syncUserMeta.deviceId = currentUuid;
+        MetaDataManager::GetInstance().SaveMeta(UserMetaRow::GetKeyFor(currentUuid), syncUserMeta);
+        MetaDataManager::GetInstance().DelMeta(UserMetaRow::GetKeyFor(oldUUID_));
+    }
 }
 } // namespace DistributedKv
 } // namespace OHOS

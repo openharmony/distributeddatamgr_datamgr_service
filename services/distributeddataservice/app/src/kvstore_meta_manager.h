@@ -96,6 +96,14 @@ private:
 
     DistributedDB::KvStoreNbDelegate::Option InitDBOption();
 
+    std::string vectorToString(const std::vector<std::string> &vec, const std::string separator = "###");
+
+    void UpdateSyncMetaDeviceId();
+
+    void UpdateLocalMetaDeviceId();
+
+    bool IsMetaDeviceIdChanged();
+
     static ExecutorPool::Task GetBackupTask(
         TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);
 
@@ -133,6 +141,7 @@ private:
     TaskId delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
     static constexpr int32_t META_VERSION = 4;
     static constexpr int32_t MAX_TASK_COUNT = 1;
+    std::string oldUUID_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS
