@@ -25,11 +25,10 @@
 #include "kvstore_meta_manager.h"
 #include "metadata/meta_data_manager.h"
 #include "nativetoken_kit.h"
+#include "preprocess_utils.h"
+#include "runtime_store.h"
 #include "text.h"
 #include "token_setproc.h"
-#define private public
-#include "store/runtime_store.h"
-#undef private
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -501,7 +500,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level1)
     details1.insert({ "udmf_key", "udmf_value" });
     auto records = data1.GetRecords();
     EXPECT_EQ(records.size(), 0);
-    status = store->GetDetailsFromUData(data1, details1);
+    status = PreProcessUtils::GetDetailsFromUData(data1, details1);
     EXPECT_FALSE(status);
 
     status = store->Delete(KEY_PREFIX);
@@ -548,7 +547,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
     auto outputRecords = outputData.GetRecords();
     ASSERT_EQ(inputRecords.size(), 512);
     ASSERT_EQ(0, outputRecords.size());
-    status = store->GetDetailsFromUData(inputData, details1);
+    status = PreProcessUtils::GetDetailsFromUData(inputData, details1);
     EXPECT_FALSE(status);
 }
 

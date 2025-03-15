@@ -909,6 +909,8 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf/preprocess",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
@@ -941,6 +943,11 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
+  ]
+
+  defines = [
+    "private=public",
+    "protected=public",
   ]
 }
 

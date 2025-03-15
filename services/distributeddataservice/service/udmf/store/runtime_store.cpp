@@ -185,7 +185,7 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
     if (status != E_OK) {
         ZLOGE("Unmarshal runtime failed, key: %{public}s, status:%{public}d", key.c_str(), status);
         return status;
-    } 
+    }
     return E_OK;
 }
 
