@@ -572,6 +572,18 @@ AppDistributedKv::ChangeLevelType KvStoreMetaManager::DBInfoDeviceChangeListener
     return AppDistributedKv::ChangeLevelType::MIN;
 }
 
+std::string KvStoreMetaManager::vectorToString(const std::vector<std::string> &vec, const std::string separator)
+{
+    std::string result;
+    std::for_each(vec.begin(), vec.end(), [&](const std::string &info) {
+        if (!result.empty()) {
+            result += separator;
+        }
+        result += info;
+    });
+    return result;
+}
+
 bool KvStoreMetaManager::IsMetaDeviceIdChanged()
 {
     DeviceIDMetaData meta;

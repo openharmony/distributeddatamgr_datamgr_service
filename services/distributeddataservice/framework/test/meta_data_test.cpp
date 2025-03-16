@@ -832,7 +832,7 @@ HWTEST_F(ServiceMetaDataTest, DeviceIDMetaData, TestSize.Level1)
  * @tc.author: yl
  */
 HWTEST_F(ServiceMetaDataTest, LoadMatePair, TestSize.Level1)
-{   
+{
     StoreMetaData storeMetaData("100", "appid", "test_store");
     storeMetaData.version = TEST_CURRENT_VERSION;
     storeMetaData.instanceId = 1;
@@ -852,7 +852,15 @@ HWTEST_F(ServiceMetaDataTest, LoadMatePair, TestSize.Level1)
     if (tokens.size() > 1) {
         tokens[1] = "updateuuid";
     }
-    auto newKey = vectorToString(tokens);
+    std::string newKey = "";
+    std::string separator = "###";
+    std::for_each(tokens.begin(), tokens.end(), [&](const std::string &info) {
+        if (!newKey.empty()) {
+            newKey += separator;
+        }
+        newKey += info;
+    });
+    EXPECT_TRUE(!newKey.empty());
     result = MetaDataManager::GetInstance().SaveMeta(newKey, value, true);
     EXPECT_TRUE(result);
     result = MetaDataManager::GetInstance().DelMeta(key, true);
