@@ -98,11 +98,14 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
 {
     UpdateTime();
     std::vector<Entry> entries;
+    std::string intention = unifiedData.GetRuntime()->key.intention;
+    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        PutSummary(unifiedData, entries);
+    }
     auto status = DataHandler::MarshalToEntries(unifiedData, entries);
     if (status != E_OK) {
         return status;
     }
-    PutSummary(unifiedData, entries);
     return PutEntries(entries);
 }
 
@@ -127,9 +130,10 @@ Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &ent
     UDDetails details {};
     Summary summary;
     if (PreProcessUtils::GetDetailsFromUData(data, details)) {
-        return PreProcessUtils::GetSummaryFromDetails(details, summary);
+        PreProcessUtils::GetSummaryFromDetails(details, summary);
+    } else {
+        UnifiedDataHelper::GetSummary(data, summary);
     }
-    UnifiedDataHelper::GetSummary(data, summary);
 
     auto propertyKey = data.GetRuntime()->key.GetPropertyKey();
     Value value;
