@@ -131,29 +131,30 @@ Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &ent
     }
     UnifiedDataHelper::GetSummary(data, summary);
 
-    auto key = data.GetRuntime()->key.GetUnifiedKey();
+    auto propertyKey = data.GetRuntime()->key.GetPropertyKey();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
     if (status != E_OK) {
-        ZLOGE("Marshal summary failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        ZLOGE("Marshal summary failed, key: %{public}s, status:%{public}d", propertyKey.c_str(), status);
         return status;
     }
-    auto summaryKey = key + SUMMARY_SUFIX;
+    auto summaryKey = propertyKey + SUMMARY_SUFIX;
     entries.push_back({{summaryKey.begin(), summaryKey.end()}, value});
     return E_OK;
 }
 
-Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
+Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
 {
     UpdateTime();
     Value value;
-    auto summaryKey = key + SUMMARY_SUFIX;
+    auto summaryKey = key.GetPropertyKey() + SUMMARY_SUFIX;
     auto res = kvStore_->Get({summaryKey.begin(), summaryKey.end()}, value);
     if (res != OK || value.empty()) {
-        ZLOGW("Get stored summary failed, key: %{public}s, status:%{public}d", key.c_str(), res);
+        ZLOGW("Get stored summary failed, key: %{public}s, status:%{public}d", summaryKey.c_str(), res);
         UnifiedData unifiedData;
-        if (Get(key, unifiedData) != E_OK) {
-            ZLOGE("Get unified data failed, key: %{public}s", key.c_str());
+        auto udKey = key.GetUnifiedKey();
+        if (Get(udKey, unifiedData) != E_OK) {
+            ZLOGE("Get unified data failed, key: %{public}s", udKey.c_str());
             return E_DB_ERROR;
         }
         UDDetails details {};
@@ -165,7 +166,7 @@ Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
     }
     auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
     if (status != E_OK) {
-        ZLOGE("Unmarshal summary failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        ZLOGE("Unmarshal summary failed, key: %{public}s, status:%{public}d", summaryKey.c_str(), status);
         return status;
     }
     return E_OK;

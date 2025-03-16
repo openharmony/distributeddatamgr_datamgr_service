@@ -571,7 +571,8 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
     data.AddRecord(text);
 
     Summary summary;
-    auto status = store->GetSummary(KEY_PREFIX, summary);
+    UnifiedKey key(KEY_PREFIX);
+    auto status = store->GetSummary(key, summary);
     ASSERT_EQ(status, E_DB_ERROR);
 }
 }; // namespace DistributedDataTest

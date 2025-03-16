@@ -26,7 +26,7 @@ public:
     using Time = std::chrono::steady_clock::time_point;
     virtual Status Put(const UnifiedData &unifiedData) = 0;
     virtual Status Get(const std::string &key, UnifiedData &unifiedData) = 0;
-    virtual Status GetSummary(const std::string &key, Summary &summary) = 0;
+    virtual Status GetSummary(UnifiedKey &key, Summary &summary) = 0;
     virtual Status Update(const UnifiedData &unifiedData) = 0;
     virtual Status Delete(const std::string &key) = 0;
     virtual Status DeleteBatch(const std::vector<std::string> &unifiedKeys) = 0;

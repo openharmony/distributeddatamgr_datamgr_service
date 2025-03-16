@@ -458,7 +458,7 @@ int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
         return E_DB_ERROR;
     }
 
-    if (store->GetSummary(query.key, summary) != E_OK) {
+    if (store->GetSummary(key, summary) != E_OK) {
         ZLOGE("Store get summary failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
