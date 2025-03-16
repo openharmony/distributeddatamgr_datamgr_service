@@ -354,7 +354,7 @@ void MetaDataManager::StopSA()
     }
 }
 
-bool MetaDataManager::GetEntries(const std::string &prefix, std::vector<Entry> &entries, bool isLocal)
+bool MetaDataManager::LoadMetaPair(const std::string &prefix, std::vector<Entry> &entries, bool isLocal)
 {
     std::vector<DistributedDB::Entry> dbEntries;
     auto status = isLocal ? metaStore_->GetLocalEntries({ prefix.begin(), prefix.end() }, dbEntries)

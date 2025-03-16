@@ -794,4 +794,68 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
     std::string key = matrixMetaData3.GetConsistentKey();
     EXPECT_EQ(key, "MatrixMeta###DEVICE_ID###Consistent");
 }
+
+/**
+ * @tc.name: DeviceIDMetaData
+ * @tc.desc: test DeviceIDMetaData function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: yl
+ */
+HWTEST_F(ServiceMetaDataTest, DeviceIDMetaData, TestSize.Level1)
+{
+    DeviceIDMetaData metaData;
+    std::string expectedPrefix = "DeviceIDKey";
+    std::string prefix = metaData.GetKey();
+    
+    ASSERT_EQ(prefix, expectedPrefix);
+    std::string currentUUID = "newuuid";
+    std::string oldUUID = "olduuid";
+    metaData.currentUUID = currentUUID;
+    metaData.oldUUID = oldUUID;
+    Serializable::json node1;
+    metaData.Marshal(node1);
+    EXPECT_EQ(node1["currentUUID"], currentUUID);
+    EXPECT_EQ(node1["oldUUID"], oldUUID);
+    
+    DeviceIDMetaData newMetaData;
+    newMetaData.Unmarshal(node1);
+    EXPECT_EQ(newMetaData.currentUUID, currentUUID);
+    EXPECT_EQ(newMetaData.oldUUID, oldUUID);
+}
+
+/**
+ * @tc.name: LoadMatePair
+ * @tc.desc: test LoadMatePair function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: yl
+ */
+HWTEST_F(ServiceMetaDataTest, LoadMatePair, TestSize.Level1)
+{   
+    StoreMetaData storeMetaData("100", "appid", "test_store");
+    storeMetaData.version = TEST_CURRENT_VERSION;
+    storeMetaData.instanceId = 1;
+    std::vector entries;
+    
+    std::string key = storeMetaData.GetKey();
+    EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store_001###1");
+    auto result = MetaDataManager::GetInstance().SaveMeta(key, storeMetaData, true);
+    EXPECT_TRUE(result);
+    result = MetaDataManager::GetInstance().LoadMatePair(key, entries, true);
+    EXPECT_TRUE(result);
+    std::string key(entries.key.begin(), entries.key.end());
+    std::string value(entries.value.begin(), entries.value.end());
+    EXPECT_EQ(storeMetaData.GetKey(), key);
+    
+    auto tokens = Constant::SplitKeepSpace(key, Constant::KEY_SEPARATOR);
+    if (tokens.size() > 1) {
+        tokens[1] = "updateuuid";
+    }
+    auto newKey = vectorToString(tokens);
+    result = MetaDataManager::GetInstance().SaveMeta(newKey, value, true);
+    EXPECT_TRUE(result);
+    result = MetaDataManager::GetInstance().DelMeta(key, true);
+    EXPECT_TRUE(result);
+}
 } // namespace OHOS::Test

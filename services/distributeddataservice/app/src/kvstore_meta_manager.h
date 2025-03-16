@@ -103,6 +103,8 @@ private:
     void UpdateLocalMetaDeviceId();
 
     bool IsMetaDeviceIdChanged();
+    
+    void CheckDeviceIDChanged();
 
     static ExecutorPool::Task GetBackupTask(
         TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);

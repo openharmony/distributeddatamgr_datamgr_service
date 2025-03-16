@@ -1651,7 +1651,8 @@ std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
     return userId;
 }
 
-int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta)
+int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta,
+    StoreMetaData &meta)
 {
     StoreMetaData syncMeta;
     if (oldMeta.isNeedUpdateDeviceId && oldMeta.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN &&

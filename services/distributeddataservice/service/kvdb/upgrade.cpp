@@ -25,6 +25,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using system_clock = std::chrono::system_clock;
@@ -80,11 +81,11 @@ void Upgrade::UpdateDeviceId(const StoreMeta &oldMeta, const StoreMeta &meta, co
         auto store = GetDBStore(meta, pwd);
         if (store == nullptr) {
             ZLOGI("store is null appId:%{public}s storeId:%{public}s", oldMeta.appId.c_str(),
-            Anonymous::Change(oldMeta.storeId).c_str());
+                Anonymous::Change(oldMeta.storeId).c_str());
             return;
         }
         store->OperateDataStatus(static_cast<uint32_t>(DistributedDB::DataOperator::UPDATE_TIME) |
-            static_cast<uint32_t>(DistributedDB::DataOperator::RESET_UPLOAD_CLOUD ));
+            static_cast<uint32_t>(DistributedDB::DataOperator::RESET_UPLOAD_CLOUD));
     }
 
     if (oldMeta.isNeedUpdateDeviceId && oldMeta.storeType == DEVICE_COLLABORATION && !oldMeta.isEncrypt) {
