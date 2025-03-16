@@ -27,6 +27,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
 #include "metadata/user_meta_data.h"
+#include "metadata/deviceid_pair_meta_data.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
 #include <nlohmann/json.hpp>
@@ -836,7 +837,7 @@ HWTEST_F(ServiceMetaDataTest, LoadMatePair, TestSize.Level1)
     StoreMetaData storeMetaData("100", "appid", "test_store");
     storeMetaData.version = TEST_CURRENT_VERSION;
     storeMetaData.instanceId = 1;
-    std::vector entries;
+    std::vector<MetaDataManager::Entry> entries;
     
     std::string key = storeMetaData.GetKey();
     EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store_001###1");
@@ -844,8 +845,9 @@ HWTEST_F(ServiceMetaDataTest, LoadMatePair, TestSize.Level1)
     EXPECT_TRUE(result);
     result = MetaDataManager::GetInstance().LoadMatePair(key, entries, true);
     EXPECT_TRUE(result);
-    std::string key(entries.key.begin(), entries.key.end());
-    std::string value(entries.value.begin(), entries.value.end());
+    EXPECT_EQ(entries.size(), 1);
+    std::string key(entries[0].key.begin(), entries[0].key.end());
+    std::string value(entries[0].value.begin(), entries[0].value.end());
     EXPECT_EQ(storeMetaData.GetKey(), key);
     
     auto tokens = Constant::SplitKeepSpace(key, Constant::KEY_SEPARATOR);
