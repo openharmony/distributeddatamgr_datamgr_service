@@ -44,6 +44,7 @@ constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
 static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
 static constexpr uint32_t PREFIX_LEN = 24;
 static constexpr uint32_t INDEX_LEN = 8;
+static constexpr const char PLACE_HOLDER = '0';
 using namespace OHOS::DistributedDataDfx;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
@@ -413,7 +414,7 @@ void PreProcessUtils::SetRecordUid(UnifiedData &data)
     auto prefix = PreProcessUtils::GenerateId().substr(0, PREFIX_LEN);
     for (const auto &record : data.GetRecords()) {
         std::ostringstream oss;
-        oss << std::setw(INDEX_LEN) << std::setfill('0') << index;
+        oss << std::setw(INDEX_LEN) << std::setfill(PLACE_HOLDER) << index;
         record->SetUid(prefix + oss.str());
         index++;
     }
