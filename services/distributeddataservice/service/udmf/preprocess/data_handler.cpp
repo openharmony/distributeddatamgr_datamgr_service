@@ -21,6 +21,7 @@
 namespace OHOS::UDMF {
 constexpr const char *UD_KEY_SEPARATOR = "/";
 constexpr const char *UD_KEY_ENTRY_SEPARATOR = "#";
+constexpr const char *UD_KEY_PROPERTIES_SEPARATOR = "#properties";
 
 Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries)
 {
@@ -34,6 +35,16 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     std::vector<uint8_t> udKeyBytes = { unifiedKey.begin(), unifiedKey.end() };
     Entry entry = { udKeyBytes, runtimeBytes };
     entries.emplace_back(entry);
+    std::string propsKey = unifiedData.GetRuntime()->key.GetPropertyKey() + UD_KEY_PROPERTIES_SEPARATOR;
+    std::vector<uint8_t> propsBytes;
+    auto propsTlv = TLVObject(propsBytes);
+    if (!TLVUtil::Writing(*unifiedData.GetProperties(), propsTlv, TAG::TAG_PROPERTIES)) {
+        ZLOGE("Properties info marshalling failed:%{public}s", propsKey.c_str());
+        return E_WRITE_PARCEL_ERROR;
+    }
+    std::vector<uint8_t> propsKeyBytes = { propsKey.begin(), propsKey.end() };
+    Entry propsEntry = { propsKeyBytes, propsBytes };
+    entries.emplace_back(std::move(propsEntry));
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
 }
 
@@ -75,7 +86,14 @@ Status DataHandler::UnmarshalEntryItem(UnifiedData &unifiedData, const std::vect
             continue;
         }
         auto isStartWithKey = keyStr.find(key) == 0;
-        if (!isStartWithKey) {
+        std::string propsKey = UnifiedKey(key).GetPropertyKey() + UD_KEY_PROPERTIES_SEPARATOR;
+        if (!isStartWithKey && (keyStr == propsKey)) {
+            std::shared_ptr<UnifiedDataProperties> properties;
+            if (!TLVUtil::ReadTlv(properties, data, TAG::TAG_PROPERTIES)) {
+                ZLOGE("Unmarshall unified properties failed.");
+                return E_READ_PARCEL_ERROR;
+            }
+            unifiedData.SetProperties(std::move(properties));
             continue;
         }
         auto isEntryItem = keyStr.rfind(UD_KEY_ENTRY_SEPARATOR) != std::string::npos;
