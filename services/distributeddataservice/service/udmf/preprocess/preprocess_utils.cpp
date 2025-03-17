@@ -437,7 +437,7 @@ bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &de
     }
     auto value = records[0]->GetOriginValue();
     auto obj = std::get_if<std::shared_ptr<Object>>(&value);
-    if (obj == nullptr) {
+    if (obj == nullptr || *obj == nullptr) {
         ZLOGE("ValueType is not Object!");
         return false;
     }
