@@ -39,6 +39,9 @@ public:
     static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<Uri> &uris);
     static void ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
         bool isLocal, std::vector<std::string> &uris);
+    static void SetRecordUid(UnifiedData &data);
+    static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
+    static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
 private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);
     static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);

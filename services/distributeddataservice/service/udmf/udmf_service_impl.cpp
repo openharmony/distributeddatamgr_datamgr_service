@@ -34,6 +34,7 @@
 #include "bootstrap.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "unified_data_helper.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -133,10 +134,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
             return ret;
         }
     }
-
-    for (const auto &record : unifiedData.GetRecords()) {
-        record->SetUid(PreProcessUtils::GenerateId());
-    }
+    PreProcessUtils::SetRecordUid(unifiedData);
 
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
@@ -399,9 +397,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     }
     runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
     unifiedData.SetRuntime(*runtime);
-    for (auto &record : unifiedData.GetRecords()) {
-        record->SetUid(PreProcessUtils::GenerateId());
-    }
+    PreProcessUtils::SetRecordUid(unifiedData);
     if (store->Update(unifiedData) != E_OK) {
         ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
@@ -462,7 +458,7 @@ int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
         return E_DB_ERROR;
     }
 
-    if (store->GetSummary(query.key, summary) != E_OK) {
+    if (store->GetSummary(key, summary) != E_OK) {
         ZLOGE("Store get summary failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
@@ -500,26 +496,23 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         return E_DB_ERROR;
     }
 
-    UnifiedData data;
-    int32_t res = store->Get(query.key, data);
+    Runtime runtime;
+    auto res = store->GetRuntime(query.key, runtime);
     if (res == E_NOT_FOUND) {
         privilegeCache_[query.key] = privilege;
         ZLOGW("Add privilege in cache, key: %{public}s.", query.key.c_str());
         return E_OK;
     }
     if (res != E_OK) {
-        ZLOGE("Get data from store failed, res:%{public}d,intention: %{public}s.", res, key.intention.c_str());
+        ZLOGE("Get runtime failed, res:%{public}d, key:%{public}s.", res, query.key.c_str());
         return res;
     }
-    if (data.GetRuntime() == nullptr) {
-        return E_DB_ERROR;
+    runtime.privileges.emplace_back(privilege);
+    res = store->PutRuntime(query.key, runtime);
+    if (res != E_OK) {
+        ZLOGE("Update runtime failed, res:%{public}d, key:%{public}s", res, query.key.c_str());
     }
-    data.GetRuntime()->privileges.emplace_back(privilege);
-    if (store->Update(data) != E_OK) {
-        ZLOGE("Update unified data failed:%{public}s", key.intention.c_str());
-        return E_DB_ERROR;
-    }
-    return E_OK;
+    return res;
 }
 
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
