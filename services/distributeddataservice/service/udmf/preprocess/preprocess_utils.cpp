@@ -424,42 +424,48 @@ bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &de
 {
     auto records = data.GetRecords();
     if (records.size() != TEMP_UDATA_RECORD_SIZE) {
-        ZLOGE("Data has multiple records.size:%{public}zu", records.size());
+        ZLOGE("Records size error.size:%{public}zu", records.size());
         return false;
     }
-    if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {
-        ZLOGE("Record is not file.");
+    if (records[0] == nullptr) {
+        ZLOGE("First record is null.");
         return false;
     }
-    auto obj = std::get<std::shared_ptr<Object>>(records[0]->GetOriginValue());
+    if (records[0]->GetType() != UDType::FILE) {
+        ZLOGE("First record is not file.");
+        return false;
+    }
+    auto value = records[0]->GetOriginValue();
+    auto obj = std::get_if<std::shared_ptr<Object>>(&value);
     if (obj == nullptr) {
         ZLOGE("ValueType is not Object!");
         return false;
     }
     std::shared_ptr<Object> detailObj;
-    obj->GetValue(DETAILS, detailObj);
+    (*obj)->GetValue(DETAILS, detailObj);
     if (detailObj == nullptr) {
         ZLOGE("Not contain details for object!");
         return false;
     }
     auto result = ObjectUtils::ConvertToUDDetails(detailObj);
     if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
+        ZLOGE("Not find temp file.");
         return false;
     }
-    details = result;
+    details = std::move(result);
     return true;
 }
 
 Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary &summary)
 {
     for (auto &item : details) {
-        if (item.first != TEMP_UNIFIED_DATA_FLAG) {
-            auto int64Value = std::get_if<int64_t>(&item.second);
-            if (int64Value != nullptr) {
-                auto size = std::get<int64_t>(item.second);
-                summary.summary[item.first] = size;
-                summary.totalSize += size;
-            }
+        if (item.first == TEMP_UNIFIED_DATA_FLAG) {
+            continue;
+        }
+        auto int64Value = std::get_if<int64_t>(&item.second);
+        if (int64Value != nullptr) {
+            summary.summary[item.first] = *int64Value;
+            summary.totalSize += *int64Value;
         }
     }
     return E_OK;
