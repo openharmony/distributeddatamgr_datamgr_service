@@ -127,7 +127,7 @@ HWTEST_F(BackupManagerServiceTest, Init, TestSize.Level1)
     meta1.isDirty = false;
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), meta1, true));
-    EXPECT_NO_FATAL_FAILURE(BackupManager::GetInstance().Init());
+    BackupManager::GetInstance().Init();
 
     StoreMetaData meta2;
     meta2 = metaData_;
@@ -135,7 +135,7 @@ HWTEST_F(BackupManagerServiceTest, Init, TestSize.Level1)
     meta2.isDirty = false;
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), meta2, true));
-    EXPECT_NO_FATAL_FAILURE(BackupManager::GetInstance().Init());
+    BackupManager::GetInstance().Init();
 
     StoreMetaData meta3;
     meta3 = metaData_;
@@ -143,7 +143,7 @@ HWTEST_F(BackupManagerServiceTest, Init, TestSize.Level1)
     meta3.isDirty = true;
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), meta3, true));
-    EXPECT_NO_FATAL_FAILURE(BackupManager::GetInstance().Init());
+    BackupManager::GetInstance().Init();
 
     StoreMetaData meta4;
     meta4 = metaData_;
@@ -151,7 +151,7 @@ HWTEST_F(BackupManagerServiceTest, Init, TestSize.Level1)
     meta4.isDirty = true;
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), meta4, true));
-    EXPECT_NO_FATAL_FAILURE(BackupManager::GetInstance().Init());
+    BackupManager::GetInstance().Init();
 }
 
 /**
