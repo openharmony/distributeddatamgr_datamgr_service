@@ -168,9 +168,9 @@ HWTEST_F(BackupManagerServiceTest, RegisterExporter, TestSize.Level1)
         [](const StoreMetaData &meta, const std::string &backupPath, bool &result)
         { result = true; };
     BackupManager instance;
-    EXPECT_NO_FATAL_FAILURE(instance.RegisterExporter(type, exporter));
+    instance.RegisterExporter(type, exporter);
     EXPECT_FALSE(instance.exporters_[type] == nullptr);
-    EXPECT_NO_FATAL_FAILURE(instance.RegisterExporter(type, exporter));
+    instance.RegisterExporter(type, exporter);
 }
 
 /**
@@ -185,7 +185,8 @@ HWTEST_F(BackupManagerServiceTest, BackSchedule, TestSize.Level1)
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(0, 1);
     BackupManager instance;
     instance.executors_ = nullptr;
-    EXPECT_NO_FATAL_FAILURE(instance.BackSchedule(executors));
+    instance.BackSchedule(executors);
+    EXPECT_FALSE(instance.executors_ == nullptr);
 }
 
 /**
@@ -230,7 +231,7 @@ HWTEST_F(BackupManagerServiceTest, CanBackup, TestSize.Level1)
     BackupManagerServiceTest::TestRule();
     std::vector<std::string> rule = { "TestRule" };
     BackupRuleManager::GetInstance().LoadBackupRules(rule);
-    ASSERT_FALSE(BackupRuleManager::GetInstance().CanBackup());
+    EXPECT_FALSE(BackupRuleManager::GetInstance().CanBackup());
     bool status = BackupManager::GetInstance().CanBackup();
     EXPECT_FALSE(status);
 }
@@ -251,7 +252,8 @@ HWTEST_F(BackupManagerServiceTest, SaveData, TestSize.Level1)
     secretKey.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     secretKey.sKey = randomKey;
     EXPECT_EQ(secretKey.sKey.size(), SKEY_SIZE);
-    EXPECT_NO_FATAL_FAILURE(BackupManager::GetInstance().SaveData(path, key, secretKey));
+    BackupManager::GetInstance().SaveData(path, key, secretKey);
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(key, secretKey, true));
     randomKey.assign(randomKey.size(), 0);
 }
 
