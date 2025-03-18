@@ -24,6 +24,7 @@ namespace DistributedData {
 using namespace OHOS::AppDistributedKv;
 using AccessCaller = OHOS::AppDistributedKv::AccessCaller;
 using AccessCallee = OHOS::AppDistributedKv::AccessCallee;
+using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
 class BDeviceManagerAdapter {
 public:
     virtual std::vector<DeviceInfo> GetRemoteDevices() = 0;
@@ -32,8 +33,10 @@ public:
     virtual Status StartWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual bool IsSameAccount(const AccessCaller &, const AccessCallee &) = 0;
+    virtual std::string GetUuidByNetworkId(const std::string &);
+    virtual DeviceInfo GetDeviceInfo(const std::string &);
+    virtual std::string ToNetworkID(const std::string &);
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
-    virtual DeviceInfo GetLocalDevice() = 0;
     static inline std::shared_ptr<BDeviceManagerAdapter> deviceManagerAdapter = nullptr;
     BDeviceManagerAdapter() = default;
     virtual ~BDeviceManagerAdapter() = default;
@@ -47,8 +50,10 @@ public:
     MOCK_METHOD(Status, StartWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(Status, StopWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(bool, IsSameAccount, (const AccessCaller &, const AccessCallee &));
+    MOCK_METHOD(std::string, GetUuidByNetworkId, (const std::string &));
+    MOCK_METHOD(DeviceInfo, GetDeviceInfo, (const std::string &));
+    MOCK_METHOD(std::string, ToNetworkID, (const std::string &));
     MOCK_METHOD(bool, CheckAccessControl, (const AccessCaller &, const AccessCallee &));
-    MOCK_METHOD(DeviceInfo, GetLocalDevice, ());
 };
 
 } // namespace DistributedData

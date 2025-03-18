@@ -37,6 +37,7 @@ using UserInfo = DistributedDB::UserInfo;
 namespace OHOS::AppDistributedKv {
 class MockCommunicationProvider : public CommunicationProvider {
 public:
+    ~MockCommunicationProvider() = default;
     static MockCommunicationProvider& Init()
     {
         static MockCommunicationProvider instance;
@@ -79,7 +80,7 @@ public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
     void SetUp();
-    void TearDown() {}
+    void TearDown();
 
     ProcessCommunicatorImpl* communicator_;
     MockCommunicationProvider* mockProvider;
@@ -114,6 +115,11 @@ void ProcessCommunicatorImplTest::SetUp(void)
     mockProvider = &MockCommunicationProvider::Init();
 }
 
+void ProcessCommunicatorImplTest::TearDown(void)
+{
+    mockProvider = nullptr;
+}
+
 void ProcessCommunicatorImplTest::SetUpTestCase(void)
 {
     deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
@@ -123,6 +129,7 @@ void ProcessCommunicatorImplTest::SetUpTestCase(void)
 void ProcessCommunicatorImplTest::TearDownTestCase()
 {
     deviceManagerAdapterMock = nullptr;
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 /**

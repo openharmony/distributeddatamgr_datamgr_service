@@ -188,11 +188,25 @@ ohos_unittest("ProcessCommunicatorImplTest") {
 ohos_unittest("SoftbusAdapterStandardTest") {
   module_out_path = module_output_path
 
-  sources = [ "unittest/softbus_adapter_standard_test.cpp" ]
+  sources = [
+    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
+    "../src/communicator_context.cpp",
+    "../src/data_buffer.cpp",
+    "../src/process_communicator_impl.cpp",
+    "../src/softbus_adapter.h",
+    "../src/softbus_client.cpp",
+    "../src/softbus_client.h",
+    "unittest/softbus_adapter_standard_test.cpp",
+  ]
+
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/framework/include/dfx",
+    "${data_service_path}/service/test/mock",
     "../src",
+    "../../include/communicator",
+    "../../include/utils",
+    "${data_service_path}/framework/include/utils",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -201,16 +215,22 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
+    "googletest:gmock_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
   ]
   deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "../../dfx:distributeddata_dfx",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
