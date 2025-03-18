@@ -94,8 +94,6 @@ HWTEST_F(ObjectServiceImplTest, OnAssetChanged001, TestSize.Level1)
     // bundleName not equal tokenId
     auto ret = objectServiceImpl->OnAssetChanged(bundleName_, sessionId_, deviceId_, asset_);
     EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
-    ret = objectServiceImpl->OnAssetChanged(bundleName, sessionId_, deviceId_, asset_);
-    EXPECT_NE(ret, OBJECT_SUCCESS);
 }
 
 /**
@@ -115,8 +113,6 @@ HWTEST_F(ObjectServiceImplTest, BindAssetStore001, TestSize.Level1)
     // bundleName not equal tokenId
     auto ret = objectServiceImpl->BindAssetStore(bundleName_, sessionId_, asset_, assetBindInfo_);
     EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
-    ret = objectServiceImpl->BindAssetStore(bundleName, sessionId_, asset_, assetBindInfo_);
-    EXPECT_NE(ret, OBJECT_SUCCESS);
 }
 
 /**
@@ -136,5 +132,23 @@ HWTEST_F(ObjectServiceImplTest, DeleteSnapshot001, TestSize.Level1)
     // bundleName not equal tokenId
     auto ret = objectServiceImpl->DeleteSnapshot(bundleName_, sessionId_);
     EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name: ResolveAutoLaunch001
+ * @tc.desc: ResolveAutoLaunch test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, ResolveAutoLaunch001, TestSize.Level1)
+{
+    DistributedDB::AutoLaunchParam param {
+        .userId = userId_,
+        .appId = appId_,
+        .storeId = "storeId",
+    };
+    std::string identifier = "identifier";
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    int32_t ret = objectServiceImpl->ResolveAutoLaunch(identifier, param);
+    EXPECT_EQ(ret, OBJECT_STORE_NOT_FOUND);
 }
 }

@@ -978,5 +978,91 @@ HWTEST_F(ObjectManagerTest, OnFinished001, TestSize.Level1)
     ObjectAssetsRecvListener listener;
     int32_t ret = listener.OnFinished(srcNetworkId, assetObj, result);
     EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
+
+    sptr<AssetObj> assetObj_1 = new AssetObj();
+    assetObj_1->dstBundleName_ = bundleName_;
+    assetObj_1->srcBundleName_ = bundleName_;
+    assetObj_1->dstNetworkId_ = "1";
+    assetObj_1->sessionId_ = "123";
+    ret = listener.OnFinished(srcNetworkId, assetObj_1, result);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: GetObjectData001
+* @tc.desc: GetObjectData test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, GetObjectData001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+
+    std::string bundleName = bundleName_;
+    std::string sessionId = sessionId_;
+    std::string source = "sourceDeviceId";
+    std::string target = "targetDeviceId";
+    std::string timestamp = "1234567890";
+    ObjectStoreManager::SaveInfo saveInfo(bundleName, sessionId, source, target, timestamp);
+    std::string prefix = saveInfo.ToPropertyPrefix();
+    EXPECT_FALSE(prefix.empty());
+
+    // p_name not asset key
+    std::string p_name = "p_namejpg";
+    std::string key = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
+    std::map<std::string, std::vector<uint8_t>> changedData = {{ key, data_ }};
+    bool hasAsset = false;
+    auto ret = manager->GetObjectData(changedData, saveInfo, hasAsset);
+    EXPECT_FALSE(ret.empty());
+    EXPECT_FALSE(hasAsset);
+}
+
+/**
+* @tc.name: GetObjectData002
+* @tc.desc: GetObjectData test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+
+    std::string bundleName = "";
+    std::string sessionId = "";
+    std::string source = "";
+    std::string target = "";
+    std::string timestamp = "";
+    ObjectStoreManager::SaveInfo saveInfo(bundleName, sessionId, source, target, timestamp);
+    std::string prefix = saveInfo.ToPropertyPrefix();
+    EXPECT_TRUE(prefix.empty());
+
+    // saveInfo.bundleName, sourceDeviceId, targetDeviceId empty
+    saveInfo.sessionId = sessionId_;
+    saveInfo.timestamp = "1234567890";
+
+    bundleName = bundleName_;
+    sessionId = sessionId_;
+    source = "sourceDeviceId";
+    target = "targetDeviceId";
+    timestamp = "1234567890";
+    std::string p_name = "p_name.jpg";
+    std::string key = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
+    std::map<std::string, std::vector<uint8_t>> changedData = {{ key, data_ }};
+    bool hasAsset = false;
+    auto ret = manager->GetObjectData(changedData, saveInfo, hasAsset);
+    EXPECT_FALSE(ret.empty());
+    EXPECT_EQ(saveInfo.bundleName, bundleName);
+    EXPECT_TRUE(hasAsset);
+
+    // only targetDeviceId empty
+    saveInfo.bundleName = "test_bundleName";
+    saveInfo.sourceDeviceId = "test_source";
+    // p_name not asset key
+    p_name = "p_namejpg";
+    std::string key_1 = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
+    std::map<std::string, std::vector<uint8_t>> changedData_1 = {{ key_1, data_ }};
+    hasAsset = false;
+    ret = manager->GetObjectData(changedData_1, saveInfo, hasAsset);
+    EXPECT_FALSE(ret.empty());
+    EXPECT_NE(saveInfo.bundleName, bundleName);
+    EXPECT_FALSE(hasAsset);
 }
 } // namespace OHOS::Test
