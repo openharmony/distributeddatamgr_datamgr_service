@@ -1771,6 +1771,7 @@ ohos_unittest("BackupManagerServiceTest") {
     "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
