@@ -37,6 +37,7 @@ public:
     virtual DeviceInfo GetDeviceInfo(const std::string &);
     virtual std::string ToNetworkID(const std::string &);
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
+    virtual DeviceInfo GetLocalDevice() = 0;
     static inline std::shared_ptr<BDeviceManagerAdapter> deviceManagerAdapter = nullptr;
     BDeviceManagerAdapter() = default;
     virtual ~BDeviceManagerAdapter() = default;
@@ -54,6 +55,7 @@ public:
     MOCK_METHOD(DeviceInfo, GetDeviceInfo, (const std::string &));
     MOCK_METHOD(std::string, ToNetworkID, (const std::string &));
     MOCK_METHOD(bool, CheckAccessControl, (const AccessCaller &, const AccessCallee &));
+    MOCK_METHOD(DeviceInfo, GetLocalDevice, ());
 };
 
 } // namespace DistributedData

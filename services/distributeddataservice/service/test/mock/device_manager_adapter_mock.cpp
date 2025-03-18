@@ -25,9 +25,6 @@ OHOS::DistributedData::DeviceManagerAdapter::DeviceManagerAdapter()
     : cloudDmInfo({ "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 })
 {}
 
-OHOS::DistributedData::DeviceManagerAdapter::~DeviceManagerAdapter()
-{}
-
 std::vector<std::string> OHOS::DistributedData::DeviceManagerAdapter::ToUUID(std::vector<DeviceInfo> devices)
 {
     if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
@@ -88,6 +85,15 @@ std::vector<DeviceInfo> OHOS::DistributedData::DeviceManagerAdapter::GetRemoteDe
     return BDeviceManagerAdapter::deviceManagerAdapter->GetRemoteDevices();
 }
 
+DeviceInfo DeviceManagerAdapter::GetLocalDevice()
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        DeviceInfo info;
+        return info;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetLocalDevice();
+}
+
 std::string OHOS::DistributedData::DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
 {
     if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
@@ -110,5 +116,9 @@ std::string OHOS::DistributedData::DeviceManagerAdapter::ToNetworkID(const std::
         return " ";
     }
     return BDeviceManagerAdapter::deviceManagerAdapter->ToNetworkID(id);
+}
+
+DeviceManagerAdapter::~DeviceManagerAdapter()
+{
 }
 }
