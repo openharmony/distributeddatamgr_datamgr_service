@@ -66,6 +66,7 @@ void SoftbusAdapterStandardTest::SetUpTestCase(void)
 void SoftbusAdapterStandardTest::TearDownTestCase()
 {
     deviceManagerAdapterMock = nullptr;
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 /**
