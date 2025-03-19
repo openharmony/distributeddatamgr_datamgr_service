@@ -48,7 +48,7 @@ Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &me
             return DBStatus::DB_ERROR;
         }
         store->OperateDataStatus(static_cast<uint32_t>(DistributedDB::DataOperator::UPDATE_TIME) |
-            static_cast<uint32_t>(DistributedDB::DataOperator::RESET_UPLOAD_CLOUD ));
+            static_cast<uint32_t>(DistributedDB::DataOperator::RESET_UPLOAD_CLOUD));
     }
 
     if ((old.version < StoreMeta::UUID_CHANGED_TAG || (old.isNeedUpdateDeviceId && !old.isEncrypt)) &&

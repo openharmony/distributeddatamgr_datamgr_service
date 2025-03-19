@@ -186,7 +186,6 @@ void KvStoreMetaManager::InitMetaData()
     }
     UpdateMetaData();
     SetCloudSyncer();
-    ZLOGI("end.");
 }
 
 void KvStoreMetaManager::UpdateMetaData()
@@ -575,7 +574,7 @@ bool KvStoreMetaManager::IsMetaDeviceIdChanged(const std::string &localUUID)
         ZLOGW("get uuid failed");
         return false;
     }
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {\
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
         meta.currentUUID = localUUID;
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
     } else {
