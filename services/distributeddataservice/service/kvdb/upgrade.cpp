@@ -40,7 +40,19 @@ Upgrade &Upgrade::GetInstance()
 
 Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd)
 {
-    if (old.version < StoreMeta::UUID_CHANGED_TAG && old.storeType == DEVICE_COLLABORATION) {
+    if (old.isNeedUpdateDeviceId && !old.isEncrypt) {
+        auto store = GetDBStore(meta, pwd);
+        if (store == nullptr) {
+            ZLOGI("get store failed, appId:%{public}s storeId:%{public}s", old.appId.c_str(),
+                Anonymous::Change(old.storeId).c_str());
+            return DBStatus::DB_ERROR;
+        }
+        store->OperateDataStatus(static_cast<uint32_t>(DistributedDB::DataOperator::UPDATE_TIME) |
+            static_cast<uint32_t>(DistributedDB::DataOperator::RESET_UPLOAD_CLOUD ));
+    }
+
+    if ((old.version < StoreMeta::UUID_CHANGED_TAG || (old.isNeedUpdateDeviceId && !old.isEncrypt)) &&
+        old.storeType == DEVICE_COLLABORATION) {
         auto upStatus = Upgrade::GetInstance().UpdateUuid(old, meta, pwd);
         if (upStatus != DBStatus::OK) {
             return DBStatus::DB_ERROR;
@@ -68,29 +80,6 @@ Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &me
 
     cleaner_(old);
     return DBStatus::OK;
-}
-
-void Upgrade::UpdateDeviceId(const StoreMeta &oldMeta, const StoreMeta &meta, const std::vector<uint8_t> &pwd)
-{
-    if (oldMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
-        oldMeta.storeType > StoreMetaData::StoreType::STORE_KV_END) {
-        return;
-    }
-
-    if (oldMeta.isNeedUpdateDeviceId && !oldMeta.isEncrypt) {
-        auto store = GetDBStore(meta, pwd);
-        if (store == nullptr) {
-            ZLOGI("store is null appId:%{public}s storeId:%{public}s", oldMeta.appId.c_str(),
-                Anonymous::Change(oldMeta.storeId).c_str());
-            return;
-        }
-        store->OperateDataStatus(static_cast<uint32_t>(DistributedDB::DataOperator::UPDATE_TIME) |
-            static_cast<uint32_t>(DistributedDB::DataOperator::RESET_UPLOAD_CLOUD));
-    }
-
-    if (oldMeta.isNeedUpdateDeviceId && oldMeta.storeType == DEVICE_COLLABORATION && !oldMeta.isEncrypt) {
-        Upgrade::GetInstance().UpdateUuid(oldMeta, meta, pwd);
-    }
 }
 
 Upgrade::DBStatus Upgrade::ExportStore(const StoreMeta &old, const StoreMeta &meta)

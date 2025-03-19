@@ -740,7 +740,6 @@ Status KVDBServiceImpl::AfterCreate(
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta, true);
     Status status = SUCCESS;
     if (isCreated && oldMeta != metaData) {
-        Upgrade::GetInstance().UpdateDeviceId(oldMeta, metaData, password);
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
         ZLOGI("update status:%{public}d appId:%{public}s storeId:%{public}s inst:%{public}d "
               "type:%{public}d->%{public}d dir:%{public}s dataType:%{public}d->%{public}d",

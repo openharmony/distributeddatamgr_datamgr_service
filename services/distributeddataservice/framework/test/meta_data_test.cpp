@@ -847,7 +847,8 @@ HWTEST_F(ServiceMetaDataTest, LoadMatePair, TestSize.Level1)
     EXPECT_TRUE(result);
     EXPECT_EQ(entries.size(), 1);
     std::string key(entries[0].key.begin(), entries[0].key.end());
-    std::string value(entries[0].value.begin(), entries[0].value.end());
+    storeMetaData value;
+    Serializable::Unmarshall({ entries[0].value.begin(), entries[0].value.end() }, value);
     EXPECT_EQ(storeMetaData.GetKey(), key);
     
     auto tokens = Constant::SplitKeepSpace(key, Constant::KEY_SEPARATOR);

@@ -95,16 +95,26 @@ private:
     ExecutorPool::Task GetTask(uint32_t retry);
 
     DistributedDB::KvStoreNbDelegate::Option InitDBOption();
-
-    std::string vectorToString(const std::vector<std::string> &vec, const std::string separator = "###");
-
-    void UpdateSyncMetaDeviceId();
-
-    void UpdateLocalMetaDeviceId();
-
-    bool IsMetaDeviceIdChanged();
     
-    void CheckDeviceIDChanged();
+    void UpdateMetaDeviceId(const std::string &currentUUID);
+
+    bool IsMetaDeviceIdChanged(const std::string &currentUUID);
+    
+    void UpdateStoreMetaData(const std::string &currentUUID, bool isLocal = false);
+    
+    void UpdateLocalMetaData(const std::string &currentUUID, bool isLocal = false);
+    
+    void UpdateAutoLaunchMetaData(const std::string &currentUUID, bool isLocal = false);
+    
+    void UpdateStrategyMetaData(const std::string &currentUUID, bool isLocal = false);
+    
+    void UpdateMatrixMetaData(const std::string &currentUUID, bool isLocal = false);
+    
+    void UpdateSwitchesMetaData(const std::string &currentUUID, bool isLocal = false);
+    
+    void UpdateUserMetaData(const std::string &currentUUID, bool isLocal = false);
+    
+    void UpdateCapMetaData(const std::string &currentUUID, bool isLocal = false);
 
     static ExecutorPool::Task GetBackupTask(
         TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);

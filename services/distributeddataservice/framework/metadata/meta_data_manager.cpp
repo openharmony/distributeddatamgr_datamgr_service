@@ -380,32 +380,4 @@ bool MetaDataManager::LoadMetaPair(const std::string &prefix, std::vector<Entry>
     }
     return true;
 }
-
-bool MetaDataManager::SaveMeta(const std::string &key, const std::string &value, bool isLocal)
-{
-    if (!inited_) {
-        return false;
-    }
-
-    auto status = isLocal ? metaStore_->PutLocal({ key.begin(), key.end() }, { value.begin(), value.end() })
-                          : metaStore_->Put({ key.begin(), key.end() }, { value.begin(), value.end() });
-    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
-        ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
-            status, isLocal, Anonymous::Change(key).c_str());
-        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
-        StopSA();
-        return false;
-    }
-    if (status == DistributedDB::DBStatus::OK && backup_) {
-        backup_(metaStore_);
-    }
-    if (!isLocal && cloudSyncer_) {
-        cloudSyncer_();
-    }
-    if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("failed! status:%{public}d isLocal:%{public}d, key:%{public}s", status, isLocal,
-            Anonymous::Change(key).c_str());
-    }
-    return status == DistributedDB::DBStatus::OK;
-}
 } // namespace OHOS::DistributedData

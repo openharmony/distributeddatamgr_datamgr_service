@@ -85,7 +85,6 @@ public:
     API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false);
     API_EXPORT bool LoadMetaPair(const std::string &prefix, std::vector<Entry> &entries,
         bool isLocal = false);
-    API_EXPORT bool SaveMeta(const std::string &key, const std::string &value, bool isLocal = false);
 private:
     MetaDataManager();
     ~MetaDataManager();

@@ -21,17 +21,16 @@
 namespace OHOS::DistributedData {
 class API_EXPORT DeviceIDMetaData final : public Serializable {
 public:
-    std::string currentUUID = "";
-    std::string oldUUID = "";
-
     API_EXPORT DeviceIDMetaData();
     API_EXPORT ~DeviceIDMetaData();
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
     API_EXPORT std::string GetKey() const;
 
+    std::string currentUUID = "";
+    std::string oldUUID = "";
 private:
-    static constexpr const char *KEY_PREFIX = "DeviceIDKey";
+    static constexpr const char *KEY_PREFIX = "DeviceIDMeta";
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_APPID_META_DATA_H

@@ -89,6 +89,18 @@ std::vector<std::string> Constant::SplitKeepSpace(const std::string &str, const 
     return res;
 }
 
+std::string Constant::vectorToString(const std::vector<std::string> &vec, const std::string separator)
+{
+    std::string result;
+    std::for_each(vec.begin(), vec.end(), [&](const std::string &info) {
+        if (!result.empty()) {
+            result += separator;
+        }
+        result += info;
+    });
+    return result;
+}
+
 bool Constant::Equal(bool first, bool second)
 {
     return (first && second) || (!first && !second);
