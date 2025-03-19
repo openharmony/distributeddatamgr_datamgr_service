@@ -94,6 +94,30 @@ DeviceInfo DeviceManagerAdapter::GetLocalDevice()
     return BDeviceManagerAdapter::deviceManagerAdapter->GetLocalDevice();
 }
 
+std::string OHOS::DistributedData::DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return " ";
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetUuidByNetworkId(networkId);
+}
+
+DeviceInfo OHOS::DistributedData::DeviceManagerAdapter::GetDeviceInfo(const std::string &id)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return {};
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetDeviceInfo(id);
+}
+
+std::string OHOS::DistributedData::DeviceManagerAdapter::ToNetworkID(const std::string &id)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return " ";
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->ToNetworkID(id);
+}
+
 DeviceManagerAdapter::~DeviceManagerAdapter()
 {
 }
