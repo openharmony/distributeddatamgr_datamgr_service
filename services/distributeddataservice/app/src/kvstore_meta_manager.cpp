@@ -40,7 +40,7 @@
 #include "metadata/matrix_meta_data.h"
 #include "metadata/strategy_meta_data.h"
 #include "metadata/store_meta_data_local.h"
-#include "metadata/stratery_meta_data.h"
+#include "metadata/strategy_meta_data.h"
 #include "metadata/switches_meta_data.h"
 #include "metadata/user_meta_data.h"
 #include "metadata/version_meta_data.h"
