@@ -15,9 +15,7 @@
 #include "app_device_change_listener.h"
 #include <cstdint>
 #include "gtest/gtest.h"
-#include <gmock/gmock.h>
 #include <iostream>
-#include "device_manager_adapter_mock.h"
 #include "softbus_adapter.h"
 #include "softbus_adapter_standard.cpp"
 #include "softbus_error_code.h"
@@ -47,27 +45,14 @@ void AppDataChangeListenerImpl::OnMessage(const OHOS::AppDistributedKv::DeviceIn
 
 class SoftbusAdapterStandardTest : public testing::Test {
 public:
-    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
+    static void SetUpTestCase(void) {}
+    static void TearDownTestCase(void) {}
     void SetUp() {}
     void TearDown() {}
 protected:
     static constexpr uint32_t DEFAULT_MTU_SIZE = 4096 * 1024u;
     static constexpr uint32_t DEFAULT_TIMEOUT = 30 * 1000;
 };
-
-void SoftbusAdapterStandardTest::SetUpTestCase(void)
-{
-    deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
-    BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
-}
-
-void SoftbusAdapterStandardTest::TearDownTestCase()
-{
-    deviceManagerAdapterMock = nullptr;
-    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
-}
 
 /**
 * @tc.name: StartWatchDeviceChange
@@ -532,10 +517,6 @@ HWTEST_F(SoftbusAdapterStandardTest, ReuseConnect01, TestSize.Level1)
     DeviceId device = {"DeviceId"};
     auto status = SoftBusAdapter::GetInstance()->ReuseConnect(pipe, device);
     EXPECT_EQ(status, Status::NOT_SUPPORT);
-    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(testing::_)).WillOnce(testing::Return(true))
-        .WillRepeatedly(testing::Return(true));
-    status = SoftBusAdapter::GetInstance()->ReuseConnect(pipe, device);
-    EXPECT_EQ(status, Status::NETWORK_ERROR);
 }
 
 /**
@@ -615,17 +596,6 @@ HWTEST_F(SoftbusAdapterStandardTest, CloseSession, TestSize.Level1)
     ASSERT_NE(flag, nullptr);
     auto status = SoftBusAdapter::GetInstance()->CloseSession(networkId);
     EXPECT_EQ(status, false);
-    std::string uuid = "CloseSessionTest";
-    EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(testing::_)).WillOnce(testing::Return(uuid))
-        .WillRepeatedly(testing::Return(uuid));
-    std::shared_ptr<SoftBusClient> conn = nullptr;
-    std::vector<std::shared_ptr<SoftBusClient>> clients;
-    clients.emplace_back(conn);
-    auto result = SoftBusAdapter::GetInstance()->connects_.Insert(uuid, clients);
-    EXPECT_EQ(result, true);
-    status = SoftBusAdapter::GetInstance()->CloseSession(networkId);
-    SoftBusAdapter::GetInstance()->connects_.Clear();
-    EXPECT_EQ(status, true);
 }
 
 /**

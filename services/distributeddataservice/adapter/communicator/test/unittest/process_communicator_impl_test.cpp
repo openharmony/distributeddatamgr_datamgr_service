@@ -22,6 +22,8 @@
 #include "communication_provider.h"
 #include "device_manager_adapter_mock.h"
 #include "process_communicator_impl.h"
+#include "softbus_adapter.h"
+#include "softbus_error_code.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -31,7 +33,7 @@ using OnDeviceChange = DistributedDB::OnDeviceChange;
 using OnDataReceive = DistributedDB::OnDataReceive;
 using OnSendAble = DistributedDB::OnSendAble;
 using DeviceInfos = DistributedDB::DeviceInfos;
-using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
+using DeviceInfoo = OHOS::AppDistributedKv::DeviceInfo;
 using UserInfo = DistributedDB::UserInfo;
 
 namespace OHOS::AppDistributedKv {
@@ -292,9 +294,9 @@ HWTEST_F(ProcessCommunicatorImplTest, GetRemoteOnlineDeviceInfosList, TestSize.L
     auto remoteDevInfos = communicator_->GetRemoteOnlineDeviceInfosList();
     EXPECT_EQ(remoteDevInfos.empty(), true);
 
-    DeviceInfo deviceInfo;
+    DeviceInfoo deviceInfo;
     deviceInfo.uuid = "GetRemoteOnlineDeviceInfosList";
-    std::vector<DeviceInfo> devInfos;
+    std::vector<DeviceInfoo> devInfos;
     devInfos.push_back(deviceInfo);
     EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillRepeatedly(Return(devInfos));
     remoteDevInfos = communicator_->GetRemoteOnlineDeviceInfosList();
@@ -311,7 +313,7 @@ HWTEST_F(ProcessCommunicatorImplTest, GetRemoteOnlineDeviceInfosList, TestSize.L
 HWTEST_F(ProcessCommunicatorImplTest, OnMessage, TestSize.Level0)
 {
     ASSERT_NE(communicator_, nullptr);
-    DeviceInfo deviceInfo;
+    DeviceInfoo deviceInfo;
     deviceInfo.uuid = "OnMessageTest";
     uint8_t data[] = {0x10, 0x20, 0x30, 0x40, 0x50};
     uint8_t *ptr = data;
@@ -336,7 +338,7 @@ HWTEST_F(ProcessCommunicatorImplTest, OnMessage, TestSize.Level0)
 HWTEST_F(ProcessCommunicatorImplTest, OnDeviceChanged, TestSize.Level0)
 {
     ASSERT_NE(communicator_, nullptr);
-    DeviceInfo deviceInfo;
+    DeviceInfoo deviceInfo;
     deviceInfo.uuid = "cloudDeviceUuid";
     EXPECT_NO_FATAL_FAILURE(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_ONREADY));
     EXPECT_NO_FATAL_FAILURE(communicator_->OnDeviceChanged(deviceInfo, DeviceChangeType::DEVICE_OFFLINE));
@@ -358,7 +360,7 @@ HWTEST_F(ProcessCommunicatorImplTest, OnDeviceChanged, TestSize.Level0)
 HWTEST_F(ProcessCommunicatorImplTest, OnSessionReady, TestSize.Level0)
 {
     ASSERT_NE(communicator_, nullptr);
-    DeviceInfo deviceInfo;
+    DeviceInfoo deviceInfo;
     deviceInfo.uuid = "OnSessionReadyTest";
     communicator_->sessionListener_ = nullptr;
     EXPECT_NO_FATAL_FAILURE(communicator_->OnSessionReady(deviceInfo, 1));
@@ -455,4 +457,50 @@ HWTEST_F(ProcessCommunicatorImplTest, GetDataUserInfo, TestSize.Level0)
     userInfos.push_back(user3);
     status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
     EXPECT_EQ(status, DistributedDB::OK);
+}
+
+/**
+* @tc.name: ReuseConnect01
+* @tc.desc: reuse connect
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: wangbin
+ */
+HWTEST_F(ProcessCommunicatorImplTest, ReuseConnect01, TestSize.Level0)
+{
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
+    PipeInfo pipe;
+    pipe.pipeId = "appId";
+    pipe.userId = "groupId";
+    DeviceId device = {"DeviceId"};
+    auto status = SoftBusAdapter::GetInstance()->ReuseConnect(pipe, device);
+    EXPECT_EQ(status, Status::NOT_SUPPORT);
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(testing::_)).WillOnce(testing::Return(true))
+        .WillRepeatedly(testing::Return(true));
+    status = SoftBusAdapter::GetInstance()->ReuseConnect(pipe, device);
+    EXPECT_EQ(status, Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: CloseSession
+* @tc.desc: close session
+* @tc.type: FUNC
+* @tc.author: nhj
+*/
+HWTEST_F(ProcessCommunicatorImplTest, CloseSession, TestSize.Level1)
+{
+    std::string networkId = "networkId";
+    auto flag = SoftBusAdapter::GetInstance();
+    ASSERT_NE(flag, nullptr);
+    std::string uuid = "CloseSessionTest";
+    EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(testing::_)).WillOnce(testing::Return(uuid))
+        .WillRepeatedly(testing::Return(uuid));
+    std::shared_ptr<SoftBusClient> conn = nullptr;
+    std::vector<std::shared_ptr<SoftBusClient>> clients;
+    clients.emplace_back(conn);
+    auto result = SoftBusAdapter::GetInstance()->connects_.Insert(uuid, clients);
+    EXPECT_EQ(result, true);
+    auto status = SoftBusAdapter::GetInstance()->CloseSession(networkId);
+    SoftBusAdapter::GetInstance()->connects_.Clear();
+    EXPECT_EQ(status, true);
 }

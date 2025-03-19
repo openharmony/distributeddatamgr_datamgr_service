@@ -189,9 +189,9 @@ ohos_unittest("SoftbusAdapterStandardTest") {
   module_out_path = module_output_path
 
   sources = [
-    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
     "../src/communicator_context.cpp",
     "../src/data_buffer.cpp",
+    "../src/device_manager_adapter.cpp",
     "../src/process_communicator_impl.cpp",
     "../src/softbus_adapter.h",
     "../src/softbus_client.cpp",
@@ -202,7 +202,6 @@ ohos_unittest("SoftbusAdapterStandardTest") {
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/framework/include/dfx",
-    "${data_service_path}/service/test/mock",
     "../src",
     "../../include/communicator",
     "../../include/utils",
@@ -215,7 +214,6 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
-    "googletest:gmock_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
