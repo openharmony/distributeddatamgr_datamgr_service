@@ -78,6 +78,7 @@ void SoftbusAdapterStandardTest::TearDownTestCase()
  */
 HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange, TestSize.Level0)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     auto status = SoftBusAdapter::GetInstance()->StartWatchDataChange(nullptr, {});
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
 }
@@ -91,6 +92,7 @@ HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange, TestSize.Level0)
  */
 HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange01, TestSize.Level0)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo appId;
     appId.pipeId = "appId";
     appId.userId = "groupId";
@@ -111,6 +113,7 @@ HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange01, TestSize.Level0)
  */
 HWTEST_F(SoftbusAdapterStandardTest, StartWatchDeviceChange02, TestSize.Level0)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo appId;
     appId.pipeId = "";
     appId.userId = "groupId";
@@ -169,6 +172,7 @@ HWTEST_F(SoftbusAdapterStandardTest, StopWatchDataChange, TestSize.Level0)
  */
 HWTEST_F(SoftbusAdapterStandardTest, StopWatchDataChange01, TestSize.Level0)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo appId;
     appId.pipeId = "";
     appId.userId = "groupId";
@@ -187,11 +191,12 @@ HWTEST_F(SoftbusAdapterStandardTest, StopWatchDataChange01, TestSize.Level0)
  */
 HWTEST_F(SoftbusAdapterStandardTest, GetExpireTime, TestSize.Level0)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo appId;
     appId.pipeId = "appId";
     appId.userId = "groupId";
-    DeviceId di = {"DeviceId"};
-    std::shared_ptr<SoftBusClient> conn = std::make_shared<SoftBusClient>(appId, di, SoftBusClient::QoSType::QOS_HML);
+    DeviceId id = {"DeviceId"};
+    std::shared_ptr<SoftBusClient> conn = std::make_shared<SoftBusClient>(appId, id, SoftBusClient::QoSType::QOS_HML);
     EXPECT_NO_FATAL_FAILURE(SoftBusAdapter::GetInstance()->GetExpireTime(conn));
 }
 
@@ -203,6 +208,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetExpireTime, TestSize.Level0)
 */
 HWTEST_F(SoftbusAdapterStandardTest, SendData, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
     PipeInfo id;
     id.pipeId = "appId";
@@ -254,6 +260,7 @@ HWTEST_F(SoftbusAdapterStandardTest, SendData01, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, StartCloseSessionTask, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     std::shared_ptr<SoftBusClient> conn = nullptr;
     std::vector<std::shared_ptr<SoftBusClient>> clients;
     clients.emplace_back(conn);
@@ -271,11 +278,12 @@ HWTEST_F(SoftbusAdapterStandardTest, StartCloseSessionTask, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, OnClientShutdown, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo appId;
     appId.pipeId = "appId";
     appId.userId = "groupId";
-    DeviceId di = {"DeviceId"};
-    std::shared_ptr<SoftBusClient> conn1 = std::make_shared<SoftBusClient>(appId, di, SoftBusClient::QoSType::QOS_HML);
+    DeviceId id = {"DeviceId"};
+    std::shared_ptr<SoftBusClient> conn1 = std::make_shared<SoftBusClient>(appId, id, SoftBusClient::QoSType::QOS_HML);
     std::shared_ptr<SoftBusClient> conn2 = nullptr;
     std::vector<std::shared_ptr<SoftBusClient>> clients;
     clients.emplace_back(conn1);
@@ -301,6 +309,7 @@ HWTEST_F(SoftbusAdapterStandardTest, OnClientShutdown, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, NotifyDataListeners, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo appId;
     appId.pipeId = "appId";
     appId.userId = "groupId";
@@ -323,6 +332,7 @@ HWTEST_F(SoftbusAdapterStandardTest, NotifyDataListeners, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, ListenBroadcastMsg, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     SoftBusAdapter::GetInstance()->onBroadcast_= nullptr;
     PipeInfo appId;
     appId.pipeId = "appId";
@@ -345,16 +355,17 @@ HWTEST_F(SoftbusAdapterStandardTest, ListenBroadcastMsg, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, OnBroadcast, TestSize.Level1)
 {
-    DeviceId di = {"DeviceId"};
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
+    DeviceId id = {"DeviceId"};
     LevelInfo level;
     level.dynamic = 1;
     level.statics = 1;
     level.switches = 1;
     level.switchesLen = 1;
     EXPECT_NE(SoftBusAdapter::GetInstance()->onBroadcast_, nullptr);
-    EXPECT_NO_FATAL_FAILURE(SoftBusAdapter::GetInstance()->OnBroadcast(di, level));
+    EXPECT_NO_FATAL_FAILURE(SoftBusAdapter::GetInstance()->OnBroadcast(id, level));
     SoftBusAdapter::GetInstance()->onBroadcast_ = nullptr;
-    EXPECT_NO_FATAL_FAILURE(SoftBusAdapter::GetInstance()->OnBroadcast(di, level));
+    EXPECT_NO_FATAL_FAILURE(SoftBusAdapter::GetInstance()->OnBroadcast(id, level));
 }
 
 /**
@@ -384,6 +395,7 @@ HWTEST_F(SoftbusAdapterStandardTest, OnClientSocketChanged, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, OnServerBytesReceived, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PeerSocketInfo info;
     info.name = strdup("");
     info.networkId = strdup("peertest01");
@@ -430,6 +442,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetPipeId, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, GetMtuSize, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
     PipeInfo id;
     id.pipeId = "appId";
@@ -451,6 +464,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetMtuSize, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, GetTimeout, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     const AppDataChangeListenerImpl *dataListener = new AppDataChangeListenerImpl();
     PipeInfo id;
     id.pipeId = "appId01";
@@ -471,6 +485,7 @@ HWTEST_F(SoftbusAdapterStandardTest, GetTimeout, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, IsSameStartedOnPeer, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo id;
     id.pipeId = "appId01";
     id.userId = "groupId01";
@@ -510,6 +525,7 @@ HWTEST_F(SoftbusAdapterStandardTest, ReuseConnect, TestSize.Level1)
 */
 HWTEST_F(SoftbusAdapterStandardTest, ReuseConnect01, TestSize.Level1)
 {
+    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
     PipeInfo pipe;
     pipe.pipeId = "appId";
     pipe.userId = "groupId";
