@@ -629,7 +629,7 @@ void KvStoreMetaManager::UpdateLocalMetaData(const std::string &currentUUID, boo
         StoreMetaDataLocal storeMetaDataLocal;
         std::string metaKey(localMetaData.key.begin(), localMetaData.key.end());
         Serializable::Unmarshall({ localMetaData.value.begin(), localMetaData.value.end() }, storeMetaDataLocal);
-        auto spliteTokens = Constant::SplitWithSeparator(metaKey, Constant::KEY_SEPARATOR);
+        auto spliteTokens = Constant::SplitKeepSpace(metaKey, Constant::KEY_SEPARATOR);
         if (spliteTokens.size() > SPLITE_MIN_SIZE) {
             spliteTokens[UUID_LOCATION] = currentUUID;
         }
@@ -647,7 +647,7 @@ void KvStoreMetaManager::UpdateAutoLaunchMetaData(const std::string &currentUUID
         AutoLaunchMetaData autoLaunchMetaData;
         std::string metaKey(metaData.key.begin(), metaData.key.end());
         Serializable::Unmarshall({ metaData.value.begin(), metaData.value.end() }, autoLaunchMetaData);
-        auto spliteTokens = Constant::SplitWithSeparator(metaKey, Constant::KEY_SEPARATOR);
+        auto spliteTokens = Constant::SplitKeepSpace(metaKey, Constant::KEY_SEPARATOR);
         if (spliteTokens.size() > SPLITE_MIN_SIZE) {
             spliteTokens[UUID_LOCATION] = currentUUID;
         }
@@ -671,7 +671,8 @@ void KvStoreMetaManager::UpdateStrategyMetaData(const std::string &currentUUID, 
 void KvStoreMetaManager::UpdateMatrixMetaData(const std::string &currentUUID, bool isLocal)
 {
     MatrixMetaData matrixMetas;
-    bool isExist = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ oldUUID_ }), matrixMetas, isLocal);
+    bool isExist = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ oldUUID_ }),
+        matrixMetas, isLocal);
     if (isExist) {
         MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({ oldUUID_ }), isLocal);
         MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({ currentUUID }), matrixMetas, isLocal);
