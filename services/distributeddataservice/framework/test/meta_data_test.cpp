@@ -805,10 +805,7 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
  */
 HWTEST_F(ServiceMetaDataTest, DeviceIDMetaData, TestSize.Level1)
 {
-    DeviceIDMetaData metaData;
-    std::string expectedPrefix = "DeviceIDKey";
-    std::string prefix = metaData.GetKey();
-    
+    DeviceIDMetaData metaData;    
     ASSERT_EQ(prefix, expectedPrefix);
     std::string currentUUID = "newuuid";
     std::string oldUUID = "olduuid";
