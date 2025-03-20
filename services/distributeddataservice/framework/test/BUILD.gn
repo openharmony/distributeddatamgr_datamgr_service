@@ -47,7 +47,9 @@ config("module_private_config") {
     "//third_party/json/single_include",
   ]
   cflags = [ "-Werror" ]
-  ldflags = [ "-Wl,--whole-archive" ]
+  ldflags = [
+    "-Wl,-z,relro,-z,now,--whole-archive"
+  ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

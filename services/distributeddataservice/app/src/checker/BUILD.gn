@@ -37,7 +37,9 @@ ohos_source_set("distributeddata_checker") {
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
   }
-  ldflags = [ "-Wl,--exclude-libs,ALL" ]
+  ldflags = [
+    "-Wl,-z,relro,-z,now,--exclude-libs,ALL"
+  ]
   deps = [ "${data_service_path}/adapter/utils:distributeddata_utils" ]
   cflags = [ "-Oz" ]
   external_deps = [
