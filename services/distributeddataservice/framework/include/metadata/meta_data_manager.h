@@ -51,7 +51,6 @@ public:
     using Backup = std::function<int32_t(const std::shared_ptr<MetaStore> &)>;
     using Bytes = std::vector<uint8_t>;
     using OnComplete = std::function<void(const std::map<std::string, int32_t> &)>;
-
     API_EXPORT static MetaDataManager &GetInstance();
     API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string &storeId);
     API_EXPORT void SetSyncer(const Syncer &syncer);

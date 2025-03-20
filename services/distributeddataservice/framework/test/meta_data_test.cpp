@@ -826,8 +826,8 @@ HWTEST_F(ServiceMetaDataTest, DeviceIDMetaData, TestSize.Level1)
 }
 
 /**
- * @tc.name: LoadMatePair
- * @tc.desc: test LoadMatePair function
+ * @tc.name: GetKeyTest
+ * @tc.desc: test GetKey function
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: yl
@@ -837,7 +837,6 @@ HWTEST_F(ServiceMetaDataTest, GetPrefixTest, TestSize.Level1)
     DeviceIDMetaData metaData;
     std::string expectPrefix = "DeviceIDMeta";
     std::string prefix = metaData.GetKey();
-
     EXPECT_EQ(prefix, expectPrefix);
 }
 } // namespace OHOS::Test
