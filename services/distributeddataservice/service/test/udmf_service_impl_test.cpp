@@ -237,6 +237,7 @@ HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level1)
     UdmfServiceImpl udmfServiceImpl;
     udmfServiceImpl.TransferToEntriesIfNeed(query, data);
     EXPECT_TRUE(data.IsNeedTransferToEntries());
-    EXPECT_EQ(data.GetRecords().size(), 2);
+    int recordSize = 2;
+    EXPECT_EQ(data.GetRecords().size(), recordSize);
 }
 }; // namespace UDMF

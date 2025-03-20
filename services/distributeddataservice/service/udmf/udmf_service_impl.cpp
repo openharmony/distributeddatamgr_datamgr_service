@@ -872,11 +872,11 @@ bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
     bundleManager->GetBundleInfoV9(bundleName, static_cast<int32_t>(
         AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE), bundleInfo, userId);
     for (const auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
-        if (std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(), 
+        if (std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(),
             DEVICE_PHONE_TAG) == hapModuleInfo.deviceTypes.end() 
-            && std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(), 
+            && std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(),
             DEVICE_DEFAULT_TAG) == hapModuleInfo.deviceTypes.end()
-            && std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(), 
+            && std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(),
             DEVICE_2IN1_TAG) != hapModuleInfo.deviceTypes.end()) {
             return true;
         }
