@@ -33,4 +33,4 @@ private:
     static constexpr const char *KEY_PREFIX = "DeviceIDMeta";
 };
 } // namespace OHOS::DistributedData
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_APPID_META_DATA_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICEID_META_DATA_H

@@ -64,8 +64,6 @@ using namespace std::chrono;
 using namespace OHOS::DistributedData;
 using namespace DistributedDB;
 using namespace OHOS::AppDistributedKv;
-constexpr const int UUID_LOCATION = 1;
-constexpr const int SPLITE_MIN_SIZE = 1;
 KvStoreMetaManager::MetaDeviceChangeListenerImpl KvStoreMetaManager::listener_;
 KvStoreMetaManager::DBInfoDeviceChangeListenerImpl KvStoreMetaManager::dbInfoListener_;
 
@@ -631,10 +629,12 @@ void KvStoreMetaManager::UpdateStoreMetaData(const std::string &currentUUID, boo
             }
             
             AutoLaunchMetaData autoLaunchMetaData;
-            bool isExist = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetAutoLaunchKey(), autoLaunchMetaData, isLocal);
+            bool isExist = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetAutoLaunchKey(),
+                autoLaunchMetaData, isLocal);
             if (!isExist) {
                 oldMeta.storeId = "";
-                isExist = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetAutoLaunchKey(), autoLaunchMetaData, isLocal);
+                isExist = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetAutoLaunchKey(),
+                    autoLaunchMetaData, isLocal);
             }
             if (isExist) {
                 MetaDataManager::GetInstance().DelMeta(oldMeta.GetAutoLaunchKey(), isLocal);
@@ -648,7 +648,8 @@ void KvStoreMetaManager::UpdateStoreMetaData(const std::string &currentUUID, boo
 void KvStoreMetaManager::UpdateMetaData(const std::string &currentUUID, bool isLocal)
 {
     MatrixMetaData matrixMeta;
-    bool isExist = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ oldUUID_ }), matrixMeta, isLocal);
+    bool isExist = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ oldUUID_ }),
+        matrixMeta, isLocal);
     if (isExist) {
         MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({ oldUUID_ }), isLocal);
         matrixMeta.deviceId = currentUUID;
