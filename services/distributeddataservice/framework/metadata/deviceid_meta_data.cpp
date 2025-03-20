@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "metadata/deviceid_pair_meta_data.h"
+#include "metadata/deviceid_meta_data.h"
 
 namespace OHOS {
 namespace DistributedData {

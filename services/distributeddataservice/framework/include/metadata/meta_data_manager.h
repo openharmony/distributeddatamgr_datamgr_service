@@ -83,8 +83,6 @@ public:
     API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
     API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false);
-    API_EXPORT bool LoadMetaPair(const std::string &prefix, std::vector<Entry> &entries,
-        bool isLocal = false);
 private:
     MetaDataManager();
     ~MetaDataManager();

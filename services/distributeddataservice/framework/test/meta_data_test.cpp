@@ -27,7 +27,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
 #include "metadata/user_meta_data.h"
-#include "metadata/deviceid_pair_meta_data.h"
+#include "metadata/deviceid_pair_data.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
 #include <nlohmann/json.hpp>
@@ -832,41 +832,12 @@ HWTEST_F(ServiceMetaDataTest, DeviceIDMetaData, TestSize.Level1)
  * @tc.require:
  * @tc.author: yl
  */
-HWTEST_F(ServiceMetaDataTest, LoadMatePair, TestSize.Level1)
+HWTEST_F(ServiceMetaDataTest, GetPrefixTest, TestSize.Level1)
 {
-    StoreMetaData storeMetaData("100", "appid", "test_store");
-    storeMetaData.version = TEST_CURRENT_VERSION;
-    storeMetaData.instanceId = 1;
-    std::vector<MetaDataManager::Entry> entries;
-    
-    std::string key = storeMetaData.GetKey();
-    EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store_001###1");
-    auto result = MetaDataManager::GetInstance().SaveMeta(key, storeMetaData, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().LoadMatePair(key, entries, true);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(entries.size(), 1);
-    std::string key(entries[0].key.begin(), entries[0].key.end());
-    storeMetaData value;
-    Serializable::Unmarshall({ entries[0].value.begin(), entries[0].value.end() }, value);
-    EXPECT_EQ(storeMetaData.GetKey(), key);
-    
-    auto tokens = Constant::SplitKeepSpace(key, Constant::KEY_SEPARATOR);
-    if (tokens.size() > 1) {
-        tokens[1] = "updateuuid";
-    }
-    std::string newKey = "";
-    std::string separator = "###";
-    std::for_each(tokens.begin(), tokens.end(), [&](const std::string &info) {
-        if (!newKey.empty()) {
-            newKey += separator;
-        }
-        newKey += info;
-    });
-    EXPECT_TRUE(!newKey.empty());
-    result = MetaDataManager::GetInstance().SaveMeta(newKey, value, true);
-    EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().DelMeta(key, true);
-    EXPECT_TRUE(result);
+    DeviceIDMetaData metaData;
+    std::string expectPrefix = "DeviceIDMeta";
+    std::string prefix = metaData.GetKey();
+
+    EXPECT_EQ(prefix, expectPrefix);
 }
 } // namespace OHOS::Test

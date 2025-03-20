@@ -29,7 +29,6 @@ struct API_EXPORT StrategyMeta final : public Serializable {
 
     API_EXPORT StrategyMeta(const std::string &devId, const std::string &userId, const std::string &bundleName,
         const std::string &storeId);
-    API_EXPORT StrategyMeta() {};
     API_EXPORT ~StrategyMeta() {};
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;

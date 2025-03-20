@@ -70,37 +70,6 @@ std::vector<std::string> Constant::Split(const std::string &str, const std::stri
     return res;
 }
 
-std::vector<std::string> Constant::SplitKeepSpace(const std::string &str, const std::string &delim)
-{
-    if (str.empty()) {
-        return { str };
-    }
-    std::vector<std::string> res;
-    size_t pos = 0;
-    while (pos <= str.size()) {
-        size_t found = str.find(delim, pos);
-        if (found == std::string::npos) {
-            res.push_back(str.substr(pos));
-            break;
-        }
-        res.push_back(str.substr(pos, found - pos));
-        pos = found + delim.size();
-    }
-    return res;
-}
-
-std::string Constant::vectorToString(const std::vector<std::string> &vec, const std::string separator)
-{
-    std::string result;
-    std::for_each(vec.begin(), vec.end(), [&](const std::string &info) {
-        if (!result.empty()) {
-            result += separator;
-        }
-        result += info;
-    });
-    return result;
-}
-
 bool Constant::Equal(bool first, bool second)
 {
     return (first && second) || (!first && !second);
