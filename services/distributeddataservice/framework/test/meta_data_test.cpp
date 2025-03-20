@@ -27,7 +27,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
 #include "metadata/user_meta_data.h"
-#include "metadata/deviceid_pair_data.h"
+#include "metadata/deviceid_meta_data.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
 #include <nlohmann/json.hpp>
