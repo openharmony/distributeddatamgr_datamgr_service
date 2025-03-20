@@ -842,12 +842,12 @@ int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
 
 void UdmfServiceImpl::TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData)
 {
-    if (unifiedData.IsNeedTransferToEntries() && Is2In1DeviceType(query)) {
+    if (unifiedData.IsNeedTransferToEntries() && IsNeedTransferDeviceType(query)) {
         unifiedData.TransferToEntries(unifiedData);
     }
 }
 
-bool UdmfServiceImpl::Is2In1DeviceType(const QueryOption &query)
+bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
 {
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {

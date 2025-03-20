@@ -59,7 +59,7 @@ private:
     bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
     void TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData);
-    bool Is2In1DeviceType(const QueryOption &query);
+    bool IsNeedTransferDeviceType(const QueryOption &query);
 
     class Factory {
     public:
