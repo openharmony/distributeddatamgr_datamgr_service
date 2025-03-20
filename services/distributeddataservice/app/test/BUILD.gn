@@ -65,9 +65,7 @@ config("module_private_config") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  ldflags = [
-    "-Wl,-z,relro,-z,now,--whole-archive"
-  ]
+  ldflags = [ "-Wl,-z,relro,-z,now,--whole-archive" ]
   defines = [
     "TEST_ON_DEVICE",
     "OPENSSL_SUPPRESS_DEPRECATED",

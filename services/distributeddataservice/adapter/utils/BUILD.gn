@@ -31,9 +31,7 @@ ohos_source_set("distributeddata_utils") {
   }
 
   include_dirs = [ "../include/utils" ]
-  ldflags = [
-    "-Wl,-z,relro,-z,now,--exclude-libs,ALL"
-  ]
+  ldflags = [ "-Wl,-z,relro,-z,now,--exclude-libs,ALL" ]
 
   external_deps = [
     "c_utils:utils",

@@ -65,9 +65,7 @@ ohos_shared_library("distributeddatasvc") {
     "-ffunction-sections",
   ]
 
-  ldflags = [
-    "-Wl,-z,relro,-z,now,--gc-sections"
-  ]
+  ldflags = [ "-Wl,-z,relro,-z,now,--gc-sections" ]
 
   cflags_cc = [
     "-fvisibility=hidden",
