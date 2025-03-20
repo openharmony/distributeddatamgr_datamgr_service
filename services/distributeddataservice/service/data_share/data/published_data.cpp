@@ -170,7 +170,7 @@ void PublishedData::Delete(const std::string &bundleName, const int32_t userId)
         ZLOGE("db open failed");
         return;
     }
-    int32_t status = delegate->Delete(KvDBDelegate::DATA_TABLE,
+    auto [status, count] = delegate->Delete(KvDBDelegate::DATA_TABLE,
         "{\"bundleName\":\"" + bundleName + "\", \"userId\": " + std::to_string(userId) + "}");
     if (status != E_OK) {
         ZLOGE("db Delete failed, %{public}s %{public}d", bundleName.c_str(), status);
@@ -209,9 +209,9 @@ void PublishedData::ClearAging()
         }
         if (data.timestamp < lastValidTime && PublishedDataSubscriberManager::GetInstance()
             .GetCount(PublishedDataKey(data.key, data.bundleName, data.subscriberId)) == 0) {
-            status = delegate->Delete(KvDBDelegate::DATA_TABLE,
+            auto [errorCode, count] = delegate->Delete(KvDBDelegate::DATA_TABLE,
                 Id(PublishedData::GenId(data.key, data.bundleName, data.subscriberId), data.userId));
-            if (status != E_OK) {
+            if (errorCode != E_OK) {
                 ZLOGE("db Delete failed, %{public}s %{public}s", data.key.c_str(), data.bundleName.c_str());
             }
             agingSize++;
@@ -249,8 +249,8 @@ void PublishedData::UpdateTimestamp(
         return;
     }
     data.timestamp = now;
-    status = delegate->Upsert(KvDBDelegate::DATA_TABLE, PublishedData(data));
-    if (status == E_OK) {
+    auto [errorCode, count] = delegate->Upsert(KvDBDelegate::DATA_TABLE, PublishedData(data));
+    if (errorCode == E_OK) {
         ZLOGI("update timestamp %{private}s", data.key.c_str());
     }
 }

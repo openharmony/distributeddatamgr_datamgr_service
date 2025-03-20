@@ -45,7 +45,7 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
     PublishedDataNode node(context->uri, context->calledBundleName, item.subscriberId_, context->currentUserId,
         PublishedDataNode::MoveTo(value));
     PublishedData data(node, context->version);
-    int32_t status = delegate->Upsert(KvDBDelegate::DATA_TABLE, data);
+    auto [status, count] = delegate->Upsert(KvDBDelegate::DATA_TABLE, data);
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}s %{public}s %{public}d", context->calledBundleName.c_str(),
             DistributedData::Anonymous::Change(context->uri).c_str(), status);

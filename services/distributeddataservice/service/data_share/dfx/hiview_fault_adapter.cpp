@@ -86,19 +86,19 @@ std::pair<std::string, int> HiViewFaultAdapter::GetCallingName(uint32_t callingT
     return std::make_pair(callingName, result);
 }
 
-void TimeoutReport::Report()
+void TimeoutReport::Report(const std::string &timeoutAppendix, const std::chrono::milliseconds timeoutms)
 {
     auto end = std::chrono::steady_clock::now();
     std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     // Used to report DFX timeout faults
-    if (needFaultReport && duration > DFX_TIME_OUT_MS) {
+    if (needFaultReport && duration > HiViewFaultAdapter::dfxTimeOutMs) {
         DFXReport(duration);
     }
     // Used to report log timeout
-    if (duration > TIME_OUT_MS) {
+    if (duration > timeoutms) {
         int64_t milliseconds = duration.count();
-        ZLOGE("over time when doing %{public}s, cost:%{public}" PRIi64 "ms", dfxInfo.businessType.c_str(),
-            milliseconds);
+        ZLOGE("over time when doing %{public}s, %{public}s, cost:%{public}" PRIi64 "ms",
+            dfxInfo.businessType.c_str(), timeoutAppendix.c_str(), milliseconds);
     }
 }
 
@@ -107,11 +107,11 @@ void TimeoutReport::Report(const std::string &user, uint32_t callingPid, int32_t
     auto end = std::chrono::steady_clock::now();
     std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     // Used to report DFX timeout faults
-    if (needFaultReport && duration > DFX_TIME_OUT_MS) {
+    if (needFaultReport && duration > HiViewFaultAdapter::dfxTimeOutMs) {
         DFXReport(duration);
     }
     // Used to report log timeout
-    if (duration > TIME_OUT_MS) {
+    if (duration > HiViewFaultAdapter::timeOutMs) {
         int64_t milliseconds = duration.count();
         std::string timeoutAppendix = "bundleName: " + dfxInfo.bundleName + ", user: " + user + ", callingPid: " +
             std::to_string(callingPid);
@@ -134,8 +134,8 @@ void TimeoutReport::DFXReport(const std::chrono::milliseconds &duration)
     int64_t milliseconds = duration.count();
     std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(dfxInfo.callingTokenId).first;
     appendix += ",cost:" + std::to_string(milliseconds) + "ms";
-    DataShareFaultInfo faultInfo{TIME_OUT, dfxInfo.bundleName, dfxInfo.moduleName, dfxInfo.storeName,
-        dfxInfo.businessType, errorCode, appendix};
+    DataShareFaultInfo faultInfo{HiViewFaultAdapter::timeOut, dfxInfo.bundleName, dfxInfo.moduleName,
+        dfxInfo.storeName, dfxInfo.businessType, errorCode, appendix};
     HiViewFaultAdapter::ReportDataFault(faultInfo);
 }
 }

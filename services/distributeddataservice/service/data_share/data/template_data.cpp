@@ -135,13 +135,15 @@ bool TemplateData::Delete(const std::string &bundleName, const int32_t userId)
         ZLOGE("db open failed");
         return false;
     }
-    auto status = delegate->Delete(KvDBDelegate::TEMPLATE_TABLE,
+    auto [status, count] = delegate->Delete(KvDBDelegate::TEMPLATE_TABLE,
         "{\"bundleName\":\"" + bundleName + "\", \"userId\": " + std::to_string(userId) + "}");
     if (status != E_OK) {
         ZLOGE("db DeleteById failed, %{public}d", status);
         return false;
     }
-    delegate->NotifyBackup();
+    if (count > 0) {
+        delegate->NotifyBackup();
+    }
     return true;
 }
 
@@ -154,12 +156,14 @@ bool TemplateData::Add(const std::string &uri, const int32_t userId, const std::
         return false;
     }
     TemplateData data(uri, bundleName, subscriberId, userId, aTemplate);
-    auto status = delegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
+    auto [status, count] = delegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}d", status);
         return false;
     }
-    delegate->NotifyBackup();
+    if (count > 0) {
+        delegate->NotifyBackup();
+    }
     return true;
 }
 
@@ -171,13 +175,15 @@ bool TemplateData::Delete(
         ZLOGE("db open failed");
         return false;
     }
-    auto status = delegate->Delete(KvDBDelegate::TEMPLATE_TABLE,
+    auto [status, count] = delegate->Delete(KvDBDelegate::TEMPLATE_TABLE,
         static_cast<std::string>(Id(TemplateData::GenId(uri, bundleName, subscriberId), userId)));
     if (status != E_OK) {
         ZLOGE("db DeleteById failed, %{public}d", status);
         return false;
     }
-    delegate->NotifyBackup();
+    if (count > 0) {
+        delegate->NotifyBackup();
+    }
     return true;
 }
 
