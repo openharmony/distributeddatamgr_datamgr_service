@@ -189,6 +189,13 @@ ohos_unittest("SoftbusAdapterStandardTest") {
   module_out_path = module_output_path
 
   sources = [
+    "../src/app_pipe_handler.cpp",
+    "../src/app_pipe_handler.h",
+    "../src/app_pipe_mgr.cpp",
+    "../src/app_pipe_mgr.h",
+    "../src/ark_communication_provider.cpp",
+    "../src/communication_provider.cpp",
+    "../src/communication_provider_impl.cpp",
     "../src/communicator_context.cpp",
     "../src/data_buffer.cpp",
     "../src/device_manager_adapter.cpp",
