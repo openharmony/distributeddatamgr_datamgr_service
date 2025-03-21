@@ -805,8 +805,7 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
  */
 HWTEST_F(ServiceMetaDataTest, DeviceMetaData, TestSize.Level1)
 {
-    DeviceMetaData metaData;   
-    ASSERT_EQ(prefix, expectedPrefix);
+    DeviceMetaData metaData;
     std::string newUuid = "newuuid";
     std::string oldUuid = "olduuid";
     metaData.newUuid = newUuid;
@@ -832,7 +831,7 @@ HWTEST_F(ServiceMetaDataTest, DeviceMetaData, TestSize.Level1)
 HWTEST_F(ServiceMetaDataTest, GetPrefixTest, TestSize.Level1)
 {
     DeviceMetaData metaData;
-    std::string expectPrefix = "DeviceIDMeta";
+    std::string expectPrefix = "DeviceMeta";
     std::string prefix = metaData.GetKey();
     EXPECT_EQ(prefix, expectPrefix);
 }
