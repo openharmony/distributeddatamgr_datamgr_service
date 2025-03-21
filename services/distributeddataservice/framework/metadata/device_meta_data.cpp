@@ -12,33 +12,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "metadata/deviceid_meta_data.h"
+#include "metadata/device_meta_data.h"
 
 namespace OHOS {
 namespace DistributedData {
-bool DeviceIDMetaData::Marshal(json &node) const
+static constexpr const char *KEY_PREFIX = "DeviceMeta";
+bool DeviceMetaData::Marshal(json &node) const
 {
-    SetValue(node[GET_NAME(currentUUID)], currentUUID);
-    SetValue(node[GET_NAME(oldUUID)], oldUUID);
+    SetValue(node[GET_NAME(newUuid)], newUuid);
+    SetValue(node[GET_NAME(oldUuid)], oldUuid);
     return true;
 }
 
-bool DeviceIDMetaData::Unmarshal(const json &node)
+bool DeviceMetaData::Unmarshal(const json &node)
 {
-    GetValue(node, GET_NAME(currentUUID), currentUUID);
-    GetValue(node, GET_NAME(oldUUID), oldUUID);
+    GetValue(node, GET_NAME(newUuid), newUuid);
+    GetValue(node, GET_NAME(oldUuid), oldUuid);
     return true;
 }
 
-DeviceIDMetaData::DeviceIDMetaData()
+DeviceMetaData::DeviceMetaData()
 {
 }
 
-DeviceIDMetaData::~DeviceIDMetaData()
+DeviceMetaData::~DeviceMetaData()
 {
 }
 
-std::string DeviceIDMetaData::GetKey() const
+std::string DeviceMetaData::GetKey() const
 {
     return KEY_PREFIX;
 }

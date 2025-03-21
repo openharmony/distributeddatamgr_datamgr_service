@@ -13,24 +13,22 @@
  * limitations under the License.
 */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICEID_META_DATA_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICEID_META_DATA_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICE_META_DATA_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICE_META_DATA_H
 #include <string>
 
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {
-class API_EXPORT DeviceIDMetaData final : public Serializable {
+class API_EXPORT DeviceMetaData final : public Serializable {
 public:
-    API_EXPORT DeviceIDMetaData();
-    API_EXPORT ~DeviceIDMetaData();
+    API_EXPORT DeviceMetaData();
+    API_EXPORT ~DeviceMetaData();
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
     API_EXPORT std::string GetKey() const;
 
-    std::string currentUUID = "";
-    std::string oldUUID = "";
-private:
-    static constexpr const char *KEY_PREFIX = "DeviceIDMeta";
+    std::string newUuid = "";
+    std::string oldUuid = "";
 };
 } // namespace OHOS::DistributedData
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICEID_META_DATA_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICE_META_DATA_H

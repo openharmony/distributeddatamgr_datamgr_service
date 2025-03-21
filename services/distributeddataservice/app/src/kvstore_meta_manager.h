@@ -96,13 +96,13 @@ private:
 
     DistributedDB::KvStoreNbDelegate::Option InitDBOption();
     
-    void UpdateMetaDeviceId(const std::string &currentUUID);
+    void CheckMetaDeviceId(const std::string &localUuid);
 
-    bool IsMetaDeviceIdChanged(const std::string &currentUUID);
+    void UpdateMetaDeviceId(const std::string &newUuid, const std::string &oldUuid);
     
-    void UpdateStoreMetaData(const std::string &currentUUID, bool isLocal = false);
-
-    void UpdateMetaData(const std::string &currentUUID, bool isLocal = false);
+    void UpdateStoreMetaData(const std::string &newUuid, const std::string &oldUuid);
+    
+    void UpdateMetaDatas(const std::string &newUuid, const std::string &oldUuid);
 
     static ExecutorPool::Task GetBackupTask(
         TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);
@@ -141,7 +141,6 @@ private:
     TaskId delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
     static constexpr int32_t META_VERSION = 4;
     static constexpr int32_t MAX_TASK_COUNT = 1;
-    std::string oldUUID_;
 };
 }  // namespace DistributedKv
 }  // namespace OHOS

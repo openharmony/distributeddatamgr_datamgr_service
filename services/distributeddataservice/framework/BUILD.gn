@@ -88,7 +88,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/capability_meta_data.cpp",
     "metadata/capability_range.cpp",
     "metadata/corrupted_meta_data.cpp",
-    "metadata/deviceid_meta_data.cpp",
+    "metadata/device_meta_data.cpp",
     "metadata/matrix_meta_data.cpp",
     "metadata/meta_data.cpp",
     "metadata/meta_data_manager.cpp",

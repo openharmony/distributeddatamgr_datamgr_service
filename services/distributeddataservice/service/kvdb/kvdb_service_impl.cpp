@@ -623,9 +623,10 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         StoreMetaData meta;
         MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), meta, true);
         if (meta.isNeedUpdateDeviceId) {
-            ZLOGW("device already update uuid, appId:%{public}s, storeId:%{public}s",
+            MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
+            MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
+            ZLOGW("device already update uuid, del secretkey. appId:%{public}s, storeId:%{public}s",
                 appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
-            return ERROR;
         }
         passwords.reserve(SECRET_KEY_COUNT);
         SecretKeyMetaData secretKey;

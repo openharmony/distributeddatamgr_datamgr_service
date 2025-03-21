@@ -27,7 +27,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
 #include "metadata/user_meta_data.h"
-#include "metadata/deviceid_meta_data.h"
+#include "metadata/device_meta_data.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
 #include <nlohmann/json.hpp>
@@ -797,29 +797,29 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
 }
 
 /**
- * @tc.name: DeviceIDMetaData
- * @tc.desc: test DeviceIDMetaData function
+ * @tc.name: DeviceMetaData
+ * @tc.desc: test DeviceMetaData function
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: yl
  */
-HWTEST_F(ServiceMetaDataTest, DeviceIDMetaData, TestSize.Level1)
+HWTEST_F(ServiceMetaDataTest, DeviceMetaData, TestSize.Level1)
 {
-    DeviceIDMetaData metaData;    
+    DeviceMetaData metaData;    
     ASSERT_EQ(prefix, expectedPrefix);
-    std::string currentUUID = "newuuid";
-    std::string oldUUID = "olduuid";
-    metaData.currentUUID = currentUUID;
-    metaData.oldUUID = oldUUID;
+    std::string newUuid = "newuuid";
+    std::string oldUuid = "olduuid";
+    metaData.newUuid = newUuid;
+    metaData.oldUuid = oldUuid;
     Serializable::json node1;
     metaData.Marshal(node1);
-    EXPECT_EQ(node1["currentUUID"], currentUUID);
-    EXPECT_EQ(node1["oldUUID"], oldUUID);
+    EXPECT_EQ(node1["newUuid"], newUuid);
+    EXPECT_EQ(node1["oldUuid"], oldUuid);
     
-    DeviceIDMetaData newMetaData;
+    DeviceMetaData newMetaData;
     newMetaData.Unmarshal(node1);
-    EXPECT_EQ(newMetaData.currentUUID, currentUUID);
-    EXPECT_EQ(newMetaData.oldUUID, oldUUID);
+    EXPECT_EQ(newMetaData.newUuid, newUuid);
+    EXPECT_EQ(newMetaData.oldUuid, oldUuid);
 }
 
 /**
@@ -831,7 +831,7 @@ HWTEST_F(ServiceMetaDataTest, DeviceIDMetaData, TestSize.Level1)
  */
 HWTEST_F(ServiceMetaDataTest, GetPrefixTest, TestSize.Level1)
 {
-    DeviceIDMetaData metaData;
+    DeviceMetaData metaData;
     std::string expectPrefix = "DeviceIDMeta";
     std::string prefix = metaData.GetKey();
     EXPECT_EQ(prefix, expectPrefix);
