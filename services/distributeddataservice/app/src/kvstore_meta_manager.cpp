@@ -574,15 +574,15 @@ void KvStoreMetaManager::CheckMetaDeviceId(const std::string &localUuid)
         return;
     }
     if (!MetaDataManager::GetInstance().LoadMeta(deviceMeta.GetKey(), deviceMeta, true)) {
-        deviceMeta.currentUuid = localUuid;
+        deviceMeta.newUuid = localUuid;
         MetaDataManager::GetInstance().SaveMeta(deviceMeta.GetKey(), deviceMeta, true);
     } else {
-        if (deviceMeta.currentUuid != localUuid) {
-            deviceMeta.oldUuid = deviceMeta.currentUuid;
-            deviceMeta.currentUuid = localUuid;
+        if (deviceMeta.newUuid != localUuid) {
+            deviceMeta.oldUuid = deviceMeta.newUuid;
+            deviceMeta.newUuid = localUuid;
             MetaDataManager::GetInstance().SaveMeta(deviceMeta.GetKey(), deviceMeta, true);
             ZLOGI("meta changed! curruuid:%{public}s, olduuid:%{public}s",
-                deviceMeta.currentUuid.c_str(), deviceMeta.oldUuid.c_str());
+                deviceMeta.newUuid.c_str(), deviceMeta.oldUuid.c_str());
             UpdateMetaDeviceId(localUuid, deviceMeta.oldUuid);
         }
     }
