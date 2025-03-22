@@ -894,6 +894,26 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest001, TestSize.Level0)
 }
 
 /**
+* @tc.name: GetBackupPasswordTest002
+* @tc.desc: GetBackupPassword test
+* @tc.type: FUNC
+* @tc.author: yl
+*/
+HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest002, TestSize.Level0)
+{
+    AppId appId;
+    StoreId storeId;
+    appId.appId = "test_appid_100";
+    storeId.storeId = "test_appid_100";
+    StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
+    meta.isNeedUpdateDeviceId = true;
+    std::vector<std::vector<uint8_t>> password;
+    auto status = kvdbServiceImpl_->GetBackupPassword
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
+    ASSERT_EQ(status, Status::ERROR);
+}
+
+/**
 * @tc.name: BeforeCreateTest001
 * @tc.desc: BeforeCreate test
 * @tc.type: FUNC

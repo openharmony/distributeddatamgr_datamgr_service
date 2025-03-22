@@ -212,6 +212,26 @@ HWTEST_F(UpgradeTest, UpdateStore, TestSize.Level0)
 }
 
 /**
+* @tc.name: UpdateStore002
+* @tc.desc: UpdateStore test the return result of input with different values.
+* @tc.type: FUNC
+* @tc.author: yl
+*/
+HWTEST_F(UpgradeTest, UpdateStore002, TestSize.Level0)
+{
+    DistributedKv::Upgrade upgrade;
+    StoreMetaData oldMeta = metaData_;
+    oldMeta.isNeedUpdateDeviceId = true;
+    std::vector<uint8_t> password;
+    auto dbStatus = upgrade.UpdateStore(oldMeta, metaData_, password);
+    EXPECT_EQ(dbStatus, DBStatus::DB_ERROR);
+
+    oldMeta.isEncrypt = true;
+    dbStatus = upgrade.UpdateStore(oldMeta, metaData_, password);
+    EXPECT_EQ(dbStatus, DBStatus::OK);
+}
+
+/**
 * @tc.name: ExportStore
 * @tc.desc: ExportStore test the return result of input with different values.
 * @tc.type: FUNC

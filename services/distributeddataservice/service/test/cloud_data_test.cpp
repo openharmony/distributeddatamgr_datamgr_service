@@ -2703,5 +2703,109 @@ HWTEST_F(CloudDataTest, GetPrepareTraceId, TestSize.Level0)
     EXPECT_EQ(evt.GetUser(), EVT_USER);
     EXPECT_EQ(evt.GetPrepareTraceId(), TEST_TRACE_ID);
 }
+
+/**
+* @tc.name: TryUpdateDeviceId001
+* @tc.desc: TryUpdateDeviceId test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
+{
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    StoreMetaData oldMeta;
+    oldMeta.deviceId = "oldUuidtest";
+    oldMeta.user = "100";
+    oldMeta.bundleName = "test_appid_001";
+    oldMeta.storeId = "test_storeid_001";
+    oldMeta.isNeedUpdateDeviceId = true;
+    oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    EXPECT_EQ(isSuccess, true);
+    StoreMetaData meta1 = oldMeta;
+    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
+    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+}
+ 
+/**
+* @tc.name: TryUpdateDeviceId002
+* @tc.desc: TryUpdateDeviceId test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
+{
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    StoreMetaData oldMeta;
+    oldMeta.deviceId = "oldUuidtest";
+    oldMeta.user = "100";
+    oldMeta.bundleName = "test_appid_001";
+    oldMeta.storeId = "test_storeid_001";
+    oldMeta.isNeedUpdateDeviceId = false;
+    oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    EXPECT_EQ(isSuccess, true);
+    StoreMetaData meta1 = oldMeta;
+    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
+    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+}
+ 
+/**
+* @tc.name: TryUpdateDeviceId003
+* @tc.desc: TryUpdateDeviceId test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, TryUpdateDeviceId003, TestSize.Level1)
+{
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    StoreMetaData oldMeta;
+    oldMeta.deviceId = "oldUuidtest";
+    oldMeta.user = "100";
+    oldMeta.bundleName = "test_appid_001";
+    oldMeta.storeId = "test_storeid_001";
+    oldMeta.isNeedUpdateDeviceId = true;
+    oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    EXPECT_EQ(isSuccess, true);
+    StoreMetaData meta1 = oldMeta;
+    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
+    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+}
+ 
+/**
+* @tc.name: TryUpdateDeviceId004
+* @tc.desc: TryUpdateDeviceId test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, TryUpdateDeviceId004, TestSize.Level1)
+{
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    StoreMetaData oldMeta;
+    oldMeta.deviceId = "oldUuidtest";
+    oldMeta.user = "100";
+    oldMeta.bundleName = "test_appid_001";
+    oldMeta.storeId = "test_storeid_001";
+    oldMeta.isNeedUpdateDeviceId = false;
+    oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    EXPECT_EQ(isSuccess, true);
+    StoreMetaData meta1 = oldMeta;
+    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
+    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
