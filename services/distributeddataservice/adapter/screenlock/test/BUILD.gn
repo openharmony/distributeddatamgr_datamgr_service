@@ -33,6 +33,7 @@ ohos_unittest("ScreenLockTest") {
     "-Dprivate=public",
     "-Dprotected=public",
     "-Werror",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [

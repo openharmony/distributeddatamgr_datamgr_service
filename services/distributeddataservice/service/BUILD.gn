@@ -42,7 +42,10 @@ config("module_public_config") {
     "${kv_store_distributeddb_path}/interfaces/include/",
     "${kv_store_distributeddb_path}/interfaces/include/relational",
   ]
-  cflags = [ "-Wno-c99-designator" ]
+  cflags = [
+    "-Wno-c99-designator",
+    "-fstack-protector-strong",
+  ]
 }
 
 ohos_shared_library("distributeddatasvc") {
@@ -63,6 +66,7 @@ ohos_shared_library("distributeddatasvc") {
     "-Oz",
     "-fdata-sections",
     "-ffunction-sections",
+    "-fstack-protector-strong",
   ]
 
   ldflags = [ "-Wl,-z,relro,-z,now,--gc-sections" ]
@@ -70,6 +74,7 @@ ohos_shared_library("distributeddatasvc") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   configs = [ ":module_public_config" ]

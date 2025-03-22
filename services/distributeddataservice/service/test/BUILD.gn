@@ -52,7 +52,10 @@ config("module_private_config") {
     "${relational_store_path}/interfaces/inner_api/common_type/include",
     "${data_service_path}/adapter/include/communicator",
   ]
-  cflags = [ "-Werror" ]
+  cflags = [
+    "-Werror",
+    "-fstack-protector-strong",
+  ]
   defines = [
     "TEST_ON_DEVICE",
     "OPENSSL_SUPPRESS_DEPRECATED",
@@ -150,6 +153,7 @@ ohos_unittest("CloudDataTest") {
 
   cflags = [
     "-fno-access-control",  # Ignore Private Member Access Control
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = cflags
@@ -246,6 +250,7 @@ ohos_unittest("CloudServiceImplTest") {
 
   cflags = [
     "-fno-access-control",  # Ignore Private Member Access Control
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = cflags
@@ -294,6 +299,7 @@ ohos_unittest("ValueProxyServiceTest") {
     "-Dprotected=public",
     "-Wno-multichar",
     "-Wno-c99-designator",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -399,6 +405,7 @@ ohos_unittest("DeviceMatrixTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -449,6 +456,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -517,6 +525,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -566,6 +575,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "-Dprotected=public",
     "-Wno-multichar",
     "-Wno-c99-designator",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -625,6 +635,7 @@ ohos_unittest("RdbServiceTest") {
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-fno-access-control",  # Ignore Private Member Access Control
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -686,6 +697,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 }
 
@@ -756,6 +768,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 }
 
@@ -817,6 +830,7 @@ ohos_unittest("ObjectManagerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 }
 
@@ -1040,6 +1054,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "-Wno-c99-designator",
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -1114,6 +1129,7 @@ ohos_unittest("KvdbServiceImplTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -1156,6 +1172,7 @@ ohos_unittest("DumpHelperTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -1189,6 +1206,7 @@ ohos_unittest("UdmfServiceImplTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [
@@ -1226,6 +1244,7 @@ ohos_unittest("UdmfServiceStubTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [
@@ -1301,6 +1320,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [ "${data_service_path}/service:distributeddatasvc" ]
@@ -1350,6 +1370,7 @@ ohos_unittest("UdmfCheckerManagerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [
@@ -1428,6 +1449,7 @@ ohos_unittest("PermissionValidatorMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [
@@ -1469,6 +1491,7 @@ ohos_unittest("PermitDelegateMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = cflags
@@ -1544,6 +1567,7 @@ ohos_unittest("BootStrapMockTest") {
     "-Werror",
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = cflags
@@ -1571,6 +1595,7 @@ ohos_unittest("QueryHelperUnitTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [
@@ -1630,6 +1655,7 @@ ohos_unittest("AuthDelegateMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = cflags
@@ -1688,6 +1714,7 @@ ohos_unittest("UpgradeMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = cflags
@@ -1727,6 +1754,7 @@ ohos_unittest("UserDelegateMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = cflags
@@ -1759,6 +1787,7 @@ ohos_unittest("BackupManagerServiceTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   external_deps = [

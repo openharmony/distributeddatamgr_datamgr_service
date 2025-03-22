@@ -70,6 +70,7 @@ ohos_source_set("udmf_server") {
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
@@ -92,6 +93,7 @@ ohos_source_set("udmf_server") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
   subsystem_name = "distributeddatamgr"
 

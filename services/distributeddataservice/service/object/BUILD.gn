@@ -49,6 +49,7 @@ ohos_source_set("distributeddata_object") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   include_dirs = [ "include" ]
@@ -61,6 +62,7 @@ ohos_source_set("distributeddata_object") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   deps = [

@@ -40,6 +40,7 @@ ohos_fuzztest("UdmfServiceFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-fstack-protector-strong",
   ]
 
   sources = [ "udmfservice_fuzzer.cpp" ]

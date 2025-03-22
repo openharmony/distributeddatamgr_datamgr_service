@@ -44,6 +44,7 @@ ohos_fuzztest("DumpHelperFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-fstack-protector-strong",
   ]
 
   sources = [

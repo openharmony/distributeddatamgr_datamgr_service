@@ -32,6 +32,7 @@ ohos_unittest("NetworkDelegateTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [ "../:distributeddata_network" ]
@@ -66,6 +67,7 @@ ohos_unittest("NetworkDelegateNormalImplTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-fstack-protector-strong",
   ]
 
   deps = [

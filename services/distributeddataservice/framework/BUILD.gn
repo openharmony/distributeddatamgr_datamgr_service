@@ -123,11 +123,15 @@ ohos_shared_library("distributeddatasvcfwk") {
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-fdata-sections",
     "-ffunction-sections",
+    "-fstack-protector-strong",
   ]
 
   ldflags = [ "-Wl,-z,relro,-z,now,--gc-sections" ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fstack-protector-strong",
+  ]
 
   configs = [ ":module_config" ]
 
