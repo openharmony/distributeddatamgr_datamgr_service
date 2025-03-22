@@ -46,11 +46,8 @@ config("module_private_config") {
     "${data_service_path}/service/matrix/include",
     "//third_party/json/single_include",
   ]
-  cflags = [
-    "-Werror",
-    "-fstack-protector-strong",
-  ]
-  ldflags = [ "-Wl,-z,relro,-z,now,--whole-archive" ]
+  cflags = [ "-Werror" ]
+  ldflags = [ "-Wl,--whole-archive" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -130,7 +127,6 @@ ohos_unittest("ServiceUtilsTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
 
   external_deps = [
@@ -167,7 +163,6 @@ ohos_unittest("StoreTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
 
   external_deps = [

@@ -64,9 +64,8 @@ config("module_private_config") {
     "-Werror",
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
-  ldflags = [ "-Wl,-z,relro,-z,now,--whole-archive" ]
+  ldflags = [ "-Wl,--whole-archive" ]
   defines = [
     "TEST_ON_DEVICE",
     "OPENSSL_SUPPRESS_DEPRECATED",
@@ -156,10 +155,7 @@ ohos_unittest("SessionManagerTest") {
     debug = false
   }
 
-  cflags_cc = [
-    "-DUT_TEST",
-    "-fstack-protector-strong",
-  ]
+  cflags_cc = [ "-DUT_TEST" ]
   configs = [ ":module_private_config" ]
 
   external_deps = [
@@ -317,7 +313,6 @@ ohos_unittest("FeatureStubImplTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
 
   if (datamgr_service_power) {

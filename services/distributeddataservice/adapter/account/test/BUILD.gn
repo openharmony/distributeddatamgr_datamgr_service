@@ -32,7 +32,6 @@ ohos_unittest("AccountDelegateTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
 
   deps = [ "../:distributeddata_account" ]

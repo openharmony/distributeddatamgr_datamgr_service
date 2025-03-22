@@ -65,7 +65,6 @@ ohos_unittest("CommunicatorContextTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
@@ -89,7 +88,6 @@ ohos_unittest("CommunicatorDataBufferTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
@@ -120,7 +118,6 @@ ohos_unittest("DeviceManagerAdapterTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
@@ -177,7 +174,6 @@ ohos_unittest("ProcessCommunicatorImplTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
 
   deps = [
@@ -235,7 +231,6 @@ ohos_unittest("SoftbusAdapterStandardTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
@@ -267,7 +262,6 @@ ohos_unittest("SoftbusClientTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
@@ -298,7 +292,6 @@ ohos_unittest("AppPipeMgrServiceTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",

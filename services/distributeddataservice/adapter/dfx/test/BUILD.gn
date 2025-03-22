@@ -42,7 +42,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
     "kv_store:distributeddata_inner",
     "openssl:libcrypto_shared",
   ]
-  ldflags = [ "-Wl,-z,relro,-z,now,--exclude-libs,ALL" ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "//third_party/googletest:gtest_main",
@@ -83,7 +83,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
     "kv_store:distributeddata_inner",
     "openssl:libcrypto_shared",
   ]
-  ldflags = [ "-Wl,-z,relro,-z,now,--exclude-libs,ALL" ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
@@ -100,7 +100,6 @@ ohos_unittest("HiViewAdapterDfxTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
-    "-fstack-protector-strong",
   ]
   configs = [ ":module_dfx_config" ]
 
@@ -116,7 +115,7 @@ ohos_unittest("HiViewAdapterDfxTest") {
     "kv_store:distributeddata_mgr",
     "openssl:libcrypto_shared",
   ]
-  ldflags = [ "-Wl,-z,relro,-z,now,--exclude-libs,ALL" ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
