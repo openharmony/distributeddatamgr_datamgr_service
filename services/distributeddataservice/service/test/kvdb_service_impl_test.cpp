@@ -911,6 +911,11 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest002, TestSize.Level0)
     auto status = kvdbServiceImpl_->GetBackupPassword
         (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
     ASSERT_EQ(status, Status::ERROR);
+
+    meta.isNeedUpdateDeviceId = false;
+    auto status = kvdbServiceImpl_->GetBackupPassword
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
+    ASSERT_EQ(status, Status::ERROR);
 }
 
 /**

@@ -300,7 +300,7 @@ ohos_unittest("ServiceMetaDataTest") {
     cfi_cross_dso = true
     debug = false
   }
-  
+
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",

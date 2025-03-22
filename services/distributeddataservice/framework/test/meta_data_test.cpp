@@ -15,6 +15,9 @@
 
 #include "bootstrap.h"
 #include "kvstore_meta_manager.h"
+
+#include "metadata/appid_meta_data.h"
+#include "metadata/auto_launch_meta_data.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/capability_range.h"
@@ -26,6 +29,7 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
+#include "metadata/switches_meta_data.h"
 #include "metadata/user_meta_data.h"
 #include "metadata/device_meta_data.h"
 #include "utils/constant.h"
@@ -797,27 +801,27 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
 }
 
 /**
- * @tc.name: DeviceMetaData 
+ * @tc.name: DeviceMetaData
  * @tc.desc: test DeviceMetaData function
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: yl
  */
-HWTEST_F(ServiceMetaDataTest, DeviceMetaData , TestSize.Level1)
+HWTEST_F(ServiceMetaDataTest, DeviceMetaData, TestSize.Level1)
 {
     DeviceMetaData  metaData;
-    std::string currentUuid = "newuuid";
+    std::string newUuid = "newuuid";
     std::string oldUuid = "olduuid";
-    metaData.currentUuid = currentUuid;
+    metaData.newUuid = newUuid;
     metaData.oldUuid = oldUuid;
     Serializable::json node1;
     metaData.Marshal(node1);
-    EXPECT_EQ(node1["currentUuid"], currentUuid);
+    EXPECT_EQ(node1["newUuid"], newUuid);
     EXPECT_EQ(node1["oldUuid"], oldUuid);
 
     DeviceIDMetaData newMetaData;
     newMetaData.Unmarshal(node1);
-    EXPECT_EQ(newMetaData.currentUuid, currentUuid);
+    EXPECT_EQ(newMetaData.newUuid, newUuid);
     EXPECT_EQ(newMetaData.oldUuid, oldUuid);
 }
 
