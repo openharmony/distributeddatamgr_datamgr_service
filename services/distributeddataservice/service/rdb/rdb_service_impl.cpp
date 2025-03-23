@@ -1664,13 +1664,7 @@ int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const Sto
                 Anonymous::Change(param.storeName_).c_str());
             return RDB_ERROR;
         }
-        auto errCode = store->UpdateDBStatus();
-        if (errCode == RDB_OK) {
-            meta.isNeedUpdateDeviceId = false;
-        } else {
-            meta.isNeedUpdateDeviceId = true;
-            ZLOGE("UpdateDBStatus failed errCode %{public}d", errCode);
-        }
+        return store->UpdateDBStatus();
     }
     return RDB_OK;
 }
