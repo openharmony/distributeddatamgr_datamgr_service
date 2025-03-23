@@ -1664,7 +1664,7 @@ bool RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreM
                 Anonymous::Change(param.storeName_).c_str());
             return false;
         }
-        auto errCode store->UpdateDBStatus();
+        auto errCode = store->UpdateDBStatus();
         if (errCode != RDB_OK) {
             ZLOGE("Update failed errCode %{public}d", errCode);
             return false;
