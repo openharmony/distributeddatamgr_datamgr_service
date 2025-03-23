@@ -1662,10 +1662,14 @@ int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const Sto
         if (store == nullptr) {
             ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
                 Anonymous::Change(param.storeName_).c_str());
-            return RDB_ERROR;
+            return false;
         }
-        return store->UpdateDBStatus();
+        auto errCode store->UpdateDBStatus();
+        if (errCode != RDB_OK) {
+            ZLOGE("Update failed errCode %{public}d", errCode);
+            return false;
+        }
     }
-    return RDB_OK;
+    return true;
 }
 } // namespace OHOS::DistributedRdb
