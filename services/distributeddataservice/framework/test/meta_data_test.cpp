@@ -819,7 +819,7 @@ HWTEST_F(ServiceMetaDataTest, DeviceMetaData, TestSize.Level1)
     EXPECT_EQ(node1["newUuid"], newUuid);
     EXPECT_EQ(node1["oldUuid"], oldUuid);
 
-    DeviceIDMetaData newMetaData;
+    DeviceMetaData newMetaData;
     newMetaData.Unmarshal(node1);
     EXPECT_EQ(newMetaData.newUuid, newUuid);
     EXPECT_EQ(newMetaData.oldUuid, oldUuid);
