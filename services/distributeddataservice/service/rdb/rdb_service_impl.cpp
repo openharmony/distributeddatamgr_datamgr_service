@@ -828,7 +828,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
             "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
             meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId();
+        meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(param, old, meta);
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
