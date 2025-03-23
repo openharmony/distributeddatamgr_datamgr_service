@@ -1651,7 +1651,7 @@ std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
     return userId;
 }
 
-int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta,
+bool RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta,
     StoreMetaData &meta)
 {
     StoreMetaData syncMeta;
@@ -1662,16 +1662,14 @@ int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const Sto
         if (store == nullptr) {
             ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
                 Anonymous::Change(param.storeName_).c_str());
-            return RDB_ERROR;
+            return false;
         }
         auto errCode = store->UpdateDBStatus();
-        if (errCode == RDB_OK) {
-            meta.isNeedUpdateDeviceId = false;
-        } else {
-            meta.isNeedUpdateDeviceId = true;
-            ZLOGE("UpdateDBStatus failed errCode %{public}d", errCode);
+        if (errCode != RDB_OK) {
+            ZLOGE("Update failed errCode %{public}d", errCode);
+            return false;
         }
     }
-    return RDB_OK;
+    return true;
 }
 } // namespace OHOS::DistributedRdb

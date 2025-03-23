@@ -2726,7 +2726,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
-    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
 }
  
@@ -2752,7 +2752,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
-    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
 }
  
@@ -2778,7 +2778,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId003, TestSize.Level1)
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
-    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
 }
  
@@ -2804,7 +2804,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId004, TestSize.Level1)
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
-    EXPECT_EQ(ret, DistributedRdb::RDB_OK);
+    EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
 }
 } // namespace DistributedDataTest
