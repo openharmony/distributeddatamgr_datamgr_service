@@ -620,8 +620,6 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         return res ? SUCCESS : ERROR;
     }
     if (passwordType == KVDBService::PasswordType::SECRET_KEY) {
-        StoreMetaData meta;
-        MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), meta, true);
         passwords.reserve(SECRET_KEY_COUNT);
         SecretKeyMetaData secretKey;
         std::vector<uint8_t> password;

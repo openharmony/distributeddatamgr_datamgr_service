@@ -659,7 +659,7 @@ void KvStoreMetaManager::UpdateMetaDatas(const std::string &newUuid, const std::
         MetaDataManager::GetInstance().DelMeta(SwitchesMetaData::GetPrefix({ oldUuid }), true);
         switchesMetaData.deviceId = newUuid;
         MetaDataManager::GetInstance().SaveMeta(SwitchesMetaData::GetPrefix({ newUuid }),
-        switchesMetaData, true);
+            switchesMetaData, true);
     }
 
     UserMetaData userMeta;
