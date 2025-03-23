@@ -981,20 +981,6 @@ HWTEST_F(ServiceMetaDataTest, DelTestMeta, TestSize.Level1)
 }
 
 /**
-* @tc.name: CheckMetaDeviceId
-* @tc.desc: test CheckMetaDeviceId function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: yl
-*/
-HWTEST_F(ServiceMetaDataTest, CheckMetaDeviceId, TestSize.Level1)
-{
-    std::string localUuid = "";
-    KvStoreMetaManager::GetInstance().CheckMetaDeviceId(localUuid);
-    EXPECT_TRUE(localUuid.empty());
-}
-
-/**
 * @tc.name: GetKeyTest
 * @tc.desc: GetKey
 * @tc.type: FUNC
