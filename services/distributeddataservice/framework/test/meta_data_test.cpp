@@ -15,6 +15,9 @@
 
 #include "bootstrap.h"
 #include "kvstore_meta_manager.h"
+
+#include "metadata/appid_meta_data.h"
+#include "metadata/auto_launch_meta_data.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/capability_range.h"
@@ -26,7 +29,9 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/strategy_meta_data.h"
+#include "metadata/switches_meta_data.h"
 #include "metadata/user_meta_data.h"
+#include "metadata/device_meta_data.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
 #include <nlohmann/json.hpp>
@@ -793,5 +798,200 @@ HWTEST_F(ServiceMetaDataTest, MatrixMetaData, TestSize.Level1)
 
     std::string key = matrixMetaData3.GetConsistentKey();
     EXPECT_EQ(key, "MatrixMeta###DEVICE_ID###Consistent");
+}
+
+/**
+ * @tc.name: DeviceMetaData
+ * @tc.desc: test DeviceMetaData function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: yl
+ */
+HWTEST_F(ServiceMetaDataTest, DeviceMetaData, TestSize.Level1)
+{
+    DeviceMetaData  metaData;
+    std::string newUuid = "newuuid";
+    std::string oldUuid = "olduuid";
+    metaData.newUuid = newUuid;
+    metaData.oldUuid = oldUuid;
+    Serializable::json node1;
+    metaData.Marshal(node1);
+    EXPECT_EQ(node1["newUuid"], newUuid);
+    EXPECT_EQ(node1["oldUuid"], oldUuid);
+
+    DeviceMetaData newMetaData;
+    newMetaData.Unmarshal(node1);
+    EXPECT_EQ(newMetaData.newUuid, newUuid);
+    EXPECT_EQ(newMetaData.oldUuid, oldUuid);
+}
+
+/**
+* @tc.name: InitMeta
+* @tc.desc: test Init TestMeta
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yl
+*/
+HWTEST_F(ServiceMetaDataTest, InitTestMeta, TestSize.Level1)
+{
+    StoreMetaData oldMeta;
+    oldMeta.deviceId = "mockOldUuid";
+    oldMeta.user = "200";
+    oldMeta.bundleName = "test_appid_001";
+    oldMeta.storeId = "test_storeid_001";
+    oldMeta.isEncrypt = true;
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
+    EXPECT_TRUE(isSuccess);
+    StoreMetaDataLocal metaDataLocal;
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyLocal(), metaDataLocal, true);
+    EXPECT_TRUE(isSuccess);
+    SwitchesMetaData switchesMetaData;
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(SwitchesMetaData::GetPrefix({"mockOldUuid"}),
+        switchesMetaData, true);
+    EXPECT_TRUE(isSuccess);
+    AutoLaunchMetaData autoLaunchMetaData;
+    MetaDataManager::GetInstance().SaveMeta(AutoLaunchMetaData::GetPrefix({ oldMeta.deviceId, oldMeta.user,
+        "default", oldMeta.bundleName, "" }), autoLaunchMetaData, true);
+    EXPECT_TRUE(isSuccess);
+    MatrixMetaData matrixMeta0;
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({"mockOldUuid"}), matrixMeta0, true);
+    EXPECT_TRUE(isSuccess);
+
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    EXPECT_TRUE(isSuccess);
+    MatrixMetaData matrixMeta;
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({"mockOldUuid"}), matrixMeta);
+    EXPECT_TRUE(isSuccess);
+    UserMetaData userMeta;
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(UserMetaRow::GetKeyFor("mockOldUuid"), userMeta);
+    EXPECT_TRUE(isSuccess);
+    CapMetaData capMetaData;
+    auto capKey = CapMetaRow::GetKeyFor("mockOldUuid");
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(std::string(capKey.begin(), capKey.end()), capMetaData);
+    EXPECT_TRUE(isSuccess);
+    StrategyMeta strategyMeta;
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetStrategyKey(), strategyMeta);
+    EXPECT_TRUE(isSuccess);
+}
+
+/**
+* @tc.name: UpdateStoreMetaData
+* @tc.desc: test UpdateStoreMetaData function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yl
+*/
+HWTEST_F(ServiceMetaDataTest, UpdateStoreMetaData, TestSize.Level1)
+{
+    std::string mockNewUuid = "mockNewUuid";
+    std::string mockOldUuid = "mockOldUuid";
+    StoreMetaData newMeta;
+    newMeta.deviceId = "mockNewUuid";
+    newMeta.user = "200";
+    newMeta.bundleName = "test_appid_001";
+    newMeta.storeId = "test_storeid_001";
+    KvStoreMetaManager::GetInstance().UpdateStoreMetaData(mockNewUuid, mockOldUuid);
+    bool isSuccess = MetaDataManager::GetInstance().LoadMeta(newMeta.GetKey(), newMeta, true);
+    EXPECT_TRUE(isSuccess);
+    EXPECT_TRUE(newMeta.isNeedUpdateDeviceId);
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(newMeta.GetKey(), newMeta);
+    EXPECT_TRUE(isSuccess);
+    AutoLaunchMetaData autoLaunchMetaData;
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(AutoLaunchMetaData::GetPrefix({ newMeta.deviceId, newMeta.user,
+        "default", newMeta.bundleName, "" }), autoLaunchMetaData, true);
+    EXPECT_TRUE(isSuccess);
+    StrategyMeta strategyMeta;
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(newMeta.GetStrategyKey(), strategyMeta);
+    EXPECT_TRUE(isSuccess);
+}
+
+/**
+* @tc.name: UpdateMetaDatas
+* @tc.desc: test UpdateMetaDatas function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yl
+*/
+HWTEST_F(ServiceMetaDataTest, UpdateMetaDatas, TestSize.Level1)
+{
+    std::string mockNewUuid = "mockNewUuid";
+    std::string mockOldUuid = "mockOldUuid";
+    StoreMetaData newMeta;
+    newMeta.deviceId = "mockNewUuid";
+    newMeta.user = "200";
+    newMeta.bundleName = "test_appid_001";
+    newMeta.storeId = "test_storeid_001";
+    KvStoreMetaManager::GetInstance().UpdateMetaDatas(mockNewUuid, mockOldUuid);
+    MatrixMetaData matrixMeta;
+    bool isSuccess = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ "mockNewUuid" }),
+        matrixMeta, true);
+    EXPECT_TRUE(isSuccess);
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ "mockNewUuid" }), matrixMeta);
+    EXPECT_TRUE(isSuccess);
+    UserMetaData userMeta;
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ "mockNewUuid" }), userMeta);
+    EXPECT_TRUE(isSuccess);
+    CapMetaData capMetaData;
+    auto capKey = CapMetaRow::GetKeyFor("mockNewUuid");
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMetaData);
+    EXPECT_TRUE(isSuccess);
+    SwitchesMetaData switchesMetaData;
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(SwitchesMetaData::GetPrefix({ "mockNewUuid" }),
+        switchesMetaData, true);
+    EXPECT_TRUE(isSuccess);
+}
+
+/**
+* @tc.name: DelInitTestMeta
+* @tc.desc: test Del TestMeta
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yl
+*/
+HWTEST_F(ServiceMetaDataTest, DelTestMeta, TestSize.Level1)
+{
+    StoreMetaData newMeta;
+    newMeta.deviceId = "mockNewUuid";
+    newMeta.user = "200";
+    newMeta.bundleName = "test_appid_001";
+    newMeta.storeId = "test_storeid_001";
+    bool isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetKey(), true);
+    EXPECT_TRUE(isSuccess);
+    isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetKeyLocal(), true);
+    EXPECT_TRUE(isSuccess);
+    isSuccess = MetaDataManager::GetInstance().DelMeta(SwitchesMetaData::GetPrefix({ "mockNewUuid" }), true);
+    EXPECT_TRUE(isSuccess);
+    MetaDataManager::GetInstance().DelMeta(AutoLaunchMetaData::GetPrefix({ "mockNewUuid", newMeta.user,
+        "default", newMeta.bundleName, "" }), true);
+    EXPECT_TRUE(isSuccess);
+    isSuccess = MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({ "mockNewUuid" }), true);
+    EXPECT_TRUE(isSuccess);
+
+    isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetKey());
+    EXPECT_TRUE(isSuccess);
+    isSuccess = MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({"mockNewUuid"}));
+    EXPECT_TRUE(isSuccess);
+    isSuccess = MetaDataManager::GetInstance().DelMeta(UserMetaRow::GetKeyFor("mockNewUuid"));
+    EXPECT_TRUE(isSuccess);
+    auto capKey = CapMetaRow::GetKeyFor("mockNewUuid");
+    isSuccess = MetaDataManager::GetInstance().DelMeta(std::string(capKey.begin(), capKey.end()));
+    EXPECT_TRUE(isSuccess);
+    isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetStrategyKey());
+    EXPECT_TRUE(isSuccess);
+}
+
+/**
+* @tc.name: GetKeyTest
+* @tc.desc: GetKey
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: yl
+*/
+HWTEST_F(ServiceMetaDataTest, GetKey, TestSize.Level1)
+{
+    DeviceMetaData metaData;
+    std::string expectedPrefix = "DeviceMeta";
+    std::string prefix = metaData.GetKey();
+    EXPECT_EQ(prefix, expectedPrefix);
 }
 } // namespace OHOS::Test

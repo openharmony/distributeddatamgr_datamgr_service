@@ -25,6 +25,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using system_clock = std::chrono::system_clock;
@@ -39,7 +40,19 @@ Upgrade &Upgrade::GetInstance()
 
 Upgrade::DBStatus Upgrade::UpdateStore(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd)
 {
-    if (old.version < StoreMeta::UUID_CHANGED_TAG && old.storeType == DEVICE_COLLABORATION) {
+    if (old.isNeedUpdateDeviceId && !old.isEncrypt) {
+        auto store = GetDBStore(meta, pwd);
+        if (store == nullptr) {
+            ZLOGI("get store failed, appId:%{public}s storeId:%{public}s", old.appId.c_str(),
+                Anonymous::Change(old.storeId).c_str());
+            return DBStatus::DB_ERROR;
+        }
+        store->OperateDataStatus(static_cast<uint32_t>(DistributedDB::DataOperator::UPDATE_TIME) |
+            static_cast<uint32_t>(DistributedDB::DataOperator::RESET_UPLOAD_CLOUD));
+    }
+
+    if ((old.version < StoreMeta::UUID_CHANGED_TAG || (old.isNeedUpdateDeviceId && !old.isEncrypt)) &&
+        old.storeType == DEVICE_COLLABORATION) {
         auto upStatus = Upgrade::GetInstance().UpdateUuid(old, meta, pwd);
         if (upStatus != DBStatus::OK) {
             return DBStatus::DB_ERROR;

@@ -301,6 +301,11 @@ ohos_unittest("ServiceMetaDataTest") {
     debug = false
   }
 
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
   configs = [ ":module_private_config" ]
 
   include_dirs = [

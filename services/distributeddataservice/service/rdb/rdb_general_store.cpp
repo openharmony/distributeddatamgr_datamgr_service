@@ -1338,4 +1338,14 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
         return;
     };
 }
+
+int32_t RdbGeneralStore::UpdateDBStatus()
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
+}
 } // namespace OHOS::DistributedRdb
