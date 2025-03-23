@@ -828,7 +828,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
             "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
             meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        TryUpdateDeviceId(param, old, meta);
+        meta.isNeedUpdateDeviceId = isCreated && !tryupdatedeviceid();
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
@@ -1664,12 +1664,12 @@ int32_t RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const Sto
                 Anonymous::Change(param.storeName_).c_str());
             return RDB_ERROR;
         }
-        auto errCode = store->OperateDataStatus();
+        auto errCode = store->UpdateDBStatus();
         if (errCode == RDB_OK) {
             meta.isNeedUpdateDeviceId = false;
         } else {
             meta.isNeedUpdateDeviceId = true;
-            ZLOGE("OperateDataStatus failed errCode %{public}d", errCode);
+            ZLOGE("UpdateDBStatus failed errCode %{public}d", errCode);
         }
     }
     return RDB_OK;

@@ -143,9 +143,8 @@ void KvStoreMetaManager::InitMetaData()
         ZLOGI("get meta failed.");
         return;
     }
-    auto uuid = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    CheckMetaDeviceId(uuid);
 
+    CheckMetaDeviceId();
     auto uid = getuid();
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto userId = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
@@ -566,9 +565,10 @@ AppDistributedKv::ChangeLevelType KvStoreMetaManager::DBInfoDeviceChangeListener
     return AppDistributedKv::ChangeLevelType::MIN;
 }
 
-void KvStoreMetaManager::CheckMetaDeviceId(const std::string &localUuid)
+void KvStoreMetaManager::CheckMetaDeviceId()
 {
     DeviceMetaData deviceMeta;
+    auto localUuid = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (localUuid.empty()) {
         ZLOGW("get uuid failed");
         return;
@@ -576,44 +576,50 @@ void KvStoreMetaManager::CheckMetaDeviceId(const std::string &localUuid)
     if (!MetaDataManager::GetInstance().LoadMeta(deviceMeta.GetKey(), deviceMeta, true)) {
         deviceMeta.newUuid = localUuid;
         MetaDataManager::GetInstance().SaveMeta(deviceMeta.GetKey(), deviceMeta, true);
-    } else {
-        if (deviceMeta.newUuid != localUuid) {
-            deviceMeta.oldUuid = deviceMeta.newUuid;
-            deviceMeta.newUuid = localUuid;
-            MetaDataManager::GetInstance().SaveMeta(deviceMeta.GetKey(), deviceMeta, true);
-            ZLOGI("meta changed! curruuid:%{public}s, olduuid:%{public}s",
-                deviceMeta.newUuid.c_str(), deviceMeta.oldUuid.c_str());
-            UpdateMetaDeviceId(localUuid, deviceMeta.oldUuid);
-        }
+        return;
     }
-}
-
-void KvStoreMetaManager::UpdateMetaDeviceId(const std::string &newUuid, const std::string &oldUuid)
-{
-    //update meta like prefix###uuid###user###default#bundleName#storeid
-    UpdateStoreMetaData(newUuid, oldUuid);
-    //update meta like prefix###uuid
-    UpdateMetaDatas(newUuid, oldUuid);
+    if (deviceMeta.newUuid != localUuid) {
+        UpdateStoreMetaData(localUuid, deviceMeta.newUuid);
+        UpdateMetaDatas(localUuid, deviceMeta.newUuid);
+        deviceMeta.oldUuid = deviceMeta.newUuid;
+        deviceMeta.newUuid = localUuid;
+        MetaDataManager::GetInstance().SaveMeta(deviceMeta.GetKey(), deviceMeta, true);
+        ZLOGI("meta changed! curruuid:%{public}s, olduuid:%{public}s",
+            deviceMeta.newUuid.c_str(), deviceMeta.oldUuid.c_str());
+    }
 }
 
 void KvStoreMetaManager::UpdateStoreMetaData(const std::string &newUuid, const std::string &oldUuid)
 {
     std::vector<StoreMetaData> storeMetas;
-    MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({oldUuid}), storeMetas, true);
+    MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ oldUuid }), storeMetas, true);
     for (auto &storeMeta : storeMetas) {
-        // update storeMeta in local table
         auto oldMeta = storeMeta;
         storeMeta.isNeedUpdateDeviceId = true;
-        MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
         storeMeta.deviceId = newUuid;
         MetaDataManager::GetInstance().SaveMeta(storeMeta.GetKey(), storeMeta, true);
-        // update storeMetaLocal in local table
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey(), true);
+
+        StoreMetaData syncStoreMeta;
+        if (MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKey(), syncStoreMeta)) {
+            syncStoreMeta.deviceId = newUuid;
+            MetaDataManager::GetInstance().SaveMeta(storeMeta.GetKey(), syncStoreMeta);
+            MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+        }
+
+        StrategyMeta strategyMeta;
+        if (MetaDataManager::GetInstance().LoadMeta(oldMeta.GetStrategyKey(), strategyMeta)) {
+            strategyMeta.devId = newUuid;
+            MetaDataManager::GetInstance().SaveMeta(storeMeta.GetStrategyKey(), strategyMeta);
+            MetaDataManager::GetInstance().DelMeta(oldMeta.GetStrategyKey());
+        }
+
         StoreMetaDataLocal metaDataLocal;
         if (MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKeyLocal(), metaDataLocal, true)) {
-            MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyLocal(), true);
             MetaDataManager::GetInstance().SaveMeta(storeMeta.GetKeyLocal(), metaDataLocal, true);
+            MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyLocal(), true);
         }
-        // update autoLaunchMeta in local table
+
         AutoLaunchMetaData autoLaunchMetaData;
         bool isExist = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetAutoLaunchKey(), autoLaunchMetaData, true);
         if (!isExist) {
@@ -625,60 +631,44 @@ void KvStoreMetaManager::UpdateStoreMetaData(const std::string &newUuid, const s
             oldMeta.deviceId = newUuid;
             MetaDataManager::GetInstance().SaveMeta(oldMeta.GetAutoLaunchKey(), autoLaunchMetaData, true);
         }
-    }
-    
-    storeMetas.clear();
-    MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({oldUuid}), storeMetas);
-    for (auto &storeMeta : storeMetas) {
-        // update storeMeta in sync table
-        auto oldMeta = storeMeta;
-        MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey());
-        storeMeta.deviceId = newUuid;
-        MetaDataManager::GetInstance().SaveMeta(storeMeta.GetKey(), storeMeta);
-        // update strategyMeta in sync table
-        StrategyMeta strategyMeta;
-        if (MetaDataManager::GetInstance().LoadMeta(oldMeta.GetStrategyKey(), strategyMeta)) {
-            MetaDataManager::GetInstance().DelMeta(oldMeta.GetStrategyKey());
-            strategyMeta.devId = newUuid;
-            MetaDataManager::GetInstance().SaveMeta(storeMeta.GetStrategyKey(), strategyMeta);
+        if (storeMeta.isEncrypt) {
+            MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
+            MetaDataManager::GetInstance().DelMeta(storeMeta.GetCloneSecretKey(), true);
         }
     }
 }
 
 void KvStoreMetaManager::UpdateMetaDatas(const std::string &newUuid, const std::string &oldUuid)
 {
-    // update storeMeta in local table
     MatrixMetaData matrixMeta;
-    bool isExist = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({oldUuid}), matrixMeta, true);
-    if (isExist) {
-        MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({oldUuid}), true);
+    if (MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ oldUuid }), matrixMeta, true)) {
+        MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({ oldUuid }), true);
         matrixMeta.deviceId = newUuid;
-        MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({newUuid}), matrixMeta, true);
+        MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({ newUuid }), matrixMeta, true);
     }
-    // update storeMeta in sync table
-    isExist = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({oldUuid}), matrixMeta);
-    if (isExist) {
-        MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({oldUuid}));
+
+    if (MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ oldUuid }), matrixMeta)) {
+        MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({ oldUuid }));
         matrixMeta.deviceId = newUuid;
-        MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({newUuid}), matrixMeta);
+        MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({ newUuid }), matrixMeta);
     }
-    // update switchesMeta in local table
+
     SwitchesMetaData switchesMetaData;
-    if (MetaDataManager::GetInstance().LoadMeta(SwitchesMetaData::GetPrefix({oldUuid}),
+    if (MetaDataManager::GetInstance().LoadMeta(SwitchesMetaData::GetPrefix({ oldUuid }),
         switchesMetaData, true)) {
-            MetaDataManager::GetInstance().DelMeta(SwitchesMetaData::GetPrefix({oldUuid}), true);
-            switchesMetaData.deviceId = newUuid;
-            MetaDataManager::GetInstance().SaveMeta(SwitchesMetaData::GetPrefix({newUuid}),
-                switchesMetaData, true);
+        MetaDataManager::GetInstance().DelMeta(SwitchesMetaData::GetPrefix({ oldUuid }), true);
+        switchesMetaData.deviceId = newUuid;
+        MetaDataManager::GetInstance().SaveMeta(SwitchesMetaData::GetPrefix({ newUuid }),
+        switchesMetaData, true);
     }
-    // update userMeta in sync table
+
     UserMetaData userMeta;
     if (MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(oldUuid), userMeta)) {
         MetaDataManager::GetInstance().DelMeta(UserMetaRow::GetKeyFor(oldUuid));
         userMeta.deviceId = newUuid;
         MetaDataManager::GetInstance().SaveMeta(UserMetaRow::GetKeyFor(newUuid), userMeta);
     }
-    // update capMeta in sync table
+        
     CapMetaData capMetaData;
     auto capKey = CapMetaRow::GetKeyFor(oldUuid);
     if (MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMetaData)) {

@@ -96,10 +96,8 @@ private:
 
     DistributedDB::KvStoreNbDelegate::Option InitDBOption();
     
-    void CheckMetaDeviceId(const std::string &localUuid);
+    void CheckMetaDeviceId();
 
-    void UpdateMetaDeviceId(const std::string &newUuid, const std::string &oldUuid);
-    
     void UpdateStoreMetaData(const std::string &newUuid, const std::string &oldUuid);
     
     void UpdateMetaDatas(const std::string &newUuid, const std::string &oldUuid);

@@ -198,7 +198,7 @@ public:
 
     virtual int32_t UnLockCloudDB() = 0;
 
-    virtual int32_t OperateDataStatus()
+    virtual int32_t UpdateDBStatus()
     {
         return 0;
     }

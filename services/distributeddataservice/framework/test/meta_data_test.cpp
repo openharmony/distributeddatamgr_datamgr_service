@@ -839,6 +839,7 @@ HWTEST_F(ServiceMetaDataTest, InitTestMeta, TestSize.Level1)
     oldMeta.user = "200";
     oldMeta.bundleName = "test_appid_001";
     oldMeta.storeId = "test_storeid_001";
+    oldMeta.isEncrypt = true;
     bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
     EXPECT_TRUE(isSuccess);
     StoreMetaDataLocal metaDataLocal;
