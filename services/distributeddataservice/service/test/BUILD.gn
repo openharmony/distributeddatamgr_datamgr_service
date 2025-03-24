@@ -931,6 +931,8 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "dsoftbus:softbus_client",
@@ -939,6 +941,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 
@@ -1200,6 +1203,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
@@ -1209,6 +1213,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 }
@@ -1237,6 +1242,7 @@ ohos_unittest("UdmfServiceStubTest") {
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
@@ -1245,6 +1251,7 @@ ohos_unittest("UdmfServiceStubTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 }
@@ -1313,6 +1320,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
@@ -1325,6 +1333,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 }
