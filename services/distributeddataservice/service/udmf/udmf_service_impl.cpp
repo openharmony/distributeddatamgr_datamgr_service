@@ -708,7 +708,7 @@ int32_t UdmfServiceImpl::QueryDataCommon(
     UnifiedKey key(query.key);
     key.IsValid();
     if (intention.empty()) {
-        dataPrefix = key.key;
+        dataPrefix = UnifiedKey(key.key).GetPropertyKey();
         intention = key.intention;
     }
     ZLOGD("dataPrefix = %{public}s, intention: %{public}s.", dataPrefix.c_str(), intention.c_str());
