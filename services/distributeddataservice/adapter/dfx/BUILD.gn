@@ -50,7 +50,10 @@ ohos_source_set("distributeddata_dfx") {
     "${data_service_path}/framework/include/utils",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fstack-protector-strong",
+  ]
 
   external_deps = [
     "c_utils:utils",
