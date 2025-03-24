@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2024 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -38,6 +38,7 @@ std::string TBL_NAME0 = "name0";
 std::string TBL_NAME1 = "name1";
 std::string BUNDLE_NAME = "ohos.datasharetest.demo";
 namespace OHOS::Test {
+using OHOS::DataShare::LogLabel;
 class DataShareServiceImplTest : public testing::Test {
 public:
     static constexpr int64_t USER_TEST = 100;
@@ -455,5 +456,39 @@ HWTEST_F(DataShareServiceImplTest, OnInitialize, TestSize.Level1)
     dataShareServiceImpl.DumpDataShareServiceInfo(fd, params);
     auto result = dataShareServiceImpl.OnInitialize();
     EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name: GetCallerInfo001
+* @tc.desc: test GetCallerInfo function when succeeded in getting tokenID
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, GetCallerInfo001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetCallerInfo001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    int32_t appIndex = 1;
+    auto result = dataShareServiceImpl.GetCallerInfo(BUNDLE_NAME, appIndex);
+    EXPECT_EQ(result.first, true);
+    ZLOGI("DataShareServiceImplTest GetCallerInfo001 end");
+}
+
+/**
+* @tc.name: GetCallerInfo002
+* @tc.desc: test GetCallerInfo function when failed to get tokenID
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, GetCallerInfo002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetCallerInfo002 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    int32_t appIndex = 1;
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    auto result = dataShareServiceImpl.GetCallerInfo(BUNDLE_NAME, appIndex);
+    EXPECT_EQ(result.first, false);
+    ZLOGI("DataShareServiceImplTest GetCallerInfo002 end");
 }
 } // namespace OHOS::Test
