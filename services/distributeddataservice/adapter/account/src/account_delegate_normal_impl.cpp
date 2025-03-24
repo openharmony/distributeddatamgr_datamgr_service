@@ -34,8 +34,7 @@ using namespace OHOS::AAFwk;
 using namespace OHOS::DistributedData;
 using namespace Security::AccessToken;
 __attribute__((used)) static bool g_isInit = AccountDelegateNormalImpl::Init();
-
-AccountSubscriber::AccountSubscriber(const OsAccountSubscribeInfo &info) : OsAccountSubscriber(info) {}
+static constexpr int32_t STOPPING_TIMEOUT = 5;
 static inline const std::map<int32_t, AccountStatus> STATUS = {
     { AccountSA::REMOVED, AccountStatus::DEVICE_ACCOUNT_DELETE },
     { AccountSA::SWITCHED, AccountStatus::DEVICE_ACCOUNT_SWITCHED },
@@ -43,6 +42,11 @@ static inline const std::map<int32_t, AccountStatus> STATUS = {
     { AccountSA::STOPPING, AccountStatus::DEVICE_ACCOUNT_STOPPING },
     { AccountSA::STOPPED, AccountStatus::DEVICE_ACCOUNT_STOPPED }
 };
+
+AccountSubscriber::AccountSubscriber(const OsAccountSubscribeInfo &info, std::shared_ptr<ExecutorPool> executors)
+    : OsAccountSubscriber(info), executors_(executors)
+{
+}
 
 void AccountSubscriber::OnStateChanged(const OsAccountStateData &data)
 {
@@ -55,8 +59,16 @@ void AccountSubscriber::OnStateChanged(const OsAccountStateData &data)
     AccountEventInfo accountEventInfo;
     accountEventInfo.userId = std::to_string(data.toId);
     accountEventInfo.status = it->second;
-    eventCallback_(accountEventInfo);
-    if (data.callback != nullptr) {
+    int32_t timeout = accountEventInfo.status == AccountStatus::DEVICE_ACCOUNT_STOPPING ? STOPPING_TIMEOUT : 0;
+    eventCallback_(accountEventInfo, timeout);
+    if (data.callback == nullptr) {
+        return;
+    }
+    if (executors_ != nullptr) {
+        executors_->Execute([callback = data.callback]() {
+            callback->OnComplete();
+        });
+    } else {
         data.callback->OnComplete();
     }
 }
@@ -65,6 +77,7 @@ void AccountSubscriber::SetEventCallback(EventCallback callback)
 {
     eventCallback_ = callback;
 }
+
 AccountDelegateNormalImpl::AccountDelegateNormalImpl()
 {
     userDeactivating_.InsertOrAssign(0, false);
@@ -141,7 +154,7 @@ bool AccountDelegateNormalImpl::IsVerified(int userId)
 void AccountDelegateNormalImpl::SubscribeAccountEvent()
 {
     ZLOGI("Subscribe account event listener start.");
-    if (AccountSubscriber_ == nullptr) {
+    if (accountSubscriber_ == nullptr) {
         std::set<OsAccountState> states;
         states.insert(AccountSA::REMOVED);
         states.insert(AccountSA::SWITCHED);
@@ -149,11 +162,11 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
         states.insert(AccountSA::STOPPING);
         states.insert(AccountSA::STOPPED);
         OsAccountSubscribeInfo info(states, true);
-        AccountSubscriber_ = std::make_shared<AccountSubscriber>(info);
-        AccountSubscriber_->SetEventCallback([this](AccountEventInfo &account) {
+        accountSubscriber_ = std::make_shared<AccountSubscriber>(info, executors_);
+        accountSubscriber_->SetEventCallback([this](AccountEventInfo &account, int32_t timeout) {
             UpdateUserStatus(account);
             account.harmonyAccountId = GetCurrentAccountId();
-            NotifyAccountChanged(account);
+            NotifyAccountChanged(account, timeout);
         });
     }
     executors_->Execute(GetTask(0));
@@ -182,8 +195,8 @@ void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo &account
 ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
 {
     return [this, retry] {
-        auto result = OsAccountManager::SubscribeOsAccount(AccountSubscriber_);
-        if (result) {
+        auto result = OsAccountManager::SubscribeOsAccount(accountSubscriber_);
+        if (result == ERR_OK) {
             ZLOGI("success to register subscriber.");
             return;
         }
@@ -200,16 +213,16 @@ ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
 AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
 {
     ZLOGD("destruct");
-    auto res = OsAccountManager::UnsubscribeOsAccount(AccountSubscriber_);
-    if (!res) {
+    auto res = OsAccountManager::UnsubscribeOsAccount(accountSubscriber_);
+    if (res != ERR_OK) {
         ZLOGW("unregister account event fail res:%d", res);
     }
 }
 
 void AccountDelegateNormalImpl::UnsubscribeAccountEvent()
 {
-    auto res = OsAccountManager::UnsubscribeOsAccount(AccountSubscriber_);
-    if (!res) {
+    auto res = OsAccountManager::UnsubscribeOsAccount(accountSubscriber_);
+    if (res != ERR_OK) {
         ZLOGW("unregister account event fail res:%d", res);
     }
 }
@@ -270,6 +283,16 @@ bool AccountDelegateNormalImpl::Init()
         AccountDelegate::RegisterAccountInstance(&normalAccountDelegate);
     });
     return true;
+}
+
+bool AccountDelegateNormalImpl::IsUserForeground(int32_t userId)
+{
+    bool isForeground = false;
+    if (AccountSA::OsAccountManager::IsOsAccountForeground(userId, isForeground) != 0) {
+        ZLOGE("check foreground user error, userId:%{public}d", userId);
+        return false;
+    }
+    return isForeground;
 }
 
 bool AccountDelegateNormalImpl::IsDeactivating(int userId)

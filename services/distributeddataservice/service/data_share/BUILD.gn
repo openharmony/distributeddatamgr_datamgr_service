@@ -94,11 +94,13 @@ ohos_source_set("data_share_service") {
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   configs = [ ":module_public_config" ]
@@ -125,6 +127,7 @@ ohos_source_set("data_share_service") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "init:libbegetutil",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",

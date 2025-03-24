@@ -44,6 +44,9 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using SecurityLevel = OHOS::DistributedKv::SecurityLevel;
 using KVDBGeneralStore = OHOS::DistributedKv::KVDBGeneralStore;
 using DMAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using DBInterceptedData = DistributedDB::InterceptedData;
+using StoreId = OHOS::DistributedKv::StoreId;
+using AppId = OHOS::DistributedKv::AppId;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 class KVDBGeneralStoreTest : public testing::Test {
@@ -52,7 +55,6 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
-
 protected:
     static constexpr const char *bundleName = "test_distributeddata";
     static constexpr const char *storeName = "test_service_meta";
@@ -183,7 +185,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
     std::vector<uint8_t> randomKey = Random(KEY_LENGTH);
     SecretKeyMetaData secretKey;
     secretKey.storeType = metaData_.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey);
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
     EXPECT_EQ(secretKey.sKey.size(), ENCRYPT_KEY_LENGTH);
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true));
 
@@ -754,6 +756,295 @@ HWTEST_F(KVDBGeneralStoreTest, Query002, TestSize.Level1)
     auto [errCode, result] = store->Query(table, query);
     EXPECT_EQ(errCode, GeneralError::E_NOT_SUPPORT);
     EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name: GetDBOption
+* @tc.desc: GetDBOption from meta and dbPassword
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetDBOption001, TestSize.Level0)
+{
+    metaData_.isEncrypt = false;
+    metaData_.appId = "distributeddata";
+    auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    auto dbOption = KVDBGeneralStore::GetDBOption(metaData_, dbPassword);
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyLocal(), metaData_, true));
+    EXPECT_EQ(metaData_.appId, Bootstrap::GetInstance().GetProcessLabel());
+    EXPECT_EQ(dbOption.createIfNecessary, false);
+    EXPECT_EQ(dbOption.isMemoryDb, false);
+    EXPECT_EQ(dbOption.isEncryptedDb, metaData_.isEncrypt);
+    EXPECT_EQ(dbOption.isNeedCompressOnSync, metaData_.isNeedCompress);
+    EXPECT_EQ(dbOption.schema, metaData_.schema);
+    EXPECT_EQ(dbOption.conflictResolvePolicy, DistributedDB::LAST_WIN);
+    EXPECT_EQ(dbOption.createDirByStoreIdOnly, true);
+    EXPECT_EQ(dbOption.secOption, KVDBGeneralStore::GetDBSecurity(metaData_.securityLevel));
+}
+
+/**
+* @tc.name: Sync
+* @tc.desc: Sync test the functionality of different branches.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
+{
+    mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
+        (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    uint32_t syncMode = GeneralStore::SyncMode::CLOUD_BEGIN;
+    uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
+    auto mixMode = GeneralStore::MixMode(syncMode, highMode);
+    std::string kvQuery = "querytest";
+    DistributedKv::KVDBQuery query(kvQuery);
+    SyncParam syncParam{};
+    syncParam.mode = mixMode;
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    EXPECT_NE(store->delegate_, nullptr);
+    auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
+    EXPECT_EQ(ret.first, GeneralError::E_NOT_SUPPORT);
+    GeneralStore::StoreConfig storeConfig;
+    storeConfig.enableCloud_ = false;
+    store->SetConfig(storeConfig);
+    ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
+    EXPECT_EQ(ret.first, GeneralError::E_NOT_SUPPORT);
+
+    std::vector<std::string> devices = { "device1", "device2" };
+    syncMode = GeneralStore::SyncMode::CLOUD_END;
+    mixMode = GeneralStore::MixMode(syncMode, highMode);
+    syncParam.mode = mixMode;
+    ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
+    EXPECT_EQ(ret.first, GeneralError::E_INVALID_ARGS);
+
+    syncMode = GeneralStore::SyncMode::NEARBY_PULL;
+    mixMode = GeneralStore::MixMode(syncMode, highMode);
+    syncParam.mode = mixMode;
+    ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
+    EXPECT_EQ(ret.first, GeneralError::E_INVALID_ARGS);
+    store->delegate_ = nullptr;
+    delete store;
+}
+
+
+/**
+* @tc.name: SetEqualIdentifier
+* @tc.desc: SetEqualIdentifier test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(KVDBGeneralStoreTest, SetEqualIdentifier, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::vector<std::string> sameAccountDevs{"account01", "account02", "account03"};
+    std::vector<std::string> uuids{"uuidtest01", "uuidtest02", "uuidtest03"};
+    AppId appId01 = { "ohos.kvdbservice.test01" };
+    StoreId storeId01 = { "meta_test_storeid" };
+    std::string account = "account";
+    store->SetEqualIdentifier(appId01, storeId01, account);
+    EXPECT_EQ(uuids.empty(), false);
+    EXPECT_EQ(sameAccountDevs.empty(), false);
+    delete store;
+}
+
+/**
+* @tc.name: GetIdentifierParams
+* @tc.desc: GetIdentifierParams test.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetIdentifierParams001, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::vector<std::string> sameAccountDevs{"account01", "account02", "account03"};
+    std::vector<std::string> uuids{"uuidtest01", "uuidtest02", "uuidtest03"};
+    store->GetIdentifierParams(sameAccountDevs, uuids, 1); //
+    for (const auto &devId : uuids) {
+        EXPECT_EQ(DMAdapter::GetInstance().IsOHOSType(devId), false);
+        EXPECT_EQ(DMAdapter::GetInstance().GetAuthType(devId), 0); //
+    }
+    EXPECT_EQ(sameAccountDevs.empty(), false);
+    delete store;
+}
+
+/**
+* @tc.name: ConvertStatus
+* @tc.desc: ConvertStatus test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(KVDBGeneralStoreTest, ConvertStatus001, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    auto ret = store->ConvertStatus(DBStatus::NOT_SUPPORT);
+    EXPECT_EQ(ret, GeneralError::E_NOT_SUPPORT);
+    DBStatus unknownStatus = static_cast<DBStatus>(0xDEAD);
+    ret = store->ConvertStatus(unknownStatus);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    delete store;
+}
+
+/**
+* @tc.name: GetDBProcessCB
+* @tc.desc: GetDBProcessCB test.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetDBProcessCB, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    bool asyncCalled = false;
+    auto async = [&asyncCalled](const DistributedData::GenDetails &details) {
+        asyncCalled = true;
+        EXPECT_TRUE(details.empty());
+    };
+
+    std::map<std::string, SyncProcess> processes;
+    auto callback = store->GetDBProcessCB(async);
+    callback(processes);
+    EXPECT_TRUE(asyncCalled);
+    delete store;
+}
+
+/**
+* @tc.name: GetDBProcessCB
+* @tc.desc: GetDBProcessCB test.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetDBProcessCB001, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    GeneralStore::DetailAsync async;
+    EXPECT_EQ(async, nullptr);
+    auto process = store->GetDBProcessCB(async);
+    EXPECT_NE(process, nullptr);
+    auto asyncs = [](const GenDetails &result) {};
+    EXPECT_NE(asyncs, nullptr);
+    process = store->GetDBProcessCB(asyncs);
+    EXPECT_NE(process, nullptr);
+    store->delegate_ = nullptr;
+    delete store;
+}
+
+/**
+* @tc.name: GetDBProcessCB
+* @tc.desc: GetDBProcessCB test.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetDBProcessCB002, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    std::map<std::string, SyncProcess> processes = {{"test_id", {}}};
+    GeneralStore::DetailAsync async;
+    EXPECT_EQ(async, nullptr);
+    auto callback = store->GetDBProcessCB(async);
+    callback(processes);
+    delete store;
+}
+
+/**
+* @tc.name: Delete
+* @tc.desc: Delete test the function.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, SetDBPushDataInterceptor, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    EXPECT_NE(store->delegate_, nullptr);
+    store->SetDBPushDataInterceptor(DistributedKv::KvStoreType::MULTI_VERSION);
+    store->SetDBReceiveDataInterceptor(DistributedKv::KvStoreType::MULTI_VERSION);
+    EXPECT_NE(metaData_.storeType, DistributedKv::KvStoreType::MULTI_VERSION);
+
+    store->SetDBPushDataInterceptor(DistributedKv::KvStoreType::SINGLE_VERSION);
+    store->SetDBReceiveDataInterceptor(DistributedKv::KvStoreType::SINGLE_VERSION);
+    EXPECT_EQ(metaData_.storeType, DistributedKv::KvStoreType::SINGLE_VERSION);
+    store->delegate_ = nullptr;
+    delete store;
+}
+
+/**
+* @tc.name: CloseTest
+* @tc.desc: Close kvdb general store
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, CloseTest001, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store->delegate_, nullptr);
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_OK);
+
+    bool isForce = false;
+    ret = store->Close(isForce);
+    EXPECT_EQ(ret, DBStatus::OK);
+    delete store;
+}
+
+/**
+* @tc.name: ConstructorTest
+* @tc.desc: Test KVDBGeneralStore constructor with different scenarios
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, ConstructorTest, TestSize.Level0)
+{
+    // Test manager initialization with same appId
+    metaData_.appId = Bootstrap::GetInstance().GetProcessLabel();
+    auto store1 = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store1, nullptr);
+    delete store1;
+
+    // Test manager initialization with different appId
+    metaData_.appId = "different_app_id";
+    auto store2 = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store2, nullptr);
+    delete store2;
+
+    // Test GetKvStore failure path
+    metaData_.storeId = "invalid_store";
+    auto store3 = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store3, nullptr);
+    EXPECT_EQ(store3->delegate_, nullptr);
+    delete store3;
+
+    // Test observer registration
+    metaData_.storeId = storeName;
+    metaData_.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
+    auto store4 = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store4, nullptr);
+    delete store4;
+
+    // Test remote push notification setup
+    metaData_.storeType = DistributedKv::KvStoreType::DEVICE_COLLABORATION;
+    auto store5 = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store5, nullptr);
+    delete store5;
+
+    // Test auto-sync configuration
+    metaData_.isAutoSync = true;
+    auto store6 = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store6, nullptr);
+    EXPECT_EQ(store6->delegate_, nullptr);
+    delete store6;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -259,10 +259,13 @@ HWTEST_F(ServiceUtilsTest, CorruptTest001, TestSize.Level1)
 HWTEST_F(ServiceUtilsTest, CorruptTest002, TestSize.Level1)
 {
     mode_t mode = S_IRWXU | S_IRWXG | S_IXOTH; // 0771
-    mkdir(TEST_CORRUPT_PATH, mode);
+    auto ret = mkdir(TEST_CORRUPT_PATH, mode);
+    ASSERT_EQ(0, ret);
+    ASSERT_EQ(true, CorruptReporter::CreateCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
     ASSERT_EQ(true, CorruptReporter::CreateCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
     ASSERT_EQ(true, CorruptReporter::HasCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
     ASSERT_EQ(true, CorruptReporter::DeleteCorruptedFlag(TEST_CORRUPT_PATH, TEST_CORRUPT_STOREID));
-    rmdir(TEST_CORRUPT_PATH);
+    ret = rmdir(TEST_CORRUPT_PATH);
+    ASSERT_EQ(0, ret);
 }
 } // namespace OHOS::Test

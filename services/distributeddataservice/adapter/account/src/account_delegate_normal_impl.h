@@ -23,14 +23,16 @@
 namespace OHOS {
 namespace DistributedData {
 using namespace AccountSA;
+using EventCallback = std::function<void(AccountEventInfo &account, int32_t timeout)>;
 class AccountSubscriber final : public OsAccountSubscriber {
 public:
     ~AccountSubscriber() {}
-    explicit AccountSubscriber(const OsAccountSubscribeInfo &subscribeInfo);
+    explicit AccountSubscriber(const OsAccountSubscribeInfo &subscribeInfo, std::shared_ptr<ExecutorPool> executors);
     void SetEventCallback(EventCallback callback);
     void OnStateChanged(const OsAccountStateData &data) override;
 private:
     EventCallback eventCallback_{};
+    std::shared_ptr<ExecutorPool> executors_ = nullptr;
 };
 class AccountDelegateNormalImpl final : public AccountDelegateImpl {
 public:
@@ -47,6 +49,7 @@ public:
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
     std::string GetUnencryptedAccountId(int32_t userId = 0) const override;
     bool QueryForegroundUserId(int &foregroundUserId) override;
+    bool IsUserForeground(int32_t userId) override;
     static bool Init();
 
 private:
@@ -56,7 +59,7 @@ private:
     void UpdateUserStatus(const AccountEventInfo &account);
     static constexpr int MAX_RETRY_TIME = 300;
     static constexpr int RETRY_WAIT_TIME_S = 1;
-    std::shared_ptr<AccountSubscriber> AccountSubscriber_{};
+    std::shared_ptr<AccountSubscriber> accountSubscriber_{};
     std::shared_ptr<ExecutorPool> executors_;
     ConcurrentMap<int32_t, bool> userStatus_{};
     ConcurrentMap<int32_t, bool> userDeactivating_{};

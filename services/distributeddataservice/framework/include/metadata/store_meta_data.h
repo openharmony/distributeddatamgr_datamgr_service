@@ -60,6 +60,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     std::string account = "";
     int32_t authType = 0;
     bool asyncDownloadAsset = false;
+    bool isNeedUpdateDeviceId = false;
 
     enum StoreType {
         STORE_KV_BEGIN = 0,
@@ -86,6 +87,7 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     API_EXPORT std::string GetBackupSecretKey() const;
     API_EXPORT std::string GetAutoLaunchKey() const;
     API_EXPORT std::string GetDebugInfoKey() const;
+    API_EXPORT std::string GetDfxInfoKey() const;
     API_EXPORT std::string GetStoreAlias() const;
     API_EXPORT StoreInfo GetStoreInfo() const;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);

@@ -31,7 +31,7 @@ constexpr KvStoreDataServiceStub::RequestHandler
 
 int32_t KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote(MessageParcel &data, MessageParcel &reply)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     AppId appId = { data.ReadString() };
     sptr<IRemoteObject> kvStoreClientDeathObserverProxy = data.ReadRemoteObject();
     if (kvStoreClientDeathObserverProxy == nullptr) {
@@ -46,7 +46,7 @@ int32_t KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote(MessageParce
 
 int32_t KvStoreDataServiceStub::GetFeatureInterfaceOnRemote(MessageParcel &data, MessageParcel &reply)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     std::string name;
     if (!ITypesUtil::Unmarshal(data, name)) {
         return -1;

@@ -25,9 +25,9 @@ config("rdb_public_config") {
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/cloud",
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/dfx",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
 }
 
@@ -46,6 +46,7 @@ ohos_source_set("distributeddata_rdb") {
     "rdb_cloud.cpp",
     "rdb_cursor.cpp",
     "rdb_general_store.cpp",
+    "rdb_hiview_adapter.cpp",
     "rdb_notifier_proxy.cpp",
     "rdb_query.cpp",
     "rdb_result_set_impl.cpp",
@@ -62,6 +63,7 @@ ohos_source_set("distributeddata_rdb") {
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   deps = [
@@ -95,6 +97,7 @@ ohos_source_set("distributeddata_rdb") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
   subsystem_name = "distributeddatamgr"
 

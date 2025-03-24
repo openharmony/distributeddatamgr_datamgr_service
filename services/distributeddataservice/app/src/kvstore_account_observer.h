@@ -42,7 +42,7 @@ public:
     }
     ~KvStoreAccountObserver() override = default;
 
-    void OnAccountChanged(const AccountEventInfo &eventInfo) override;
+    void OnAccountChanged(const AccountEventInfo &eventInfo, int32_t timeout) override;
     // must specify unique name for observer
     std::string Name() override
     {

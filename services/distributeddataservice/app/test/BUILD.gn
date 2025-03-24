@@ -13,7 +13,7 @@
 import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-module_output_path = "datamgr_service/distributeddataservice"
+module_output_path = "datamgr_service/datamgr_service/distributeddataservice"
 
 ###############################################################################
 config("module_private_config") {
@@ -28,7 +28,6 @@ config("module_private_config") {
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include",
-    "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/bootstrap/include",
@@ -275,7 +274,6 @@ ohos_unittest("FeatureStubImplTest") {
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include",
-    "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/bootstrap/include",

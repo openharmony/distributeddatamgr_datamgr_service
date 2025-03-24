@@ -16,23 +16,17 @@
 
 #include "preprocess_utils.h"
 
-#include <random>
 #include <sstream>
 
 #include "dds_trace.h"
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
-#include "bundlemgr/bundle_mgr_client_impl.h"
 #include "device_manager_adapter.h"
-#include "error_code.h"
-#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
 #include "remote_file_share.h"
-#include "uri.h"
 #include "utils/crypto.h"
-#include "want.h"
 #include "uri_permission_manager_client.h"
 namespace OHOS {
 namespace UDMF {
@@ -42,7 +36,15 @@ static constexpr int MAXIMUM = 121;
 constexpr char SPECIAL = '^';
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *TAG = "PreProcessUtils::";
+constexpr const char *FILE_SCHEME_PREFIX = "file://";
+constexpr const char *DOCS_LOCAL_TAG = "/docs/";
+static constexpr uint32_t DOCS_LOCAL_PATH_SUBSTR_START_INDEX = 1;
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
+constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
+static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
+static constexpr uint32_t PREFIX_LEN = 24;
+static constexpr uint32_t INDEX_LEN = 8;
+static constexpr const char PLACE_HOLDER = '0';
 using namespace OHOS::DistributedDataDfx;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
@@ -69,6 +71,7 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
     runtime.deviceId = GetLocalDeviceId();
     runtime.recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
     runtime.tokenId = option.tokenId;
+    runtime.sdkVersion = data.GetSdkVersion();
     data.SetRuntime(runtime);
     return E_OK;
 }
@@ -121,7 +124,7 @@ bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleNa
             return true;
         }
     }
-    ZLOGE("GetHapBundleNameByToken faild");
+    ZLOGE("Get bundle name faild");
     return false;
 }
 
@@ -160,7 +163,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
         std::shared_ptr<Object> detailObj;
         obj->GetValue(DETAILS, detailObj);
         if (detailObj == nullptr) {
-            ZLOGE("Not contain details for object!");
+            ZLOGE("No details for object");
             return false;
         }
         UDDetails details = ObjectUtils::ConvertToUDDetails(detailObj);
@@ -189,23 +192,24 @@ int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
         std::string oriUri;
         obj->GetValue(ORI_URI, oriUri);
         if (oriUri.empty()) {
-            ZLOGW("Get uri empty, plase check the uri.");
+            ZLOGW("URI is empty, please check");
             return false;
         }
         Uri uri(oriUri);
         std::string scheme = uri.GetScheme();
         std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
         if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-            ZLOGW("Get uri authority empty or uri scheme not equals to file.");
+            ZLOGW("Empty URI authority or scheme not file");
             return false;
         }
         uris.push_back(oriUri);
         return true;
     });
+    GetHtmlFileUris(tokenId, data, true, uris);
     if (!uris.empty()) {
         ZLOGI("Read to check uri authorization");
         if (!CheckUriAuthorization(uris, tokenId)) {
-            ZLOGE("CheckUriAuthorization failed, bundleName:%{public}s, tokenId: %{public}d, uris size:%{public}zu.",
+            ZLOGE("UriAuth check failed:bundleName:%{public}s,tokenId:%{public}d,uris size:%{public}zu",
                   data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                 BizScene::SET_DATA, SetDataStage::VERIFY_SHARE_PERMISSIONS, StageRes::FAILED, E_NO_PERMISSION);
@@ -248,6 +252,18 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
         }
         return true;
     });
+    for (auto &record : data.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
+        record->ComputeUris([&dfsUris] (UriInfo &uriInfo) {
+            auto iter = dfsUris.find(uriInfo.authUri);
+            if (iter != dfsUris.end()) {
+                uriInfo.dfsUri = (iter->second).uriStr;
+            }
+            return true;
+        });
+    }
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::SUCCESS, BizState::DFX_END);
     return E_OK;
@@ -288,7 +304,7 @@ bool PreProcessUtils::IsNetworkingEnabled()
 {
     std::vector<AppDistributedKv::DeviceInfo> devInfos =
         DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
-    ZLOGI("DM remote devices count is %{public}u.", static_cast<uint32_t>(devInfos.size()));
+    ZLOGI("Remote devices count:%{public}u", static_cast<uint32_t>(devInfos.size()));
     if (devInfos.empty()) {
         return false;
     }
@@ -314,6 +330,145 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
             continue;
         }
     }
+}
+
+void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
+    bool isLocal, std::vector<std::string> &uris)
+{
+    record->ComputeUris([&uris, &isLocal, &tokenId] (UriInfo &uriInfo) {
+        std::string newUriStr = "";
+        if (isLocal) {
+            Uri tmpUri(uriInfo.oriUri);
+            std::string path = tmpUri.GetPath();
+            std::string bundleName;
+            if (!GetHapBundleNameByToken(tokenId, bundleName)) {
+                return true;
+            }
+            if (path.substr(0, strlen(DOCS_LOCAL_TAG)) == DOCS_LOCAL_TAG) {
+                newUriStr = FILE_SCHEME_PREFIX;
+                newUriStr += path.substr(DOCS_LOCAL_PATH_SUBSTR_START_INDEX);
+            } else {
+                newUriStr = FILE_SCHEME_PREFIX;
+                newUriStr += bundleName + path;
+            }
+            uriInfo.authUri = newUriStr;
+        } else {
+            newUriStr = uriInfo.dfsUri;
+        }
+        Uri uri(newUriStr);
+        if (uri.GetAuthority().empty()) {
+            return true;
+        }
+        std::string scheme = uri.GetScheme();
+        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+        if (scheme != FILE_SCHEME) {
+            return true;
+        }
+        auto iter = std::find(uris.begin(), uris.end(), newUriStr);
+        if (iter == uris.end()) {
+            uris.push_back(std::move(newUriStr));
+        }
+        return true;
+    });
+}
+
+void PreProcessUtils::GetHtmlFileUris(uint32_t tokenId, UnifiedData &data,
+    bool isLocal, std::vector<std::string> &uris)
+{
+    for (auto &record : data.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
+        PreProcessUtils::ProcessRecord(record, tokenId, isLocal, uris);
+    }
+}
+
+void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
+{
+    for (auto &record : data.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
+        record->ComputeUris([] (UriInfo &uriInfo) {
+            uriInfo.dfsUri = "";
+            return true;
+        });
+    }
+}
+
+void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<Uri> &uris)
+{
+    std::vector<std::string> strUris;
+    PreProcessUtils::GetHtmlFileUris(tokenId, data, isLocal, strUris);
+    for (auto &uri : strUris) {
+        uris.emplace_back(Uri(uri));
+    }
+    if (isLocal) {
+        PreProcessUtils::ClearHtmlDfsUris(data);
+    }
+}
+
+void PreProcessUtils::SetRecordUid(UnifiedData &data)
+{
+    uint32_t index = 0;
+    auto prefix = PreProcessUtils::GenerateId().substr(0, PREFIX_LEN);
+    for (const auto &record : data.GetRecords()) {
+        std::ostringstream oss;
+        oss << std::setw(INDEX_LEN) << std::setfill(PLACE_HOLDER) << index;
+        record->SetUid(prefix + oss.str());
+        index++;
+    }
+}
+
+bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &details)
+{
+    auto records = data.GetRecords();
+    if (records.size() != TEMP_UDATA_RECORD_SIZE) {
+        ZLOGE("Records size error.size:%{public}zu", records.size());
+        return false;
+    }
+    if (records[0] == nullptr) {
+        ZLOGE("First record is null.");
+        return false;
+    }
+    if (records[0]->GetType() != UDType::FILE) {
+        ZLOGE("First record is not file.");
+        return false;
+    }
+    auto value = records[0]->GetOriginValue();
+    auto obj = std::get_if<std::shared_ptr<Object>>(&value);
+    if (obj == nullptr || *obj == nullptr) {
+        ZLOGE("ValueType is not Object!");
+        return false;
+    }
+    std::shared_ptr<Object> detailObj;
+    (*obj)->GetValue(DETAILS, detailObj);
+    if (detailObj == nullptr) {
+        ZLOGE("Not contain details for object!");
+        return false;
+    }
+    auto result = ObjectUtils::ConvertToUDDetails(detailObj);
+    if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
+        ZLOGE("Not find temp file.");
+        return false;
+    }
+    details = std::move(result);
+    return true;
+}
+
+Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary &summary)
+{
+    for (auto &item : details) {
+        if (item.first == TEMP_UNIFIED_DATA_FLAG) {
+            continue;
+        }
+        auto int64Value = std::get_if<int64_t>(&item.second);
+        if (int64Value != nullptr) {
+            summary.summary[item.first] = *int64Value;
+            summary.totalSize += *int64Value;
+        }
+    }
+    return E_OK;
 }
 } // namespace UDMF
 } // namespace OHOS

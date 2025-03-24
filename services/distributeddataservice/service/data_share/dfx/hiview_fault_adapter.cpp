@@ -86,17 +86,57 @@ std::pair<std::string, int> HiViewFaultAdapter::GetCallingName(uint32_t callingT
     return std::make_pair(callingName, result);
 }
 
-RdbTimeCostInfo::~RdbTimeCostInfo()
+void TimeoutReport::Report(const std::string &timeoutAppendix, const std::chrono::milliseconds timeoutms)
 {
     auto end = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    if (duration > TIME_OUT_MS) {
-        int64_t milliseconds = duration.count();
-        std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(callingTokenId).first;
-        appendix += ",cost:" + std::to_string(milliseconds) + "ms";
-        DataShareFaultInfo faultInfo{TIME_OUT, bundleName, moduleName, storeName, businessType, errorCode, appendix};
-        HiViewFaultAdapter::ReportDataFault(faultInfo);
+    std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    // Used to report DFX timeout faults
+    if (needFaultReport && duration > HiViewFaultAdapter::dfxTimeOutMs) {
+        DFXReport(duration);
     }
+    // Used to report log timeout
+    if (duration > timeoutms) {
+        int64_t milliseconds = duration.count();
+        ZLOGE("over time when doing %{public}s, %{public}s, cost:%{public}" PRIi64 "ms",
+            dfxInfo.businessType.c_str(), timeoutAppendix.c_str(), milliseconds);
+    }
+}
+
+void TimeoutReport::Report(const std::string &user, uint32_t callingPid, int32_t appIndex, int32_t instanceId)
+{
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    // Used to report DFX timeout faults
+    if (needFaultReport && duration > HiViewFaultAdapter::dfxTimeOutMs) {
+        DFXReport(duration);
+    }
+    // Used to report log timeout
+    if (duration > HiViewFaultAdapter::timeOutMs) {
+        int64_t milliseconds = duration.count();
+        std::string timeoutAppendix = "bundleName: " + dfxInfo.bundleName + ", user: " + user + ", callingPid: " +
+            std::to_string(callingPid);
+        if (!dfxInfo.storeName.empty()) {
+            timeoutAppendix += ", storeName: " + dfxInfo.storeName;
+        }
+        if (appIndex != -1) {
+            timeoutAppendix += ", appIndex: " + std::to_string(appIndex);
+        }
+        if (instanceId != -1) {
+            timeoutAppendix += ", instanceId: " + std::to_string(instanceId);
+        }
+        ZLOGE("over time when doing %{public}s, %{public}s, cost:%{public}" PRIi64 "ms",
+            dfxInfo.businessType.c_str(), timeoutAppendix.c_str(), milliseconds);
+    }
+}
+
+void TimeoutReport::DFXReport(const std::chrono::milliseconds &duration)
+{
+    int64_t milliseconds = duration.count();
+    std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(dfxInfo.callingTokenId).first;
+    appendix += ",cost:" + std::to_string(milliseconds) + "ms";
+    DataShareFaultInfo faultInfo{HiViewFaultAdapter::timeOut, dfxInfo.bundleName, dfxInfo.moduleName,
+        dfxInfo.storeName, dfxInfo.businessType, errorCode, appendix};
+    HiViewFaultAdapter::ReportDataFault(faultInfo);
 }
 }
 }

@@ -136,5 +136,24 @@ std::string StoreMetaDataLocal::GetPrefix(const std::initializer_list<std::strin
     prefix.append(Constant::KEY_SEPARATOR);
     return prefix;
 }
+
+std::string StoreDfxInfo::GetPrefix(const std::initializer_list<std::string> &fields)
+{
+    auto prefix = Constant::Join(StoreDfxInfo::KEY_PREFIX, Constant::KEY_SEPARATOR, fields);
+    prefix.append(Constant::KEY_SEPARATOR);
+    return prefix;
+}
+
+bool StoreDfxInfo::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(lastOpenTime)], lastOpenTime);
+    return true;
+}
+
+bool StoreDfxInfo::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(lastOpenTime), lastOpenTime);
+    return true;
+}
 } // namespace DistributedData
 } // namespace OHOS

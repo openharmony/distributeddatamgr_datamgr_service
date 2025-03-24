@@ -110,7 +110,9 @@ KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData
     auto storeKey = data.GetSecretKey();
     MetaDataManager::GetInstance().LoadMeta(storeKey, secretKey, true);
     std::vector<uint8_t> password;
-    CryptoManager::GetInstance().Decrypt(secretKey.sKey, password);
+    StoreMetaData metaData;
+    MetaDataManager::GetInstance().LoadMeta(data.GetKey(), metaData, true);
+    CryptoManager::GetInstance().Decrypt(metaData, secretKey, password);
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
     return dbPassword;
@@ -632,6 +634,12 @@ void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::strin
         auto &info = changeInfo[storeId_][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
+            if (priData.empty()) {
+                ZLOGW("priData is empty, store:%{public}s table:%{public}s data change from :%{public}s, i=%{public}d",
+                    Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
+                    Anonymous::Change(originalId).c_str(), i);
+                continue;
+            }
             Convert(std::move(*(priData.begin())), value);
             info.push_back(std::move(value));
         }

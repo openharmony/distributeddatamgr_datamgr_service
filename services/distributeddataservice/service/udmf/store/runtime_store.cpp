@@ -16,26 +16,19 @@
 
 #include "runtime_store.h"
 
-#include <algorithm>
-#include <vector>
-#include <unistd.h>
-#include <sys/stat.h>
-
 #include "data_handler.h"
 #include "log_print.h"
 #include "ipc_skeleton.h"
 #include "unified_data_helper.h"
 #include "udmf_radar_reporter.h"
-#include "unified_meta.h"
-#include "tlv_util.h"
 #include "account/account_delegate.h"
-#include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/appid_meta_data.h"
 #include "device_manager_adapter.h"
 #include "bootstrap.h"
 #include "directory/directory_manager.h"
 #include "utils/anonymous.h"
+#include "preprocess_utils.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -43,9 +36,7 @@ using namespace RadarReporter;
 using namespace DistributedDB;
 using Anonymous = OHOS::DistributedData::Anonymous;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-
-constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
-static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
+constexpr const char *SUMMARY_SUFIX = "#summary";
 
 RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
 {
@@ -107,6 +98,10 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
 {
     UpdateTime();
     std::vector<Entry> entries;
+    std::string intention = unifiedData.GetRuntime()->key.intention;
+    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        PutSummary(unifiedData, entries);
+    }
     auto status = DataHandler::MarshalToEntries(unifiedData, entries);
     if (status != E_OK) {
         return status;
@@ -129,63 +124,89 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
-bool RuntimeStore::GetDetailsFromUData(UnifiedData &data, UDDetails &details)
+Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &entries)
 {
-    auto records = data.GetRecords();
-    if (records.size() != TEMP_UDATA_RECORD_SIZE) {
-        return false;
+    UpdateTime();
+    UDDetails details {};
+    Summary summary;
+    if (PreProcessUtils::GetDetailsFromUData(data, details)) {
+        PreProcessUtils::GetSummaryFromDetails(details, summary);
+    } else {
+        UnifiedDataHelper::GetSummary(data, summary);
     }
-    if (records[0] == nullptr || records[0]->GetType() != UDType::FILE) {
-        return false;
+
+    auto propertyKey = data.GetRuntime()->key.GetPropertyKey();
+    Value value;
+    auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
+    if (status != E_OK) {
+        ZLOGE("Marshal summary failed, key: %{public}s, status:%{public}d", propertyKey.c_str(), status);
+        return status;
     }
-    auto obj = std::get<std::shared_ptr<Object>>(records[0]->GetOriginValue());
-    if (obj == nullptr) {
-        ZLOGE("ValueType is not Object!");
-        return false;
-    }
-    std::shared_ptr<Object> detailObj;
-    obj->GetValue(DETAILS, detailObj);
-        if (detailObj == nullptr) {
-            ZLOGE("Not contain details for object!");
-            return false;
-        }
-    auto result = ObjectUtils::ConvertToUDDetails(detailObj);
-    if (result.find(TEMP_UNIFIED_DATA_FLAG) == result.end()) {
-        return false;
-    }
-    details = result;
-    return true;
+    auto summaryKey = propertyKey + SUMMARY_SUFIX;
+    entries.push_back({{summaryKey.begin(), summaryKey.end()}, value});
+    return E_OK;
 }
 
-Status RuntimeStore::GetSummaryFromDetails(const UDDetails &details, Summary &summary)
+Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
 {
-    for (auto &item : details) {
-        if (item.first != TEMP_UNIFIED_DATA_FLAG) {
-            auto int64Value = std::get_if<int64_t>(&item.second);
-            if (int64Value != nullptr) {
-                auto size = std::get<int64_t>(item.second);
-                summary.summary[item.first] = size;
-                summary.totalSize += size;
-            }
+    UpdateTime();
+    Value value;
+    auto summaryKey = key.GetPropertyKey() + SUMMARY_SUFIX;
+    auto res = kvStore_->Get({summaryKey.begin(), summaryKey.end()}, value);
+    if (res != OK || value.empty()) {
+        ZLOGW("Get stored summary failed, key: %{public}s, status:%{public}d", summaryKey.c_str(), res);
+        UnifiedData unifiedData;
+        auto udKey = key.GetUnifiedKey();
+        if (Get(udKey, unifiedData) != E_OK) {
+            ZLOGE("Get unified data failed, key: %{public}s", udKey.c_str());
+            return E_DB_ERROR;
         }
+        UDDetails details {};
+        if (PreProcessUtils::GetDetailsFromUData(unifiedData, details)) {
+            return PreProcessUtils::GetSummaryFromDetails(details, summary);
+        }
+        UnifiedDataHelper::GetSummary(unifiedData, summary);
+        return E_OK;
+    }
+    auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
+    if (status != E_OK) {
+        ZLOGE("Unmarshal summary failed, key: %{public}s, status:%{public}d", summaryKey.c_str(), status);
+        return status;
     }
     return E_OK;
 }
 
-Status RuntimeStore::GetSummary(const std::string &key, Summary &summary)
+Status RuntimeStore::PutRuntime(const std::string &key, const Runtime &runtime)
 {
     UpdateTime();
-    UnifiedData unifiedData;
-    if (Get(key, unifiedData) != E_OK) {
-        ZLOGE("Get unified data failed, dataPrefix: %{public}s", key.c_str());
+    Value value;
+    auto status = DataHandler::MarshalToEntries(runtime, value, TAG::TAG_RUNTIME);
+    if (status != E_OK) {
+        ZLOGE("Marshal runtime failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        return status;
+    }
+    auto res = kvStore_->Put({key.begin(), key.end()}, value);
+    if (res != OK) {
+        ZLOGE("Put failed, key:%{public}s, status:%{public}d", key.c_str(), res);
         return E_DB_ERROR;
     }
+    return E_OK;
+}
 
-    UDDetails details {};
-    if (GetDetailsFromUData(unifiedData, details)) {
-        return GetSummaryFromDetails(details, summary);
+Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
+{
+    UpdateTime();
+    Value value;
+    auto res = kvStore_->Get({key.begin(), key.end()}, value);
+    if (res != OK || value.empty()) {
+        ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
+        return E_DB_ERROR;
     }
-    UnifiedDataHelper::GetSummary(unifiedData, summary);
+    auto status = DataHandler::UnmarshalEntries(value, runtime, TAG::TAG_RUNTIME);
+    if (status != E_OK) {
+        ZLOGE("Unmarshal runtime failed, key: %{public}s, status:%{public}d", key.c_str(), status);
+        return status;
+    }
     return E_OK;
 }
 

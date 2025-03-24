@@ -102,6 +102,8 @@ public:
 
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
+    int32_t ReportStatistic(const RdbSyncerParam &param, const RdbStatEvent &statEvent) override;
+
     int32_t GetPassword(const RdbSyncerParam &param, std::vector<std::vector<uint8_t>> &password) override;
 
     std::pair<int32_t, uint32_t> LockCloudContainer(const RdbSyncerParam &param) override;
@@ -110,6 +112,8 @@ public:
 
     int32_t GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo) override;
 
+    int32_t GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::RdbDfxInfo &dfxInfo) override;
+
     int32_t VerifyPromiseInfo(const RdbSyncerParam &param) override;
 
 private:
@@ -117,6 +121,7 @@ private:
     using StaticActs = DistributedData::StaticActs;
     using DBStatus = DistributedDB::DBStatus;
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
+    using AutoCache = DistributedData::AutoCache;
     struct SyncAgent {
         SyncAgent() = default;
         explicit SyncAgent(const std::string &bundleName);
@@ -167,10 +172,10 @@ private:
 
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
-    
+
     int DoAutoSync(
         const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tableNames);
-    
+
     std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices);
     int DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase);
 
@@ -183,7 +188,7 @@ private:
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
-    
+
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);
 
     void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
@@ -207,9 +212,11 @@ private:
 
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
+    static std::string GetSubUser(const int32_t subUser);
+
     static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
-    void GetCloudSchema(const RdbSyncerParam &param);
+    void GetSchema(const RdbSyncerParam &param);
 
     void SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param);
 
@@ -221,15 +228,20 @@ private:
 
     int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
+    int32_t SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+
     int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
     int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
-    
+
     bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
         DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
+    void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
 
-    void UpdateSyncMeta(const StoreMetaData &meta, const StoreMetaData &localMeta);
+    bool UpgradeCloneSecretKey(const StoreMetaData &meta);
+
+    bool TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

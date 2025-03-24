@@ -49,7 +49,6 @@ namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
 using namespace NativeRdb;
-using namespace CloudData;
 using namespace std::chrono;
 using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
@@ -116,6 +115,7 @@ static DistributedSchema GetGaussDistributedSchema(const Database &database)
             DistributedField dbField;
             dbField.colName = field.colName;
             dbField.isP2pSync = IsExistence(field.colName, table.deviceSyncFields);
+            dbField.isSpecified = field.primary;
             dbTable.fields.push_back(std::move(dbField));
         }
     }
@@ -167,7 +167,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
         SecretKeyMetaData secretKeyMeta;
         MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
         std::vector<uint8_t> decryptKey;
-        CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey);
+        CryptoManager::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey);
         option.passwd.SetValue(decryptKey.data(), decryptKey.size());
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
         option.isEncryptedDb = meta.isEncrypt;
@@ -195,10 +195,6 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     if (delegate_ != nullptr && meta.isManualClean) {
         PragmaData data = static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
         delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
-    }
-    std::pair<bool, Database> tableData = GetDistributedSchema(meta);
-    if (delegate_ != nullptr && tableData.first) {
-        delegate_->SetDistributedSchema(GetGaussDistributedSchema(tableData.second));
     }
     ZLOGI("Get rdb store, tokenId:%{public}u, bundleName:%{public}s, storeName:%{public}s, user:%{public}s,"
           "isEncrypt:%{public}d, isManualClean:%{public}d, isSearchable:%{public}d",
@@ -926,9 +922,13 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
     }
     auto status = delegate_->SetReference(properties);
-    if (status != DistributedDB::DBStatus::OK) {
+    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
         return GeneralError::E_ERROR;
+    }
+    auto [exist, database] = GetDistributedSchema(observer_.meta_);
+    if (exist) {
+        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database));
     }
     CloudMark metaData(storeInfo_);
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
@@ -945,6 +945,24 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             Anonymous::Change(storeInfo_.storeName).c_str());
     }
     return GeneralError::E_OK;
+}
+
+void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+     if (delegate_ == nullptr) {
+        ZLOGE("database already closed!, tableMode is :%{public}d",
+              storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
+    }
+    if (storeConfig.tableMode.has_value()) {
+        RelationalStoreDelegate::StoreConfig config;
+        if (storeConfig.tableMode == DistributedTableMode::COLLABORATION) {
+            config.tableMode = DistributedDB::DistributedTableMode::COLLABORATION;
+        } else if (storeConfig.tableMode == DistributedTableMode::SPLIT_BY_DEVICE) {
+            config.tableMode = DistributedDB::DistributedTableMode::SPLIT_BY_DEVICE;
+        }
+        delegate_->SetStoreConfig(config);
+    }
 }
 
 int32_t RdbGeneralStore::SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
@@ -1162,6 +1180,12 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         auto &info = changeInfo[data.tableName][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
+            if (priData.empty()) {
+                ZLOGW("priData is empty, store:%{public}s table:%{public}s data change from :%{public}s, i=%{public}d",
+                    Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
+                    Anonymous::Change(originalId).c_str(), i);
+                continue;
+            }
             Convert(std::move(*(priData.begin())), value);
             if (notifyFlag || origin != DBOrigin::ORIGIN_CLOUD || i != DistributedDB::OP_DELETE) {
                 info.push_back(std::move(value));
@@ -1313,5 +1337,15 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
         }
         return;
     };
+}
+
+int32_t RdbGeneralStore::UpdateDBStatus()
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
 }
 } // namespace OHOS::DistributedRdb

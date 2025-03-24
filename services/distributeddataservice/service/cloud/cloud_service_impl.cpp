@@ -23,6 +23,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
+#include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_server.h"
 #include "cloud/cloud_share_event.h"
@@ -37,7 +38,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "network_adapter.h"
+#include "network/network_delegate.h"
 #include "rdb_types.h"
 #include "reporter.h"
 #include "relational_store_manager.h"
@@ -60,7 +61,7 @@ using namespace DistributedDataDfx;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Account = AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
-static constexpr uint32_t RESTART_SERVICE_TIME_THRESHOLD = 60;
+static constexpr uint32_t RESTART_SERVICE_TIME_THRESHOLD = 120;
 static constexpr const char *FT_ENABLE_CLOUD = "ENABLE_CLOUD";
 static constexpr const char *FT_DISABLE_CLOUD = "DISABLE_CLOUD";
 static constexpr const char *FT_SWITCH_ON = "SWITCH_ON";
@@ -121,7 +122,7 @@ CloudServiceImpl::CloudServiceImpl()
 int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches)
 {
     XCollie xcollie(
-        __FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY, RESTART_SERVICE_TIME_THRESHOLD);
+        __FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY, RESTART_SERVICE_TIME_THRESHOLD);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     auto [status, cloudInfo] = GetCloudInfo(user);
@@ -159,7 +160,7 @@ void CloudServiceImpl::Report(
 
 int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     ReleaseUserInfo(user, CloudSyncScene::DISABLE_CLOUD);
@@ -185,7 +186,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
 
 int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
     CloudSyncScene scene;
@@ -437,7 +438,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::str
 
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std::string &extraData, int32_t userId)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     ExtraData exData;
     if (eventId != DATA_CHANGE_EVENT_ID || extraData.empty() || !exData.Unmarshall(extraData)) {
         ZLOGE("invalid args, eventId:%{public}s, user:%{public}d, extraData is %{public}s", eventId.c_str(),
@@ -645,7 +646,7 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
         databases = schema.databases;
         for (const auto &database : schema.databases) {
             if (storeId.empty() || database.alias == storeId) {
-                queryKeys.push_back({ id, bundleName, database.name });
+                queryKeys.push_back({ user, id, bundleName, database.name });
             }
         }
         if (queryKeys.empty()) {
@@ -654,26 +655,20 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
         }
     }
 
-    auto ret = syncManager_.QueryLastSyncInfo(queryKeys, results);
-    ZLOGI("code:%{public}d, accountId:%{public}s, bundleName:%{public}s, storeId:%{public}s", ret,
-        Anonymous::Change(id).c_str(), bundleName.c_str(), Anonymous::Change(storeId).c_str());
-    if (results.empty()) {
+    auto [ret, lastSyncInfos] = syncManager_.QueryLastSyncInfo(queryKeys);
+    ZLOGI("code:%{public}d, id:%{public}s, bundleName:%{public}s, storeId:%{public}s, size:%{public}d", ret,
+        Anonymous::Change(id).c_str(), bundleName.c_str(), Anonymous::Change(storeId).c_str(),
+        static_cast<int32_t>(lastSyncInfos.size()));
+    if (lastSyncInfos.empty()) {
         return { ret, results };
     }
-    for (const auto &database : databases) {
-        if (results.find(database.name) != results.end()) {
-            auto node = results.extract(database.name);
-            node.key() = database.alias;
-            results.insert(std::move(node));
-        }
-    }
-    return { ret, results };
+    return { ret, AssembleLastResults(databases, lastSyncInfos) };
 }
 
 int32_t CloudServiceImpl::OnInitialize()
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
-    NetworkAdapter::GetInstance().RegOnNetworkChange();
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
+    NetworkDelegate::GetInstance()->RegOnNetworkChange();
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
     Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT,
         { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
@@ -710,7 +705,7 @@ int32_t CloudServiceImpl::OnBind(const BindInfo &info)
 
 int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     int32_t userId = atoi(user.c_str());
     ZLOGI("code:%{public}d, user:%{public}s, account:%{public}s", code, user.c_str(),
         Anonymous::Change(account).c_str());
@@ -736,7 +731,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
 
 int32_t CloudServiceImpl::OnReady(const std::string &device)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         return SUCCESS;
     }
@@ -745,7 +740,7 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
     if (users.empty()) {
         return SUCCESS;
     }
-    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         return NETWORK_ERROR;
     }
     for (auto user : users) {
@@ -788,7 +783,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
-    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         ZLOGD("network is not available");
         return { NETWORK_ERROR, cloudInfo };
     }
@@ -883,7 +878,7 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
 std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
 {
     SchemaMeta schemaMeta;
-    if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         ZLOGD("network is not available");
         return { NETWORK_ERROR, schemaMeta };
     }
@@ -921,7 +916,7 @@ ExecutorPool::Task CloudServiceImpl::GenTask(int32_t retry, int32_t user, CloudS
         if (retry >= RETRY_TIMES || executor == nullptr || works.empty()) {
             return;
         }
-        if (!NetworkAdapter::GetInstance().IsNetworkAvailable()) {
+        if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
             ZLOGD("network is not available");
             return;
         }
@@ -1055,8 +1050,6 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName
 
 int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
 {
-    ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", hapInfo.bundleName.c_str(), hapInfo.user,
-        hapInfo.instIndex);
     auto [status, cloudInfo] = GetCloudInfoFromMeta(hapInfo.user);
     if (status != SUCCESS) {
         return status;
@@ -1086,11 +1079,10 @@ int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
 void CloudServiceImpl::UpdateClearWaterMark(
     const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta)
 {
-    ZLOGI("update schemaMeta newVersion:%{public}d,oldVersion:%{public}d", newSchemaMeta.version, schemaMeta.version);
     if (newSchemaMeta.version == schemaMeta.version) {
         return;
     }
-
+    ZLOGI("update schemaMeta newVersion:%{public}d,oldVersion:%{public}d", newSchemaMeta.version, schemaMeta.version);
     CloudMark metaData;
     metaData.bundleName = hapInfo.bundleName;
     metaData.userId = hapInfo.user;
@@ -1107,7 +1099,8 @@ void CloudServiceImpl::UpdateClearWaterMark(
             metaData.storeId = database.name;
             metaData.isClearWaterMark = true;
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-            ZLOGI("clear watermark, storeId:%{public}s", Anonymous::Change(metaData.storeId).c_str());
+            ZLOGI("clear watermark, storeId:%{public}s, newVersion:%{public}d, oldVersion:%{public}d",
+                Anonymous::Change(metaData.storeId).c_str(), database.version, dbMap[database.name]);
         }
     }
 }
@@ -1122,7 +1115,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo 
             return { SUCCESS, schemaMeta };
         }
     }
-    ZLOGE("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
+    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
     return { ERROR, schemaMeta };
 }
 
@@ -1431,7 +1424,7 @@ std::string CloudServiceImpl::GetDfxFaultType(CloudSyncScene scene)
 
 int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1452,7 +1445,7 @@ int32_t CloudServiceImpl::Share(const std::string &sharingRes, const Participant
 
 int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participants &participants, Results &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1473,7 +1466,7 @@ int32_t CloudServiceImpl::Unshare(const std::string &sharingRes, const Participa
 
 int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t, std::string> &result)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1496,7 +1489,7 @@ int32_t CloudServiceImpl::Exit(const std::string &sharingRes, std::pair<int32_t,
 int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const Participants &participants,
     Results &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1518,7 +1511,7 @@ int32_t CloudServiceImpl::ChangePrivilege(const std::string &sharingRes, const P
 
 int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1537,7 +1530,7 @@ int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &res
 
 int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, QueryResults &results)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, invitation:%{public}s", Anonymous::Change(invitation).c_str());
@@ -1557,7 +1550,7 @@ int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, Query
 int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32_t confirmation,
     std::tuple<int32_t, std::string, std::string> &result)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, invitation:%{public}s, confirmation:%{public}d",
@@ -1581,7 +1574,7 @@ int32_t CloudServiceImpl::ConfirmInvitation(const std::string &invitation, int32
 int32_t CloudServiceImpl::ChangeConfirmation(const std::string &sharingRes, int32_t confirmation,
     std::pair<int32_t, std::string> &result)
 {
-    XCollie xcollie(__FUNCTION__, HiviewDFX::XCOLLIE_FLAG_LOG | HiviewDFX::XCOLLIE_FLAG_RECOVERY);
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto hapInfo = GetHapInfo(IPCSkeleton::GetCallingTokenID());
     if (hapInfo.bundleName.empty()) {
         ZLOGE("bundleName is empty, sharingRes:%{public}s", Anonymous::Change(sharingRes).c_str());
@@ -1696,5 +1689,20 @@ int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
 {
     syncManager_.OnScreenUnlocked(user);
     return E_OK;
+}
+
+QueryLastResults CloudServiceImpl::AssembleLastResults(const std::vector<Database> &databases,
+    const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos)
+{
+    QueryLastResults results;
+    for (const auto &database : databases) {
+        auto iter = lastSyncInfos.find(database.name);
+        if (iter != lastSyncInfos.end()) {
+            CloudSyncInfo syncInfo = { .startTime = iter->second.startTime, .finishTime = iter->second.finishTime,
+                                       .code = iter->second.code, .syncStatus = iter->second.syncStatus };
+            results.insert({ database.alias, std::move(syncInfo) });
+        }
+    }
+    return results;
 }
 } // namespace OHOS::CloudData

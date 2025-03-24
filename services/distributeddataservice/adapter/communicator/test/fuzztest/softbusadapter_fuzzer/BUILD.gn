@@ -21,9 +21,6 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
-    "${data_service_path}/adapter/include/log",
-    "${data_service_path}/adapter/include/autils",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/communicator/src",
     "${data_service_path}/framework/include",
@@ -40,13 +37,9 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
 
   sources = [ "softbusadapter_fuzzer.cpp" ]
 
-  deps = [
-    "${data_service_path}/adapter/dfx:distributeddata_dfx",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
-  ]
-
   external_deps = [
     "c_utils:utils",
+    "datamgr_service:distributeddatasvcfwk",
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hilog:libhilog",

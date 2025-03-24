@@ -52,7 +52,7 @@ public:
     using Bytes = std::vector<uint8_t>;
     using OnComplete = std::function<void(const std::map<std::string, int32_t> &)>;
     API_EXPORT static MetaDataManager &GetInstance();
-    API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string storeId);
+    API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string &storeId);
     API_EXPORT void SetSyncer(const Syncer &syncer);
     API_EXPORT void SetCloudSyncer(const CloudSyncer &cloudSyncer);
     API_EXPORT bool SaveMeta(const std::string &key, const Serializable &value, bool isLocal = false);
@@ -78,7 +78,7 @@ public:
     API_EXPORT bool Subscribe(std::shared_ptr<Filter> filter, Observer observer);
     API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
-    API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete);
+    API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false);
 
 private:
     MetaDataManager();

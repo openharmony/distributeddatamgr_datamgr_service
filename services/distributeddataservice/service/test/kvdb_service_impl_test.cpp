@@ -22,17 +22,22 @@
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
+#include "cloud/cloud_server.h"
 #include "device_manager_adapter.h"
 #include "distributed_kv_data_manager.h"
 #include "event_center.h"
 #include "ipc_skeleton.h"
 #include "kvdb_service_stub.h"
+#include "kvdb_query.h"
 #include "kvstore_death_recipient.h"
 #include "kvstore_meta_manager.h"
 #include "kvstore_sync_manager.h"
 #include "log_print.h"
+#include <limits>
 #include "mock/access_token_mock.h"
 #include "mock/meta_data_manager_mock.h"
+#include "network_delegate.h"
+#include "network_delegate_mock.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "types.h"
@@ -60,9 +65,10 @@ using UserId = OHOS::DistributedKv::UserId;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using SyncEnd = OHOS::DistributedKv::KvStoreSyncManager::SyncEnd;
 using DBResult = std::map<std::string, DistributedDB::DBStatus>;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 static OHOS::DistributedKv::StoreId storeId = { "kvdb_test_storeid" };
 static OHOS::DistributedKv::AppId appId = { "ohos.test.kvdb" };
-
+static constexpr const char *TEST_USER = "0";
 namespace OHOS::Test {
 namespace DistributedDataTest {
 class KvdbServiceImplTest : public testing::Test {
@@ -76,7 +82,7 @@ public:
     static UserId userId;
 
     std::shared_ptr<SingleKvStore> kvStore;
-
+    std::shared_ptr<ExecutorPool> executors_;
     static AppId appId;
     static StoreId storeId64;
     static StoreId storeId65;
@@ -91,7 +97,21 @@ public:
 
 protected:
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
+    static NetworkDelegateMock delegate_;
+    StoreMetaData metaData_;
+    Options options_;
 };
+
+class CloudServerMock : public CloudServer {
+public:
+    virtual ~CloudServerMock() = default;
+    bool IsSupportCloud(int32_t userId);
+};
+
+bool CloudServerMock::IsSupportCloud(int32_t userId)
+{
+    return true;
+}
 
 OHOS::DistributedKv::DistributedKvDataManager KvdbServiceImplTest::manager;
 Options KvdbServiceImplTest::create;
@@ -100,6 +120,7 @@ UserId KvdbServiceImplTest::userId;
 AppId KvdbServiceImplTest::appId;
 StoreId KvdbServiceImplTest::storeId64;
 StoreId KvdbServiceImplTest::storeId65;
+NetworkDelegateMock KvdbServiceImplTest::delegate_;
 
 void KvdbServiceImplTest::RemoveAllStore(DistributedKvDataManager &manager)
 {
@@ -131,6 +152,7 @@ void KvdbServiceImplTest::SetUpTestCase(void)
     BAccessTokenKit::accessTokenkit = accTokenMock;
     metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
     BMetaDataManager::metaDataManager = metaDataManagerMock;
+    NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
 void KvdbServiceImplTest::TearDownTestCase()
@@ -148,6 +170,15 @@ void KvdbServiceImplTest::TearDownTestCase()
 void KvdbServiceImplTest::SetUp(void)
 {
     kvdbServiceImpl_ = std::make_shared<DistributedKv::KVDBServiceImpl>();
+
+    options_.isNeedCompress = true;
+    metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData_.bundleName = appId.appId;
+    metaData_.storeId = storeId.storeId;
+    metaData_.user = TEST_USER;
+    metaData_.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    metaData_.version = 1;
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
 }
 
 void KvdbServiceImplTest::TearDown(void)
@@ -202,7 +233,7 @@ HWTEST_F(KvdbServiceImplTest, KvdbServiceImpl001, TestSize.Level0)
 
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return
         (ATokenTypeEnum::TOKEN_NATIVE)).WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    status = kvdbServiceImpl_->Close(appId, id1);
+    status = kvdbServiceImpl_->Close(appId, id1, 0);
     EXPECT_EQ(status, Status::SUCCESS);
 }
 
@@ -257,7 +288,7 @@ HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status, Status::SUCCESS);
     std::vector<StoreId> storeIds;
-    status = kvdbServiceImpl_->GetStoreIds(appId, storeIds);
+    status = kvdbServiceImpl_->GetStoreIds(appId, 0, storeIds);
     ASSERT_EQ(status, Status::SUCCESS);
 }
 
@@ -272,7 +303,7 @@ HWTEST_F(KvdbServiceImplTest, GetStoreIdsTest002, TestSize.Level0)
     ZLOGI("GetStoreIdsTest002 start");
     std::vector<StoreId> storeIds;
     AppId appId01;
-    auto status = kvdbServiceImpl_->GetStoreIds(appId01, storeIds);
+    auto status = kvdbServiceImpl_->GetStoreIds(appId01, 0, storeIds);
     ZLOGI("GetStoreIdsTest002 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
@@ -291,7 +322,7 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest001, TestSize.Level0)
     ASSERT_EQ(status1, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return
         (ATokenTypeEnum::TOKEN_NATIVE)).WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->Delete(appId, storeId);
+    auto status = kvdbServiceImpl_->Delete(appId, storeId, 0);
     ZLOGI("DeleteTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
@@ -309,7 +340,7 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest002, TestSize.Level0)
     StoreId storeId01 = { "meta_test_storeid" };
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return
         (ATokenTypeEnum::TOKEN_NATIVE)).WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->Delete(appId01, storeId01);
+    auto status = kvdbServiceImpl_->Delete(appId01, storeId01, 0);
     ZLOGI("DeleteTest002 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
@@ -326,7 +357,7 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest003, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_)).WillOnce(testing::Return(-1))
         .WillRepeatedly(testing::Return(-1));
-    int32_t status = kvdbServiceImpl_->Delete(appId, storeId);
+    int32_t status = kvdbServiceImpl_->Delete(appId, storeId, 0);
     EXPECT_EQ(status, DistributedKv::ILLEGAL_STATE);
 }
 
@@ -342,7 +373,7 @@ HWTEST_F(KvdbServiceImplTest, CloseTest001, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_)).WillOnce(testing::Return(-1))
         .WillRepeatedly(testing::Return(-1));
-    int32_t status = kvdbServiceImpl_->Close(appId, storeId);
+    int32_t status = kvdbServiceImpl_->Close(appId, storeId, 0);
     EXPECT_EQ(status, DistributedKv::ILLEGAL_STATE);
 }
 
@@ -397,7 +428,7 @@ HWTEST_F(KvdbServiceImplTest, syncTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     SyncInfo syncInfo;
-    auto status = kvdbServiceImpl_->Sync(appId, storeId, syncInfo);
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
     ZLOGI("syncTest001 status = :%{public}d", status);
     ASSERT_NE(status, Status::SUCCESS);
 }
@@ -481,10 +512,10 @@ HWTEST_F(KvdbServiceImplTest, SetSyncParamTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     OHOS::DistributedKv::KvSyncParam syncparam;
-    auto status = kvdbServiceImpl_->SetSyncParam(appId, storeId, syncparam);
+    auto status = kvdbServiceImpl_->SetSyncParam(appId, storeId, 0, syncparam);
     ASSERT_EQ(status, Status::SUCCESS);
     syncparam.allowedDelayMs = DistributedKv::KvStoreSyncManager::SYNC_MAX_DELAY_MS + 1;
-    status = kvdbServiceImpl_->SetSyncParam(appId, storeId, syncparam);
+    status = kvdbServiceImpl_->SetSyncParam(appId, storeId, 0, syncparam);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
 }
 
@@ -501,7 +532,7 @@ HWTEST_F(KvdbServiceImplTest, GetSyncParamTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     OHOS::DistributedKv::KvSyncParam syncparam;
-    auto status = kvdbServiceImpl_->GetSyncParam(appId, storeId, syncparam);
+    auto status = kvdbServiceImpl_->GetSyncParam(appId, storeId, 0, syncparam);
     ZLOGI("GetSyncParamTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
@@ -519,11 +550,11 @@ HWTEST_F(KvdbServiceImplTest, EnableCapabilityTest001, TestSize.Level0)
     ASSERT_EQ(status1, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    auto status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::ILLEGAL_STATE);
 }
 
@@ -736,12 +767,12 @@ HWTEST_F(KvdbServiceImplTest, DisableCapabilityTest001, TestSize.Level0)
     ASSERT_EQ(status1, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->DisableCapability(appId, storeId);
+    auto status = kvdbServiceImpl_->DisableCapability(appId, storeId, 0);
     ZLOGI("DisableCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::ILLEGAL_STATE);
 }
 
@@ -761,12 +792,12 @@ HWTEST_F(KvdbServiceImplTest, SetCapabilityTest001, TestSize.Level0)
     std::vector<std::string> remote;
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->SetCapability(appId, storeId, local, remote);
+    auto status = kvdbServiceImpl_->SetCapability(appId, storeId, 0, local, remote);
     ZLOGI("SetCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    status = kvdbServiceImpl_->EnableCapability(appId, storeId);
+    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::ILLEGAL_STATE);
 }
 
@@ -786,7 +817,7 @@ HWTEST_F(KvdbServiceImplTest, AddSubscribeInfoTest001, TestSize.Level0)
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->AddSubscribeInfo(appId, storeId, syncInfo);
+    auto status = kvdbServiceImpl_->AddSubscribeInfo(appId, storeId, 0, syncInfo);
     ZLOGI("AddSubscribeInfoTest001 status = :%{public}d", status);
     ASSERT_NE(status, Status::SUCCESS);
 }
@@ -804,7 +835,7 @@ HWTEST_F(KvdbServiceImplTest, RmvSubscribeInfoTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     SyncInfo syncInfo;
-    auto status = kvdbServiceImpl_->RmvSubscribeInfo(appId, storeId, syncInfo);
+    auto status = kvdbServiceImpl_->RmvSubscribeInfo(appId, storeId, 0, syncInfo);
     ZLOGI("RmvSubscribeInfoTest001 status = :%{public}d", status);
     ASSERT_NE(status, Status::SUCCESS);
 }
@@ -822,7 +853,7 @@ HWTEST_F(KvdbServiceImplTest, SubscribeTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     sptr<OHOS::DistributedKv::IKvStoreObserver> observer;
-    auto status = kvdbServiceImpl_->Subscribe(appId, storeId, observer);
+    auto status = kvdbServiceImpl_->Subscribe(appId, storeId, 0, observer);
     ZLOGI("SubscribeTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
 }
@@ -848,7 +879,7 @@ HWTEST_F(KvdbServiceImplTest, UnsubscribeTest001, TestSize.Level0)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     kvdbServiceImpl_->syncAgents_.Insert(tokenId, syncAgent);
     sptr<OHOS::DistributedKv::IKvStoreObserver> observer;
-    auto status = kvdbServiceImpl_->Unsubscribe(appId, storeId, observer);
+    auto status = kvdbServiceImpl_->Unsubscribe(appId, storeId, 0, observer);
     ZLOGI("UnsubscribeTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
 }
@@ -866,13 +897,13 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest001, TestSize.Level0)
     ASSERT_EQ(status, Status::SUCCESS);
     std::vector<std::vector<uint8_t>> password;
     status = kvdbServiceImpl_->GetBackupPassword
-        (appId, storeId, password, DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
     ASSERT_EQ(status, Status::ERROR);
     status = kvdbServiceImpl_->GetBackupPassword
-        (appId, storeId, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
     ASSERT_EQ(status, Status::ERROR);
     status = kvdbServiceImpl_->GetBackupPassword
-        (appId, storeId, password, DistributedKv::KVDBService::PasswordType::BUTTON);
+        (appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::BUTTON);
     ASSERT_EQ(status, Status::ERROR);
 }
 
@@ -1023,9 +1054,9 @@ HWTEST_F(KvdbServiceImplTest, OnReadyTest001, TestSize.Level0)
 */
 HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch, TestSize.Level0)
 {
-    StoreId id1;
-    id1.storeId = "id1";
-    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
+    StoreId id;
+    id.storeId = "id";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
     EXPECT_NE(kvStore, nullptr);
     EXPECT_EQ(status, Status::SUCCESS);
     std::string identifier = "identifier";
@@ -1064,9 +1095,9 @@ HWTEST_F(KvdbServiceImplTest, IsRemoteChangeTest, TestSize.Level0)
 */
 HWTEST_F(KvdbServiceImplTest, PutSwitch, TestSize.Level0)
 {
-    StoreId id1;
-    id1.storeId = "id1";
-    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
+    StoreId id;
+    id.storeId = "id1";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status, Status::SUCCESS);
     DistributedKv::SwitchData switchData;
@@ -1101,9 +1132,9 @@ HWTEST_F(KvdbServiceImplTest, PutSwitch, TestSize.Level0)
 */
 HWTEST_F(KvdbServiceImplTest, DoCloudSync, TestSize.Level0)
 {
-    StoreId id1;
-    id1.storeId = "id1";
-    Status status = manager.GetSingleKvStore(create, appId, id1, kvStore);
+    StoreId id;
+    id.storeId = "id1";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status, Status::SUCCESS);
     StoreMetaData metaData;
@@ -1237,6 +1268,226 @@ HWTEST_F(KvdbServiceImplTest, GetSyncMode, TestSize.Level0)
     EXPECT_EQ(status, SyncMode::PULL);
     status = kvdbServiceImpl_->GetSyncMode(false, false);
     EXPECT_EQ(status, SyncMode::PUSH_PULL);
+}
+
+/**
+* @tc.name: DoCloudSync02
+* @tc.desc: DoCloudSync02 function test.
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DoCloudSync02, TestSize.Level0)
+{
+    delegate_.isNetworkAvailable_ = false;
+    auto cloudServerMock = new CloudServerMock();
+    CloudServer::RegisterCloudInstance(cloudServerMock);
+    StoreMetaData metaData;
+    metaData.enableCloud = true;
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, OHOS::DistributedKv::Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: DoCloudSync
+* @tc.desc: DoCloudSync error function test.
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DoCloudSync01, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "id1";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+    StoreMetaData metaData;
+    metaData.enableCloud = false;
+    SyncInfo syncInfo;
+    status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, Status::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: OnAsyncCompleteTest002
+* @tc.desc: OnAsyncComplete function test.
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, OnAsyncCompleteTest002, TestSize.Level0)
+{
+    DistributedKv::Statistic upload;
+    upload.failed = 1; // test
+    upload.success = 1; // test
+    upload.total = 1; // test
+    upload.untreated = 1; // test
+    DistributedKv::Statistic download;
+    download.failed = 1; // test
+    download.success = 1; // test
+    download.total = 1; // test
+    download.untreated = 1; // test
+    DistributedKv::TableDetail details;
+    details.download = download;
+    details.upload = upload;
+    DistributedKv::ProgressDetail detail;
+    detail.code = 1; // test
+    detail.progress = 1; // test
+    detail.details = details;
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    sptr<DistributedKv::IKVDBNotifier> notifier = nullptr;
+    syncAgent.pid_ = 1; // test
+    syncAgent.switchesObserverCount_ = 1; // test
+    syncAgent.appId_ = { "ohos.OnAsyncCompleteTest.kvdb" };
+    syncAgent.notifier_ = notifier;
+    EXPECT_EQ(notifier, nullptr);
+    uint32_t tokenId = 2;
+    uint64_t seqNum = 1;
+    kvdbServiceImpl_->syncAgents_.Insert(tokenId, syncAgent);
+    kvdbServiceImpl_->OnAsyncComplete(tokenId, seqNum, std::move(detail));
+    EXPECT_TRUE(kvdbServiceImpl_->syncAgents_.Find(tokenId).first);
+    kvdbServiceImpl_->OnAsyncComplete(0, 1, std::move(detail));
+    EXPECT_TRUE(kvdbServiceImpl_->syncAgents_.Find(tokenId).first);
+}
+
+/**
+* @tc.name: OnAsyncCompleteTest003
+* @tc.desc: OnAsyncComplete function test.
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, OnAsyncCompleteTest003, TestSize.Level0)
+{
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    sptr<DistributedKv::IKVDBNotifier> notifier;
+    syncAgent.pid_ = 1; // test
+    syncAgent.switchesObserverCount_ = 1; // test
+    syncAgent.appId_ = { "ohos.OnAsyncCompleteTest001.kvdb" };
+    syncAgent.notifier_ = notifier;
+    DistributedKv::ProgressDetail detail;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    kvdbServiceImpl_->syncAgents_.Insert(tokenId, syncAgent);
+    kvdbServiceImpl_->OnAsyncComplete(tokenId, 1, std::move(detail));
+    EXPECT_TRUE(kvdbServiceImpl_->syncAgents_.Find(tokenId).first);
+}
+
+/**
+* @tc.name: DeleteTest004
+* @tc.desc: Delete Test
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteTest004, TestSize.Level0)
+{
+    ZLOGI("DeleteTest004 start");
+    AppId appId = { "ohos.kvdbserviceimpl.test" };
+    StoreId storeId = { "meta_test_storeid" };
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    syncAgent.pid_ = 1;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto status = kvdbServiceImpl_->Delete(appId, storeId, 0);
+    ZLOGI("DeleteTest002 status = :%{public}d", status);
+    EXPECT_NE(tokenId, syncAgent.pid_);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: syncTest002
+* @tc.desc: Sync
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, syncTest002, TestSize.Level0)
+{
+    ZLOGI("syncTest002 start");
+    StoreMetaData metaData;
+    auto mm = std::numeric_limits<uint64_t>::max();
+    metaData.isAutoSync = true;
+    SyncInfo syncInfo;
+    syncInfo.devices = { "device1", "device2" };
+    syncInfo.query = "query";
+    syncInfo.seqId = mm; // test
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
+    ASSERT_EQ(syncInfo.seqId, std::numeric_limits<uint64_t>::max());
+    ZLOGI("syncTest002 status = :%{public}d", status);
+    ASSERT_NE(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: syncTest003
+* @tc.desc: Sync
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, syncTest003, TestSize.Level0)
+{
+    ZLOGI("syncTest003 start");
+    StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
+    StoreMetaData metaData;
+    metaData.isAutoSync = true;
+    StoreMetaDataLocal localMeta;
+    PolicyValue value;
+    value.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
+    localMeta.policies = { std::move(value) };
+    SyncInfo syncInfo;
+    syncInfo.seqId = std::numeric_limits<uint64_t>::max();
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(true)).WillRepeatedly(testing::Return(true));
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
+    EXPECT_EQ(localMeta.HasPolicy(DistributedKv::IMMEDIATE_SYNC_ON_CHANGE), false);
+    EXPECT_NE(status, Status::SUCCESS);
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false)).WillRepeatedly(testing::Return(false));
+    status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
+    EXPECT_EQ(localMeta.HasPolicy(DistributedKv::IMMEDIATE_SYNC_ON_ONLINE), true);
+}
+
+/**
+* @tc.name: GetSyncParamTest001
+* @tc.desc: GetStoreIds
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, GetSyncParamTest002, TestSize.Level0)
+{
+    ZLOGI("GetSyncParamTest001 start");
+    Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status1, Status::SUCCESS);
+    OHOS::DistributedKv::KvSyncParam syncparam;
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    syncAgent.pid_ = 1;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    EXPECT_NE(tokenId, syncAgent.pid_);
+    auto status = kvdbServiceImpl_->GetSyncParam(appId, storeId, 0, syncparam);
+    ZLOGI("GetSyncParamTest002 status = :%{public}d", status);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: SubscribeSwitchData
+* @tc.desc: SubscribeSwitchData function test.
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, SubscribeSwitchData, TestSize.Level0)
+{
+    options_.isNeedCompress = false;
+    std::vector<uint8_t> password {};
+    StoreMetaData metaData;
+    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    syncAgent.switchesObserverCount_ = 1;
+    syncAgent.pid_ = tokenId;
+    syncAgent.notifier_ = nullptr;
+    status = kvdbServiceImpl_->SubscribeSwitchData(appId);
+    EXPECT_EQ(status, Status::SUCCESS);
+    ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData));
+    kvdbServiceImpl_->syncAgents_.Insert(IPCSkeleton::GetCallingTokenID(), syncAgent);
+    EXPECT_EQ(tokenId, syncAgent.pid_);
+    status = kvdbServiceImpl_->UnregServiceNotifier(appId);
+    ASSERT_EQ(status, Status::SUCCESS);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

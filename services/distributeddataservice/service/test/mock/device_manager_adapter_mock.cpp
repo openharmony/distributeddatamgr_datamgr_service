@@ -41,4 +41,84 @@ bool OHOS::DistributedData::DeviceManagerAdapter::IsOHOSType(const std::string &
     }
     return BDeviceManagerAdapter::deviceManagerAdapter->IsOHOSType(id);
 }
+
+bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return false;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->IsSameAccount(accCaller, accCallee);
+}
+
+bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return false;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->CheckAccessControl(accCaller, accCallee);
+}
+
+Status OHOS::DistributedData::DeviceManagerAdapter::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
+    __attribute__((unused)) const PipeInfo &pipeInfo)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return Status::SUCCESS;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->StartWatchDeviceChange(observer, pipeInfo);
+}
+
+Status OHOS::DistributedData::DeviceManagerAdapter::StopWatchDeviceChange(const AppDeviceChangeListener *observer,
+    __attribute__((unused)) const PipeInfo &pipeInfo)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return Status::SUCCESS;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->StopWatchDeviceChange(observer, pipeInfo);
+}
+
+std::vector<DeviceInfo> OHOS::DistributedData::DeviceManagerAdapter::GetRemoteDevices()
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        std::vector<DeviceInfo> info;
+        return info;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetRemoteDevices();
+}
+
+DeviceInfo DeviceManagerAdapter::GetLocalDevice()
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        DeviceInfo info;
+        return info;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetLocalDevice();
+}
+
+std::string OHOS::DistributedData::DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return " ";
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetUuidByNetworkId(networkId);
+}
+
+DeviceInfo OHOS::DistributedData::DeviceManagerAdapter::GetDeviceInfo(const std::string &id)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return {};
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetDeviceInfo(id);
+}
+
+std::string OHOS::DistributedData::DeviceManagerAdapter::ToNetworkID(const std::string &id)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return " ";
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->ToNetworkID(id);
+}
+
+DeviceManagerAdapter::~DeviceManagerAdapter()
+{
+}
 }

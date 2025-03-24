@@ -136,6 +136,7 @@ bool Field::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(alias), alias);
     GetValue(node, GET_NAME(type), type);
     GetValue(node, GET_NAME(primary), primary);
+    GetValue(node, GET_NAME(primaryKey), primary);
     GetValue(node, GET_NAME(nullable), nullable);
     GetValue(node, GET_NAME(columnName), colName);
     GetValue(node, GET_NAME(notNull), nullable);
@@ -155,5 +156,14 @@ Database SchemaMeta::GetDataBase(const std::string &storeId)
 bool SchemaMeta::IsValid() const
 {
     return !bundleName.empty() && !databases.empty();
+}
+
+std::vector<std::string> SchemaMeta::GetStores()
+{
+    std::vector<std::string> stores;
+    for (const auto &it : databases) {
+        stores.push_back(it.name);
+    }
+    return stores;
 }
 } // namespace OHOS::DistributedData

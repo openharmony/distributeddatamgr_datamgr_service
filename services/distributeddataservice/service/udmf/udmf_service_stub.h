@@ -16,14 +16,9 @@
 #ifndef UDMF_SERVICE_STUB_H
 #define UDMF_SERVICE_STUB_H
 
-#include <map>
-#include <string>
-
 #include "feature/feature_system.h"
-#include "message_parcel.h"
 
 #include "distributeddata_udmf_ipc_interface_code.h"
-#include "error_code.h"
 #include "udmf_service.h"
 
 namespace OHOS {
@@ -67,8 +62,7 @@ private:
         &UdmfServiceStub::OnGetAppShareOption,
         &UdmfServiceStub::OnRemoveAppShareOption,
         &UdmfServiceStub::OnObtainAsynProcess,
-        &UdmfServiceStub::OnClearAsynProcessByKey,
-        &UdmfServiceStub::OnInvokeHap
+        &UdmfServiceStub::OnClearAsynProcessByKey
     };
 };
 } // namespace UDMF

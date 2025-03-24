@@ -42,7 +42,8 @@
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "model/component_config.h"
-#include "network_adapter.h"
+#include "network_delegate.h"
+#include "network_delegate_mock.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
 #include "rdb_service_impl.h"
@@ -72,9 +73,11 @@ public:
     void TearDown();
 
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
+    static NetworkDelegateMock delegate_;
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =
     std::make_shared<CloudData::CloudServiceImpl>();
+NetworkDelegateMock CloudServiceImplTest::delegate_;
 
 void CloudServiceImplTest::SetUpTestCase(void)
 {
@@ -82,6 +85,7 @@ void CloudServiceImplTest::SetUpTestCase(void)
     size_t min = 5;
     auto executor = std::make_shared<ExecutorPool>(max, min);
     DeviceManagerAdapter::GetInstance().Init(executor);
+    NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
 void CloudServiceImplTest::TearDownTestCase() { }
@@ -249,7 +253,6 @@ HWTEST_F(CloudServiceImplTest, UpdateSchema001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest GetAppSchemaFromServer001 start");
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
     int user = -1;
     auto [status, result] = cloudServiceImpl_->GetAppSchemaFromServer(user, TEST_CLOUD_BUNDLE);
     EXPECT_EQ(status, CloudData::CloudService::SERVER_UNAVAILABLE);
@@ -264,7 +267,6 @@ HWTEST_F(CloudServiceImplTest, GetAppSchemaFromServer001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, GetCloudInfoFromServer001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest GetCloudInfoFromServer001 start");
-    NetworkAdapter::GetInstance().SetNet(NetworkAdapter::WIFI);
     int user = -1;
     auto [status, result] = cloudServiceImpl_->GetCloudInfoFromServer(user);
     EXPECT_EQ(status, CloudData::CloudService::SERVER_UNAVAILABLE);
@@ -482,6 +484,28 @@ HWTEST_F(CloudServiceImplTest, CheckNotifyConditions, TestSize.Level0)
     EXPECT_EQ(status, CloudData::CloudService::CLOUD_DISABLE_SWITCH);
 }
 
+/**
+ * @tc.name: GetDfxFaultType
+ * @tc.desc: test GetDfxFaultType function
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, GetDfxFaultType, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::ENABLE_CLOUD), "ENABLE_CLOUD");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::DISABLE_CLOUD), "DISABLE_CLOUD");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SWITCH_ON), "SWITCH_ON");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SWITCH_OFF), "SWITCH_OFF");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::QUERY_SYNC_INFO), "QUERY_SYNC_INFO");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::USER_CHANGE), "USER_CHANGE");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::USER_UNLOCK), "USER_UNLOCK");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::NETWORK_RECOVERY), "NETWORK_RECOVERY");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::SERVICE_INIT), "SERVICE_INIT");
+    EXPECT_EQ(cloudServiceImpl_->GetDfxFaultType(CloudSyncScene::ACCOUNT_STOP), "SYNC_TASK");
+}
+
 class ComponentConfigTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -514,6 +538,7 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     config.destructor = "destructor";
     config.params = "";
     Serializable::json node;
+    EXPECT_EQ(config.params.empty(), true);
 
     EXPECT_EQ(config.Marshal(node), true);
     EXPECT_EQ(node["description"], config.description);
@@ -527,8 +552,10 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     componentConfig.constructor = "constructor";
     componentConfig.destructor = "destructor";
     componentConfig.params = "params";
+    Serializable::json node1;
+    EXPECT_EQ(componentConfig.params.empty(), false);
 
-    EXPECT_EQ(config.Marshal(node), true);
+    EXPECT_EQ(componentConfig.Marshal(node1), true);
     EXPECT_EQ(node["description"], componentConfig.description);
     EXPECT_EQ(node["lib"], componentConfig.lib);
     EXPECT_EQ(node["constructor"], componentConfig.constructor);

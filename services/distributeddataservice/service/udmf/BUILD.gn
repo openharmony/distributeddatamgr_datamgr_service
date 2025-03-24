@@ -18,9 +18,9 @@ config("module_public_config") {
 
   include_dirs = [
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/dfx",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/account",
-    "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
@@ -57,7 +57,6 @@ ohos_source_set("udmf_server") {
     "permission/uri_permission_manager.cpp",
     "preprocess/data_handler.cpp",
     "preprocess/preprocess_utils.cpp",
-    "preprocess/udmf_dialog.cpp",
     "store/runtime_store.cpp",
     "store/store_account_observer.cpp",
     "store/store_cache.cpp",
@@ -71,25 +70,18 @@ ohos_source_set("udmf_server") {
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-  ]
-  defines = []
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   external_deps = [
     "ability_base:zuri",
-    "ability_runtime:ability_manager",
     "ability_runtime:uri_permission_mgr",
-    "ability_runtime:wantagent_innerkits",
-    "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -97,23 +89,15 @@ ohos_source_set("udmf_server") {
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddb",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
-
-  if (window_manager_use_sceneboard) {
-    external_deps += [ "window_manager:libwm_lite" ]
-    defines += [ "SCENE_BOARD_ENABLE" ]
-  } else {
-    external_deps += [ "window_manager:libwm" ]
-  }
 }

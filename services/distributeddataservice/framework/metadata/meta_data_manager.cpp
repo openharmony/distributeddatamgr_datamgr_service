@@ -155,7 +155,7 @@ MetaDataManager::~MetaDataManager()
     metaObservers_.Clear();
 }
 
-void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string storeId)
+void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string &storeId)
 {
     if (metaStore == nullptr) {
         return;
@@ -167,7 +167,7 @@ void MetaDataManager::Initialize(std::shared_ptr<MetaStore> metaStore, const Bac
     }
     metaStore_ = std::move(metaStore);
     backup_ = backup;
-    storeId_ = std::move(storeId);
+    storeId_ = storeId;
     inited_ = true;
 }
 
@@ -290,7 +290,7 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
     return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
 }
 
-bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete complete)
+bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait)
 {
     if (!inited_ || devices.empty()) {
         return false;
@@ -301,7 +301,7 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
             results.insert_or_assign(uuid, static_cast<int32_t>(status));
         }
         complete(results);
-    });
+    }, wait);
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d", status);
         CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);

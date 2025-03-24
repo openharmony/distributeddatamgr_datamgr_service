@@ -57,6 +57,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(enableCloud)], enableCloud);
     SetValue(node[GET_NAME(cloudAutoSync)], cloudAutoSync);
     SetValue(node[GET_NAME(asyncDownloadAsset)], asyncDownloadAsset);
+    SetValue(node[GET_NAME(isNeedUpdateDeviceId)], isNeedUpdateDeviceId);
     // compatible with the versions which lower than VERSION_TAG_0000
     SetValue(node[GET_NAME(kvStoreType)], storeType);
     SetValue(node[GET_NAME(deviceAccountID)], user);
@@ -98,6 +99,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(enableCloud), enableCloud);
     GetValue(node, GET_NAME(cloudAutoSync), cloudAutoSync);
     GetValue(node, GET_NAME(asyncDownloadAsset), asyncDownloadAsset);
+    GetValue(node, GET_NAME(isNeedUpdateDeviceId), isNeedUpdateDeviceId);
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
         GetValue(node, GET_NAME(kvStoreType), storeType);
@@ -138,7 +140,8 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
         Constant::NotEqual(isNeedCompress, metaData.isNeedCompress) ||
         Constant::NotEqual(enableCloud, metaData.enableCloud) ||
         Constant::NotEqual(cloudAutoSync, metaData.cloudAutoSync) ||
-        Constant::NotEqual(isManualClean, metaData.isManualClean)) {
+        Constant::NotEqual(isManualClean, metaData.isManualClean) ||
+        Constant::NotEqual(isNeedUpdateDeviceId, metaData.isNeedUpdateDeviceId)) {
         return false;
     }
     return (version == metaData.version && storeType == metaData.storeType && dataType == metaData.dataType &&
@@ -194,6 +197,11 @@ std::string StoreMetaData::GetAutoLaunchKey() const
 std::string StoreMetaData::GetDebugInfoKey() const
 {
     return StoreDebugInfo::GetPrefix({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaData::GetDfxInfoKey() const
+{
+    return StoreDfxInfo::GetPrefix({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
 std::string StoreMetaData::GetStoreAlias() const

@@ -94,7 +94,7 @@
                 "json",
                 "dmsfwk",
                 "data_object",
-                "window_manager"
+                "init"
             ],
             "third_party": [
                 "libuv",
@@ -129,6 +129,8 @@
                             "cloud/schema_meta.h",
                             "cloud/subscription.h",
                             "cloud/sync_event.h",
+                            "dfx/dfx_types.h",
+                            "dfx/reporter.h",
                             "directory/directory_manager.h",
                             "error/general_error.h",
                             "eventcenter/event.h",
@@ -165,16 +167,6 @@
                             "utils/ref_count.h"
                         ],
                         "header_base": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework/include"
-                    }
-                },
-                {
-                    "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/dfx:distributeddata_dfx_fault_static",
-                    "header": {
-                        "header_files": [
-                            "dfx_types.h",
-                            "reporter.h"
-                        ],
-                        "header_base": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/include/dfx"
                     }
                 }
             ],

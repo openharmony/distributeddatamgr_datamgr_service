@@ -139,11 +139,15 @@ private:
         int32_t errCode, std::string &func);
     bool CheckAllowList(const uint32_t &currentUserId, const uint32_t &callerTokenId,
         const std::vector<AllowList> &allowLists);
+    bool VerifyPermission(const std::string &bundleName, const std::string &permission,
+        bool isFromExtension, const int32_t tokenId);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     static constexpr const char *EXT_URI_SCHEMA = "datashare://";
+    static constexpr const char *NO_PERMISSION = "noPermission";
+    static constexpr const char *CONNECT_SUPPORT_CROSS_USER = "const.abilityms.connect_support_cross_user";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;

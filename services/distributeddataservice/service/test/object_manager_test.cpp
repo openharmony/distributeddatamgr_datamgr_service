@@ -524,26 +524,31 @@ HWTEST_F(ObjectManagerTest, Close001, TestSize.Level0)
 HWTEST_F(ObjectManagerTest, SyncOnStore001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
+    manager->delegate_ = manager->OpenObjectKvStore();
     std::function<void(const std::map<std::string, int32_t> &results)> func;
     func = [](const std::map<std::string, int32_t> &results) {
         return results;
     };
     std::string prefix = "ObjectManagerTest";
     std::vector<std::string> deviceList;
-    deviceList.push_back("local");
+    // not local device & syncDevices empty
     deviceList.push_back("local1");
     auto result = manager->SyncOnStore(prefix, deviceList, func);
+    ASSERT_NE(result, OBJECT_SUCCESS);
+    // local device
+    deviceList.push_back("local");
+    result = manager->SyncOnStore(prefix, deviceList, func);
     ASSERT_EQ(result, OBJECT_SUCCESS);
 }
 
 /**
-* @tc.name: RevokeSaveToStore001
+* @tc.name: RetrieveFromStore001
 * @tc.desc: RetrieveFromStore test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: wangbin
 */
-HWTEST_F(ObjectManagerTest, RevokeSaveToStore001, TestSize.Level0)
+HWTEST_F(ObjectManagerTest, RetrieveFromStore001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
     DistributedDB::KvStoreNbDelegateMock mockDelegate;
@@ -680,6 +685,33 @@ HWTEST_F(ObjectManagerTest, ProcessSyncCallback001, TestSize.Level0)
     results.insert({"local", 1}); // for testing
     ASSERT_EQ(results.empty(), false);
     ASSERT_NE(results.find("local"), results.end());
+    manager->ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
+}
+
+/**
+* @tc.name: ProcessSyncCallback002
+* @tc.desc: ProcessSyncCallback test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, ProcessSyncCallback002, TestSize.Level0)
+{
+    std::string dataDir = "/data/app/el2/100/database";
+    auto manager = ObjectStoreManager::GetInstance();
+    std::map<std::string, int32_t> results;
+    
+    results.insert({"remote", 1}); // for testing
+    ASSERT_EQ(results.empty(), false);
+    ASSERT_EQ(results.find("local"), results.end());
+
+    manager->kvStoreDelegateManager_ = nullptr;
+    // open store failed -> success
+    manager->ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
+
+    // open store success -> success
+    manager->SetData(dataDir, userId_);
+    ASSERT_NE(manager->kvStoreDelegateManager_, nullptr);
+    manager->delegate_ = manager->OpenObjectKvStore();
+    ASSERT_NE(manager->delegate_, nullptr);
     manager->ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
 }
 
@@ -830,7 +862,7 @@ HWTEST_F(ObjectManagerTest, RegisterAssetsLister001, TestSize.Level0)
 }
 
 /**
-* @tc.name: RegisterAssetsLister001
+* @tc.name: PushAssets001
 * @tc.desc: PushAssets test.
 * @tc.type: FUNC
 * @tc.require:
@@ -847,6 +879,41 @@ HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
     data.insert({assetPrefix, completes});
     auto result = manager->PushAssets(appId_, appId_, sessionId_, data, deviceId_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: PushAssets002
+* @tc.desc: PushAssets test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, PushAssets002, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::map<std::string, std::vector<uint8_t>> data;
+    std::vector<uint8_t> value{0};
+    std::string data0 = "[STRING]test";
+    value.insert(value.end(), data0.begin(), data0.end());
+
+    std::string prefix = "bundleName_sessionId_source_target_timestamp";
+    std::string dataKey = prefix + "_p_data";
+    std::string assetPrefix = prefix + "_p_asset0";
+    std::string fieldsPrefix = "p_";
+    std::string deviceIdKey = "__deviceId";
+
+    data.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    data.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    data.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    data.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    data.insert({fieldsPrefix + deviceIdKey, value});
+
+    manager->objectAssetsSendListener_ = nullptr;
+    int32_t ret = manager->PushAssets(appId_, appId_, sessionId_, data, deviceId_);
+    EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
+
+    manager->objectAssetsSendListener_ = new ObjectAssetsSendListener();
+    ASSERT_NE(manager->objectAssetsSendListener_, nullptr);
+    ret = manager->PushAssets(appId_, appId_, sessionId_, data, deviceId_);
+    EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
 }
 
 /**
@@ -896,5 +963,106 @@ HWTEST_F(ObjectManagerTest, BindAsset001, TestSize.Level0)
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     auto result = manager->BindAsset(tokenId, bundleName, sessionId_, assetValue_, assetBindInfo_);
     ASSERT_EQ(result, DistributedObject::OBJECT_DBSTATUS_ERROR);
+}
+
+/**
+* @tc.name: OnFinished001
+* @tc.desc: OnFinished test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, OnFinished001, TestSize.Level1)
+{
+    std::string srcNetworkId = "srcNetworkId";
+    sptr<AssetObj> assetObj = nullptr;
+    int32_t result = 100;
+    ObjectAssetsRecvListener listener;
+    int32_t ret = listener.OnFinished(srcNetworkId, assetObj, result);
+    EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
+
+    sptr<AssetObj> assetObj_1 = new AssetObj();
+    assetObj_1->dstBundleName_ = bundleName_;
+    assetObj_1->srcBundleName_ = bundleName_;
+    assetObj_1->dstNetworkId_ = "1";
+    assetObj_1->sessionId_ = "123";
+    ret = listener.OnFinished(srcNetworkId, assetObj_1, result);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: GetObjectData001
+* @tc.desc: GetObjectData test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, GetObjectData001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+
+    std::string bundleName = bundleName_;
+    std::string sessionId = sessionId_;
+    std::string source = "sourceDeviceId";
+    std::string target = "targetDeviceId";
+    std::string timestamp = "1234567890";
+    ObjectStoreManager::SaveInfo saveInfo(bundleName, sessionId, source, target, timestamp);
+    std::string prefix = saveInfo.ToPropertyPrefix();
+    EXPECT_FALSE(prefix.empty());
+
+    // p_name not asset key
+    std::string p_name = "p_namejpg";
+    std::string key = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
+    std::map<std::string, std::vector<uint8_t>> changedData = {{ key, data_ }};
+    bool hasAsset = false;
+    auto ret = manager->GetObjectData(changedData, saveInfo, hasAsset);
+    EXPECT_FALSE(ret.empty());
+    EXPECT_FALSE(hasAsset);
+}
+
+/**
+* @tc.name: GetObjectData002
+* @tc.desc: GetObjectData test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+
+    std::string bundleName = "";
+    std::string sessionId = "";
+    std::string source = "";
+    std::string target = "";
+    std::string timestamp = "";
+    ObjectStoreManager::SaveInfo saveInfo(bundleName, sessionId, source, target, timestamp);
+    std::string prefix = saveInfo.ToPropertyPrefix();
+    EXPECT_TRUE(prefix.empty());
+
+    // saveInfo.bundleName, sourceDeviceId, targetDeviceId empty
+    saveInfo.sessionId = sessionId_;
+    saveInfo.timestamp = "1234567890";
+
+    bundleName = bundleName_;
+    sessionId = sessionId_;
+    source = "sourceDeviceId";
+    target = "targetDeviceId";
+    timestamp = "1234567890";
+    std::string p_name = "p_name.jpg";
+    std::string key = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
+    std::map<std::string, std::vector<uint8_t>> changedData = {{ key, data_ }};
+    bool hasAsset = false;
+    auto ret = manager->GetObjectData(changedData, saveInfo, hasAsset);
+    EXPECT_FALSE(ret.empty());
+    EXPECT_EQ(saveInfo.bundleName, bundleName);
+    EXPECT_TRUE(hasAsset);
+
+    // only targetDeviceId empty
+    saveInfo.bundleName = "test_bundleName";
+    saveInfo.sourceDeviceId = "test_source";
+    // p_name not asset key
+    p_name = "p_namejpg";
+    std::string key_1 = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
+    std::map<std::string, std::vector<uint8_t>> changedData_1 = {{ key_1, data_ }};
+    hasAsset = false;
+    ret = manager->GetObjectData(changedData_1, saveInfo, hasAsset);
+    EXPECT_FALSE(ret.empty());
+    EXPECT_NE(saveInfo.bundleName, bundleName);
+    EXPECT_FALSE(hasAsset);
 }
 } // namespace OHOS::Test

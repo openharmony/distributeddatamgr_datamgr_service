@@ -95,6 +95,12 @@ private:
     ExecutorPool::Task GetTask(uint32_t retry);
 
     DistributedDB::KvStoreNbDelegate::Option InitDBOption();
+    
+    void CheckMetaDeviceId();
+
+    void UpdateStoreMetaData(const std::string &newUuid, const std::string &oldUuid);
+    
+    void UpdateMetaDatas(const std::string &newUuid, const std::string &oldUuid);
 
     static ExecutorPool::Task GetBackupTask(
         TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);

@@ -16,19 +16,11 @@
 
 namespace OHOS {
 namespace DistributedData {
-constexpr const char* CLONE_INFO_DETAIL = "detail";
-constexpr const char* ENCRYPTION_INFO = "encryption_info";
-constexpr const char* APPLICATION_SELECTION = "application_selection";
-constexpr const char* USER_ID = "userId";
-constexpr const char* ENCRYPTION_SYMKEY = "encryption_symkey";
-constexpr const char* ENCRYPTION_ALGORITHM = "encryption_algname";
-constexpr const char* GCM_PARAMS_IV = "gcmParams_iv";
-
 bool CloneEncryptionInfo::Unmarshal(const json &node)
 {
-    bool res = GetValue(node, ENCRYPTION_SYMKEY, symkey);
-    res = GetValue(node, ENCRYPTION_ALGORITHM, algName) && res;
-    res = GetValue(node, GCM_PARAMS_IV, iv) && res;
+    bool res = GetValue(node, "encryption_symkey", symkey);
+    res = GetValue(node, "encryption_algname", algName) && res;
+    res = GetValue(node, "gcmParams_iv", iv) && res;
     return res;
 }
 
@@ -58,22 +50,23 @@ bool CloneBundleInfo::Marshal(json &node) const
 
 bool CloneBackupInfo::Unmarshal(const json &node)
 {
-    if (!node.is_array()) {
+    auto items = DistributedData::Serializable::ToJson(node);
+    if (!items.is_array()) {
         return false;
     }
     std::string type;
-    auto size = node.size();
+    auto size = items.size();
     for (size_t i = 0; i < size; i++) {
-        bool result = GetValue(node[i], GET_NAME(type), type);
+        bool result = GetValue(items[i], GET_NAME(type), type);
         if (!result || type.empty()) {
             continue;
         }
-        if (type == ENCRYPTION_INFO) {
-            GetValue(node[i], CLONE_INFO_DETAIL, encryptionInfo);
-        } else if (type == APPLICATION_SELECTION) {
-            GetValue(node[i], CLONE_INFO_DETAIL, bundleInfos);
-        } else if (type == USER_ID) {
-            GetValue(node[i], CLONE_INFO_DETAIL, userId);
+        if (type == "encryption_info") {
+            GetValue(items[i], "detail", encryptionInfo);
+        } else if (type == "application_selection") {
+            GetValue(items[i], "detail", bundleInfos);
+        } else if (type == "userId") {
+            GetValue(items[i], "detail", userId);
         }
     }
     return true;

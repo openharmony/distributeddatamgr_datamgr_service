@@ -51,7 +51,7 @@ public:
             LOW,
         };
         API_EXPORT virtual ~Observer() = default;
-        API_EXPORT virtual void OnAccountChanged(const AccountEventInfo &eventInfo) = 0;
+        API_EXPORT virtual void OnAccountChanged(const AccountEventInfo &eventInfo, int32_t timeout = 0) = 0;
 
         // must specify unique name for observer
         API_EXPORT virtual std::string Name() = 0;
@@ -76,6 +76,7 @@ public:
     API_EXPORT virtual std::string GetUnencryptedAccountId(int32_t userId = 0) const = 0;
     API_EXPORT static AccountDelegate *GetInstance();
     API_EXPORT static bool RegisterAccountInstance(AccountDelegate *instance);
+    API_EXPORT virtual bool IsUserForeground(int32_t userId) = 0;
 
 private:
     static AccountDelegate *instance_;

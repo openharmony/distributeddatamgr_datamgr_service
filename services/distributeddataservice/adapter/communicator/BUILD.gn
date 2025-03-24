@@ -43,14 +43,16 @@ ohos_source_set("distributeddata_communicator") {
 
   include_dirs = [
     "../include/communicator",
-    "../include/dfx",
-    "../include/log",
-    "../include/autils",
     "../include/utils",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/dfx",
+    "${data_service_path}/framework/include/utils",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fstack-protector-strong",
+  ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
@@ -64,6 +66,7 @@ ohos_source_set("distributeddata_communicator") {
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]

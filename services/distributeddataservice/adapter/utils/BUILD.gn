@@ -22,25 +22,19 @@ ohos_source_set("distributeddata_utils") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [
-    "src/kvstore_utils.cpp",
-    "src/time_utils.cpp",
-  ]
+  sources = [ "src/kvstore_utils.cpp" ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fstack-protector-strong",
+  ]
 
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
   }
 
-  include_dirs = [
-    "../include/permission",
-    "../include/utils",
-    "../include/log",
-    "../include/communicator",
-    "../include/dfx",
-  ]
-  ldflags = [ "-Wl,--exclude-libs,ALL" ]
+  include_dirs = [ "../include/utils" ]
+  ldflags = [ "-Wl,-z,relro,-z,now,--exclude-libs,ALL" ]
 
   external_deps = [
     "c_utils:utils",

@@ -85,6 +85,28 @@ std::string DirectoryManager::GetMetaBackupPath(uint32_t version)
     return path;
 }
 
+std::string DirectoryManager::GetClonePath(const std::string &userId, uint32_t version)
+{
+    int32_t index = GetVersionIndex(version);
+    if (index < 0) {
+        return "";
+    }
+
+    auto &strategy = strategies_[index];
+    auto path = strategy.clonePath;
+    std::string pattern = "{userId}";
+    size_t pos = path.find(pattern);
+    if (pos != std::string::npos) {
+        path.replace(pos, pattern.length(), userId);
+        if (CreateDirectory(path.substr(0, path.rfind('/')))) {
+            return path;
+        } else {
+            return "";
+        };
+    }
+    return "";
+}
+
 void DirectoryManager::Initialize(const std::vector<Strategy> &strategies)
 {
     strategies_.resize(strategies.size());
@@ -95,6 +117,7 @@ void DirectoryManager::Initialize(const std::vector<Strategy> &strategies)
         impl.version = strategy.version;
         impl.metaPath = strategy.metaPath;
         impl.path = Split(strategy.pattern, "/");
+        impl.clonePath = strategy.clonePath;
         impl.pipes.clear();
         for (auto &value : impl.path) {
             auto it = actions_.find(value);

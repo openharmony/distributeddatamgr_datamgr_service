@@ -16,13 +16,9 @@
 #ifndef UDMF_STORE_CACHE_H
 #define UDMF_STORE_CACHE_H
 
-#include <memory>
-#include <mutex>
-
 #include "concurrent_map.h"
 #include "executor_pool.h"
 #include "store.h"
-#include "unified_meta.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -31,6 +27,7 @@ public:
     std::shared_ptr<Store> GetStore(std::string intention);
     static StoreCache &GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+    void CloseStores();
 
 private:
     StoreCache() {}

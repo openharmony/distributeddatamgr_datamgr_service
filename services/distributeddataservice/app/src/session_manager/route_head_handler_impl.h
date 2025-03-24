@@ -61,7 +61,9 @@ public:
     explicit RouteHeadHandlerImpl(const ExtendInfo &info);
     DBStatus GetHeadDataSize(uint32_t &headSize) override;
     DBStatus FillHeadData(uint8_t *data, uint32_t headSize, uint32_t totalLen) override;
-    bool ParseHeadData(const uint8_t *data, uint32_t len, uint32_t &headSize, std::vector<std::string> &users) override;
+    bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize) override;
+    bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
+        std::vector<UserInfo> &userInfos) override;
 
 private:
     void Init();
@@ -71,6 +73,7 @@ private:
     bool UnPackData(const uint8_t *data, uint32_t totalLen, uint32_t &unpackedSize);
     bool UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead);
     bool UnPackDataBody(const uint8_t *data, uint32_t totalLen);
+    std::string ParseStoreId(const std::string &deviceId, const std::string &label);
 
     std::string userId_;
     std::string appId_;

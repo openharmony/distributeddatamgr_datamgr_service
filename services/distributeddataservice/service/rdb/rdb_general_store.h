@@ -80,6 +80,7 @@ public:
     int32_t RegisterDetailProgressObserver(DetailAsync async) override;
     int32_t UnregisterDetailProgressObserver() override;
     int32_t Close(bool isForce = false) override;
+    void SetConfig(const StoreConfig &storeConfig) override;
     int32_t AddRef() override;
     int32_t Release() override;
     int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
@@ -87,6 +88,7 @@ public:
     int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
+    int32_t UpdateDBStatus() override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);

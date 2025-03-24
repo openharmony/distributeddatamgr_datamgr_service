@@ -31,19 +31,25 @@ public:
     void SetUp();
 
     void TearDown();
+    static Reporter* reporter_;
 };
+
+Reporter* DistributeddataDfxUTTest::reporter_ = nullptr;
 
 void DistributeddataDfxUTTest::SetUpTestCase()
 {
     FakeHivew::Clear();
     size_t max = 12;
     size_t min = 5;
-    Reporter::GetInstance()->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
+    reporter_ = Reporter::GetInstance();
+    ASSERT_NE(nullptr, reporter_);
+    reporter_->SetThreadPool(std::make_shared<OHOS::ExecutorPool>(max, min));
 }
 
 void DistributeddataDfxUTTest::TearDownTestCase()
 {
-    Reporter::GetInstance()->SetThreadPool(nullptr);
+    reporter_->SetThreadPool(nullptr);
+    reporter_ = nullptr;
     FakeHivew::Clear();
 }
 
@@ -64,7 +70,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx001, TestSize.Level0)
      * @tc.steps: step1. getcommunicationFault instance
      * @tc.expected: step1. Expect instance is not null.
      */
-    auto comFault = Reporter::GetInstance()->CommunicationFault();
+    auto comFault = reporter_->CommunicationFault();
     EXPECT_NE(nullptr, comFault);
     struct CommFaultMsg msg{.userId = "user001", .appId = "myApp", .storeId = "storeTest"};
     msg.deviceId.push_back("device001");
@@ -107,7 +113,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx002, TestSize.Level0)
      * @tc.steps: step1. get database fault report instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto dbFault = Reporter::GetInstance()->DatabaseFault();
+    auto dbFault = reporter_->DatabaseFault();
     EXPECT_NE(nullptr, dbFault);
     struct DBFaultMsg msg {.appId = "MyApp", .storeId = "MyDatabase",
         .moduleName = "database", .errorType = Fault::DF_DB_DAMAGE};
@@ -142,7 +148,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx003, TestSize.Level0)
      * @tc.steps: step1. get database reporter instance.
      * @tc.expected: step1. Expect get success.
      */
-    auto dbs = Reporter::GetInstance()->DatabaseStatistic();
+    auto dbs = reporter_->DatabaseStatistic();
     EXPECT_NE(nullptr, dbs);
     DbStat ds = {"uid", "appid", "storeId001", 100};
     auto dbsRet = dbs->Report(ds);
@@ -167,8 +173,8 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx004, TestSize.Level0)
      * @tc.steps: step1. Get runtime fault instance.
      * @tc.expected: step1. Expect get runtime fault instance success.
      */
-    auto rtFault = Reporter::GetInstance()->RuntimeFault();
-    auto rtFault2 = Reporter::GetInstance()->RuntimeFault();
+    auto rtFault = reporter_->RuntimeFault();
+    auto rtFault2 = reporter_->RuntimeFault();
     EXPECT_NE(nullptr, rtFault);
     EXPECT_EQ(rtFault, rtFault2);
 
@@ -204,7 +210,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx005, TestSize.Level0)
      * @tc.steps:step1. send data to 1 device
      * @tc.expected: step1. Expect put success.
      */
-    auto ts = Reporter::GetInstance()->TrafficStatistic();
+    auto ts = reporter_->TrafficStatistic();
     EXPECT_NE(nullptr, ts);
     struct TrafficStat tss = {"appId001", "deviceId001", 100, 200};
     auto tsRet = ts->Report(tss);
@@ -230,7 +236,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx006, TestSize.Level0)
      * @tc.steps:step1. create call interface statistic instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto vs = Reporter::GetInstance()->VisitStatistic();
+    auto vs = reporter_->VisitStatistic();
     EXPECT_NE(nullptr, vs);
     struct VisitStat vss = {"appid001", "Put"};
     auto vsRet = vs->Report(vss);
@@ -260,7 +266,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx007, TestSize.Level0)
      * @tc.steps:step1. create call api perforamnce statistic instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto ap = Reporter::GetInstance()->ApiPerformanceStatistic();
+    auto ap = reporter_->ApiPerformanceStatistic();
     EXPECT_NE(nullptr, ap);
     struct ApiPerformanceStat aps = { "interface", 10000, 5000, 20000 };
     auto apRet = ap->Report(aps);
@@ -285,7 +291,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx008, TestSize.Level0)
      * @tc.steps: step1. get database fault report instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto behavior = Reporter::GetInstance()->BehaviourReporter();
+    auto behavior = reporter_->GetBehaviourReporter();
     EXPECT_NE(nullptr, behavior);
     struct BehaviourMsg msg{.userId = "user008", .appId = "myApp08", .storeId = "storeTest08",
                             .behaviourType = BehaviourType::DATABASE_BACKUP, .extensionInfo="test111"};
@@ -323,8 +329,8 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx009, TestSize.Level0)
      * @tc.steps: step1. Get runtime fault instance.
      * @tc.expected: step1. Expect get runtime fault instance success.
      */
-    auto svFault = Reporter::GetInstance()->ServiceFault();
-    auto svFault2 = Reporter::GetInstance()->ServiceFault();
+    auto svFault = reporter_->ServiceFault();
+    auto svFault2 = reporter_->ServiceFault();
     EXPECT_NE(nullptr, svFault);
     EXPECT_EQ(svFault, svFault2);
 
@@ -359,7 +365,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx010, TestSize.Level0)
      * @tc.steps: step1. get database reporter instance.
      * @tc.expected: step1. Expect get success.
      */
-    auto dbs = Reporter::GetInstance()->DatabaseStatistic();
+    auto dbs = reporter_->DatabaseStatistic();
     EXPECT_NE(nullptr, dbs);
     DbStat ds = {"uid", "appid", "storeId002", 100};
     auto dbsRet = dbs->Report(ds);
@@ -391,7 +397,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx011, TestSize.Level0)
      * @tc.steps: step1. get database fault report instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto UdmfBehavior = Reporter::GetInstance()->BehaviourReporter();
+    auto UdmfBehavior = reporter_->GetBehaviourReporter();
     EXPECT_NE(nullptr, UdmfBehavior);
     struct UdmfBehaviourMsg UdMsg{"myApp", "channel", 200, "dataType", "operation", "result"};
     auto repStatus = UdmfBehavior->UDMFReport(UdMsg);
@@ -435,7 +441,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx012, TestSize.Level0)
      * @tc.steps:step1. send data to 1 device
      * @tc.expected: step1. Expect put success.
      */
-    auto ts = Reporter::GetInstance()->TrafficStatistic();
+    auto ts = reporter_->TrafficStatistic();
     EXPECT_NE(nullptr, ts);
     struct TrafficStat tss = {"appId001", "deviceId001", 100, 200};
     auto tsRet = ts->Report(tss);
@@ -464,7 +470,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx013, TestSize.Level0)
      * @tc.steps:step1. create call api perforamnce statistic instance
      * @tc.expected: step1. Expect get instance success.
      */
-    auto ap = Reporter::GetInstance()->ApiPerformanceStatistic();
+    auto ap = reporter_->ApiPerformanceStatistic();
     EXPECT_NE(nullptr, ap);
     struct ApiPerformanceStat aps = { "interface", 2000, 500, 1000 };
     auto apRet = ap->Report(aps);
@@ -490,7 +496,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx013, TestSize.Level0)
 HWTEST_F(DistributeddataDfxUTTest, Dfx014, TestSize.Level0)
 {
     FakeHivew::Clear();
-    auto dbFault = Reporter::GetInstance()->DatabaseFault();
+    auto dbFault = reporter_->DatabaseFault();
     ASSERT_NE(nullptr, dbFault);
     struct DBFaultMsg msg {.appId = "mYApp", .storeId = "mYDatabase",
         .moduleName = "dataBase", .errorType = Fault::DF_DB_CORRUPTED};
@@ -509,7 +515,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx014, TestSize.Level0)
 HWTEST_F(DistributeddataDfxUTTest, Dfx015, TestSize.Level0)
 {
     FakeHivew::Clear();
-    auto dbFault = Reporter::GetInstance()->DatabaseFault();
+    auto dbFault = reporter_->DatabaseFault();
     ASSERT_NE(nullptr, dbFault);
     struct DBFaultMsg msg {.appId = "MyApp", .storeId = "mYDatabase",
         .moduleName = "DataBase", .errorType = Fault::DF_DB_REKEY_FAILED};
@@ -528,7 +534,7 @@ HWTEST_F(DistributeddataDfxUTTest, Dfx015, TestSize.Level0)
 HWTEST_F(DistributeddataDfxUTTest, Dfx016, TestSize.Level0)
 {
     FakeHivew::Clear();
-    auto dbFault = Reporter::GetInstance()->DatabaseFault();
+    auto dbFault = reporter_->DatabaseFault();
     ASSERT_NE(nullptr, dbFault);
     struct DBFaultMsg msg {.appId = "MyApp", .storeId = "mYDatabase",
         .moduleName = "DataBase", .errorType = Fault::SF_SERVICE_PUBLISH};

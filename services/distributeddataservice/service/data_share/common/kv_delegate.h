@@ -28,8 +28,8 @@ class KvDelegate final : public KvDBDelegate {
 public:
     KvDelegate(const std::string &path, const std::shared_ptr<ExecutorPool> &executors);
     ~KvDelegate() override;
-    int32_t Upsert(const std::string &collectionName, const KvData &value) override;
-    int32_t Delete(const std::string &collectionName, const std::string &filter) override;
+    std::pair<int32_t, int32_t> Upsert(const std::string &collectionName, const KvData &value) override;
+    std::pair<int32_t, int32_t> Delete(const std::string &collectionName, const std::string &filter) override;
     int32_t Get(const std::string &collectionName, const Id &id, std::string &value) override;
 
     int32_t Get(const std::string &collectionName, const std::string &filter, const std::string &projection,
@@ -41,7 +41,8 @@ public:
 private:
     bool Init();
     bool GetVersion(const std::string &collectionName, const std::string &filter, int &version);
-    int64_t Upsert(const std::string &collectionName, const std::string &filter, const std::string &value);
+    std::pair<int32_t, int32_t> Upsert(const std::string &collectionName, const std::string &filter,
+        const std::string &value);
     void Flush();
     bool RestoreIfNeed(int32_t dbStatus);
     void Backup();

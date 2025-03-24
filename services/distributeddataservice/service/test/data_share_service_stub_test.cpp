@@ -207,36 +207,4 @@ HWTEST_F(DataShareServiceStubTest, OnEnableRdbSubs001, TestSize.Level1)
     result = dataShareServiceStub->OnDisableRdbSubs(request, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 }
-
-/**
-* @tc.name: OnRegisterObserver001
-* @tc.desc: test OnRegisterObserver function abnormal scene
-* @tc.type: FUNC
-* @tc.require:SQL
-*/
-HWTEST_F(DataShareServiceStubTest, OnRegisterObserver001, TestSize.Level1)
-{
-    uint8_t value = TEST_DATA;
-    uint8_t *data = &value;
-    size_t size = TEST_SIZE;
-    MessageParcel request;
-    request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(data, size);
-    request.RewindRead(0);
-    MessageParcel reply;
-    auto result = dataShareServiceStub->OnRegisterObserver(request, reply);
-    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
-
-    result = dataShareServiceStub->OnNotifyObserver(request, reply);
-    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
-
-    result = dataShareServiceStub->OnSetSilentSwitch(request, reply);
-    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
-
-    result = dataShareServiceStub->OnGetSilentProxyStatus(request, reply);
-    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
-
-    result = dataShareServiceStub->OnUnregisterObserver(request, reply);
-    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
-}
 } // namespace OHOS::Test

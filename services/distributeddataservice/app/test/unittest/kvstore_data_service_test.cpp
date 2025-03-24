@@ -994,6 +994,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup008, TestSize.Level0) {
     testMeta.bundleName = "com.example.restore_test";
     testMeta.storeId = "Source";
     testMeta.user = "100";
+    testMeta.area = DEFAULT_ENCRYPTION_LEVEL;
     testMeta.instanceId = 0;
     testMeta.deviceId =
         DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
@@ -1004,15 +1005,11 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup008, TestSize.Level0) {
                               131, 104, 141, 43,  96,  119, 214, 34,  177, 129,
                               233, 96,  98,  164, 87,  115, 187, 170};
     SecretKeyMetaData testSecret;
-    testSecret.sKey = CryptoManager::GetInstance().Encrypt(sKey);
+    testSecret.sKey = CryptoManager::GetInstance().Encrypt(sKey, testMeta.area, testMeta.user);
     testSecret.storeType = 10;
     testSecret.time = std::vector<uint8_t>{233, 39, 137, 103, 0, 0, 0, 0};
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetKey(),
-                                                      testMeta, true),
-              true);
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetSecretKey(),
-                                                      testSecret, true),
-              true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetKey(), testMeta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetSecretKey(), testSecret, true), true);
 
     std::string cloneInfoStr =
         "[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"27,"

@@ -34,6 +34,7 @@
 #include "want_params.h"
 #include "db_delegate.h"
 #include "log_debug.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 32;
@@ -84,7 +85,7 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
             return std::make_pair(E_DB_NOT_EXIST, config);
         }
         std::vector<uint8_t> decryptKey;
-        if (!DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptKey)) {
+        if (!DistributedData::CryptoManager::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey)) {
             return std::make_pair(E_ERROR, config);
         };
         config.SetEncryptKey(decryptKey);
@@ -108,7 +109,10 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
         return;
     }
     DefaultOpenCallback callback;
+    TimeoutReport timeoutReport({meta.bundleName, "", meta.storeId, __FUNCTION__, 0});
     store_ = RdbHelper::GetRdbStore(config, version, callback, errCode_);
+    auto callingPid = IPCSkeleton::GetCallingPid();
+    timeoutReport.Report(meta.user, callingPid, -1, meta.instanceId);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
@@ -213,7 +217,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     }
     int count = resultSetCount.fetch_add(1);
     ZLOGD_MACRO("start query %{public}d", count);
-    if (count > MAX_RESULTSET_COUNT && IsLimit(count, callingPid, callingTokenId)) {
+    if (count >= MAX_RESULTSET_COUNT && IsLimit(count, callingPid, callingTokenId)) {
         resultSetCount--;
         return std::make_pair(E_RESULTSET_BUSY, nullptr);
     }
@@ -337,7 +341,7 @@ bool RdbDelegate::IsLimit(int count, int32_t callingPid, uint32_t callingTokenId
     });
     ZLOGE("resultSetCount is full, pid: %{public}d, owner is %{public}s", callingPid, logStr.c_str());
     std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(callingTokenId).first;
-    DataShareFaultInfo faultInfo{RESULTSET_FULL, "callingTokenId:" + std::to_string(callingTokenId),
+    DataShareFaultInfo faultInfo{HiViewFaultAdapter::resultsetFull, "callingTokenId:" + std::to_string(callingTokenId),
         "Pid:" + std::to_string(callingPid), "owner:" + logStr, __FUNCTION__, E_RESULTSET_BUSY, appendix};
     HiViewFaultAdapter::ReportDataFault(faultInfo);
     return true;

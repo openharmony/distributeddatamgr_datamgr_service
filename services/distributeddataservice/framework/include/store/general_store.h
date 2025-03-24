@@ -115,8 +115,14 @@ public:
         int32_t maxRetryConflictTimes = 3;     // default max retry 3 times when version conflict
     };
 
+    enum class DistributedTableMode : int {
+        COLLABORATION = 0, // Save all devices data in user table
+        SPLIT_BY_DEVICE // Save device data in each table split by device
+    };
+
     struct StoreConfig {
         bool enableCloud_ = false;
+        std::optional<DistributedTableMode> tableMode;
     };
 
     enum ErrOffset {
@@ -191,6 +197,11 @@ public:
     virtual std::pair<int32_t, uint32_t> LockCloudDB() = 0;
 
     virtual int32_t UnLockCloudDB() = 0;
+
+    virtual int32_t UpdateDBStatus()
+    {
+        return 0;
+    }
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

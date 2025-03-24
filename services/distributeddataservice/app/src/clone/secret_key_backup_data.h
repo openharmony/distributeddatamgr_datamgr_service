@@ -27,6 +27,7 @@ public:
         std::string sKey;
         int32_t instanceId;
         int32_t storeType;
+        int32_t area = -1;
         std::vector<uint8_t> time;
 
         API_EXPORT BackupItem();

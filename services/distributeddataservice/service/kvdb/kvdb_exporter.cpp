@@ -59,7 +59,7 @@ void KVDBExporter::Exporter(const StoreMetaData &meta, const std::string &backup
         .append("], backup result  [")
         .append(std::to_string(result))
         .append("]");
-    Reporter::GetInstance()->BehaviourReporter()->Report(
+    Reporter::GetInstance()->GetBehaviourReporter()->Report(
         { meta.account, meta.appId, meta.storeId, BehaviourType::DATABASE_BACKUP, message });
 }
 

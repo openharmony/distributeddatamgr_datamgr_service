@@ -35,15 +35,18 @@ ohos_source_set("distributeddata_installer") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
   ]
 
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
-  cflags = [ "-Oz" ]
+  cflags = [
+    "-Oz",
+    "-fstack-protector-strong",
+  ]
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",

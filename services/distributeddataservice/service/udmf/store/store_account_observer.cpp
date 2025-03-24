@@ -15,10 +15,8 @@
 #define LOG_TAG "RuntimeStoreAccountObserver"
 
 #include "store_account_observer.h"
-#include "runtime_store.h"
 #include "log_print.h"
 #include "directory/directory_manager.h"
-#include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "ipc_skeleton.h"
 
@@ -26,7 +24,7 @@ namespace OHOS {
 namespace UDMF {
 using namespace DistributedKv;
 using namespace DistributedData;
-void RuntimeStoreAccountObserver::OnAccountChanged(const AccountEventInfo &eventInfo)
+void RuntimeStoreAccountObserver::OnAccountChanged(const AccountEventInfo &eventInfo, int32_t timeout)
 {
     ZLOGI("account event begin. status is %{public}d.", eventInfo.status);
     if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_DELETE) {

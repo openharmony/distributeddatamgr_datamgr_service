@@ -27,9 +27,9 @@ ohos_source_set("distributeddata_kvdb") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/adapter/include",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/dfx",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/dfx",
     "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/kvdb",
@@ -55,6 +55,7 @@ ohos_source_set("distributeddata_kvdb") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   cflags = [
@@ -63,6 +64,7 @@ ohos_source_set("distributeddata_kvdb") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   deps = [

@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "executor_pool.h"
+#include "object_common.h"
 #include "snapshot/machine_status.h"
 
 using namespace testing::ext;
@@ -205,5 +206,54 @@ HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded002, TestSize.Level0)
     auto [success, hash] = assetLoader->downloaded_.Find(asset_.uri);
     EXPECT_EQ(success, false);
     EXPECT_EQ(hash, "");
+}
+
+/**
+* @tc.name: PushAsset001
+* @tc.desc: PushAsset test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectAssetLoaderTest, PushAsset001, TestSize.Level0)
+{
+    auto assetLoader = ObjectAssetLoader::GetInstance();
+    ASSERT_NE(assetLoader, nullptr);
+    sptr<AssetObj> assetObj = new AssetObj();
+    assetObj->dstBundleName_ = bundleName_;
+    assetObj->srcBundleName_ = bundleName_;
+    assetObj->dstNetworkId_ = "1";
+    assetObj->sessionId_ = "123";
+
+    sptr<ObjectAssetsSendListener> sendCallback = new ObjectAssetsSendListener();
+    ASSERT_NE(sendCallback, nullptr);
+    int32_t ret = assetLoader->PushAsset(userId_, assetObj, sendCallback);
+    EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: OnSendResult001
+* @tc.desc: OnSendResult test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectAssetLoaderTest, OnSendResult001, TestSize.Level1)
+{
+    sptr<AssetObj> assetObj = nullptr;
+
+    int32_t result = -1;
+    sptr<ObjectAssetsSendListener> sendCallback = new ObjectAssetsSendListener();
+    int32_t ret = sendCallback->OnSendResult(assetObj, result);
+    EXPECT_EQ(ret, result);
+
+    assetObj = new AssetObj();
+    assetObj->dstBundleName_ = bundleName_;
+    assetObj->srcBundleName_ = bundleName_;
+    assetObj->dstNetworkId_ = "1";
+    assetObj->sessionId_ = "123";
+    
+    ret = sendCallback->OnSendResult(assetObj, result);
+    EXPECT_EQ(ret, result);
+
+    result = 0;
+    ret = sendCallback->OnSendResult(assetObj, result);
+    EXPECT_EQ(ret, result);
 }
 } // namespace OHOS::Test

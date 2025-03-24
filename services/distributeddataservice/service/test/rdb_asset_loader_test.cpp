@@ -62,6 +62,11 @@ public:
     {
         return GeneralError::E_OK;
     }
+
+    int32_t CancelDownload() override
+    {
+        return GeneralError::E_OK;
+    }
 };
 
 class RdbWatcherTest : public testing::Test {
@@ -180,6 +185,26 @@ HWTEST_F(RdbAssetLoaderTest, RemoveLocalAssets, TestSize.Level0)
 }
 
 /**
+* @tc.name: CancelDownloadTest
+* @tc.desc: RdbAssetLoader CancelDownload test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Hollokin
+*/
+HWTEST_F(RdbAssetLoaderTest, CancelDownloadTest, TestSize.Level0)
+{
+    BindAssets bindAssets;
+    DistributedRdb::RdbAssetLoader rdbAssetLoader1(nullptr, &bindAssets);
+    auto result = rdbAssetLoader1.CancelDownload();
+    EXPECT_EQ(result, DistributedDB::DBStatus::DB_ERROR);
+
+    std::shared_ptr<MockAssetLoader> cloudAssetLoader = std::make_shared<MockAssetLoader>();
+    DistributedRdb::RdbAssetLoader rdbAssetLoader2(cloudAssetLoader, &bindAssets);
+    result = rdbAssetLoader2.CancelDownload();
+    EXPECT_EQ(result, DistributedDB::DBStatus::OK);
+}
+
+/**
 * @tc.name: PostEvent001
 * @tc.desc: RdbAssetLoader PostEvent001 test
 * @tc.type: FUNC
@@ -246,6 +271,8 @@ HWTEST_F(RdbAssetLoaderTest, ConvertStatus, TestSize.Level0)
     EXPECT_EQ(status, DistributedDB::DBStatus::OK);
     status = RdbAssetLoader::ConvertStatus(DistributedRdb::RdbAssetLoader::AssetStatus::STATUS_BUTT);
     EXPECT_EQ(status, DistributedDB::DBStatus::CLOUD_ERROR);
+    status = RdbAssetLoader::ConvertStatus(DistributedRdb::RdbAssetLoader::AssetStatus::STATUS_SKIP_ASSET);
+    EXPECT_EQ(status, DistributedDB::DBStatus::SKIP_ASSET);
 }
 
 /**

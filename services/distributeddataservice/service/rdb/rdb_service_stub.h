@@ -20,6 +20,7 @@
 #include "rdb_service.h"
 #include "rdb_notifier.h"
 #include "feature/feature_system.h"
+#include "rdb_result_set_impl.h"
 
 namespace OHOS::DistributedRdb {
 using RdbServiceCode = OHOS::DistributedRdb::RelationalStore::RdbServiceInterfaceCode;
@@ -64,6 +65,8 @@ private:
 
     int32_t OnAfterOpen(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnReportStatistic(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnDisable(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnEnable(MessageParcel& data, MessageParcel& reply);
@@ -76,9 +79,13 @@ private:
 
     int32_t OnGetDebugInfo(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnGetDfxInfo(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnVerifyPromiseInfo(MessageParcel& data, MessageParcel& reply);
 
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
+RDB_UTILS_PUSH_WARNING
+RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
     static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX)] = {
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_TABLE)] =
             &RdbServiceStub::OnRemoteObtainDistributedTableName,
@@ -112,8 +119,12 @@ private:
             &RdbServiceStub::OnUnlockCloudContainer,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DEBUG_INFO)] = &RdbServiceStub::OnGetDebugInfo,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_VERIFY_PROMISE_INFO)] =
-            &RdbServiceStub::OnVerifyPromiseInfo
+            &RdbServiceStub::OnVerifyPromiseInfo,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REPORT_STAT)] =
+            &RdbServiceStub::OnReportStatistic,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DFX_INFO)] = &RdbServiceStub::OnGetDfxInfo,
     };
+RDB_UTILS_POP_WARNING
 };
 } // namespace OHOS::DistributedRdb
 #endif

@@ -19,7 +19,6 @@
 #include "log_print.h"
 #include "preprocess_utils.h"
 #include "uri_permission_manager_client.h"
-#include "want.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -35,12 +34,12 @@ Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &allUri, 
 {
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
-        ZLOGE("Get BundleName fail, key:%{public}s, tokenId:%{public}u.", queryKey.c_str(), tokenId);
+        ZLOGE("BundleName get failed:%{public}s,tokenId:%{public}u", queryKey.c_str(), tokenId);
         return E_ERROR;
     }
     int32_t instIndex = -1;
     if (!PreProcessUtils::GetInstIndex(tokenId, instIndex)) {
-        ZLOGE("Get InstIndex fail, key:%{public}s, tokenId:%{public}u.", queryKey.c_str(), tokenId);
+        ZLOGE("InstIndex get failed:%{public}s,tokenId:%{public}u", queryKey.c_str(), tokenId);
         return E_ERROR;
     }
 

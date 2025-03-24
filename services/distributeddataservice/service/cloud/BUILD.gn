@@ -39,6 +39,7 @@ ohos_source_set("distributeddata_cloud") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   include_dirs = [
@@ -46,12 +47,11 @@ ohos_source_set("distributeddata_cloud") {
     "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/network",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/framework/include",
     "${data_service_path}/adapter/include/communicator",
     "sync_strategies",
-    "${data_service_path}/adapter/include/dfx",
+    "${data_service_path}/framework/include/dfx",
   ]
   configs = [ ":cloud_public_config" ]
   cflags = [
@@ -60,17 +60,19 @@ ohos_source_set("distributeddata_cloud") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-fstack-protector-strong",
   ]
 
   deps = [
+    "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/service/network:distributeddata_network",
   ]
 
   external_deps = [
     "access_token:libtokenid_sdk",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:cloud_data_inner",

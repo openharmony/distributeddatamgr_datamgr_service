@@ -13,7 +13,7 @@
 import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-module_output_path = "datamgr_service/distributeddatafwk"
+module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
 
 ###############################################################################
 config("module_dfx_mst_config") {
@@ -23,9 +23,6 @@ config("module_dfx_mst_config") {
     "../src",
     "../src/fault",
     "../src/statistic",
-    "../../include/log",
-    "../../include/utils",
-    "../../include/dfx",
   ]
 }
 
@@ -38,6 +35,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
 
   external_deps = [
     "c_utils:utils",
+    "datamgr_service:distributeddatasvcfwk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -46,8 +44,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
-    "${data_service_path}/adapter/utils:distributeddata_utils",
-    "../../dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
   ]
@@ -64,9 +61,6 @@ config("module_dfx_config") {
     "../src",
     "../src/fault",
     "../src/statistic",
-    "../../include/log",
-    "../../include/utils",
-    "../../include/dfx",
   ]
 }
 
@@ -74,20 +68,6 @@ ohos_unittest("DistributeddataDfxUTTest") {
   module_out_path = module_output_path
 
   sources = [
-    "../src/behaviour/behaviour_reporter_impl.cpp",
-    "../src/fault/cloud_sync_fault_impl.cpp",
-    "../src/fault/communication_fault_impl.cpp",
-    "../src/fault/database_fault_impl.cpp",
-    "../src/fault/fault_reporter.cpp",
-    "../src/fault/runtime_fault_impl.cpp",
-    "../src/fault/service_fault_impl.cpp",
-    "../src/hiview_adapter.cpp",
-    "../src/reporter.cpp",
-    "../src/statistic/api_performance_statistic_impl.cpp",
-    "../src/statistic/database_statistic_impl.cpp",
-    "../src/statistic/statistic_reporter.cpp",
-    "../src/statistic/traffic_statistic_impl.cpp",
-    "../src/statistic/visit_statistic_impl.cpp",
     "./unittest/distributeddata_dfx_ut_test.cpp",
     "./unittest/fake/hiview/fake_hiview.cpp",
   ]
@@ -96,6 +76,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
 
   external_deps = [
     "c_utils:utils",
+    "datamgr_service:distributeddatasvcfwk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -104,9 +85,41 @@ ohos_unittest("DistributeddataDfxUTTest") {
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
+  ]
+  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
+ohos_unittest("HiViewAdapterDfxTest") {
+  module_out_path = module_output_path
+  include_dirs = [ "${data_service_path}/adapter/include/communicator" ]
+  sources = [ "./unittest/hiview_adapter_dfx_test.cpp" ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+  configs = [ ":module_dfx_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "datamgr_service:distributeddatasvcfwk",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "openssl:libcrypto_shared",
+  ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -119,6 +132,7 @@ group("unittest") {
   deps += [
     ":DistributeddataDfxMSTTest",
     ":DistributeddataDfxUTTest",
+    ":HiViewAdapterDfxTest",
   ]
 }
 ###############################################################################

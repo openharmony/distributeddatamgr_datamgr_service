@@ -35,6 +35,7 @@ namespace DataShare {
 constexpr const char *PROFILE_FILE_PREFIX = "$profile:";
 constexpr const char *SEPARATOR = "/";
 static constexpr int PATH_SIZE = 2;
+static constexpr int MAX_ALLOWLIST_COUNT = 256;
 const size_t PROFILE_PREFIX_LEN = strlen(PROFILE_FILE_PREFIX);
 bool Config::Marshal(json &node) const
 {
@@ -108,6 +109,9 @@ bool ProfileInfo::Unmarshal(const json &node)
     GetValue(node, GET_NAME(type), type);
     GetValue(node, GET_NAME(launchInfos), launchInfos);
     GetValue(node, GET_NAME(allowLists), allowLists);
+    if (allowLists.size() > MAX_ALLOWLIST_COUNT) {
+        allowLists.resize(MAX_ALLOWLIST_COUNT);
+    }
     GetValue(node, GET_NAME(storeMetaDataFromUri), storeMetaDataFromUri);
     GetValue(node, GET_NAME(launchForCleanData), launchForCleanData);
     GetValue(node, GET_NAME(backup), backup);
