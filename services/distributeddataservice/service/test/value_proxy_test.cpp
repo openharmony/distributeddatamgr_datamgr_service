@@ -362,4 +362,103 @@ HWTEST_F(ValueProxyServiceTest, TempAssetConvertToDataStatus, TestSize.Level0)
     result = ValueProxy::TempAsset::ConvertToDataStatus(status);
     EXPECT_NE(result, DistributedData::Asset::STATUS_NORMAL);
 }
+
+/**
+* @tc.name: AssetsOperator001
+* @tc.desc: AssetsOperator test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ValueProxyServiceTest, AssetsOperator001, TestSize.Level0)
+{
+    ValueProxy::Assets proxy1;
+    ValueProxy::Assets proxy2;
+    ValueProxy::Assets proxy3;
+    proxy1.assets_.push_back(ValueProxy::Asset(DistributedDB::Asset {
+        .version = 1,
+        .status = DistributedData::Asset::Status::STATUS_INSERT,
+        .name = "Asset1",
+        .uri = "uri1",
+        .size = "1",
+        .hash = "hash1",
+    }));
+    proxy2.assets_.push_back(ValueProxy::Asset(DistributedDB::Asset {
+        .version = 2,
+        .status = DistributedData::Asset::Status::STATUS_NORMAL,
+        .name = "Asset2",
+        .uri = "uri2",
+        .size = "2",
+        .hash = "hash2",
+    }));
+    proxy2.assets_.push_back(ValueProxy::Asset(DistributedDB::Asset {
+        .version = 3,
+        .status = DistributedData::Asset::Status::STATUS_NORMAL,
+        .name = "Asset3",
+        .uri = "uri3",
+        .size = "3",
+        .hash = "hash3",
+    }));
+    // operator "=" same asset case
+    proxy3 = proxy1;
+    proxy1 = proxy3;
+
+    // operator "=" different aseet case
+    proxy1 = proxy2;
+    EXPECT_EQ(proxy1.assets_.size(), 2);
+
+    // operator Distributeddata Asset()
+    DistributedData::Asset asset = proxy1.assets_[0];
+    EXPECT_EQ(asset.version, 2);
+
+    // operator "=" noexcept same asset case
+    proxy2 = std::move(proxy1);
+    // operator "=" noexcept different asset case
+    proxy1 = std::move(proxy3);
+    EXPECT_EQ(proxy1.assets_.size(), 1);
+    asset = proxy1.assets_[0];
+    EXPECT_EQ(asset.version, 1);
+}
+
+/**
+* @tc.name: AssetOperator001
+* @tc.desc: AssetOperator test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ValueProxyServiceTest, AssetOperator001, TestSize.Level0)
+{
+    ValueProxy::Asset asset1 = DistributedDB::Asset {
+        .version = 1,
+        .status = DistributedData::Asset::Status::STATUS_INSERT,
+        .name = "Asset1",
+        .uri = "uri1",
+        .size = "1",
+        .hash = "hash1",
+    };
+    ValueProxy::Asset asset2 = DistributedDB::Asset {
+        .version = 2,
+        .status = DistributedData::Asset::Status::STATUS_NORMAL,
+        .name = "Asset2",
+        .uri = "uri2",
+        .size = "2",
+        .hash = "hash2",
+    };
+    ValueProxy::Asset asset3 = asset1;
+    DistributedData::Asset asset = asset3;
+    EXPECT_EQ(asset.version, 1);
+
+    // operator "=" same asset case
+    asset1 = asset3;
+    EXPECT_EQ(asset.version, 1);
+    // operator "=" different aseet case
+    asset1 = asset2;
+    asset = asset1;
+    EXPECT_EQ(asset.version, 2);
+
+    // operator "=" noexcept same asset case
+    asset2 = std::move(asset1);
+    EXPECT_EQ(asset.version, 2);
+    // operator "=" noexcept different asset case
+    asset1 = std::move(asset3);
+    asset = asset1;
+    EXPECT_EQ(asset.version, 1);
+}
 } // namespace OHOS::Test
