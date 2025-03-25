@@ -1074,16 +1074,16 @@ HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch, TestSize.Level0)
 }
 
 /**
-* @tc.name: IsRemoteChange
-* @tc.desc: IsRemoteChange function test.
+* @tc.name: IsNeedSync
+* @tc.desc: IsNeedSync function test.
 * @tc.type: FUNC
 * @tc.author: wangbin
 */
-HWTEST_F(KvdbServiceImplTest, IsRemoteChangeTest, TestSize.Level0)
+HWTEST_F(KvdbServiceImplTest, IsNeedSyncTest, TestSize.Level0)
 {
     StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
-    std::string devices= "IsRemoteChangeTest";
-    auto changes = kvdbServiceImpl_->IsRemoteChange(meta, devices);
+    std::vector<std::string> devices= {"IsNeedSyncTest"};
+    auto changes = kvdbServiceImpl_->IsNeedSync(meta, devices);
     EXPECT_EQ(changes, true);
 }
 
