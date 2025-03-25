@@ -50,7 +50,7 @@ std::vector<uint8_t> RdbCloudDataTranslate::AssetsToBlob(const Assets &assets)
     auto magicU8 = reinterpret_cast<uint8_t *>(const_cast<uint32_t *>(&leMagic));
     rawData.insert(rawData.end(), magicU8, magicU8 + sizeof(ASSETS_MAGIC));
     rawData.insert(rawData.end(), reinterpret_cast<uint8_t *>(&num), reinterpret_cast<uint8_t *>(&num) + sizeof(num));
-    for (auto &asset : assets) {
+    for (const auto &asset : assets) {
         auto data = AssetToBlob(asset);
         rawData.insert(rawData.end(), data.begin(), data.end());
     }
