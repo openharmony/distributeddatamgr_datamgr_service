@@ -843,7 +843,7 @@ int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
 void UdmfServiceImpl::TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData)
 {
     if (unifiedData.IsNeedTransferToEntries() && IsNeedTransferDeviceType(query)) {
-        unifiedData.TransferToEntries(unifiedData);
+        unifiedData.TransferToEntries();
     }
 }
 
