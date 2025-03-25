@@ -723,7 +723,7 @@ std::pair<int32_t, CloudLastSyncInfo> SyncManager::GetLastResults(std::map<SyncI
 {
     auto iter = infos.rbegin();
     if (iter != infos.rend() && iter->second.code != -1) {
-        return { SUCCESS, std::move(iter->second) };
+        return { SUCCESS, iter->second };
     }
     return { E_ERROR, {} };
 }
@@ -801,7 +801,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
                 iter->second.code = code;
                 iter->second.syncStatus = SyncStatus::FINISHED;
                 SaveLastSyncInfo(key, std::move(iter->second));
-                iter = val.erase(iter);
+                return false;
             } else {
                 iter++;
             }
