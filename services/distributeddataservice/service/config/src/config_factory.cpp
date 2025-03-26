@@ -91,5 +91,10 @@ ThreadConfig *ConfigFactory::GetThreadConfig()
 {
     return config_.thread;
 }
+
+std::vector<std::string> ConfigFactory::GetDataShareExtNames()
+{
+    return config_.dataShareExtNames;
+}
 } // namespace DistributedData
 } // namespace OHOS

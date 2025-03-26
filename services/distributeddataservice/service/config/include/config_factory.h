@@ -33,6 +33,7 @@ public:
     API_EXPORT CloudConfig *GetCloudConfig();
     API_EXPORT std::vector<AppIdMappingConfig> *GetAppIdMappingConfig();
     API_EXPORT ThreadConfig *GetThreadConfig();
+    API_EXPORT std::vector<std::string> GetDataShareExtNames();
 private:
     static constexpr const char *CONF_PATH = "/system/etc/distributeddata/conf";
     ConfigFactory();
