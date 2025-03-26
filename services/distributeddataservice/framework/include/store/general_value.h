@@ -115,6 +115,7 @@ struct ReportParam {
     std::string prepareTraceId;
     SyncStage syncStage = SyncStage::PREPARE;
     int32_t errCode = 0;
+    std::string message = "";
 };
 
 using Assets = std::vector<Asset>;

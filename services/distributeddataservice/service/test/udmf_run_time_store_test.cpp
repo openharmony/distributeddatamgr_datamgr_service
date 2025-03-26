@@ -552,6 +552,101 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
 }
 
 /**
+* @tc.name: Sync01
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Sync01, TestSize.Level1)
+{
+    std::vector<std::string> devices = {"device"};
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    Status ret = store->Sync(devices);
+    EXPECT_EQ(ret, E_DB_ERROR);
+}
+
+/**
+* @tc.name: Sync02
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Sync02, TestSize.Level1)
+{
+    std::vector<std::string> devices = { };
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    Status ret = store->Sync(devices);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: Sync03
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Sync03, TestSize.Level1)
+{
+    std::vector<std::string> devices = { "device" };
+    ProcessCallback callback;
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    Status ret = store->Sync(devices, callback);
+    EXPECT_EQ(ret, E_DB_ERROR);
+}
+
+/**
+* @tc.name: Sync04
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Sync04, TestSize.Level1)
+{
+    std::vector<std::string> devices = { };
+    ProcessCallback callback;
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    Status ret = store->Sync(devices, callback);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: Clear01
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Clear01, TestSize.Level1)
+{
+    static constexpr const char *DATA_PREFIX = "udmf://";
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    Status ret = store->Clear();
+    EXPECT_EQ(ret, store->Delete(DATA_PREFIX));
+}
+
+/**
+* @tc.name: Close01
+* @tc.desc: check for legal parameters, delete entries error.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, Close01, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    EXPECT_NO_FATAL_FAILURE(store->Close());
+}
+
+
+/**
 * @tc.name: GetSummary
 * @tc.desc: check for legal parameters, delete entries error.
 * @tc.type: FUNC

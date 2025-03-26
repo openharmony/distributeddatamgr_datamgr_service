@@ -158,13 +158,16 @@ private:
     std::function<void()> GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud, SyncInfo &info,
         bool retry, const TraceIds &traceIds);
     void DoExceptionalCallback(const GenAsync &async, GenDetails &details, const StoreInfo &storeInfo,
-        const std::string &prepareTraceId, int32_t code = GeneralError::E_ERROR);
+        const ReportParam &param);
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
         Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
     void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
     bool NeedSaveSyncInfo(const QueryKey &queryKey);
-    void BatchReport(int32_t userId, const TraceIds &traceIds, SyncStage syncStage, int32_t errCode);
+    void BatchReport(int32_t userId, const TraceIds &traceIds, SyncStage syncStage, int32_t errCode,
+        const std::string &message = "");
+    void StartCloudSync(const DistributedData::SyncEvent &evt, const StoreMetaData &meta,
+        const AutoCache::Store &store, Retryer retryer, DistributedData::GenDetails &details);
     std::pair<bool, StoreMetaData> GetMetaData(const StoreInfo &storeInfo);
     void AddCompensateSync(const StoreMetaData &meta);
     void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState, int32_t code);
