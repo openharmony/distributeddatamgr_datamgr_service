@@ -24,6 +24,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/common",
+    "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/data_share/data",
@@ -104,6 +105,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
   ]
 
   external_deps = [
