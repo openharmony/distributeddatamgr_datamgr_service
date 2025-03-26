@@ -81,6 +81,7 @@
                 "napi",
                 "netmanager_base",
                 "os_account",
+                "qos_manager",
                 "relational_store",
                 "resource_management",
                 "safwk",

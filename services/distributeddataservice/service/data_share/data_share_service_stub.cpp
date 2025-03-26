@@ -25,10 +25,25 @@
 #include "ishared_result_set.h"
 #include "itypes_util.h"
 #include "log_print.h"
+#include "qos.h"
 #include "utils/anonymous.h"
 
 namespace OHOS {
 namespace DataShare {
+
+class DataShareServiceStub::QosManager {
+public:
+    QosManager()
+    {
+        // set thread qos QOS_USER_INTERACTIVE
+        QOS::SetThreadQos(QOS::QosLevel::QOS_USER_INTERACTIVE);
+    }
+    ~QosManager()
+    {
+        QOS::ResetThreadQos();
+    }
+};
+
 bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
 {
     auto localDescriptor = IDataShareService::GetDescriptor();
@@ -51,6 +66,8 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = InsertEx(uri, extUri, bucket);
+    ZLOGI("Insert uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -70,6 +87,8 @@ int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = UpdateEx(uri, extUri, predicate, bucket);
+    ZLOGI("Update uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -87,6 +106,8 @@ int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = DeleteEx(uri, extUri, predicate);
+    ZLOGI("Delete uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -327,6 +348,12 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
 
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
+    // set thread qos
+    DataShareServiceStub::QosManager qos;
+    // check thread qos
+    QOS::QosLevel curLevel;
+    int qosRet = QOS::GetThreadQos(curLevel);
+
     int tryTimes = TRY_TIMES;
     while (!isReady_.load() && tryTimes > 0) {
         tryTimes--;
@@ -334,7 +361,8 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     }
     auto callingPid = IPCSkeleton::GetCallingPid();
     if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
-        ZLOGI("code:%{public}u, callingPid:%{public}d", code, callingPid);
+        ZLOGI("code:%{public}u, callingPid:%{public}d, qosRet:%{public}d, curLevel:%{public}d",
+            code, callingPid, qosRet, curLevel);
     }
     if (!CheckInterfaceToken(data)) {
         return DATA_SHARE_ERROR;
