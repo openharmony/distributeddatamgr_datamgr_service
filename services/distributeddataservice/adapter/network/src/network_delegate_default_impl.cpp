@@ -40,6 +40,10 @@ NetworkDelegate::NetworkType NetworkDelegateDefaultImpl::GetNetworkType(bool ret
     return NetworkType::NONE;
 }
 
+void NetworkDelegateDefaultImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+}
+
 bool NetworkDelegateDefaultImpl::Init()
 {
     static NetworkDelegateDefaultImpl delegate;

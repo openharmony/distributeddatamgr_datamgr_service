@@ -114,30 +114,43 @@ NetworkDelegateNormalImpl::~NetworkDelegateNormalImpl()
 
 void NetworkDelegateNormalImpl::RegOnNetworkChange()
 {
-    static std::atomic_bool flag = false;
-    if (flag.exchange(true)) {
-        ZLOGW("run only one");
-        return;
+    if (executors_ != nullptr) {
+        executors_->Execute(GetTask(0));
     }
-    sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(*this);
-    if (observer == nullptr) {
-        ZLOGE("new operator error.observer is nullptr");
-        flag.store(false);
-        return;
-    }
-    constexpr int32_t RETRY_MAX_TIMES = 3;
-    int32_t retryCount = 0;
-    constexpr int32_t RETRY_TIME_INTERVAL_MILLISECOND = 1 * 1000 * 1000;
-    do {
+}
+
+void NetworkDelegateNormalImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+}
+
+ExecutorPool::Task NetworkDelegateNormalImpl::GetTask(uint32_t retry)
+{
+    return [this, retry] {
+        static std::atomic_bool flag = false;
+        if (flag.exchange(true)) {
+            ZLOGW("run only one");
+            return;
+        }
+        sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(*this);
+        if (observer == nullptr) {
+            ZLOGE("new operator error.observer is nullptr");
+            flag.store(false);
+            return;
+        }
         auto nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
-        if (nRet == NETMANAGER_SUCCESS) {
             break;
+            return;
         }
         ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
         flag.store(false);
-        retryCount++;
-        usleep(RETRY_TIME_INTERVAL_MILLISECOND);
-    } while (retryCount < RETRY_MAX_TIMES);
+        if (retry + 1 > MAX_RETRY_TIME) {
+            flag.store(false);
+            ZLOGE("fail to register subscriber!");
+            return;
+        }
+        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+    };
 }
 
 bool NetworkDelegateNormalImpl::IsNetworkAvailable()
