@@ -215,6 +215,8 @@ private:
     static std::string GetSubUser(const int32_t subUser);
 
     static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+    
+    static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
 
     void GetSchema(const RdbSyncerParam &param);
 
