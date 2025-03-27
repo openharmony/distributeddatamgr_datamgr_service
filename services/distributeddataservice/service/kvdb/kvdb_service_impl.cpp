@@ -245,6 +245,16 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
+        DeviceMatrix::GetInstance().OnChanged(metaData);
+        StoreMetaDataLocal localMeta;
+        MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), localMeta, true);
+        if (!localMeta.HasPolicy(IMMEDIATE_SYNC_ON_CHANGE)) {
+            ZLOGW("appId:%{public}s storeId:%{public}s no IMMEDIATE_SYNC_ON_CHANGE ", appId.appId.c_str(),
+                  Anonymous::Change(storeId.storeId).c_str());
+            return Status::SUCCESS;
+        }
+    }
     if ((DeviceMatrix::GetInstance().IsStatics(metaData) || DeviceMatrix::GetInstance().IsDynamic(metaData)) &&
         !IsNeedSync(metaData, syncInfo.devices)) {
         ZLOGW("no change, do not need sync, appId:%{public}s storeId:%{public}s", metaData.bundleName.c_str(),
