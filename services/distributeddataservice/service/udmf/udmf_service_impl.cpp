@@ -535,6 +535,14 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
+    std::vector<std::string> syncDevices;
+    for (auto const &device : devices) {
+        if (!DistributedData::DeviceManagerAdapter::GetInstance().IsSameAccount(device)) {
+            ZLOGW("is diff account. device:%{public}s", DistributedData::Anonymous::Change(device).c_str());
+            continue;
+        }
+        syncDevices.emplace_back(device);
+    }
     RegisterAsyncProcessInfo(query.key);
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
@@ -556,7 +564,7 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     };
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
-    if (store->Sync(devices, callback) != E_OK) {
+    if (store->Sync(syncDevices, callback) != E_OK) {
         ZLOGE("Store sync failed:%{public}s", key.intention.c_str());
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);

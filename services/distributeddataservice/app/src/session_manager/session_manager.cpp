@@ -48,11 +48,7 @@ Session SessionManager::GetSession(const SessionPoint &local, const std::string 
     session.sourceDeviceId = local.deviceId;
     session.targetDeviceId = targetDeviceId;
     auto users = UserDelegate::GetInstance().GetRemoteUserStatus(targetDeviceId);
-    // system service
-    if (local.userId == UserDelegate::SYSTEM_USER) {
-        session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
-    }
-    
+
     AclParams aclParams;
     if (!GetSendAuthParams(local, targetDeviceId, aclParams)) {
         ZLOGE("get send auth params failed:%{public}s", Anonymous::Change(targetDeviceId).c_str());
@@ -64,6 +60,8 @@ Session SessionManager::GetSession(const SessionPoint &local, const std::string 
         aclParams.accCallee.userId = user.id;
         auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(local.userId, user.id,
             targetDeviceId, aclParams);
+        ZLOGD("targetDeviceId:%{public}s, user.id:%{public}d, isPermitted:%{public}d, isSameAccount: %{public}d",
+            Anonymous::Change(targetDeviceId).c_str(), user.id, isPermitted, isSameAccount);
         if (isPermitted) {
             auto it = std::find(session.targetUserIds.begin(), session.targetUserIds.end(), user.id);
             if (it == session.targetUserIds.end() && isSameAccount) {
@@ -145,6 +143,8 @@ bool SessionManager::CheckSession(const SessionPoint &local, const SessionPoint 
     }
     auto [isPermitted, isSameAccount] = AuthDelegate::GetInstance()->CheckAccess(local.userId,
         peer.userId, peer.deviceId, aclParams);
+    ZLOGD("peer.deviceId:%{public}s, peer.userId:%{public}d, isPermitted:%{public}d, isSameAccount: %{public}d",
+        Anonymous::Change(peer.deviceId).c_str(), peer.userId, isPermitted, isSameAccount);
     if (isPermitted && local.userId != UserDelegate::SYSTEM_USER) {
         isPermitted = Account::GetInstance()->IsUserForeground(local.userId);
     }

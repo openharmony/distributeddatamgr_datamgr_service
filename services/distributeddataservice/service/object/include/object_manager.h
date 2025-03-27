@@ -202,8 +202,7 @@ private:
              + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
     std::recursive_mutex kvStoreMutex_;
-    std::mutex mutex_;
-    DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
+    std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
     ObjectDataListener *objectDataListener_ = nullptr;
     sptr<ObjectAssetsRecvListener> objectAssetsRecvListener_ = nullptr;
@@ -214,7 +213,6 @@ private:
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
     std::shared_ptr<ExecutorPool> executors_;
     DistributedData::AssetBindInfo ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo);
-    VBucket ConvertVBucket(ObjectStore::ValuesBucket &vBucket);
     ConcurrentMap<std::string, std::shared_ptr<Snapshot>> snapshots_; // key:bundleName_sessionId
     ConcurrentMap<std::string, UriToSnapshot> bindSnapshots_; // key:bundleName_storeName
     ConcurrentMap<std::string, RestoreStatus> restoreStatus_; // key:bundleName+sessionId

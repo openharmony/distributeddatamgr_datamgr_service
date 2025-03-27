@@ -313,7 +313,7 @@ int32_t ObjectStoreManager::Clear()
             return OBJECT_SUCCESS;
         }
     }
-    ZLOGD("user is change, need to change");
+    ZLOGI("user changed, need to clear, userId:%{public}s", userId.c_str());
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
@@ -405,6 +405,22 @@ void ObjectStoreManager::NotifyChange(ObjectRecord &changedData)
         }
     }
     auto data = GetObjectData(changedData, saveInfo, hasAsset);
+    auto isSameAccount = DeviceManagerAdapter::GetInstance().IsSameAccount(saveInfo.sourceDeviceId);
+    if (!isSameAccount) {
+        ZLOGE("IsSameAccount failed. bundleName:%{public}s, source device:%{public}s", saveInfo.bundleName.c_str(),
+            Anonymous::Change(saveInfo.sourceDeviceId).c_str());
+        std::vector<std::vector<uint8_t>> keys;
+        std::vector<DistributedDB::Entry> entries;
+        std::for_each(entries.begin(), entries.end(), [&keys](const DistributedDB::Entry &entry) {
+            keys.emplace_back(entry.key);
+        });
+        auto status = delegate_->DeleteBatch(keys);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("Delete entries failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
+                saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
+        }
+        return;
+    }
     if (!hasAsset) {
         ObjectStore::RadarReporter::ReportStateStart(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
             ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS, ObjectStore::START, saveInfo.bundleName);
@@ -697,11 +713,15 @@ void ObjectStoreManager::DoNotifyWaitAssetTimeout(const std::string &objectKey)
 
 void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &userId)
 {
-    ZLOGI("enter %{public}s", dataDir.c_str());
-    kvStoreDelegateManager_ =
-        new DistributedDB::KvStoreDelegateManager(DistributedData::Bootstrap::GetInstance().GetProcessLabel(), userId);
+    ZLOGI("enter, user: %{public}s", userId.c_str());
+    kvStoreDelegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>
+        (DistributedData::Bootstrap::GetInstance().GetProcessLabel(), userId);
     DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
-    kvStoreDelegateManager_->SetKvStoreConfig(kvStoreConfig);
+    auto status = kvStoreDelegateManager_->SetKvStoreConfig(kvStoreConfig);
+    if (status != DistributedDB::OK) {
+        ZLOGE("Set kvstore config failed, status: %{public}d", status);
+        return;
+    }
     userId_ = userId;
 }
 
@@ -793,7 +813,7 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
 {
     std::vector<DistributedDB::Entry> entries;
     auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
-    if (status != DistributedDB::DBStatus::NOT_FOUND) {
+    if (status == DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGI("Get old entries empty, bundleName: %{public}s", appId.c_str());
         return;
     }
@@ -869,11 +889,15 @@ int32_t ObjectStoreManager::SyncOnStore(
     const std::string &prefix, const std::vector<std::string> &deviceList, SyncCallBack &callback)
 {
     std::vector<std::string> syncDevices;
-    for (auto &device : deviceList) {
+    for (auto const &device : deviceList) {
         if (device == LOCAL_DEVICE) {
             ZLOGI("Save to local, do not need sync, prefix: %{public}s", prefix.c_str());
             callback({{LOCAL_DEVICE, OBJECT_SUCCESS}});
             return OBJECT_SUCCESS;
+        }
+        if (!DeviceManagerAdapter::GetInstance().IsSameAccount(device)) {
+            ZLOGE("IsSameAccount failed. device:%{public}s", Anonymous::Change(device).c_str());
+            continue;
         }
         syncDevices.emplace_back(DmAdaper::GetInstance().GetUuidByNetworkId(device));
     }
