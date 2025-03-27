@@ -245,14 +245,14 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
-    if (DeviceMatrix::GetInstance().IsStatics(metaData) || DeviceMatrix::GetInstance().IsDynamic(metaData)) {
-        if (!IsNeedSync(metaData, syncInfo.devices)) {
-            ZLOGW("no change, do not need sync, appId:%{public}s storeId:%{public}s", metaData.bundleName.c_str(),
-                  Anonymous::Change(metaData.storeId).c_str());
-            DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
-            DoComplete(metaData, syncInfo, RefCount(), std::move(dbResult));
-            return SUCCESS;
-        }
+    if ((DeviceMatrix::GetInstance().IsStatics(metaData) || DeviceMatrix::GetInstance().IsDynamic(metaData)) &&
+        !IsNeedSync(metaData, syncInfo.devices))
+    {
+        ZLOGW("no change, do not need sync, appId:%{public}s storeId:%{public}s", metaData.bundleName.c_str(),
+            Anonymous::Change(metaData.storeId).c_str());
+        DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
+        DoComplete(metaData, syncInfo, RefCount(), std::move(dbResult));
+        return SUCCESS;
     }
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     syncInfo.syncId = ++syncId_;
@@ -277,6 +277,8 @@ bool KVDBServiceImpl::IsNeedSync(const StoreMetaData &metaData, std::vector<std:
     auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuids[0]);
     auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuids[0]);
     if ((mask & code) == code || (localMask & code) == code) {
+        ZLOGI("record level change ,code is %{public}d, localMask is %{public}d, mask is %{public}d", code,
+            localMask, mask);
         return true;
     }
     return false;
