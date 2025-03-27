@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "dm_device_info.h"
 #define LOG_TAG "UdmfServiceImpl"
 
 #include "udmf_service_impl.h"
