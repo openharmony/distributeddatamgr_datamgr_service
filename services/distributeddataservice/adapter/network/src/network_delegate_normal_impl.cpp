@@ -139,13 +139,12 @@ ExecutorPool::Task NetworkDelegateNormalImpl::GetTask(uint32_t retry)
             return;
         }
         auto nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
-            break;
+        if (nRet == NETMANAGER_SUCCESS) {
             return;
         }
         ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
         flag.store(false);
         if (retry + 1 > MAX_RETRY_TIME) {
-            flag.store(false);
             ZLOGE("fail to register subscriber!");
             return;
         }
