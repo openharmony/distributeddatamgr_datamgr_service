@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "dm_device_info.h"
 #define LOG_TAG "UdmfServiceImpl"
 
 #include "udmf_service_impl.h"
@@ -43,6 +44,7 @@
 namespace OHOS {
 namespace UDMF {
 using namespace Security::AccessToken;
+using namespace OHOS::DistributedHardware;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
@@ -849,6 +851,10 @@ void UdmfServiceImpl::TransferToEntriesIfNeed(const QueryOption &query, UnifiedD
 
 bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
 {
+    auto deviceInfo = DmAdapter::GetInstance().GetLocalDevice();
+    if (deviceInfo.deviceType != DEVICE_TYPE_PC && deviceInfo.deviceType != DEVICE_TYPE_PAD) {
+        return false;
+    }
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
         ZLOGE("Failed to get system ability mgr.");
