@@ -57,12 +57,12 @@ static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& a
 
 static int32_t UpdateStore(ChangedAssetInfo& changedAsset);
 
-static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset);
+static AutoCache::Store GetStore(const ChangedAssetInfo& changedAsset);
 static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBindInfo, const Asset& newAsset);
 static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& assetBindInfo);
 static void MergeAsset(Asset& oldAsset, const Asset& newAsset);
 static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args);
-static BindEvent::BindEventInfo MakeBindInfo(ChangedAssetInfo& changedAsset);
+static BindEvent::BindEventInfo MakeBindInfo(const ChangedAssetInfo& changedAsset);
 
 static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
     {
@@ -287,7 +287,7 @@ static void MergeAsset(Asset& oldAsset, const Asset& newAsset)
     oldAsset.path = newAsset.path;
 }
 
-static AutoCache::Store GetStore(ChangedAssetInfo& changedAsset)
+static AutoCache::Store GetStore(const ChangedAssetInfo& changedAsset)
 {
     StoreMetaData meta;
     meta.storeId = changedAsset.bindInfo.storeName;
@@ -347,7 +347,7 @@ static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& a
     return E_OK;
 }
 
-static BindEvent::BindEventInfo MakeBindInfo(ChangedAssetInfo& changedAsset)
+static BindEvent::BindEventInfo MakeBindInfo(const ChangedAssetInfo& changedAsset)
 {
     BindEvent::BindEventInfo bindEventInfo;
     bindEventInfo.bundleName = changedAsset.storeInfo.bundleName;
