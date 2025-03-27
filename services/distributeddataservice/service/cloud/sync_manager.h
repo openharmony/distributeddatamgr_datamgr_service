@@ -46,7 +46,6 @@ public:
     using TraceIds = std::map<std::string, std::string>;
     using SyncStage = DistributedData::SyncStage;
     using ReportParam = DistributedData::ReportParam;
-    static std::pair<int32_t, AutoCache::Store> GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     class SyncInfo final {
     public:
         using Store = std::string;
@@ -95,12 +94,13 @@ public:
     };
     SyncManager();
     ~SyncManager();
+    static void Report(const ReportParam &reportParam);
+    static std::pair<int32_t, AutoCache::Store> GetStore(const StoreMetaData &meta, int32_t user, bool mustBind = true);
     int32_t Bind(std::shared_ptr<ExecutorPool> executor);
     int32_t DoCloudSync(SyncInfo syncInfo);
     int32_t StopCloudSync(int32_t user = 0);
     std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> QueryLastSyncInfo(
         const std::vector<QueryKey> &queryKeys);
-    void Report(const ReportParam &reportParam);
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
 
@@ -137,6 +137,13 @@ private:
     static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
     static bool NeedGetCloudInfo(CloudInfo &cloud);
     static GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
+    static std::function<void(const Event &)> GetLockChangeHandler();
+    static TraceIds GetPrepareTraceId(const SyncInfo &info, const CloudInfo &cloud);
+    static void Report(
+        const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix);
+    static std::pair<int32_t, CloudLastSyncInfo> GetLastResults(std::map<SyncId, CloudLastSyncInfo> &infos);
+    static std::pair<int32_t, CloudLastSyncInfo> GetLastSyncInfoFromMeta(const QueryKey &queryKey);
+    static void SaveLastSyncInfo(const QueryKey &queryKey, CloudLastSyncInfo &&info);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
@@ -155,23 +162,15 @@ private:
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
         Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
-    static std::pair<int32_t, CloudLastSyncInfo> GetLastResults(std::map<SyncId, CloudLastSyncInfo> &infos);
     void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
     bool NeedSaveSyncInfo(const QueryKey &queryKey);
-    std::function<void(const Event &)> GetLockChangeHandler();
     void BatchReport(int32_t userId, const TraceIds &traceIds, SyncStage syncStage, int32_t errCode,
         const std::string &message = "");
     void StartCloudSync(const DistributedData::SyncEvent &evt, const StoreMetaData &meta,
         const AutoCache::Store &store, Retryer retryer, DistributedData::GenDetails &details);
-    TraceIds GetPrepareTraceId(const SyncInfo &info, const CloudInfo &cloud);
     std::pair<bool, StoreMetaData> GetMetaData(const StoreInfo &storeInfo);
     void AddCompensateSync(const StoreMetaData &meta);
-    static void Report(
-        const std::string &faultType, const std::string &bundleName, int32_t errCode, const std::string &appendix);
     void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState, int32_t code);
-    std::pair<int32_t, CloudLastSyncInfo> GetLastSyncInfoFromMeta(const QueryKey &queryKey);
-    static void SaveLastSyncInfo(const QueryKey &queryKey, CloudLastSyncInfo &&info);
-
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;

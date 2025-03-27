@@ -201,8 +201,8 @@ std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
 
 SyncManager::SyncManager()
 {
-    EventCenter::GetInstance().Subscribe(CloudEvent::LOCK_CLOUD_CONTAINER, GetLockChangeHandler());
-    EventCenter::GetInstance().Subscribe(CloudEvent::UNLOCK_CLOUD_CONTAINER, GetLockChangeHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::UNLOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
     syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
     auto metaName = Bootstrap::GetInstance().GetProcessLabel();
@@ -299,15 +299,15 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
             auto it = traceIds.find(schema.bundleName);
             if (!cloud.IsOn(schema.bundleName)) {
                 UpdateFinishSyncInfo({ cloud.user, cloud.id, schema.bundleName, "" }, syncId, E_ERROR);
-                Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second, SyncStage::END,
-                         E_ERROR, "!IsOn:" + schema.bundleName });
+                SyncManager::Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second,
+                    SyncStage::END, E_ERROR, "!IsOn:" + schema.bundleName });
                 continue;
             }
             for (const auto &database : schema.databases) {
                 if (!info.Contains(database.name)) {
                     UpdateFinishSyncInfo({ cloud.user, cloud.id, schema.bundleName, database.name }, syncId, E_ERROR);
-                    Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second, SyncStage::END,
-                             E_ERROR, "!Contains:" + database.name });
+                    SyncManager::Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second,
+                        SyncStage::END, E_ERROR, "!Contains:" + database.name });
                     continue;
                 }
                 StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
@@ -317,8 +317,8 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
                         storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
                     UpdateFinishSyncInfo({ cloud.user, cloud.id, schema.bundleName, database.name }, syncId, status);
-                    Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second, SyncStage::END,
-                        status, "CheckSyncAction" });
+                    SyncManager::Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second,
+                        SyncStage::END, status, "CheckSyncAction" });
                     info.SetError(status);
                     continue;
                 }
@@ -353,7 +353,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
-        auto traceIds = GetPrepareTraceId(info, cloud);
+        auto traceIds = SyncManager::GetPrepareTraceId(info, cloud);
         BatchReport(info.user_, traceIds, SyncStage::PREPARE, E_OK);
         UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
@@ -454,18 +454,17 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
 
 void SyncManager::ReportSyncEvent(const SyncEvent &evt, BizState bizState, int32_t code)
 {
-    SyncStage syncStage = SyncStage::START;
     auto &storeInfo = evt.GetStoreInfo();
     if (bizState == BizState::BEGIN) {
-        syncStage = SyncStage::START;
         RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC,
             storeInfo.syncId, evt.GetTriggerMode()}, "GetSyncHandler", bizState);
     } else {
-        syncStage = SyncStage::END;
         RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC,
             storeInfo.syncId, evt.GetTriggerMode(), code}, "GetSyncHandler", bizState);
     }
-    Report({evt.GetUser(), storeInfo.bundleName, evt.GetPrepareTraceId(), syncStage, code, "GetSyncHandler"});
+    SyncStage syncStage = (bizState == BizState::BEGIN) ? SyncStage::START : SyncStage::END;
+    SyncManager::Report({evt.GetUser(), storeInfo.bundleName, evt.GetPrepareTraceId(), syncStage, code,
+        "GetSyncHandler"});
 }
 
 std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
@@ -508,7 +507,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
                                     dbCode },
                 "GetRetryer", BizState::END);
-            Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
+            SyncManager::Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
                 dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "GetRetryer finish" });
             Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
                 "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
@@ -525,7 +524,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
                                     dbCode },
                 "GetRetryer", BizState::END);
-            Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
+            SyncManager::Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
                 dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "GetRetryer continue" });
             Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
                    "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
@@ -770,7 +769,7 @@ std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryL
         if (lastSyncInfoMap.find(queryKey.storeId) != lastSyncInfoMap.end()) {
             continue;
         }
-        auto [status, syncInfo] = GetLastSyncInfoFromMeta(queryKey);
+        auto [status, syncInfo] = SyncManager::GetLastSyncInfoFromMeta(queryKey);
         if (status == SUCCESS) {
             lastSyncInfoMap.insert(std::make_pair(std::move(syncInfo.storeId), std::move(syncInfo)));
         }
@@ -844,7 +843,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
         RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId, triggerMode,
                                 dbCode, result.begin()->second.changeCount },
             "GetCallback", BizState::END);
-        Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, dbCode, "GetCallback" });
+        SyncManager::Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END, dbCode, "GetCallback" });
         if (dbCode != 0) {
             Report(FT_CALLBACK, storeInfo.bundleName, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
                 "callback failed, dbCode=" + std::to_string(dbCode));
@@ -899,7 +898,7 @@ void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &detai
     }
     QueryKey queryKey{ storeInfo.user, GetAccountId(storeInfo.user), storeInfo.bundleName, storeInfo.storeName };
     UpdateFinishSyncInfo(queryKey, storeInfo.syncId, param.errCode);
-    Report({ storeInfo.user, storeInfo.bundleName, param.prepareTraceId, SyncStage::END,
+    SyncManager::Report({ storeInfo.user, storeInfo.bundleName, param.prepareTraceId, SyncStage::END,
         param.errCode, param.message });
 }
 
@@ -934,7 +933,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
                 RadarReporter::Report({ storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC, storeInfo.syncId,
                                         triggerMode, code, details.begin()->second.changeCount },
                     "RetryCallback", BizState::END);
-                Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END,
+                SyncManager::Report({ user, storeInfo.bundleName, prepareTraceId, SyncStage::END,
                     dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "RetryCallback" });
             }
         }
@@ -954,7 +953,7 @@ void SyncManager::BatchReport(int32_t userId, const TraceIds &traceIds, SyncStag
     const std::string &message)
 {
     for (const auto &[bundle, id] : traceIds) {
-        Report({ userId, bundle, id, syncStage, errCode, message });
+        SyncManager::Report({ userId, bundle, id, syncStage, errCode, message });
     }
 }
 
