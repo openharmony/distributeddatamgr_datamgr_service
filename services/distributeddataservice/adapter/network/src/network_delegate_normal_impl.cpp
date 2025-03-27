@@ -125,11 +125,19 @@ void NetworkDelegateNormalImpl::RegOnNetworkChange()
         flag.store(false);
         return;
     }
-    auto nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
-    if (nRet != NETMANAGER_SUCCESS) {
+    constexpr int32_t RETRY_MAX_TIMES = 3;
+    int32_t retryCount = 0;
+    constexpr int32_t RETRY_TIME_INTERVAL_MILLISECOND = 1 * 1000 * 1000;
+    do {
+        auto nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
+        if (nRet == E_OK) {
+            break;
+        }
         ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
         flag.store(false);
-    }
+        retryCount++;
+        usleep(RETRY_TIMEE_INTERVAL_MILLISECOND);
+    } while (retryCount < RETRY_MAX_TIMES);
 }
 
 bool NetworkDelegateNormalImpl::IsNetworkAvailable()
