@@ -251,7 +251,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
         MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), localMeta, true);
         if (!localMeta.HasPolicy(IMMEDIATE_SYNC_ON_CHANGE)) {
             ZLOGW("appId:%{public}s storeId:%{public}s no IMMEDIATE_SYNC_ON_CHANGE ", appId.appId.c_str(),
-                  Anonymous::Change(storeId.storeId).c_str());
+                Anonymous::Change(storeId.storeId).c_str());
             return Status::SUCCESS;
         }
     }
