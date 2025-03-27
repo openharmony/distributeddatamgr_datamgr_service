@@ -24,6 +24,7 @@ public:
     bool IsNetworkAvailable() override;
     NetworkType GetNetworkType(bool retrieve = false) override;
     void RegOnNetworkChange() override;
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
     bool isNetworkAvailable_ = true;
     virtual ~NetworkDelegateMock() = default;
 };
