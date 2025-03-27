@@ -801,7 +801,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
                 iter->second.code = code;
                 iter->second.syncStatus = SyncStatus::FINISHED;
                 SaveLastSyncInfo(key, std::move(iter->second));
-                return false;
+                iter = val.erase(iter);
             } else {
                 iter++;
             }
