@@ -130,13 +130,13 @@ void NetworkDelegateNormalImpl::RegOnNetworkChange()
     constexpr int32_t RETRY_TIME_INTERVAL_MILLISECOND = 1 * 1000 * 1000;
     do {
         auto nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
-        if (nRet == E_OK) {
+        if (nRet == NETMANAGER_SUCCESS) {
             break;
         }
         ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
         flag.store(false);
         retryCount++;
-        usleep(RETRY_TIMEE_INTERVAL_MILLISECOND);
+        usleep(RETRY_TIME_INTERVAL_MILLISECOND);
     } while (retryCount < RETRY_MAX_TIMES);
 }
 
