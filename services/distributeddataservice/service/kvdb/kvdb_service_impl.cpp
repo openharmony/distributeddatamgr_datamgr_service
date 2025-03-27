@@ -246,8 +246,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
     if ((DeviceMatrix::GetInstance().IsStatics(metaData) || DeviceMatrix::GetInstance().IsDynamic(metaData)) &&
-        !IsNeedSync(metaData, syncInfo.devices))
-    {
+        !IsNeedSync(metaData, syncInfo.devices)) {
         ZLOGW("no change, do not need sync, appId:%{public}s storeId:%{public}s", metaData.bundleName.c_str(),
             Anonymous::Change(metaData.storeId).c_str());
         DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
