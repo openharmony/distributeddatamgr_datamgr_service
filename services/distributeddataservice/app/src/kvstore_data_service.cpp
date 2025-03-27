@@ -50,6 +50,7 @@
 #include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "network/network_delegate.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -319,6 +320,7 @@ void KvStoreDataService::OnStart()
     }
     AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
+    AddSystemAbilityListener(COMM_NET_CONN_MANAGER_SYS_ABILITY_ID);
     RegisterStoreInfo();
     Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
         std::placeholders::_2);
@@ -359,6 +361,8 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
         Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1,
                                                                 DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    } else if (systemAbilityId == COMM_NET_CONN_MANAGER_SYS_ABILITY_ID) {
+        NetworkDelegate::GetInstance()->RegOnNetworkChange();
     }
     return;
 }
