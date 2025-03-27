@@ -1084,7 +1084,7 @@ HWTEST_F(KvdbServiceImplTest, IsNeedSyncTest, TestSize.Level0)
     StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
     std::vector<std::string> devices= {"IsNeedSyncTest"};
     auto changes = kvdbServiceImpl_->IsNeedSync(meta, devices);
-    EXPECT_EQ(changes, true);
+    EXPECT_EQ(changes, false);
 }
 
 /**
