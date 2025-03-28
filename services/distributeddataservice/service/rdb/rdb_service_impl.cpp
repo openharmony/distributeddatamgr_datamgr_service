@@ -823,6 +823,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     auto meta = GetStoreMetaData(param);
     StoreMetaData old;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
+    meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
     if (!isCreated || meta != old) {
         Upgrade(param, old);
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
@@ -845,15 +846,10 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     SavePromiseInfo(meta, param);
     SaveDfxInfo(meta, param);
 
-    AppIDMetaData appIdMeta;
-    appIdMeta.bundleName = meta.bundleName;
-    appIdMeta.appId = meta.appId;
-    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
-            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+    if (!SaveAppIDMeta(meta, old)) {
         return RDB_ERROR;
     }
+
     if (param.isEncrypt_ && !param.password_.empty()) {
         if (SetSecretKey(param, meta) != RDB_OK) {
             ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
@@ -864,6 +860,20 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     }
     GetSchema(param);
     return RDB_OK;
+}
+
+bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old)
+{
+    AppIDMetaData appIdMeta;
+    appIdMeta.bundleName = meta.bundleName;
+    appIdMeta.appId = meta.appId;
+    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
+        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+        return false;
+    }
+    return true;
 }
 
 int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam& param, const RdbStatEvent &statEvent)
