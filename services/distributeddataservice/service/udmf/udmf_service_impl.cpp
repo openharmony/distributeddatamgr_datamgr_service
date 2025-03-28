@@ -43,6 +43,7 @@
 namespace OHOS {
 namespace UDMF {
 using namespace Security::AccessToken;
+using namespace OHOS::DistributedHardware;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
@@ -843,12 +844,17 @@ int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
 void UdmfServiceImpl::TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData)
 {
     if (unifiedData.IsNeedTransferToEntries() && IsNeedTransferDeviceType(query)) {
-        unifiedData.TransferToEntries(unifiedData);
+        unifiedData.ConvertRecordsToEntries();
     }
 }
 
 bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
 {
+    auto deviceInfo = DmAdapter::GetInstance().GetLocalDevice();
+    if (deviceInfo.deviceType != DEVICE_TYPE_PC && deviceInfo.deviceType != DEVICE_TYPE_PAD
+        && deviceInfo.deviceType != DEVICE_TYPE_2IN1) {
+        return false;
+    }
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
         ZLOGE("Failed to get system ability mgr.");
