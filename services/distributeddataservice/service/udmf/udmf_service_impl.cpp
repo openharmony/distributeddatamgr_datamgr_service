@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "dm_device_info.h"
 #define LOG_TAG "UdmfServiceImpl"
 
 #include "udmf_service_impl.h"
@@ -851,7 +852,8 @@ void UdmfServiceImpl::TransferToEntriesIfNeed(const QueryOption &query, UnifiedD
 bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
 {
     auto deviceInfo = DmAdapter::GetInstance().GetLocalDevice();
-    if (deviceInfo.deviceType != DEVICE_TYPE_PC && deviceInfo.deviceType != DEVICE_TYPE_PAD) {
+    if (deviceInfo.deviceType != DEVICE_TYPE_PC && deviceInfo.deviceType != DEVICE_TYPE_PAD
+        && deviceInfo.deviceType != DEVICE_TYPE_2IN1) {
         return false;
     }
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
