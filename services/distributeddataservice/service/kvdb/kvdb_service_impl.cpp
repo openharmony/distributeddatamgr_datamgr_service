@@ -259,6 +259,9 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
         !IsNeedSync(metaData, syncInfo.devices)) {
         ZLOGW("no change, do not need sync, appId:%{public}s storeId:%{public}s", metaData.bundleName.c_str(),
             Anonymous::Change(metaData.storeId).c_str());
+        if (syncInfo.devices.empty()) {
+            return DEVICE_NOT_ONLINE;
+        }
         DBResult dbResult = { {syncInfo.devices[0], DBStatus::OK} };
         DoComplete(metaData, syncInfo, RefCount(), std::move(dbResult));
         return SUCCESS;
@@ -286,7 +289,7 @@ bool KVDBServiceImpl::IsNeedSync(const StoreMetaData &metaData, std::vector<std:
     auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuids[0]);
     auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuids[0]);
     if ((mask & code) == code || (localMask & code) == code) {
-        ZLOGI("record level change, mask: %{public}d, localmask: %{public}d, code: %{public}d", mask, localmask, code);
+        ZLOGI("record level change, code: %{public}d, localmask: %{public}d, mask: %{public}d", code, localmask, mask);
         return true;
     }
     return false;
