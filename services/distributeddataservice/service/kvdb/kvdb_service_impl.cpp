@@ -283,10 +283,12 @@ bool KVDBServiceImpl::IsNeedSync(const StoreMetaData &metaData, std::vector<std:
         return false;
     }
     auto code = DeviceMatrix::GetInstance().GetCode(metaData);
+    {}
     auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuids[0]);
     auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuids[0]);
     if ((mask & code) == code || (localMask & code) == code) {
-        ZLOGI("record remote level change: %{public}d", (mask & code) == code);
+        ZLOGI("remote level change: %{public}d, local level change: %{public}d",
+            (mask & code) == code, (localMask & code) == code);
         return true;
     }
     return false;
