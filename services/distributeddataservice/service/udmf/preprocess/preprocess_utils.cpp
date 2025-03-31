@@ -22,6 +22,7 @@
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
 #include "device_manager_adapter.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
@@ -71,7 +72,7 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
     runtime.deviceId = GetLocalDeviceId();
     runtime.recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
     runtime.tokenId = option.tokenId;
-    runtime.sdkVersion = data.GetSdkVersion();
+    runtime.sdkVersion = GetSdkVersionByToken(option.tokenId);
     data.SetRuntime(runtime);
     return E_OK;
 }
@@ -469,6 +470,22 @@ Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary 
         }
     }
     return E_OK;
+}
+
+std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
+{
+    if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) !=
+        Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
+        ZLOGE("Caller is not application.");
+        return "";
+    }
+    Security::AccessToken::HapTokenInfo hapTokenInfo;
+    auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
+    if (ret != 0) {
+        ZLOGE("GetHapTokenInfo fail, tokenid is %{public}u, ret is %{public}d.", tokenId, ret);
+        return "";
+    }
+    return std::to_string(hapTokenInfo.apiVersion);
 }
 } // namespace UDMF
 } // namespace OHOS
