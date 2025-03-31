@@ -62,6 +62,7 @@ constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
 constexpr const char *VALUES = " VALUES ";
 constexpr const char *LOGOUT_DELETE_FLAG = "DELETE#ALL_CLOUDDATA";
+constexpr const char *LOGOUT_RESERVE_FLAG = "RESERVE#ALL_CLOUDDATA";
 constexpr const LockAction LOCK_ACTION =
     static_cast<LockAction>(static_cast<uint32_t>(LockAction::INSERT) | static_cast<uint32_t>(LockAction::UPDATE) |
                             static_cast<uint32_t>(LockAction::DELETE) | static_cast<uint32_t>(LockAction::DOWNLOAD));
@@ -1191,8 +1192,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
                 info.push_back(std::move(value));
                 continue;
             }
-            auto deleteKey = std::get_if<std::string>(&value);
-            if (deleteKey != nullptr && (*deleteKey == LOGOUT_DELETE_FLAG)) {
+            auto key = std::get_if<std::string>(&value);
+            if (key != nullptr && (*key == LOGOUT_DELETE_FLAG || *key == LOGOUT_RESERVE_FLAG)) {
                 // notify to start app
                 notifyFlag = true;
             }
@@ -1200,8 +1201,11 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         }
     }
     if (notifyFlag) {
-        ZLOGI("post data change for cleaning cloud data");
-        PostDataChange(meta_, {}, CLOUD_DATA_CLEAN);
+        ZLOGI("post data change for cleaning cloud data. store:%{public}s table:%{public}s data change from "
+              ":%{public}s",
+            Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
+            Anonymous::Change(originalId).c_str());
+        PostDataChange(meta_, {}, CLOUD_LOGOUT);
     }
     if (!data.field.empty()) {
         fields[std::move(data.tableName)] = std::move(*(data.field.begin()));
