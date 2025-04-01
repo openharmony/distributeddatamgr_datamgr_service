@@ -1231,8 +1231,20 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, in
     std::string prefix = Database::GetPrefix({std::to_string(user), "default", bundleName});
     std::vector<Database> dataBase;
     if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
-        for (const auto &dataBase : dataBase) {
-            MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true);
+        for (const auto &database : dataBase) {
+            ZLOGD("Delete matedata store is :%{public}s", database.name.c_str());
+            MetaDataManager::GetInstance().DelMeta(database.GetKey(), true);
+            StoreMetaData meta;
+            meta.user = database.user;
+            meta.deviceId = database.deviceId;
+            meta.storeId = database.name;
+            meta.bundleName = bundleName;
+            Database base;
+            if (RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() &&
+                !base.bundleName.empty()) {
+                ZLOGD("save metadata store is :%{public}s", base.name.c_str());
+                MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true);
+            }
         }
     }
     return CloseStore(bundleName, user, index);
