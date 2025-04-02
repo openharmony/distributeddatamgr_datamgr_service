@@ -425,7 +425,7 @@ bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &de
 {
     auto records = data.GetRecords();
     if (records.size() != TEMP_UDATA_RECORD_SIZE) {
-        ZLOGE("Records size error.size:%{public}zu", records.size());
+        ZLOGI("Records size:%{public}zu", records.size());
         return false;
     }
     if (records[0] == nullptr) {
@@ -476,7 +476,7 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
 {
     if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) !=
         Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
-        ZLOGE("Caller is not application.");
+        ZLOGE("Caller is not application, tokenid is %{public}u", tokenId);
         return "";
     }
     Security::AccessToken::HapTokenInfo hapTokenInfo;
