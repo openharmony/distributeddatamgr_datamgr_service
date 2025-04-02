@@ -216,6 +216,8 @@ private:
 
     static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
 
+    static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
+
     void GetSchema(const RdbSyncerParam &param);
 
     void SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param);
