@@ -22,7 +22,6 @@
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
 #include "device_manager_adapter.h"
-#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
