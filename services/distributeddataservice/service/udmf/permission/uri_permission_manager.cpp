@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace UDMF {
-constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 500;
+constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 10000;
 UriPermissionManager &UriPermissionManager::GetInstance()
 {
     static UriPermissionManager instance;
