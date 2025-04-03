@@ -114,22 +114,42 @@ NetworkDelegateNormalImpl::~NetworkDelegateNormalImpl()
 
 void NetworkDelegateNormalImpl::RegOnNetworkChange()
 {
-    static std::atomic_bool flag = false;
-    if (flag.exchange(true)) {
-        ZLOGW("run only one");
-        return;
+    if (executors_ != nullptr) {
+        executors_->Execute(GetTask(0));
     }
-    sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(*this);
-    if (observer == nullptr) {
-        ZLOGE("new operator error.observer is nullptr");
-        flag.store(false);
-        return;
-    }
-    auto nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
-    if (nRet != NETMANAGER_SUCCESS) {
+}
+
+void NetworkDelegateNormalImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    executors_ = executors;
+}
+
+ExecutorPool::Task NetworkDelegateNormalImpl::GetTask(uint32_t retry)
+{
+    return [this, retry] {
+        static std::atomic_bool flag = false;
+        if (flag.exchange(true)) {
+            ZLOGW("run only one");
+            return;
+        }
+        sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(*this);
+        if (observer == nullptr) {
+            ZLOGE("new operator error.observer is nullptr");
+            flag.store(false);
+            return;
+        }
+        auto nRet = NetConnClient::GetInstance().RegisterNetConnCallback(observer);
+        if (nRet == NETMANAGER_SUCCESS) {
+            return;
+        }
         ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
         flag.store(false);
-    }
+        if (retry + 1 >= MAX_RETRY_TIME) {
+            ZLOGE("fail to register subscriber!");
+            return;
+        }
+        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+    };
 }
 
 bool NetworkDelegateNormalImpl::IsNetworkAvailable()

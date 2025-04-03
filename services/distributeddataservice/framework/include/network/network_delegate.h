@@ -19,6 +19,7 @@
 #include <memory>
 #include <mutex>
 
+#include "executor_pool.h"
 #include "types.h"
 
 namespace OHOS {
@@ -37,6 +38,7 @@ public:
     API_EXPORT static bool RegisterNetworkInstance(NetworkDelegate *instance);
     virtual bool IsNetworkAvailable() = 0;
     virtual void RegOnNetworkChange() = 0;
+    virtual void BindExecutor(std::shared_ptr<ExecutorPool> executors) = 0;
     virtual NetworkType GetNetworkType(bool retrieve = false) = 0;
 
 private:
