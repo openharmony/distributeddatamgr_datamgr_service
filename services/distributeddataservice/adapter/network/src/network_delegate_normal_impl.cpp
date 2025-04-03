@@ -144,7 +144,7 @@ ExecutorPool::Task NetworkDelegateNormalImpl::GetTask(uint32_t retry)
         }
         ZLOGE("RegisterNetConnCallback failed, ret = %{public}d", nRet);
         flag.store(false);
-        if (retry + 1 > MAX_RETRY_TIME) {
+        if (retry + 1 >= MAX_RETRY_TIME) {
             ZLOGE("fail to register subscriber!");
             return;
         }
