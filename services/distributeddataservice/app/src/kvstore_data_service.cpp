@@ -322,6 +322,7 @@ void KvStoreDataService::OnStart()
     AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
     AddSystemAbilityListener(COMM_NET_CONN_MANAGER_SYS_ABILITY_ID);
+    AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
     RegisterStoreInfo();
     Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
         std::placeholders::_2);
@@ -356,9 +357,10 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     ZLOGI("add system abilityid:%{public}d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
-        AccountDelegate::GetInstance()->SubscribeAccountEvent();
         Installer::GetInstance().Init(this, executors_);
         ScreenManager::GetInstance()->SubscribeScreenEvent();
+    } else if (systemAbilityId == SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN) {
+        AccountDelegate::GetInstance()->SubscribeAccountEvent();
     } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
         Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1,
                                                                 DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
@@ -372,10 +374,12 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
 {
     ZLOGI("remove system abilityid:%{public}d", systemAbilityId);
     (void)deviceId;
+    if (systemAbilityId == SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN) {
+        AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
+    }
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
     }
-    AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
     ScreenManager::GetInstance()->UnsubscribeScreenEvent();
     Installer::GetInstance().UnsubscribeEvent();
 }
