@@ -26,7 +26,8 @@
 #include "executor_pool.h"
 namespace OHOS::DataShare {
 struct PublishedDataKey {
-    PublishedDataKey(const std::string &key, const std::string &bundleName, int64_t subscriberId);
+    PublishedDataKey(const std::string &key, const std::string &bundleName,
+        int64_t subscriberId);
     bool operator<(const PublishedDataKey &rhs) const;
     bool operator>(const PublishedDataKey &rhs) const;
     bool operator<=(const PublishedDataKey &rhs) const;
@@ -36,13 +37,14 @@ struct PublishedDataKey {
     std::string key;
     std::string bundleName;
     int64_t subscriberId;
+    int32_t userId;
 };
 
 class PublishedDataSubscriberManager {
 public:
     static PublishedDataSubscriberManager &GetInstance();
     int Add(const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer,
-        uint32_t firstCallerTokenId);
+        uint32_t firstCallerTokenId, int32_t userId);
     int Delete(const PublishedDataKey &key, uint32_t firstCallerTokenId);
     void Delete(uint32_t callerTokenId, uint32_t callerPid);
     int Disable(const PublishedDataKey &key, uint32_t firstCallerTokenId);
@@ -58,18 +60,20 @@ public:
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer, uint32_t firstCallerTokenId,
-            uint32_t callerTokenId = 0, uint32_t callerPid = 0);
+            uint32_t callerTokenId = 0, uint32_t callerPid = 0, int32_t userId = 0);
         sptr<IDataProxyPublishedDataObserver> observer;
         uint32_t firstCallerTokenId;
         uint32_t callerTokenId;
         uint32_t callerPid;
         bool enabled = true;
         bool isNotifyOnEnabled = false;
+        int32_t userId = 0;
     };
 
     PublishedDataSubscriberManager() = default;
     void PutInto(std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &,
-        const std::vector<ObserverNode> &, const PublishedDataKey &, const sptr<IDataProxyPublishedDataObserver>);
+        const std::vector<ObserverNode> &, const PublishedDataKey &, const sptr<IDataProxyPublishedDataObserver>,
+        int32_t userId);
     ConcurrentMap<PublishedDataKey, std::vector<ObserverNode>> publishedDataCache_;
 };
 } // namespace OHOS::DataShare

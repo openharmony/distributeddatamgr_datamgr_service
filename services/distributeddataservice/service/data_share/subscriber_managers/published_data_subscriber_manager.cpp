@@ -32,15 +32,16 @@ PublishedDataSubscriberManager &PublishedDataSubscriberManager::GetInstance()
     return manager;
 }
 
-int PublishedDataSubscriberManager::Add(
-    const PublishedDataKey &key, const sptr<IDataProxyPublishedDataObserver> observer, uint32_t firstCallerTokenId)
+int PublishedDataSubscriberManager::Add(const PublishedDataKey &key,
+    const sptr<IDataProxyPublishedDataObserver> observer, uint32_t firstCallerTokenId, int32_t userId)
 {
     publishedDataCache_.Compute(
-        key, [&observer, &firstCallerTokenId, this](const PublishedDataKey &key, std::vector<ObserverNode> &value) {
+        key, [&observer, &firstCallerTokenId, userId, this](const PublishedDataKey &key,
+        std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{public}s tokenId 0x%{public}x",
                 DistributedData::Anonymous::Change(key.key).c_str(), firstCallerTokenId);
             value.emplace_back(observer, firstCallerTokenId, IPCSkeleton::GetCallingTokenID(),
-                IPCSkeleton::GetCallingPid());
+                IPCSkeleton::GetCallingPid(), userId);
             return true;
         });
     return E_OK;
@@ -112,6 +113,7 @@ int PublishedDataSubscriberManager::Enable(const PublishedDataKey &key, uint32_t
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
+// if arg observer is not null, notify that observer only; otherwise notify all observers
 void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &keys, int32_t userId,
     const std::string &ownerBundleName, const sptr<IDataProxyPublishedDataObserver> observer)
 {
@@ -133,7 +135,7 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
                 publishedResult.erase(key);
                 continue;
             }
-            PutInto(callbacks, val, key, observer);
+            PutInto(callbacks, val, key, observer, userId);
             break;
         }
         return false;
@@ -157,12 +159,16 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
 void PublishedDataSubscriberManager::PutInto(
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> &callbacks,
     const std::vector<ObserverNode> &val, const PublishedDataKey &key,
-    const sptr<IDataProxyPublishedDataObserver> observer)
+    const sptr<IDataProxyPublishedDataObserver> observer, int32_t userId)
 {
     for (auto const &callback : val) {
         if (callback.enabled && callback.observer != nullptr) {
             // callback the observer, others do not call
             if (observer != nullptr && callback.observer != observer) {
+                continue;
+            }
+            if (callback.userId != 0 && callback.userId != userId && userId != 0) {
+                ZLOGE("Not across user publish, from %{public}d to %{public}d", userId, callback.userId);
                 continue;
             }
             callbacks[callback.observer].emplace_back(key);
@@ -267,8 +273,8 @@ bool PublishedDataKey::operator!=(const PublishedDataKey &rhs) const
 }
 
 PublishedDataSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer,
-    uint32_t firstCallerTokenId, uint32_t callerTokenId, uint32_t callerPid)
-    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId), callerPid(callerPid)
+    uint32_t firstCallerTokenId, uint32_t callerTokenId, uint32_t callerPid, int32_t userId): observer(observer),
+    firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId), callerPid(callerPid), userId(userId)
 {
 }
 } // namespace OHOS::DataShare
