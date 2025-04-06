@@ -518,7 +518,10 @@ void RuntimeStore::SetDelegateManager(const std::string &dataDir, const std::str
 {
     delegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>(appId, userId, subUser);
     DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
-    delegateManager_->SetKvStoreConfig(kvStoreConfig);
+    auto status = delegateManager_->SetKvStoreConfig(kvStoreConfig);
+    if (status != DBStatus::OK) {
+        ZLOGE("SetKvStoreConfig failed, status: %{public}d.", status);
+    }
 }
 
 Status RuntimeStore::GetEntries(const std::string &dataPrefix, std::vector<Entry> &entries)
