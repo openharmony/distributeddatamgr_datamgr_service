@@ -1232,18 +1232,19 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, in
     std::vector<Database> dataBase;
     if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
         for (const auto &database : dataBase) {
-            ZLOGD("Delete matedata store is :%{public}s", database.name.c_str());
             MetaDataManager::GetInstance().DelMeta(database.GetKey(), true);
+            ZLOGD("del metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
+                Anonymous::Change(database.name).c_str(), database.user.c_str(), database.bundleName.c_str());
             StoreMetaData meta;
             meta.user = database.user;
             meta.deviceId = database.deviceId;
             meta.storeId = database.name;
             meta.bundleName = bundleName;
             Database base;
-            if (RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() &&
-                !base.bundleName.empty()) {
-                ZLOGD("save metadata store is :%{public}s", base.name.c_str());
+            if (RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() && !base.bundleName.empty()) {
                 MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true);
+                ZLOGD("save metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
+                    Anonymous::Change(base.name).c_str(), base.user.c_str(), base.bundleName.c_str());
             }
         }
     }
