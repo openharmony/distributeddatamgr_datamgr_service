@@ -110,9 +110,9 @@ HWTEST_F(DataShareSubscriberManagersTest, Add, TestSize.Level1)
     nodes.emplace_back(node2);
     Template tpl(nodes, "select name1 as name from TBL00");
     DataShare::Key key(DATA_SHARE_URI_TEST, tpltId.subscriberId_, tpltId.bundleName_);
-    auto result = TemplateManager::GetInstance().Add(key, context->currentUserId, tpl);
+    auto result = TemplateManager::GetInstance().Add(key, context->visitedUserId, tpl);
     EXPECT_EQ(result, DataShare::E_ERROR);
-    result = TemplateManager::GetInstance().Delete(key, context->currentUserId);
+    result = TemplateManager::GetInstance().Delete(key, context->visitedUserId);
     EXPECT_EQ(result, DataShare::E_ERROR);
 }
 
@@ -210,7 +210,7 @@ HWTEST_F(DataShareSubscriberManagersTest, IsNotifyOnEnabled, TestSize.Level1)
     sptr<IDataProxyPublishedDataObserver> observer;
     std::vector<PublishedDataSubscriberManager::ObserverNode> val;
     std::map<sptr<IDataProxyPublishedDataObserver>, std::vector<PublishedDataKey>> callbacks;
-    PublishedDataSubscriberManager::GetInstance().PutInto(callbacks, val, key, observer);
+    PublishedDataSubscriberManager::GetInstance().PutInto(callbacks, val, key, observer, context->visitedUserId);
     std::vector<PublishedDataKey> publishedKeys;
     PublishedDataSubscriberManager::GetInstance().SetObserversNotifiedOnEnabled(publishedKeys);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME_TEST, USER_TEST);

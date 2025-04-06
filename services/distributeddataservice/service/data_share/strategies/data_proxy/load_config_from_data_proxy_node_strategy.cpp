@@ -31,7 +31,7 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
     }
     context->type = PUBLISHED_DATA_TYPE;
     if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
-        context->calledBundleName, context->currentUserId, context->bundleInfo) != E_OK) {
+        context->calledBundleName, context->visitedUserId, context->bundleInfo) != E_OK) {
         ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
         context->errCode = E_BUNDLE_NAME_NOT_EXIST;
         return false;
