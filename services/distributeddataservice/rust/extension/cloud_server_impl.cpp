@@ -28,11 +28,19 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::CloudData {
-__attribute__((used)) static bool g_isInit =
-    DistributedData::CloudServer::RegisterCloudInstance(new (std::nothrow) CloudServerImpl());
+__attribute__((used)) static bool g_isInit = CloudServerImpl::Init();
 using namespace Security::AccessToken;
 using DBMetaMgr = DistributedData::MetaDataManager;
 using Anonymous = DistributedData::Anonymous;
+
+bool CloudServerImpl::Init()
+{
+    static CloudServerImpl cloudServerInstance;
+    static std::once_flag onceFlag;
+    std::call_once(onceFlag, [&]() { DistributedData::CloudServer::RegisterCloudInstance(&cloudServerInstance); });
+    return true;
+}
+
 std::pair<int32_t, DBCloudInfo> CloudServerImpl::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     DBCloudInfo result;
