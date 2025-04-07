@@ -28,7 +28,7 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::CloudData {
-__attribute__((used)) static bool g_isInit = CloudServerImpl::Init();    
+__attribute__((used)) static bool g_isInit = CloudServerImpl::Init();
 using namespace Security::AccessToken;
 using DBMetaMgr = DistributedData::MetaDataManager;
 using Anonymous = DistributedData::Anonymous;
