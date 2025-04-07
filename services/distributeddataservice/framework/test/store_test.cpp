@@ -278,12 +278,12 @@ HWTEST_F(AutoCacheTest, CloseStore001, TestSize.Level2)
     mock_->isLocked_ = true;
     StoreMetaData meta;
     meta.area = GeneralStore::EL1;
-    meta.dataDir = 'abc';
+    meta.dataDir = "abc";
     uint32_t tokenId = 123;
     std::string storeId = TEST_CLOUD_STORE;
     std::string userId = "";
     AutoCache autoCache;
-    autoCache.stores_.Computer(tokenId, 
+    autoCache.stores_.Compute(tokenId,
         [this, &meta, &watchers, &store](auto &, std::map<std::string, AutoCache::Delegate> &stores) -> bool {
             std::string storeKey = "key";
             stores.emplace(std::piecewise_construct, std::forward_as_tuple(storeKey),
@@ -291,10 +291,10 @@ HWTEST_F(AutoCacheTest, CloseStore001, TestSize.Level2)
             return !stores.empty();
         });
     autoCache.CloseStore(tokenId, storeId, userId);
-    EXPECT_TRUE(autoCache.stores_.empty());
-    }
+    EXPECT_TRUE(autoCache.stores_.Empty());
+}
 
-    /**
+/**
 * @tc.name: CloseStore002
 * @tc.desc: AutoCache CloseStore002
 * @tc.type: FUNC
@@ -309,12 +309,12 @@ HWTEST_F(AutoCacheTest, CloseStore002, TestSize.Level2)
     mock_->isLocked_ = true;
     StoreMetaData meta;
     meta.area = GeneralStore::EL4;
-    meta.dataDir = 'abc';
+    meta.dataDir = "abc";
     uint32_t tokenId = 123;
     std::string storeId = TEST_CLOUD_STORE;
     std::string userId = "";
     AutoCache autoCache;
-    autoCache.stores_.Computer(tokenId, 
+    autoCache.stores_.Compute(tokenId,
         [this, &meta, &watchers, &store](auto &, std::map<std::string, AutoCache::Delegate> &stores) -> bool {
             std::string storeKey = "key";
             stores.emplace(std::piecewise_construct, std::forward_as_tuple(storeKey),
@@ -322,6 +322,6 @@ HWTEST_F(AutoCacheTest, CloseStore002, TestSize.Level2)
             return !stores.empty();
         });
     autoCache.CloseStore(tokenId, storeId, userId);
-    EXPECT_FALSE(autoCache.stores_.empty());
-    }
+    EXPECT_FALSE(autoCache.stores_.Empty());
+}
 } // namespace OHOS::Test
