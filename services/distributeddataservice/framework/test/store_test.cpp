@@ -30,6 +30,8 @@
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
+static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
+
 class GeneralValueTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
@@ -260,4 +262,66 @@ HWTEST_F(AutoCacheTest, GetDBStore, TestSize.Level2)
     meta.area = GeneralStore::EL5;
     EXPECT_NE(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
 }
+
+/**
+* @tc.name: CloseStore001
+* @tc.desc: AutoCache CloseStore001
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, CloseStore001, TestSize.Level2)
+{
+    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    ASSERT_NE(store, nullptr);
+    AutoCache::Watchers watchers;
+    mock_->isLocked_ = true;
+    StoreMetaData meta;
+    meta.area = GeneralStore::EL1;
+    meta.dataDir = 'abc';
+    uint32_t tokenId = 123;
+    std::string storeId = TEST_CLOUD_STORE;
+    std::string userId = "";
+    AutoCache autoCache;
+    autoCache.stores_.Computer(tokenId, 
+        [this, &meta, &watchers, &store](auto &, std::map<std::string, AutoCache::Delegate> &stores) -> bool {
+            std::string storeKey = "key";
+            stores.emplace(std::piecewise_construct, std::forward_as_tuple(storeKey),
+                std::forward_as_tuple(store, watchers, 0, meta));
+            return !stores.empty();
+        });
+    autoCache.CloseStore(tokenId, storeId, userId);
+    EXPECT_TRUE(autoCache.stores_.empty());
+    }
+
+    /**
+* @tc.name: CloseStore002
+* @tc.desc: AutoCache CloseStore002
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, CloseStore002, TestSize.Level2)
+{
+    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    ASSERT_NE(store, nullptr);
+    AutoCache::Watchers watchers;
+    mock_->isLocked_ = true;
+    StoreMetaData meta;
+    meta.area = GeneralStore::EL4;
+    meta.dataDir = 'abc';
+    uint32_t tokenId = 123;
+    std::string storeId = TEST_CLOUD_STORE;
+    std::string userId = "";
+    AutoCache autoCache;
+    autoCache.stores_.Computer(tokenId, 
+        [this, &meta, &watchers, &store](auto &, std::map<std::string, AutoCache::Delegate> &stores) -> bool {
+            std::string storeKey = "key";
+            stores.emplace(std::piecewise_construct, std::forward_as_tuple(storeKey),
+                std::forward_as_tuple(store, watchers, 0, meta));
+            return !stores.empty();
+        });
+    autoCache.CloseStore(tokenId, storeId, userId);
+    EXPECT_FALSE(autoCache.stores_.empty());
+    }
 } // namespace OHOS::Test
