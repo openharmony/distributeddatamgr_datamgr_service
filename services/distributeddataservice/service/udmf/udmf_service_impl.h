@@ -60,6 +60,7 @@ private:
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
     void TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData);
     bool IsNeedTransferDeviceType(const QueryOption &query);
+    bool CheckDragParams(UnifiedKey &key, const QueryOption &query);
 
     class Factory {
     public:
