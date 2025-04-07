@@ -33,6 +33,7 @@ public:
     virtual Status StartWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual bool IsSameAccount(const AccessCaller &, const AccessCallee &) = 0;
+    virtual bool IsSameAccount(const std::string &) = 0;
     virtual std::string GetUuidByNetworkId(const std::string &);
     virtual DeviceInfo GetDeviceInfo(const std::string &);
     virtual std::string ToNetworkID(const std::string &);
@@ -51,6 +52,7 @@ public:
     MOCK_METHOD(Status, StartWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(Status, StopWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(bool, IsSameAccount, (const AccessCaller &, const AccessCallee &));
+    MOCK_METHOD(bool, IsSameAccount, (const std::string &));
     MOCK_METHOD(std::string, GetUuidByNetworkId, (const std::string &));
     MOCK_METHOD(DeviceInfo, GetDeviceInfo, (const std::string &));
     MOCK_METHOD(std::string, ToNetworkID, (const std::string &));

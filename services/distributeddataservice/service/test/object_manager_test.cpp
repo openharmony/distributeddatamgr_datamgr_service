@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 #include <ipc_skeleton.h>
 
+#include "device_manager_adapter_mock.h"
 #include "executor_pool.h"
 #include "kv_store_nb_delegate_mock.h"
 #include "object_types.h"
@@ -27,6 +28,8 @@
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
+using namespace std;
+using namespace testing;
 using AssetValue = OHOS::CommonType::AssetValue;
 using RestoreStatus = OHOS::DistributedObject::ObjectStoreManager::RestoreStatus;
 namespace OHOS::Test {
@@ -35,6 +38,8 @@ class ObjectManagerTest : public testing::Test {
 public:
     void SetUp();
     void TearDown();
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
 
 protected:
     Asset asset_;
@@ -52,6 +57,7 @@ protected:
     pid_t pid_ = 10;
     uint32_t tokenId_ = 100;
     AssetValue assetValue_;
+    static inline std::shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
 };
 
 void ObjectManagerTest::SetUp()
@@ -89,6 +95,18 @@ void ObjectManagerTest::SetUp()
         .assetName = "asset1.jpg",
     };
     assetBindInfo_ = AssetBindInfo;
+}
+
+void ObjectManagerTest::SetUpTestCase(void)
+{
+    devMgrAdapterMock = make_shared<DeviceManagerAdapterMock>();
+    BDeviceManagerAdapter::deviceManagerAdapter = devMgrAdapterMock;
+}
+
+void ObjectManagerTest::TearDownTestCase(void)
+{
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
+    devMgrAdapterMock = nullptr;
 }
 
 void ObjectManagerTest::TearDown() {}
@@ -349,6 +367,7 @@ HWTEST_F(ObjectManagerTest, NotifyChange002, TestSize.Level0)
     data.insert_or_assign(assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value);
     data.insert_or_assign(assetPrefix + ObjectStore::SIZE_SUFFIX, value);
     data.insert_or_assign("testkey", value);
+    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
     manager->NotifyChange(data);
     EXPECT_TRUE(manager->restoreStatus_.Contains(bundleName+sessionId));
     auto [has, taskId] = manager->objectTimer_.Find(bundleName+sessionId);
@@ -533,10 +552,12 @@ HWTEST_F(ObjectManagerTest, SyncOnStore001, TestSize.Level0)
     std::vector<std::string> deviceList;
     // not local device & syncDevices empty
     deviceList.push_back("local1");
+    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
     auto result = manager->SyncOnStore(prefix, deviceList, func);
     ASSERT_NE(result, OBJECT_SUCCESS);
     // local device
     deviceList.push_back("local");
+    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
     result = manager->SyncOnStore(prefix, deviceList, func);
     ASSERT_EQ(result, OBJECT_SUCCESS);
 }
