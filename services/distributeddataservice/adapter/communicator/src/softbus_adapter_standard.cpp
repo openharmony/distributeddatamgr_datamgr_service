@@ -207,7 +207,8 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
     uint32_t qosType)
 {
     std::shared_ptr<SoftBusClient> conn;
-    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType](const auto &key,
+    auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
+    connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType, &networkId](const auto &key,
         std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
         for (auto &connect : connects) {
             if (connect == nullptr) {
@@ -218,7 +219,8 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
                 return true;
             }
         }
-        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, qosType);
+        DeviceId device = { .deviceId = deviceId.deviceId, .networkId = std::move(networkId) };
+        auto connect = std::make_shared<SoftBusClient>(pipeInfo, device, qosType);
         connects.emplace_back(connect);
         conn = connect;
         return true;
@@ -354,23 +356,24 @@ std::string SoftBusAdapter::DelConnect(int32_t socket, bool isForce)
         if (!isForce && DmAdapter::GetInstance().IsOHOSType(deviceId)) {
             return false;
         }
+        std::string networkId;
         for (auto iter = connects.begin(); iter != connects.end();) {
             if (*iter != nullptr && **iter == socket) {
                 name += deviceId;
                 name += " ";
+                networkId = (*iter)->GetNetworkId();
                 iter = connects.erase(iter);
             } else {
                 iter++;
             }
         }
         if (connects.empty()) {
-            closedConnect.insert(deviceId);
+            closedConnect.insert(networkId);
             return true;
         }
         return false;
     });
-    for (const auto &deviceId : closedConnect) {
-        auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId).networkId;
+    for (const auto &networkId : closedConnect) {
         ConnectManager::GetInstance()->OnSessionClose(networkId);
     }
     return name;
