@@ -193,13 +193,6 @@ void KvStoreDataService::LoadFeatures()
     for (auto const &feature : features) {
         GetFeatureInterface(feature);
     }
-    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
-    staticActs.ForEach([exec = executors_](const auto &name, std::shared_ptr<StaticActs> acts) {
-        if (acts != nullptr) {
-            acts->SetThreadPool(exec);
-        }
-        return false;
-    });
 }
 
 /* RegisterClientDeathObserver */

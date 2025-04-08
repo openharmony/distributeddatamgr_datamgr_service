@@ -20,7 +20,6 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
-#include "cloud/cloud_mark.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_last_sync_info.h"
@@ -87,7 +86,6 @@ void AllocHapToken(const HapPolicyParams &policy)
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
-static constexpr const int32_t SCHEMA_VERSION = 101;
 static constexpr const int32_t EVT_USER = 102;
 static constexpr const char *TEST_TRACE_ID = "123456789";
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
@@ -96,7 +94,6 @@ static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_STORE_1 = "test_cloud_store1";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
-static constexpr const char *COM_EXAMPLE_TEST_CLOUD = "com.example.testCloud";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *PERMISSION_CLOUDDATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
@@ -104,7 +101,6 @@ static constexpr const char *PERMISSION_GET_NETWORK_INFO = "ohos.permission.GET_
 static constexpr const char *PERMISSION_DISTRIBUTED_DATASYNC = "ohos.permission.DISTRIBUTED_DATASYNC";
 static constexpr const char *PERMISSION_ACCESS_SERVICE_DM = "ohos.permission.ACCESS_SERVICE_DM";
 static constexpr const char *PERMISSION_MANAGE_LOCAL_ACCOUNTS = "ohos.permission.MANAGE_LOCAL_ACCOUNTS";
-static constexpr const char *PERMISSION_GET_BUNDLE_INFO = "ohos.permission.GET_BUNDLE_INFO_PRIVILEGED";
 PermissionDef GetPermissionDef(const std::string &permission)
 {
     PermissionDef def = { .permissionName = permission,
@@ -270,13 +266,12 @@ void CloudDataTest::SetUpTestCase(void)
         .domain = "test.domain",
         .permList = { GetPermissionDef(PERMISSION_CLOUDDATA_CONFIG), GetPermissionDef(PERMISSION_GET_NETWORK_INFO),
             GetPermissionDef(PERMISSION_DISTRIBUTED_DATASYNC), GetPermissionDef(PERMISSION_ACCESS_SERVICE_DM),
-            GetPermissionDef(PERMISSION_MANAGE_LOCAL_ACCOUNTS), GetPermissionDef(PERMISSION_GET_BUNDLE_INFO) },
+            GetPermissionDef(PERMISSION_MANAGE_LOCAL_ACCOUNTS) },
         .permStateList = { GetPermissionStateFull(PERMISSION_CLOUDDATA_CONFIG),
             GetPermissionStateFull(PERMISSION_GET_NETWORK_INFO),
             GetPermissionStateFull(PERMISSION_DISTRIBUTED_DATASYNC),
             GetPermissionStateFull(PERMISSION_ACCESS_SERVICE_DM),
-            GetPermissionStateFull(PERMISSION_MANAGE_LOCAL_ACCOUNTS),
-            GetPermissionStateFull(PERMISSION_GET_BUNDLE_INFO)} };
+            GetPermissionStateFull(PERMISSION_MANAGE_LOCAL_ACCOUNTS)} };
     g_selfTokenID = GetSelfTokenID();
     AllocHapToken(policy);
     size_t max = 12;
@@ -2496,193 +2491,6 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
         .isAutoSync = true };
     DistributedRdb::PredicatesMemo memo;
     rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
-}
-
-/**
-* @tc.name: UpdateSchemaFromHap001
-* @tc.desc: Test the UpdateSchemaFromHap with invalid user
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = -1 };
-    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
-    EXPECT_EQ(ret, Status::ERROR);
-}
-
-/**
-* @tc.name: UpdateSchemaFromHap002
-* @tc.desc: Test the UpdateSchemaFromHap with invalid bundleName
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap002, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = "", .user = cloudInfo_.user };
-    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
-    EXPECT_EQ(ret, Status::ERROR);
-}
-
-/**
-* @tc.name: UpdateSchemaFromHap003
-* @tc.desc: Test the UpdateSchemaFromHap with the schema application is not configured
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo info = {
-        .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
-    };
-    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
-    EXPECT_EQ(ret, Status::SUCCESS);
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    EXPECT_EQ(schemaMeta.version, schemaMeta_.version);
-}
-
-/**
-* @tc.name: UpdateSchemaFromHap004
-* @tc.desc: Test the UpdateSchemaFromHap with valid parameter
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudInfo::AppInfo exampleAppInfo;
-    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.version = 1;
-    exampleAppInfo.cloudSwitch = true;
-    CloudInfo cloudInfo;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    cloudInfo.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    CloudData::CloudServiceImpl::HapInfo info = {
-        .instIndex = 0, .bundleName = COM_EXAMPLE_TEST_CLOUD, .user = cloudInfo_.user
-    };
-    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
-    EXPECT_EQ(ret, Status::SUCCESS);
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    EXPECT_EQ(schemaMeta.version, SCHEMA_VERSION);
-}
-
-/**
-* @tc.name: UpdateClearWaterMark001
-* @tc.desc: Test UpdateClearWaterMark001 the database.version not found.
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateClearWaterMark001, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo hapInfo = {
-       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
-    };
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.version = 1;
-    SchemaMeta schemaMeta;
-    schemaMeta.version = 1;
-    schemaMeta.databases.push_back(database);
-    
-    SchemaMeta::Database database1;
-    database1.name = TEST_CLOUD_STORE_1;
-    database1.version = 2;
-    SchemaMeta newSchemaMeta;
-    newSchemaMeta.version = 0;
-    newSchemaMeta.databases.push_back(database1);
-    cloudServiceImpl_->UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
-
-    CloudMark metaData;
-    metaData.bundleName = hapInfo.bundleName;
-    metaData.userId = hapInfo.user;
-    metaData.index = hapInfo.instIndex;
-    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData.storeId = database1.name;
-    ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
-}
-
-/**
-* @tc.name: UpdateClearWaterMark002
-* @tc.desc: Test UpdateClearWaterMark002 the same database.version
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateClearWaterMark002, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo hapInfo = {
-       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
-    };
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.version = 1;
-    SchemaMeta schemaMeta;
-    schemaMeta.version = 1;
-    schemaMeta.databases.push_back(database);
-    
-    SchemaMeta::Database database1;
-    database1.name = TEST_CLOUD_STORE;
-    database1.version = 1;
-    SchemaMeta newSchemaMeta;
-    newSchemaMeta.version = 0;
-    newSchemaMeta.databases.push_back(database1);
-    cloudServiceImpl_->UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
-
-    CloudMark metaData;
-    metaData.bundleName = hapInfo.bundleName;
-    metaData.userId = hapInfo.user;
-    metaData.index = hapInfo.instIndex;
-    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData.storeId = database1.name;
-    ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
-}
-
-/**
-* @tc.name: UpdateClearWaterMark003
-* @tc.desc: Test UpdateClearWaterMark003 the different database.version
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateClearWaterMark003, TestSize.Level0)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo hapInfo = {
-       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
-    };
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.version = 1;
-    SchemaMeta schemaMeta;
-    schemaMeta.version = 1;
-    schemaMeta.databases.push_back(database);
-    
-    SchemaMeta::Database database1;
-    database1.name = TEST_CLOUD_STORE;
-    database1.version = 2;
-    SchemaMeta newSchemaMeta;
-    newSchemaMeta.version = 0;
-    newSchemaMeta.databases.push_back(database1);
-    cloudServiceImpl_->UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
-
-    CloudMark metaData;
-    metaData.bundleName = hapInfo.bundleName;
-    metaData.userId = hapInfo.user;
-    metaData.index = hapInfo.instIndex;
-    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData.storeId = database1.name;
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true));
-    EXPECT_TRUE(metaData.isClearWaterMark);
-    MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
 }
 
 /**

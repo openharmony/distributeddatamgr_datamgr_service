@@ -148,16 +148,4 @@ std::string CloudInfo::GetKey(const std::string &prefix, const std::initializer_
 {
     return Constant::Join(prefix, Constant::KEY_SEPARATOR, fields);
 }
-
-std::optional<CloudInfo::AppInfo> CloudInfo::GetAppInfo(const std::string &bundleName) const
-{
-    if (bundleName.empty()) {
-        return std::nullopt;
-    }
-    auto it = apps.find(bundleName);
-    if (it == apps.end()) {
-        return std::nullopt;
-    }
-    return it->second;
-}
 } // namespace OHOS::DistributedData

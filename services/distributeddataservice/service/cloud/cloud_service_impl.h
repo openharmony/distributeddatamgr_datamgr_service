@@ -82,7 +82,6 @@ private:
         ~CloudStatic() override{};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
-        int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
     };
     class Factory {
     public:
@@ -150,9 +149,9 @@ private:
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromServer(int32_t userId);
     static int32_t UpdateCloudInfoFromServer(int32_t user);
-    static std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
 
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
+    std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
     void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(
         const std::string &storeId, const CloudInfo &cloudInfo, const SchemaMeta &schemaMeta);
@@ -162,7 +161,6 @@ private:
 
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);
-    void DoSync(const Event &event);
 
     Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
@@ -187,10 +185,6 @@ private:
     void Report(const std::string &faultType, DistributedDataDfx::Fault errCode, const std::string &bundleName,
         const std::string &appendix);
 
-    static std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
-    static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
-    static void UpdateClearWaterMark(
-        const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
     QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
                                          const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
 
