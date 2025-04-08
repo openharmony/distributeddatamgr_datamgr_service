@@ -55,7 +55,6 @@ ohos_source_set("distributeddata_kvdb") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   cflags = [
@@ -64,7 +63,6 @@ ohos_source_set("distributeddata_kvdb") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   deps = [

@@ -30,7 +30,6 @@ ohos_source_set("distributeddata_checker") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   include_dirs = [ "${data_service_path}/framework/include" ]
@@ -40,10 +39,7 @@ ohos_source_set("distributeddata_checker") {
   }
   ldflags = [ "-Wl,-z,relro,-z,now,--exclude-libs,ALL" ]
   deps = [ "${data_service_path}/adapter/utils:distributeddata_utils" ]
-  cflags = [
-    "-Oz",
-    "-fstack-protector-strong",
-  ]
+  cflags = [ "-Oz" ]
   external_deps = [
     "ability_base:base",
     "ability_base:want",

@@ -76,13 +76,11 @@ config("module_private_config") {
     "-Oz",
     "-fdata-sections",
     "-ffunction-sections",
-    "-fstack-protector-strong",
   ]
 
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   ldflags = [ "-Wl,-z,relro,-z,now,--gc-sections" ]
