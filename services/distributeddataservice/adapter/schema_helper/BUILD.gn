@@ -29,10 +29,7 @@ ohos_source_set("distributeddata_schema_helper") {
   }
   sources = [ "src/get_schema_helper.cpp" ]
 
-  cflags_cc = [
-    "-fvisibility=hidden",
-    "-fstack-protector-strong",
-  ]
+  cflags_cc = [ "-fvisibility=hidden" ]
 
   include_dirs = [ "../include/schema_helper" ]
 
