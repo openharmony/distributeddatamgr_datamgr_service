@@ -552,7 +552,7 @@ int32_t CloudServerImpl::Unsubscribe(int32_t userId, const std::map<std::string,
             if (it == dbRelation.relations.end()) {
                 continue;
             }
-            uint32_t subId = std::stoul(it->second);
+            uint32_t subId = static_cast<uint32_t>(std::atoi(it->second.c_str()));
             if (OhCloudExtVectorPush(relation, &subId, sizeof(uint32_t)) != ERRNO_SUCCESS) {
                 return DBErr::E_ERROR;
             }

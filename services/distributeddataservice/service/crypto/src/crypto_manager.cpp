@@ -64,7 +64,7 @@ bool AddHksParams(HksParamSet *params, const CryptoManager::ParamConfig &paramCo
     };
     if (paramConfig.storageLevel > HKS_AUTH_STORAGE_LEVEL_DE) {
         hksParam.emplace_back(
-            HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::stoi(paramConfig.userId) });
+            HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::atoi(paramConfig.userId.c_str()) });
     }
 
     auto ret = HksAddParams(params, aes256Param, sizeof(aes256Param) / sizeof(aes256Param[0]));
@@ -100,7 +100,7 @@ int32_t GetRootKeyParams(HksParamSet *&params, uint32_t storageLevel, const std:
         { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = storageLevel },
     };
     if (storageLevel > HKS_AUTH_STORAGE_LEVEL_DE) {
-        hksParam.emplace_back(HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::stoi(userId) });
+        hksParam.emplace_back(HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::atoi(userId.c_str()) });
     }
 
     ret = HksAddParams(params, hksParam.data(), hksParam.size());
