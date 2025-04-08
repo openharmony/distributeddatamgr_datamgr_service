@@ -51,6 +51,7 @@ public:
     void UpdateExpireTime(bool async = true);
     int32_t GetSoftBusError();
     Status ReuseConnect(const ISocketListener *listener);
+    std::string GetNetworkId();
 
 private:
     int32_t Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async = true);
