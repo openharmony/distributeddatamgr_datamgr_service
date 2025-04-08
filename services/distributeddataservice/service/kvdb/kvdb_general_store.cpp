@@ -78,6 +78,7 @@ const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap
 };
 
 constexpr uint32_t LOCK_TIMEOUT = 3600; // second
+static constexpr int DECIMAL_BASE = 10; // decimal base
 static DBSchema GetDBSchema(const Database &database)
 {
     DBSchema schema;
@@ -201,7 +202,18 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     storeInfo_.bundleName = meta.bundleName;
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
-    storeInfo_.user = std::stoi(meta.user);
+    char *endptr = nullptr;
+    errno = 0;
+    long userLong = strtol(meta.user, &endptr, DECIMAL_BASE);
+    if (endptr == nullptr || endptr == meta.user || *endptr != '\0') {
+        ZLOGE("User:%{public}s is invalid", meta.user);
+        return;
+    }
+    if (errno == ERANGE || userLong >= INT32_MAX || userLong <= INT32_MIN) {
+        ZLOGE("User:%{public}s is out of range", meta.user);
+        return;
+    }
+    storeInfo_.user = static_cast<int32_t>(userLong);
     enableCloud_ = meta.enableCloud;
 }
 
