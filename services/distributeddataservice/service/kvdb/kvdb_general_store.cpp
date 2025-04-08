@@ -204,13 +204,13 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     storeInfo_.instanceId = meta.instanceId;
     char *endptr = nullptr;
     errno = 0;
-    long userLong = strtol(meta.user, &endptr, DECIMAL_BASE);
-    if (endptr == nullptr || endptr == meta.user || *endptr != '\0') {
-        ZLOGE("User:%{public}s is invalid", meta.user);
+    long userLong = strtol(meta.user.c_str(), &endptr, DECIMAL_BASE);
+    if (endptr == nullptr || endptr == meta.user.c_str() || *endptr != '\0') {
+        ZLOGE("User:%{public}s is invalid", meta.user.c_str());
         return;
     }
     if (errno == ERANGE || userLong >= INT32_MAX || userLong <= INT32_MIN) {
-        ZLOGE("User:%{public}s is out of range", meta.user);
+        ZLOGE("User:%{public}s is out of range", meta.user.c_str());
         return;
     }
     storeInfo_.user = static_cast<int32_t>(userLong);
