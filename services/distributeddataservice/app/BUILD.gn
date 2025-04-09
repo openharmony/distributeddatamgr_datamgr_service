@@ -83,7 +83,7 @@ config("module_private_config") {
     "-Oz",
   ]
 
-  ldflags = [ "-Wl,-z,relro,-z,now,--gc-sections" ]
+  ldflags = [ "-Wl,--gc-sections" ]
 }
 
 ohos_shared_library("distributeddataservice") {
