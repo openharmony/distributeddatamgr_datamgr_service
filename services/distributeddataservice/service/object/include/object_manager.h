@@ -95,7 +95,7 @@ public:
                                 sptr<IRemoteObject> callback);
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
-    void NotifyChange(ObjectRecord &changedData);
+    void NotifyChange(const ObjectRecord &changedData);
     void NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
         const std::string& srcNetworkId = "");
     void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");

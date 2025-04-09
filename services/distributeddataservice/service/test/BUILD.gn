@@ -838,6 +838,7 @@ ohos_unittest("ObjectManagerTest") {
     "../object/src/object_service_stub.cpp",
     "../object/src/object_snapshot.cpp",
     "../object/src/object_types_utils.cpp",
+    "mock/device_manager_adapter_mock.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
     "object_manager_test.cpp",
     "object_service_impl_test.cpp",
@@ -850,6 +851,7 @@ ohos_unittest("ObjectManagerTest") {
     "${dataobject_path}/frameworks/innerkitsimpl/include/common",
     "${dataobject_path}/interfaces/innerkits",
     "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/service/test/mock",
   ]
 
   configs = [ ":module_private_config" ]
@@ -863,6 +865,8 @@ ohos_unittest("ObjectManagerTest") {
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "dmsfwk:distributed_sdk",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",

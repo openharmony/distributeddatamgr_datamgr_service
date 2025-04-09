@@ -393,7 +393,7 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
     }));
 }
 
-void ObjectStoreManager::NotifyChange(ObjectRecord &changedData)
+void ObjectStoreManager::NotifyChange(const ObjectRecord &changedData)
 {
     ZLOGI("OnChange start, size:%{public}zu", changedData.size());
     bool hasAsset = false;
@@ -409,17 +409,22 @@ void ObjectStoreManager::NotifyChange(ObjectRecord &changedData)
     if (!isSameAccount) {
         ZLOGE("IsSameAccount failed. bundleName:%{public}s, source device:%{public}s", saveInfo.bundleName.c_str(),
             Anonymous::Change(saveInfo.sourceDeviceId).c_str());
+        auto status = Open();
+        if (status != OBJECT_SUCCESS) {
+            ZLOGE("Open failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
+                saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
+            return;
+        }
         std::vector<std::vector<uint8_t>> keys;
-        std::vector<DistributedDB::Entry> entries;
-        std::for_each(entries.begin(), entries.end(), [&keys](const DistributedDB::Entry &entry) {
-            keys.emplace_back(entry.key);
-        });
-        auto status = delegate_->DeleteBatch(keys);
+        for (const auto &[key, value] : changedData) {
+            keys.emplace_back(key.begin(), key.end());
+        }
+        status = delegate_->DeleteBatch(keys);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("Delete entries failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
                 saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
         }
-        return;
+        return Close();
     }
     if (!hasAsset) {
         ObjectStore::RadarReporter::ReportStateStart(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
