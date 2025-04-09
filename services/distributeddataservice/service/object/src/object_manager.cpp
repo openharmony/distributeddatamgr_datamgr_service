@@ -393,7 +393,7 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
     }));
 }
 
-void ObjectStoreManager::NotifyChange(ObjectRecord &changedData)
+void ObjectStoreManager::NotifyChange(const ObjectRecord &changedData)
 {
     ZLOGI("OnChange start, size:%{public}zu", changedData.size());
     bool hasAsset = false;
@@ -424,7 +424,7 @@ void ObjectStoreManager::NotifyChange(ObjectRecord &changedData)
             ZLOGE("Delete entries failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
                 saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
         }
-        return;
+        return Close();
     }
     if (!hasAsset) {
         ObjectStore::RadarReporter::ReportStateStart(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
