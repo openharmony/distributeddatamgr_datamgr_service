@@ -71,7 +71,6 @@ struct API_EXPORT PipeInfo {
 
 struct API_EXPORT DeviceId {
     std::string deviceId;
-    std::string networkId;
 };
 
 enum class API_EXPORT MessageType {

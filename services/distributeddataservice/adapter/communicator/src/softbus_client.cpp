@@ -28,8 +28,8 @@ namespace OHOS::AppDistributedKv {
 using namespace OHOS::DistributedKv;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Context = DistributedData::CommunicatorContext;
-SoftBusClient::SoftBusClient(const PipeInfo& pipeInfo, const DeviceId& deviceId, uint32_t type)
-    : type_(type), pipe_(pipeInfo), device_(deviceId)
+SoftBusClient::SoftBusClient(const PipeInfo& pipeInfo, const DeviceId& deviceId, const std::string& networkId,
+    uint32_t type) : type_(type), pipe_(pipeInfo), device_(deviceId), networkId_(networkId)
 {
     mtu_ = DEFAULT_MTU_SIZE;
 }
@@ -125,8 +125,7 @@ int32_t SoftBusClient::CreateSocket() const
     SocketInfo socketInfo;
     std::string peerName = pipe_.pipeId;
     socketInfo.peerName = const_cast<char *>(peerName.c_str());
-    std::string networkId = device_.networkId;
-    socketInfo.peerNetworkId = const_cast<char *>(networkId.c_str());
+    socketInfo.peerNetworkId = const_cast<char *>(networkId_.c_str());
     std::string clientName = pipe_.pipeId;
     socketInfo.name = const_cast<char *>(clientName.c_str());
     std::string pkgName = "ohos.distributeddata";
@@ -177,7 +176,7 @@ int32_t SoftBusClient::Open(int32_t socket, uint32_t type, const ISocketListener
     UpdateBindInfo(socket, mtu, status, async);
     ZLOGI("open %{public}s, session:%{public}s success, socket:%{public}d",
         KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket_);
-    ConnectManager::GetInstance()->OnSessionOpen(device_.networkId);
+    ConnectManager::GetInstance()->OnSessionOpen(networkId_);
     return status;
 }
 
@@ -257,8 +256,8 @@ Status SoftBusClient::ReuseConnect(const ISocketListener *listener)
     return status == SOFTBUS_OK ? Status::SUCCESS : Status::NETWORK_ERROR;
 }
 
-std::string SoftBusClient::GetNetworkId()
+const std::string& SoftBusClient::GetNetworkId() const
 {
-    return device_.networkId;
+    return networkId_;
 }
 } // namespace OHOS::AppDistributedKv

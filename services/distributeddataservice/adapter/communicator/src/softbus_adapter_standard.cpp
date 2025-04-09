@@ -207,7 +207,7 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
     uint32_t qosType)
 {
     std::shared_ptr<SoftBusClient> conn;
-    auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
+    std::string networkId = DmAdapter::GetInstance().ToNetworkID(deviceId.deviceId);
     connects_.Compute(deviceId.deviceId, [&pipeInfo, &deviceId, &conn, qosType, &networkId](const auto &key,
         std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
         for (auto &connect : connects) {
@@ -219,8 +219,7 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
                 return true;
             }
         }
-        DeviceId device = { .deviceId = deviceId.deviceId, .networkId = std::move(networkId) };
-        auto connect = std::make_shared<SoftBusClient>(pipeInfo, device, qosType);
+        auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, networkId, qosType);
         connects.emplace_back(connect);
         conn = connect;
         return true;
@@ -367,8 +366,8 @@ std::string SoftBusAdapter::DelConnect(int32_t socket, bool isForce)
                 iter++;
             }
         }
-        if (connects.empty()) {
-            closedConnect.insert(networkId);
+        if (connects.empty() && !networkId.empty()) {
+            closedConnect.insert(std::move(networkId));
             return true;
         }
         return false;

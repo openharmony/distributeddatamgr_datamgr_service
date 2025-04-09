@@ -33,7 +33,8 @@ public:
         QOS_REUSE,
         QOS_BUTT
     };
-    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId, uint32_t type = QOS_HML);
+    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId, const std::string& networkId,
+        uint32_t type = QOS_HML);
     ~SoftBusClient();
 
     using Time = std::chrono::steady_clock::time_point;
@@ -51,7 +52,7 @@ public:
     void UpdateExpireTime(bool async = true);
     int32_t GetSoftBusError();
     Status ReuseConnect(const ISocketListener *listener);
-    std::string GetNetworkId();
+    const std::string& GetNetworkId() const;
 
 private:
     int32_t Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async = true);
@@ -96,6 +97,7 @@ private:
     int32_t socket_ = INVALID_SOCKET_ID;
     int32_t bindState_ = -1;
     int32_t softBusError_ = 0;
+    const std::string networkId_;
 };
 } // namespace OHOS::AppDistributedKv
 
