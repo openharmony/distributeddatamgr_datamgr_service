@@ -141,7 +141,6 @@ ohos_unittest("CloudDataTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
@@ -236,7 +235,6 @@ ohos_unittest("CloudServiceImplTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
@@ -1732,8 +1730,6 @@ group("unittest") {
       ":CloudDataTest",
       ":CloudServiceImplTest",
       ":CloudTest",
-      "ohos_test:copy_ohos_test",
-      "testCloud:testCloud",
     ]
   }
 

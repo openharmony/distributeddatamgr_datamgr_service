@@ -64,7 +64,6 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/cloud_info.cpp",
     "cloud/cloud_last_sync_info.cpp",
     "cloud/cloud_lock_event.cpp",
-    "cloud/cloud_mark.cpp",
     "cloud/cloud_report.cpp",
     "cloud/cloud_server.cpp",
     "cloud/cloud_share_event.cpp",
@@ -116,7 +115,6 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/ref_count.cpp",
     "utils/time_utils.cpp",
   ]
-
   cflags = [
     "-Werror",
     "-Wno-multichar",

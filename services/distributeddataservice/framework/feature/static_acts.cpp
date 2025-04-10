@@ -37,18 +37,4 @@ int32_t StaticActs::OnClearAppStorage(const std::string &bundleName, int32_t use
 {
     return E_OK;
 }
-
-void StaticActs::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
-{
-    executors_ = executors;
-}
-
-void StaticActs::Execute(Task task)
-{
-    auto executor = executors_;
-    if (executor == nullptr) {
-        return;
-    }
-    executor->Execute(std::move(task));
-}
 }

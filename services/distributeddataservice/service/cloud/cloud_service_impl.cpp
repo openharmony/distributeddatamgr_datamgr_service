@@ -24,7 +24,6 @@
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_last_sync_info.h"
-#include "cloud/cloud_mark.h"
 #include "cloud/cloud_server.h"
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
@@ -43,14 +42,12 @@
 #include "reporter.h"
 #include "relational_store_manager.h"
 #include "runtime_config.h"
-#include "get_schema_helper.h"
 #include "store/auto_cache.h"
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
 #include "values_bucket.h"
 #include "xcollie.h"
-
 
 namespace OHOS::CloudData {
 using namespace DistributedData;
@@ -72,7 +69,6 @@ static constexpr const char *FT_USER_UNLOCK = "USER_UNLOCK";
 static constexpr const char *FT_NETWORK_RECOVERY = "NETWORK_RECOVERY";
 static constexpr const char *FT_SERVICE_INIT = "SERVICE_INIT";
 static constexpr const char *FT_SYNC_TASK = "SYNC_TASK";
-static constexpr const char *CLOUD_SCHEMA = "arkdata/cloud/cloud_schema.json";
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
     &CloudServiceImpl::SaveNetworkStrategy
@@ -102,9 +98,6 @@ CloudServiceImpl::CloudServiceImpl()
     });
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SHARE, [this](const Event &event) {
         CloudShare(event);
-    });
-    EventCenter::GetInstance().Subscribe(CloudEvent::UPGRADE_SCHEMA, [this](const Event &event) {
-        DoSync(event);
     });
     MetaDataManager::GetInstance().Subscribe(
         Subscription::GetPrefix({ "" }), [this](const std::string &key,
@@ -845,18 +838,8 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
     }
     auto keys = cloudInfo.GetSchemaKey();
     for (const auto &[bundle, key] : keys) {
-        HapInfo hapInfo{ .user = user, .instIndex = 0, .bundleName = bundle };
-        auto appInfoOpt = cloudInfo.GetAppInfo(bundle);
-        if (appInfoOpt.has_value()) {
-            const CloudInfo::AppInfo &appInfo = appInfoOpt.value();
-            hapInfo.instIndex = appInfo.instanceId;
-        }
-
         SchemaMeta schemaMeta;
-        std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
-        if (status != SUCCESS) {
-            std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
-        }
+        std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
         if (status == NOT_SUPPORT) {
             ZLOGW("app not support, del cloudInfo! user:%{public}d, bundleName:%{public}s", user, bundle.c_str());
             MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
@@ -868,7 +851,6 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
         SchemaMeta oldMeta;
         if (MetaDataManager::GetInstance().LoadMeta(key, oldMeta, true)) {
             UpgradeSchemaMeta(user, oldMeta);
-            UpdateClearWaterMark(hapInfo, schemaMeta, oldMeta);
         }
         MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
     }
@@ -966,12 +948,7 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
         return { SUCCESS, schemaMeta };
     }
     UpgradeSchemaMeta(userId, schemaMeta);
-    HapInfo hapInfo{ .user = userId, .instIndex = instanceId, .bundleName = bundleName };
-    std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
-    if (status == SUCCESS) {
-        MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
-        return { status, schemaMeta };
-    }
+
     if (!Account::GetInstance()->IsVerified(userId)) {
         ZLOGE("user:%{public}d is locked!", userId);
         return { ERROR, schemaMeta };
@@ -1031,92 +1008,7 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
 
 int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
-    auto ret = UpdateCloudInfoFromServer(user);
-    if (ret == E_OK) {
-        StoreInfo info{.bundleName = bundleName,  .instanceId = index, .user = user};
-        EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, info));
-    }
-    return ret;
-}
-
-int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
-{
-    ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
-    HapInfo hapInfo{ .user = user, .instIndex = index, .bundleName = bundleName };
-    Execute([this, hapInfo]() { UpdateSchemaFromHap(hapInfo); });
-    return SUCCESS;
-}
-
-int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
-{
-    auto [status, cloudInfo] = GetCloudInfoFromMeta(hapInfo.user);
-    if (status != SUCCESS) {
-        return status;
-    }
-    if (!cloudInfo.Exist(hapInfo.bundleName, hapInfo.instIndex)) {
-        return ERROR;
-    }
-
-    std::string schemaKey = CloudInfo::GetSchemaKey(hapInfo.user, hapInfo.bundleName, hapInfo.instIndex);
-    auto [ret, newSchemaMeta] = GetSchemaFromHap(hapInfo);
-    if (ret != SUCCESS) {
-        std::tie(ret, newSchemaMeta) = GetAppSchemaFromServer(hapInfo.user, hapInfo.bundleName);
-    }
-    if (ret != SUCCESS) {
-        MetaDataManager::GetInstance().DelMeta(schemaKey, true);
-        return ret;
-    }
-
-    SchemaMeta schemaMeta;
-    if (MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
-        UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
-    }
-    MetaDataManager::GetInstance().SaveMeta(schemaKey, newSchemaMeta, true);
-    return SUCCESS;
-}
-
-void CloudServiceImpl::UpdateClearWaterMark(
-    const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta)
-{
-    if (newSchemaMeta.version == schemaMeta.version) {
-        return;
-    }
-    ZLOGI("update schemaMeta newVersion:%{public}d,oldVersion:%{public}d", newSchemaMeta.version, schemaMeta.version);
-    CloudMark metaData;
-    metaData.bundleName = hapInfo.bundleName;
-    metaData.userId = hapInfo.user;
-    metaData.index = hapInfo.instIndex;
-    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-
-    std::unordered_map<std::string, uint32_t> dbMap;
-    for (const auto &database : schemaMeta.databases) {
-        dbMap[database.name] = database.version;
-    }
-
-    for (const auto &database : newSchemaMeta.databases) {
-        if (dbMap.find(database.name) != dbMap.end() && database.version != dbMap[database.name]) {
-            metaData.storeId = database.name;
-            metaData.isClearWaterMark = true;
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-            ZLOGI("clear watermark, storeId:%{public}s, newVersion:%{public}d, oldVersion:%{public}d",
-                Anonymous::Change(metaData.storeId).c_str(), database.version, dbMap[database.name]);
-        }
-    }
-}
-
-std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaFromHap(const HapInfo &hapInfo)
-{
-    SchemaMeta schemaMeta;
-    AppInfo info{ .bundleName = hapInfo.bundleName, .userId = hapInfo.user, .appIndex = hapInfo.instIndex };
-    auto schemas = GetSchemaHelper::GetInstance().GetSchemaFromHap(CLOUD_SCHEMA, info);
-    for (auto &schema : schemas) {
-        if (schemaMeta.Unmarshall(schema)) {
-            return { SUCCESS, schemaMeta };
-        }
-    }
-    ZLOGD("get schema from hap failed, bundleName:%{public}s", hapInfo.bundleName.c_str());
-    return { ERROR, schemaMeta };
+    return UpdateCloudInfoFromServer(user);
 }
 
 void CloudServiceImpl::GetSchema(const Event &event)
@@ -1155,15 +1047,6 @@ void CloudServiceImpl::CloudShare(const Event &event)
     if (callback) {
         callback(status, cursor);
     }
-}
-
-void CloudServiceImpl::DoSync(const Event &event)
-{
-    auto &cloudEvent = static_cast<const CloudEvent &>(event);
-    auto &storeInfo = cloudEvent.GetStoreInfo();
-    SyncManager::SyncInfo info(storeInfo.user, storeInfo.bundleName);
-    syncManager_.DoCloudSync(info);
-    return;
 }
 
 std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> CloudServiceImpl::PreShare(
