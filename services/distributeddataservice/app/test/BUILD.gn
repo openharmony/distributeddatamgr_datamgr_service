@@ -13,7 +13,7 @@
 import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-module_output_path = "datamgr_service/distributeddataservice"
+module_output_path = "datamgr_service/datamgr_service/distributeddataservice"
 
 ###############################################################################
 config("module_private_config") {
