@@ -659,11 +659,13 @@ ohos_unittest("RdbServiceImplTest") {
   sources = [
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "mock/checker_mock.cpp",
     "rdb_service_impl_test.cpp",
   ]
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/eventcenter",
     "${data_service_path}/service/test/mock",
   ]
 
