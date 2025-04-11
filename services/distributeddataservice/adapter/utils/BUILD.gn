@@ -24,17 +24,14 @@ ohos_source_set("distributeddata_utils") {
   }
   sources = [ "src/kvstore_utils.cpp" ]
 
-  cflags_cc = [
-    "-fvisibility=hidden",
-    "-fstack-protector-strong",
-  ]
+  cflags_cc = [ "-fvisibility=hidden" ]
 
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
   }
 
   include_dirs = [ "../include/utils" ]
-  ldflags = [ "-Wl,-z,relro,-z,now,--exclude-libs,ALL" ]
+  ldflags = [ "-Wl,--exclude-libs,ALL" ]
 
   external_deps = [
     "c_utils:utils",

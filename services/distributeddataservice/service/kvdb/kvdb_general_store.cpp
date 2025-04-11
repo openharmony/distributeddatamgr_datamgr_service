@@ -201,7 +201,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     storeInfo_.bundleName = meta.bundleName;
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
-    storeInfo_.user = std::stoi(meta.user);
+    storeInfo_.user = std::atoi(meta.user.c_str());
     enableCloud_ = meta.enableCloud;
 }
 

@@ -24,10 +24,7 @@ ohos_source_set("distributeddata_screenlock") {
   }
   sources = [ "src/screen_lock.cpp" ]
 
-  cflags_cc = [
-    "-fvisibility=hidden",
-    "-fstack-protector-strong",
-  ]
+  cflags_cc = [ "-fvisibility=hidden" ]
 
   include_dirs = [
     "../include/screenlock",

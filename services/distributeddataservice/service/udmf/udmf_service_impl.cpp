@@ -190,11 +190,23 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     return res;
 }
 
+bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key, const QueryOption &query)
+{
+    if (!key.IsValid()) {
+        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+        return false;
+    }
+    if (key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        ZLOGE("Invalid intention:%{public}s", key.intention.c_str());
+        return false;
+    }
+    return true;
+}
+
 int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &unifiedData)
 {
     UnifiedKey key(query.key);
-    if (!key.IsValid()) {
-        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+    if (!CheckDragParams(key, query)) {
         return E_INVALID_PARAMETERS;
     }
     auto store = StoreCache::GetInstance().GetStore(key.intention);

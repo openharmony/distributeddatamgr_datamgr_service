@@ -32,7 +32,6 @@ ohos_source_set("distributeddata_bootstrap") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   include_dirs = [ "${data_service_path}/service/config/include" ]
@@ -44,7 +43,6 @@ ohos_source_set("distributeddata_bootstrap") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   deps = [

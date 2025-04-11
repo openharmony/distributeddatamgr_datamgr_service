@@ -23,13 +23,13 @@ using namespace OHOS::DistributedData;
 CacheCursor::CacheCursor(std::vector<DistributedData::VBucket> &&records)
     : row_(0), maxCol_(0), records_(std::move(records))
 {
-    maxRow_ = records_.size();
+    maxRow_ = static_cast<int32_t>(records_.size());
     if (maxRow_ > 0) {
         for (auto it = records_[0].begin(); it != records_[0].end(); it++) {
             colNames_.push_back(it->first);
             colTypes_.push_back(it->second.index());
         }
-        maxCol_ = colNames_.size();
+        maxCol_ = static_cast<int32_t>(colNames_.size());
     }
 }
 
