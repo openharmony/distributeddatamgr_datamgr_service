@@ -25,7 +25,7 @@ public:
     bool IsNetworkAvailable() override;
     void RegOnNetworkChange() override;
     NetworkType GetNetworkType(bool retrieve = false) override;
-
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
 private:
     NetworkDelegateDefaultImpl();
     ~NetworkDelegateDefaultImpl();

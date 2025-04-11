@@ -30,5 +30,10 @@ void NetworkDelegateMock::RegOnNetworkChange()
 {
     return;
 }
+
+void NetworkDelegateMock::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    return;
+}
 } // namespace DistributedData
 } // namespace OHOS
