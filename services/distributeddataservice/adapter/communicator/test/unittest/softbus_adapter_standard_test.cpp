@@ -181,7 +181,8 @@ HWTEST_F(SoftbusAdapterStandardTest, GetExpireTime, TestSize.Level0)
     appId.pipeId = "appId";
     appId.userId = "groupId";
     DeviceId id = {"DeviceId"};
-    std::shared_ptr<SoftBusClient> conn = std::make_shared<SoftBusClient>(appId, id, SoftBusClient::QoSType::QOS_HML);
+    std::shared_ptr<SoftBusClient> conn = std::make_shared<SoftBusClient>(
+        appId, id, "", SoftBusClient::QoSType::QOS_HML);
     EXPECT_NO_FATAL_FAILURE(SoftBusAdapter::GetInstance()->GetExpireTime(conn));
 }
 
@@ -268,7 +269,8 @@ HWTEST_F(SoftbusAdapterStandardTest, OnClientShutdown, TestSize.Level1)
     appId.pipeId = "appId";
     appId.userId = "groupId";
     DeviceId id = {"DeviceId"};
-    std::shared_ptr<SoftBusClient> conn1 = std::make_shared<SoftBusClient>(appId, id, SoftBusClient::QoSType::QOS_HML);
+    std::shared_ptr<SoftBusClient> conn1 = std::make_shared<SoftBusClient>(
+        appId, id, "", SoftBusClient::QoSType::QOS_HML);
     std::shared_ptr<SoftBusClient> conn2 = nullptr;
     std::vector<std::shared_ptr<SoftBusClient>> clients;
     clients.emplace_back(conn1);

@@ -46,7 +46,7 @@ void SoftbusClientTest::SetUpTestCase(void)
     pipeInfo.pipeId = "pipeId";
     pipeInfo.userId = "userId";
     DeviceId id = {"DeviceId"};
-    client = std::make_shared<SoftBusClient>(pipeInfo, id);
+    client = std::make_shared<SoftBusClient>(pipeInfo, id, "");
 }
 
 void SoftbusClientTest::TearDownTestCase(void)
