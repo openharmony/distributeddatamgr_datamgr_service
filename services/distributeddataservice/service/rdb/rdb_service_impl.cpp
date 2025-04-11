@@ -812,6 +812,20 @@ void RdbServiceImpl::SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &par
     param.haMode_ = metadata.haMode;
 }
 
+void RdbServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
+{
+    RemoteChangeEvent::DataInfo info;
+    info.bundleName = meta.bundleName;
+    info.deviceId = meta.deviceId;
+    info.userId = meta.user;
+    if (executors_ != nullptr) {
+        executors_->Schedule(ExecutorPool::INVALID_DELAY, [dataInfo = std::move(info)]() mutable {
+            auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::RDB_META_SAVE, std::move(dataInfo));
+            EventCenter::GetInstance().PostEvent(std::move(evt));
+        });
+    }
+}
+
 int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
@@ -833,12 +847,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
-            RemoteChangeEvent::DataInfo info;
-            info.bundleName = meta.bundleName;
-            info.deviceId = meta.deviceId;
-            info.userId = meta.user;
-            auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::RDB_META_SAVE, std::move(info));
-            EventCenter::GetInstance().PostEvent(std::move(evt));
+            SaveLaunchInfo(meta);
         }
     }
 

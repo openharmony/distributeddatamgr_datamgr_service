@@ -245,6 +245,8 @@ private:
 
     bool TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta);
 
+    void SaveLaunchInfo(StoreMetaData &meta);
+
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
