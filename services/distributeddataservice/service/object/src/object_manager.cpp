@@ -520,7 +520,7 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
     for (const auto& [objectId, assets] : changedAssets) {
         std::string networkId = DmAdaper::GetInstance().ToNetworkID(saveInfo.sourceDeviceId);
         auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
-        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(std::stoi(GetCurrentUser()),
+        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(std::atoi(GetCurrentUser().c_str()),
             saveInfo.bundleName, networkId, assets, [this, block](bool success) {
                 block->SetValue({ false, success });
         });
