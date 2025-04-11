@@ -53,6 +53,8 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = InsertEx(uri, extUri, bucket);
+    ZLOGI("Insert uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -72,6 +74,8 @@ int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = UpdateEx(uri, extUri, predicate, bucket);
+    ZLOGI("Update uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -89,6 +93,8 @@ int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = DeleteEx(uri, extUri, predicate);
+    ZLOGI("Delete uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
