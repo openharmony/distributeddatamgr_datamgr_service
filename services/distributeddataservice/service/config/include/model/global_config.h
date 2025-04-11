@@ -41,6 +41,7 @@ public:
     std::vector<AppIdMappingConfig> *appIdMapping = nullptr;
     ThreadConfig *thread = nullptr;
     std::vector<std::string> dataShareExtNames;
+    std::vector<std::string> hosAppList;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

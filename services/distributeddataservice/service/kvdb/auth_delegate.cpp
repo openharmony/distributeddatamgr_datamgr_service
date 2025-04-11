@@ -34,6 +34,7 @@ private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
     bool IsSystemUser(int localUserId, int peerUserId);
+    bool CheckAppAccess(const std::string &bundleName);
     static constexpr pid_t UID_CAPACITY = 10000;
     static constexpr int SYSTEM_USER = 0;
 };
@@ -64,7 +65,11 @@ std::pair<bool, bool> AuthHandlerStub::CheckAccess(int localUserId, int peerUser
         return std::make_pair(false, false);
     }
     if (!DmAdapter::GetInstance().IsOHOSType(peerDeviceId)) {
-        return std::make_pair(true, false);
+        if (DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
+            return std::make_pair(true, false);
+        }
+        auto isPermitted = CheckAppAccess(aclParams.accCaller.bundleName);
+        return std::make_pair(isPermitted, false);
     }
     if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::DEFAULT)) {
         if (DmAdapter::GetInstance().IsSameAccount(aclParams.accCaller, aclParams.accCallee)) {
@@ -95,6 +100,12 @@ bool AuthHandlerStub::IsUserActive(const std::vector<UserStatus> &users, int32_t
         }
     }
     return false;
+}
+
+bool AuthHandlerStub::CheckAppAccess(const std::string &bundleName)
+{
+    auto appList = ConfigFactory::GetInstance().GetHOSAppList();
+    return (std::find(appList.begin(), appList.end(), bundleName) != appList.end());
 }
 
 AuthHandler *AuthDelegate::GetInstance()

@@ -96,5 +96,10 @@ std::vector<std::string> ConfigFactory::GetDataShareExtNames()
 {
     return config_.dataShareExtNames;
 }
+
+std::vector<std::string> ConfigFactory::GetHOSAppList()
+{
+    return config_.hosAppList;
+}
 } // namespace DistributedData
 } // namespace OHOS
