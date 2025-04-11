@@ -791,7 +791,8 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
         ZLOGD("cloud server is nullptr, user:%{public}d", userId);
         return { SERVER_UNAVAILABLE, cloudInfo };
     }
-    return instance->GetServerInfo(cloudInfo.user, false);
+    auto [code, info] = instance->GetServerInfo(cloudInfo.user, false);
+    return { code != E_OK ? code : info.IsValid() ? E_OK : E_ERROR, info };
 }
 
 int32_t CloudServiceImpl::UpdateCloudInfoFromServer(int32_t user)
