@@ -449,7 +449,7 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
         }
         if (runtime->tokenId == query.tokenId) {
             unifiedDataSet.push_back(data);
-            deleteKeys.push_back(runtime->key.key);
+            deleteKeys.push_back(UnifiedKey(runtime->key.key).GetKeyCommonPrefix());
         }
     }
     if (deleteKeys.empty()) {
@@ -726,7 +726,7 @@ int32_t UdmfServiceImpl::QueryDataCommon(
     if (key.key.empty()) {
         dataPrefix = DATA_PREFIX + intention;
     } else {
-        dataPrefix = UnifiedKey(key.key).GetPropertyKey();
+        dataPrefix = UnifiedKey(key.key).GetKeyCommonPrefix();
         intention = key.intention;
     }
     ZLOGD("dataPrefix = %{public}s, intention: %{public}s.", dataPrefix.c_str(), intention.c_str());
