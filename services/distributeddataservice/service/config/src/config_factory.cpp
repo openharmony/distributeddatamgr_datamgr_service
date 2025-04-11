@@ -97,7 +97,7 @@ std::vector<std::string> ConfigFactory::GetDataShareExtNames()
     return config_.dataShareExtNames;
 }
 
-std::vector<std::string> ConfigFactory::GetHOSAppList()
+std::vector<AppAccessCheckConfig> ConfigFactory::GetHOSAppListConfig()
 {
     return config_.hosAppList;
 }

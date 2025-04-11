@@ -16,6 +16,7 @@
 #define LOG_TAG "AuthHandler"
 #include "auth_delegate.h"
 
+#include "access_check/app_access_check_config_manager.h"
 #include "checker/checker_manager.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
@@ -29,12 +30,11 @@ class AuthHandlerStub : public AuthHandler {
 public:
     // override for mock auth in current version, need remove in the future
     std::pair<bool, bool> CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
-        const AclParams &aclParams) override;
+        const AclParams &aclParams, const std::string &appId) override;
 private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
     bool IsSystemUser(int localUserId, int peerUserId);
-    bool CheckAppAccess(const std::string &bundleName);
     static constexpr pid_t UID_CAPACITY = 10000;
     static constexpr int SYSTEM_USER = 0;
 };
@@ -56,7 +56,7 @@ bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::str
 }
 
 std::pair<bool, bool> AuthHandlerStub::CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
-    const AclParams &aclParams)
+    const AclParams &aclParams, const std::string &appId)
 {
     if (IsSystemUser(localUserId, peerUserId)) {
         return std::make_pair(true, false);
@@ -68,7 +68,8 @@ std::pair<bool, bool> AuthHandlerStub::CheckAccess(int localUserId, int peerUser
         if (DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
             return std::make_pair(true, false);
         }
-        auto isPermitted = CheckAppAccess(aclParams.accCaller.bundleName);
+        auto isPermitted = AppAccessCheckConfigManager::GetInstance().CheckAppAccess(
+            aclParams.accCaller.bundleName, appId);
         return std::make_pair(isPermitted, false);
     }
     if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::DEFAULT)) {
@@ -100,12 +101,6 @@ bool AuthHandlerStub::IsUserActive(const std::vector<UserStatus> &users, int32_t
         }
     }
     return false;
-}
-
-bool AuthHandlerStub::CheckAppAccess(const std::string &bundleName)
-{
-    auto appList = ConfigFactory::GetInstance().GetHOSAppList();
-    return (std::find(appList.begin(), appList.end(), bundleName) != appList.end());
 }
 
 AuthHandler *AuthDelegate::GetInstance()

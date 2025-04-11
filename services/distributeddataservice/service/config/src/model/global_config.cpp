@@ -31,6 +31,7 @@ bool GlobalConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(appIdMapping)], appIdMapping);
     SetValue(node[GET_NAME(thread)], thread);
     SetValue(node[GET_NAME(dataShareExtNames)], dataShareExtNames);
+    SetValue(node[GET_NAME(hosAppList)], hosAppList);
     return true;
 }
 
@@ -49,6 +50,7 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(appIdMapping), appIdMapping);
     GetValue(node, GET_NAME(thread), thread);
     GetValue(node, GET_NAME(dataShareExtNames), dataShareExtNames);
+    GetValue(node, GET_NAME(hosAppList), hosAppList);
     return true;
 }
 
@@ -62,6 +64,7 @@ GlobalConfig::~GlobalConfig()
     delete cloud;
     delete appIdMapping;
     delete thread;
+    delete hosAppList;
 }
 } // namespace DistributedData
 } // namespace OHOS

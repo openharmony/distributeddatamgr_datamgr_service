@@ -17,6 +17,7 @@
 
 #include <dlfcn.h>
 
+#include "access_check/app_access_check_config_manager.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "backup_manager.h"
 #include "backuprule/backup_rule_manager.h"
@@ -190,6 +191,19 @@ void Bootstrap::LoadThread()
         return;
     }
     ThreadManager::GetInstance().Initialize(config->minThreadNum, config->maxThreadNum, config->ipcThreadNum);
+}
+
+void Bootstrap::LoadAppAccess()
+{
+    auto *appList = ConfigFactory::GetInstance().GetHOSAppListConfig();
+    if (appList == nullptr) {
+        return;
+    }
+    std::vector<AppAccessCheckConfigManager::AppMappingInfo> infos;
+    for (auto &info : *appList) {
+        infos.push_back({ info.bundleName, info.appId });
+    }
+    AppAccessCheckConfigManager::GetInstance().Initialize(infos);
 }
 } // namespace DistributedData
 } // namespace OHOS
