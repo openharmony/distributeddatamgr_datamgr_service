@@ -16,7 +16,6 @@
 #define LOG_TAG "AuthHandler"
 #include "auth_delegate.h"
 
-#include "access_check/app_access_check_config_manager.h"
 #include "checker/checker_manager.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
@@ -30,7 +29,7 @@ class AuthHandlerStub : public AuthHandler {
 public:
     // override for mock auth in current version, need remove in the future
     std::pair<bool, bool> CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
-        const AclParams &aclParams, const std::string &appId) override;
+        const AclParams &aclParams) override;
 private:
     bool IsUserActive(const std::vector<UserStatus> &users, int32_t userId);
     bool CheckUsers(int localUserId, int peerUserId, const std::string &peerDeviceId);
@@ -65,12 +64,7 @@ std::pair<bool, bool> AuthHandlerStub::CheckAccess(int localUserId, int peerUser
         return std::make_pair(false, false);
     }
     if (!DmAdapter::GetInstance().IsOHOSType(peerDeviceId)) {
-        if (DmAdapter::GetInstance().IsSameAccount(peerDeviceId)) {
-            return std::make_pair(true, false);
-        }
-        auto isPermitted = AppAccessCheckConfigManager::GetInstance().CheckAppAccess(
-            aclParams.accCaller.bundleName, appId);
-        return std::make_pair(isPermitted, false);
+        return std::make_pair(true, false);
     }
     if (aclParams.authType == static_cast<int32_t>(DistributedKv::AuthType::DEFAULT)) {
         if (DmAdapter::GetInstance().IsSameAccount(aclParams.accCaller, aclParams.accCallee)) {

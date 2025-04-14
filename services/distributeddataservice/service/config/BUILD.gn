@@ -24,7 +24,6 @@ ohos_source_set("distributeddata_config") {
   }
   sources = [
     "src/config_factory.cpp",
-    "src/model/app_access_check_config.cpp",
     "src/model/app_id_mapping_config.cpp",
     "src/model/backup_config.cpp",
     "src/model/checker_config.cpp",

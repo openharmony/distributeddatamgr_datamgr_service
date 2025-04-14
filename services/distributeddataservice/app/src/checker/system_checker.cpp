@@ -62,6 +62,11 @@ std::string SystemChecker::GetAppId(const CheckerManager::StoreInfo &info)
     return appId;
 }
 
+bool SystemChecker::IsTrust(const std::string &bundleName, const std::string &appId)
+{
+    return false;
+}
+
 bool SystemChecker::IsValid(const CheckerManager::StoreInfo &info)
 {
     auto type = AccessTokenKit::GetTokenTypeFlag(info.tokenId);

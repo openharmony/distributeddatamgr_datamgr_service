@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include "account/account_delegate.h"
 #include "auth_delegate.h"
+#include "checker/checker_manager.h"
 #include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
@@ -95,6 +96,12 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     if (devInfo.osType != OH_OS_TYPE) {
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
+        StoreMetaData metaData;
+        GetStoreMeta("", metaData);
+        if (!CheckerManager::GetInstance().GetAppId(metaData.bundleName, metaData.appId)) {
+            ZLOGW("check access failed, bundleName:%{public}s", metaData.bundleName.c_str());
+            return DistributedDB::DB_ERROR;
+        }
         return DistributedDB::OK;
     }
     bool flag = false;
@@ -263,6 +270,13 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
                 userInfos.emplace_back(userInfo);
                 return true;
             }
+        } else {
+            StoreMetaData metaData;
+            GetStoreMeta(label, metaData);
+            if (!CheckerManager::GetInstance().GetAppId(metaData.bundleName, metaData.appId)) {
+                ZLOGW("check access failed, bundleName:%{public}s", metaData.bundleName.c_str());
+                return false;
+            }
         }
     }
 
@@ -280,6 +294,18 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
         }
     }
     return true;
+}
+
+bool RouteHeadHandlerImpl::GetStoreMeta(const std::string &label, StoreMetaData &metaData)
+{
+    int foregroundUserId = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    auto storeId = label.empty() ? storeId_ : ParseStoreId(session_.targetDeviceId, label);
+    metaData.deviceId = session_.targetDeviceId;
+    metaData.user = foregroundUserId;
+    metaData.bundleName = session_.appId;
+    metaData.storeId = storeId;
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
 }
 
 bool RouteHeadHandlerImpl::UnPackData(const uint8_t *data, uint32_t totalLen, uint32_t &unpackedSize)

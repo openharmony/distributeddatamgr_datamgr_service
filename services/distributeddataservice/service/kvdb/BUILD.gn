@@ -31,7 +31,6 @@ ohos_source_set("distributeddata_kvdb") {
     "${data_service_path}/framework/include",
     "${data_service_path}/framework/include/dfx",
     "${data_service_path}/service/bootstrap/include",
-    "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",

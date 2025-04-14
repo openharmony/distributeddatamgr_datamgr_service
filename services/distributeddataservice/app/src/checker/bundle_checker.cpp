@@ -104,6 +104,15 @@ std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
     return Crypto::Sha256(appId);
 }
 
+bool BundleChecker::IsTrust(const std::string &bundleName, const std::string &appId)
+{
+    auto it = trusts_.find(bundleName);
+    if (it != trusts_.end() && (it->second == appId)) {
+        return true;
+    }
+    return false;
+}
+
 bool BundleChecker::IsValid(const CheckerManager::StoreInfo &info)
 {
     if (AccessTokenKit::GetTokenTypeFlag(info.tokenId) != TOKEN_HAP) {

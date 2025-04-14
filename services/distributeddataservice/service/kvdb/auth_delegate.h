@@ -34,7 +34,7 @@ enum AUTH_GROUP_TYPE {
 class AuthHandler {
 public:
     virtual std::pair<bool, bool> CheckAccess(int localUserId, int peerUserId,
-        const std::string &peerDeviceId, const AclParams &aclParams, const std::string &appId);
+        const std::string &peerDeviceId, const AclParams &aclParams);
 };
 
 class AuthDelegate {

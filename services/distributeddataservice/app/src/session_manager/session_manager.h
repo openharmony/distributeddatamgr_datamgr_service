@@ -54,9 +54,9 @@ public:
     bool CheckSession(const SessionPoint &local, const SessionPoint &peer) const;
 private:
     bool GetSendAuthParams(const SessionPoint &local, const std::string &targetDeviceId,
-        AclParams &aclParams, std::string &appId) const;
+        AclParams &aclParams) const;
     bool GetRecvAuthParams(const SessionPoint &local, const std::string &targetDeviceId,
-        AclParams &aclParams, int peerUser, std::string &appId) const;
+        AclParams &aclParams, int peerUser) const;
 };
 } // namespace OHOS::DistributedData
 

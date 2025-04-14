@@ -36,7 +36,7 @@ public:
     std::vector<CheckerManager::StoreInfo> GetStaticStores() override;
     bool IsDynamic(const CheckerManager::StoreInfo &info) override;
     bool IsStatic(const CheckerManager::StoreInfo &info) override;
-
+    bool IsTrust(const std::string &bundleName, const std::string &appId) override;
 private:
     static BundleChecker instance_;
     std::map<std::string, std::string> trusts_;
