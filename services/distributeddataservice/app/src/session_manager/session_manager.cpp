@@ -52,7 +52,7 @@ Session SessionManager::GetSession(const SessionPoint &local, const std::string 
     if (local.userId == UserDelegate::SYSTEM_USER) {
         session.targetUserIds.push_back(UserDelegate::SYSTEM_USER);
     }
-
+    
     AclParams aclParams;
     if (!GetSendAuthParams(local, targetDeviceId, aclParams)) {
         ZLOGE("get send auth params failed:%{public}s", Anonymous::Change(targetDeviceId).c_str());
