@@ -55,7 +55,7 @@ bool AuthHandlerStub::CheckUsers(int localUserId, int peerUserId, const std::str
 }
 
 std::pair<bool, bool> AuthHandlerStub::CheckAccess(int localUserId, int peerUserId, const std::string &peerDeviceId,
-    const AclParams &aclParams, const std::string &appId)
+    const AclParams &aclParams)
 {
     if (IsSystemUser(localUserId, peerUserId)) {
         return std::make_pair(true, false);
