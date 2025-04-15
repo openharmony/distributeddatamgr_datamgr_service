@@ -40,10 +40,12 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         context->permission = "reject";
         return true;
     }
+    std::string uri = context->uri;
+    URIUtils::FormatUri(uri);
     for (auto const &hapModuleInfo : context->bundleInfo.hapModuleInfos) {
         auto proxyDatas = hapModuleInfo.proxyDatas;
         for (auto const &proxyData : proxyDatas) {
-            if (proxyData.uri != context->uri) {
+            if (proxyData.uri != uri) {
                 continue;
             }
             context->permission = context->isRead ? proxyData.requiredReadPermission
