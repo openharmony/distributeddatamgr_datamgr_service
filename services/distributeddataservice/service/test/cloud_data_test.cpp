@@ -321,7 +321,7 @@ void CloudDataTest::TearDown()
 * @tc.require:
 * @tc.author: ht
 */
-HWTEST_F(CloudDataTest, GetSchema, TestSize.Level0)
+HWTEST_F(CloudDataTest, GetSchema, TestSize.Level1)
 {
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
@@ -384,7 +384,7 @@ HWTEST_F(CloudDataTest, QueryStatistics002, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
+HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level1)
 {
     // Construct the statisticInfo data
     auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
@@ -420,7 +420,7 @@ HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level0)
+HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level1)
 {
     // Construct the statisticInfo data
     auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
@@ -494,7 +494,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo003, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
+HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
 {
     auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
@@ -518,7 +518,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level0)
+HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
 {
     std::map<std::string, int32_t> switches;
     switches.emplace(TEST_CLOUD_ID, true);
@@ -739,7 +739,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo010, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, QueryLastSyncInfo011, TestSize.Level0)
+HWTEST_F(CloudDataTest, QueryLastSyncInfo011, TestSize.Level1)
 {
     schemaMeta_.databases[1].name = TEST_CLOUD_STORE_1;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
@@ -868,7 +868,7 @@ HWTEST_F(CloudDataTest, UpdateFinishSyncInfo, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, Share001, TestSize.Level0)
+HWTEST_F(CloudDataTest, Share001, TestSize.Level1)
 {
     std::string sharingRes = "";
     CloudData::Participants participants{};
@@ -883,7 +883,7 @@ HWTEST_F(CloudDataTest, Share001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, Unshare001, TestSize.Level0)
+HWTEST_F(CloudDataTest, Unshare001, TestSize.Level1)
 {
     std::string sharingRes = "";
     CloudData::Participants participants{};
@@ -898,7 +898,7 @@ HWTEST_F(CloudDataTest, Unshare001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, ChangePrivilege001, TestSize.Level0)
+HWTEST_F(CloudDataTest, ChangePrivilege001, TestSize.Level1)
 {
     std::string sharingRes = "";
     CloudData::Participants participants{};
@@ -913,7 +913,7 @@ HWTEST_F(CloudDataTest, ChangePrivilege001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, ChangeConfirmation001, TestSize.Level0)
+HWTEST_F(CloudDataTest, ChangeConfirmation001, TestSize.Level1)
 {
     std::string sharingRes = "";
     int32_t confirmation = 0;
@@ -928,7 +928,7 @@ HWTEST_F(CloudDataTest, ChangeConfirmation001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, ConfirmInvitation001, TestSize.Level0)
+HWTEST_F(CloudDataTest, ConfirmInvitation001, TestSize.Level1)
 {
     std::string sharingRes = "";
     int32_t confirmation = 0;
@@ -943,7 +943,7 @@ HWTEST_F(CloudDataTest, ConfirmInvitation001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, Exit001, TestSize.Level0)
+HWTEST_F(CloudDataTest, Exit001, TestSize.Level1)
 {
     std::string sharingRes = "";
     std::pair<int32_t, std::string> result;
@@ -957,7 +957,7 @@ HWTEST_F(CloudDataTest, Exit001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, Query001, TestSize.Level0)
+HWTEST_F(CloudDataTest, Query001, TestSize.Level1)
 {
     std::string sharingRes = "";
     CloudData::QueryResults result;
@@ -971,7 +971,7 @@ HWTEST_F(CloudDataTest, Query001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, QueryByInvitation001, TestSize.Level0)
+HWTEST_F(CloudDataTest, QueryByInvitation001, TestSize.Level1)
 {
     std::string invitation = "";
     CloudData::QueryResults result;
@@ -1015,7 +1015,7 @@ HWTEST_F(CloudDataTest, AllocResourceAndShare001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level0)
+HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level1)
 {
     std::vector<CommonType::Value> values;
     values.push_back(CloudData::NetWorkStrategy::WIFI);
@@ -1033,7 +1033,7 @@ HWTEST_F(CloudDataTest, SetGlobalCloudStrategy001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level0)
+HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level1)
 {
     std::vector<CommonType::Value> values;
     values.push_back(CloudData::NetWorkStrategy::WIFI);
@@ -1148,7 +1148,7 @@ HWTEST_F(CloudDataTest, NotifyDataChange002, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level0)
+HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level1)
 {
     constexpr const int32_t userId = 100;
     constexpr const int32_t defaultUserId = 0;
@@ -1300,7 +1300,7 @@ HWTEST_F(CloudDataTest, EnableCloud, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnEnableCloud, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnEnableCloud, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1321,7 +1321,7 @@ HWTEST_F(CloudDataTest, OnEnableCloud, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnDisableCloud, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnDisableCloud, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1340,7 +1340,7 @@ HWTEST_F(CloudDataTest, OnDisableCloud, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnChangeAppSwitch, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnChangeAppSwitch, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1361,7 +1361,7 @@ HWTEST_F(CloudDataTest, OnChangeAppSwitch, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnClean, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnClean, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1382,7 +1382,7 @@ HWTEST_F(CloudDataTest, OnClean, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnNotifyDataChange, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnNotifyDataChange, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1402,7 +1402,7 @@ HWTEST_F(CloudDataTest, OnNotifyDataChange, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnNotifyChange, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnNotifyChange, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1424,7 +1424,7 @@ HWTEST_F(CloudDataTest, OnNotifyChange, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnQueryStatistics, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnQueryStatistics, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1445,7 +1445,7 @@ HWTEST_F(CloudDataTest, OnQueryStatistics, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnQueryLastSyncInfo, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnQueryLastSyncInfo, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1466,7 +1466,7 @@ HWTEST_F(CloudDataTest, OnQueryLastSyncInfo, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnSetGlobalCloudStrategy, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnSetGlobalCloudStrategy, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1488,7 +1488,7 @@ HWTEST_F(CloudDataTest, OnSetGlobalCloudStrategy, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnAllocResourceAndShare, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnAllocResourceAndShare, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1512,7 +1512,7 @@ HWTEST_F(CloudDataTest, OnAllocResourceAndShare, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnShare, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnShare, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1534,7 +1534,7 @@ HWTEST_F(CloudDataTest, OnShare, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnUnshare, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnUnshare, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1556,7 +1556,7 @@ HWTEST_F(CloudDataTest, OnUnshare, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnExit, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnExit, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1577,7 +1577,7 @@ HWTEST_F(CloudDataTest, OnExit, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnChangePrivilege, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnChangePrivilege, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1599,7 +1599,7 @@ HWTEST_F(CloudDataTest, OnChangePrivilege, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnQuery, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnQuery, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1620,7 +1620,7 @@ HWTEST_F(CloudDataTest, OnQuery, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnQueryByInvitation, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnQueryByInvitation, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1641,7 +1641,7 @@ HWTEST_F(CloudDataTest, OnQueryByInvitation, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnConfirmInvitation, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnConfirmInvitation, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1663,7 +1663,7 @@ HWTEST_F(CloudDataTest, OnConfirmInvitation, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, OnChangeConfirmation, TestSize.Level0)
+HWTEST_F(CloudDataTest, OnChangeConfirmation, TestSize.Level1)
 {
     MessageParcel reply;
     MessageParcel data;
@@ -1982,7 +1982,7 @@ HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level0)
+HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level1)
 {
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     auto ret = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
@@ -2202,7 +2202,7 @@ HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, GetCloudInfo001, TestSize.Level0)
+HWTEST_F(CloudDataTest, GetCloudInfo001, TestSize.Level1)
 {
     int32_t userId = 1000;
     auto [status, cloudInfo] = cloudServiceImpl_->GetCloudInfo(userId);
@@ -2504,7 +2504,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level0)
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = -1 };
@@ -2518,7 +2518,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap002, TestSize.Level0)
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap002, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = "", .user = cloudInfo_.user };
@@ -2532,7 +2532,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap002, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level0)
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo info = {
@@ -2552,7 +2552,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level0)
+HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudInfo::AppInfo exampleAppInfo;
