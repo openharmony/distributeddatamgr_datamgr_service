@@ -198,6 +198,10 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
     UpdateTime();
     Value value;
     auto res = kvStore_->Get({key.begin(), key.end()}, value);
+    if (res == NOT_FOUND) {
+        ZLOGW("Runtime not found, key: %{public}s", key.c_str());
+        return E_NOT_FOUND;
+    }
     if (res != OK || value.empty()) {
         ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
         return E_DB_ERROR;
