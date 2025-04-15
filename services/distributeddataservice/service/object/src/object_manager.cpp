@@ -297,8 +297,7 @@ int32_t ObjectStoreManager::Clear()
         return OBJECT_INNER_ERROR;
     }
     DistributedData::ObjectUserMetaData userMeta;
-    std::string userMetaKey = DistributedData::ObjectUserMetaData::GetKey();
-    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMetaKey, userMeta, true)) {
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
         ZLOGE("no meta of userId:%{public}s", userId.c_str());
         return OBJECT_STORE_NOT_FOUND;
     }

@@ -1086,4 +1086,16 @@ HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
     EXPECT_NE(saveInfo.bundleName, bundleName);
     EXPECT_FALSE(hasAsset);
 }
+
+/**
+* @tc.name: ClearOldUserMeta001
+* @tc.desc: test clear old user meta.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, ClearOldUserMeta001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    auto status = manager->ClearOldUserMeta();
+    ASSERT_EQ(status, DistributedObject::OBJECT_SUCCESS);
+}
 } // namespace OHOS::Test
