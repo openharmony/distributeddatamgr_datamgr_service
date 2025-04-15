@@ -987,7 +987,7 @@ void SyncManager::CleanCompensateSync(int32_t userId)
 
 void SyncManager::AddCompensateSync(const StoreMetaData &meta)
 {
-    compensateSyncInfos_.Compute(std::stoi(meta.user),
+    compensateSyncInfos_.Compute(std::atoi(meta.user.c_str()),
         [&meta](auto &, std::map<std::string, std::set<std::string>> &apps) {
             apps[meta.bundleName].insert(meta.storeId);
             return true;

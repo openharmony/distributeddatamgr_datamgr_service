@@ -393,7 +393,7 @@ HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
 {
     auto store = new (std::nothrow) RdbGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
-    auto result = store->IsBound(std::stoi(metaData_.user));
+    auto result = store->IsBound(std::atoi(metaData_.user.c_str()));
     EXPECT_EQ(result, false);
     EXPECT_EQ(store->delegate_, nullptr);
     auto ret = store->Close();
