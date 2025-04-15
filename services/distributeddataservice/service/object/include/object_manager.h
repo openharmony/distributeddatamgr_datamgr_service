@@ -89,6 +89,7 @@ public:
         sptr<IRemoteObject> callback, uint32_t tokenId);
     void SetData(const std::string &dataDir, const std::string &userId);
     int32_t Clear();
+    int32_t ClearOldUserMeta();
     int32_t DeleteByAppId(const std::string &appId, int32_t user);
     void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
                                 pid_t pid, uint32_t tokenId,
@@ -196,9 +197,10 @@ private:
     {
         return appId + SEPERATOR + sessionId + SEPERATOR;
     };
-    inline std::string GetMetaUserIdKey(const std::string &appId)
+    inline std::string GetMetaUserIdKey(const std::string &userId, const std::string &appId)
     {
-        return std::string(USERID) + SEPERATOR + appId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid;
+        return std::string(USERID) + SEPERATOR + userId + SEPERATOR + appId + SEPERATOR
+             + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
     std::recursive_mutex kvStoreMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;

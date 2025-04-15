@@ -29,6 +29,7 @@
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/object_user_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "object_dms_handler.h"
 #include "object_radar_reporter.h"
@@ -295,23 +296,15 @@ int32_t ObjectStoreManager::Clear()
     if (userId.empty()) {
         return OBJECT_INNER_ERROR;
     }
-    std::vector<StoreMetaData> metaData;
-    std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    std::string metaKey = GetMetaUserIdKey(appId);
-    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(metaKey, metaData, true)) {
-        ZLOGE("no store of %{public}s", appId.c_str());
+    DistributedData::ObjectUserMetaData userMeta;
+    std::string userMetaKey = DistributedData::ObjectUserMetaData::GetKey();
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMetaKey, userMeta, true)) {
+        ZLOGE("no meta of userId:%{public}s", userId.c_str());
         return OBJECT_STORE_NOT_FOUND;
     }
-    for (const auto &storeMeta : metaData) {
-        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_OBJECT_BEGIN
-            || storeMeta.storeType > StoreMetaData::StoreType::STORE_OBJECT_END) {
-            continue;
-        }
-        if (storeMeta.user == userId) {
-            ZLOGI("user is same, not need to change, mate user:%{public}s::user:%{public}s.",
-                storeMeta.user.c_str(), userId.c_str());
-            return OBJECT_SUCCESS;
-        }
+    if (userMeta.userId == userId) {
+        ZLOGI("user is same, not need to change, user:%{public}s.", userId.c_str());
+        return OBJECT_SUCCESS;
     }
     ZLOGI("user changed, need to clear, userId:%{public}s", userId.c_str());
     int32_t result = Open();
@@ -322,6 +315,30 @@ int32_t ObjectStoreManager::Clear()
     result = RevokeSaveToStore("");
     Close();
     return result;
+}
+
+int32_t ObjectStoreManager::ClearOldUserMeta()
+{
+    std::string userId = GetCurrentUser();
+    if (userId.empty()) {
+        ZLOGI("get userId error, one minute again");
+        executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&ObjectStoreManager::ClearOldUserMeta, this));
+        return OBJECT_INNER_ERROR;
+    }
+    ObjectUserMetaData userMetaData;
+    userMetaData.userId = userId;
+    if (!DistributedData::MetaDataManager::GetInstance().SaveMeta(DistributedData::ObjectUserMetaData::GetKey(),
+        userMetaData, true)) {
+        ZLOGE("save meta error, userId:%{public}s", userId.c_str());
+        return OBJECT_INNER_ERROR;
+    }
+    std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    std::string metaKey = GetMetaUserIdKey(userId, appId);
+    if (!DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true)) {
+        ZLOGE("delete old meta error, userId:%{public}s", userId.c_str());
+        return OBJECT_INNER_ERROR;
+    }
+    return OBJECT_SUCCESS;
 }
 
 int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId, int32_t user)
@@ -338,11 +355,6 @@ int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId, int32_t user
             appId.c_str(), user);
     }
     Close();
-    std::string metaKey = GetMetaUserIdKey(appId);
-    auto status = DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true);
-    if (!status) {
-        ZLOGE("Delete meta failed, userId: %{public}d, appId: %{public}s", user, appId.c_str());
-    }
     return result;
 }
 
@@ -1099,11 +1111,9 @@ void ObjectStoreManager::SaveUserToMeta()
         return;
     }
     std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    StoreMetaData userMeta;
-    userMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
-    userMeta.user = userId;
-    userMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
-    std::string userMetaKey = GetMetaUserIdKey(appId);
+    DistributedData::ObjectUserMetaData userMeta;
+    userMeta.userId = userId;
+    auto userMetaKey = DistributedData::ObjectUserMetaData::GetKey();
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(userMetaKey, userMeta, true);
     if (!saved) {
         ZLOGE("userMeta save failed");
