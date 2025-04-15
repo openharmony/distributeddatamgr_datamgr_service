@@ -196,10 +196,9 @@ private:
     {
         return appId + SEPERATOR + sessionId + SEPERATOR;
     };
-    inline std::string GetMetaUserIdKey(const std::string &userId, const std::string &appId)
+    inline std::string GetMetaUserIdKey(const std::string &appId)
     {
-        return std::string(USERID) + SEPERATOR + userId + SEPERATOR + appId + SEPERATOR
-             + DmAdaper::GetInstance().GetLocalDevice().udid;
+        return std::string(USERID) + SEPERATOR + appId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
     std::recursive_mutex kvStoreMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;

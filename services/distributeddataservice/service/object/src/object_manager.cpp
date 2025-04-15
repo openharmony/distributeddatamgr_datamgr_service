@@ -297,7 +297,7 @@ int32_t ObjectStoreManager::Clear()
     }
     std::vector<StoreMetaData> metaData;
     std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    std::string metaKey = GetMetaUserIdKey(userId, appId);
+    std::string metaKey = GetMetaUserIdKey(appId);
     if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(metaKey, metaData, true)) {
         ZLOGE("no store of %{public}s", appId.c_str());
         return OBJECT_STORE_NOT_FOUND;
@@ -338,11 +338,10 @@ int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId, int32_t user
             appId.c_str(), user);
     }
     Close();
-    std::string userId = std::to_string(user);
-    std::string metaKey = GetMetaUserIdKey(userId, appId);
+    std::string metaKey = GetMetaUserIdKey(appId);
     auto status = DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true);
     if (!status) {
-        ZLOGE("Delete meta failed, userId: %{public}s, appId: %{public}s", userId.c_str(), appId.c_str());
+        ZLOGE("Delete meta failed, userId: %{public}d, appId: %{public}s", user, appId.c_str());
     }
     return result;
 }
@@ -1104,7 +1103,7 @@ void ObjectStoreManager::SaveUserToMeta()
     userMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
     userMeta.user = userId;
     userMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
-    std::string userMetaKey = GetMetaUserIdKey(userId, appId);
+    std::string userMetaKey = GetMetaUserIdKey(appId);
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(userMetaKey, userMeta, true);
     if (!saved) {
         ZLOGE("userMeta save failed");
