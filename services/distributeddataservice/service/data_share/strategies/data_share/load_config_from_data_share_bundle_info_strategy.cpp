@@ -80,9 +80,9 @@ bool LoadConfigFromDataShareBundleInfoStrategy::operator()(std::shared_ptr<Conte
         ZLOGE("LoadConfigFromUri failed! bundleName: %{public}s", context->calledBundleName.c_str());
         return false;
     }
-    if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+    if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMSWithCheck(
         context->calledBundleName, context->visitedUserId, context->bundleInfo) != E_OK) {
-        ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
+        ZLOGE("GetBundleInfoFromBMSWithCheck failed! bundleName: %{public}s", context->calledBundleName.c_str());
         return false;
     }
     for (auto const &item : context->bundleInfo.extensionInfos) {

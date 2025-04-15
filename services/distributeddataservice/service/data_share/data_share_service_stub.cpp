@@ -18,8 +18,7 @@
 #include "data_share_service_stub.h"
 
 #include <cinttypes>
-#include "accesstoken_kit.h"
-#include "tokenid_kit.h"
+#include "common_utils.h"
 #include "data_share_obs_proxy.h"
 #include "hiview_adapter.h"
 #include "hiview_fault_adapter.h"
@@ -327,24 +326,6 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
     return 0;
 }
 
-bool DataShareServiceStub::CheckProxyCallingPermission(uint32_t tokenId)
-{
-    Security::AccessToken::ATokenTypeEnum tokenType =
-        Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
-    return (tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ||
-        tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL);
-}
-
-// GetTokenType use tokenId, and IsSystemApp use fullTokenId, these are different
-bool DataShareServiceStub::CheckSystemUidCallingPermission(uint32_t tokenId, uint64_t fullTokenId)
-{
-    if (CheckProxyCallingPermission(tokenId)) {
-        return true;
-    }
-    // IsSystemAppByFullTokenID here is not IPC
-    return Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
-}
-
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     int tryTimes = TRY_TIMES;
@@ -353,10 +334,12 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
     auto callingPid = IPCSkeleton::GetCallingPid();
+    auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = CheckSystemCallingPermission(IPCSkeleton::GetCallingTokenID(), fullTokenId);
+    DataShareThreadLocal::SetFromSystemApp(isSystemApp);
     if (code >= DATA_SHARE_CMD_SYSTEM_CODE) {
-        auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
-        if (!CheckSystemUidCallingPermission(IPCSkeleton::GetCallingTokenID(), fullTokenId)) {
-            ZLOGE("CheckSystemUidCallingPermission fail, token:%{public}" PRIx64
+        if (!isSystemApp) {
+            ZLOGE("CheckSystemCallingPermission fail, token:%{public}" PRIx64
                 ", callingPid:%{public}d, code:%{public}u", fullTokenId, callingPid, code);
             return E_NOT_SYSTEM_APP;
         }
@@ -366,6 +349,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         ZLOGI("code:%{public}u, callingPid:%{public}d", code, callingPid);
     }
     if (!CheckInterfaceToken(data)) {
+        DataShareThreadLocal::CleanFromSystemApp();
         return DATA_SHARE_ERROR;
     }
     int res = -1;
@@ -384,6 +368,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         }
         HiViewAdapter::GetInstance().ReportDataStatistic(callerInfo);
     }
+    DataShareThreadLocal::CleanFromSystemApp();
     return res;
 }
 

@@ -64,7 +64,7 @@ std::pair<int, BundleConfig> DataProviderConfig::GetBundleInfo()
         }
         providerInfo_.bundleName = uriConfig_.pathSegments[0];
     }
-    auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+    auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMSWithCheck(
         providerInfo_.bundleName, providerInfo_.visitedUserId, bundleInfo, providerInfo_.appIndex);
     return std::make_pair(ret, bundleInfo);
 }
@@ -158,7 +158,7 @@ int DataProviderConfig::GetFromExtension()
         return E_URI_NOT_EXIST;
     }
     BundleConfig bundleInfo;
-    auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+    auto ret = BundleMgrProxy::GetInstance()->GetBundleInfoFromBMSWithCheck(
         providerInfo_.bundleName, providerInfo_.visitedUserId, bundleInfo, providerInfo_.appIndex);
     if (ret != E_OK) {
         ZLOGE("BundleInfo failed! bundleName: %{public}s", providerInfo_.bundleName.c_str());
@@ -249,7 +249,11 @@ std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProvider
 
 bool DataProviderConfig::IsInExtList(const std::string &bundleName)
 {
-    auto extNames = ConfigFactory::GetInstance().GetDataShareExtNames();
+    DataShareConfig *config = ConfigFactory::GetInstance().GetDataShareConfig();
+    if (config == nullptr) {
+        return true;
+    }
+    std::vector<std::string>& extNames = config->dataShareExtNames;
     return std::find(extNames.begin(), extNames.end(), bundleName) != extNames.end();
 }
 } // namespace OHOS::DataShare
