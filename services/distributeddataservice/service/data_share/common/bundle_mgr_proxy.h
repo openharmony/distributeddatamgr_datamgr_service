@@ -57,6 +57,7 @@ struct ExtensionAbilityInfo {
 struct BundleConfig {
     std::string name;
     bool singleton = false;
+    bool isSystemApp = false;
     std::vector<HapModuleInfo> hapModuleInfos;
     std::vector<ExtensionAbilityInfo> extensionInfos;
 };
@@ -66,6 +67,8 @@ public:
     ~BundleMgrProxy();
     static std::shared_ptr<BundleMgrProxy> GetInstance();
     int GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId,
+        BundleConfig &bundleConfig, int32_t appIndex = 0);
+    int GetBundleInfoFromBMSWithCheck(const std::string &bundleName, int32_t userId,
         BundleConfig &bundleConfig, int32_t appIndex = 0);
     void Delete(const std::string &bundleName, int32_t userId, int32_t appIndex);
     sptr<IRemoteObject> CheckBMS();
