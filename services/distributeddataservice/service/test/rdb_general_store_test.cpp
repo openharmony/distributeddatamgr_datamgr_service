@@ -48,7 +48,7 @@ RdbGeneralStore::Values g_RdbValues = { { "0000000" }, { true }, { int64_t(100) 
     { Bytes({ 1, 2, 3, 4 }) } };
 RdbGeneralStore::VBucket g_RdbVBucket = { { "#gid", { "0000000" } }, { "#flag", { true } },
     { "#value", { int64_t(100) } }, { "#float", { double(100) } } };
-bool MockRelationalStoreDelegate::g_testResult = false;
+bool MockRelationalStoreDelegate::gTestResult = false;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -67,7 +67,7 @@ public:
     };
     void TearDown()
     {
-        MockRelationalStoreDelegate::g_testResult = false;
+        MockRelationalStoreDelegate::gTestResult = false;
     };
 
 protected:
@@ -771,7 +771,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
     result = store->Clean(devices1, GeneralStore::NEARBY_DATA, tableName);
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    MockRelationalStoreDelegate::g_testResult = true;
+    MockRelationalStoreDelegate::gTestResult = true;
     result = store->Clean(devices, GeneralStore::CLOUD_INFO, tableName);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     result = store->Clean(devices, GeneralStore::CLOUD_DATA, tableName);
@@ -922,7 +922,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
     std::vector<std::string> test = { "test" };
     result = store->SetDistributedTables(test, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
-    MockRelationalStoreDelegate::g_testResult = true;
+    MockRelationalStoreDelegate::gTestResult = true;
     result = store->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }

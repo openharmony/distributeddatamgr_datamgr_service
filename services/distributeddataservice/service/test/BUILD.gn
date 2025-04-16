@@ -625,7 +625,6 @@ ohos_unittest("RdbServiceTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
-    "googletest:gmock",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",

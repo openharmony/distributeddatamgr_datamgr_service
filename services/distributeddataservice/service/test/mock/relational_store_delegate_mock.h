@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef RELATIONAL_STORE_DELEGATE_MOCK_H
+#define RELATIONAL_STORE_DELEGATE_MOCK_H
 #include "rdb_general_store.h"
 namespace DistributedDB {
 class MockRelationalStoreDelegate : public DistributedDB::RelationalStoreDelegate {
@@ -119,7 +121,7 @@ public:
 
     DBStatus SetReference(const std::vector<TableReferenceProperty> &tableReferenceProperty) override
     {
-        if (g_testResult) {
+        if (gTestResult) {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -145,12 +147,12 @@ public:
     {
         return DBStatus::OK;
     }
-    static bool g_testResult;
+    static bool gTestResult;
 
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
     {
-        if (g_testResult) {
+        if (gTestResult) {
             return DBStatus::DB_ERROR;
         }
         return DBStatus::OK;
@@ -165,3 +167,4 @@ protected:
     }
 };
 } // namespace DistributedDB
+#endif
