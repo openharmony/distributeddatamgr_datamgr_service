@@ -40,6 +40,10 @@ void MockQuery::MakeRemoteQuery(const std::string &devices, const std::string &s
 
 void MockQuery::MakeQuery(const DistributedRdb::PredicatesMemo &predicates)
 {
+    if (!predicates.tables_.empty()) {
+        predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
+        predicates_->SetWhereClause("id = 1");
+    }
     devices_ = predicates.devices_;
     tables_ = predicates.tables_;
 }

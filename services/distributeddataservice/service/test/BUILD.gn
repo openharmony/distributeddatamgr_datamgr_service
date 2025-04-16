@@ -596,6 +596,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "cache_cursor_test.cpp",
     "mock/general_watcher_mock.cpp",
+    "mock/relational_store_manager_mock.cpp",
     "rdb_asset_loader_test.cpp",
     "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",
@@ -613,8 +614,6 @@ ohos_unittest("RdbServiceTest") {
   configs = [ ":module_private_config" ]
 
   cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-fno-access-control",  # Ignore Private Member Access Control
@@ -626,17 +625,16 @@ ohos_unittest("RdbServiceTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gmock",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
   ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${kv_store_distributeddb_path}:distributeddb",
     "${relational_store_inner_api_path}:native_rdb_static",
     "//third_party/googletest:gtest_main",
   ]
