@@ -16,6 +16,7 @@
 #define DATA_HANDLER_H
 
 #include "unified_data.h"
+#include "tlv_util.h"
 #include "types_export.h"
 
 namespace OHOS::UDMF {
@@ -26,6 +27,10 @@ public:
     static Status MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries);
     static Status UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
         UnifiedData &unifiedData);
+    template <typename T>
+    static Status MarshalToEntries(const T &data, Value &value, TAG tag);
+    template <typename T>
+    static Status UnmarshalEntries(const Value &value, T &data, TAG tag);
 
 private:
     static Status BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord>> &records,
@@ -34,5 +39,25 @@ private:
         const std::string &key, std::map<std::string, std::shared_ptr<UnifiedRecord>> &records,
         std::map<std::string, std::map<std::string, ValueType>> &innerEntries);
 };
+
+template <typename T>
+Status DataHandler::MarshalToEntries(const T &data, Value &value, TAG tag)
+{
+    auto tlvObject = TLVObject(value);
+    if (!TLVUtil::Writing(data, tlvObject, tag)) {
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+template <typename T>
+Status DataHandler::UnmarshalEntries(const Value &value, T &data, TAG tag)
+{
+    auto tlvObject = TLVObject(const_cast<std::vector<uint8_t> &>(value));
+    if (!TLVUtil::ReadTlv(data, tlvObject, tag)) {
+        return E_READ_PARCEL_ERROR;
+    }
+    return E_OK;
+}
 } // namespace UDMF::OHOS
 #endif // DATA_HANDLER_H

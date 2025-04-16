@@ -30,7 +30,7 @@ public:
     ~RuntimeStore();
     Status Put(const UnifiedData &unifiedData) override;
     Status Get(const std::string &key, UnifiedData &unifiedData) override;
-    Status GetSummary(const std::string &key, Summary &summary) override;
+    Status GetSummary(UnifiedKey &key, Summary &summary) override;
     Status Update(const UnifiedData &unifiedData) override;
     Status Delete(const std::string &key) override;
     Status DeleteBatch(const std::vector<std::string> &unifiedKeys) override;
@@ -41,6 +41,8 @@ public:
     Status PutLocal(const std::string &key, const std::string &value) override;
     Status GetLocal(const std::string &key, std::string &value) override;
     Status DeleteLocal(const std::string &key) override;
+    Status PutRuntime(const std::string &key, const Runtime &runtime) override;
+    Status GetRuntime(const std::string &key, Runtime &runtime) override;
     void Close() override;
     bool Init() override;
 
@@ -57,13 +59,10 @@ private:
     Status GetEntries(const std::string &dataPrefix, std::vector<DistributedDB::Entry> &entries);
     Status PutEntries(const std::vector<DistributedDB::Entry> &entries);
     Status DeleteEntries(const std::vector<DistributedDB::Key> &keys);
-    Status UnmarshalEntries(
-        const std::string &key, std::vector<DistributedDB::Entry> &entries, UnifiedData &unifiedData);
-    bool GetDetailsFromUData(UnifiedData &data, UDDetails &details);
-    Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
+    Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
 };
 } // namespace UDMF
 } // namespace OHOS
