@@ -17,6 +17,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <fuzzer/FuzzedDataProvider.h>
 #include <memory>
 
 #include "rdb_result_set_impl.h"
@@ -34,7 +35,8 @@ constexpr uint32_t CODE_MAX = NativeRdb::RemoteResultSet::Code::CMD_MAX + 1;
 
 bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 {
-    uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
+    FuzzedDataProvider provider(data, size);
+    uint32_t code = provider.ConsumeIntegral<uint32_t>() % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     request.WriteBuffer(data, size);
