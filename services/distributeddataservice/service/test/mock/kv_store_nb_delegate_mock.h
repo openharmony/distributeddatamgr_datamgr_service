@@ -107,6 +107,7 @@ public:
     DBStatus Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess);
     DBStatus CancelSync(uint32_t syncId);
     DatabaseStatus GetDatabaseStatus() const;
+    DBStatus ClearMetaData(ClearKvMetaDataOption option);
 };
 } // namespace DistributedDB
 #endif // KV_STORE_NB_DELEGATE_H_MOCK
