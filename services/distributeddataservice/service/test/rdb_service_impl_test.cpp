@@ -96,6 +96,7 @@ void RdbServiceImplTest::SetUpTestCase()
     DeviceManagerAdapter::GetInstance().Init(dmExecutor);
     InitMetaData();
     Bootstrap::GetInstance().LoadCheckers();
+    CryptoManager::GetInstance().GenerateRootKey();
 }
 
 void RdbServiceImplTest::TearDownTestCase()
@@ -705,8 +706,10 @@ HWTEST_F(RdbServiceImplTest, GetPassword002, TestSize.Level0)
     std::vector<std::vector<uint8_t>> password;
     int32_t result = service.GetPassword(param, password);
 
-    EXPECT_EQ(result, RDB_ERROR);
-
+    EXPECT_EQ(result, RDB_OK);
+    size_t KEY_COUNT = 2;
+    ASSERT_EQ(password.size(), KEY_COUNT);
+    EXPECT_EQ(password.at(0), sKey);
     MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
 }
@@ -770,7 +773,10 @@ HWTEST_F(RdbServiceImplTest, GetPassword004, TestSize.Level0)
 
     int32_t result = service.GetPassword(param, password);
 
-    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(result, RDB_OK);
+    size_t KEY_COUNT = 2;
+    ASSERT_EQ(password.size(), KEY_COUNT);
+    EXPECT_EQ(password.at(1), sKey);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetCloneSecretKey(), true);
 }
