@@ -571,19 +571,15 @@ int32_t UdmfServiceImpl::IsRemoteData(const QueryOption &query, bool &result)
         return E_DB_ERROR;
     }
 
-    UnifiedData unifiedData;
-    if (store->Get(query.key, unifiedData) != E_OK) {
-        ZLOGE("Store get unifiedData failed:%{public}s", key.intention.c_str());
-        return E_DB_ERROR;
-    }
-    std::shared_ptr<Runtime> runtime = unifiedData.GetRuntime();
-    if (runtime == nullptr) {
-        ZLOGE("Store get runtime failed, key: %{public}s.", query.key.c_str());
+    Runtime runtime;
+    auto res = store->GetRuntime(query.key, runtime);
+    if (res != E_OK) {
+        ZLOGE("Get runtime failed, res:%{public}d, key:%{public}s.", res, query.key.c_str());
         return E_DB_ERROR;
     }
 
     std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-    if (localDeviceId != runtime->deviceId) {
+    if (localDeviceId != runtime.deviceId) {
         result = true;
     }
     return E_OK;

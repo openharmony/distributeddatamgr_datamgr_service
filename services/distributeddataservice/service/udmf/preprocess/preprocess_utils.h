@@ -46,6 +46,7 @@ private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);
     static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);
     static bool IsFileType(std::shared_ptr<UnifiedRecord> record);
+    static std::string GetSdkVersionByToken(uint32_t tokenId);
 };
 } // namespace UDMF
 } // namespace OHOS
