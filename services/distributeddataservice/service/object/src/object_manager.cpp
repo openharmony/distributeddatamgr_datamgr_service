@@ -1098,8 +1098,8 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
 std::string ObjectStoreManager::GetCurrentUser()
 {
     std::vector<int> users;
-    AccountDelegate::GetInstance()->QueryUsers(users);
-    if (users.empty()) {
+    if (!AccountDelegate::GetInstance()->QueryUsers(users)) {
+        ZLOGE("QueryUsers failed.");
         return "";
     }
     return std::to_string(users[0]);

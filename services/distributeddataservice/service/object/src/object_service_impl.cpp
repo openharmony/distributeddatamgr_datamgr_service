@@ -383,8 +383,9 @@ void ObjectServiceImpl::RegisterObjectServiceInfo()
 
 void ObjectServiceImpl::RegisterHandler()
 {
-    Handler handler =
-        std::bind(&ObjectServiceImpl::DumpObjectServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    Handler handler = [this](int fd, std::map<std::string, std::vector<std::string>> &params) {
+        DumpObjectServiceInfo(fd, params);
+    };
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
 }
 
