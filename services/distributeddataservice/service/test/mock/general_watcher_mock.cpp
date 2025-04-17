@@ -49,6 +49,7 @@ void MockQuery::MakeQuery(const DistributedRdb::PredicatesMemo &predicates)
 }
 int32_t MockGeneralWatcher::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {
+    primaryFields_ = primaryFields;
     return GeneralError::E_OK;
 }
 

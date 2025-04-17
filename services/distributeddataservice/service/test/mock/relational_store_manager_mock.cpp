@@ -18,7 +18,7 @@
 #include "relational_store_delegate_mock.h"
 #include "relational_store_manager.h"
 namespace DistributedDB {
-DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::string &storeId,
+DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::string &storeId,
     const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate)
 {
     delegate = std::make_shared<MockRelationalStoreDelegate>().get();
@@ -28,7 +28,7 @@ DB_API DBStatus RelationalStoreManager::OpenStore(const std::string &path, const
     return DB_ERROR;
 }
 
-DB_API DBStatus RelationalStoreManager::CloseStore(RelationalStoreDelegate *store)
+DBStatus RelationalStoreManager::CloseStore(RelationalStoreDelegate *store)
 {
     store = nullptr;
     return OK;

@@ -512,7 +512,7 @@ HWTEST_F(RdbGeneralStoreTest, Query002, TestSize.Level1)
 
 /**
  * @tc.name: Query003
- * @tc.desc: Test remote query with invalid device count
+ * @tc.desc: it is not a remote query return E_ERROR.
  * @tc.type: FUNC
  */
 HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
@@ -525,11 +525,10 @@ HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
     const std::string devices = "device1";
     const std::string sql;
     Values args;
-    query.MakeRemoteQuery(devices, sql, std::move(args));
     query.lastResult = true;
     std::string table = "test_table";
     auto [err, cursor] = store->Query(table, query);
-    EXPECT_EQ(err, GeneralError::E_OK);
+    EXPECT_EQ(err, GeneralError::E_ERROR);
 }
 
 /**
@@ -667,7 +666,7 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing, TestSize.Level1)
 
 /**
 * @tc.name: PreSharing
-* @tc.desc: RdbGeneralStore PreSharing function test
+* @tc.desc: RdbGeneralStore PreSharing function test, return E_INVALID_ARGS.
 * @tc.type: FUNC
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing001, TestSize.Level1)
@@ -683,7 +682,7 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing001, TestSize.Level1)
 
 /**
 * @tc.name: PreSharing
-* @tc.desc: RdbGeneralStore PreSharing function test
+* @tc.desc: RdbGeneralStore PreSharing function delegate is nullptr test.
 * @tc.type: FUNC
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
@@ -703,12 +702,11 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
 
 /**
 * @tc.name: PreSharing
-* @tc.desc: RdbGeneralStore PreSharing function test
+* @tc.desc: RdbGeneralStore PreSharing function E_CLOUD_DISABLED test.
 * @tc.type: FUNC
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing003, TestSize.Level1)
 {
-    ZLOGE("PreSharing003 start");
     metaData_.storeId = "mock";
     auto store = std::make_shared<RdbGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
@@ -834,8 +832,6 @@ HWTEST_F(RdbGeneralStoreTest, OnChange, TestSize.Level1)
 * @tc.name: OnChange001
 * @tc.desc: RdbGeneralStore OnChange function test
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
 */
 HWTEST_F(RdbGeneralStoreTest, OnChange001, TestSize.Level1)
 {
@@ -868,6 +864,7 @@ HWTEST_F(RdbGeneralStoreTest, OnChange001, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_OK);
     store->observer_.OnChange(data);
     store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
+    EXPECT_EQ(watcher.primaryFields_[changedData.tableName], *(changedData.field.begin()));
     store->observer_.OnChange(DistributedDB::Origin::ORIGIN_LOCAL, "originalId", std::move(changedData));
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_OK);
