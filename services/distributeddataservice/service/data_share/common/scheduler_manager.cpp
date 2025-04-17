@@ -87,6 +87,13 @@ void SchedulerManager::Stop(const Key &key)
 
 void SchedulerManager::Enable(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
 {
+    Template tpl;
+    if (!TemplateManager::GetInstance().Get(key, userId, tpl) ||
+        tpl.scheduler_.empty() || tpl.scheduler_.find(REMIND_TIMER_FUNC) == std::string::npos) {
+        ZLOGE("find template scheduler failed, %{public}s, %{public}" PRId64 ", %{public}s",
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+        return;
+    }
     bool isTimerStopped = false;
     {
         std::lock_guard<std::mutex> lock(mutex_);
