@@ -172,6 +172,8 @@ private:
         const AutoCache::Store &store, Retryer retryer, DistributedData::GenDetails &details);
     std::pair<bool, StoreMetaData> GetMetaData(const StoreInfo &storeInfo);
     void AddCompensateSync(const StoreMetaData &meta);
+    static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
+    static int32_t GetValidGeneralCode(int32_t code);
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;

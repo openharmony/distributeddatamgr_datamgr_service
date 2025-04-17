@@ -402,7 +402,7 @@ void SyncManager::StartCloudSync(const DistributedData::SyncEvent &evt, const St
                         : GetCallback(async, storeInfo, evt.GetTriggerMode(), prepareTraceId, user), syncParam);
     if (status != E_OK) {
         if (async) {
-            detail.code = status;
+            detail.code = GetValidGeneralCode(status);
             async(std::move(details));
         }
         UpdateFinishSyncInfo({ storeInfo.user, GetAccountId(storeInfo.user), storeInfo.bundleName,
@@ -810,7 +810,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
                 iter = val.erase(iter);
             } else if (iter->first == syncId) {
                 iter->second.finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-                iter->second.code = code;
+                iter->second.code = GetValidGeneralCode(code);
                 iter->second.syncStatus = SyncStatus::FINISHED;
                 SaveLastSyncInfo(key, std::move(iter->second));
                 iter = val.erase(iter);
@@ -827,7 +827,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
 {
     return [this, async, storeInfo, triggerMode, prepareTraceId, user](const GenDetails &result) {
         if (async != nullptr) {
-            async(result);
+            async(std::move(ConvertGenDetailsCode(result)));
         }
 
         if (result.empty()) {
@@ -1036,5 +1036,21 @@ void SyncManager::SaveLastSyncInfo(const QueryKey &queryKey, CloudLastSyncInfo &
         ZLOGE("save cloud last info fail, bundleName: %{public}s, user:%{public}d",
               queryKey.bundleName.c_str(), queryKey.user);
     }
+}
+
+DistributedData::GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
+{
+    GenDetails newDetails;
+    for (const auto &it : details) {
+        GenProgressDetail detail = it.second;
+        detail.code = GetValidGeneralCode(detail.code);
+        newDetails.emplace(std::make_pair(it.first, std::move(detail)));
+    }
+    return newDetails;
+}
+
+int32_t SyncManager::GetValidGeneralCode(int32_t code)
+{
+    return (code >= E_OK && code <= E_BLOCKED_BY_NETWORK_STRATEGY) ? code : E_ERROR;
 }
 } // namespace OHOS::CloudData

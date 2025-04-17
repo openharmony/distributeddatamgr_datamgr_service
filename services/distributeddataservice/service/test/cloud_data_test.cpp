@@ -2836,5 +2836,68 @@ HWTEST_F(CloudDataTest, CleanWaterVersion, TestSize.Level1)
         AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID()));
     EXPECT_TRUE(ret);
 }
+
+/**
+* @tc.name: ConvertGenDetailsCode
+* @tc.desc: Test ConvertGenDetailsCode function.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ConvertGenDetailsCode, TestSize.Level0)
+{
+    DistributedData::GenDetails result;
+    GenProgressDetail detail;
+    detail.progress = GenProgress::SYNC_IN_PROGRESS;
+    detail.code = 100;
+    result.insert(std::make_pair("test", detail));
+    auto details =  CloudData::SyncManager::ConvertGenDetailsCode(result);
+    EXPECT_TRUE(details["test"].code == E_ERROR);
+
+    DistributedData::GenDetails result1;
+    GenProgressDetail detail1;
+    detail1.progress = GenProgress::SYNC_IN_PROGRESS;
+    detail1.code = E_ERROR;
+    result1.insert(std::make_pair("test", detail1));
+    details =  CloudData::SyncManager::ConvertGenDetailsCode(result1);
+    EXPECT_TRUE(details["test"].code == E_ERROR);
+
+    DistributedData::GenDetails result2;
+    GenProgressDetail detail2;
+    detail2.progress = GenProgress::SYNC_IN_PROGRESS;
+    detail2.code =  E_OK;
+    result2.insert(std::make_pair("test", detail2));
+    details =  CloudData::SyncManager::ConvertGenDetailsCode(result2);
+    EXPECT_TRUE(details["test"].code == E_OK);
+}
+
+/**
+* @tc.name: GetValidGeneralCode
+* @tc.desc: Test GetValidGeneralCode function.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetValidGeneralCode, TestSize.Level0)
+{
+    auto ret =  CloudData::SyncManager::GetValidGeneralCode(E_OK);
+    EXPECT_TRUE(ret == E_OK);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_ERROR);
+    EXPECT_TRUE(ret == E_ERROR);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_NETWORK_ERROR);
+    EXPECT_TRUE(ret == E_NETWORK_ERROR);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_CLOUD_DISABLED);
+    EXPECT_TRUE(ret == E_CLOUD_DISABLED);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_LOCKED_BY_OTHERS);
+    EXPECT_TRUE(ret == E_LOCKED_BY_OTHERS);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_RECODE_LIMIT_EXCEEDED);
+    EXPECT_TRUE(ret == E_RECODE_LIMIT_EXCEEDED);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_NO_SPACE_FOR_ASSET);
+    EXPECT_TRUE(ret == E_NO_SPACE_FOR_ASSET);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_TRUE(ret == E_BLOCKED_BY_NETWORK_STRATEGY);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_BUSY);
+    EXPECT_TRUE(ret == E_ERROR);
+    ret =  CloudData::SyncManager::GetValidGeneralCode(E_SYNC_TASK_MERGED);
+    EXPECT_TRUE(ret == E_ERROR);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
