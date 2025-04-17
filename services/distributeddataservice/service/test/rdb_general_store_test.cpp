@@ -867,7 +867,8 @@ HWTEST_F(RdbGeneralStoreTest, OnChange001, TestSize.Level1)
     store->observer_.OnChange(data);
     store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
     EXPECT_EQ(watcher.primaryFields_[changedDataTmp.tableName], *(changedDataTmp.field.begin()));
-    store->observer_.OnChange(DistributedDB::Origin::ORIGIN_LOCAL, "originalId", std::move(changedData));
+    store->observer_.OnChange(DistributedDB::Origin::ORIGIN_LOCAL, "originalId", std::move(changedDataTmp));
+    EXPECT_NE(watcher.origin_.id.size(), 0);
     EXPECT_EQ(watcher.origin_.id[0], "originalId");
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_OK);
