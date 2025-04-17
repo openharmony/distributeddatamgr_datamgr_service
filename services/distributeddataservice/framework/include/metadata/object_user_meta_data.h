@@ -15,8 +15,6 @@
 
 #ifndef DISTRIBUTEDDATAMGR_OBJECT_USER_META_DATA_H
 #define DISTRIBUTEDDATAMGR_OBJECT_USER_META_DATA_H
-#include <string>
-#include <vector>
 
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {

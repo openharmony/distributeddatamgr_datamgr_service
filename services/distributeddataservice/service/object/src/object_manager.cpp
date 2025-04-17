@@ -292,20 +292,21 @@ int32_t ObjectStoreManager::Retrieve(
 int32_t ObjectStoreManager::Clear()
 {
     ZLOGI("enter");
-    std::string userId = GetCurrentUser();
-    if (userId.empty()) {
-        return OBJECT_INNER_ERROR;
-    }
     DistributedData::ObjectUserMetaData userMeta;
     if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
-        ZLOGE("no meta of userId:%{public}s", userId.c_str());
-        return OBJECT_STORE_NOT_FOUND;
-    }
-    if (userMeta.userId == userId) {
-        ZLOGI("user is same, not need to change, user:%{public}s.", userId.c_str());
+        ZLOGI("no object user meta. don't need clear");
         return OBJECT_SUCCESS;
     }
-    ZLOGI("user changed, need to clear, userId:%{public}s", userId.c_str());
+    std::string userId = GetCurrentUser();
+    if (userId.empty()) {
+        ZLOGE("no user error");
+        return OBJECT_INNER_ERROR;
+    }
+    if (userMeta.userId == userId) {
+        ZLOGI("user is same, don't need clear, user:%{public}s.", userId.c_str());
+        return OBJECT_SUCCESS;
+    }
+    ZLOGI("user changed, need clear, userId:%{public}s", userId.c_str());
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
@@ -321,7 +322,9 @@ int32_t ObjectStoreManager::ClearOldUserMeta()
     std::string userId = GetCurrentUser();
     if (userId.empty()) {
         ZLOGI("get userId error, one minute again");
-        executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&ObjectStoreManager::ClearOldUserMeta, this));
+        executors_->Schedule(std::chrono::minutes(INTERVAL), [this]() {
+            ClearOldUserMeta();
+        });
         return OBJECT_INNER_ERROR;
     }
     ObjectUserMetaData userMetaData;
@@ -1121,7 +1124,9 @@ void ObjectStoreManager::SaveUserToMeta()
 
 void ObjectStoreManager::CloseAfterMinute()
 {
-    executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&ObjectStoreManager::Close, this));
+    executors_->Schedule(std::chrono::minutes(INTERVAL), [this]() {
+        Close();
+    });
 }
 
 void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
