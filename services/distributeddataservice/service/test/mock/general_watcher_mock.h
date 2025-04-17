@@ -39,6 +39,7 @@ public:
     int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
 
 private:
+    Origin origin_;
     PRIFields primaryFields_;
 };
 } // namespace OHOS::DistributedData
