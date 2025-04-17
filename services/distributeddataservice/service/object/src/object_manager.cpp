@@ -1115,10 +1115,10 @@ void ObjectStoreManager::SaveUserToMeta()
     std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     DistributedData::ObjectUserMetaData userMeta;
     userMeta.userId = userId;
-    auto userMetaKey = DistributedData::ObjectUserMetaData::GetKey();
-    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(userMetaKey, userMeta, true);
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(
+        DistributedData::ObjectUserMetaData::GetKey(), userMeta, true);
     if (!saved) {
-        ZLOGE("userMeta save failed");
+        ZLOGE("userMeta save failed, userId:%{public}s", userId.c_str());
     }
 }
 
