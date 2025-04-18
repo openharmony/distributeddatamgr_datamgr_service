@@ -21,7 +21,12 @@ namespace DistributedDB {
 DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::string &storeId,
     const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate)
 {
-    delegate = std::make_shared<MockRelationalStoreDelegate>().get();
+    delegate = new (std::nothrow) MockRelationalStoreDelegate();
+    if (delegate == nullptr) {
+        return DB_ERROR;
+    }
+    delegate->CreateDistributedTable("naturalbase_rdb_test");
+    delegate->CreateDistributedTable("naturalbase_rdb_name");
     if (storeId == "mock") {
         return OK;
     }
@@ -30,6 +35,7 @@ DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::s
 
 DBStatus RelationalStoreManager::CloseStore(RelationalStoreDelegate *store)
 {
+    delete store;
     store = nullptr;
     return OK;
 }
