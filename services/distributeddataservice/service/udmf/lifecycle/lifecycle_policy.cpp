@@ -30,7 +30,7 @@ Status LifeCyclePolicy::OnGot(const UnifiedKey &key)
         ZLOGE("Get store failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
-    if (store->Delete(key.key) != E_OK) {
+    if (store->Delete(UnifiedKey(key.key).GetPropertyKey()) != E_OK) {
         ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
@@ -92,7 +92,7 @@ Status LifeCyclePolicy::GetTimeoutKeys(
         }
         if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
             || curTime < data.GetRuntime()->createTime) {
-            timeoutKeys.push_back(data.GetRuntime()->key.key);
+            timeoutKeys.push_back(UnifiedKey(data.GetRuntime()->key.key).GetPropertyKey());
         }
     }
     return E_OK;
