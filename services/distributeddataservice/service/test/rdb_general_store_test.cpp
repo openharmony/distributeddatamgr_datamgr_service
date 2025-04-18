@@ -554,7 +554,6 @@ HWTEST_F(RdbGeneralStoreTest, MergeMigratedData, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Sync, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     GeneralStore::Devices devices;
     MockQuery query;
     GeneralStore::DetailAsync async;
@@ -575,7 +574,6 @@ HWTEST_F(RdbGeneralStoreTest, Sync, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Sync001, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     GeneralStore::Devices devices;
     MockQuery query;
     GeneralStore::DetailAsync async;
@@ -620,7 +618,6 @@ HWTEST_F(RdbGeneralStoreTest, Sync002, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     MockQuery query;
     auto [errCode, result] = store->PreSharing(query);
     EXPECT_NE(errCode, GeneralError::E_OK);
@@ -634,7 +631,6 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing001, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     MockQuery query;
     query.lastResult = true;
     auto [errCode, result] = store->PreSharing(query);
@@ -649,7 +645,6 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing001, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     MockQuery query;
     DistributedRdb::PredicatesMemo predicates;
     predicates.devices_ = { "device1" };
@@ -689,7 +684,6 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing003, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, ExtractExtend, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     RdbGeneralStore::VBucket extend = { { "#gid", { "0000000" } }, { "#flag", { true } },
         { "#value", { int64_t(100) } }, { "#float", { double(100) } }, { "#cloud_gid", { "cloud_gid" } },
         { "cloud_gid", { "" } } };
@@ -708,7 +702,6 @@ HWTEST_F(RdbGeneralStoreTest, ExtractExtend, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     std::string tableName = "tableName";
     std::vector<std::string> devices = { "device1", "device2" };
     auto result = store->Clean(devices, -1, tableName);
@@ -746,7 +739,6 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Watch, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     MockGeneralWatcher watcher;
     auto result = store->Watch(GeneralWatcher::Origin::ORIGIN_CLOUD, watcher);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
@@ -771,7 +763,6 @@ HWTEST_F(RdbGeneralStoreTest, Watch, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, OnChange, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     MockGeneralWatcher watcher;
     MockStoreChangedData data;
     DistributedDB::ChangedData changedData;
@@ -792,7 +783,6 @@ HWTEST_F(RdbGeneralStoreTest, OnChange, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, OnChange001, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     MockGeneralWatcher watcher;
     MockStoreChangedData data;
     DistributedDB::ChangedData changedData;
@@ -863,7 +853,6 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     std::vector<std::string> tables = { "table1", "table2" };
     int32_t type = 0;
     std::vector<DistributedData::Reference> references;
@@ -890,7 +879,6 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     std::string tableName = "tableName";
     std::set<std::string> trackerColNames = { "col1", "col2" };
     std::set<std::string> extendColNames = { "extendColName1", "extendColName2" };
@@ -914,7 +902,6 @@ HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, RemoteQuery, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     std::string device = "device";
     DistributedDB::RemoteCondition remoteCondition;
     metaData_.storeId = "mock";
@@ -932,7 +919,6 @@ HWTEST_F(RdbGeneralStoreTest, RemoteQuery, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     auto result = store->ConvertStatus(DBStatus::OK);
     EXPECT_EQ(result, GeneralError::E_OK);
     result = store->ConvertStatus(DBStatus::CLOUD_NETWORK_ERROR);
@@ -979,7 +965,6 @@ HWTEST_F(RdbGeneralStoreTest, QuerySql, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenCloumnEmpty, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     std::string table = "mock_table";
     std::string statement = "mock_statement";
     std::vector<std::string> columns;
@@ -996,7 +981,6 @@ HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenCloumnEmpty, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenParamValid, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     std::string table = "mock_table";
     std::string statement = "mock_statement";
     std::vector<std::string> columns;
@@ -1016,7 +1000,6 @@ HWTEST_F(RdbGeneralStoreTest, BuildSqlWhenParamValid, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, LockAndUnLockCloudDBTest, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     auto result = store->LockCloudDB();
     EXPECT_EQ(result.first, 1);
     EXPECT_EQ(result.second, 0);
@@ -1031,7 +1014,6 @@ HWTEST_F(RdbGeneralStoreTest, LockAndUnLockCloudDBTest, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, InFinishedTest, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     DistributedRdb::RdbGeneralStore::SyncId syncId = 1;
     bool isFinished = store->IsFinished(syncId);
     EXPECT_TRUE(isFinished);
@@ -1044,7 +1026,6 @@ HWTEST_F(RdbGeneralStoreTest, InFinishedTest, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, GetRdbCloudTest, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     auto rdbCloud = store->GetRdbCloud();
     EXPECT_EQ(rdbCloud, nullptr);
 }
@@ -1056,7 +1037,6 @@ HWTEST_F(RdbGeneralStoreTest, GetRdbCloudTest, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, RegisterDetailProgressObserverTest, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     DistributedData::GeneralStore::DetailAsync async;
     auto result = store->RegisterDetailProgressObserver(async);
     EXPECT_EQ(result, GeneralError::E_OK);
@@ -1069,7 +1049,6 @@ HWTEST_F(RdbGeneralStoreTest, RegisterDetailProgressObserverTest, TestSize.Level
 */
 HWTEST_F(RdbGeneralStoreTest, GetFinishTaskTest, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     DistributedRdb::RdbGeneralStore::SyncId syncId = 1;
     auto result = store->GetFinishTask(syncId);
     ASSERT_NE(result, nullptr);
@@ -1082,7 +1061,6 @@ HWTEST_F(RdbGeneralStoreTest, GetFinishTaskTest, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, GetCBTest, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     DistributedRdb::RdbGeneralStore::SyncId syncId = 1;
     auto result = store->GetCB(syncId);
     ASSERT_NE(result, nullptr);
@@ -1095,7 +1073,6 @@ HWTEST_F(RdbGeneralStoreTest, GetCBTest, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, UpdateDBStatus, TestSize.Level1)
 {
-    ASSERT_NE(store, nullptr);
     auto result = store->UpdateDBStatus();
     EXPECT_EQ(result, E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
