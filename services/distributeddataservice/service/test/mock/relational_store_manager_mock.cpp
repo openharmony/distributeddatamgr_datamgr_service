@@ -22,6 +22,9 @@ DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::s
     const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate)
 {
     delegate = new (std::nothrow) MockRelationalStoreDelegate();
+    if (delegate == nullptr) {
+        return DB_ERROR;
+    }
     delegate->CreateDistributedTable("naturalbase_rdb_test");
     delegate->CreateDistributedTable("naturalbase_rdb_name");
     if (storeId == "mock") {
@@ -32,6 +35,7 @@ DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::s
 
 DBStatus RelationalStoreManager::CloseStore(RelationalStoreDelegate *store)
 {
+    delete store;
     store = nullptr;
     return OK;
 }

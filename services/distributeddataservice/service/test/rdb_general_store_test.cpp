@@ -70,10 +70,6 @@ public:
     void TearDown()
     {
         MockRelationalStoreDelegate::gTestResult = false;
-        if (store->delegate_ != nullptr) {
-            delete store->delegate_;
-            store->delegate_ = nullptr;
-        }
     };
 
 protected:
