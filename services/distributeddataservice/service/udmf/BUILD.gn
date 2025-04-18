@@ -72,7 +72,10 @@ ohos_source_set("udmf_server") {
     "-Oz",
   ]
 
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+  ]
 
   external_deps = [
     "ability_base:zuri",
@@ -81,6 +84,7 @@ ohos_source_set("udmf_server") {
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -88,6 +92,8 @@ ohos_source_set("udmf_server") {
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
