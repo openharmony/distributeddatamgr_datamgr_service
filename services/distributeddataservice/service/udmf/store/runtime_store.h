@@ -59,6 +59,8 @@ private:
     Status GetEntries(const std::string &dataPrefix, std::vector<DistributedDB::Entry> &entries);
     Status PutEntries(const std::vector<DistributedDB::Entry> &entries);
     Status DeleteEntries(const std::vector<DistributedDB::Key> &keys);
+    Status UnmarshalEntries(
+        const std::string &key, std::vector<DistributedDB::Entry> &entries, UnifiedData &unifiedData);
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);

@@ -36,7 +36,6 @@ using namespace RadarReporter;
 using namespace DistributedDB;
 using Anonymous = OHOS::DistributedData::Anonymous;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-
 constexpr const char *SUMMARY_SUFIX = "#summary";
 
 RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
@@ -114,7 +113,7 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 {
     UpdateTime();
     std::vector<Entry> entries;
-    if (GetEntries(key, entries) != E_OK) {
+    if (GetEntries(UnifiedKey(key).GetPropertyKey(), entries) != E_OK) {
         ZLOGE("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
         return E_DB_ERROR;
     }
@@ -218,7 +217,7 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
 Status RuntimeStore::Update(const UnifiedData &unifiedData)
 {
     std::string key = unifiedData.GetRuntime()->key.key;
-    if (Delete(key) != E_OK) {
+    if (Delete(UnifiedKey(key).GetPropertyKey()) != E_OK) {
         UpdateTime();
         ZLOGE("Delete unified data failed, dataPrefix: %{public}s.", key.c_str());
         return E_DB_ERROR;
@@ -376,7 +375,8 @@ Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<Uni
     std::vector<std::string> keySet;
     for (const auto &entry : entries) {
         std::string keyStr = {entry.key.begin(), entry.key.end()};
-        if (std::count(keyStr.begin(), keyStr.end(), '/') == SLASH_COUNT_IN_KEY) {
+        if (std::count(keyStr.begin(), keyStr.end(), '/') == SLASH_COUNT_IN_KEY &&
+            std::count(keyStr.begin(), keyStr.end(), '#') == 0) {
             keySet.emplace_back(keyStr);
         }
     }

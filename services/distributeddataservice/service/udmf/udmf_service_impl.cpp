@@ -21,24 +21,29 @@
 #include "tokenid_kit.h"
 
 #include "accesstoken_kit.h"
+#include "bootstrap.h"
+#include "bundle_info.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "checker_manager.h"
+#include "device_manager_adapter.h"
+#include "iservice_registry.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
-#include "preprocess_utils.h"
-#include "reporter.h"
-#include "uri_permission_manager.h"
-#include "udmf_radar_reporter.h"
-#include "device_manager_adapter.h"
-#include "store_account_observer.h"
-#include "utils/anonymous.h"
-#include "bootstrap.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "preprocess_utils.h"
+#include "reporter.h"
+#include "store_account_observer.h"
+#include "system_ability_definition.h"
+#include "uri_permission_manager.h"
+#include "udmf_radar_reporter.h"
 #include "unified_data_helper.h"
+#include "utils/anonymous.h"
 
 namespace OHOS {
 namespace UDMF {
 using namespace Security::AccessToken;
+using namespace OHOS::DistributedHardware;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
@@ -51,6 +56,9 @@ constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
 constexpr const char *MANAGE_UDMF_APP_SHARE_OPTION = "ohos.permission.MANAGE_UDMF_APP_SHARE_OPTION";
+constexpr const char *DEVICE_2IN1_TAG = "2in1";
+constexpr const char *DEVICE_PHONE_TAG = "phone";
+constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
@@ -168,6 +176,7 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
         msg.appId = bundleName;
         res = RetrieveData(query, unifiedData);
     }
+    TransferToEntriesIfNeed(query, unifiedData);
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
     for (const auto &record : unifiedData.GetRecords()) {
@@ -181,11 +190,23 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     return res;
 }
 
+bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key, const QueryOption &query)
+{
+    if (!key.IsValid()) {
+        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+        return false;
+    }
+    if (key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        ZLOGE("Invalid intention:%{public}s", key.intention.c_str());
+        return false;
+    }
+    return true;
+}
+
 int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &unifiedData)
 {
     UnifiedKey key(query.key);
-    if (!key.IsValid()) {
-        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+    if (!CheckDragParams(key, query)) {
         return E_INVALID_PARAMETERS;
     }
     auto store = StoreCache::GetInstance().GetStore(key.intention);
@@ -428,7 +449,7 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
         }
         if (runtime->tokenId == query.tokenId) {
             unifiedDataSet.push_back(data);
-            deleteKeys.push_back(runtime->key.key);
+            deleteKeys.push_back(UnifiedKey(runtime->key.key).GetPropertyKey());
         }
     }
     if (deleteKeys.empty()) {
@@ -688,15 +709,16 @@ int32_t UdmfServiceImpl::QueryDataCommon(
 {
     auto find = UD_INTENTION_MAP.find(query.intention);
     std::string intention = find == UD_INTENTION_MAP.end() ? intention : find->second;
-    if (!UnifiedDataUtils::IsValidOptions(query.key, intention)) {
+    UnifiedKey key(query.key);
+    if (!UnifiedDataUtils::IsValidOptions(key, intention, UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB))) {
         ZLOGE("Unified key: %{public}s and intention: %{public}s is invalid.", query.key.c_str(), intention.c_str());
         return E_INVALID_PARAMETERS;
     }
-    std::string dataPrefix = DATA_PREFIX + intention;
-    UnifiedKey key(query.key);
-    key.IsValid();
-    if (intention.empty()) {
-        dataPrefix = key.key;
+    std::string dataPrefix;
+    if (key.key.empty()) {
+        dataPrefix = DATA_PREFIX + intention;
+    } else {
+        dataPrefix = UnifiedKey(key.key).GetPropertyKey();
         intention = key.intention;
     }
     ZLOGD("dataPrefix = %{public}s, intention: %{public}s.", dataPrefix.c_str(), intention.c_str());
@@ -826,6 +848,55 @@ int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
         StoreCache::GetInstance().CloseStores();
     }
     return Feature::OnUserChange(code, user, account);
+}
+
+void UdmfServiceImpl::TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData)
+{
+    if (unifiedData.IsNeedTransferToEntries() && IsNeedTransferDeviceType(query)) {
+        unifiedData.ConvertRecordsToEntries();
+    }
+}
+
+bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
+{
+    auto deviceInfo = DmAdapter::GetInstance().GetLocalDevice();
+    if (deviceInfo.deviceType != DEVICE_TYPE_PC && deviceInfo.deviceType != DEVICE_TYPE_PAD
+        && deviceInfo.deviceType != DEVICE_TYPE_2IN1) {
+        return false;
+    }
+    auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgrProxy == nullptr) {
+        ZLOGE("Failed to get system ability mgr.");
+        return false;
+    }
+    auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (bundleMgrProxy == nullptr) {
+        ZLOGE("Failed to Get BMS SA.");
+        return false;
+    }
+    auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
+    if (bundleManager == nullptr) {
+        ZLOGE("Failed to get bundle manager");
+        return false;
+    }
+    std::string bundleName;
+    PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
+    int32_t userId = DistributedData::AccountDelegate::GetInstance()->GetUserByToken(
+        IPCSkeleton::GetCallingFullTokenID());
+    AppExecFwk::BundleInfo bundleInfo;
+    bundleManager->GetBundleInfoV9(bundleName, static_cast<int32_t>(
+        AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE), bundleInfo, userId);
+    for (const auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
+        if (std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(),
+            DEVICE_PHONE_TAG) == hapModuleInfo.deviceTypes.end()
+            && std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(),
+            DEVICE_DEFAULT_TAG) == hapModuleInfo.deviceTypes.end()
+            && std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(),
+            DEVICE_2IN1_TAG) != hapModuleInfo.deviceTypes.end()) {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace UDMF
 } // namespace OHOS
