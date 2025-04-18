@@ -317,14 +317,11 @@ int32_t ObjectStoreManager::Clear()
     return result;
 }
 
-int32_t ObjectStoreManager::ClearOldUserMeta()
+int32_t ObjectStoreManager::CleanOldUserMeta()
 {
     std::string userId = GetCurrentUser();
     if (userId.empty()) {
-        ZLOGI("get userId error, one minute again");
-        executors_->Schedule(std::chrono::minutes(INTERVAL), [this]() {
-            ClearOldUserMeta();
-        });
+        ZLOGI("get userId error");
         return OBJECT_INNER_ERROR;
     }
     ObjectUserMetaData userMetaData;

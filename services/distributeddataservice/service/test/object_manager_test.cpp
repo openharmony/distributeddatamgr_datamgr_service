@@ -1095,7 +1095,7 @@ HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
 HWTEST_F(ObjectManagerTest, ClearOldUserMeta001, TestSize.Level1)
 {
     auto manager = ObjectStoreManager::GetInstance();
-    auto status = manager->ClearOldUserMeta();
+    auto status = manager->CleanOldUserMeta();
     ASSERT_EQ(status, DistributedObject::OBJECT_SUCCESS);
 }
 } // namespace OHOS::Test

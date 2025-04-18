@@ -15,7 +15,6 @@
 #include "metadata/object_user_meta_data.h"
 
 namespace OHOS::DistributedData {
-
 ObjectUserMetaData::ObjectUserMetaData()
 {
 }

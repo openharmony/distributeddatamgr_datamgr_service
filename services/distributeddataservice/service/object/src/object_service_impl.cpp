@@ -139,7 +139,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     StoreMetaData saveMeta;
     SaveMetaData(saveMeta, std::to_string(userId), accountId);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
-    ObjectStoreManager::GetInstance()->ClearOldUserMeta();
+    ObjectStoreManager::GetInstance()->CleanOldUserMeta();
     RegisterObjectServiceInfo();
     RegisterHandler();
     ObjectDmsHandler::GetInstance().RegisterDmsEvent();
