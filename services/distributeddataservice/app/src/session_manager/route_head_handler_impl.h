@@ -50,8 +50,15 @@ struct SessionUserPair {
 };
 
 struct SessionAppId {
+    static constexpr int32_t MAX_APP_ID_LEN = 256;
     uint32_t len;
     char appId[0];
+};
+
+struct SessionStoreId {
+    static constexpr int32_t MAX_STORE_ID_LEN = 256;
+    uint32_t len;
+    char storeId[0];
 };
 #pragma pack()
 
@@ -74,6 +81,7 @@ private:
     bool UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead);
     bool UnPackDataBody(const uint8_t *data, uint32_t totalLen);
     std::string ParseStoreId(const std::string &deviceId, const std::string &label);
+    bool UnPackStoreId(const uint8_t *data, uint32_t leftSize);
 
     std::string userId_;
     std::string appId_;
