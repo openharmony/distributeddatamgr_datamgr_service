@@ -294,7 +294,11 @@ int32_t ObjectStoreManager::Clear()
     ZLOGI("enter");
     DistributedData::ObjectUserMetaData userMeta;
     if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
-        ZLOGI("no object user meta. don't need clear");
+        ZLOGE("load meta error");
+        return OBJECT_INNER_ERROR;
+    }
+    if (userMeta.userId.empty()) {
+        ZLOGI("no object user meta, don't need clean");
         return OBJECT_SUCCESS;
     }
     std::string userId = GetCurrentUser();
@@ -317,17 +321,25 @@ int32_t ObjectStoreManager::Clear()
     return result;
 }
 
-int32_t ObjectStoreManager::CleanOldUserMeta()
+int32_t ObjectStoreManager::InitUserMeta()
 {
+    ObjectUserMetaData userMeta;
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
+        ZLOGE("load meta error");
+        return OBJECT_INNER_ERROR;
+    }
+    if (!userMeta.userId.empty()) {
+        ZLOGI("userId has been set, don't need clean");
+        return OBJECT_SUCCESS;
+    }
     std::string userId = GetCurrentUser();
     if (userId.empty()) {
         ZLOGI("get userId error");
         return OBJECT_INNER_ERROR;
     }
-    ObjectUserMetaData userMetaData;
-    userMetaData.userId = userId;
+    userMeta.userId = userId;
     if (!DistributedData::MetaDataManager::GetInstance().SaveMeta(DistributedData::ObjectUserMetaData::GetKey(),
-        userMetaData, true)) {
+        userMeta, true)) {
         ZLOGE("save meta error, userId:%{public}s", userId.c_str());
         return OBJECT_INNER_ERROR;
     }
