@@ -20,14 +20,17 @@
 #include <gtest/gtest.h>
 #include <ipc_skeleton.h>
 
+#include "bootstrap.h"
 #include "device_manager_adapter_mock.h"
 #include "executor_pool.h"
+#include "kvstore_meta_manager.h"
 #include "kv_store_nb_delegate_mock.h"
 #include "object_types.h"
 #include "snapshot/machine_status.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
+using namespace OHOS::DistributedData;
 using namespace std;
 using namespace testing;
 using AssetValue = OHOS::CommonType::AssetValue;
@@ -1094,6 +1097,13 @@ HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerTest, ClearOldUserMeta001, TestSize.Level1)
 {
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+
     auto manager = ObjectStoreManager::GetInstance();
     auto status = manager->CleanOldUserMeta();
     ASSERT_EQ(status, DistributedObject::OBJECT_SUCCESS);
