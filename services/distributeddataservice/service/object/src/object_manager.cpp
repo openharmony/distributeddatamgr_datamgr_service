@@ -324,11 +324,7 @@ int32_t ObjectStoreManager::Clear()
 int32_t ObjectStoreManager::InitUserMeta()
 {
     ObjectUserMetaData userMeta;
-    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
-        ZLOGE("load meta error");
-        return OBJECT_INNER_ERROR;
-    }
-    if (!userMeta.userId.empty()) {
+    if (DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
         ZLOGI("userId has been set, don't need clean");
         return OBJECT_SUCCESS;
     }
@@ -338,15 +334,15 @@ int32_t ObjectStoreManager::InitUserMeta()
         return OBJECT_INNER_ERROR;
     }
     userMeta.userId = userId;
-    if (!DistributedData::MetaDataManager::GetInstance().SaveMeta(DistributedData::ObjectUserMetaData::GetKey(),
-        userMeta, true)) {
-        ZLOGE("save meta error, userId:%{public}s", userId.c_str());
-        return OBJECT_INNER_ERROR;
-    }
     std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     std::string metaKey = GetMetaUserIdKey(userId, appId);
     if (!DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true)) {
         ZLOGE("delete old meta error, userId:%{public}s", userId.c_str());
+        return OBJECT_INNER_ERROR;
+    }
+    if (!DistributedData::MetaDataManager::GetInstance().SaveMeta(DistributedData::ObjectUserMetaData::GetKey(),
+        userMeta, true)) {
+        ZLOGE("save meta error, userId:%{public}s", userId.c_str());
         return OBJECT_INNER_ERROR;
     }
     return OBJECT_SUCCESS;
