@@ -265,8 +265,9 @@ void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
-    ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
+    ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d",
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
+        static_cast<int32_t>(dvInfo.authForm));
 }
 
 void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
