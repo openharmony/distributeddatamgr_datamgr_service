@@ -273,6 +273,23 @@ HWTEST_F(CloudServiceImplTest, GetCloudInfoFromServer001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: GetCloudInfoFromServer002
+ * @tc.desc: Test GetCloudInfoFromServer functions with cloudinfo is empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, GetCloudInfoFromServer002, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest GetCloudInfoFromServer002 start");
+    CloudServer cloudServer;
+    CloudServer::RegisterCloudInstance(&cloudServer);
+    int user = 100;
+    auto [status, result] = cloudServiceImpl_->GetCloudInfoFromServer(user);
+    EXPECT_EQ(status, E_ERROR);
+    CloudServer::instance_ = nullptr;
+}
+
+/**
  * @tc.name: ReleaseUserInfo001
  * @tc.desc: Test ReleaseUserInfo functions with invalid parameter.
  * @tc.type: FUNC
