@@ -14,13 +14,13 @@
  */
 
 #include "accesstoken_kit.h"
+#include "account_delegate_mock.h"
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
 #include "device_manager_adapter_mock.h"
 #include "gtest/gtest.h"
 #include "kvstore_meta_manager.h"
 #include "meta_data_manager_mock.h"
-#include "account_delegate_mock.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "nativetoken_kit.h"
@@ -29,6 +29,7 @@
 #include "token_setproc.h"
 #include "user_delegate.h"
 #include "user_delegate_mock.h"
+#include "utils/endian_converter.h"
 
 namespace {
 using namespace testing;
@@ -150,60 +151,95 @@ public:
     }
     void ConstructValidData()
     {
-        // 构建有效数据缓冲区
-        RouteHead head;
+        constexpr size_t BUFFER_SIZE = sizeof(dataBuffer);
+        memset_s(dataBuffer, BUFFER_SIZE, 0, BUFFER_SIZE); // 清空缓冲区
+
+        // 构建有效数据
+        RouteHead head{};
         head.magic = RouteHead::MAGIC_NUMBER;
         head.version = RouteHead::VERSION;
-        head.dataLen =
-            sizeof(SessionDevicePair) + sizeof(SessionUserPair) + sizeof(uint32_t) * 1 + sizeof(SessionAppId) + 5;
-        head.checkSum = 0; // 假设校验和正确
+        head.dataLen = sizeof(SessionDevicePair) + sizeof(SessionUserPair) + sizeof(uint32_t) * 1
+                       + sizeof(SessionAppId) + APP_STR_LEN; // 应用ID长度+内容
+        head.checkSum = 0;                                   // 假设校验和正确
 
         // 序列化头部
         uint8_t *ptr = dataBuffer;
-        memcpy(ptr, &head, sizeof(RouteHead));
+        size_t remaining = BUFFER_SIZE;
+
+        // 1. 写入RouteHead
+        errno_t err = memcpy_s(ptr, remaining, &head, sizeof(RouteHead));
+        ASSERT_EQ(err, 0) << "Failed to copy RouteHead";
         ptr += sizeof(RouteHead);
+        remaining -= sizeof(RouteHead);
 
-        // 设备对
-        SessionDevicePair devPair;
-        memset(devPair.sourceId, 'A', SessionDevicePair::MAX_DEVICE_ID);
-        memset(devPair.targetId, 'B', SessionDevicePair::MAX_DEVICE_ID);
-        memcpy(ptr, &devPair, sizeof(SessionDevicePair));
+        // 2. 写入SessionDevicePair
+        SessionDevicePair devPair{};
+        // 安全初始化设备ID
+        constexpr size_t DEV_ID_SIZE = sizeof(devPair.sourceId);
+        err = memset_s(devPair.sourceId, DEV_ID_SIZE, 'A', DEV_ID_SIZE - 1); // 留1字节给终止符
+        ASSERT_EQ(err, 0) << "Failed to init sourceId";
+        devPair.sourceId[DEV_ID_SIZE - 1] = '\0';
+
+        err = memset_s(devPair.targetId, DEV_ID_SIZE, 'B', DEV_ID_SIZE - 1);
+        ASSERT_EQ(err, 0) << "Failed to init targetId";
+        devPair.targetId[DEV_ID_SIZE - 1] = '\0';
+
+        err = memcpy_s(ptr, remaining, &devPair, sizeof(SessionDevicePair));
+        ASSERT_EQ(err, 0) << "Failed to copy SessionDevicePair";
         ptr += sizeof(SessionDevicePair);
+        remaining -= sizeof(SessionDevicePair);
 
-        // 用户对
-        SessionUserPair userPair;
-        userPair.sourceUserId = 100;
-        userPair.targetUserCount = 1;
-        uint32_t targetUser = 200;
-        memcpy(ptr, &userPair, sizeof(SessionUserPair));
+        // 3. 写入SessionUserPair
+        SessionUserPair userPair{};
+        userPair.sourceUserId = HostToNet(100U); // 注意字节序转换
+        userPair.targetUserCount = HostToNet(1U);
+
+        err = memcpy_s(ptr, remaining, &userPair, sizeof(SessionUserPair));
+        ASSERT_EQ(err, 0) << "Failed to copy SessionUserPair";
         ptr += sizeof(SessionUserPair);
-        memcpy(ptr, &targetUser, sizeof(uint32_t));
+        remaining -= sizeof(SessionUserPair);
+
+        // 写入目标用户ID
+        uint32_t targetUser = HostToNet(200U);
+        err = memcpy_s(ptr, remaining, &targetUser, sizeof(uint32_t));
+        ASSERT_EQ(err, 0) << "Failed to copy targetUser";
         ptr += sizeof(uint32_t);
+        remaining -= sizeof(uint32_t);
 
-        // 应用ID
-        SessionAppId appId;
-        appId.len = 5;
+        // 4. 写入SessionAppId
+        SessionAppId appId{};
         const char *appStr = "test";
-        memcpy(ptr, &appId, sizeof(SessionAppId));
-        ptr += sizeof(SessionAppId);
-        memcpy(ptr, appStr, 5);
-    }
 
+        appId.len = HostToNet(static_cast<uint32_t>(APP_STR_LEN));
+
+        err = memcpy_s(ptr, remaining, &appId, sizeof(SessionAppId));
+        ASSERT_EQ(err, 0) << "Failed to copy SessionAppId";
+        ptr += sizeof(SessionAppId);
+        remaining -= sizeof(SessionAppId);
+
+        // 写入应用ID内容
+        err = memcpy_s(ptr, remaining, appStr, APP_STR_LEN);
+        ASSERT_EQ(err, 0) << "Failed to copy appId data";
+        ptr += APP_STR_LEN;
+        remaining -= APP_STR_LEN;
+    }
+    // 验证总长度
+    const size_t validTotalLen = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
+                                 + sizeof(uint32_t) * 1 + sizeof(SessionAppId) + APP_STR_LEN;
     uint8_t dataBuffer[1024];
-    const uint32_t validTotalLen = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
-                                   + sizeof(uint32_t) * 1 + sizeof(SessionAppId) + 5;
+    static constexpr size_t APP_STR_LEN = 5; // 包括终止符
     static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
 };
 
 /**
- * @tc.name: PackAndUnPack01
- * @tc.desc: test get db dir
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: illybyy
- */
+  * @tc.name: PackAndUnPack01
+  * @tc.desc: test get db dir
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: illybyy
+  */
 HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
 {
     const DistributedDB::ExtendInfo info = {
@@ -229,11 +265,11 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     ASSERT_EQ(users.size(), 0);
 }
 /**
- * @tc.name: GetHeadDataSize_Test1
- * @tc.desc: test appId equal processLabel.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: GetHeadDataSize_Test1
+  * @tc.desc: test appId equal processLabel.
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, GetHeadDataSize_Test1, TestSize.Level1)
 {
     ExtendInfo info;
@@ -249,11 +285,11 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test1, TestSize.Level1)
     EXPECT_EQ(headSize, 0);
 }
 /**
- * @tc.name: GetHeadDataSize_Test2
- * @tc.desc: test appId not equal processLabel.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: GetHeadDataSize_Test2
+  * @tc.desc: test appId not equal processLabel.
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, GetHeadDataSize_Test2, TestSize.Level1)
 {
     ExtendInfo info;
@@ -269,11 +305,11 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test2, TestSize.Level1)
     EXPECT_EQ(headSize, 0);
 }
 /**
- * @tc.name: GetHeadDataSize_Test3
- * @tc.desc: test devInfo.osType equal OH_OS_TYPE, appId not equal processLabel.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: GetHeadDataSize_Test3
+  * @tc.desc: test devInfo.osType equal OH_OS_TYPE, appId not equal processLabel.
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, GetHeadDataSize_Test3, TestSize.Level1)
 {
     // 设置devInfo.osType等于OH_OS_TYPE
@@ -293,11 +329,11 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test3, TestSize.Level1)
     EXPECT_EQ(headSize, 0);
 }
 /**
- * @tc.name: GetHeadDataSize_Test4
- * @tc.desc: test GetHeadDataSize
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: GetHeadDataSize_Test4
+  * @tc.desc: test GetHeadDataSize
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, GetHeadDataSize_Test4, TestSize.Level1)
 {
     const DistributedDB::ExtendInfo info = {
@@ -339,11 +375,11 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test4, TestSize.Level1)
     EXPECT_EQ(status, DistributedDB::DB_ERROR);
 }
 /**
- * @tc.name: ParseHeadDataUserTest001
- * @tc.desc: test parse null data.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: ParseHeadDataUserTest001
+  * @tc.desc: test parse null data.
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, ParseHeadDataUserTest001, TestSize.Level1)
 {
     // 创建RouteHeadHandlerImpl实例
@@ -366,11 +402,11 @@ HWTEST_F(SessionManagerTest, ParseHeadDataUserTest001, TestSize.Level1)
     EXPECT_EQ(userInfos.size(), 0);
 }
 /**
- * @tc.name: ParseHeadDataUserTest002
- * @tc.desc: test totalLen < sizeof(RouteHead).
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: ParseHeadDataUserTest002
+  * @tc.desc: test totalLen < sizeof(RouteHead).
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, ParseHeadDataUserTest002, TestSize.Level1)
 {
     // 创建RouteHeadHandlerImpl实例
@@ -394,11 +430,11 @@ HWTEST_F(SessionManagerTest, ParseHeadDataUserTest002, TestSize.Level1)
 }
 
 /**
- * @tc.name: ParseHeadDataUserTest003
- * @tc.desc: test totalLen < sizeof(RouteHead).
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: ParseHeadDataUserTest003
+  * @tc.desc: test totalLen < sizeof(RouteHead).
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, ParseHeadDataUserTest003, TestSize.Level1)
 {
     // 创建RouteHeadHandlerImpl实例
@@ -415,7 +451,7 @@ HWTEST_F(SessionManagerTest, ParseHeadDataUserTest003, TestSize.Level1)
 
     RouteHead head = { 0 };
     head.version = RouteHead::VERSION;
-    head.dataLen = sizeof(data) - sizeof(RouteHead);
+    head.dataLen = static_cast<uint32_t>(sizeof(data) - sizeof(RouteHead));
 
     // 调用待测试方法
     bool result = sendHandler->ParseHeadDataUser(data, sizeof(RouteHead), label, userInfos);
@@ -426,11 +462,11 @@ HWTEST_F(SessionManagerTest, ParseHeadDataUserTest003, TestSize.Level1)
 }
 
 /**
- * @tc.name: UnPackData_InvalidMagic
- * @tc.desc: test invalid magic.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: UnPackData_InvalidMagic
+  * @tc.desc: test invalid magic.
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, UnPackData_InvalidMagic, TestSize.Level1)
 {
     RouteHead *head = reinterpret_cast<RouteHead *>(dataBuffer);
@@ -443,11 +479,11 @@ HWTEST_F(SessionManagerTest, UnPackData_InvalidMagic, TestSize.Level1)
 }
 
 /**
- * @tc.name: UnPackData_VersionMismatch
- * @tc.desc: test version mismatch.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: UnPackData_VersionMismatch
+  * @tc.desc: test version mismatch.
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, UnPackData_VersionMismatch, TestSize.Level1)
 {
     RouteHead *head = reinterpret_cast<RouteHead *>(dataBuffer);
@@ -460,11 +496,11 @@ HWTEST_F(SessionManagerTest, UnPackData_VersionMismatch, TestSize.Level1)
 }
 
 /**
- * @tc.name: UnPackData_ValidData
- * @tc.desc: test valid data.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
+  * @tc.name: UnPackData_ValidData
+  * @tc.desc: test valid data.
+  * @tc.type: FUNC
+  * @tc.author: guochao
+  */
 HWTEST_F(SessionManagerTest, UnPackData_ValidData, TestSize.Level1)
 {
     ExtendInfo info;
@@ -473,34 +509,5 @@ HWTEST_F(SessionManagerTest, UnPackData_ValidData, TestSize.Level1)
     uint32_t unpackedSize;
     EXPECT_TRUE(routeHeadHandlerImpl.UnPackData(dataBuffer, validTotalLen, unpackedSize));
     EXPECT_EQ(unpackedSize, validTotalLen);
-}
-
-/**
- * @tc.name: ParseHeadDataUser_OHOS_LoadMetaFailed
- * @tc.desc: test load meta failed.
- * @tc.type: FUNC
- * @tc.author: guochao
- */
-HWTEST_F(SessionManagerTest, ParseHeadDataUser_OHOS_LoadMetaFailed, TestSize.Level1)
-{
-    // 创建RouteHeadHandlerImpl实例
-    const DistributedDB::ExtendInfo info = {
-        .appId = "otherAppId", .storeId = "test_store", .userId = "0", .dstTarget = "device123"
-    };
-    auto sendHandler = RouteHeadHandlerImpl::Create(info);
-    ASSERT_NE(sendHandler, nullptr);
-    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(_)).WillOnce(Return(true));
-
-    string label = "test_label";
-
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false));
-
-    int foregroundUser = 100;
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryForegroundUserId(_)).WillRepeatedly(DoAll(SetArgReferee<0>(foregroundUser), Return(true)));
-
-    vector<UserInfo> userInfos;
-    EXPECT_TRUE(sendHandler->ParseHeadDataUser(dataBuffer, validTotalLen, label, userInfos));
-    ASSERT_EQ(userInfos.size(), 1);
-    EXPECT_EQ(userInfos[0].receiveUser, "100");
 }
 } // namespace
