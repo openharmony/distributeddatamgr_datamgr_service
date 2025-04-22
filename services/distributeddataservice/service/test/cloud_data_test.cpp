@@ -2868,6 +2868,22 @@ HWTEST_F(CloudDataTest, ConvertGenDetailsCode, TestSize.Level0)
     result2.insert(std::make_pair("test", detail2));
     details =  CloudData::SyncManager::ConvertGenDetailsCode(result2);
     EXPECT_TRUE(details["test"].code == E_OK);
+
+    DistributedData::GenDetails result3;
+    GenProgressDetail detail3;
+    detail3.progress = GenProgress::SYNC_IN_PROGRESS;
+    detail3.code =  E_BLOCKED_BY_NETWORK_STRATEGY;
+    result3.insert(std::make_pair("test", detail3));
+    details =  CloudData::SyncManager::ConvertGenDetailsCode(result3);
+    EXPECT_TRUE(details["test"].code == E_BLOCKED_BY_NETWORK_STRATEGY);
+
+    DistributedData::GenDetails result4;
+    GenProgressDetail detail4;
+    detail4.progress = GenProgress::SYNC_IN_PROGRESS;
+    detail4.code =  E_BUSY;
+    result4.insert(std::make_pair("test", detail4));
+    details =  CloudData::SyncManager::ConvertGenDetailsCode(result4);
+    EXPECT_TRUE(details["test"].code == E_ERROR);
 }
 
 /**
