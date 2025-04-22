@@ -36,6 +36,7 @@ RdbResultSetImpl::RdbResultSetImpl(std::shared_ptr<Cursor> resultSet) : resultSe
         count_ = resultSet_->GetCount();
         resultSet_->GetColumnNames(colNames_);
     }
+	ZLOGE("test only");
 }
 
 int RdbResultSetImpl::GetAllColumnNames(std::vector<std::string> &columnNames)
