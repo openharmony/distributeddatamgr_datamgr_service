@@ -482,6 +482,11 @@ bool RdbServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector
             isAfterMeta = true;
             break;
         }
+        auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuid);
+        if ((localMask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
     }
     return isAfterMeta;
 }
