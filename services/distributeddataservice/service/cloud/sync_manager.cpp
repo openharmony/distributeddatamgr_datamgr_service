@@ -1051,6 +1051,6 @@ GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
 
 int32_t SyncManager::GetValidGeneralCode(int32_t code)
 {
-    return (code >= E_OK && code <= E_BLOCKED_BY_NETWORK_STRATEGY) ? code : E_ERROR;
+    return (code >= E_OK && code < E_BUSY) ? code : E_ERROR;
 }
 } // namespace OHOS::CloudData
