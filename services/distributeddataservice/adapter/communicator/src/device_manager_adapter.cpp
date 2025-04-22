@@ -176,7 +176,6 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
         static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
-    SaveHosDevInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
     ResetLocalDeviceInfo();
