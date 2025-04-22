@@ -16,7 +16,11 @@
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
+#include "device_manager_adapter_mock.h"
+#include "gtest/gtest.h"
 #include "kvstore_meta_manager.h"
+#include "meta_data_manager_mock.h"
+#include "account_delegate_mock.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "nativetoken_kit.h"
@@ -24,18 +28,23 @@
 #include "session_manager/upgrade_manager.h"
 #include "token_setproc.h"
 #include "user_delegate.h"
-#include "gtest/gtest.h"
+#include "user_delegate_mock.h"
 
 namespace {
+using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
+using namespace DistributedDB;
 using namespace OHOS;
 using namespace OHOS::Security::AccessToken;
+using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
+using UserInfo = DistributedDB::UserInfo;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
 constexpr int PEER_USER_ID1 = 101;
 constexpr int PEER_USER_ID2 = 100;
 constexpr int METADATA_UID = 2000000;
+static constexpr int32_t OH_OS_TYPE = 10;
 
 void GrantPermissionNative()
 {
@@ -55,7 +64,7 @@ void GrantPermissionNative()
     uint64_t tokenId = GetAccessTokenId(&infoInstance);
     SetSelfTokenID(tokenId);
     AccessTokenKit::ReloadNativeTokenInfo();
-    delete []perms;
+    delete[] perms;
 }
 
 class SessionManagerTest : public testing::Test {
@@ -102,6 +111,12 @@ public:
         metaData.storeType = 1;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
         GrantPermissionNative();
+        deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+        BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
+        metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+        BMetaDataManager::metaDataManager = metaDataManagerMock;
+        userDelegateMock = std::make_shared<UserDelegateMock>();
+        BUserDelegate::userDelegate = userDelegateMock;
     }
     static void TearDownTestCase()
     {
@@ -119,22 +134,76 @@ public:
         metaData.uid = METADATA_UID;
         metaData.storeType = 1;
         MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
+        deviceManagerAdapterMock = nullptr;
+        BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
+        metaDataManagerMock = nullptr;
+        BMetaDataManager::metaDataManager = nullptr;
+        userDelegateMock = nullptr;
+        BUserDelegate::userDelegate = nullptr;
     }
     void SetUp()
     {
+        ConstructValidData();
     }
     void TearDown()
     {
     }
+    void ConstructValidData()
+    {
+        // 构建有效数据缓冲区
+        RouteHead head;
+        head.magic = RouteHead::MAGIC_NUMBER;
+        head.version = RouteHead::VERSION;
+        head.dataLen =
+            sizeof(SessionDevicePair) + sizeof(SessionUserPair) + sizeof(uint32_t) * 1 + sizeof(SessionAppId) + 5;
+        head.checkSum = 0; // 假设校验和正确
+
+        // 序列化头部
+        uint8_t *ptr = dataBuffer;
+        memcpy(ptr, &head, sizeof(RouteHead));
+        ptr += sizeof(RouteHead);
+
+        // 设备对
+        SessionDevicePair devPair;
+        memset(devPair.sourceId, 'A', SessionDevicePair::MAX_DEVICE_ID);
+        memset(devPair.targetId, 'B', SessionDevicePair::MAX_DEVICE_ID);
+        memcpy(ptr, &devPair, sizeof(SessionDevicePair));
+        ptr += sizeof(SessionDevicePair);
+
+        // 用户对
+        SessionUserPair userPair;
+        userPair.sourceUserId = 100;
+        userPair.targetUserCount = 1;
+        uint32_t targetUser = 200;
+        memcpy(ptr, &userPair, sizeof(SessionUserPair));
+        ptr += sizeof(SessionUserPair);
+        memcpy(ptr, &targetUser, sizeof(uint32_t));
+        ptr += sizeof(uint32_t);
+
+        // 应用ID
+        SessionAppId appId;
+        appId.len = 5;
+        const char *appStr = "test";
+        memcpy(ptr, &appId, sizeof(SessionAppId));
+        ptr += sizeof(SessionAppId);
+        memcpy(ptr, appStr, 5);
+    }
+
+    uint8_t dataBuffer[1024];
+    const uint32_t validTotalLen = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
+                                   + sizeof(uint32_t) * 1 + sizeof(SessionAppId) + 5;
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
+    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
+    static inline std::shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
 };
 
 /**
-* @tc.name: PackAndUnPack01
-* @tc.desc: test get db dir
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: illybyy
-*/
+ * @tc.name: PackAndUnPack01
+ * @tc.desc: test get db dir
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: illybyy
+ */
 HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
 {
     const DistributedDB::ExtendInfo info = {
@@ -152,9 +221,286 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     auto recvHandler = RouteHeadHandlerImpl::Create({});
     ASSERT_NE(recvHandler, nullptr);
     uint32_t parseSize = 1;
+    auto res = recvHandler->ParseHeadDataLen(nullptr, routeHeadSize, parseSize);
+    EXPECT_EQ(res, false);
     recvHandler->ParseHeadDataLen(data.get(), routeHeadSize, parseSize);
     EXPECT_EQ(routeHeadSize, parseSize);
     recvHandler->ParseHeadDataUser(data.get(), routeHeadSize, "", users);
     ASSERT_EQ(users.size(), 0);
+}
+/**
+ * @tc.name: GetHeadDataSize_Test1
+ * @tc.desc: test appId equal processLabel.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, GetHeadDataSize_Test1, TestSize.Level1)
+{
+    ExtendInfo info;
+    // 创建RouteHeadHandlerImpl实例
+    RouteHeadHandlerImpl routeHeadHandlerImpl(info);
+    uint32_t headSize = 0;
+    // 设置appId_为Bootstrap::GetInstance().GetProcessLabel()
+    routeHeadHandlerImpl.appId_ = Bootstrap::GetInstance().GetProcessLabel();
+    // 调用GetHeadDataSize方法
+    auto status = routeHeadHandlerImpl.GetHeadDataSize(headSize);
+    // 验证返回状态和headSize的值
+    EXPECT_EQ(status, DistributedDB::OK);
+    EXPECT_EQ(headSize, 0);
+}
+/**
+ * @tc.name: GetHeadDataSize_Test2
+ * @tc.desc: test appId not equal processLabel.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, GetHeadDataSize_Test2, TestSize.Level1)
+{
+    ExtendInfo info;
+    // 创建RouteHeadHandlerImpl实例
+    RouteHeadHandlerImpl routeHeadHandlerImpl(info);
+    uint32_t headSize = 0;
+    // 设置appId_不等于Bootstrap::GetInstance().GetProcessLabel()
+    routeHeadHandlerImpl.appId_ = "otherAppId";
+    // 调用GetHeadDataSize方法
+    auto status = routeHeadHandlerImpl.GetHeadDataSize(headSize);
+    // 验证返回状态和headSize的值
+    EXPECT_EQ(status, DistributedDB::OK);
+    EXPECT_EQ(headSize, 0);
+}
+/**
+ * @tc.name: GetHeadDataSize_Test3
+ * @tc.desc: test devInfo.osType equal OH_OS_TYPE, appId not equal processLabel.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, GetHeadDataSize_Test3, TestSize.Level1)
+{
+    // 设置devInfo.osType等于OH_OS_TYPE
+    DeviceInfo deviceInfo;
+    deviceInfo.osType = OH_OS_TYPE;
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceInfo(_)).WillRepeatedly(Return(deviceInfo));
+    ExtendInfo info;
+    // 创建RouteHeadHandlerImpl实例
+    RouteHeadHandlerImpl routeHeadHandlerImpl(info);
+    uint32_t headSize = 0;
+    // 设置appId_不等于Bootstrap::GetInstance().GetProcessLabel()
+    routeHeadHandlerImpl.appId_ = "otherAppId";
+    // 调用GetHeadDataSize方法
+    auto status = routeHeadHandlerImpl.GetHeadDataSize(headSize);
+    // 验证返回状态和headSize的值
+    EXPECT_EQ(status, DistributedDB::OK);
+    EXPECT_EQ(headSize, 0);
+}
+/**
+ * @tc.name: GetHeadDataSize_Test4
+ * @tc.desc: test GetHeadDataSize
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, GetHeadDataSize_Test4, TestSize.Level1)
+{
+    const DistributedDB::ExtendInfo info = {
+        .appId = "otherAppId", .storeId = "test_store", .userId = "100", .dstTarget = PEER_DEVICE_ID
+    };
+    auto sendHandler = RouteHeadHandlerImpl::Create(info);
+    ASSERT_NE(sendHandler, nullptr);
+    // 设置devInfo.osType等于OH_OS_TYPE
+    DeviceInfo deviceInfo;
+    deviceInfo.osType = OH_OS_TYPE;
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceInfo(_)).WillRepeatedly(Return(deviceInfo));
+    CapMetaData capMetaData;
+    capMetaData.version = CapMetaData::CURRENT_VERSION;
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<1>(capMetaData), Return(true)));
+
+    std::vector<UserStatus> userStatus;
+    UserStatus userStat1;
+    UserStatus userStat2;
+    UserStatus userStat3;
+    userStat1.id = 1;
+    userStat2.id = 2;
+    userStat3.id = 3;
+    userStatus.push_back(userStat1);
+    userStatus.push_back(userStat2);
+    userStatus.push_back(userStat3);
+    EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillRepeatedly(Return(userStatus));
+
+    uint32_t headSize = 0;
+    // 调用GetHeadDataSize方法
+    auto status = sendHandler->GetHeadDataSize(headSize);
+    // 验证返回状态和headSize的值
+    EXPECT_EQ(status, DistributedDB::OK);
+    EXPECT_EQ(headSize, 0);
+
+    uint32_t routeHeadSize = 10;
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(routeHeadSize);
+    status = sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
+    EXPECT_EQ(status, DistributedDB::DB_ERROR);
+}
+/**
+ * @tc.name: ParseHeadDataUserTest001
+ * @tc.desc: test parse null data.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, ParseHeadDataUserTest001, TestSize.Level1)
+{
+    // 创建RouteHeadHandlerImpl实例
+    const DistributedDB::ExtendInfo info = {
+        .appId = "otherAppId", .storeId = "test_store", .userId = "100", .dstTarget = PEER_DEVICE_ID
+    };
+    auto sendHandler = RouteHeadHandlerImpl::Create(info);
+    ASSERT_NE(sendHandler, nullptr);
+
+    // 创建测试数据
+    uint32_t totalLen = 10;
+    std::string label = "testLabel";
+    std::vector<UserInfo> userInfos;
+
+    // 调用待测试方法
+    bool result = sendHandler->ParseHeadDataUser(nullptr, totalLen, label, userInfos);
+
+    // 验证结果
+    EXPECT_FALSE(result);
+    EXPECT_EQ(userInfos.size(), 0);
+}
+/**
+ * @tc.name: ParseHeadDataUserTest002
+ * @tc.desc: test totalLen < sizeof(RouteHead).
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, ParseHeadDataUserTest002, TestSize.Level1)
+{
+    // 创建RouteHeadHandlerImpl实例
+    const DistributedDB::ExtendInfo info = {
+        .appId = "otherAppId", .storeId = "test_store", .userId = "100", .dstTarget = PEER_DEVICE_ID
+    };
+    auto sendHandler = RouteHeadHandlerImpl::Create(info);
+    ASSERT_NE(sendHandler, nullptr);
+
+    // 创建测试数据
+    uint8_t data[10] = { 0 };
+    std::string label = "testLabel";
+    std::vector<UserInfo> userInfos;
+
+    // 调用待测试方法
+    bool result = sendHandler->ParseHeadDataUser(data, sizeof(RouteHead) - 1, label, userInfos);
+
+    // 验证结果
+    EXPECT_FALSE(result);
+    EXPECT_EQ(userInfos.size(), 0);
+}
+
+/**
+ * @tc.name: ParseHeadDataUserTest003
+ * @tc.desc: test totalLen < sizeof(RouteHead).
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, ParseHeadDataUserTest003, TestSize.Level1)
+{
+    // 创建RouteHeadHandlerImpl实例
+    const DistributedDB::ExtendInfo info = {
+        .appId = "otherAppId", .storeId = "test_store", .userId = "100", .dstTarget = PEER_DEVICE_ID
+    };
+    auto sendHandler = RouteHeadHandlerImpl::Create(info);
+    ASSERT_NE(sendHandler, nullptr);
+
+    // 创建测试数据
+    uint8_t data[10] = { 0 };
+    std::string label = "testLabel";
+    std::vector<UserInfo> userInfos;
+
+    RouteHead head = { 0 };
+    head.version = RouteHead::VERSION;
+    head.dataLen = sizeof(data) - sizeof(RouteHead);
+
+    // 调用待测试方法
+    bool result = sendHandler->ParseHeadDataUser(data, sizeof(RouteHead), label, userInfos);
+
+    // 验证结果
+    EXPECT_FALSE(result);
+    EXPECT_EQ(userInfos.size(), 0);
+}
+
+/**
+ * @tc.name: UnPackData_InvalidMagic
+ * @tc.desc: test invalid magic.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, UnPackData_InvalidMagic, TestSize.Level1)
+{
+    RouteHead *head = reinterpret_cast<RouteHead *>(dataBuffer);
+    head->magic = 0xFFFF; // Invalid magic
+    ExtendInfo info;
+    // 创建RouteHeadHandlerImpl实例
+    RouteHeadHandlerImpl routeHeadHandlerImpl(info);
+    uint32_t unpackedSize;
+    EXPECT_FALSE(routeHeadHandlerImpl.UnPackData(dataBuffer, validTotalLen, unpackedSize));
+}
+
+/**
+ * @tc.name: UnPackData_VersionMismatch
+ * @tc.desc: test version mismatch.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, UnPackData_VersionMismatch, TestSize.Level1)
+{
+    RouteHead *head = reinterpret_cast<RouteHead *>(dataBuffer);
+    head->version = 0x00; // Invalid version
+    ExtendInfo info;
+    // 创建RouteHeadHandlerImpl实例
+    RouteHeadHandlerImpl routeHeadHandlerImpl(info);
+    uint32_t unpackedSize;
+    EXPECT_FALSE(routeHeadHandlerImpl.UnPackData(dataBuffer, validTotalLen, unpackedSize));
+}
+
+/**
+ * @tc.name: UnPackData_ValidData
+ * @tc.desc: test valid data.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, UnPackData_ValidData, TestSize.Level1)
+{
+    ExtendInfo info;
+    // 创建RouteHeadHandlerImpl实例
+    RouteHeadHandlerImpl routeHeadHandlerImpl(info);
+    uint32_t unpackedSize;
+    EXPECT_TRUE(routeHeadHandlerImpl.UnPackData(dataBuffer, validTotalLen, unpackedSize));
+    EXPECT_EQ(unpackedSize, validTotalLen);
+}
+
+/**
+ * @tc.name: ParseHeadDataUser_OHOS_LoadMetaFailed
+ * @tc.desc: test load meta failed.
+ * @tc.type: FUNC
+ * @tc.author: guochao
+ */
+HWTEST_F(SessionManagerTest, ParseHeadDataUser_OHOS_LoadMetaFailed, TestSize.Level1)
+{
+    // 创建RouteHeadHandlerImpl实例
+    const DistributedDB::ExtendInfo info = {
+        .appId = "otherAppId", .storeId = "test_store", .userId = "0", .dstTarget = "device123"
+    };
+    auto sendHandler = RouteHeadHandlerImpl::Create(info);
+    ASSERT_NE(sendHandler, nullptr);
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(_)).WillOnce(Return(true));
+
+    string label = "test_label";
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false));
+
+    int foregroundUser = 100;
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryForegroundUserId(_)).WillRepeatedly(DoAll(SetArgReferee<0>(foregroundUser), Return(true)));
+
+    vector<UserInfo> userInfos;
+    EXPECT_TRUE(sendHandler->ParseHeadDataUser(dataBuffer, validTotalLen, label, userInfos));
+    ASSERT_EQ(userInfos.size(), 1);
+    EXPECT_EQ(userInfos[0].receiveUser, "100");
 }
 } // namespace
