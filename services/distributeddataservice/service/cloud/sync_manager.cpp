@@ -1038,7 +1038,7 @@ void SyncManager::SaveLastSyncInfo(const QueryKey &queryKey, CloudLastSyncInfo &
     }
 }
 
-DistributedData::GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
+GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
 {
     GenDetails newDetails;
     for (const auto &it : details) {
