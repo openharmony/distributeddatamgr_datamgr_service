@@ -15,9 +15,6 @@
 #define LOG_TAG "DeviceSyncAppManager"
 #include "device_sync_app/device_sync_app_manager.h"
 
-#include "log_print.h"
-#include "types.h"
-#include "unistd.h"
 namespace OHOS::DistributedData {
 DeviceSyncAppManager::DeviceSyncAppManager()
 {
@@ -38,7 +35,7 @@ void DeviceSyncAppManager::Initialize(const std::vector<WhiteList> &lists)
 
 bool DeviceSyncAppManager::Check(const WhiteList &whiteList)
 {
-    for (auto &info : whiteLists_) {
+    for (const auto &info : whiteLists_) {
         if (info.appId == whiteList.appId && (info.bundleName == whiteList.bundleName) &&
             (info.version == whiteList.version)) {
             return true;
