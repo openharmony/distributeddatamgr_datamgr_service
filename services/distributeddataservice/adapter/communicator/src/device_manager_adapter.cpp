@@ -341,9 +341,9 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Delete(dvInfo.udid);
             readyDevices_.Erase(dvInfo.uuid);
             if (dvInfo.osType != OH_OS_TYPE) {
-                otherDeviceInfos_.Delete(dvInfo.networkId, dvInfo);
-                otherDeviceInfos_.Delete(dvInfo.uuid, dvInfo);
-                otherDeviceInfos_.Delete(dvInfo.udid, dvInfo);
+                otherDeviceInfos_.Delete(dvInfo.networkId);
+                otherDeviceInfos_.Delete(dvInfo.uuid);
+                otherDeviceInfos_.Delete(dvInfo.udid);
             }
             break;
         }
