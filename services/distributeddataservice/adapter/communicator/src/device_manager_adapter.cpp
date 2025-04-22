@@ -246,7 +246,6 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
         static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
-    SaveHosDevInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
     auto task = [this, dvInfo]() {
         observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
             if (value != nullptr) {
@@ -265,9 +264,9 @@ void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
-    ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d",
+    ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d osType:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm));
+        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
 }
 
 void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
@@ -278,8 +277,9 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
         return;
     }
     readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
-    ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
+    ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
+        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     auto task = [this, dvInfo]() {
         observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
             if (value != nullptr) {
@@ -329,6 +329,11 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Set(dvInfo.uuid, dvInfo);
             deviceInfos_.Set(dvInfo.udid, dvInfo);
             readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONLINE, dvInfo));
+            if (dvInfo.osType != OH_OS_TYPE) {
+                otherDeviceInfos_.Set(dvInfo.networkId, dvInfo);
+                otherDeviceInfos_.Set(dvInfo.uuid, dvInfo);
+                otherDeviceInfos_.Set(dvInfo.udid, dvInfo);
+            }
             break;
         }
         case DeviceChangeType::DEVICE_OFFLINE: {
@@ -336,6 +341,11 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Delete(dvInfo.uuid);
             deviceInfos_.Delete(dvInfo.udid);
             readyDevices_.Erase(dvInfo.uuid);
+            if (dvInfo.osType != OH_OS_TYPE) {
+                otherDeviceInfos_.Delete(dvInfo.networkId, dvInfo);
+                otherDeviceInfos_.Delete(dvInfo.uuid, dvInfo);
+                otherDeviceInfos_.Delete(dvInfo.udid, dvInfo);
+            }
             break;
         }
         default: {
@@ -412,10 +422,7 @@ bool DeviceManagerAdapter::IsOHOSType(const std::string &id)
 int32_t DeviceManagerAdapter::GetAuthType(const std::string &id)
 {
     DeviceInfo dvInfo;
-    if (hosDeviceInfos_.Get(id, dvInfo)) {
-        return static_cast<int32_t>(dvInfo.authForm);
-    }
-    if (!deviceInfos_.Get(id, dvInfo)) {
+    if (!otherDeviceInfos_.Get(id, dvInfo) && !deviceInfos_.Get(id, dvInfo)) {
         InitDeviceInfo();
         deviceInfos_.Get(id, dvInfo);
     }
@@ -647,31 +654,5 @@ void DeviceManagerAdapter::ResetLocalDeviceInfo()
     deviceInfos_.Set(local.uuid, local);
     deviceInfos_.Set(local.udid, local);
     deviceInfos_.Set(local.networkId, local);
-}
-
-void DeviceManagerAdapter::SaveHosDevInfo(const DeviceInfo &dvInfo, const DeviceChangeType &type)
-{
-    if (dvInfo.networkId == DeviceManagerAdapter::cloudDmInfo.networkId ||
-        dvInfo.osType == OH_OS_TYPE) {
-        return;
-    }
-    switch (type) {
-        case DeviceChangeType::DEVICE_ONLINE: {
-            hosDeviceInfos_.Set(dvInfo.networkId, dvInfo);
-            hosDeviceInfos_.Set(dvInfo.uuid, dvInfo);
-            hosDeviceInfos_.Set(dvInfo.udid, dvInfo);
-            break;
-        }
-        case DeviceChangeType::DEVICE_OFFLINE: {
-            hosDeviceInfos_.Delete(dvInfo.networkId);
-            hosDeviceInfos_.Delete(dvInfo.uuid);
-            hosDeviceInfos_.Delete(dvInfo.udid);
-            break;
-        }
-        default: {
-            ZLOGW("unknown type.");
-            break;
-        }
-    }
 }
 } // namespace OHOS::DistributedData

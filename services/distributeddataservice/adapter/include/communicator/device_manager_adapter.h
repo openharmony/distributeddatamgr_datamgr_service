@@ -91,7 +91,6 @@ private:
     void OnChanged(const DmDeviceInfo &info);
     std::vector<const AppDeviceChangeListener *> GetObservers();
     void ResetLocalDeviceInfo();
-    void SaveHosDevInfo(const DeviceInfo &dvInfo, const AppDistributedKv::DeviceChangeType &type);
     static inline uint64_t GetTimeStamp()
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -104,7 +103,7 @@ private:
     const DmDeviceInfo cloudDmInfo;
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
-    LRUBucket<std::string, DeviceInfo> hosDeviceInfos_ {64};
+    LRUBucket<std::string, DeviceInfo> otherDeviceInfos_ {64};
     static constexpr size_t TIME_TASK_CAPACITY = 50;
     static constexpr int32_t SYNC_TIMEOUT = 60 * 1000; // ms
     static constexpr int32_t OH_OS_TYPE = 10;
