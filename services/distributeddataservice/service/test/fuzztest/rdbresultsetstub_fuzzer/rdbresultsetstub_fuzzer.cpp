@@ -28,14 +28,14 @@
 #include "store/cursor.h"
 
 using namespace OHOS::DistributedRdb;
-
 namespace OHOS {
+using Code = NativeRdb::RemoteResultSet::Code;
 const std::u16string INTERFACE_TOKEN = u"OHOS::NativeRdb.IResultSet";
 
 bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
-    uint32_t code = provider.ConsumeIntegral<uint32_t>();
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(0, Code::CMD_MAX);
     std::vector<uint8_t> remaining_data = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);

@@ -40,7 +40,8 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
         { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     FuzzedDataProvider provider(data, size);
-    uint32_t code = provider.ConsumeIntegral<uint32_t>();
+    uint32_t code =
+        provider.ConsumeIntegralInRange<uint32_t>(0, static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX));
     std::vector<uint8_t> remaining_data = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
