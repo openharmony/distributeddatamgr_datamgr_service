@@ -184,7 +184,6 @@ private:
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     void Report(const std::string &faultType, DistributedDataDfx::Fault errCode, const std::string &bundleName,
         const std::string &appendix);
-
     QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
                                          const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
 

@@ -121,7 +121,7 @@ void NetworkDelegateNormalImpl::RegOnNetworkChange()
 
 void NetworkDelegateNormalImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
-    executors_ = std::move(executors);
+    executors_ = executors;
 }
 
 ExecutorPool::Task NetworkDelegateNormalImpl::GetTask(uint32_t retry)

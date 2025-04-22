@@ -33,8 +33,8 @@ public:
         std::string storeId;
         std::string deviceId;
         std::string bundleName;
-        int changeType = 0; // 0 means CLOUD_DATA_CHANGE
         std::vector<std::string> tables;
+        int changeType = 0; // 0 means CLOUD_DATA_CHANGE
     };
 
     RemoteChangeEvent(int32_t evtId, DataInfo&& info);
