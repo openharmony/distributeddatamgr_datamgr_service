@@ -23,6 +23,7 @@
 #include "changeevent/remote_change_event.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
+#include "cloud/cloud_lock_event.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
 #include "cloud_service.h"
