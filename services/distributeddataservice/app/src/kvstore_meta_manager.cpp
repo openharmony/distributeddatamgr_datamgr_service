@@ -584,8 +584,8 @@ void KvStoreMetaManager::CheckMetaDeviceId()
         deviceMeta.oldUuid = deviceMeta.newUuid;
         deviceMeta.newUuid = localUuid;
         MetaDataManager::GetInstance().SaveMeta(deviceMeta.GetKey(), deviceMeta, true);
-        ZLOGI("meta changed! curruuid:%{public}s, olduuid:%{public}s",
-            deviceMeta.newUuid.c_str(), deviceMeta.oldUuid.c_str());
+        ZLOGI("meta changed! curruuid:%{public}s, olduuid:%{public}s", Anonymous::Change(deviceMeta.newUuid).c_str(),
+            Anonymous::Change(deviceMeta.oldUuid).c_str());
     }
 }
 
