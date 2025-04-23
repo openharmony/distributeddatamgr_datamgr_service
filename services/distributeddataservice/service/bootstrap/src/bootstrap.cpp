@@ -23,6 +23,7 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_config_manager.h"
 #include "config_factory.h"
+#include "device_sync_app/device_sync_app_manager.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"
 #include "thread/thread_manager.h"
@@ -190,6 +191,19 @@ void Bootstrap::LoadThread()
         return;
     }
     ThreadManager::GetInstance().Initialize(config->minThreadNum, config->maxThreadNum, config->ipcThreadNum);
+}
+
+void Bootstrap::LoadDeviceSyncAppWhiteLists()
+{
+    auto *deviceSyncAppWhiteLists = ConfigFactory::GetInstance().GetDeviceSyncAppWhiteListConfig();
+    if (deviceSyncAppWhiteLists == nullptr) {
+        return;
+    }
+    std::vector<DeviceSyncAppManager::WhiteList> infos;
+    for (auto &info : deviceSyncAppWhiteLists->whiteLists) {
+        infos.push_back({ info.appId, info.bundleName, info.version });
+    }
+    DeviceSyncAppManager::GetInstance().Initialize(infos);
 }
 } // namespace DistributedData
 } // namespace OHOS

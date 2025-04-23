@@ -75,6 +75,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
     "${data_service_path}/service/config/src/model/datashare_config.cpp",
+    "${data_service_path}/service/config/src/model/device_sync_app_white_list_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",
