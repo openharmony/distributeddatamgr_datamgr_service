@@ -77,6 +77,26 @@ HWTEST_F(UserDelegateMockTest, GetLocalUserStatus, TestSize.Level0)
 }
 
 /**
+* @tc.name: InitLocalUserMeta
+* @tc.desc: test InitLocalUserMeta
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UserDelegateMockTest, InitLocalUserMeta, TestSize.Level0)
+{
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_)).WillOnce(Return(false));
+    bool ret = UserDelegate::GetInstance().InitLocalUserMeta();
+    EXPECT_FALSE(ret);
+
+    std::vector<int> users;
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(users), Return(true)));
+    ret = UserDelegate::GetInstance().InitLocalUserMeta();
+    UserDelegate::GetInstance().DeleteUsers("users");
+    EXPECT_FALSE(ret);
+}
+
+/**
 * @tc.name: GetLocalUsers
 * @tc.desc: test GetLocalUsers
 * @tc.type: FUNC

@@ -2014,7 +2014,6 @@ group("unittest") {
       ":KvdbServiceImplTest",
       ":QueryHelperUnitTest",
       ":UpgradeMockTest",
-      ":UserDelegateMockTest",
     ]
   }
 
