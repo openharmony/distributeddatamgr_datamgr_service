@@ -1149,6 +1149,8 @@ ohos_unittest("DataShareServiceImplTest") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "qos_manager:concurrent_task_client",
+    "qos_manager:qos",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
     "resource_management:global_resmgr",

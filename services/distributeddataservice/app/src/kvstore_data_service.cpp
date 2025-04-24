@@ -323,6 +323,7 @@ void KvStoreDataService::OnStart()
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
     AddSystemAbilityListener(COMM_NET_CONN_MANAGER_SYS_ABILITY_ID);
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
+    AddSystemAbilityListener(CONCURRENT_TASK_SERVICE_ID);
     RegisterStoreInfo();
     Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
         std::placeholders::_2);
