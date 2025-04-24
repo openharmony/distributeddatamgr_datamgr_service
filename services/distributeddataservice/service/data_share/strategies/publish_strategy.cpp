@@ -42,7 +42,7 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
         return -1;
     }
     PublishedDataItem::DataType value = item.GetData();
-    PublishedDataNode node(context->uri, context->calledBundleName, item.subscriberId_, context->currentUserId,
+    PublishedDataNode node(context->uri, context->calledBundleName, item.subscriberId_, context->visitedUserId,
         PublishedDataNode::MoveTo(value));
     PublishedData data(node, context->version);
     auto [status, count] = delegate->Upsert(KvDBDelegate::DATA_TABLE, data);

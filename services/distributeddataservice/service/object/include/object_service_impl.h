@@ -17,6 +17,7 @@
 #define DISTRIBUTEDDATASERVICE_OBJECT_SERVICE_H
 
 #include "feature/static_acts.h"
+#include "metadata/store_meta_data.h"
 #include "object_manager.h"
 #include "object_service_stub.h"
 #include "visibility.h"
@@ -40,7 +41,6 @@ public:
     int32_t DeleteSnapshot(const std::string &bundleName, const std::string &sessionId) override;
     int32_t IsBundleNameEqualTokenId(
         const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId);
-    void Clear();
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId) override;
     int32_t OnInitialize() override;
@@ -68,6 +68,9 @@ private:
     };
     void RegisterObjectServiceInfo();
     void RegisterHandler();
+    int32_t SaveMetaData(StoreMetaData& saveMeta, const std::string &user, const std::string &account);
+    void UpdateMetaData();
+
     static Factory factory_;
     std::shared_ptr<ExecutorPool> executors_;
 };

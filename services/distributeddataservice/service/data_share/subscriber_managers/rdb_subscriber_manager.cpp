@@ -119,9 +119,9 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
         auto callerTokenId = IPCSkeleton::GetCallingTokenID();
         auto callerPid = IPCSkeleton::GetCallingPid();
-        value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
+        value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
         std::vector<ObserverNode> node;
-        node.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid);
+        node.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
         ExecutorPool::Task task = [key, node, context, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
@@ -130,9 +130,9 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
                 return;
             }
             DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
-            Notify(key, context->currentUserId, node, metaData);
+            Notify(key, context->visitedUserId, node, metaData);
             if (GetEnableObserverCount(key) == 1) {
-                SchedulerManager::GetInstance().Start(key, context->currentUserId, metaData);
+                SchedulerManager::GetInstance().Start(key, context->visitedUserId, metaData);
             }
         };
         executorPool->Execute(task);
@@ -227,13 +227,13 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
             if (it->isNotifyOnEnabled) {
                 std::vector<ObserverNode> node;
                 node.emplace_back(it->observer, context->callerTokenId);
-                Notify(key, context->currentUserId, node, metaData);
+                Notify(key, context->visitedUserId, node, metaData);
             }
         }
         return true;
     });
     if (isChanged) {
-        SchedulerManager::GetInstance().Enable(key, context->currentUserId, metaData);
+        SchedulerManager::GetInstance().Enable(key, context->visitedUserId, metaData);
     }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
@@ -252,12 +252,12 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
         if (key.uri != uri) {
             return false;
         }
-        Notify(key, context->currentUserId, val, metaData);
+        Notify(key, context->visitedUserId, val, metaData);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
     SchedulerManager::GetInstance().Execute(
-        uri, context->currentUserId, metaData);
+        uri, context->visitedUserId, metaData);
 }
 
 void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
@@ -372,6 +372,12 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
     ZLOGI("emit, valSize: %{public}zu, dataSize:%{public}zu, uri:%{public}s,",
         val.size(), changeNode.data_.size(), DistributedData::Anonymous::Change(changeNode.uri_).c_str());
     for (const auto &callback : val) {
+        // not notify across user
+        if (callback.userId != userId && userId != 0 && callback.userId != 0) {
+            ZLOGI("Not allow across notify, uri:%{public}s, from %{public}d to %{public}d.",
+                DistributedData::Anonymous::Change(changeNode.uri_).c_str(), userId, callback.userId);
+            continue;
+        }
         if (callback.enabled && callback.observer != nullptr) {
             callback.observer->OnChangeFromRdb(changeNode);
         }
@@ -399,12 +405,12 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
         if (key.uri != uri || key.subscriberId != subscriberId) {
             return false;
         }
-        Notify(key, context->currentUserId, val, metaData);
+        Notify(key, context->visitedUserId, val, metaData);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
     Key executeKey(uri, subscriberId, bundleName);
-    SchedulerManager::GetInstance().Start(executeKey, context->currentUserId, metaData);
+    SchedulerManager::GetInstance().Start(executeKey, context->visitedUserId, metaData);
 }
 
 DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(const std::shared_ptr<Context> context)
@@ -418,8 +424,8 @@ DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(cons
 }
 
 RdbSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyRdbObserver> &observer,
-    uint32_t firstCallerTokenId, uint32_t callerTokenId, uint32_t callerPid)
-    : observer(observer), firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId), callerPid(callerPid)
+    uint32_t firstCallerTokenId, uint32_t callerTokenId, uint32_t callerPid, int32_t userId): observer(observer),
+    firstCallerTokenId(firstCallerTokenId), callerTokenId(callerTokenId), callerPid(callerPid), userId(userId)
 {
 }
 } // namespace OHOS::DataShare

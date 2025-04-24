@@ -112,4 +112,292 @@ HWTEST_F(KvDelegateTest, GetVersion001, TestSize.Level1)
     EXPECT_EQ(result, false);
     ZLOGI("KvDelegateTest GetVersion001 end");
 }
+
+/**
+* @tc.name: Upsert001
+* @tc.desc: test Upsert function when GDR_DBOpen failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= false
+    2.call Upsert function to upsert filter
+* @tc.experct: Upsert failed and return E_ERROR
+*/
+HWTEST_F(KvDelegateTest, Upsert001, TestSize.Level1)
+{
+    ZLOGI("KvDelegateTest Upsert001 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    std::string value = "value";
+    auto result = kvDelegate.Upsert(collectionName, filter, value);
+    EXPECT_EQ(result.first, E_ERROR);
+    ZLOGI("KvDelegateTest Upsert001 end");
+}
+
+/**
+* @tc.name: Upsert002
+* @tc.desc: test Upsert function when GRD_UpsertDoc failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
+    2.call Upsert function to upsert filter
+* @tc.experct: Upsert failed and return GRD_INVALID_ARGS
+*/
+HWTEST_F(KvDelegateTest, Upsert002, TestSize.Level1)
+{
+    ZLOGI("KvDelegateTest Upsert001 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    kvDelegate.isInitDone_= true;
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    std::string value = "value";
+    auto result = kvDelegate.Upsert(collectionName, filter, value);
+    EXPECT_EQ(result.first, GRD_INVALID_ARGS);
+    ZLOGI("KvDelegateTest Upsert002 end");
+}
+
+/**
+* @tc.name: Delete001
+* @tc.desc: test Delete function when GDR_DBOpen failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= false
+    2.call Delete function to Delete filter
+* @tc.experct: Delete failed and return E_ERROR
+*/
+HWTEST_F(KvDelegateTest, Delete001, TestSize.Level1)
+{
+    ZLOGI("KvDelegateTest Delete001 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    auto result = kvDelegate.Delete(collectionName, filter);
+    EXPECT_EQ(result.first, E_ERROR);
+    ZLOGI("KvDelegateTest Delete001 end");
+}
+
+/**
+* @tc.name: Delete002
+* @tc.desc: test Delete function when GRD_DeleteDoc failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
+    2.call Delete function to Delete filter
+* @tc.experct: Delete failed and return GRD_INVALID_ARGS
+*/
+HWTEST_F(KvDelegateTest, Delete002, TestSize.Level1)
+{
+    ZLOGI("KvDelegateTest Delete002 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    kvDelegate.isInitDone_= true;
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    auto result = kvDelegate.Delete(collectionName, filter);
+    EXPECT_EQ(result.first, GRD_INVALID_ARGS);
+    ZLOGI("KvDelegateTest Delete002 end");
+}
+
+/**
+* @tc.name: Init001
+* @tc.desc: test Init function when isInitDone_ = true
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
+    2.call Init function
+* @tc.experct: Init failed and return true
+*/
+HWTEST_F(KvDelegateTest, Init001, TestSize.Level1)
+{
+    ZLOGI("KvDelegateTest Init001 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    kvDelegate.isInitDone_ = true;
+    auto result = kvDelegate.Init();
+    EXPECT_TRUE(result);
+    ZLOGI("KvDelegateTest Init001 end");
+}
+
+/**
+* @tc.name: Init002
+* @tc.desc: test Init function when isInitDone_ = false
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= false
+    2.call Init function
+* @tc.experct: Init failed and return false
+*/
+HWTEST_F(KvDelegateTest, Init002, TestSize.Level1)
+{
+    ZLOGI("KvDelegateTest Init002 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    auto result = kvDelegate.Init();
+    EXPECT_FALSE(result);
+    ZLOGI("KvDelegateTest Init002 end");
+}
+
+/**
+* @tc.name: Get001
+* @tc.desc: test Get function when GDR_DBOpen failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= false
+    2.call Get function
+* @tc.experct: Get failed and return E_ERROR
+*/
+HWTEST_F(KvDelegateTest, Get001, TestSize.Level1)
+{
+    ZLOGI("Get001 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    std::string projection = "projection";
+    std::string value = "value";
+    std::string result = "result";
+    auto result1 = kvDelegate.Get(collectionName, filter, projection, result);
+    EXPECT_EQ(result1, E_ERROR);
+    ZLOGI("Get001 end");
+}
+
+/**
+* @tc.name: Get002
+* @tc.desc: test Get function when GRD_FindDoc failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
+    2.call Get function
+* @tc.experct: Get failed and return GRD_INVALID_ARGS
+*/
+HWTEST_F(KvDelegateTest, Get002, TestSize.Level1)
+{
+    ZLOGI("Get002 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    kvDelegate.isInitDone_ = true;
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    std::string projection = "projection";
+    std::string value = "value";
+    std::string result = "result";
+    auto result1 = kvDelegate.Get(collectionName, filter, projection, result);
+    EXPECT_EQ(result1, GRD_INVALID_ARGS);
+    ZLOGI("Get002 end");
+}
+
+/**
+* @tc.name: Backup001
+* @tc.desc: test Backup function when hasChange_ is true
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.hasChange_ = true
+    2.call Backup function
+* @tc.experct: need backup and change kvDelegate.hasChange_ to false
+*/
+HWTEST_F(KvDelegateTest, Backup001, TestSize.Level1)
+{
+    ZLOGI("Backup001 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    kvDelegate.hasChange_ = true;
+    kvDelegate.Backup();
+    EXPECT_FALSE(kvDelegate.hasChange_);
+    ZLOGI("Backup001 end");
+}
+
+/**
+* @tc.name: Backup002
+* @tc.desc: test Backup function when hasChange_ is false
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.hasChange_ = false
+    2.call Backup function
+* @tc.experct: no need to backup and kvDelegate.hasChange_ not change
+*/
+HWTEST_F(KvDelegateTest, Backup002, TestSize.Level1)
+{
+    ZLOGI("Backup002 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    kvDelegate.Backup();
+    EXPECT_FALSE(kvDelegate.hasChange_);
+    ZLOGI("Backup002 end");
+}
+
+/**
+* @tc.name: GetBatch001
+* @tc.desc: test GetBatch function when GDR_DBOpen failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= false
+    2.call GetBach function
+* @tc.experct: GetBach failed and return E_ERROR
+*/
+HWTEST_F(KvDelegateTest, GetBatch001, TestSize.Level1)
+{
+    ZLOGI("GetBatch001 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    std::string projection = "projection";
+    std::string value = "value";
+    std::vector<std::string> result;
+    auto result1 = kvDelegate.GetBatch(collectionName, filter, projection, result);
+    EXPECT_EQ(result1, E_ERROR);
+    ZLOGI("GetBatch001 end");
+}
+
+/**
+* @tc.name: GetBatch002
+* @tc.desc: test GetBatch function when GRD_FindDoc failed
+* @tc.type: FUNC
+* @tc.require:issueIBX9E1
+* @tc.precon: None
+* @tc.step:
+    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
+    2.call GetBatch function
+* @tc.experct: GetBatch failed and return GRD_INVALID_ARGS
+*/
+HWTEST_F(KvDelegateTest, GetBatch002, TestSize.Level1)
+{
+    ZLOGI("GetBatch002 start");
+    std::string path = "path/to/your/db";
+    KvDelegate kvDelegate(path, executors);
+    kvDelegate.isInitDone_ = true;
+    std::string collectionName = "test";
+    std::string filter = "filter";
+    std::string projection = "projection";
+    std::string value = "value";
+    std::vector<std::string> result;
+    auto result1 = kvDelegate.GetBatch(collectionName, filter, projection, result);
+    EXPECT_EQ(result1, GRD_INVALID_ARGS);
+    ZLOGI("GetBatch001 end");
+}
 } // namespace OHOS::Test

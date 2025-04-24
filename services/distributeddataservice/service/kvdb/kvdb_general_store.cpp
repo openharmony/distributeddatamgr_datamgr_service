@@ -201,7 +201,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     storeInfo_.bundleName = meta.bundleName;
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
-    storeInfo_.user = std::stoi(meta.user);
+    storeInfo_.user = std::atoi(meta.user.c_str());
     enableCloud_ = meta.enableCloud;
 }
 
@@ -520,6 +520,11 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
             break;
         case CLOUD_DATA:
             status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
+            break;
+        case CLEAN_WATER:
+            ClearKvMetaDataOption option;
+            option.type = ClearKvMetaOpType::CLEAN_CLOUD_WATERMARK;
+            status = delegate_->ClearMetaData(option);
             break;
         case NEARBY_DATA:
             if (devices.empty()) {

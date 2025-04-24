@@ -91,5 +91,15 @@ ThreadConfig *ConfigFactory::GetThreadConfig()
 {
     return config_.thread;
 }
+
+DataShareConfig *ConfigFactory::GetDataShareConfig()
+{
+    return config_.dataShare;
+}
+
+DeviceSyncAppWhiteListConfig *ConfigFactory::GetDeviceSyncAppWhiteListConfig()
+{
+    return config_.deviceSyncAppWhiteList;
+}
 } // namespace DistributedData
 } // namespace OHOS

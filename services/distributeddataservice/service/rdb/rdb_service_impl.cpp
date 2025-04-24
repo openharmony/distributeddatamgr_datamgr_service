@@ -812,6 +812,20 @@ void RdbServiceImpl::SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &par
     param.haMode_ = metadata.haMode;
 }
 
+void RdbServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
+{
+    RemoteChangeEvent::DataInfo info;
+    info.bundleName = meta.bundleName;
+    info.deviceId = meta.deviceId;
+    info.userId = meta.user;
+    if (executors_ != nullptr) {
+        executors_->Schedule(ExecutorPool::INVALID_DELAY, [dataInfo = std::move(info)]() mutable {
+            auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::RDB_META_SAVE, std::move(dataInfo));
+            EventCenter::GetInstance().PostEvent(std::move(evt));
+        });
+    }
+}
+
 int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
@@ -823,6 +837,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     auto meta = GetStoreMetaData(param);
     StoreMetaData old;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
+    meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
     if (!isCreated || meta != old) {
         Upgrade(param, old);
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
@@ -832,12 +847,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
-            RemoteChangeEvent::DataInfo info;
-            info.bundleName = meta.bundleName;
-            info.deviceId = meta.deviceId;
-            info.userId = meta.user;
-            auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::RDB_META_SAVE, std::move(info));
-            EventCenter::GetInstance().PostEvent(std::move(evt));
+            SaveLaunchInfo(meta);
         }
     }
 
@@ -845,15 +855,10 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     SavePromiseInfo(meta, param);
     SaveDfxInfo(meta, param);
 
-    AppIDMetaData appIdMeta;
-    appIdMeta.bundleName = meta.bundleName;
-    appIdMeta.appId = meta.appId;
-    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
-            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+    if (!SaveAppIDMeta(meta, old)) {
         return RDB_ERROR;
     }
+
     if (param.isEncrypt_ && !param.password_.empty()) {
         if (SetSecretKey(param, meta) != RDB_OK) {
             ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
@@ -864,6 +869,20 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     }
     GetSchema(param);
     return RDB_OK;
+}
+
+bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old)
+{
+    AppIDMetaData appIdMeta;
+    appIdMeta.bundleName = meta.bundleName;
+    appIdMeta.appId = meta.appId;
+    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
+        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+        return false;
+    }
+    return true;
 }
 
 int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam& param, const RdbStatEvent &statEvent)
@@ -1221,8 +1240,21 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, in
     std::string prefix = Database::GetPrefix({std::to_string(user), "default", bundleName});
     std::vector<Database> dataBase;
     if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
-        for (const auto &dataBase : dataBase) {
-            MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true);
+        for (const auto &database : dataBase) {
+            MetaDataManager::GetInstance().DelMeta(database.GetKey(), true);
+            ZLOGD("del metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
+                Anonymous::Change(database.name).c_str(), database.user.c_str(), database.bundleName.c_str());
+            StoreMetaData meta;
+            meta.user = database.user;
+            meta.deviceId = database.deviceId;
+            meta.storeId = database.name;
+            meta.bundleName = bundleName;
+            Database base;
+            if (RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() && !base.bundleName.empty()) {
+                MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true);
+                ZLOGD("save metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
+                    Anonymous::Change(base.name).c_str(), base.user.c_str(), base.bundleName.c_str());
+            }
         }
     }
     return CloseStore(bundleName, user, index);

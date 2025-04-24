@@ -137,6 +137,22 @@ int32_t ObjectServiceImpl::OnInitialize()
     const std::string accountId = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
     const auto userId = DistributedData::AccountDelegate::GetInstance()->GetUserByToken(token);
     StoreMetaData saveMeta;
+    SaveMetaData(saveMeta, std::to_string(userId), accountId);
+    ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
+    ObjectStoreManager::GetInstance()->InitUserMeta();
+    RegisterObjectServiceInfo();
+    RegisterHandler();
+    ObjectDmsHandler::GetInstance().RegisterDmsEvent();
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::string &user, const std::string &account)
+{
+    auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (localDeviceId.empty()) {
+        ZLOGE("failed to get local device id");
+        return OBJECT_INNER_ERROR;
+    }
     saveMeta.appType = "default";
     saveMeta.deviceId = localDeviceId;
     saveMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
@@ -145,16 +161,15 @@ int32_t ObjectServiceImpl::OnInitialize()
     saveMeta.isEncrypt = false;
     saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.user = std::to_string(userId);
-    saveMeta.account = accountId;
-    saveMeta.tokenId = token;
+    saveMeta.user = user;
+    saveMeta.account = account;
+    saveMeta.tokenId = IPCSkeleton::GetCallingTokenID();
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
     bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
                    DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!isSaved) {
@@ -168,18 +183,18 @@ int32_t ObjectServiceImpl::OnInitialize()
     if (!isSaved) {
         ZLOGE("Save appIdMeta failed");
     }
-    ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s",
-        saveMeta.appId.c_str(), saveMeta.GetStoreAlias().c_str());
-    RegisterObjectServiceInfo();
-    RegisterHandler();
-    ObjectDmsHandler::GetInstance().RegisterDmsEvent();
+    ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s", saveMeta.appId.c_str(),
+        saveMeta.GetStoreAlias().c_str());
     return OBJECT_SUCCESS;
 }
 
 int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
     if (code == static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
-        Clear();
+        int32_t status = ObjectStoreManager::GetInstance()->Clear();
+        if (status != OBJECT_SUCCESS) {
+            ZLOGE("Clear fail user:%{public}s, status: %{public}d", user.c_str(), status);
+        }
     }
     return Feature::OnUserChange(code, user, account);
 }
@@ -271,15 +286,6 @@ int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
         return OBJECT_PERMISSION_DENIED;
     }
     return OBJECT_SUCCESS;
-}
-
-void ObjectServiceImpl::Clear()
-{
-    ZLOGI("begin.");
-    int32_t status = ObjectStoreManager::GetInstance()->Clear();
-    if (status != OBJECT_SUCCESS) {
-        ZLOGE("save fail %{public}d", status);
-    }
 }
 
 int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
@@ -377,8 +383,9 @@ void ObjectServiceImpl::RegisterObjectServiceInfo()
 
 void ObjectServiceImpl::RegisterHandler()
 {
-    Handler handler =
-        std::bind(&ObjectServiceImpl::DumpObjectServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    Handler handler = [this](int fd, std::map<std::string, std::vector<std::string>> &params) {
+        DumpObjectServiceInfo(fd, params);
+    };
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
 }
 

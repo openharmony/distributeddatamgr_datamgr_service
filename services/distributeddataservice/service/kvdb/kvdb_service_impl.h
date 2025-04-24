@@ -155,7 +155,7 @@ private:
     void RegisterHandler();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
     void TryToSync(const StoreMetaData &metaData, bool force = false);
-    bool IsRemoteChange(const StoreMetaData &metaData, const std::string &device);
+    bool IsNeedSync(const StoreMetaData &metaData, std::vector<std::string> &devices);
     bool IsOHOSType(const std::vector<std::string> &ids);
     Status ConvertDbStatusNative(DBStatus status);
     bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,

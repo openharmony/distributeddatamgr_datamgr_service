@@ -50,6 +50,14 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
     return BDeviceManagerAdapter::deviceManagerAdapter->IsSameAccount(accCaller, accCallee);
 }
 
+bool DeviceManagerAdapter::IsSameAccount(const std::string &devicdId)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return false;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->IsSameAccount(devicdId);
+}
+
 bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
 {
     if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {

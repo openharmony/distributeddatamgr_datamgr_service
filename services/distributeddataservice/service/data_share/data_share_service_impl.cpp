@@ -125,7 +125,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
             callingTokenId}, true);
         auto [errCode, ret] = dbDelegate->InsertEx(providerInfo.tableName, valuesBucket);
         if (errCode == E_OK && ret > 0) {
-            NotifyChange(uri);
+            // only notify specific userId
+            NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
@@ -136,7 +137,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
     return ExecuteEx(uri, extUri, IPCSkeleton::GetCallingTokenID(), false, callBack);
 }
 
-bool DataShareServiceImpl::NotifyChange(const std::string &uri)
+bool DataShareServiceImpl::NotifyChange(const std::string &uri, int32_t userId)
 {
     RadarReporter::RadarReport report(RadarReporter::NOTIFY_OBSERVER_DATA_CHANGE,
         RadarReporter::NOTIFY_DATA_CHANGE, __FUNCTION__);
@@ -146,8 +147,7 @@ bool DataShareServiceImpl::NotifyChange(const std::string &uri)
         report.SetError(RadarReporter::DATA_OBS_EMPTY_ERROR);
         return false;
     }
-
-    ErrCode ret = obsMgrClient->NotifyChange(Uri(uri));
+    ErrCode ret = obsMgrClient->NotifyChange(Uri(uri), userId);
     if (ret != ERR_OK) {
         ZLOGE("obsMgrClient->NotifyChange error return %{public}d", ret);
         report.SetError(RadarReporter::NOTIFY_ERROR);
@@ -173,7 +173,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
             callingTokenId}, true);
         auto [errCode, ret] = dbDelegate->UpdateEx(providerInfo.tableName, predicate, valuesBucket);
         if (errCode == E_OK && ret > 0) {
-            NotifyChange(uri);
+            NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
@@ -201,7 +201,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
             callingTokenId}, true);
         auto [errCode, ret] = dbDelegate->DeleteEx(providerInfo.tableName, predicate);
         if (errCode == E_OK && ret > 0) {
-            NotifyChange(uri);
+            NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
         } else {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
@@ -258,7 +258,7 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
         uri.c_str(), subscriberId, tpltId.bundleName_.c_str(), tplt.predicates_.size());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &tplt, &context]() -> int32_t {
         auto result = TemplateManager::GetInstance().Add(
-            Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId, tplt);
+            Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->visitedUserId, tplt);
         RdbSubscriberManager::GetInstance().Emit(context->uri, tpltId.subscriberId_, tpltId.bundleName_, context);
         return result;
     });
@@ -277,7 +277,7 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
         DistributedData::Anonymous::Change(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
         return TemplateManager::GetInstance().Delete(
-            Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->currentUserId);
+            Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->visitedUserId);
     });
 }
 
@@ -346,7 +346,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
             continue;
         }
         publishedData.emplace_back(context->uri, context->calledBundleName, item.subscriberId_);
-        userId = context->currentUserId;
+        userId = context->visitedUserId;
     }
     if (!publishedData.empty()) {
         PublishedDataSubscriberManager::GetInstance().Emit(publishedData, userId, callerBundleName);
@@ -376,7 +376,8 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
         auto context = std::make_shared<Context>(uri);
         results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &observer, &context, this]() {
             return RdbSubscriberManager::GetInstance().Add(
-                Key(context->uri, id.subscriberId_, id.bundleName_), observer, context, binderInfo_.executors);
+                Key(context->uri, id.subscriberId_, id.bundleName_),
+                observer, context, binderInfo_.executors);
         }));
     }
     return results;
@@ -444,7 +445,7 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
         result = subscribeStrategy_.Execute(context, [&subscriberId, &observer, &context]() {
             return PublishedDataSubscriberManager::GetInstance().Add(
                 PublishedDataKey(context->uri, context->callerBundleName, subscriberId), observer,
-                context->callerTokenId);
+                context->callerTokenId, context->visitedUserId);
         });
         results.emplace_back(uri, result);
         if (result == E_OK) {
@@ -452,10 +453,10 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
             if (binderInfo_.executors != nullptr) {
                 binderInfo_.executors->Execute([context, subscriberId]() {
                     PublishedData::UpdateTimestamp(
-                        context->uri, context->calledBundleName, subscriberId, context->currentUserId);
+                        context->uri, context->calledBundleName, subscriberId, context->visitedUserId);
                 });
             }
-            userId = context->currentUserId;
+            userId = context->visitedUserId;
         }
     }
     if (!publishedKeys.empty()) {
@@ -484,7 +485,7 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
             if (result == E_OK && binderInfo_.executors != nullptr) {
                 binderInfo_.executors->Execute([context, subscriberId]() {
                     PublishedData::UpdateTimestamp(
-                        context->uri, context->calledBundleName, subscriberId, context->currentUserId);
+                        context->uri, context->calledBundleName, subscriberId, context->visitedUserId);
                 });
             }
             return result;
@@ -517,7 +518,7 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         if (result == E_OK && binderInfo_.executors != nullptr) {
             binderInfo_.executors->Execute([context, subscriberId]() {
                 PublishedData::UpdateTimestamp(
-                    context->uri, context->calledBundleName, subscriberId, context->currentUserId);
+                    context->uri, context->calledBundleName, subscriberId, context->visitedUserId);
             });
         }
         results.emplace_back(uri, result);
@@ -526,7 +527,7 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
             if (PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(pKey, context->callerTokenId)) {
                 publishedKeys.emplace_back(pKey);
             }
-            userId = context->currentUserId;
+            userId = context->visitedUserId;
         }
     }
     if (!publishedKeys.empty()) {
@@ -555,7 +556,7 @@ std::vector<OperationResult> DataShareServiceImpl::DisablePubSubs(const std::vec
             if (result == E_OK && binderInfo_.executors != nullptr) {
                 binderInfo_.executors->Execute([context, subscriberId]() {
                     PublishedData::UpdateTimestamp(
-                        context->uri, context->calledBundleName, subscriberId, context->currentUserId);
+                        context->uri, context->calledBundleName, subscriberId, context->visitedUserId);
                 });
             }
             return result;

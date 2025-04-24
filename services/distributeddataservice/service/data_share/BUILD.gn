@@ -28,6 +28,7 @@ config("module_public_config") {
     "${datashare_path}/interfaces/inner_api/common/include",
     "${datashare_path}/interfaces/inner_api/consumer/include",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/service/config/include",
     "../common",
     "../crypto/include",
     "../permission/include",
@@ -48,6 +49,7 @@ ohos_source_set("data_share_service") {
   sources = [
     "common/app_connect_manager.cpp",
     "common/bundle_mgr_proxy.cpp",
+    "common/common_utils.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
     "common/extension_ability_manager.cpp",
@@ -94,13 +96,11 @@ ohos_source_set("data_share_service") {
     "-Wno-multichar",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
   configs = [ ":module_public_config" ]

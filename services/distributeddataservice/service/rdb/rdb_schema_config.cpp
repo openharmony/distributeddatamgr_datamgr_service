@@ -39,7 +39,6 @@ bool RdbSchemaConfig::GetDistributedSchema(const StoreMetaData &meta, Database &
     if (!InitBundleInfo(meta.bundleName, std::atoi(meta.user.c_str()), bundleInfo)) {
         return false;
     }
-    std::string storeName = meta.storeId;
     auto ret = GetSchemaFromHap(bundleInfo, meta.storeId, database);
     if (ret) {
         database.user = meta.user;
@@ -99,7 +98,7 @@ bool RdbSchemaConfig::GetSchemaFromHap(
         std::string jsonData(fileContent.get(), fileContent.get() + length);
         DbSchema databases;
         databases.Unmarshall(jsonData);
-        for (auto &schema : databases.databases) {
+        for (const auto &schema : databases.databases) {
             if (schema.name == storeName) {
                 database = schema;
                 return true;

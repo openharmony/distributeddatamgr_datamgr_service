@@ -50,6 +50,7 @@
 #include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "network/network_delegate.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -298,6 +299,7 @@ void KvStoreDataService::OnStart()
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     DmAdapter::GetInstance().Init(executors_);
     AutoCache::GetInstance().Bind(executors_);
+    NetworkDelegate::GetInstance()->BindExecutor(executors_);
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
@@ -349,6 +351,7 @@ void KvStoreDataService::LoadConfigs()
     Bootstrap::GetInstance().LoadBackup(executors_);
     Bootstrap::GetInstance().LoadCloud();
     Bootstrap::GetInstance().LoadAppIdMappings();
+    Bootstrap::GetInstance().LoadDeviceSyncAppWhiteLists();
 }
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
@@ -356,12 +359,15 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     ZLOGI("add system abilityid:%{public}d", systemAbilityId);
     (void)deviceId;
     if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
-        AccountDelegate::GetInstance()->SubscribeAccountEvent();
         Installer::GetInstance().Init(this, executors_);
         ScreenManager::GetInstance()->SubscribeScreenEvent();
+    } else if (systemAbilityId == SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN) {
+        AccountDelegate::GetInstance()->SubscribeAccountEvent();
     } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
         Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1,
                                                                 DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+    } else if (systemAbilityId == COMM_NET_CONN_MANAGER_SYS_ABILITY_ID) {
+        NetworkDelegate::GetInstance()->RegOnNetworkChange();
     }
     return;
 }
@@ -370,10 +376,12 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
 {
     ZLOGI("remove system abilityid:%{public}d", systemAbilityId);
     (void)deviceId;
+    if (systemAbilityId == SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN) {
+        AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
+    }
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;
     }
-    AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
     ScreenManager::GetInstance()->UnsubscribeScreenEvent();
     Installer::GetInstance().UnsubscribeEvent();
 }

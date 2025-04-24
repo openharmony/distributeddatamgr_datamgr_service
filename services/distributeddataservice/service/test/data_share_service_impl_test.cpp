@@ -146,10 +146,10 @@ HWTEST_F(DataShareServiceImplTest, NotifyChange001, TestSize.Level1)
 {
     DataShareServiceImpl dataShareServiceImpl;
     std::string uri = SLIENT_ACCESS_URI;
-    auto result = dataShareServiceImpl.NotifyChange(uri);
+    auto result = dataShareServiceImpl.NotifyChange(uri, USER_TEST);
     EXPECT_EQ(result, true);
 
-    result = dataShareServiceImpl.NotifyChange("");
+    result = dataShareServiceImpl.NotifyChange("", USER_TEST);
     EXPECT_EQ(result, false);
 }
 

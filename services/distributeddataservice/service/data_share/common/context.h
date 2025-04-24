@@ -37,6 +37,7 @@ public:
     virtual ~Context() = default;
     std::string uri;
     int32_t currentUserId = -1;
+    int32_t visitedUserId = -1;
     int32_t appIndex = 0;
     int32_t haMode = 0;
     std::string permission;

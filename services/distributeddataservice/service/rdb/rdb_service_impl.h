@@ -215,6 +215,8 @@ private:
     static std::string GetSubUser(const int32_t subUser);
 
     static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
+    
+    static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
 
     void GetSchema(const RdbSyncerParam &param);
 
@@ -242,6 +244,8 @@ private:
     bool UpgradeCloneSecretKey(const StoreMetaData &meta);
 
     bool TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta);
+
+    void SaveLaunchInfo(StoreMetaData &meta);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

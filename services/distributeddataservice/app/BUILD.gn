@@ -76,16 +76,14 @@ config("module_private_config") {
     "-Oz",
     "-fdata-sections",
     "-ffunction-sections",
-    "-fstack-protector-strong",
   ]
 
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
-    "-fstack-protector-strong",
   ]
 
-  ldflags = [ "-Wl,-z,relro,-z,now,--gc-sections" ]
+  ldflags = [ "-Wl,--gc-sections" ]
 }
 
 ohos_shared_library("distributeddataservice") {
@@ -127,6 +125,7 @@ ohos_shared_library("distributeddataservice") {
 
   configs = [ ":module_private_config" ]
   deps = [
+    "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",

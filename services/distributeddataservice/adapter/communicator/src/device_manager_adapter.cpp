@@ -263,8 +263,9 @@ void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
         ZLOGE("get device info fail");
         return;
     }
-    ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
+    ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d osType:%{public}d",
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
+        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
 }
 
 void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
@@ -275,8 +276,9 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
         return;
     }
     readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
-    ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType);
+    ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
+        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     auto task = [this, dvInfo]() {
         observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
             if (value != nullptr) {
@@ -326,6 +328,11 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Set(dvInfo.uuid, dvInfo);
             deviceInfos_.Set(dvInfo.udid, dvInfo);
             readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONLINE, dvInfo));
+            if (dvInfo.osType != OH_OS_TYPE) {
+                otherDeviceInfos_.Set(dvInfo.networkId, dvInfo);
+                otherDeviceInfos_.Set(dvInfo.uuid, dvInfo);
+                otherDeviceInfos_.Set(dvInfo.udid, dvInfo);
+            }
             break;
         }
         case DeviceChangeType::DEVICE_OFFLINE: {
@@ -333,6 +340,11 @@ void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const Device
             deviceInfos_.Delete(dvInfo.uuid);
             deviceInfos_.Delete(dvInfo.udid);
             readyDevices_.Erase(dvInfo.uuid);
+            if (dvInfo.osType != OH_OS_TYPE) {
+                otherDeviceInfos_.Delete(dvInfo.networkId);
+                otherDeviceInfos_.Delete(dvInfo.uuid);
+                otherDeviceInfos_.Delete(dvInfo.udid);
+            }
             break;
         }
         default: {
@@ -409,7 +421,7 @@ bool DeviceManagerAdapter::IsOHOSType(const std::string &id)
 int32_t DeviceManagerAdapter::GetAuthType(const std::string &id)
 {
     DeviceInfo dvInfo;
-    if (!deviceInfos_.Get(id, dvInfo)) {
+    if (!otherDeviceInfos_.Get(id, dvInfo) && !deviceInfos_.Get(id, dvInfo)) {
         InitDeviceInfo();
         deviceInfos_.Get(id, dvInfo);
     }

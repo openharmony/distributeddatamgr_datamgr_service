@@ -25,6 +25,7 @@
 #include "metadata/matrix_meta_data.h"
 #include "metadata/meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/object_user_meta_data.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
@@ -991,6 +992,19 @@ HWTEST_F(ServiceMetaDataTest, GetKey, TestSize.Level1)
 {
     DeviceMetaData metaData;
     std::string expectedPrefix = "DeviceMeta";
+    std::string prefix = metaData.GetKey();
+    EXPECT_EQ(prefix, expectedPrefix);
+}
+
+/**
+* @tc.name: ObjectUserMetaDataGetKey
+* @tc.desc: ObjectUserMetaDataGetKey
+* @tc.type: FUNC
+*/
+HWTEST_F(ServiceMetaDataTest, ObjectUserMetaDataGetKey, TestSize.Level1)
+{
+    ObjectUserMetaData metaData;
+    std::string expectedPrefix = "ObjectUserMetaData";
     std::string prefix = metaData.GetKey();
     EXPECT_EQ(prefix, expectedPrefix);
 }

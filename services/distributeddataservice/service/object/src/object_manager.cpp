@@ -29,6 +29,7 @@
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/object_user_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "object_dms_handler.h"
 #include "object_radar_reporter.h"
@@ -291,29 +292,25 @@ int32_t ObjectStoreManager::Retrieve(
 int32_t ObjectStoreManager::Clear()
 {
     ZLOGI("enter");
-    std::string userId = GetCurrentUser();
-    if (userId.empty()) {
+    DistributedData::ObjectUserMetaData userMeta;
+    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
+        ZLOGE("load meta error");
         return OBJECT_INNER_ERROR;
     }
-    std::vector<StoreMetaData> metaData;
-    std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    std::string metaKey = GetMetaUserIdKey(userId, appId);
-    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(metaKey, metaData, true)) {
-        ZLOGE("no store of %{public}s", appId.c_str());
-        return OBJECT_STORE_NOT_FOUND;
+    if (userMeta.userId.empty()) {
+        ZLOGI("no object user meta, don't need clean");
+        return OBJECT_SUCCESS;
     }
-    for (const auto &storeMeta : metaData) {
-        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_OBJECT_BEGIN
-            || storeMeta.storeType > StoreMetaData::StoreType::STORE_OBJECT_END) {
-            continue;
-        }
-        if (storeMeta.user == userId) {
-            ZLOGI("user is same, not need to change, mate user:%{public}s::user:%{public}s.",
-                storeMeta.user.c_str(), userId.c_str());
-            return OBJECT_SUCCESS;
-        }
+    std::string userId = GetCurrentUser();
+    if (userId.empty()) {
+        ZLOGE("no user error");
+        return OBJECT_INNER_ERROR;
     }
-    ZLOGD("user is change, need to change");
+    if (userMeta.userId == userId) {
+        ZLOGI("user is same, don't need clear, user:%{public}s.", userId.c_str());
+        return OBJECT_SUCCESS;
+    }
+    ZLOGI("user changed, need clear, userId:%{public}s", userId.c_str());
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
@@ -322,6 +319,33 @@ int32_t ObjectStoreManager::Clear()
     result = RevokeSaveToStore("");
     Close();
     return result;
+}
+
+int32_t ObjectStoreManager::InitUserMeta()
+{
+    ObjectUserMetaData userMeta;
+    if (DistributedData::MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), userMeta, true)) {
+        ZLOGI("userId has been set, don't need clean");
+        return OBJECT_SUCCESS;
+    }
+    std::string userId = GetCurrentUser();
+    if (userId.empty()) {
+        ZLOGI("get userId error");
+        return OBJECT_INNER_ERROR;
+    }
+    userMeta.userId = userId;
+    std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    std::string metaKey = GetMetaUserIdKey(userId, appId);
+    if (!DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true)) {
+        ZLOGE("delete old meta error, userId:%{public}s", userId.c_str());
+        return OBJECT_INNER_ERROR;
+    }
+    if (!DistributedData::MetaDataManager::GetInstance().SaveMeta(DistributedData::ObjectUserMetaData::GetKey(),
+        userMeta, true)) {
+        ZLOGE("save meta error, userId:%{public}s", userId.c_str());
+        return OBJECT_INNER_ERROR;
+    }
+    return OBJECT_SUCCESS;
 }
 
 int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId, int32_t user)
@@ -338,12 +362,6 @@ int32_t ObjectStoreManager::DeleteByAppId(const std::string &appId, int32_t user
             appId.c_str(), user);
     }
     Close();
-    std::string userId = std::to_string(user);
-    std::string metaKey = GetMetaUserIdKey(userId, appId);
-    auto status = DistributedData::MetaDataManager::GetInstance().DelMeta(metaKey, true);
-    if (!status) {
-        ZLOGE("Delete meta failed, userId: %{public}s, appId: %{public}s", userId.c_str(), appId.c_str());
-    }
     return result;
 }
 
@@ -393,7 +411,7 @@ void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName,
     }));
 }
 
-void ObjectStoreManager::NotifyChange(ObjectRecord &changedData)
+void ObjectStoreManager::NotifyChange(const ObjectRecord &changedData)
 {
     ZLOGI("OnChange start, size:%{public}zu", changedData.size());
     bool hasAsset = false;
@@ -405,6 +423,27 @@ void ObjectStoreManager::NotifyChange(ObjectRecord &changedData)
         }
     }
     auto data = GetObjectData(changedData, saveInfo, hasAsset);
+    auto isSameAccount = DeviceManagerAdapter::GetInstance().IsSameAccount(saveInfo.sourceDeviceId);
+    if (!isSameAccount) {
+        ZLOGE("IsSameAccount failed. bundleName:%{public}s, source device:%{public}s", saveInfo.bundleName.c_str(),
+            Anonymous::Change(saveInfo.sourceDeviceId).c_str());
+        auto status = Open();
+        if (status != OBJECT_SUCCESS) {
+            ZLOGE("Open failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
+                saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
+            return;
+        }
+        std::vector<std::vector<uint8_t>> keys;
+        for (const auto &[key, value] : changedData) {
+            keys.emplace_back(key.begin(), key.end());
+        }
+        status = delegate_->DeleteBatch(keys);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("Delete entries failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
+                saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
+        }
+        return Close();
+    }
     if (!hasAsset) {
         ObjectStore::RadarReporter::ReportStateStart(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
             ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS, ObjectStore::START, saveInfo.bundleName);
@@ -520,7 +559,7 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
     for (const auto& [objectId, assets] : changedAssets) {
         std::string networkId = DmAdaper::GetInstance().ToNetworkID(saveInfo.sourceDeviceId);
         auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
-        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(std::stoi(GetCurrentUser()),
+        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(std::atoi(GetCurrentUser().c_str()),
             saveInfo.bundleName, networkId, assets, [this, block](bool success) {
                 block->SetValue({ false, success });
         });
@@ -697,11 +736,15 @@ void ObjectStoreManager::DoNotifyWaitAssetTimeout(const std::string &objectKey)
 
 void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &userId)
 {
-    ZLOGI("enter %{public}s", dataDir.c_str());
-    kvStoreDelegateManager_ =
-        new DistributedDB::KvStoreDelegateManager(DistributedData::Bootstrap::GetInstance().GetProcessLabel(), userId);
+    ZLOGI("enter, user: %{public}s", userId.c_str());
+    kvStoreDelegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>
+        (DistributedData::Bootstrap::GetInstance().GetProcessLabel(), userId);
     DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
-    kvStoreDelegateManager_->SetKvStoreConfig(kvStoreConfig);
+    auto status = kvStoreDelegateManager_->SetKvStoreConfig(kvStoreConfig);
+    if (status != DistributedDB::OK) {
+        ZLOGE("Set kvstore config failed, status: %{public}d", status);
+        return;
+    }
     userId_ = userId;
 }
 
@@ -793,7 +836,7 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
 {
     std::vector<DistributedDB::Entry> entries;
     auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
-    if (status != DistributedDB::DBStatus::NOT_FOUND) {
+    if (status == DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGI("Get old entries empty, bundleName: %{public}s", appId.c_str());
         return;
     }
@@ -869,11 +912,15 @@ int32_t ObjectStoreManager::SyncOnStore(
     const std::string &prefix, const std::vector<std::string> &deviceList, SyncCallBack &callback)
 {
     std::vector<std::string> syncDevices;
-    for (auto &device : deviceList) {
+    for (auto const &device : deviceList) {
         if (device == LOCAL_DEVICE) {
             ZLOGI("Save to local, do not need sync, prefix: %{public}s", prefix.c_str());
             callback({{LOCAL_DEVICE, OBJECT_SUCCESS}});
             return OBJECT_SUCCESS;
+        }
+        if (!DeviceManagerAdapter::GetInstance().IsSameAccount(device)) {
+            ZLOGE("IsSameAccount failed. device:%{public}s", Anonymous::Change(device).c_str());
+            continue;
         }
         syncDevices.emplace_back(DmAdaper::GetInstance().GetUuidByNetworkId(device));
     }
@@ -1056,8 +1103,8 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
 std::string ObjectStoreManager::GetCurrentUser()
 {
     std::vector<int> users;
-    AccountDelegate::GetInstance()->QueryUsers(users);
-    if (users.empty()) {
+    if (!AccountDelegate::GetInstance()->QueryUsers(users)) {
+        ZLOGE("QueryUsers failed.");
         return "";
     }
     return std::to_string(users[0]);
@@ -1071,20 +1118,20 @@ void ObjectStoreManager::SaveUserToMeta()
         return;
     }
     std::string appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    StoreMetaData userMeta;
-    userMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
-    userMeta.user = userId;
-    userMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
-    std::string userMetaKey = GetMetaUserIdKey(userId, appId);
-    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(userMetaKey, userMeta, true);
+    DistributedData::ObjectUserMetaData userMeta;
+    userMeta.userId = userId;
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(
+        DistributedData::ObjectUserMetaData::GetKey(), userMeta, true);
     if (!saved) {
-        ZLOGE("userMeta save failed");
+        ZLOGE("userMeta save failed, userId:%{public}s", userId.c_str());
     }
 }
 
 void ObjectStoreManager::CloseAfterMinute()
 {
-    executors_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&ObjectStoreManager::Close, this));
+    executors_->Schedule(std::chrono::minutes(INTERVAL), [this]() {
+        Close();
+    });
 }
 
 void ObjectStoreManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)

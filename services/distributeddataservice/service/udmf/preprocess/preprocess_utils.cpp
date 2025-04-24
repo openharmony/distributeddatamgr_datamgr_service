@@ -71,7 +71,7 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
     runtime.deviceId = GetLocalDeviceId();
     runtime.recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
     runtime.tokenId = option.tokenId;
-    runtime.sdkVersion = data.GetSdkVersion();
+    runtime.sdkVersion = GetSdkVersionByToken(option.tokenId);
     data.SetRuntime(runtime);
     return E_OK;
 }
@@ -337,7 +337,7 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
 {
     record->ComputeUris([&uris, &isLocal, &tokenId] (UriInfo &uriInfo) {
         std::string newUriStr = "";
-        if (isLocal) {
+        if (isLocal && uriInfo.authUri.empty()) {
             Uri tmpUri(uriInfo.oriUri);
             std::string path = tmpUri.GetPath();
             std::string bundleName;
@@ -353,7 +353,7 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
             }
             uriInfo.authUri = newUriStr;
         } else {
-            newUriStr = uriInfo.dfsUri;
+            newUriStr = isLocal ? uriInfo.authUri : uriInfo.dfsUri;
         }
         Uri uri(newUriStr);
         if (uri.GetAuthority().empty()) {
@@ -424,7 +424,7 @@ bool PreProcessUtils::GetDetailsFromUData(const UnifiedData &data, UDDetails &de
 {
     auto records = data.GetRecords();
     if (records.size() != TEMP_UDATA_RECORD_SIZE) {
-        ZLOGE("Records size error.size:%{public}zu", records.size());
+        ZLOGI("Records size:%{public}zu", records.size());
         return false;
     }
     if (records[0] == nullptr) {
@@ -469,6 +469,22 @@ Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary 
         }
     }
     return E_OK;
+}
+
+std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
+{
+    if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) !=
+        Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
+        ZLOGE("Caller is not application, tokenid is %{public}u", tokenId);
+        return "";
+    }
+    Security::AccessToken::HapTokenInfo hapTokenInfo;
+    auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
+    if (ret != 0) {
+        ZLOGE("GetHapTokenInfo fail, tokenid is %{public}u, ret is %{public}d.", tokenId, ret);
+        return "";
+    }
+    return std::to_string(hapTokenInfo.apiVersion);
 }
 } // namespace UDMF
 } // namespace OHOS

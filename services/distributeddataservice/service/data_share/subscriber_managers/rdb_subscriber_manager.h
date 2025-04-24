@@ -73,13 +73,14 @@ public:
 private:
     struct ObserverNode {
         ObserverNode(const sptr<IDataProxyRdbObserver> &observer, uint32_t firstCallerTokenId,
-            uint32_t callerTokenId = 0, uint32_t callerPid = 0);
+            uint32_t callerTokenId = 0, uint32_t callerPid = 0, int32_t userId = 0);
         sptr<IDataProxyRdbObserver> observer;
         uint32_t firstCallerTokenId;
         uint32_t callerTokenId;
         uint32_t callerPid;
         bool enabled = true;
         bool isNotifyOnEnabled = false;
+        int32_t userId = 0;
     };
 
     RdbSubscriberManager() = default;

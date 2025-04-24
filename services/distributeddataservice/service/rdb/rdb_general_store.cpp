@@ -26,6 +26,7 @@
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
+#include "device_sync_app/device_sync_app_manager.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
 #include "communicator/device_manager_adapter.h"
@@ -141,7 +142,7 @@ void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
     storeInfo_.bundleName = meta.bundleName;
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
-    storeInfo_.user = std::stoi(meta.user);
+    storeInfo_.user = std::atoi(meta.user.c_str());
     storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
 }
 
@@ -927,8 +928,10 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         return GeneralError::E_ERROR;
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
-    if (exist) {
-        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database));
+    if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
+        auto force = DeviceSyncAppManager::GetInstance().Check(
+            {observer_.meta_.appId, observer_.meta_.bundleName, database.version});
+        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
     }
     CloudMark metaData(storeInfo_);
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {

@@ -149,6 +149,6 @@ HWTEST_F(ObjectServiceImplTest, ResolveAutoLaunch001, TestSize.Level1)
     std::string identifier = "identifier";
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     int32_t ret = objectServiceImpl->ResolveAutoLaunch(identifier, param);
-    EXPECT_EQ(ret, OBJECT_STORE_NOT_FOUND);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
 }
 }

@@ -118,7 +118,7 @@ private:
     void RegisterDataShareServiceInfo();
     void RegisterHandler();
     bool SubscribeTimeChanged();
-    bool NotifyChange(const std::string &uri);
+    bool NotifyChange(const std::string &uri, int32_t userId);
     bool GetCallerBundleName(std::string &bundleName);
     std::pair<int32_t, int32_t> ExecuteEx(const std::string &uri, const std::string &extUri, const int32_t tokenId,
         bool isRead, ExecuteCallbackEx callback);

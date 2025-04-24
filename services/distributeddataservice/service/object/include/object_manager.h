@@ -89,13 +89,14 @@ public:
         sptr<IRemoteObject> callback, uint32_t tokenId);
     void SetData(const std::string &dataDir, const std::string &userId);
     int32_t Clear();
+    int32_t InitUserMeta();
     int32_t DeleteByAppId(const std::string &appId, int32_t user);
     void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
                                 pid_t pid, uint32_t tokenId,
                                 sptr<IRemoteObject> callback);
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
                                   const std::string &sessionId = "");
-    void NotifyChange(ObjectRecord &changedData);
+    void NotifyChange(const ObjectRecord &changedData);
     void NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
         const std::string& srcNetworkId = "");
     void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");
@@ -202,8 +203,7 @@ private:
              + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
     std::recursive_mutex kvStoreMutex_;
-    std::mutex mutex_;
-    DistributedDB::KvStoreDelegateManager *kvStoreDelegateManager_ = nullptr;
+    std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
     ObjectDataListener *objectDataListener_ = nullptr;
     sptr<ObjectAssetsRecvListener> objectAssetsRecvListener_ = nullptr;
@@ -214,7 +214,6 @@ private:
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
     std::shared_ptr<ExecutorPool> executors_;
     DistributedData::AssetBindInfo ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo);
-    VBucket ConvertVBucket(ObjectStore::ValuesBucket &vBucket);
     ConcurrentMap<std::string, std::shared_ptr<Snapshot>> snapshots_; // key:bundleName_sessionId
     ConcurrentMap<std::string, UriToSnapshot> bindSnapshots_; // key:bundleName_storeName
     ConcurrentMap<std::string, RestoreStatus> restoreStatus_; // key:bundleName+sessionId
