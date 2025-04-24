@@ -197,7 +197,7 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
     uint32_t appIdSize = session_.appId.size();
     appPair->len = HostToNet(appIdSize);
-    ret = strcpy_s(appPair->appId, SessionAppId::MAX_APP_ID_LEN, session_.appId.c_str());
+    ret = strcpy_s(appPair->appId, appIdSize, session_.appId.c_str());
     if (ret != 0) {
         ZLOGE("strcpy for app id failed, error:%{public}d", errno);
         return false;

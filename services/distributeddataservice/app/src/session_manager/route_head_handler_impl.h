@@ -50,13 +50,11 @@ struct SessionUserPair {
 };
 
 struct SessionAppId {
-    static constexpr int32_t MAX_APP_ID_LEN = 256;
     uint32_t len;
     char appId[0];
 };
 
 struct SessionStoreId {
-    static constexpr int32_t MAX_STORE_ID_LEN = 256;
     uint32_t len;
     char storeId[0];
 };
