@@ -65,6 +65,7 @@ public:
     bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize) override;
     bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
         std::vector<UserInfo> &userInfos) override;
+    bool IsAppTrusted(const std::string &label, const std::string &device) override;
 
 private:
     void Init();
@@ -75,6 +76,10 @@ private:
     bool UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead);
     bool UnPackDataBody(const uint8_t *data, uint32_t totalLen);
     std::string ParseStoreId(const std::string &deviceId, const std::string &label);
+    bool IsTrust(const std::string &label);
+    bool IsTrust();
+    bool ParseStoreInfo(const std::string &accountId, const std::string &label,
+        StoreMetaData &storeMeta);
 
     std::string userId_;
     std::string appId_;

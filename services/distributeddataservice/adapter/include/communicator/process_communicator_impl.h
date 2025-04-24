@@ -62,9 +62,10 @@ public:
 
     API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;
-    API_EXPORT DBStatus GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength) override;
+    API_EXPORT DBStatus GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength,
+        const std::string &device) override;
     API_EXPORT DBStatus GetDataUserInfo(const uint8_t *data, uint32_t totalLen, const std::string &label,
-        std::vector<UserInfo> &userInfos) override;
+        const std::string &device, std::vector<UserInfo> &userInfos) override;
 
     Status ReuseConnect(const DeviceId &deviceId);
 

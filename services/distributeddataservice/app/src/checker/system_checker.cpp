@@ -62,8 +62,12 @@ std::string SystemChecker::GetAppId(const CheckerManager::StoreInfo &info)
     return appId;
 }
 
-bool SystemChecker::IsTrust(const std::string &bundleName, const std::string &appId)
+bool SystemChecker::IsTrust(const CheckerManager::StoreInfo &info)
 {
+    auto it = trusts_.find(info.bundleName);
+    if (it != trusts_.end() && (it->second == info.appId)) {
+        return true;
+    }
     return false;
 }
 

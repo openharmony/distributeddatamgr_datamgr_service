@@ -251,7 +251,7 @@ std::shared_ptr<ExtendHeaderHandle> ProcessCommunicatorImpl::GetExtendHeaderHand
     return {};
 }
 
-DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength)
+DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength, const std::string &device)
 {
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");
@@ -271,7 +271,7 @@ DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t 
 }
 
 DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t totalLen, const std::string &label,
-    std::vector<UserInfo> &userInfos)
+    const std::string &device, std::vector<UserInfo> &userInfos)
 {
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");
@@ -282,7 +282,12 @@ DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t 
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    auto ret = handler->ParseHeadDataUser(data, totalLen, label, userInfos);
+    auto ret = handler->IsAppTrusted(label, device);
+    if (!ret) {
+        ZLOGE("app not trust");
+        return DBStatus::DB_ERROR;
+    }
+    ret = handler->ParseHeadDataUser(data, totalLen, label, userInfos);
     if (!ret) {
         ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s", totalLen, Anonymous::Change(label).c_str());
         return DBStatus::INVALID_FORMAT;
