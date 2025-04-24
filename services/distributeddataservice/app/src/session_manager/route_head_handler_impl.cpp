@@ -214,8 +214,7 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     return true;
 }
 
-bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize,
-    const std::string &device)
+bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize)
 {
     if (data == nullptr) {
         ZLOGE("invalid input data, totalLen:%{public}d", totalLen);
