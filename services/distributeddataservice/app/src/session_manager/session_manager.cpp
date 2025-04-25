@@ -44,6 +44,7 @@ Session SessionManager::GetSession(const SessionPoint &local, const std::string 
     ZLOGD("begin. peer device:%{public}s", Anonymous::Change(targetDeviceId).c_str());
     Session session;
     session.appId = local.appId;
+    session.storeId = local.storeId;
     session.sourceUserId = local.userId;
     session.sourceDeviceId = local.deviceId;
     session.targetDeviceId = targetDeviceId;
@@ -163,6 +164,7 @@ bool Session::Marshal(json &node) const
     ret = SetValue(node[GET_NAME(sourceUserId)], sourceUserId) && ret;
     ret = SetValue(node[GET_NAME(targetUserIds)], targetUserIds) && ret;
     ret = SetValue(node[GET_NAME(appId)], appId) && ret;
+    ret = SetValue(node[GET_NAME(storeId)], storeId) && ret;
     return ret;
 }
 
@@ -174,6 +176,7 @@ bool Session::Unmarshal(const json &node)
     ret = GetValue(node, GET_NAME(sourceUserId), sourceUserId) && ret;
     ret = GetValue(node, GET_NAME(targetUserIds), targetUserIds) && ret;
     ret = GetValue(node, GET_NAME(appId), appId) && ret;
+    ret = GetValue(node, GET_NAME(storeId), storeId) && ret;
     return ret;
 }
 } // namespace OHOS::DistributedData
