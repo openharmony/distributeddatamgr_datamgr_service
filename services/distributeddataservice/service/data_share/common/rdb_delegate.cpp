@@ -341,7 +341,7 @@ bool RdbDelegate::IsLimit(int count, int32_t callingPid, uint32_t callingTokenId
     });
     ZLOGE("resultSetCount is full, pid: %{public}d, owner is %{public}s", callingPid, logStr.c_str());
     std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(callingTokenId).first;
-    DataShareFaultInfo faultInfo{RESULTSET_FULL, "callingTokenId:" + std::to_string(callingTokenId),
+    DataShareFaultInfo faultInfo{HiViewFaultAdapter::resultsetFull, "callingTokenId:" + std::to_string(callingTokenId),
         "Pid:" + std::to_string(callingPid), "owner:" + logStr, __FUNCTION__, E_RESULTSET_BUSY, appendix};
     HiViewFaultAdapter::ReportDataFault(faultInfo);
     return true;

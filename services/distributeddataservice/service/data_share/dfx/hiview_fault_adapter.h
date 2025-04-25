@@ -34,6 +34,17 @@ struct DataShareFaultInfo {
     std::string appendix;
 };
 
+class HiViewFaultAdapter {
+public:
+    static constexpr const std::chrono::milliseconds timeOutMs = std::chrono::milliseconds(300);
+    static constexpr const std::chrono::milliseconds dfxTimeOutMs = std::chrono::milliseconds(2000);
+    static constexpr const char* timeOut = "TIME_OUT";
+    static constexpr const char* resultsetFull = "RESULTSET_FULL";
+    static constexpr const char* curdFailed = "CURD_FAILED";
+    static void ReportDataFault(const DataShareFaultInfo &faultInfo);
+    static std::pair<std::string, int> GetCallingName(uint32_t callingTokenid);
+};
+
 // TimeoutReport is used for recording the time usage of multiple interfaces;
 // It can set up a timeout threshold, and when the time usage exceeds this threshold, will print log;
 // If want to record DFX fault report, need to set needFaultReport to true (default is false);
@@ -54,24 +65,12 @@ struct TimeoutReport {
     explicit TimeoutReport(const DfxInfo &dfxInfo, bool needFaultReport = false)
         : dfxInfo(dfxInfo), needFaultReport(needFaultReport)
     {}
-    void Report();
+    void Report(const std::string &timeoutAppendix = "",
+        const std::chrono::milliseconds timeoutms = HiViewFaultAdapter::timeOutMs);
     void Report(const std::string &user, uint32_t callingPid, int32_t appIndex = -1, int32_t instanceId = -1);
     void DFXReport(const std::chrono::milliseconds &duration);
     ~TimeoutReport() = default;
 };
-
-
-class HiViewFaultAdapter {
-public:
-    static void ReportDataFault(const DataShareFaultInfo &faultInfo);
-    static std::pair<std::string, int> GetCallingName(uint32_t callingTokenid);
-};
-
-inline const char* TIME_OUT = "TIME_OUT";
-inline const char* RESULTSET_FULL = "RESULTSET_FULL";
-inline const char* CURD_FAILED = "CURD_FAILED";
-inline const std::chrono::milliseconds TIME_OUT_MS = std::chrono::milliseconds(300);
-inline const std::chrono::milliseconds DFX_TIME_OUT_MS = std::chrono::milliseconds(2000);
 }
 }
 #endif
