@@ -847,7 +847,7 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     saveInfoEntry.value = std::vector<uint8_t>(saveInfoValue.begin(), saveInfoValue.end());
     std::vector<DistributedDB::Entry> entries;
     entries.emplace_back(saveInfoEntry);
-    for (const auto &item : data) {
+    for (auto &item : data) {
         DistributedDB::Entry entry;
         std::string key = GetPropertyPrefix(appId, sessionId, toDeviceId) + timestamp + SEPERATOR + item.first;
         entry.key = std::vector<uint8_t>(key.begin(), key.end());
@@ -1110,7 +1110,7 @@ SequenceSyncManager::Result SequenceSyncManager::Process(
         return ERR_SID_NOT_EXIST;
     }
     std::map<std::string, int32_t> syncResults;
-    for (const auto &item : results) {
+    for (auto &item : results) {
         syncResults[item.first] = item.second == DistributedDB::DBStatus::OK ? 0 : -1;
     }
     seqIdCallbackRelations_[sequenceId](syncResults);
