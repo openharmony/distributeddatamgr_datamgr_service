@@ -154,6 +154,7 @@ ohos_unittest("SessionManagerTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
 
   cflags_cc = [ "-DUT_TEST" ]
