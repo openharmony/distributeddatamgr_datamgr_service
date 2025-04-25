@@ -185,6 +185,7 @@ ohos_unittest("SessionManagerTest") {
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
