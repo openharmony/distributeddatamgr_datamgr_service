@@ -14,7 +14,7 @@ import("//build/ohos_var.gni")
 import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-module_output_path = "datamgr_service/distributeddatafwk"
+module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
 
 ###############################################################################
 config("module_private_config") {
@@ -141,7 +141,6 @@ ohos_unittest("CloudDataTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
@@ -236,7 +235,6 @@ ohos_unittest("CloudServiceImplTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
@@ -909,6 +907,8 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf/preprocess",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
@@ -922,6 +922,8 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "dsoftbus:softbus_client",
@@ -930,6 +932,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 
@@ -941,6 +944,11 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
+  ]
+
+  defines = [
+    "private=public",
+    "protected=public",
   ]
 }
 
@@ -1188,6 +1196,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
@@ -1197,6 +1206,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 }
@@ -1301,17 +1311,98 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
+    "udmf:udmf_client",
+  ]
+}
+
+ohos_unittest("UdmfPreProcessUtilsTest") {
+  module_out_path = module_output_path
+  sources = [ "udmf_preprocess_utils_test.cpp" ]
+
+  include_dirs = [
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/service/udmf/preprocess",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  external_deps = [
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+    "udmf:udmf_client",
+  ]
+}
+
+ohos_unittest("UdmfPreProcessUtilsMockTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/test/mock/access_token_mock.cpp",
+    "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
+    "udmf_preprocess_utils_mock_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/service/test/mock",
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/framework/include/account",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+    "mock:distributeddata_mock_static",
+  ]
+
+  external_deps = [
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "app_file_service:remote_file_share_native",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
     "udmf:udmf_client",
   ]
 }
@@ -1734,8 +1825,6 @@ group("unittest") {
       ":CloudDataTest",
       ":CloudServiceImplTest",
       ":CloudTest",
-      "ohos_test:copy_ohos_test",
-      "testCloud:testCloud",
     ]
   }
 

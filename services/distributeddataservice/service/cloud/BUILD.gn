@@ -61,15 +61,13 @@ ohos_source_set("distributeddata_cloud") {
     "-Oz",
   ]
 
-  deps = [
-    "${data_service_path}/adapter/network:distributeddata_network",
-    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-  ]
+  deps = [ "${data_service_path}/adapter/network:distributeddata_network" ]
 
   external_deps = [
     "access_token:libtokenid_sdk",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
+    "hilog:libhilog",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",

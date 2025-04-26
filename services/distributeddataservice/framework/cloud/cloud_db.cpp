@@ -103,5 +103,6 @@ std::pair<int32_t, std::string> CloudDB::GetEmptyCursor(const std::string &table
 void CloudDB::SetPrepareTraceId(const std::string &prepareTraceId)
 {
     (void)prepareTraceId;
+    return;
 }
 } // namespace OHOS::DistributedData

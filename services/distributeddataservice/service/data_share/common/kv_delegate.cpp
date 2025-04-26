@@ -40,7 +40,8 @@ const char* g_backupFiles[] = {
     "dataShare.db.safe",
     "dataShare.db.undo",
 };
-const char* BACKUP_SUFFIX = ".backup";
+constexpr const char* BACKUP_SUFFIX = ".backup";
+constexpr std::chrono::milliseconds COPY_TIME_OUT_MS = std::chrono::milliseconds(500);
 
 // If isBackUp is true, remove db backup files. Otherwise remove source db files.
 void KvDelegate::RemoveDbFile(bool isBackUp) const
@@ -65,12 +66,15 @@ bool KvDelegate::CopyFile(bool isBackup)
     std::filesystem::copy_options options = std::filesystem::copy_options::overwrite_existing;
     std::error_code code;
     bool ret = true;
+    int index = 0;
     for (auto &fileName : g_backupFiles) {
         std::string src = path_ + "/" + fileName;
         std::string dst = src;
         isBackup ? dst.append(BACKUP_SUFFIX) : src.append(BACKUP_SUFFIX);
+        TimeoutReport timeoutReport({"", "", "", __FUNCTION__, 0});
         // If src doesn't exist, error will be returned through `std::error_code`
         bool copyRet = std::filesystem::copy_file(src, dst, options, code);
+        timeoutReport.Report(("file index:" + std::to_string(index)), COPY_TIME_OUT_MS);
         if (!copyRet) {
             ZLOGE("failed to copy file %{public}s, isBackup %{public}d, err: %{public}s",
                 fileName, isBackup, code.message().c_str());
@@ -78,6 +82,7 @@ bool KvDelegate::CopyFile(bool isBackup)
             RemoveDbFile(isBackup);
             break;
         }
+        index++;
     }
     return ret;
 }
@@ -128,29 +133,30 @@ bool KvDelegate::RestoreIfNeed(int32_t dbStatus)
     return false;
 }
 
-int64_t KvDelegate::Upsert(const std::string &collectionName, const std::string &filter, const std::string &value)
+std::pair<int32_t, int32_t> KvDelegate::Upsert(const std::string &collectionName, const std::string &filter,
+    const std::string &value)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (!Init()) {
         ZLOGE("init failed, %{public}s", collectionName.c_str());
-        return E_ERROR;
+        return std::make_pair(E_ERROR, 0);
     }
-    int count = GRD_UpsertDoc(db_, collectionName.c_str(), filter.c_str(), value.c_str(), 0);
+    int32_t count = GRD_UpsertDoc(db_, collectionName.c_str(), filter.c_str(), value.c_str(), 0);
     if (count <= 0) {
         ZLOGE("GRD_UpSertDoc failed,status %{public}d", count);
         RestoreIfNeed(count);
-        return count;
+        return std::make_pair(count, 0);
     }
     Flush();
-    return E_OK;
+    return std::make_pair(E_OK, count);
 }
 
-int32_t KvDelegate::Delete(const std::string &collectionName, const std::string &filter)
+std::pair<int32_t, int32_t> KvDelegate::Delete(const std::string &collectionName, const std::string &filter)
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (!Init()) {
         ZLOGE("init failed, %{public}s", collectionName.c_str());
-        return E_ERROR;
+        return std::make_pair(E_ERROR, 0);
     }
     std::vector<std::string> queryResults;
 
@@ -158,23 +164,25 @@ int32_t KvDelegate::Delete(const std::string &collectionName, const std::string 
     if (status != E_OK) {
         ZLOGE("db GetBatch failed, %{public}s %{public}d", filter.c_str(), status);
         // `GetBatch` should decide whether to restore before errors are returned, so skip restoration here.
-        return status;
+        return std::make_pair(status, 0);
     }
+    int32_t deleteCount = 0;
     for (auto &result : queryResults) {
         auto count = GRD_DeleteDoc(db_, collectionName.c_str(), result.c_str(), 0);
         if (count < 0) {
             ZLOGE("GRD_DeleteDoc failed,status %{public}d %{public}s", count, result.c_str());
             if (RestoreIfNeed(count)) {
-                return count;
+                return std::make_pair(count, 0);
             }
             continue;
         }
+        deleteCount += count;
     }
     Flush();
     if (queryResults.size() > 0) {
         ZLOGI("Delete, %{public}s, count %{public}zu", collectionName.c_str(), queryResults.size());
     }
-    return E_OK;
+    return std::make_pair(E_OK, deleteCount);
 }
 
 bool KvDelegate::Init()
@@ -232,7 +240,7 @@ KvDelegate::~KvDelegate()
     }
 }
 
-int32_t KvDelegate::Upsert(const std::string &collectionName, const KvData &value)
+std::pair<int32_t, int32_t> KvDelegate::Upsert(const std::string &collectionName, const KvData &value)
 {
     std::string id = value.GetId();
     if (value.HasVersion() && value.GetVersion() != 0) {
@@ -241,7 +249,7 @@ int32_t KvDelegate::Upsert(const std::string &collectionName, const KvData &valu
             if (value.GetVersion() <= version) {
                 ZLOGE("GetVersion failed,%{public}s id %{private}s %{public}d %{public}d", collectionName.c_str(),
                       id.c_str(), value.GetVersion(), version);
-                return E_VERSION_NOT_NEWER;
+                return std::make_pair(E_VERSION_NOT_NEWER, 0);
             }
         }
     }

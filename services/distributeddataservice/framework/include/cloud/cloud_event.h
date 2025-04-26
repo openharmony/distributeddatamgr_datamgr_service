@@ -39,7 +39,6 @@ public:
         LOCK_CLOUD_CONTAINER,
         UNLOCK_CLOUD_CONTAINER,
         SET_SEARCH_TRIGGER,
-        UPGRADE_SCHEMA,
         CLOUD_BUTT
     };
 

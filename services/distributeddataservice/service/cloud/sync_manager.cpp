@@ -441,17 +441,15 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
 
 void SyncManager::ReportSyncEvent(const SyncEvent &evt, BizState bizState, int32_t code)
 {
-    SyncStage syncStage = SyncStage::START;
     auto &storeInfo = evt.GetStoreInfo();
     if (bizState == BizState::BEGIN) {
-        syncStage = SyncStage::START;
         RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, TRIGGER_SYNC,
             storeInfo.syncId, evt.GetTriggerMode()}, "GetSyncHandler", bizState);
     } else {
-        syncStage = SyncStage::END;
         RadarReporter::Report({storeInfo.bundleName.c_str(), CLOUD_SYNC, FINISH_SYNC,
             storeInfo.syncId, evt.GetTriggerMode(), code}, "GetSyncHandler", bizState);
     }
+    SyncStage syncStage = (bizState == BizState::BEGIN) ? SyncStage::START : SyncStage::END;
     Report({evt.GetUser(), storeInfo.bundleName, evt.GetPrepareTraceId(), syncStage, code});
 }
 
@@ -723,7 +721,7 @@ std::pair<int32_t, CloudLastSyncInfo> SyncManager::GetLastResults(std::map<SyncI
 {
     auto iter = infos.rbegin();
     if (iter != infos.rend() && iter->second.code != -1) {
-        return { SUCCESS, std::move(iter->second) };
+        return { SUCCESS, iter->second };
     }
     return { E_ERROR, {} };
 }
@@ -733,10 +731,7 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     if (queryKey.accountId.empty()) {
         return false;
     }
-    if (std::find(kvApps_.begin(), kvApps_.end(), queryKey.bundleName) != kvApps_.end()) {
-        return false;
-    }
-    return true;
+    return kvApps_.find(queryKey.bundleName) == kvApps_.end();
 }
 
 std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(
@@ -992,7 +987,7 @@ void SyncManager::CleanCompensateSync(int32_t userId)
 
 void SyncManager::AddCompensateSync(const StoreMetaData &meta)
 {
-    compensateSyncInfos_.Compute(std::stoi(meta.user),
+    compensateSyncInfos_.Compute(std::atoi(meta.user.c_str()),
         [&meta](auto &, std::map<std::string, std::set<std::string>> &apps) {
             apps[meta.bundleName].insert(meta.storeId);
             return true;

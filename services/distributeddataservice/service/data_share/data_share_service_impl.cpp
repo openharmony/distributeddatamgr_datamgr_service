@@ -1154,7 +1154,7 @@ void DataShareServiceImpl::ReportExcuteFault(uint32_t callingTokenId, DataProvid
     int32_t errCode, std::string &func)
 {
     std::string appendix = "callingName:" + HiViewFaultAdapter::GetCallingName(callingTokenId).first;
-    DataShareFaultInfo faultInfo = {CURD_FAILED, providerInfo.bundleName, providerInfo.moduleName,
+    DataShareFaultInfo faultInfo = {HiViewFaultAdapter::curdFailed, providerInfo.bundleName, providerInfo.moduleName,
         providerInfo.storeName, func, errCode, appendix};
     HiViewFaultAdapter::ReportDataFault(faultInfo);
 }
