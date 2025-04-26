@@ -15,6 +15,8 @@
 
 #include "session_manager/session_manager.h"
 
+#include <cstdint>
+
 #include "accesstoken_kit.h"
 #include "account_delegate_mock.h"
 #include "auth_delegate_mock.h"
@@ -33,6 +35,7 @@
 #include "user_delegate_mock.h"
 #include "utils/endian_converter.h"
 
+
 namespace {
 using namespace testing;
 using namespace testing::ext;
@@ -46,6 +49,10 @@ using UserInfo = DistributedDB::UserInfo;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
 constexpr int PEER_USER_ID1 = 101;
 constexpr int PEER_USER_ID2 = 100;
+constexpr int32_t USER_ID0 = 0;
+constexpr int32_t USER_ID1 = 1;
+constexpr int32_t USER_ID2 = 2;
+constexpr int32_t USER_ID3 = 3;
 constexpr int METADATA_UID = 2000000;
 static constexpr int32_t OH_OS_TYPE = 10;
 
@@ -75,13 +82,13 @@ public:
     void CreateUserStatus(std::vector<UserStatus> &users)
     {
         UserStatus stat;
-        stat.id = 0;
+        stat.id = USER_ID0;
         UserStatus stat1;
-        stat.id = 1;
+        stat.id = USER_ID1;
         UserStatus stat2;
-        stat.id = 2;
+        stat.id = USER_ID2;
         UserStatus stat3;
-        stat.id = 3;
+        stat.id = USER_ID3;
         users.push_back(stat);
         users.push_back(stat1);
         users.push_back(stat2);
@@ -205,13 +212,11 @@ public:
         uint8_t *ptr = dataBuffer;
         size_t remaining = BUFFER_SIZE;
 
-        // 1. write RouteHead
         errno_t err = memcpy_s(ptr, remaining, &head, sizeof(RouteHead));
         ASSERT_EQ(err, 0) << "Failed to copy RouteHead";
         ptr += sizeof(RouteHead);
         remaining -= sizeof(RouteHead);
 
-        // 2. write SessionDevicePair
         SessionDevicePair devPair{};
         constexpr size_t DEV_ID_SIZE = sizeof(devPair.sourceId);
         err = memset_s(devPair.sourceId, DEV_ID_SIZE, 'A', DEV_ID_SIZE - 1);
@@ -227,7 +232,6 @@ public:
         ptr += sizeof(SessionDevicePair);
         remaining -= sizeof(SessionDevicePair);
 
-        // 3. write SessionUserPair
         SessionUserPair userPair{};
         userPair.sourceUserId = HostToNet(100U);
         userPair.targetUserCount = HostToNet(1U);
@@ -242,7 +246,6 @@ public:
         ptr += sizeof(uint32_t);
         remaining -= sizeof(uint32_t);
 
-        // 4. write SessionAppId
         SessionAppId appId{};
         const char *appStr = "test";
 
