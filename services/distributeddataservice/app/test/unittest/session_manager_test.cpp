@@ -49,6 +49,7 @@ using UserInfo = DistributedDB::UserInfo;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
 constexpr int PEER_USER_ID1 = 101;
 constexpr int PEER_USER_ID2 = 100;
+constexpr int32_t USER_MAXID = 4;
 constexpr int METADATA_UID = 2000000;
 static constexpr int32_t OH_OS_TYPE = 10;
 
@@ -77,7 +78,7 @@ class SessionManagerTest : public testing::Test {
 public:
     void CreateUserStatus(std::vector<UserStatus> &users)
     {
-        for (int32_t i = 0; i < 4; i++) {
+        for (int32_t i = 0; i < USER_MAXID; i++) {
             UserStatus stat;
             stat.id = i;
             users.push_back(stat);
