@@ -49,10 +49,6 @@ using UserInfo = DistributedDB::UserInfo;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
 constexpr int PEER_USER_ID1 = 101;
 constexpr int PEER_USER_ID2 = 100;
-constexpr int32_t USER_ID0 = 0;
-constexpr int32_t USER_ID1 = 1;
-constexpr int32_t USER_ID2 = 2;
-constexpr int32_t USER_ID3 = 3;
 constexpr int METADATA_UID = 2000000;
 static constexpr int32_t OH_OS_TYPE = 10;
 
@@ -81,18 +77,11 @@ class SessionManagerTest : public testing::Test {
 public:
     void CreateUserStatus(std::vector<UserStatus> &users)
     {
-        UserStatus stat;
-        stat.id = USER_ID0;
-        UserStatus stat1;
-        stat.id = USER_ID1;
-        UserStatus stat2;
-        stat.id = USER_ID2;
-        UserStatus stat3;
-        stat.id = USER_ID3;
-        users.push_back(stat);
-        users.push_back(stat1);
-        users.push_back(stat2);
-        users.push_back(stat3);
+        for (int32_t i = 0; i < 4; i++) {
+            UserStatus stat;
+            stat.id = i;
+            users.push_back(stat);
+        }
     }
     void CreateStoreMetaData(std::vector<StoreMetaData> &datas, SessionPoint local)
     {
