@@ -79,6 +79,8 @@ public:
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     static constexpr size_t NUM_MIN = 5;
     static constexpr size_t NUM_MAX = 12;
+    static constexpr uint32_t TOKENID1 = 123;
+    static constexpr uint32_t TOKENID2 = 456;
     static DistributedKvDataManager manager;
     static Options create;
     static UserId userId;
@@ -241,7 +243,7 @@ void KvdbServiceImplTest::CreateStoreMetaData(std::vector<StoreMetaData> &datas,
     meta6.user = param.userId; // param.userId = "user1"
     meta6.appId = "valid_app_id";
     meta6.storeId = "store_id_2";
-    meta6.tokenId = 123;
+    meta6.tokenId = TOKENID1;
     metaData.push_back(meta6);
 
     // 6: trigger SetEqualIdentifier.
@@ -250,7 +252,7 @@ void KvdbServiceImplTest::CreateStoreMetaData(std::vector<StoreMetaData> &datas,
     meta7.user = param.userId;
     meta7.appId = "valid_app_id";
     meta7.storeId = "store_id_3";
-    meta7.tokenId = 456;
+    meta7.tokenId = TOKENID2;
     metaData.push_back(meta7);
 }
 

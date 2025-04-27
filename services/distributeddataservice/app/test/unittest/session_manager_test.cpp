@@ -35,7 +35,6 @@
 #include "user_delegate_mock.h"
 #include "utils/endian_converter.h"
 
-
 namespace {
 using namespace testing;
 using namespace testing::ext;
@@ -189,27 +188,54 @@ public:
     }
     void ConstructValidData()
     {
-        constexpr size_t BUFFER_SIZE = sizeof(dataBuffer);
+        const std::string storeId = "test_store";
+        InitializeBuffer();
+        ConstructRouteHead(storeId);
+        ConstructSessionDevicePair();
+        ConstructSessionUserPair();
+        ConstructSessionAppId();
+        ConstructSessionStoreId(storeId);
+
+        const size_t validlLen = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
+                                 + sizeof(uint32_t) * 1 + sizeof(SessionAppId) + APP_STR_LEN + sizeof(SessionStoreId)
+                                 + storeId.size();
+        validTotalLen = validlLen;
+    }
+
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
+    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
+    static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
+    static inline std::shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
+
+private:
+    void InitializeBuffer()
+    {
         memset_s(dataBuffer, BUFFER_SIZE, 0, BUFFER_SIZE);
+        ptr = dataBuffer;
+        remaining = BUFFER_SIZE;
+    }
 
+    void ConstructRouteHead(const std::string &storeId)
+    {
         RouteHead head{};
-        head.magic = RouteHead::MAGIC_NUMBER;
-        head.version = RouteHead::VERSION;
-        head.dataLen = sizeof(SessionDevicePair) + sizeof(SessionUserPair) + sizeof(uint32_t) * 1
-                       + sizeof(SessionAppId) + APP_STR_LEN;
+        head.magic = HostToNet(RouteHead::MAGIC_NUMBER);
+        head.version = HostToNet(RouteHead::VERSION);
+        head.dataLen = HostToNet(sizeof(SessionDevicePair) + sizeof(SessionUserPair) + sizeof(uint32_t) * 1
+                                 + sizeof(SessionAppId) + APP_STR_LEN + sizeof(SessionStoreId) + storeId.size());
         head.checkSum = 0;
-
-        uint8_t *ptr = dataBuffer;
-        size_t remaining = BUFFER_SIZE;
 
         errno_t err = memcpy_s(ptr, remaining, &head, sizeof(RouteHead));
         ASSERT_EQ(err, 0) << "Failed to copy RouteHead";
         ptr += sizeof(RouteHead);
         remaining -= sizeof(RouteHead);
+    }
 
+    void ConstructSessionDevicePair()
+    {
         SessionDevicePair devPair{};
         constexpr size_t DEV_ID_SIZE = sizeof(devPair.sourceId);
-        err = memset_s(devPair.sourceId, DEV_ID_SIZE, 'A', DEV_ID_SIZE - 1);
+
+        errno_t err = memset_s(devPair.sourceId, DEV_ID_SIZE, 'A', DEV_ID_SIZE - 1);
         ASSERT_EQ(err, 0) << "Failed to init sourceId";
         devPair.sourceId[DEV_ID_SIZE - 1] = '\0';
 
@@ -221,27 +247,33 @@ public:
         ASSERT_EQ(err, 0) << "Failed to copy SessionDevicePair";
         ptr += sizeof(SessionDevicePair);
         remaining -= sizeof(SessionDevicePair);
+    }
 
+    void ConstructSessionUserPair()
+    {
         SessionUserPair userPair{};
         userPair.sourceUserId = HostToNet(100U);
         userPair.targetUserCount = HostToNet(1U);
 
-        err = memcpy_s(ptr, remaining, &userPair, sizeof(SessionUserPair));
+        errno_t err = memcpy_s(ptr, remaining, &userPair, sizeof(SessionUserPair));
         ASSERT_EQ(err, 0) << "Failed to copy SessionUserPair";
         ptr += sizeof(SessionUserPair);
         remaining -= sizeof(SessionUserPair);
+
         uint32_t targetUser = HostToNet(200U);
         err = memcpy_s(ptr, remaining, &targetUser, sizeof(uint32_t));
         ASSERT_EQ(err, 0) << "Failed to copy targetUser";
         ptr += sizeof(uint32_t);
         remaining -= sizeof(uint32_t);
+    }
 
+    void ConstructSessionAppId()
+    {
         SessionAppId appId{};
         const char *appStr = "test";
-
         appId.len = HostToNet(static_cast<uint32_t>(APP_STR_LEN));
 
-        err = memcpy_s(ptr, remaining, &appId, sizeof(SessionAppId));
+        errno_t err = memcpy_s(ptr, remaining, &appId, sizeof(SessionAppId));
         ASSERT_EQ(err, 0) << "Failed to copy SessionAppId";
         ptr += sizeof(SessionAppId);
         remaining -= sizeof(SessionAppId);
@@ -251,14 +283,28 @@ public:
         ptr += APP_STR_LEN;
         remaining -= APP_STR_LEN;
     }
-    const size_t validTotalLen = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
-                                 + sizeof(uint32_t) * 1 + sizeof(SessionAppId) + APP_STR_LEN;
+    void ConstructSessionStoreId(const std::string &storeId)
+    {
+        SessionStoreId storeIdHeader{};
+        storeIdHeader.len = HostToNet(static_cast<uint32_t>(storeId.size()));
+
+        errno_t err = memcpy_s(ptr, remaining, &storeIdHeader, sizeof(SessionStoreId));
+        ASSERT_EQ(err, 0) << "Failed to copy storeId length";
+        ptr += sizeof(SessionStoreId);
+        remaining -= sizeof(SessionStoreId);
+
+        err = memcpy_s(ptr, remaining, storeId.c_str(), storeId.size());
+        ASSERT_EQ(err, 0) << "Failed to copy storeId data";
+        ptr += storeId.size();
+        remaining -= storeId.size();
+    }
+    size_t validTotalLen;
     uint8_t dataBuffer[1024];
-    static constexpr size_t APP_STR_LEN = 5;
-    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
-    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
-    static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
-    static inline std::shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
+    static constexpr size_t APP_STR_LEN = 4;
+    uint8_t *ptr = dataBuffer;
+    size_t remaining = BUFFER_SIZE;
+    static constexpr size_t MAX_STORE_ID_LEN = 100;
+    static constexpr size_t BUFFER_SIZE = sizeof(dataBuffer) + sizeof(uint32_t) + MAX_STORE_ID_LEN;
 };
 
 /**
