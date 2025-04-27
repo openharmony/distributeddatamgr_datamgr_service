@@ -670,5 +670,54 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
     auto status = store->GetSummary(key, summary);
     ASSERT_EQ(status, E_DB_ERROR);
 }
+
+/**
+* @tc.name: GetRuntime001
+* @tc.desc: Normal testcase of GetRuntime
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetRuntime001, TestSize.Level1)
+{
+    UnifiedData inputData;
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    auto status = PreProcessUtils::RuntimeDataImputation(inputData, option);
+    EXPECT_EQ(status, E_OK);
+    auto key = inputData.GetRuntime()->key.GetUnifiedKey();
+
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    status = store->PutRuntime(key, *inputData.GetRuntime());
+    EXPECT_EQ(status, E_OK);
+
+    Runtime outRuntime;
+    status = store->GetRuntime(key, outRuntime);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(inputData.GetRuntime()->createTime, outRuntime.createTime);
+}
+
+/**
+* @tc.name: GetRuntime002
+* @tc.desc: Abnormal testcase of GetRuntime
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level1)
+{
+    UnifiedData inputData;
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    auto status = PreProcessUtils::RuntimeDataImputation(inputData, option);
+    EXPECT_EQ(status, E_OK);
+    auto key = inputData.GetRuntime()->key.GetUnifiedKey();
+
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Runtime outRuntime;
+    status = store->GetRuntime(key, outRuntime);
+    EXPECT_EQ(status, E_NOT_FOUND);
+}
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

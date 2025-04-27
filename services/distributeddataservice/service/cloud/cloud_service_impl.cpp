@@ -275,7 +275,9 @@ void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32
         storeInfo.bundleName = meta.bundleName;
         storeInfo.user = atoi(meta.user.c_str());
         storeInfo.storeName = meta.storeId;
-        EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
+        if (action != GeneralStore::CLEAN_WATER) {
+            EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
+        }
         auto status = store->Clean({}, action, "");
         if (status != E_OK) {
             ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
@@ -669,10 +671,16 @@ int32_t CloudServiceImpl::OnInitialize()
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
-    Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT,
-        { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     std::vector<int> users;
     Account::GetInstance()->QueryUsers(users);
+    for (auto user : users) {
+        if (user == DEFAULT_USER) {
+            continue;
+        }
+        CleanWaterVersion(user);
+    }
+    Execute(GenTask(0, 0, CloudSyncScene::SERVICE_INIT,
+        { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     for (auto user : users) {
         if (user == DEFAULT_USER) {
             continue;
@@ -685,6 +693,35 @@ int32_t CloudServiceImpl::OnInitialize()
         InitSubTask(sub);
     }
     return E_OK;
+}
+
+bool CloudServiceImpl::CleanWaterVersion(int32_t user)
+{
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+    if (status != SUCCESS) {
+        return false;
+    }
+    auto stores = CheckerManager::GetInstance().GetDynamicStores();
+    auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+    stores.insert(stores.end(), staticStores.begin(), staticStores.end());
+    auto keys = cloudInfo.GetSchemaKey();
+    for (const auto &[bundle, key] : keys) {
+        SchemaMeta schemaMeta;
+        if (MetaDataManager::GetInstance().LoadMeta(key, schemaMeta, true) &&
+            schemaMeta.metaVersion < SchemaMeta::CLEAN_WATER_VERSION) {
+            bool found = std::any_of(stores.begin(), stores.end(),
+                [&schemaMeta](const CheckerManager::StoreInfo &storeInfo) {
+                    return storeInfo.bundleName == schemaMeta.bundleName;
+                });
+            if (!found) {
+                continue;
+            }
+            DoClean(user, schemaMeta, GeneralStore::CleanMode::CLEAN_WATER);
+            schemaMeta.metaVersion = SchemaMeta::CLEAN_WATER_VERSION;
+        }
+        MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
+    }
+    return true;
 }
 
 int32_t CloudServiceImpl::OnBind(const BindInfo &info)
@@ -791,7 +828,8 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfoFromServer(int32_t u
         ZLOGD("cloud server is nullptr, user:%{public}d", userId);
         return { SERVER_UNAVAILABLE, cloudInfo };
     }
-    return instance->GetServerInfo(cloudInfo.user, false);
+    auto [code, info] = instance->GetServerInfo(cloudInfo.user, false);
+    return { code != E_OK ? code : info.IsValid() ? E_OK : E_ERROR, info };
 }
 
 int32_t CloudServiceImpl::UpdateCloudInfoFromServer(int32_t user)

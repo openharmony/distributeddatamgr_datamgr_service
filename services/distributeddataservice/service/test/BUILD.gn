@@ -85,6 +85,8 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/config/src/model/checker_config.cpp",
     "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/datashare_config.cpp",
+    "${data_service_path}/service/config/src/model/device_sync_app_white_list_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",
@@ -181,6 +183,8 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/config/src/model/checker_config.cpp",
     "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/datashare_config.cpp",
+    "${data_service_path}/service/config/src/model/device_sync_app_white_list_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",
@@ -603,6 +607,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "cache_cursor_test.cpp",
     "mock/general_watcher_mock.cpp",
+    "mock/relational_store_manager_mock.cpp",
     "rdb_asset_loader_test.cpp",
     "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",
@@ -620,8 +625,6 @@ ohos_unittest("RdbServiceTest") {
   configs = [ ":module_private_config" ]
 
   cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
     "-Wno-multichar",
     "-Wno-c99-designator",
     "-fno-access-control",  # Ignore Private Member Access Control
@@ -636,14 +639,12 @@ ohos_unittest("RdbServiceTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
   ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${kv_store_distributeddb_path}:distributeddb",
     "${relational_store_inner_api_path}:native_rdb_static",
     "//third_party/googletest:gtest_main",
   ]
@@ -657,9 +658,9 @@ ohos_unittest("RdbServiceImplTest") {
   }
   module_out_path = module_output_path
   sources = [
+    "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
-    "mock/checker_mock.cpp",
     "rdb_service_impl_test.cpp",
   ]
 
@@ -828,6 +829,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
 ohos_unittest("ObjectManagerTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "../object/src/object_asset_loader.cpp",
@@ -849,6 +851,7 @@ ohos_unittest("ObjectManagerTest") {
 
   include_dirs = [
     "${dataobject_path}/frameworks/innerkitsimpl/include",
+    "${data_service_path}/app/src",
     "${data_service_path}/service/common",
     "${dataobject_path}/frameworks/innerkitsimpl/include/common",
     "${dataobject_path}/interfaces/innerkits",
@@ -864,6 +867,7 @@ ohos_unittest("ObjectManagerTest") {
     "access_token:libtokenid_sdk",
     "c_utils:utils",
     "data_object:distributeddataobject_impl",
+    "dataclassification:data_transit_mgr",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "dmsfwk:distributed_sdk",
@@ -874,6 +878,7 @@ ohos_unittest("ObjectManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
@@ -1052,6 +1057,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
+    "${data_service_path}/service/data_share/common/common_utils.cpp",
     "${data_service_path}/service/data_share/common/db_delegate.cpp",
     "${data_service_path}/service/data_share/common/div_strategy.cpp",
     "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
@@ -1143,6 +1149,8 @@ ohos_unittest("DataShareServiceImplTest") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "qos_manager:concurrent_task_client",
+    "qos_manager:qos",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
     "resource_management:global_resmgr",
@@ -1678,6 +1686,8 @@ ohos_unittest("BootStrapMockTest") {
     "${data_service_path}/service/config/src/model/checker_config.cpp",
     "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/datashare_config.cpp",
+    "${data_service_path}/service/config/src/model/device_sync_app_white_list_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",
@@ -2006,7 +2016,6 @@ group("unittest") {
       ":KvdbServiceImplTest",
       ":QueryHelperUnitTest",
       ":UpgradeMockTest",
-      ":UserDelegateMockTest",
     ]
   }
 

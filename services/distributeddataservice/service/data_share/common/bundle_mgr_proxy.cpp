@@ -16,6 +16,7 @@
 #include "bundle_mgr_proxy.h"
 
 #include "account/account_delegate.h"
+#include "common_utils.h"
 #include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
 #include "if_system_ability_manager.h"
@@ -114,6 +115,23 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
     return E_OK;
 }
 
+int BundleMgrProxy::GetBundleInfoFromBMSWithCheck(
+    const std::string &bundleName, int32_t userId, BundleConfig &bundleConfig, int32_t appIndex)
+{
+    int res = GetBundleInfoFromBMS(bundleName, userId, bundleConfig, appIndex);
+    if (res != E_OK) {
+        return res;
+    }
+    // Not allow normal app visit normal app.
+    if (!DataShareThreadLocal::IsFromSystemApp() && !bundleConfig.isSystemApp) {
+        ZLOGE("Not allow normal app visit normal app, bundle:%{public}s, callingPid:%{public}d",
+            bundleName.c_str(), IPCSkeleton::GetCallingPid());
+        return E_NOT_SYSTEM_APP;
+    }
+
+    return E_OK;
+}
+
 std::pair<int, std::string> BundleMgrProxy::GetCallerAppIdentifier(
     const std::string &bundleName, int32_t userId)
 {
@@ -199,6 +217,7 @@ std::pair<int, BundleConfig> BundleMgrProxy::ConvertToDataShareBundle(AppExecFwk
         return std::make_pair(err, bundleConfig);
     }
     bundleConfig.extensionInfos = extensionInfos;
+    bundleConfig.isSystemApp = bundleInfo.applicationInfo.isSystemApp;
     return std::make_pair(E_OK, bundleConfig);
 }
 

@@ -92,9 +92,14 @@ ThreadConfig *ConfigFactory::GetThreadConfig()
     return config_.thread;
 }
 
-std::vector<std::string> ConfigFactory::GetDataShareExtNames()
+DataShareConfig *ConfigFactory::GetDataShareConfig()
 {
-    return config_.dataShareExtNames;
+    return config_.dataShare;
+}
+
+DeviceSyncAppWhiteListConfig *ConfigFactory::GetDeviceSyncAppWhiteListConfig()
+{
+    return config_.deviceSyncAppWhiteList;
 }
 } // namespace DistributedData
 } // namespace OHOS

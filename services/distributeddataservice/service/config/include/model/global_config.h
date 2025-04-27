@@ -20,9 +20,11 @@
 #include "model/checker_config.h"
 #include "model/cloud_config.h"
 #include "model/component_config.h"
+#include "model/datashare_config.h"
 #include "model/directory_config.h"
 #include "model/network_config.h"
 #include "model/thread_config.h"
+#include "model/device_sync_app_white_list_config.h"
 #include "serializable/serializable.h"
 namespace OHOS {
 namespace DistributedData {
@@ -40,7 +42,8 @@ public:
     CloudConfig *cloud = nullptr;
     std::vector<AppIdMappingConfig> *appIdMapping = nullptr;
     ThreadConfig *thread = nullptr;
-    std::vector<std::string> dataShareExtNames;
+    DataShareConfig *dataShare = nullptr;
+    DeviceSyncAppWhiteListConfig *deviceSyncAppWhiteList = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

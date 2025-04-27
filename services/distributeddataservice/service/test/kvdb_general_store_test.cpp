@@ -567,7 +567,7 @@ HWTEST_F(KVDBGeneralStoreTest, Clean, TestSize.Level0)
     std::string tableName = "tableName";
     auto ret = store->Clean(devices, -1, tableName);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
-    ret = store->Clean(devices, 5, tableName);
+    ret = store->Clean(devices, 6, tableName);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
     ret = store->Clean(devices, GeneralStore::CleanMode::NEARBY_DATA, tableName);
     EXPECT_EQ(ret, GeneralError::E_ALREADY_CLOSED);
@@ -587,6 +587,9 @@ HWTEST_F(KVDBGeneralStoreTest, Clean, TestSize.Level0)
 
     ret = store->Clean(devices, GeneralStore::CleanMode::LOCAL_DATA, tableName);
     EXPECT_EQ(ret, GeneralError::E_ERROR);
+
+    ret = store->Clean(devices, GeneralStore::CleanMode::CLEAN_WATER, tableName);
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**

@@ -113,7 +113,7 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 {
     UpdateTime();
     std::vector<Entry> entries;
-    if (GetEntries(UnifiedKey(key).GetPropertyKey(), entries) != E_OK) {
+    if (GetEntries(UnifiedKey(key).GetKeyCommonPrefix(), entries) != E_OK) {
         ZLOGE("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
         return E_DB_ERROR;
     }
@@ -135,7 +135,7 @@ Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &ent
         UnifiedDataHelper::GetSummary(data, summary);
     }
 
-    auto propertyKey = data.GetRuntime()->key.GetPropertyKey();
+    auto propertyKey = data.GetRuntime()->key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
     if (status != E_OK) {
@@ -151,7 +151,7 @@ Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
 {
     UpdateTime();
     Value value;
-    auto summaryKey = key.GetPropertyKey() + SUMMARY_SUFIX;
+    auto summaryKey = key.GetKeyCommonPrefix() + SUMMARY_SUFIX;
     auto res = kvStore_->Get({summaryKey.begin(), summaryKey.end()}, value);
     if (res != OK || value.empty()) {
         ZLOGW("Get stored summary failed, key: %{public}s, status:%{public}d", summaryKey.c_str(), res);
@@ -198,6 +198,10 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
     UpdateTime();
     Value value;
     auto res = kvStore_->Get({key.begin(), key.end()}, value);
+    if (res == NOT_FOUND) {
+        ZLOGW("Runtime not found, key: %{public}s", key.c_str());
+        return E_NOT_FOUND;
+    }
     if (res != OK || value.empty()) {
         ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
         return E_DB_ERROR;
@@ -213,7 +217,7 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
 Status RuntimeStore::Update(const UnifiedData &unifiedData)
 {
     std::string key = unifiedData.GetRuntime()->key.key;
-    if (Delete(key) != E_OK) {
+    if (Delete(UnifiedKey(key).GetKeyCommonPrefix()) != E_OK) {
         UpdateTime();
         ZLOGE("Delete unified data failed, dataPrefix: %{public}s.", key.c_str());
         return E_DB_ERROR;
