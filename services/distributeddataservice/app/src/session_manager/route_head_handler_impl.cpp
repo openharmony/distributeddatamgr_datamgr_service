@@ -201,8 +201,8 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     ptr += sizeof(SessionAppId);
     ret = memcpy_s(appPair->appId, end - ptr, session_.appId.c_str(), appIdSize);
     if (ret != 0) {
-        ZLOGE("memcpy for app id failed, ret is %{public}d, leftSize is %{public}d, appIdSize is %{public}d",
-            ret, end - ptr, appIdSize);
+        ZLOGE("memcpy for app id failed, ret is %{public}d, leftSize is %{public}u, appIdSize is %{public}u",
+            ret, static_cast<uint32_t>(end - ptr), appIdSize);
         return false;
     }
     ptr += appIdSize;
@@ -211,8 +211,8 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     uint32_t storeIdSize = session_.storeId.size();
     ret = memcpy_s(storePair->storeId, end - ptr, session_.storeId.data(), storeIdSize);
     if (ret != 0) {
-        ZLOGE("memcpy for store id failed, ret is %{public}d, leftSize is %{public}d, storeIdSize is %{public}d",
-            ret, end - ptr, storeIdSize);
+        ZLOGE("memcpy for store id failed, ret is %{public}d, leftSize is %{public}u, storeIdSize is %{public}u",
+            ret, static_cast<uint32_t>(end - ptr), storeIdSize);
         return false;
     }
     storePair->len = HostToNet(storeIdSize);
