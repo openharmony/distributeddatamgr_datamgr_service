@@ -827,7 +827,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
 {
     return [this, async, storeInfo, triggerMode, prepareTraceId, user](const GenDetails &result) {
         if (async != nullptr) {
-            async(std::move(ConvertGenDetailsCode(result)));
+            async(ConvertGenDetailsCode(result));
         }
 
         if (result.empty()) {
