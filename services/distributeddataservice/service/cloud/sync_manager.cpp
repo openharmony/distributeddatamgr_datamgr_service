@@ -402,7 +402,7 @@ void SyncManager::StartCloudSync(const DistributedData::SyncEvent &evt, const St
                         : GetCallback(async, storeInfo, evt.GetTriggerMode(), prepareTraceId, user), syncParam);
     if (status != E_OK) {
         if (async) {
-            detail.code = GetValidGeneralCode(status);
+            detail.code = ConvertValidGeneralCode(status);
             async(std::move(details));
         }
         UpdateFinishSyncInfo({ storeInfo.user, GetAccountId(storeInfo.user), storeInfo.bundleName,
@@ -810,7 +810,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
                 iter = val.erase(iter);
             } else if (iter->first == syncId) {
                 iter->second.finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-                iter->second.code = GetValidGeneralCode(code);
+                iter->second.code = ConvertValidGeneralCode(code);
                 iter->second.syncStatus = SyncStatus::FINISHED;
                 SaveLastSyncInfo(key, std::move(iter->second));
                 iter = val.erase(iter);
@@ -1043,13 +1043,13 @@ GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
     GenDetails newDetails;
     for (const auto &it : details) {
         GenProgressDetail detail = it.second;
-        detail.code = GetValidGeneralCode(detail.code);
+        detail.code = ConvertValidGeneralCode(detail.code);
         newDetails.emplace(std::make_pair(it.first, std::move(detail)));
     }
     return newDetails;
 }
 
-int32_t SyncManager::GetValidGeneralCode(int32_t code)
+int32_t SyncManager::ConvertValidGeneralCode(int32_t code)
 {
     return (code >= E_OK && code < E_BUSY) ? code : E_ERROR;
 }
