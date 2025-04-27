@@ -555,8 +555,56 @@ HWTEST_F(CloudEventTest, GetEventId, TestSize.Level0)
 * @tc.require:
 * @tc.author:
 */
-HWTEST_F(ScreenManagerTest, IsLocked, TestSize.Level0)
+HWTEST_F(ScreenManagerTest, IsLocked, TestSize.Level1)
 {
     ASSERT_FALSE(ScreenManager::GetInstance()->IsLocked());
+}
+
+/**
+* @tc.name: Subscribe
+* @tc.desc: test Subscribe function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ScreenManagerTest, Subscribe, TestSize.Level1)
+{
+    EXPECT_NO_FATAL_FAILURE(ScreenManager::GetInstance()->Subscribe(nullptr));
+}
+
+/**
+* @tc.name: Unsubscribe
+* @tc.desc: test Unsubscribe function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ScreenManagerTest, Unsubscribe, TestSize.Level1)
+{
+    EXPECT_NO_FATAL_FAILURE(ScreenManager::GetInstance()->Unsubscribe(nullptr));
+}
+
+/**
+* @tc.name: SubscribeScreenEvent
+* @tc.desc: test SubscribeScreenEvent function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ScreenManagerTest, SubscribeScreenEvent, TestSize.Level1)
+{
+    EXPECT_NO_FATAL_FAILURE(ScreenManager::GetInstance()->SubscribeScreenEvent());
+}
+
+/**
+* @tc.name: UnsubscribeScreenEvent
+* @tc.desc: test UnsubscribeScreenEvent function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ScreenManagerTest, UnsubscribeScreenEvent, TestSize.Level1)
+{
+    EXPECT_NO_FATAL_FAILURE(ScreenManager::GetInstance()->UnsubscribeScreenEvent());
 }
 } // namespace OHOS::Test
