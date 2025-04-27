@@ -99,7 +99,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
         if (!IsTrust()) {
-            ZLOGW("check access failed, bundleName:%{public}s", metaData.bundleName.c_str());
+            ZLOGW("distrust app, bundleName:%{public}s", metaData.bundleName.c_str());
             return DistributedDB::DB_ERROR;
         }
         return DistributedDB::OK;
@@ -268,7 +268,7 @@ bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
 
     auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
     for (auto storeMeta : metaDatas) {
-        if (storeMeta.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
+        if (storeMeta.appId == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }
         if (!ParseStoreInfo(accountId, label, storeMeta)) {
