@@ -656,9 +656,9 @@ ohos_unittest("RdbServiceImplTest") {
   }
   module_out_path = module_output_path
   sources = [
+    "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
-    "mock/checker_mock.cpp",
     "rdb_service_impl_test.cpp",
   ]
 
@@ -1165,6 +1165,12 @@ ohos_unittest("DataShareServiceImplTest") {
 
 ohos_unittest("KvdbServiceImplTest") {
   module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "kvdb_service_impl_test.cpp",
