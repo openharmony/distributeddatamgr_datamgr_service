@@ -20,8 +20,7 @@ namespace OHOS {
 namespace DistributedData {
 class AppAccessCheckConfig final : public Serializable {
 public:
-    struct TrustApp final : public Serializable
-    {
+    struct TrustApp final : public Serializable {
         std::string bundleName = "";
         std::string appId = "";
         bool Marshal(json &node) const override;

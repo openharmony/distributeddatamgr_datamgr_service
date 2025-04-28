@@ -37,7 +37,8 @@ bool AppAccessCheckConfigManager::IsTrust(const AppMappingInfo &mapper)
     if (it != appMapper_.end() && (it->second == mapper.appId)) {
         return true;
     }
-    ZLOGE("check access failed, bundleName:%{public}s, appId:%{public}s", bundleName.c_str(), appId.c_str());
+    ZLOGW("check access failed, bundleName:%{public}s, appId:%{public}s",
+        mapper.bundleName.c_str(), mapper.appId.c_str());
     return false;
 }
 

@@ -251,7 +251,8 @@ std::shared_ptr<ExtendHeaderHandle> ProcessCommunicatorImpl::GetExtendHeaderHand
     return {};
 }
 
-DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength, const std::string &device)
+DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength,
+    const std::string &device)
 {
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");

@@ -102,7 +102,7 @@ DeviceSyncAppWhiteListConfig *ConfigFactory::GetDeviceSyncAppWhiteListConfig()
     return config_.deviceSyncAppWhiteList;
 }
 
-AppAccessCheckConfig *ConfigFactory::GetHOSAppListConfig()
+AppAccessCheckConfig *ConfigFactory::GetSyncAppsConfig()
 {
     return config_.syncAppList;
 }
