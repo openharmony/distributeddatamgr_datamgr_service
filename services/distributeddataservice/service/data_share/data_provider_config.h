@@ -63,6 +63,7 @@ private:
     int GetFromExtensionProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
     void GetMetaDataFromUri();
     std::pair<int, BundleConfig> GetBundleInfo();
+    bool IsInExtList(const std::string &bundleName);
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
         MODULE_NAME,
