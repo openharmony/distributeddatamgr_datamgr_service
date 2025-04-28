@@ -659,7 +659,7 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     if (profileInfos.empty()) {
         return;
     }
-    StoreMetaData meta = MakeMetaData(bundlename, userId, deviceId);
+    StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
     for (auto &[uri, value] : profileInfos) {
         if (uri.find(EXT_URI_SCHEMA) == std::string::npos) {
             continue;
