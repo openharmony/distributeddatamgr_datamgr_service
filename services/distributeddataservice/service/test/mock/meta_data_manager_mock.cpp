@@ -12,23 +12,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <typeinfo>
 #include "meta_data_manager_mock.h"
+
+#include <typeinfo>
+
+#include "metadata/capability_meta_data.h"
 
 namespace OHOS::DistributedData {
 using namespace std;
+
 OHOS::DistributedData::MetaDataManager &OHOS::DistributedData::MetaDataManager::GetInstance()
 {
     static MetaDataManager instance;
     return instance;
 }
 
-OHOS::DistributedData::MetaDataManager::MetaDataManager() { }
+OHOS::DistributedData::MetaDataManager::MetaDataManager()
+{
+}
 
-OHOS::DistributedData::MetaDataManager::~MetaDataManager() { }
-
+OHOS::DistributedData::MetaDataManager::~MetaDataManager()
+{
+}
 bool OHOS::DistributedData::MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool isLocal)
 {
     return BMetaDataManager::metaDataManager->LoadMeta(key, value, isLocal);
 }
+
+template<>
+bool OHOS::DistributedData::MetaDataManager::LoadMeta(
+    const std::string &prefix, std::vector<StoreMetaData> &values, bool isLocal)
+{
+    return BMetaData<StoreMetaData>::metaDataManager->LoadMeta(prefix, values, isLocal);
 }
+} // namespace OHOS::DistributedData
