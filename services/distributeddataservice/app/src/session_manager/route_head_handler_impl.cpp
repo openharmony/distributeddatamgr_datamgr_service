@@ -19,9 +19,8 @@
 #include <cinttypes>
 #include "account/account_delegate.h"
 #include "auth_delegate.h"
+#include "access_check/app_access_check_config_manager.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
-#include "checker/checker_manager.h"
-#include "utils/converter.h"
 #include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
@@ -40,6 +39,8 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
+constexpr const char *DEFAULT_ACCOUNT_A = "default";
+constexpr const char *DEFAULT_ACCOUNT_Z = "ohosAnonymousUid";
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
     auto handler = std::make_shared<RouteHeadHandlerImpl>(info);
@@ -223,10 +224,13 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     return true;
 }
 
-bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize)
+bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize, const std::string &device)
 {
     if (data == nullptr) {
         ZLOGE("invalid input data, totalLen:%{public}d", totalLen);
+        return false;
+    }
+    if (!DmAdapter::GetInstance().IsOHOSType(device)) {
         return false;
     }
     RouteHead head = { 0 };
@@ -239,7 +243,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
 bool RouteHeadHandlerImpl::ParseStoreInfo(const std::string &accountId, const std::string &label,
     StoreMetaData &storeMeta)
 {
-    std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
+    std::vector<std::string> accountIds { accountId, DEFAULT_ACCOUNT_Z, DEFAULT_ACCOUNT_A };
     for (auto &id : accountIds) {
         auto convertedIds =
             AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId, storeMeta.user);
@@ -263,7 +267,7 @@ bool RouteHeadHandlerImpl::IsTrust()
     auto [appId, storeId] = AppIdMappingConfigManager::GetInstance().Convert(appId_, storeId_);
     metaData.bundleName = appId;
     metaData.appId = appId;
-    return CheckerManager::GetInstance().IsTrust(Converter::ConvertToStoreInfo(metaData));
+    return ::GetInstance().IsTrust(Converter::ConvertToStoreInfo(metaData));
 }
 
 bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
@@ -283,7 +287,7 @@ bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
         if (!ParseStoreInfo(accountId, label, storeMeta)) {
             continue;
         }
-        return CheckerManager::GetInstance().IsTrust(Converter::ConvertToStoreInfo(metaData));
+        return ::GetInstance().IsTrust(Converter::ConvertToStoreInfo(metaData));
     }
     ZLOGE("not found app msg:%{public}s", label.c_str());
     return false;
@@ -309,12 +313,13 @@ std::string RouteHeadHandlerImpl::ParseStoreId(const std::string &deviceId, cons
     return "";
 }
 
-bool RouteHeadHandlerImpl::IsAppTrusted(const std::string &label, const std::string &device)
+std::pair<bool, bool> RouteHeadHandlerImpl::IsAppTrusted(const std::string &label, const std::string &device)
 {
     if (DmAdapter::GetInstance().IsOHOSType(device)) {
-        return true;
+        return std::make_pair(true, true);
     }
-    return IsTrust(label);
+    bool isTrust = IsTrust(label);
+    return return std::make_pair(isTrust, false);
 }
 
 bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,

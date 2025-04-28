@@ -62,15 +62,6 @@ std::string SystemChecker::GetAppId(const CheckerManager::StoreInfo &info)
     return appId;
 }
 
-bool SystemChecker::IsTrust(const CheckerManager::StoreInfo &info)
-{
-    auto it = trusts_.find(info.bundleName);
-    if (it != trusts_.end() && (it->second == info.appId)) {
-        return true;
-    }
-    return false;
-}
-
 bool SystemChecker::IsValid(const CheckerManager::StoreInfo &info)
 {
     auto type = AccessTokenKit::GetTokenTypeFlag(info.tokenId);

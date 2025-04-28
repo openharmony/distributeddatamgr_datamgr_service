@@ -282,12 +282,15 @@ DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t 
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    auto ret = handler->IsAppTrusted(label, device);
-    if (!ret) {
+    auto [isTrust, isOHOSType] = handler->IsAppTrusted(label, device);
+    if (!isTrust && !isOHOSType) {
         ZLOGE("app not trust");
         return DBStatus::DB_ERROR;
     }
-    ret = handler->ParseHeadDataUser(data, totalLen, label, userInfos);
+    if (isTrust && !isOHOSType) {
+        return DBStatus::OK;
+    }
+    auto ret = handler->ParseHeadDataUser(data, totalLen, label, userInfos);
     if (!ret) {
         ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s", totalLen, Anonymous::Change(label).c_str());
         return DBStatus::INVALID_FORMAT;

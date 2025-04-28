@@ -70,7 +70,7 @@ public:
     bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize) override;
     bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
         std::vector<UserInfo> &userInfos) override;
-    bool IsAppTrusted(const std::string &label, const std::string &device) override;
+    std::pair<bool, bool> IsAppTrusted(const std::string &label, const std::string &device) override;
 
 private:
     void Init();

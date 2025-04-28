@@ -36,7 +36,6 @@ public:
         uint32_t tokenId;
         std::string bundleName;
         std::string storeId;
-        std::string appId;
     };
     class Checker {
     public:
@@ -54,7 +53,6 @@ public:
         virtual std::vector<StoreInfo> GetStaticStores() = 0;
         virtual bool IsDynamic(const StoreInfo &info) = 0;
         virtual bool IsStatic(const StoreInfo &info) = 0;
-        virtual bool IsTrust(const StoreInfo &info) = 0;
     protected:
         API_EXPORT ~Checker() = default;
     };
@@ -70,7 +68,6 @@ public:
     API_EXPORT bool IsSwitches(const StoreInfo &info);
     API_EXPORT void LoadCheckers(std::vector<std::string> &checkers);
     API_EXPORT Checker *GetChecker(const std::string &checker);
-    API_EXPORT bool IsTrust(const StoreInfo &info);
 private:
     std::map<std::string, Checker *> checkers_;
     ConcurrentMap<std::string, std::function<Checker *()>> getters_;

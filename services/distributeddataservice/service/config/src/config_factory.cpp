@@ -101,5 +101,10 @@ DeviceSyncAppWhiteListConfig *ConfigFactory::GetDeviceSyncAppWhiteListConfig()
 {
     return config_.deviceSyncAppWhiteList;
 }
+
+AppAccessCheckConfig *ConfigFactory::GetHOSAppListConfig()
+{
+    return config_.syncAppList;
+}
 } // namespace DistributedData
 } // namespace OHOS

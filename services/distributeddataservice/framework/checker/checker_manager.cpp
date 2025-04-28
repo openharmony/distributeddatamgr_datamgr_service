@@ -76,20 +76,6 @@ bool CheckerManager::IsValid(const StoreInfo &info)
     return false;
 }
 
-bool CheckerManager::IsTrust(const StoreInfo &info)
-{
-    for (auto &[name, checker] : checkers_) {
-        if (checker == nullptr) {
-            continue;
-        }
-        if (!checker->IsTrust(info)) {
-            continue;
-        }
-        return true;
-    }
-    return false;
-}
-
 bool CheckerManager::IsDistrust(const StoreInfo &info)
 {
     for (auto &[name, checker] : checkers_) {

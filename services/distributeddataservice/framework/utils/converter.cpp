@@ -17,6 +17,6 @@
 namespace OHOS::DistributedData {
 CheckerManager::StoreInfo Converter::ConvertToStoreInfo(const StoreMetaData &metaData)
 {
-    return { metaData.uid, metaData.tokenId, metaData.bundleName, metaData.storeId, metaData.appId };
+    return { metaData.uid, metaData.tokenId, metaData.bundleName, metaData.storeId };
 }
 } // namespace OHOS::DistributedData
