@@ -38,6 +38,7 @@ private:
     StoreCache &operator=(const StoreCache &obj) = delete;
 
     void GarbageCollect();
+    static bool IsValidIntention(const std::string &intention);
 
     ConcurrentMap<std::string, std::shared_ptr<Store>> stores_;
     std::mutex taskMutex_;
