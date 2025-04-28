@@ -289,7 +289,7 @@ bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
         }
         return AppAccessCheckConfigManager::GetInstance().IsTrust({ storeMeta.bundleName, storeMeta.appId });
     }
-    ZLOGE("not found app msg:%{public}s", label.c_str());
+    ZLOGI("not found app msg:%{public}s", label.c_str());
     return false;
 }
 

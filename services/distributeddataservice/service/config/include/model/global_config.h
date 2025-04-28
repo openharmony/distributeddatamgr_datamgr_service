@@ -45,7 +45,7 @@ public:
     ThreadConfig *thread = nullptr;
     DataShareConfig *dataShare = nullptr;
     DeviceSyncAppWhiteListConfig *deviceSyncAppWhiteList = nullptr;
-    std::vector<AppAccessCheckConfig> *syncAppList = nullptr;
+    AppAccessCheckConfig *syncAppList = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
