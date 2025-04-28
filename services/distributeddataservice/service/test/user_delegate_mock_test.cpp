@@ -39,6 +39,11 @@ bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLo
     return false;
 }
 
+bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value, bool isLocal)
+{
+    return true;
+}
+
 namespace OHOS::Test {
 namespace DistributedDataTest {
 class UserDelegateMockTest : public testing::Test {
@@ -144,6 +149,13 @@ HWTEST_F(UserDelegateMockTest, Init, TestSize.Level0)
     ASSERT_NE(poolPtr, nullptr);
     UserDelegate::GetInstance().executors_ = poolPtr;
     ASSERT_NE(UserDelegate::GetInstance().executors_, nullptr);
+
+    std::vector<int> users = { 0 };
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
+        .WillRepeatedly(([&users](std::vector<int> &out) {
+            out = users;
+        }));
+    EXPECT_TRUE(UserDelegate::GetInstance().InitLocalUserMeta());
     UserDelegate::GetInstance().Init(poolPtr);
     ASSERT_TRUE(UserDelegate::GetInstance().executors_ != nullptr);
 }
