@@ -303,8 +303,7 @@ private:
     static constexpr size_t APP_STR_LEN = 4;
     uint8_t *ptr = dataBuffer;
     size_t remaining = BUFFER_SIZE;
-    static constexpr size_t MAX_STORE_ID_LEN = 100;
-    static constexpr size_t BUFFER_SIZE = sizeof(dataBuffer) + sizeof(uint32_t) + MAX_STORE_ID_LEN;
+    static constexpr size_t BUFFER_SIZE = sizeof(dataBuffer);
 };
 
 /**
