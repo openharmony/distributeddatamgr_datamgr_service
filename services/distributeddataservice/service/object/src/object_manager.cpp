@@ -793,7 +793,7 @@ void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
 {
     std::vector<DistributedDB::Entry> entries;
     auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
-    if (status != DistributedDB::DBStatus::NOT_FOUND) {
+    if (status == DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGI("Get old entries empty, bundleName: %{public}s", appId.c_str());
         return;
     }
