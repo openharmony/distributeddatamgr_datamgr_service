@@ -154,6 +154,7 @@ HWTEST_F(UserDelegateMockTest, Init, TestSize.Level0)
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
         .WillRepeatedly(([&users](std::vector<int> &out) {
             out = users;
+            return true;
         }));
     EXPECT_TRUE(UserDelegate::GetInstance().InitLocalUserMeta());
     UserDelegate::GetInstance().Init(poolPtr);
