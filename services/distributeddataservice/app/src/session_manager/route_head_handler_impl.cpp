@@ -267,7 +267,7 @@ bool RouteHeadHandlerImpl::IsTrust()
     auto [appId, storeId] = AppIdMappingConfigManager::GetInstance().Convert(appId_, storeId_);
     metaData.bundleName = appId;
     metaData.appId = appId;
-    return ::GetInstance().IsTrust(Converter::ConvertToStoreInfo(metaData));
+    return AppAccessCheckConfigManager::GetInstance().IsTrust({ metaData.bundleName, metaData.appId });
 }
 
 bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
@@ -287,7 +287,7 @@ bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
         if (!ParseStoreInfo(accountId, label, storeMeta)) {
             continue;
         }
-        return ::GetInstance().IsTrust(Converter::ConvertToStoreInfo(metaData));
+        return AppAccessCheckConfigManager::GetInstance().IsTrust({ storeMeta.bundleName, storeMeta.appId });
     }
     ZLOGE("not found app msg:%{public}s", label.c_str());
     return false;
