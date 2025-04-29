@@ -34,7 +34,7 @@ public:
     API_EXPORT void LoadAppIdMappings();
     API_EXPORT void LoadThread();
     API_EXPORT void LoadDeviceSyncAppWhiteLists();
-    API_EXPORT void LoadTrustedApp();
+    API_EXPORT void LoadSyncTrustedApp();
 private:
     static constexpr const char *DEFAULT_LABEL = "distributeddata";
     static constexpr const char *DEFAULT_META = "service_meta";

@@ -207,7 +207,7 @@ void Bootstrap::LoadDeviceSyncAppWhiteLists()
     DeviceSyncAppManager::GetInstance().Initialize(infos);
 }
 
-void Bootstrap::LoadTrustedApp()
+void Bootstrap::LoadSyncTrustedApp()
 {
     auto *config = ConfigFactory::GetInstance().GetSyncAppsConfig();
     if (config == nullptr) {
