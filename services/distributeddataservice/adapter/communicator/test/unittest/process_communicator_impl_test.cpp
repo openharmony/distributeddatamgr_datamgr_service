@@ -405,18 +405,19 @@ HWTEST_F(ProcessCommunicatorImplTest, GetDataHeadInfo, TestSize.Level0)
     uint8_t *ptr = data;
     uint32_t totalLen = 1;
     uint32_t headLength = 1;
+    std::string device = "";
     communicator_->routeHeadHandlerCreator_ = nullptr;
-    auto status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength);
+    auto status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength, device);
     EXPECT_EQ(status, DistributedDB::DB_ERROR);
 
     communicator_->routeHeadHandlerCreator_ = [](const DistributedDB::ExtendInfo &info) ->
         std::shared_ptr<OHOS::DistributedData::RouteHeadHandler> {
             return std::make_shared<OHOS::DistributedData::ConcreteRouteHeadHandler>();
     };
-    status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength);
+    status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength, device);
     EXPECT_EQ(status, DistributedDB::INVALID_FORMAT);
     totalLen = 0;
-    status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength);
+    status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength, device);
     EXPECT_EQ(status, DistributedDB::OK);
 }
 
@@ -434,12 +435,13 @@ HWTEST_F(ProcessCommunicatorImplTest, GetDataUserInfo, TestSize.Level0)
     uint8_t *ptr = data;
     uint32_t totalLen = 1;
     std::string label = "GetDataUserInfoTest";
+    std::string device = "";
     std::vector<UserInfo> userInfos;
     UserInfo user1{"GetDataUserInfo01"};
     UserInfo user2{"GetDataUserInfo02"};
     UserInfo user3{"GetDataUserInfo03"};
     communicator_->routeHeadHandlerCreator_ = nullptr;
-    auto status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
+    auto status = communicator_->GetDataUserInfo(ptr, totalLen, label, device, userInfos);
     EXPECT_EQ(status, DistributedDB::DB_ERROR);
 
     communicator_->routeHeadHandlerCreator_ = [](const DistributedDB::ExtendInfo &info) ->
@@ -450,12 +452,12 @@ HWTEST_F(ProcessCommunicatorImplTest, GetDataUserInfo, TestSize.Level0)
     EXPECT_EQ(status, DistributedDB::INVALID_FORMAT);
     totalLen = 0;
     EXPECT_EQ(userInfos.empty(), true);
-    status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
+    status = communicator_->GetDataUserInfo(ptr, totalLen, label, device, userInfos);
     EXPECT_EQ(status, DistributedDB::NO_PERMISSION);
     userInfos.push_back(user1);
     userInfos.push_back(user2);
     userInfos.push_back(user3);
-    status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
+    status = communicator_->GetDataUserInfo(ptr, totalLen, label, device, userInfos);
     EXPECT_EQ(status, DistributedDB::OK);
 }
 

@@ -830,10 +830,10 @@ bool KVDBServiceImpl::CompareTripleIdentifier(const std::string &accountId, cons
 {
     std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
     for (auto &id : accountIds) {
-        auto convertedIds =
-            AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId, storeMeta.user);
+        auto appId =
+            AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId);
         const std::string &tempTripleIdentifier =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, convertedIds.first,
+            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, appId,
                 storeMeta.storeId, false);
         if (tempTripleIdentifier == identifier) {
             ZLOGI("find triple identifier,storeId:%{public}s,id:%{public}s",
