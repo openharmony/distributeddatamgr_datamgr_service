@@ -41,6 +41,7 @@ config("module_private_config") {
     "${data_service_path}/app/src",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/test/mock",
     "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
@@ -153,6 +154,7 @@ ohos_unittest("SessionManagerTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
 
   cflags_cc = [ "-DUT_TEST" ]
@@ -166,6 +168,7 @@ ohos_unittest("SessionManagerTest") {
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
+    "googletest:gmock",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
@@ -183,6 +186,7 @@ ohos_unittest("SessionManagerTest") {
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
     "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",

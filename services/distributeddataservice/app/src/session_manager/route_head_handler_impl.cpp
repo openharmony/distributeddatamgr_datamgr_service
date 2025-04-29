@@ -205,19 +205,22 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
     uint32_t appIdSize = session_.appId.size();
     appPair->len = HostToNet(appIdSize);
-    ret = strcpy_s(appPair->appId, appIdSize, session_.appId.c_str());
+    uint8_t *end = data + totalLen;
+    ptr += sizeof(SessionAppId);
+    ret = memcpy_s(appPair->appId, end - ptr, session_.appId.c_str(), appIdSize);
     if (ret != 0) {
-        ZLOGE("strcpy for app id failed, error:%{public}d", errno);
+        ZLOGE("memcpy for app id failed, ret is %{public}d, leftSize is %{public}u, appIdSize is %{public}u",
+            ret, static_cast<uint32_t>(end - ptr), appIdSize);
         return false;
     }
-    ptr += (sizeof(SessionAppId) + appIdSize);
+    ptr += appIdSize;
 
-    uint8_t *end = data + totalLen;
     SessionStoreId *storePair = reinterpret_cast<SessionStoreId *>(ptr);
     uint32_t storeIdSize = session_.storeId.size();
     ret = memcpy_s(storePair->storeId, end - ptr, session_.storeId.data(), storeIdSize);
     if (ret != 0) {
-        ZLOGE("strcpy for store id failed, error:%{public}d", errno);
+        ZLOGE("memcpy for store id failed, ret is %{public}d, leftSize is %{public}u, storeIdSize is %{public}u",
+            ret, static_cast<uint32_t>(end - ptr), storeIdSize);
         return false;
     }
     storePair->len = HostToNet(storeIdSize);

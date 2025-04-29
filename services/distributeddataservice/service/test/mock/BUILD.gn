@@ -18,6 +18,7 @@ config("module_private_config") {
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/service/kvdb",
     "../../../framework/include/",
     "../../../service/rdb/",
     "./",
@@ -27,6 +28,7 @@ config("module_private_config") {
 }
 
 ohos_static_library("distributeddata_mock_static") {
+  testonly = true
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -35,18 +37,25 @@ ohos_static_library("distributeddata_mock_static") {
   }
 
   sources = [
+    "auth_delegate_mock.cpp",
     "cursor_mock.cpp",
     "db_change_data_mock.cpp",
     "db_store_mock.cpp",
+    "device_manager_adapter_mock.cpp",
     "general_store_mock.cpp",
     "kv_store_nb_delegate_mock.cpp",
+    "meta_data_manager_mock.cpp",
     "network_delegate_mock.cpp",
     "screen_lock_mock.cpp",
+    "user_delegate_mock.cpp",
   ]
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   external_deps = [
+    "device_manager:devicemanagersdk",
+    "googletest:gmock",
+    "googletest:gtest",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
