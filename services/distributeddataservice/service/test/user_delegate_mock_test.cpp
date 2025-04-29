@@ -150,7 +150,7 @@ HWTEST_F(UserDelegateMockTest, Init, TestSize.Level0)
     UserDelegate::GetInstance().executors_ = poolPtr;
     ASSERT_NE(UserDelegate::GetInstance().executors_, nullptr);
 
-    std::vector<int> users = { 0 };
+    std::vector<int> users = {1, 2, 3};
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
         .WillRepeatedly(([&users](std::vector<int> &out) {
             out = users;
