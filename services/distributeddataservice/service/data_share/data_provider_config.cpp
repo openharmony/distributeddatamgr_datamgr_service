@@ -234,8 +234,8 @@ std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProvider
     auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     Security::AccessToken::HapTokenInfo tokenInfo;
     auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(IPCSkeleton::GetCallingTokenID(), tokenInfo);
-    if (!Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)
-        || (result == Security::AccessToken::RET_SUCCESS && !IsInExtList(tokenInfo.bundleName))) {
+    if (!Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId) ||
+        (result == Security::AccessToken::RET_SUCCESS && !IsInExtList(tokenInfo.bundleName))) {
         ZLOGE("The URI in the extension, is not allowed for silent access.! ret: %{public}d, bundleName: %{public}s,"
             "uri: %{public}s", ret, tokenInfo.bundleName.c_str(), providerInfo_.uri.c_str());
         return std::make_pair(ret, providerInfo_);
