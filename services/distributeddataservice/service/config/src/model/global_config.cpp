@@ -62,6 +62,7 @@ GlobalConfig::~GlobalConfig()
     delete cloud;
     delete appIdMapping;
     delete thread;
+    delete dataShare;
 }
 } // namespace DistributedData
 } // namespace OHOS
