@@ -130,7 +130,7 @@ private:
     private:
         enum ChangeType {
             CLOUD_DATA_CHANGE = 0,
-            CLOUD_DATA_CLEAN
+            CLOUD_LOGOUT,
         };
         void PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables, ChangeType type);
         friend RdbGeneralStore;
