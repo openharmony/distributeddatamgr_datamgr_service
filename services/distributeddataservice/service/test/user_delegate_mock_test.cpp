@@ -95,7 +95,8 @@ HWTEST_F(UserDelegateMockTest, InitLocalUserMeta, TestSize.Level0)
 
     std::vector<int> users;
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .WillRepeatedly(DoAll(SetArgReferee<0>(users), Return(true)));
+        .Times(1)
+        .WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
     ret = UserDelegate::GetInstance().InitLocalUserMeta();
     UserDelegate::GetInstance().DeleteUsers("users");
     EXPECT_FALSE(ret);
@@ -145,17 +146,14 @@ HWTEST_F(UserDelegateMockTest, Init, TestSize.Level0)
     EXPECT_CALL(AccountDelegateMock::Init(), Subscribe(_)).WillRepeatedly(Return(0));
     DeviceInfo devInfo = { .uuid = "HJJ4FGAGAAGA45WF3663FAGA" };
     EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
-    std::shared_ptr<ExecutorPool> poolPtr = std::make_shared<ExecutorPool>(0, 1);
+    std::shared_ptr<ExecutorPool> poolPtr = std::make_shared<ExecutorPool>(1, 0);
     ASSERT_NE(poolPtr, nullptr);
     UserDelegate::GetInstance().executors_ = poolPtr;
     ASSERT_NE(UserDelegate::GetInstance().executors_, nullptr);
 
-    std::vector<int> users = {1, 2, 3};
+    std::vector<int> users = {0, 1};
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .WillRepeatedly(([&users](std::vector<int> &out) {
-            out = users;
-            return true;
-        }));
+        .WillRepeatedly(DoAll(SetArgReferee<0>(users), Return(true)));
     EXPECT_TRUE(UserDelegate::GetInstance().InitLocalUserMeta());
     UserDelegate::GetInstance().Init(poolPtr);
     ASSERT_TRUE(UserDelegate::GetInstance().executors_ != nullptr);
