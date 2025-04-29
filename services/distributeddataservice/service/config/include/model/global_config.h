@@ -20,6 +20,7 @@
 #include "model/checker_config.h"
 #include "model/cloud_config.h"
 #include "model/component_config.h"
+#include "model/datashare_config.h"
 #include "model/directory_config.h"
 #include "model/network_config.h"
 #include "model/thread_config.h"
@@ -40,6 +41,7 @@ public:
     CloudConfig *cloud = nullptr;
     std::vector<AppIdMappingConfig> *appIdMapping = nullptr;
     ThreadConfig *thread = nullptr;
+    DataShareConfig *dataShare = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
