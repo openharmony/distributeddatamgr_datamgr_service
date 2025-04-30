@@ -333,7 +333,7 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     std::string device = "";
     recvHandler->ParseHeadDataLen(data.get(), routeHeadSize, parseSize, device);
     EXPECT_EQ(routeHeadSize, parseSize);
-    recvHandler->ParseHeadDataUser(data.get(), routeHeadSize, "", device, users);
+    recvHandler->ParseHeadDataUser(data.get(), routeHeadSize, "", users);
     ASSERT_EQ(users.size(), 0);
 }
 /**

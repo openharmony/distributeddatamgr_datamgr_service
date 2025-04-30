@@ -69,9 +69,9 @@ public:
     DBStatus FillHeadData(uint8_t *data, uint32_t headSize, uint32_t totalLen) override;
     bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize,
         const std::string &device) override;
-    bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label, const std::string &device,
+    bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
         std::vector<UserInfo> &userInfos) override;
-    std::pair<bool, bool> IsAppTrusted(const std::string &label, const std::string &device) override;
+    DBStatus IsAppTrusted(const std::string &label) override;
 
 private:
     void Init();

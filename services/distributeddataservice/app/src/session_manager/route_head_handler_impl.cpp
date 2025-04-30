@@ -100,7 +100,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
         if (!IsTrust()) {
-            ZLOGE("distrust app, bundleName:%{public}s", metaData.bundleName.c_str());
+            ZLOGE("distrust app, appId:%{public}s", Anonymous::Change(appId_).c_str());
             return DistributedDB::DB_ERROR;
         }
         return DistributedDB::OK;
@@ -234,6 +234,9 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         ZLOGE("invalid input data, totalLen:%{public}d", totalLen);
         return false;
     }
+    if (!DmAdapter::GetInstance().IsOHOSType(device)) {
+        return false;
+    }
     RouteHead head = { 0 };
     auto ret = UnPackDataHead(data, totalLen, head);
     headSize = ret ? sizeof(RouteHead) + head.dataLen : 0;
@@ -245,9 +248,8 @@ bool RouteHeadHandlerImpl::ParseStoreInfo(const std::string &accountId, const st
     StoreMetaData &storeMeta)
 {
     std::vector<std::string> accountIds { accountId, ANONYMOUS_ACCOUNT, DEFAULT_ACCOUNT };
+    auto appId = AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId);
     for (auto &id : accountIds) {
-        auto appId =
-            AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId);
         const std::string tempTripleLabel =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, appId,
                 storeMeta.storeId, false);

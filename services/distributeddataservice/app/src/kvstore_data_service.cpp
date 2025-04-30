@@ -352,7 +352,7 @@ void KvStoreDataService::LoadConfigs()
     Bootstrap::GetInstance().LoadCloud();
     Bootstrap::GetInstance().LoadAppIdMappings();
     Bootstrap::GetInstance().LoadDeviceSyncAppWhiteLists();
-    Bootstrap::GetInstance().LoadTrustedApp();
+    Bootstrap::GetInstance().LoadSyncTrustedApp();
 }
 
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)

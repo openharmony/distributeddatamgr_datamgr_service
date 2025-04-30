@@ -29,8 +29,8 @@ public:
     virtual bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize,
         const std::string &device) = 0;
     virtual bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
-        const std::string &device, std::vector<UserInfo> &userInfos) = 0;
-    virtual std::pair<bool, bool> IsAppTrusted(const std::string &label, const std::string &device) = 0;
+        std::vector<UserInfo> &userInfos) = 0;
+    virtual DBStatus IsAppTrusted(const std::string &label) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_EXTEND_HEAD_HANDLER_H
