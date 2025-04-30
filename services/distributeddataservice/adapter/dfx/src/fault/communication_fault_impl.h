@@ -16,9 +16,9 @@
 #ifndef DISTRIBUTEDDATAMGR_COMMUNICATION_FAULT_IMPL_H
 #define DISTRIBUTEDDATAMGR_COMMUNICATION_FAULT_IMPL_H
 
-#include "fault_reporter.h"
+#include "dfx/dfx_types.h"
+#include "dfx/fault_reporter.h"
 #include "hiview_adapter.h"
-#include "dfx_types.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
@@ -39,6 +39,6 @@ public:
 private:
     std::shared_ptr<ExecutorPool> executors_;
 };
-}  // namespace DistributedDataDfx
-}  // namespace OHOS
+} // namespace DistributedDataDfx
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_COMMUNICATION_FAULT_IMPL_H

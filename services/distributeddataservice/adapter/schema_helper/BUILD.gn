@@ -15,7 +15,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("module_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [ "../include/schema_helper" ]
+  include_dirs = [ "." ]
 }
 
 ohos_source_set("distributeddata_schema_helper") {
@@ -27,11 +27,12 @@ ohos_source_set("distributeddata_schema_helper") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [ "src/get_schema_helper.cpp" ]
+  sources = [ "get_schema_helper.cpp" ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
-
-  include_dirs = [ "../include/schema_helper" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-fstack-protector-strong",
+  ]
 
   public_configs = [ ":module_public_config" ]
   external_deps = [

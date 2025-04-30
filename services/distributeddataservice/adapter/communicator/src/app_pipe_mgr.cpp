@@ -15,7 +15,6 @@
 
 #include "app_pipe_mgr.h"
 #include "kvstore_utils.h"
-#include "reporter.h"
 
 #undef LOG_TAG
 #define LOG_TAG "AppPipeMgr"

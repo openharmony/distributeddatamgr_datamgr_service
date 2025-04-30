@@ -21,7 +21,7 @@
 #include "changeevent/remote_change_event.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
-#include "screenlock/screen_lock.h"
+#include "screen/screen_manager.h"
 #include "utils/anonymous.h"
 namespace OHOS::DistributedData {
 using Account = AccountDelegate;

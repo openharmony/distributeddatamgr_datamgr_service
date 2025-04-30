@@ -12,6 +12,11 @@
 # limitations under the License.
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+config("module_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [ "${data_service_path}/adapter/include/communicator" ]
+}
 ohos_source_set("distributeddata_communicator") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -42,19 +47,15 @@ ohos_source_set("distributeddata_communicator") {
   ]
 
   include_dirs = [
-    "../include/communicator",
-    "../include/utils",
-    "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include/dfx",
-    "${data_service_path}/framework/include/utils",
+    "${data_service_path}/adapter/include/utils",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
+  public_configs = [ ":module_public_config" ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "../dfx:distributeddata_dfx",
   ]
 
   external_deps = [

@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,7 +18,7 @@ config("module_public_config") {
   include_dirs = [ "${data_service_path}/adapter" ]
 }
 
-ohos_source_set("distributeddata_screenlock") {
+ohos_source_set("distributeddata_bundle_mgr") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -27,29 +27,32 @@ ohos_source_set("distributeddata_screenlock") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [ "screen_lock.cpp" ]
-
+  sources = []
   cflags_cc = [
     "-fvisibility=hidden",
+    "-Oz",
     "-fstack-protector-strong",
   ]
 
-  include_dirs = [
-    "../include/utils",
-    "${data_service_path}/framework/include",
+  public_configs = [ ":module_public_config" ]
+  cflags = [
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-Werror",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Oz",
+    "-fstack-protector-strong",
   ]
 
-  public_configs = [ ":module_public_config" ]
-  deps = [ "${data_service_path}/adapter/account:distributeddata_account" ]
-
-  external_deps = [
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
+  external_deps = [ "kv_store:datamgr_common" ]
+  sources += [ "bundle_mgr_adapter.cpp" ]
+  external_deps += [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "hilog:libhilog",
-    "kv_store:datamgr_common",
-    "screenlock_mgr:screenlock_client",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

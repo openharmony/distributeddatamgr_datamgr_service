@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <mutex>
 
 #include "iremote_object.h"
 

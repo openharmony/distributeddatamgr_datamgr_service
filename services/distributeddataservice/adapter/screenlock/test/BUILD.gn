@@ -19,13 +19,13 @@ ohos_unittest("ScreenLockTest") {
   module_out_path = module_output_path
 
   sources = [
-    "${data_service_path}/adapter/screenlock/src/screen_lock.cpp",
+    "${data_service_path}/adapter/screenlock/screen_lock.cpp",
     "${data_service_path}/framework/account/account_delegate.cpp",
     "${data_service_path}/framework/screen/screen_manager.cpp",
     "screen_lock_test.cpp",
   ]
   include_dirs = [
-    "${data_service_path}/adapter/include/screenlock",
+    "${data_service_path}/adapter/screenlock",
     "${data_service_path}/framework/include",
     "${data_service_path}/framework/include/account",
   ]

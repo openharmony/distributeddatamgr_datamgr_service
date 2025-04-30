@@ -16,7 +16,7 @@
 #ifndef DISTRIBUTEDDATAMGR_VISIT_STATISTIC_IMPL_H
 #define DISTRIBUTEDDATAMGR_VISIT_STATISTIC_IMPL_H
 
-#include "statistic_reporter.h"
+#include "dfx/statistic_reporter.h"
 #include "hiview_adapter.h"
 
 namespace OHOS {
@@ -30,6 +30,6 @@ public:
 private:
     std::shared_ptr<ExecutorPool> executors_;
 };
-}  // namespace DistributedDataDfx
-}  // namespace OHOS
+} // namespace DistributedDataDfx
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_VISIT_STATISTIC_IMPL_H

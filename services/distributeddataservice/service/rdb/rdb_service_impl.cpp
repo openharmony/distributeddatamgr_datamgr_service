@@ -18,6 +18,7 @@
 #include "abs_rdb_predicates.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bundle_mgr/bundle_mgr_adapter.h"
 #include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
@@ -234,7 +235,15 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
 std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
 {
     ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), table.c_str());
-    auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(device);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto uid = IPCSkeleton::GetCallingUid();
+    std::string appId = "";
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == Security::AccessToken::TOKEN_HAP) {
+        auto bundleName = BundleMgrAdapter::GetInstance().GetBundleName(uid);
+        auto [instanceId, user] = GetInstIndexAndUser(tokenId, bundleName);
+        appId = BundleMgrAdapter::GetInstance().GetAppId(user, bundleName);
+    }
+    auto uuid = DmAdapter::GetInstance().CalcClientUuid(appId, device);
     if (uuid.empty()) {
         ZLOGE("get uuid failed");
         return "";
@@ -597,7 +606,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
                     ? GeneralStore::ASSETS_SYNC_MODE
                     : (option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode, highMode));
-    SyncParam syncParam = { mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isCompensation };
+    SyncParam syncParam = { mixMode, (option.isAsync ? 0 : static_cast<int32_t>(WAIT_TIME)), option.isCompensation };
     syncParam.asyncDownloadAsset = param.asyncDownloadAsset_;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
