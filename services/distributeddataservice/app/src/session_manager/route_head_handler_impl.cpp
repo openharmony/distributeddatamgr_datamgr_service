@@ -76,7 +76,8 @@ void RouteHeadHandlerImpl::Init()
         }
     }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
-        static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_ };
+        static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_,
+        AccountDelegate::GetInstance()->GetCurrentAccountId() };
     session_ = SessionManager::GetInstance().GetSession(localPoint, deviceId_);
     ZLOGD("valid session:appId:%{public}s, srcDevId:%{public}s, srcUser:%{public}u, trgDevId:%{public}s,",
           session_.appId.c_str(), Anonymous::Change(session_.sourceDeviceId).c_str(),
@@ -112,9 +113,9 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("no valid session to peer device");
         return DistributedDB::DB_ERROR;
     }
-    size_t expectSize = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
-                        + session_.targetUserIds.size() * sizeof(int) + sizeof(SessionAppId) + session_.appId.size()
-                        + sizeof(SessionStoreId) + session_.storeId.size();
+    size_t expectSize = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair) +
+        session_.targetUserIds.size() * sizeof(int) + sizeof(SessionAppId) + session_.appId.size() +
+        sizeof(SessionStoreId) + session_.storeId.size() + sizeof(SessionAccountId) + session_.accountId.size();
 
     // align message uint width
     headSize = GET_ALIGNED_SIZE(expectSize, ALIGN_WIDTH);
@@ -194,28 +195,57 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     }
     ptr += (sizeof(SessionUserPair) + session_.targetUserIds.size() * sizeof(int));
 
-    SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
+    const uint8_t *end = data + totalLen;
+    if (!PackAppId(&ptr, end) || !PackStoreId(&ptr, end) || !PackAccountId(&ptr, end)) {
+        return false;
+    }
+    return true;
+}
+
+bool RouteHeadHandlerImpl::PackAppId(uint8_t **data, const uint8_t *end)
+{
+    SessionAppId *appPair = reinterpret_cast<SessionAppId *>(*data);
     uint32_t appIdSize = session_.appId.size();
     appPair->len = HostToNet(appIdSize);
-    uint8_t *end = data + totalLen;
-    ptr += sizeof(SessionAppId);
-    ret = memcpy_s(appPair->appId, end - ptr, session_.appId.c_str(), appIdSize);
-    if (ret != 0) {
+    *data += sizeof(SessionAppId);
+    auto ret = memcpy_s(appPair->appId, end - *data, session_.appId.c_str(), appIdSize);
+    if (ret != EOK) {
         ZLOGE("memcpy for app id failed, ret is %{public}d, leftSize is %{public}u, appIdSize is %{public}u",
-            ret, static_cast<uint32_t>(end - ptr), appIdSize);
+            ret, static_cast<uint32_t>(end - *data), appIdSize);
         return false;
     }
-    ptr += appIdSize;
+    *data += appIdSize;
+    return true;
+}
 
-    SessionStoreId *storePair = reinterpret_cast<SessionStoreId *>(ptr);
+bool RouteHeadHandlerImpl::PackStoreId(uint8_t **data, const uint8_t *end)
+{
+    SessionStoreId *storePair = reinterpret_cast<SessionStoreId *>(*data);
     uint32_t storeIdSize = session_.storeId.size();
-    ret = memcpy_s(storePair->storeId, end - ptr, session_.storeId.data(), storeIdSize);
-    if (ret != 0) {
+    storePair->len = HostToNet(storeIdSize);
+    *data += sizeof(SessionStoreId);
+    auto ret = memcpy_s(storePair->storeId, end - *data, session_.storeId.data(), storeIdSize);
+    if (ret != EOK) {
         ZLOGE("memcpy for store id failed, ret is %{public}d, leftSize is %{public}u, storeIdSize is %{public}u",
-            ret, static_cast<uint32_t>(end - ptr), storeIdSize);
+            ret, static_cast<uint32_t>(end - *data), storeIdSize);
         return false;
     }
-    storePair->len = HostToNet(storeIdSize);
+    *data += storeIdSize;
+    return true;
+}
+
+bool RouteHeadHandlerImpl::PackAccountId(uint8_t **data, const uint8_t *end)
+{
+    SessionAccountId *accountPair = reinterpret_cast<SessionAccountId *>(*data);
+    uint32_t accountIdSize = session_.accountId.size();
+    accountPair->len = HostToNet(accountIdSize);
+    *data += sizeof(SessionAccountId);
+    auto ret = memcpy_s(accountPair->accountId, end - *data, session_.accountId.data(), accountIdSize);
+    if (ret != EOK) {
+        ZLOGE("memcpy for account id failed, ret is %{public}d, leftSize is %{public}u, storeIdSize is %{public}u",
+            ret, static_cast<uint32_t>(end - *data), accountIdSize);
+        return false;
+    }
     return true;
 }
 
@@ -283,13 +313,21 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
 
     // flip the local and peer ends
     SessionPoint local { .deviceId = session_.targetDeviceId, .appId = session_.appId };
-    SessionPoint peer { .deviceId = session_.sourceDeviceId, .userId = session_.sourceUserId, .appId = session_.appId };
+    SessionPoint peer { .deviceId = session_.sourceDeviceId, .userId = session_.sourceUserId, .appId = session_.appId,
+        .accountId = session_.accountId };
     ZLOGD("valid session:appId:%{public}s, srcDevId:%{public}s, srcUser:%{public}u, trgDevId:%{public}s,",
           session_.appId.c_str(), Anonymous::Change(session_.sourceDeviceId).c_str(),
           session_.sourceUserId, Anonymous::Change(session_.targetDeviceId).c_str());
+    bool flag = false;
+    auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.sourceDeviceId, flag);
+    if (!flag) {
+        ZLOGI("get peer cap failed, peer deviceId:%{public}s", Anonymous::Change(session_.sourceDeviceId).c_str());
+        return false;
+    }
+    bool accountFlag = peerCap.version >= CapMetaData::ACCOUNT_VERSION;
     for (const auto &item : session_.targetUserIds) {
         local.userId = item;
-        if (SessionManager::GetInstance().CheckSession(local, peer)) {
+        if (SessionManager::GetInstance().CheckSession(local, peer, accountFlag)) {
             UserInfo userInfo = { .receiveUser = std::to_string(item) };
             userInfos.emplace_back(userInfo);
         }
@@ -340,7 +378,7 @@ bool RouteHeadHandlerImpl::UnPackDataHead(const uint8_t *data, uint32_t totalLen
 
 bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen)
 {
-    const uint8_t *ptr = data;
+    uint8_t *ptr = const_cast<uint8_t *>(data);
     uint32_t leftSize = totalLen;
 
     if (leftSize < sizeof(SessionDevicePair)) {
@@ -373,39 +411,61 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     ptr += userPairSize;
     leftSize -= userPairSize;
 
-    if (leftSize < sizeof(SessionAppId)) {
-        ZLOGE("failed to parse app id, leftSize : %{public}d", leftSize);
+    if (!UnPackAppId(&ptr, leftSize) || !UnPackStoreId(&ptr, leftSize) || !UnPackAccountId(&ptr, leftSize)) {
         return false;
     }
-    const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(ptr);
+    return true;
+}
+
+bool RouteHeadHandlerImpl::UnPackAppId(uint8_t **data, uint32_t leftSize)
+{
+    if (leftSize < sizeof(SessionAppId)) {
+        ZLOGE("failed to parse app id, leftSize:%{public}d.", leftSize);
+        return false;
+    }
+    const SessionAppId *appId = reinterpret_cast<const SessionAppId *>(*data);
     auto appIdLen = NetToHost(appId->len);
     if (leftSize - sizeof(SessionAppId) < appIdLen) {
         ZLOGE("failed to parse app id, appIdLen:%{public}d, leftSize:%{public}d.", appIdLen, leftSize);
         return false;
     }
-    session_.appId.append(appId->appId, appIdLen);
+    session_.appId = std::string(appId->appId, appIdLen);
     leftSize -= (sizeof(SessionAppId) + appIdLen);
-    if (leftSize > 0) {
-        ptr += (sizeof(SessionAppId) + appIdLen);
-        return UnPackStoreId(ptr, leftSize);
-    }
+    *data += (sizeof(SessionAppId) + appIdLen);
     return true;
 }
 
-bool RouteHeadHandlerImpl::UnPackStoreId(const uint8_t *data, uint32_t leftSize)
+bool RouteHeadHandlerImpl::UnPackStoreId(uint8_t **data, uint32_t leftSize)
 {
     if (leftSize < sizeof(SessionStoreId)) {
         ZLOGE("failed to parse store id, leftSize:%{public}d.", leftSize);
         return false;
     }
-    const uint8_t *ptr = data;
-    const SessionStoreId *storeId = reinterpret_cast<const SessionStoreId *>(ptr);
+    const SessionStoreId *storeId = reinterpret_cast<const SessionStoreId *>(*data);
     auto storeIdLen = NetToHost(storeId->len);
     if (leftSize - sizeof(SessionStoreId) < storeIdLen) {
         ZLOGE("failed to parse store id, storeIdLen:%{public}d, leftSize:%{public}d.", storeIdLen, leftSize);
         return false;
     }
     session_.storeId = std::string(storeId->storeId, storeIdLen);
+    leftSize -= (sizeof(SessionAppId) + storeIdLen);
+    *data += (sizeof(SessionAppId) + storeIdLen);
+    return true;
+}
+
+bool RouteHeadHandlerImpl::UnPackAccountId(uint8_t **data, uint32_t leftSize)
+{
+    if (leftSize < sizeof(SessionAccountId)) {
+        ZLOGE("failed to parse account id, leftSize:%{public}d.", leftSize);
+        return false;
+    }
+    const SessionAccountId *accountId = reinterpret_cast<const SessionAccountId *>(*data);
+    auto accountIdLen = NetToHost(accountId->len);
+    if (leftSize - sizeof(SessionAccountId) < accountIdLen) {
+        ZLOGE("failed to parse account id, accountIdLen:%{public}d, leftSize:%{public}d.", accountIdLen, leftSize);
+        return false;
+    }
+    session_.accountId = std::string(accountId->accountId, accountIdLen);
     return true;
 }
 } // namespace OHOS::DistributedData

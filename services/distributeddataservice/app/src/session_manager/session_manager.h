@@ -30,6 +30,7 @@ struct SessionPoint {
     uint32_t userId;
     std::string appId;
     std::string storeId;
+    std::string accountId;
 };
 
 class Session : public Serializable {
@@ -40,6 +41,7 @@ public:
     std::vector<uint32_t> targetUserIds;
     std::string appId;
     std::string storeId;
+    std::string accountId;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     inline bool IsValid()
@@ -52,12 +54,12 @@ class SessionManager {
 public:
     static SessionManager &GetInstance();
     Session GetSession(const SessionPoint &local, const std::string &targetDeviceId) const;
-    bool CheckSession(const SessionPoint &local, const SessionPoint &peer) const;
+    bool CheckSession(const SessionPoint &local, const SessionPoint &peer, bool accountFlag) const;
 private:
     bool GetSendAuthParams(const SessionPoint &local, const std::string &targetDeviceId,
         AclParams &aclParams) const;
-    bool GetRecvAuthParams(const SessionPoint &local, const std::string &targetDeviceId,
-        AclParams &aclParams, int peerUser) const;
+    bool GetRecvAuthParams(const SessionPoint &local, const SessionPoint &peer, bool accountFlag,
+        AclParams &aclParams) const;
 };
 } // namespace OHOS::DistributedData
 
