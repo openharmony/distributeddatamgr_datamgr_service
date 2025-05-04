@@ -119,7 +119,7 @@ int32_t CloudDbImpl::BatchDelete(const std::string &table, DBVBuckets &extends)
     return ExtensionUtil::ConvertStatus(status);
 }
 
-std::shared_ptr<DBCursor> CloudDbImpl::Query(const std::string &table, const DBVBucket &extend)
+std::pair<int32_t, std::shared_ptr<DBCursor>> CloudDbImpl::Query(const std::string &table, const DBVBucket &extend)
 {
     std::string cursor;
     auto it = extend.find(DistributedData::SchemaMeta::CURSOR_FIELD);
@@ -134,7 +134,11 @@ std::shared_ptr<DBCursor> CloudDbImpl::Query(const std::string &table, const DBV
     };
     OhCloudExtCloudDbData *cloudData = nullptr;
     auto status = OhCloudExtCloudDbBatchQuery(database_, &info, &cloudData);
-    return (status == ERRNO_SUCCESS && cloudData != nullptr) ? std::make_shared<CloudCursorImpl>(cloudData) : nullptr;
+    if (status == ERRNO_SUCCESS && cloudData != nullptr) {
+        return std::make_pair(DBErr::E_OK, std::make_shared<CloudCursorImpl>(cloudData));
+    }
+    return status != ERRNO_SUCCESS ? std::make_pair(ExtensionUtil::ConvertStatus(status), nullptr)
+        : std::make_pair(DBErr::E_ERROR, nullptr);
 }
 
 int32_t CloudDbImpl::Lock()
