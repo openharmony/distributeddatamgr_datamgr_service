@@ -45,8 +45,7 @@ std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
             return true;
         }
 
-        if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)
-            || intention == UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
+        if (IsValidIntention(intention)) {
             storePtr = std::make_shared<RuntimeStore>(intention);
             if (!storePtr->Init()) {
                 ZLOGE("Init runtime store failed.");
@@ -93,6 +92,11 @@ void StoreCache::CloseStores()
 {
     ZLOGI("CloseStores, stores size:%{public}zu", stores_.Size());
     stores_.Clear();
+}
+
+bool StoreCache::IsValidIntention(const std::string &intention)
+{
+    return UnifiedDataUtils::GetIntentionByString(intention) != UD_INTENTION_BUTT;
 }
 } // namespace UDMF
 } // namespace OHOS

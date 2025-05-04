@@ -59,6 +59,8 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
         return E_DB_ERROR;
     }
     std::vector<std::string> timeoutKeys;
+    Duration interval = INTERVAL;
+    CheckFileMangerIntention(intention, interval);
     auto status = GetTimeoutKeys(store, INTERVAL, timeoutKeys);
     if (status != E_OK) {
         ZLOGE("Timeout keys get failed");
@@ -94,6 +96,16 @@ Status LifeCyclePolicy::GetTimeoutKeys(
             || curTime < data.GetRuntime()->createTime) {
             timeoutKeys.push_back(data.GetRuntime()->key.key);
         }
+    }
+    return E_OK;
+}
+
+Status LifeCyclePolicy::CheckFileMangerIntention(const std::string &intention, Duration &interval)
+{
+    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_SYSTEM_SHARE) ||
+        intention == UD_INTENTION_MAP.at(UD_INTENTION_PICKER) ||
+        intention == UD_INTENTION_MAP.at(UD_INTENTION_MENU)) {
+        interval = SYSTEM_SHARE_INTERVAL;
     }
     return E_OK;
 }

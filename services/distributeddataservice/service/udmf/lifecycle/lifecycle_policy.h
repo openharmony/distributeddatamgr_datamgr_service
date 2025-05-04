@@ -23,6 +23,7 @@ class LifeCyclePolicy {
 public:
     using Duration = std::chrono::steady_clock::duration;
     static constexpr Duration INTERVAL = std::chrono::milliseconds(60 * 60 * 1000);
+    static constexpr Duration SYSTEM_SHARE_INTERVAL = std::chrono::milliseconds(24 * 60 * 60 * 1000);
     virtual ~LifeCyclePolicy() = default;
     virtual Status OnGot(const UnifiedKey &key);
     virtual Status OnStart(const std::string &intention);
@@ -31,6 +32,7 @@ public:
         const std::shared_ptr<Store> &store, Duration interval, std::vector<std::string> &timeoutKeys);
 
 private:
+    virtual Status CheckFileMangerIntention(const std::string &intention, Duration &interval);
     static constexpr const char *DATA_PREFIX = "udmf://";
 };
 } // namespace UDMF
