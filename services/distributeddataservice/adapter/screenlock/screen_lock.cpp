@@ -14,7 +14,7 @@
  */
 
 #define LOG_TAG "ScreenLock"
-#include "screenlock/screen_lock.h"
+#include "screen_lock.h"
 
 #include "account/account_delegate.h"
 #include "log_print.h"

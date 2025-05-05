@@ -36,7 +36,8 @@ int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, 
     }
 
     std::string distributedTableName = ObtainDistributedTableName(device, table);
-    if (!ITypesUtil::Marshal(reply, distributedTableName)) {
+    int32_t status = distributedTableName.empty() ? RDB_ERROR : RDB_OK;
+    if (!ITypesUtil::Marshal(reply, status, distributedTableName)) {
         ZLOGE("Marshal distributedTableName:%{public}s", distributedTableName.c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

@@ -34,13 +34,11 @@ ohos_source_set("distributeddata_screenlock") {
     "-fstack-protector-strong",
   ]
 
-  include_dirs = [
-    "../include/utils",
-    "${data_service_path}/framework/include",
-  ]
-
   public_configs = [ ":module_public_config" ]
-  deps = [ "${data_service_path}/adapter/account:distributeddata_account" ]
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
 
   external_deps = [
     "c_utils:utils",

@@ -248,6 +248,7 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device
         ZLOGE("get uuid failed");
         return "";
     }
+    ZLOGI("uuid=%{public}s appId=%{public}s", uuid.c_str(), appId.c_str());
     return DistributedDB::RelationalStoreManager::GetDistributedTableName(uuid, table);
 }
 
