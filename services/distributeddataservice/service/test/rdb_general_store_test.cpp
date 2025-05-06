@@ -854,7 +854,7 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
 HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
 {
     std::vector<std::string> tables = { "table1", "table2" };
-    int32_t type = 0;
+    int32_t type = DistributedTableType::DISTRIBUTED_DEVICE;
     std::vector<DistributedData::Reference> references;
     auto result = store->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
@@ -868,6 +868,9 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
     result = store->SetDistributedTables(test, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     MockRelationalStoreDelegate::gTestResult = true;
+    result = store->SetDistributedTables(tables, type, references);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    type = DistributedTableType::DISTRIBUTED_CLOUD;
     result = store->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
