@@ -67,6 +67,13 @@ ohos_unittest("CloudDataTest") {
   }
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_types_util.cpp",
+    "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
     "cloud_data_test.cpp",
   ]
@@ -78,6 +85,7 @@ ohos_unittest("CloudDataTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "hicollie:libhicollie",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
@@ -90,7 +98,6 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-    "${data_service_path}/service/cloud:distributeddata_cloud",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -113,6 +120,13 @@ ohos_unittest("CloudServiceImplTest") {
   }
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_types_util.cpp",
+    "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
     "cloud_service_impl_test.cpp",
   ]
@@ -123,7 +137,7 @@ ohos_unittest("CloudServiceImplTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
     "c_utils:utils",
-    "hilog:libhilog",
+    "hicollie:libhicollie",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
@@ -136,10 +150,9 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-    "${data_service_path}/service/cloud:distributeddata_cloud",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
-    "../../framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
     "//third_party/googletest:gtest_main",
   ]
@@ -746,13 +759,13 @@ ohos_unittest("ObjectManagerTest") {
   ]
 
   include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
+    "${data_service_path}/adapter/include/utils",
     "${data_service_path}/app/src",
     "${data_service_path}/service/common",
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "${data_service_path}/adapter/include/utils",
     "${data_service_path}/service/test/mock",
+    "${dataobject_path}/interfaces/innerkits",
+    "${dataobject_path}/frameworks/innerkitsimpl/include",
+    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
   ]
 
   configs = [ ":module_private_config" ]
@@ -889,9 +902,6 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/preprocess",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -917,7 +927,6 @@ ohos_unittest("UdmfRunTimeStoreTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/udmf:udmf_server",
@@ -1609,7 +1618,7 @@ ohos_unittest("BootStrapMockTest") {
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/service/backup:distributeddata_backup",
-    "../../framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
 
   cflags = [

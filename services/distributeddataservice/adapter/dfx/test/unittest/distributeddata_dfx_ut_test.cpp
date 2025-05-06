@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <string>
-#include "reporter.h"
+#include "dfx/reporter.h"
 #include "fake_hiview.h"
 #include "value_hash.h"
 

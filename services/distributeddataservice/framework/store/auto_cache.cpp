@@ -17,7 +17,7 @@
 
 #include <cinttypes>
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "changeevent/remote_change_event.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"

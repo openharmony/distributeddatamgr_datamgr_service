@@ -17,13 +17,11 @@
 #include "upgrade_manager.h"
 
 #include <thread>
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
-#include "utils/constant.h"
-#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;

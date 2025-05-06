@@ -18,7 +18,7 @@
 
 #include <gmock/gmock.h>
 #include <vector>
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 namespace OHOS {
 namespace DistributedData {
 class AccountDelegateMock : public AccountDelegate {

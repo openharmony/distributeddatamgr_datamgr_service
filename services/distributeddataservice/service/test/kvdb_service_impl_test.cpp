@@ -37,7 +37,7 @@
 #include "mock/access_token_mock.h"
 #include "mock/meta_data_manager_mock.h"
 #include "nativetoken_kit.h"
-#include "network_delegate.h"
+#include "network/network_delegate.h"
 #include "network_delegate_mock.h"
 #include "token_setproc.h"
 #include "types.h"

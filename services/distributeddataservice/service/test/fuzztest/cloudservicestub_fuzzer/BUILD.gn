@@ -20,11 +20,6 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
   module_out_path = "datamgr_service/datamgr_service"
 
   include_dirs = [
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/app/src",
-    "${data_service_path}/framework/include",
-    "${data_service_path}/service/backup/include",
-    "${data_service_path}/service/bootstrap/include",
     "${data_service_path}/service/cloud",
     "${data_service_path}/service/common",
     "${data_service_path}/service/config/include",
@@ -35,24 +30,9 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/object",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_distributeddb_path}",
-    "${kv_store_distributeddb_path}/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
-    "${relational_store_path}/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-    "//third_party/json/single_include",
-    "${data_service_path}/adapter/include/communicator",
   ]
 
-  fuzz_config_file =
-      "${data_service_path}/service/test/fuzztest/cloudservicestub_fuzzer"
+  fuzz_config_file = "${data_service_path}/service/test/fuzztest/cloudservicestub_fuzzer"
 
   cflags = [
     "-g",
@@ -69,6 +49,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/adapter/utils:distributeddata_utils",
@@ -81,10 +62,6 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
   ]
 
   external_deps = [
-    "ability_base:want",
-    "ability_base:zuri",
-    "ability_runtime:ability_manager",
-    "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
@@ -95,9 +72,9 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "kv_store:datamgr_common",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",

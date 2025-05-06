@@ -234,21 +234,17 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
 
 std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
 {
-    ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), table.c_str());
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), Anonymous::Change(table).c_str());
     auto uid = IPCSkeleton::GetCallingUid();
-    std::string appId = "";
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == Security::AccessToken::TOKEN_HAP) {
-        auto bundleName = BundleMgrAdapter::GetInstance().GetBundleName(uid);
-        auto [instanceId, user] = GetInstIndexAndUser(tokenId, bundleName);
-        appId = BundleMgrAdapter::GetInstance().GetAppId(user, bundleName);
-    }
-    auto uuid = DmAdapter::GetInstance().CalcClientUuid(appId, device);
+    auto bundleName = BundleMgrAdapter::GetInstance().GetBundleName(uid);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto appId = CheckerManager::GetInstance().GetAppId({ uid, tokenId, bundleName });
+    auto uuid = DmAdapter::GetInstance().CalcClientUuid(appId, DmAdapter::GetInstance().ToUUID(device));
     if (uuid.empty()) {
-        ZLOGE("get uuid failed");
+        ZLOGE("get uuid failed, bundle:%{public}s, deviceId:%{public}s, table:%{public}s", bundleName.c_str(),
+            Anonymous::Change(device).c_str(), Anonymous::Change(table).c_str());
         return "";
     }
-    ZLOGI("uuid=%{public}s appId=%{public}s", uuid.c_str(), appId.c_str());
     return DistributedDB::RelationalStoreManager::GetDistributedTableName(uuid, table);
 }
 

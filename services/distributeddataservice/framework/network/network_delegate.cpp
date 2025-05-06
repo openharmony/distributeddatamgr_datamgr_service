@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "network_delegate.h"
+#include "network/network_delegate.h"
 
 namespace OHOS {
 namespace DistributedData {

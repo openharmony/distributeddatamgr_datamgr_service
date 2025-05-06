@@ -15,7 +15,7 @@
 #ifndef STORE_ACCOUNT_OBSERVER_H
 #define STORE_ACCOUNT_OBSERVER_H
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 namespace OHOS {
 namespace UDMF {
 class RuntimeStoreAccountObserver : public DistributedData::AccountDelegate::Observer {

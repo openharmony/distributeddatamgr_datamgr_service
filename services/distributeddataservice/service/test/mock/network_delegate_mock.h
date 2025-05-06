@@ -15,7 +15,7 @@
 #ifndef OHOS_NETWORK_DELEGATE_MOCK_H
 #define OHOS_NETWORK_DELEGATE_MOCK_H
 
-#include "network_delegate.h"
+#include "network/network_delegate.h"
 
 namespace OHOS {
 namespace DistributedData {
