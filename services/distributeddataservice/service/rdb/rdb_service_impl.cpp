@@ -18,6 +18,7 @@
 #include "abs_rdb_predicates.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bundle_mgr/bundle_mgr_adapter.h"
 #include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
@@ -233,10 +234,15 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
 
 std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
 {
-    ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), table.c_str());
-    auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(device);
+    ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), Anonymous::Change(table).c_str());
+    auto uid = IPCSkeleton::GetCallingUid();
+    auto bundleName = BundleMgrAdapter::GetInstance().GetBundleName(uid);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto appId = CheckerManager::GetInstance().GetAppId({ uid, tokenId, bundleName });
+    auto uuid = DmAdapter::GetInstance().CalcClientUuid(appId, DmAdapter::GetInstance().ToUUID(device));
     if (uuid.empty()) {
-        ZLOGE("get uuid failed");
+        ZLOGE("get uuid failed, bundle:%{public}s, deviceId:%{public}s, table:%{public}s", bundleName.c_str(),
+            Anonymous::Change(device).c_str(), Anonymous::Change(table).c_str());
         return "";
     }
     return DistributedDB::RelationalStoreManager::GetDistributedTableName(uuid, table);
