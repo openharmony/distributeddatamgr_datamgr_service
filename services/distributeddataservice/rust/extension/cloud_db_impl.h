@@ -36,7 +36,7 @@ public:
     int32_t BatchUpdate(const std::string &table, DBVBuckets &&values, DBVBuckets &extends) override;
     int32_t BatchUpdate(const std::string &table, DBVBuckets &&values, const DBVBuckets &extends) override;
     int32_t BatchDelete(const std::string &table, DBVBuckets &extends) override;
-    std::shared_ptr<DBCursor> Query(const std::string &table, const DBVBucket &extend) override;
+    std::pair<int32_t, std::shared_ptr<DBCursor>> Query(const std::string &table, const DBVBucket &extend) override;
     int32_t Lock() override;
     int32_t Heartbeat() override;
     int32_t Unlock() override;
