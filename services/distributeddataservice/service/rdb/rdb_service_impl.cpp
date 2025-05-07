@@ -238,7 +238,10 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device
     auto uid = IPCSkeleton::GetCallingUid();
     auto bundleName = BundleMgrAdapter::GetInstance().GetBundleName(uid);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto appId = CheckerManager::GetInstance().GetAppId({ uid, tokenId, bundleName });
+    std::string appId = " ";
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == Security::AccessToken::TOKEN_HAP) {
+        appId = CheckerManager::GetInstance().GetAppId({ uid, tokenId, bundleName });
+    }
     auto uuid = DmAdapter::GetInstance().CalcClientUuid(appId, DmAdapter::GetInstance().ToUUID(device));
     if (uuid.empty()) {
         ZLOGE("get uuid failed, bundle:%{public}s, deviceId:%{public}s, table:%{public}s", bundleName.c_str(),

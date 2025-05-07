@@ -27,7 +27,7 @@ ohos_source_set("distributeddata_bundle_mgr") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = []
+  sources = [ "bundle_mgr_adapter.cpp" ]
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
@@ -47,7 +47,6 @@ ohos_source_set("distributeddata_bundle_mgr") {
   ]
 
   external_deps = [ "kv_store:datamgr_common" ]
-  sources += [ "bundle_mgr_adapter.cpp" ]
   external_deps += [
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",

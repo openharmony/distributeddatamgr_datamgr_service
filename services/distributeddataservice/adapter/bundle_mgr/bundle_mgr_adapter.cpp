@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "bundle_mgr_adapter"
+#define LOG_TAG "BundleMgrAdapter"
 #include "bundle_mgr/bundle_mgr_adapter.h"
 #include "bundle_mgr_client.h"
 #include "log_print.h"
