@@ -41,6 +41,8 @@ bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLo
 
 bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value, bool isLocal)
 {
+    (void)key;
+    (void)value;
     return true;
 }
 
@@ -89,7 +91,9 @@ HWTEST_F(UserDelegateMockTest, GetLocalUserStatus, TestSize.Level0)
 */
 HWTEST_F(UserDelegateMockTest, InitLocalUserMeta, TestSize.Level0)
 {
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_)).WillOnce(Return(false));
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
+        .Times(1)
+        .WillOnce(Return(false));
     bool ret = UserDelegate::GetInstance().InitLocalUserMeta();
     EXPECT_FALSE(ret);
 
@@ -148,15 +152,16 @@ HWTEST_F(UserDelegateMockTest, Init, TestSize.Level0)
     EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
     std::shared_ptr<ExecutorPool> poolPtr = std::make_shared<ExecutorPool>(1, 0);
     ASSERT_NE(poolPtr, nullptr);
-    UserDelegate::GetInstance().executors_ = poolPtr;
-    ASSERT_NE(UserDelegate::GetInstance().executors_, nullptr);
+    UserDelegate instance;
+    instance.executors_ = poolPtr;
+    ASSERT_NE(instance.executors_, nullptr);
 
     std::vector<int> users = {0, 1};
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
         .WillRepeatedly(DoAll(SetArgReferee<0>(users), Return(true)));
-    EXPECT_TRUE(UserDelegate::GetInstance().InitLocalUserMeta());
-    UserDelegate::GetInstance().Init(poolPtr);
-    ASSERT_TRUE(UserDelegate::GetInstance().executors_ != nullptr);
+    EXPECT_TRUE(instance.InitLocalUserMeta());
+    instance.Init(poolPtr);
+    ASSERT_TRUE(instance.executors_ != nullptr);
 }
 }
 }
