@@ -66,7 +66,6 @@ ohos_source_set("distributeddata_rdb") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/bundle_mgr:distributeddata_bundle_mgr",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/crypto:distributeddata_crypto",
