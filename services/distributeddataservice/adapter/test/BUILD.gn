@@ -20,7 +20,6 @@ group("unittest") {
 
   deps += [
     "../account/test:unittest",
-    "../bundle_mgr/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
   ]

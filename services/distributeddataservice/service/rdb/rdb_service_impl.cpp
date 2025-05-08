@@ -18,7 +18,6 @@
 #include "abs_rdb_predicates.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "bundle_mgr/bundle_mgr_adapter.h"
 #include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
@@ -232,19 +231,22 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
     return !CheckerManager::GetInstance().GetAppId(storeInfo).empty();
 }
 
-std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
+std::string RdbServiceImpl::ObtainDistributedTableName(const RdbSyncerParam &param, const std::string &device,
+    const std::string &table)
 {
-    ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), Anonymous::Change(table).c_str());
-    auto uid = IPCSkeleton::GetCallingUid();
-    auto bundleName = BundleMgrAdapter::GetInstance().GetBundleName(uid);
+    if (!CheckAccess(param.bundleName_, "")) {
+        ZLOGE("bundleName:%{public}s. Permission error", param.bundleName_.c_str());
+        return "";
+    }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     std::string appId = " ";
     if (AccessTokenKit::GetTokenTypeFlag(tokenId) == Security::AccessToken::TOKEN_HAP) {
-        appId = CheckerManager::GetInstance().GetAppId({ uid, tokenId, bundleName });
+        auto uid = IPCSkeleton::GetCallingUid();
+        appId = CheckerManager::GetInstance().GetAppId({ uid, tokenId, param.bundleName_ });
     }
     auto uuid = DmAdapter::GetInstance().CalcClientUuid(appId, DmAdapter::GetInstance().ToUUID(device));
     if (uuid.empty()) {
-        ZLOGE("get uuid failed, bundle:%{public}s, deviceId:%{public}s, table:%{public}s", bundleName.c_str(),
+        ZLOGE("get uuid failed, bundle:%{public}s, deviceId:%{public}s, table:%{public}s", param.bundleName_.c_str(),
             Anonymous::Change(device).c_str(), Anonymous::Change(table).c_str());
         return "";
     }
