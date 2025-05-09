@@ -114,7 +114,6 @@ bool BundleChecker::IsValid(const CheckerManager::StoreInfo &info)
     if (AccessTokenKit::GetHapTokenInfo(info.tokenId, tokenInfo) != RET_SUCCESS) {
         return false;
     }
-
     return tokenInfo.bundleName == info.bundleName;
 }
 

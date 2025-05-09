@@ -228,7 +228,8 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = bundleName;
     storeInfo.storeId = RemoveSuffix(storeName);
-    return !CheckerManager::GetInstance().GetAppId(storeInfo).empty();
+
+    return CheckerManager::GetInstance().IsValid(storeInfo);
 }
 
 std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
