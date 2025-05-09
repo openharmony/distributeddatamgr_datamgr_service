@@ -20,14 +20,17 @@
 #include <gtest/gtest.h>
 #include <ipc_skeleton.h>
 
+#include "bootstrap.h"
 #include "device_manager_adapter_mock.h"
 #include "executor_pool.h"
+#include "kvstore_meta_manager.h"
 #include "kv_store_nb_delegate_mock.h"
 #include "object_types.h"
 #include "snapshot/machine_status.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
+using namespace OHOS::DistributedData;
 using namespace std;
 using namespace testing;
 using AssetValue = OHOS::CommonType::AssetValue;
@@ -101,6 +104,12 @@ void ObjectManagerTest::SetUpTestCase(void)
 {
     devMgrAdapterMock = make_shared<DeviceManagerAdapterMock>();
     BDeviceManagerAdapter::deviceManagerAdapter = devMgrAdapterMock;
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
 }
 
 void ObjectManagerTest::TearDownTestCase(void)
@@ -184,7 +193,7 @@ HWTEST_F(ObjectManagerTest, Clear001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
     auto result = manager->Clear();
-    ASSERT_EQ(result, OHOS::DistributedObject::OBJECT_STORE_NOT_FOUND);
+    ASSERT_EQ(result, OHOS::DistributedObject::OBJECT_SUCCESS);
 }
 
 /**
@@ -1085,5 +1094,17 @@ HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
     EXPECT_FALSE(ret.empty());
     EXPECT_NE(saveInfo.bundleName, bundleName);
     EXPECT_FALSE(hasAsset);
+}
+
+/**
+* @tc.name: InitUserMeta001
+* @tc.desc: test clear old user meta.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, InitUserMeta001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    auto status = manager->InitUserMeta();
+    ASSERT_EQ(status, DistributedObject::OBJECT_SUCCESS);
 }
 } // namespace OHOS::Test

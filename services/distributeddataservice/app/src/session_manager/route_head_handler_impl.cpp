@@ -113,7 +113,8 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         return DistributedDB::DB_ERROR;
     }
     size_t expectSize = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
-                        + session_.targetUserIds.size() * sizeof(int) + sizeof(SessionAppId) + session_.appId.size();
+                        + session_.targetUserIds.size() * sizeof(int) + sizeof(SessionAppId) + session_.appId.size()
+                        + sizeof(SessionStoreId) + session_.storeId.size();
 
     // align message uint width
     headSize = GET_ALIGNED_SIZE(expectSize, ALIGN_WIDTH);
@@ -194,16 +195,27 @@ bool RouteHeadHandlerImpl::PackDataBody(uint8_t *data, uint32_t totalLen)
     ptr += (sizeof(SessionUserPair) + session_.targetUserIds.size() * sizeof(int));
 
     SessionAppId *appPair = reinterpret_cast<SessionAppId *>(ptr);
-    ptr += sizeof(SessionAppId);
-
-    uint8_t *end = data + totalLen;
     uint32_t appIdSize = session_.appId.size();
-    ret = memcpy_s(appPair->appId, end - ptr, session_.appId.data(), appIdSize);
+    appPair->len = HostToNet(appIdSize);
+    uint8_t *end = data + totalLen;
+    ptr += sizeof(SessionAppId);
+    ret = memcpy_s(appPair->appId, end - ptr, session_.appId.c_str(), appIdSize);
     if (ret != 0) {
-        ZLOGE("strcpy for app id failed, error:%{public}d", errno);
+        ZLOGE("memcpy for app id failed, ret is %{public}d, leftSize is %{public}u, appIdSize is %{public}u",
+            ret, static_cast<uint32_t>(end - ptr), appIdSize);
         return false;
     }
-    appPair->len = HostToNet(appIdSize);
+    ptr += appIdSize;
+
+    SessionStoreId *storePair = reinterpret_cast<SessionStoreId *>(ptr);
+    uint32_t storeIdSize = session_.storeId.size();
+    ret = memcpy_s(storePair->storeId, end - ptr, session_.storeId.data(), storeIdSize);
+    if (ret != 0) {
+        ZLOGE("memcpy for store id failed, ret is %{public}d, leftSize is %{public}u, storeIdSize is %{public}u",
+            ret, static_cast<uint32_t>(end - ptr), storeIdSize);
+        return false;
+    }
+    storePair->len = HostToNet(storeIdSize);
     return true;
 }
 
@@ -222,6 +234,9 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
 
 std::string RouteHeadHandlerImpl::ParseStoreId(const std::string &deviceId, const std::string &label)
 {
+    if (!session_.storeId.empty()) {
+        return session_.storeId;
+    }
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ deviceId });
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
@@ -255,7 +270,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
             metaData.deviceId = session_.targetDeviceId;
             metaData.user = DEFAULT_USERID;
             metaData.bundleName = session_.appId;
-            metaData.storeId = storeId;
+            metaData.storeId = std::move(storeId);
             if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
                 int foregroundUserId = 0;
                 AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
@@ -369,6 +384,28 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
         return false;
     }
     session_.appId.append(appId->appId, appIdLen);
+    leftSize -= (sizeof(SessionAppId) + appIdLen);
+    if (leftSize > 0) {
+        ptr += (sizeof(SessionAppId) + appIdLen);
+        return UnPackStoreId(ptr, leftSize);
+    }
+    return true;
+}
+
+bool RouteHeadHandlerImpl::UnPackStoreId(const uint8_t *data, uint32_t leftSize)
+{
+    if (leftSize < sizeof(SessionStoreId)) {
+        ZLOGE("failed to parse store id, leftSize:%{public}d.", leftSize);
+        return false;
+    }
+    const uint8_t *ptr = data;
+    const SessionStoreId *storeId = reinterpret_cast<const SessionStoreId *>(ptr);
+    auto storeIdLen = NetToHost(storeId->len);
+    if (leftSize - sizeof(SessionStoreId) < storeIdLen) {
+        ZLOGE("failed to parse store id, storeIdLen:%{public}d, leftSize:%{public}d.", storeIdLen, leftSize);
+        return false;
+    }
+    session_.storeId = std::string(storeId->storeId, storeIdLen);
     return true;
 }
 } // namespace OHOS::DistributedData

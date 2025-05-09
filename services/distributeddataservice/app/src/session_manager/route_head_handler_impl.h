@@ -53,6 +53,11 @@ struct SessionAppId {
     uint32_t len;
     char appId[0];
 };
+
+struct SessionStoreId {
+    uint32_t len;
+    char storeId[0];
+};
 #pragma pack()
 
 class RouteHeadHandlerImpl : public DistributedData::RouteHeadHandler {
@@ -74,6 +79,7 @@ private:
     bool UnPackDataHead(const uint8_t *data, uint32_t totalLen, RouteHead &routeHead);
     bool UnPackDataBody(const uint8_t *data, uint32_t totalLen);
     std::string ParseStoreId(const std::string &deviceId, const std::string &label);
+    bool UnPackStoreId(const uint8_t *data, uint32_t leftSize);
 
     std::string userId_;
     std::string appId_;

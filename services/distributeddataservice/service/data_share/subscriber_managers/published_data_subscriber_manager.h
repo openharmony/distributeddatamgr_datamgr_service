@@ -37,7 +37,6 @@ struct PublishedDataKey {
     std::string key;
     std::string bundleName;
     int64_t subscriberId;
-    int32_t userId;
 };
 
 class PublishedDataSubscriberManager {

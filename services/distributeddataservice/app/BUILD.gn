@@ -38,7 +38,6 @@ ohos_sa_profile("distributeddata_profile") {
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
-    "${kv_store_common_path}",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${data_service_path}/adapter/include/account",
@@ -125,6 +124,7 @@ ohos_shared_library("distributeddataservice") {
 
   configs = [ ":module_private_config" ]
   deps = [
+    "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",

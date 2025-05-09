@@ -91,7 +91,7 @@ bool UserDelegate::NotifyUserEvent(const UserDelegate::UserEvent &userEvent)
 
 void UserDelegate::LocalUserObserver::OnAccountChanged(const AccountEventInfo &eventInfo, int32_t timeout)
 {
-    return;
+    userDelegate_.NotifyUserEvent({});
 }
 
 UserDelegate::LocalUserObserver::LocalUserObserver(UserDelegate &userDelegate) : userDelegate_(userDelegate) {}

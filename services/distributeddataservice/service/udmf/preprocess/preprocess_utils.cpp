@@ -337,7 +337,7 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
 {
     record->ComputeUris([&uris, &isLocal, &tokenId] (UriInfo &uriInfo) {
         std::string newUriStr = "";
-        if (isLocal) {
+        if (isLocal && uriInfo.authUri.empty()) {
             Uri tmpUri(uriInfo.oriUri);
             std::string path = tmpUri.GetPath();
             std::string bundleName;
@@ -353,7 +353,7 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
             }
             uriInfo.authUri = newUriStr;
         } else {
-            newUriStr = uriInfo.dfsUri;
+            newUriStr = isLocal ? uriInfo.authUri : uriInfo.dfsUri;
         }
         Uri uri(newUriStr);
         if (uri.GetAuthority().empty()) {

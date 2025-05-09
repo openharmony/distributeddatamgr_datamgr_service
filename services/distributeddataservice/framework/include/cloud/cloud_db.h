@@ -40,9 +40,9 @@ public:
 
     virtual int32_t BatchDelete(const std::string &table, VBuckets &extends);
 
-    virtual std::shared_ptr<Cursor> Query(const std::string &table, const VBucket &extend);
+    virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, const VBucket &extend);
 
-    virtual std::shared_ptr<Cursor> Query(GenQuery &query, const VBucket &extend);
+    virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const VBucket &extend);
 
     virtual int32_t PreSharing(const std::string &table, VBuckets &extend);
 

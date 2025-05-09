@@ -59,6 +59,7 @@ public:
     bool IsBound(uint32_t user) override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
+    int32_t SetReference(const std::vector<Reference> &references);
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
 	    const std::vector<Reference> &references) override;
     int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
@@ -130,7 +131,7 @@ private:
     private:
         enum ChangeType {
             CLOUD_DATA_CHANGE = 0,
-            CLOUD_DATA_CLEAN
+            CLOUD_LOGOUT,
         };
         void PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables, ChangeType type);
         friend RdbGeneralStore;

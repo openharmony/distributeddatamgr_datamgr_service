@@ -20,7 +20,7 @@
 #include <mutex>
 
 #include "executor_pool.h"
-#include "types.h"
+#include "visibility.h"
 
 namespace OHOS {
 namespace DistributedData {

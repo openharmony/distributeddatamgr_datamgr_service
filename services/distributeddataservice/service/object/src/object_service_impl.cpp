@@ -139,6 +139,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     StoreMetaData saveMeta;
     SaveMetaData(saveMeta, std::to_string(userId), accountId);
     ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
+    ObjectStoreManager::GetInstance()->InitUserMeta();
     RegisterObjectServiceInfo();
     RegisterHandler();
     ObjectDmsHandler::GetInstance().RegisterDmsEvent();
@@ -382,8 +383,9 @@ void ObjectServiceImpl::RegisterObjectServiceInfo()
 
 void ObjectServiceImpl::RegisterHandler()
 {
-    Handler handler =
-        std::bind(&ObjectServiceImpl::DumpObjectServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    Handler handler = [this](int fd, std::map<std::string, std::vector<std::string>> &params) {
+        DumpObjectServiceInfo(fd, params);
+    };
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
 }
 

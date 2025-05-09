@@ -145,6 +145,7 @@ private:
     bool ReleaseUserInfo(int32_t user, CloudSyncScene scene);
     bool DoCloudSync(int32_t user, CloudSyncScene scene);
     bool StopCloudSync(int32_t user, CloudSyncScene scene);
+    bool CleanWaterVersion(int32_t user);
 
     static std::pair<int32_t, CloudInfo> GetCloudInfo(int32_t userId);
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromMeta(int32_t userId);

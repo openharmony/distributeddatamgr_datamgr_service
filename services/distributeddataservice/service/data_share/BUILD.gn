@@ -49,6 +49,7 @@ ohos_source_set("data_share_service") {
   sources = [
     "common/app_connect_manager.cpp",
     "common/bundle_mgr_proxy.cpp",
+    "common/common_utils.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
     "common/extension_ability_manager.cpp",
@@ -131,6 +132,8 @@ ohos_source_set("data_share_service") {
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "qos_manager:concurrent_task_client",
+    "qos_manager:qos",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
     "samgr:samgr_proxy",

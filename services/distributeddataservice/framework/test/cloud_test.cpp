@@ -502,9 +502,9 @@ HWTEST_F(ServicesCloudDBTest, CloudDB, TestSize.Level0)
     EXPECT_EQ(result1, GeneralError::E_NOT_SUPPORT);
 
     auto result2 = cloudDB.Query(table, extend);
-    EXPECT_EQ(result2, nullptr);
+    EXPECT_EQ(result2.second, nullptr);
     result2 = cloudDB.Query(query, extend);
-    EXPECT_EQ(result2, nullptr);
+    EXPECT_EQ(result2.second, nullptr);
 
     auto result3 = cloudDB.AliveTime();
     EXPECT_EQ(result3, -1);

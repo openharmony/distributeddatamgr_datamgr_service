@@ -26,6 +26,7 @@
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
+#include "device_sync_app/device_sync_app_manager.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
 #include "communicator/device_manager_adapter.h"
@@ -62,6 +63,7 @@ constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
 constexpr const char *VALUES = " VALUES ";
 constexpr const char *LOGOUT_DELETE_FLAG = "DELETE#ALL_CLOUDDATA";
+constexpr const char *LOGOUT_RESERVE_FLAG = "RESERVE#ALL_CLOUDDATA";
 constexpr const LockAction LOCK_ACTION =
     static_cast<LockAction>(static_cast<uint32_t>(LockAction::INSERT) | static_cast<uint32_t>(LockAction::UPDATE) |
                             static_cast<uint32_t>(LockAction::DELETE) | static_cast<uint32_t>(LockAction::DOWNLOAD));
@@ -897,6 +899,20 @@ void RdbGeneralStore::Report(const std::string &faultType, int32_t errCode, cons
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
+int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
+{
+    std::vector<DistributedDB::TableReferenceProperty> properties;
+    for (const auto &reference : references) {
+        properties.push_back({reference.sourceTable, reference.targetTable, reference.refFields});
+    }
+    auto status = delegate_->SetReference(properties);
+    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
+        ZLOGE("distributed table set reference failed, err:%{public}d", status);
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
     const std::vector<Reference> &references)
 {
@@ -917,18 +933,17 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             return GeneralError::E_ERROR;
         }
     }
-    std::vector<DistributedDB::TableReferenceProperty> properties;
-    for (const auto &reference : references) {
-        properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
-    }
-    auto status = delegate_->SetReference(properties);
-    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
-        ZLOGE("distributed table set reference failed, err:%{public}d", status);
-        return GeneralError::E_ERROR;
+    if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
+        auto status = SetReference(references);
+        if (status != GeneralError::E_OK) {
+            return GeneralError::E_ERROR;
+        }
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
-    if (exist) {
-        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database));
+    if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
+        auto force = DeviceSyncAppManager::GetInstance().Check(
+            {observer_.meta_.appId, observer_.meta_.bundleName, database.version});
+        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
     }
     CloudMark metaData(storeInfo_);
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
@@ -1191,8 +1206,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
                 info.push_back(std::move(value));
                 continue;
             }
-            auto deleteKey = std::get_if<std::string>(&value);
-            if (deleteKey != nullptr && (*deleteKey == LOGOUT_DELETE_FLAG)) {
+            auto key = std::get_if<std::string>(&value);
+            if (key != nullptr && (*key == LOGOUT_DELETE_FLAG || *key == LOGOUT_RESERVE_FLAG)) {
                 // notify to start app
                 notifyFlag = true;
             }
@@ -1200,8 +1215,11 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
         }
     }
     if (notifyFlag) {
-        ZLOGI("post data change for cleaning cloud data");
-        PostDataChange(meta_, {}, CLOUD_DATA_CLEAN);
+        ZLOGI("post data change for cleaning cloud data. store:%{public}s table:%{public}s data change from "
+              ":%{public}s",
+            Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
+            Anonymous::Change(originalId).c_str());
+        PostDataChange(meta_, {}, CLOUD_LOGOUT);
     }
     if (!data.field.empty()) {
         fields[std::move(data.tableName)] = std::move(*(data.field.begin()));

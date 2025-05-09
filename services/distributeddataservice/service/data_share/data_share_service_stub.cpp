@@ -18,8 +18,7 @@
 #include "data_share_service_stub.h"
 
 #include <cinttypes>
-#include "accesstoken_kit.h"
-#include "tokenid_kit.h"
+#include "common_utils.h"
 #include "data_share_obs_proxy.h"
 #include "hiview_adapter.h"
 #include "hiview_fault_adapter.h"
@@ -27,10 +26,25 @@
 #include "ishared_result_set.h"
 #include "itypes_util.h"
 #include "log_print.h"
+#include "qos.h"
 #include "utils/anonymous.h"
 
 namespace OHOS {
 namespace DataShare {
+
+class DataShareServiceStub::QosManager {
+public:
+    QosManager()
+    {
+        // set thread qos QOS_USER_INTERACTIVE
+        QOS::SetThreadQos(QOS::QosLevel::QOS_USER_INTERACTIVE);
+    }
+    ~QosManager()
+    {
+        QOS::ResetThreadQos();
+    }
+};
+
 bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
 {
     auto localDescriptor = IDataShareService::GetDescriptor();
@@ -53,6 +67,8 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = InsertEx(uri, extUri, bucket);
+    ZLOGI("Insert uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -72,6 +88,8 @@ int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = UpdateEx(uri, extUri, predicate, bucket);
+    ZLOGI("Update uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -89,6 +107,8 @@ int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = DeleteEx(uri, extUri, predicate);
+    ZLOGI("Delete uri:%{public}s, errCode:%{public}x, status:%{public}x",
+        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -327,45 +347,37 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
     return 0;
 }
 
-bool DataShareServiceStub::CheckProxyCallingPermission(uint32_t tokenId)
-{
-    Security::AccessToken::ATokenTypeEnum tokenType =
-        Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
-    return (tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ||
-        tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL);
-}
-
-// GetTokenType use tokenId, and IsSystemApp use fullTokenId, these are different
-bool DataShareServiceStub::CheckSystemUidCallingPermission(uint32_t tokenId, uint64_t fullTokenId)
-{
-    if (CheckProxyCallingPermission(tokenId)) {
-        return true;
-    }
-    // IsSystemAppByFullTokenID here is not IPC
-    return Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
-}
-
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
+    // set thread qos
+    DataShareServiceStub::QosManager qos;
+    // check thread qos
+    QOS::QosLevel curLevel;
+    int qosRet = QOS::GetThreadQos(curLevel);
+
     int tryTimes = TRY_TIMES;
     while (!isReady_.load() && tryTimes > 0) {
         tryTimes--;
         std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
     }
     auto callingPid = IPCSkeleton::GetCallingPid();
+    auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = CheckSystemCallingPermission(IPCSkeleton::GetCallingTokenID(), fullTokenId);
+    DataShareThreadLocal::SetFromSystemApp(isSystemApp);
     if (code >= DATA_SHARE_CMD_SYSTEM_CODE) {
-        auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
-        if (!CheckSystemUidCallingPermission(IPCSkeleton::GetCallingTokenID(), fullTokenId)) {
-            ZLOGE("CheckSystemUidCallingPermission fail, token:%{public}" PRIx64
+        if (!isSystemApp) {
+            ZLOGE("CheckSystemCallingPermission fail, token:%{public}" PRIx64
                 ", callingPid:%{public}d, code:%{public}u", fullTokenId, callingPid, code);
             return E_NOT_SYSTEM_APP;
         }
         code = code - DATA_SHARE_CMD_SYSTEM_CODE;
     }
     if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
-        ZLOGI("code:%{public}u, callingPid:%{public}d", code, callingPid);
+        ZLOGI("code:%{public}u, callingPid:%{public}d, qosRet:%{public}d, curLevel:%{public}d",
+            code, callingPid, qosRet, curLevel);
     }
     if (!CheckInterfaceToken(data)) {
+        DataShareThreadLocal::CleanFromSystemApp();
         return DATA_SHARE_ERROR;
     }
     int res = -1;
@@ -384,6 +396,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         }
         HiViewAdapter::GetInstance().ReportDataStatistic(callerInfo);
     }
+    DataShareThreadLocal::CleanFromSystemApp();
     return res;
 }
 

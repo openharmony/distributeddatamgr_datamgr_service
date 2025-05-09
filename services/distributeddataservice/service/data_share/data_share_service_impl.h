@@ -125,6 +125,7 @@ private:
     std::pair<bool, Security::AccessToken::ATokenTypeEnum> GetCallerInfo(std::string &bundleName, int32_t &appIndex);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     void SubscribeCommonEvent();
+    void SubscribeConcurrentTask();
     static void InitSubEvent();
     void AutoLaunch(const DistributedData::Event &event);
     void SubscribeChange();

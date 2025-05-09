@@ -39,6 +39,7 @@ public:
     uint32_t sourceUserId;
     std::vector<uint32_t> targetUserIds;
     std::string appId;
+    std::string storeId;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     inline bool IsValid()

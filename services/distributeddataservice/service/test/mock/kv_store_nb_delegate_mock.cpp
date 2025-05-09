@@ -337,4 +337,9 @@ KvStoreNbDelegate::DatabaseStatus KvStoreNbDelegateMock::GetDatabaseStatus() con
 {
     return {};
 }
+
+DBStatus KvStoreNbDelegateMock::ClearMetaData(ClearKvMetaDataOption option)
+{
+    return DBStatus::OK;
+}
 } // namespace DistributedDB

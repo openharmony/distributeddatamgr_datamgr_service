@@ -29,6 +29,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "rdb_service_impl.h"
+#include "rdb_types.h"
 #include "relational_store_manager.h"
 #include "gtest/gtest.h"
 
@@ -96,6 +97,7 @@ void RdbServiceImplTest::SetUpTestCase()
     DeviceManagerAdapter::GetInstance().Init(dmExecutor);
     InitMetaData();
     Bootstrap::GetInstance().LoadCheckers();
+    CryptoManager::GetInstance().GenerateRootKey();
 }
 
 void RdbServiceImplTest::TearDownTestCase()
@@ -705,8 +707,10 @@ HWTEST_F(RdbServiceImplTest, GetPassword002, TestSize.Level0)
     std::vector<std::vector<uint8_t>> password;
     int32_t result = service.GetPassword(param, password);
 
-    EXPECT_EQ(result, RDB_ERROR);
-
+    EXPECT_EQ(result, RDB_OK);
+    size_t KEY_COUNT = 2;
+    ASSERT_EQ(password.size(), KEY_COUNT);
+    EXPECT_EQ(password.at(0), sKey);
     MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
 }
@@ -770,11 +774,174 @@ HWTEST_F(RdbServiceImplTest, GetPassword004, TestSize.Level0)
 
     int32_t result = service.GetPassword(param, password);
 
-    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(result, RDB_OK);
+    size_t KEY_COUNT = 2;
+    ASSERT_EQ(password.size(), KEY_COUNT);
+    EXPECT_EQ(password.at(1), sKey);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetCloneSecretKey(), true);
 }
 
+/**
+ * @tc.name: GetPassword005
+ * @tc.desc: Test GetPassword when no meta data.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, GetPassword005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    std::vector<std::vector<uint8_t>> password;
+
+    int32_t result = service.GetPassword(param, password);
+
+    EXPECT_EQ(result, RDB_NO_META);
+}
+
+/**
+ * @tc.name: SetDistributedTables001
+ * @tc.desc: Test SetDistributedTables when CheckAccess not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    std::vector<std::string> tables;
+    std::vector<OHOS::DistributedRdb::Reference> references;
+
+    int32_t result = service.SetDistributedTables(param, tables, references, false);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: SetDistributedTables002
+ * @tc.desc: Test SetDistributedTables when type is search.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    std::vector<std::string> tables;
+    std::vector<OHOS::DistributedRdb::Reference> references;
+
+    int32_t result =
+        service.SetDistributedTables(param, tables, references, false,
+                                     DistributedTableType::DISTRIBUTED_SEARCH);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: Sync001
+ * @tc.desc: Test Sync when CheckAccess not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Sync001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    RdbService::Option option {};
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: Subscribe001
+ * @tc.desc: Test Subscribe when option mode invalid.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Subscribe001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    SubscribeOption option {};
+    option.mode = SubscribeMode::SUBSCRIBE_MODE_MAX;
+
+    int32_t result = service.Subscribe(param, option, nullptr);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: UnSubscribe001
+ * @tc.desc: Test UnSubscribe when option mode invalid.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, UnSubscribe001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    SubscribeOption option {};
+    option.mode = SubscribeMode::SUBSCRIBE_MODE_MAX;
+
+    int32_t result = service.UnSubscribe(param, option, nullptr);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: UpgradeCloneSecretKey001
+ * @tc.desc: Test UpgradeCloneSecretKey when meta invalid.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, UpgradeCloneSecretKey001, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> sKey{2,   249, 221, 119, 177, 216, 217, 134, 185, 139, 114, 38,  140, 64,  165, 35,
+                              77,  169, 0,   226, 226, 166, 37,  73,  181, 229, 42,  88,  108, 111, 131, 104,
+                              141, 43,  96,  119, 214, 34,  177, 129, 233, 96,  98,  164, 87,  115, 187, 170};
+    SecretKeyMetaData secretKey;
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey);
+    secretKey.area = -1;
+    secretKey.storeType = meta.storeType;
+    secretKey.time = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true), true);
+
+    RdbServiceImpl service;
+
+    auto result = service.UpgradeCloneSecretKey(meta);
+    ASSERT_EQ(result, true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+}
+
+/**
+ * @tc.name: GetDfxInfo001
+ * @tc.desc: Test GetDfxInfo when CheckAccess not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, GetDfxInfo001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    DistributedRdb::RdbDfxInfo dfxInfo;
+
+    int32_t result = service.GetDfxInfo(param, dfxInfo);
+    EXPECT_EQ(result, RDB_ERROR);
+}
 /**
  * @tc.name: LockCloudContainer001
  * @tc.desc: Test LockCloudContainer when CheckAccess fails.

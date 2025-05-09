@@ -30,9 +30,9 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         return false;
     }
     context->type = PUBLISHED_DATA_TYPE;
-    if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMS(
+    if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMSWithCheck(
         context->calledBundleName, context->visitedUserId, context->bundleInfo) != E_OK) {
-        ZLOGE("GetBundleInfoFromBMS failed! bundleName: %{public}s", context->calledBundleName.c_str());
+        ZLOGE("GetBundleInfoFromBMSWithCheck failed! bundleName: %{public}s", context->calledBundleName.c_str());
         context->errCode = E_BUNDLE_NAME_NOT_EXIST;
         return false;
     }
@@ -40,10 +40,12 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         context->permission = "reject";
         return true;
     }
+    std::string uri = context->uri;
+    URIUtils::FormatUri(uri);
     for (auto const &hapModuleInfo : context->bundleInfo.hapModuleInfos) {
         auto proxyDatas = hapModuleInfo.proxyDatas;
         for (auto const &proxyData : proxyDatas) {
-            if (proxyData.uri != context->uri) {
+            if (proxyData.uri != uri) {
                 continue;
             }
             context->permission = context->isRead ? proxyData.requiredReadPermission
