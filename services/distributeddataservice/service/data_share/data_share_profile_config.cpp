@@ -173,7 +173,7 @@ std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<A
 
 std::shared_ptr<ResourceManager> DataShareProfileConfig::InitResMgr(const std::string &resourcePath)
 {
-    std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
+    std::shared_ptr<ResourceManager> resMgr(CreateResourceManager(false));
     if (resMgr == nullptr) {
         return nullptr;
     }
