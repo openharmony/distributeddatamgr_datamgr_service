@@ -36,6 +36,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
   external_deps = [
     "c_utils:utils",
     "datamgr_service:distributeddatasvcfwk",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -43,11 +44,7 @@ ohos_unittest("DistributeddataDfxMSTTest") {
     "openssl:libcrypto_shared",
   ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [
-    "${data_service_path}/adapter/dfx:distributeddata_dfx",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
-  ]
+  deps = [ "${data_service_path}/adapter/dfx:distributeddata_dfx" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -77,6 +74,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
   external_deps = [
     "c_utils:utils",
     "datamgr_service:distributeddatasvcfwk",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
@@ -87,8 +85,6 @@ ohos_unittest("DistributeddataDfxUTTest") {
   deps = [
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

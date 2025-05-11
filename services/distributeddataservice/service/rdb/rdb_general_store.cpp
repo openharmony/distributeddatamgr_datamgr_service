@@ -896,6 +896,20 @@ void RdbGeneralStore::Report(const std::string &faultType, int32_t errCode, cons
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
+int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
+{
+    std::vector<DistributedDB::TableReferenceProperty> properties;
+    for (const auto &reference : references) {
+        properties.push_back({reference.sourceTable, reference.targetTable, reference.refFields});
+    }
+    auto status = delegate_->SetReference(properties);
+    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
+        ZLOGE("distributed table set reference failed, err:%{public}d", status);
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
     const std::vector<Reference> &references)
 {
@@ -916,14 +930,11 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             return GeneralError::E_ERROR;
         }
     }
-    std::vector<DistributedDB::TableReferenceProperty> properties;
-    for (const auto &reference : references) {
-        properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
-    }
-    auto status = delegate_->SetReference(properties);
-    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
-        ZLOGE("distributed table set reference failed, err:%{public}d", status);
-        return GeneralError::E_ERROR;
+    if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
+        auto status = SetReference(references);
+        if (status != GeneralError::E_OK) {
+            return GeneralError::E_ERROR;
+        }
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {

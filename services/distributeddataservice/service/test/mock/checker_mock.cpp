@@ -47,7 +47,7 @@ std::string CheckerMock::GetAppId(const CheckerManager::StoreInfo &info)
 
 bool CheckerMock::IsValid(const CheckerManager::StoreInfo &info)
 {
-    return true;
+    return !info.bundleName.empty();
 }
 
 bool CheckerMock::SetDistrustInfo(const CheckerManager::Distrust &distrust)

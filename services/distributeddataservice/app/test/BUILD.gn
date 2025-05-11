@@ -19,12 +19,8 @@ module_output_path = "datamgr_service/datamgr_service/distributeddataservice"
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/common",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/src",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include",
@@ -42,9 +38,6 @@ config("module_private_config") {
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/test/mock",
-    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
-    "//commonlibrary/c_utils/base/include",
-    "//utils/system/safwk/native/include",
     "../include",
     "../src",
     "../src/security",
@@ -53,7 +46,6 @@ config("module_private_config") {
     "../../service/backup/include",
     "../../../../interfaces/innerkits/distributeddata",
     "../../service/dumper/include",
-    "//third_party/json/single_include",
     "${data_service_path}/adapter/include/communicator",
   ]
 
@@ -110,7 +102,9 @@ ohos_unittest("KvStoreDataServiceTest") {
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
+    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -118,6 +112,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
@@ -134,7 +129,6 @@ ohos_unittest("KvStoreDataServiceTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
   part_name = "datamgr_service"
 }
@@ -167,11 +161,17 @@ ohos_unittest("SessionManagerTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gmock",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -186,13 +186,9 @@ ohos_unittest("SessionManagerTest") {
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/test/mock:distributeddata_mock_static",
-    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
   ]
 
   part_name = "datamgr_service"
@@ -237,13 +233,16 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
+    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -265,7 +264,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 
   part_name = "datamgr_service"
@@ -302,6 +300,7 @@ ohos_unittest("FeatureStubImplTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -350,14 +349,5 @@ group("unittest") {
 ###############################################################################
 group("moduletest") {
   testonly = true
-  deps = [
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest_main",
-    "//third_party/sqlite:sqlite",
-  ]
-
-  deps += [
-    #":DistributedDataAccountEventModuleTest",
-  ]
 }
 ###############################################################################
