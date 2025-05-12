@@ -48,6 +48,7 @@ Session SessionManager::GetSession(const SessionPoint &local, const std::string 
     session.sourceUserId = local.userId;
     session.sourceDeviceId = local.deviceId;
     session.targetDeviceId = targetDeviceId;
+    session.accountId = local.accountId;
     auto users = UserDelegate::GetInstance().GetRemoteUserStatus(targetDeviceId);
     // system service
     if (local.userId == UserDelegate::SYSTEM_USER) {
@@ -94,7 +95,7 @@ bool SessionManager::GetSendAuthParams(const SessionPoint &local, const std::str
     for (const auto &storeMeta : metaData) {
         if (storeMeta.appId == local.appId && storeMeta.storeId == local.storeId) {
             aclParams.accCaller.bundleName = storeMeta.bundleName;
-            aclParams.accCaller.accountId = AccountDelegate::GetInstance()->GetCurrentAccountId();
+            aclParams.accCaller.accountId = local.accountId;
             aclParams.accCaller.userId = local.userId;
             aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(local.deviceId);
 
@@ -109,13 +110,13 @@ bool SessionManager::GetSendAuthParams(const SessionPoint &local, const std::str
     return false;
 }
 
-bool SessionManager::GetRecvAuthParams(const SessionPoint &local, const std::string &targetDeviceId,
-    AclParams &aclParams, int32_t peerUser) const
+bool SessionManager::GetRecvAuthParams(const SessionPoint &local, const SessionPoint &peer, bool accountFlag,
+    AclParams &aclParams) const
 {
     std::vector<StoreMetaData> metaData;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ targetDeviceId }), metaData)) {
-        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d", Anonymous::Change(targetDeviceId).c_str(),
-            peerUser);
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ peer.deviceId }), metaData)) {
+        ZLOGE("load meta failed, deviceId:%{public}s, user:%{public}d", Anonymous::Change(peer.deviceId).c_str(),
+            peer.userId);
         return false;
     }
     for (const auto &storeMeta : metaData) {
@@ -126,23 +127,23 @@ bool SessionManager::GetRecvAuthParams(const SessionPoint &local, const std::str
             aclParams.accCaller.userId = local.userId;
             aclParams.accCaller.networkId = DmAdapter::GetInstance().ToNetworkID(local.deviceId);
 
-            aclParams.accCallee.accountId = accountId;
-            aclParams.accCallee.userId = peerUser;
-            aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(targetDeviceId);
+            aclParams.accCallee.accountId = accountFlag ? peer.accountId : accountId;
+            aclParams.accCallee.userId = peer.userId;
+            aclParams.accCallee.networkId = DmAdapter::GetInstance().ToNetworkID(peer.deviceId);
             aclParams.authType = storeMeta.authType;
             return true;
         }
     }
 
     ZLOGE("get params failed,appId:%{public}s,tarDevid:%{public}s,user:%{public}d,peer:%{public}d",
-        local.appId.c_str(), Anonymous::Change(targetDeviceId).c_str(), local.userId, peerUser);
+        local.appId.c_str(), Anonymous::Change(peer.deviceId).c_str(), local.userId, peer.userId);
     return false;
 }
 
-bool SessionManager::CheckSession(const SessionPoint &local, const SessionPoint &peer) const
+bool SessionManager::CheckSession(const SessionPoint &local, const SessionPoint &peer, bool accountFlag) const
 {
     AclParams aclParams;
-    if (!GetRecvAuthParams(local, peer.deviceId, aclParams, peer.userId)) {
+    if (!GetRecvAuthParams(local, peer, accountFlag, aclParams)) {
         ZLOGE("get recv auth params failed:%{public}s", Anonymous::Change(peer.deviceId).c_str());
         return false;
     }
@@ -165,6 +166,7 @@ bool Session::Marshal(json &node) const
     ret = SetValue(node[GET_NAME(targetUserIds)], targetUserIds) && ret;
     ret = SetValue(node[GET_NAME(appId)], appId) && ret;
     ret = SetValue(node[GET_NAME(storeId)], storeId) && ret;
+    ret = SetValue(node[GET_NAME(accountId)], accountId) && ret;
     return ret;
 }
 
@@ -177,6 +179,7 @@ bool Session::Unmarshal(const json &node)
     ret = GetValue(node, GET_NAME(targetUserIds), targetUserIds) && ret;
     ret = GetValue(node, GET_NAME(appId), appId) && ret;
     ret = GetValue(node, GET_NAME(storeId), storeId) && ret;
+    ret = GetValue(node, GET_NAME(accountId), accountId) && ret;
     return ret;
 }
 } // namespace OHOS::DistributedData

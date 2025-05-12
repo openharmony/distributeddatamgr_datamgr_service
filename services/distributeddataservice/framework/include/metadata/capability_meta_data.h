@@ -20,8 +20,10 @@
 namespace OHOS::DistributedData {
 class API_EXPORT CapMetaData final : public Serializable {
 public:
-    static constexpr int32_t CURRENT_VERSION = 1;
+    // 1->2 add accountId to session
+    static constexpr int32_t CURRENT_VERSION = 2;
     static constexpr int32_t INVALID_VERSION = -1;
+    static constexpr int32_t ACCOUNT_VERSION = 2;
     int32_t version = INVALID_VERSION;
 
     API_EXPORT bool Marshal(json &node) const override;
