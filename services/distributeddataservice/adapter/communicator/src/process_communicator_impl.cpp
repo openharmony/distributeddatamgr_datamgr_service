@@ -251,8 +251,7 @@ std::shared_ptr<ExtendHeaderHandle> ProcessCommunicatorImpl::GetExtendHeaderHand
     return {};
 }
 
-DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength,
-    const std::string &device)
+DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(DataHeadInfo dataHeadInfo, uint32_t &headLength)
 {
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");
@@ -263,16 +262,15 @@ DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t 
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    auto ret = handler->ParseHeadDataLen(data, totalLen, headLength, device);
+    auto ret = handler->ParseHeadDataLen(dataHeadInfo.data, dataHeadInfo.totalLen, headLength, dataHeadInfo.device);
     if (!ret) {
-        ZLOGE("illegal head format, dataLen:%{public}u, headLength:%{public}u", totalLen, headLength);
+        ZLOGE("illegal head format, dataLen:%{public}u, headLength:%{public}u", dataHeadInfo.totalLen, headLength);
         return DBStatus::INVALID_FORMAT;
     }
     return DBStatus::OK;
 }
 
-DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t totalLen, const std::string &label,
-    const std::string &device, std::vector<UserInfo> &userInfos)
+DBStatus ProcessCommunicatorImpl::GetDataUserInfo(DataUserInfo dataUserInfo, std::vector<UserInfo> &userInfos)
 {
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");
@@ -283,12 +281,13 @@ DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t 
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    if (!DmAdapter::GetInstance().IsOHOSType(device)) {
-        return handler->IsAppTrusted(label);
+    if (!DmAdapter::GetInstance().IsOHOSType(dataUserInfo.device)) {
+        return handler->IsAppTrusted(dataUserInfo.label);
     }
-    auto ret = handler->ParseHeadDataUser(data, totalLen, label, userInfos);
+    auto ret = handler->ParseHeadDataUser(dataUserInfo.data, dataUserInfo.totalLen, dataUserInfo.label, userInfos);
     if (!ret) {
-        ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s", totalLen, Anonymous::Change(label).c_str());
+        ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s",
+            dataUserInfo.totalLen, Anonymous::Change(dataUserInfo.label).c_str());
         return DBStatus::INVALID_FORMAT;
     }
     if (userInfos.empty()) {

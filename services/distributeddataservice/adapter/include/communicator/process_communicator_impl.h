@@ -36,6 +36,8 @@ public:
     using UserInfo = DistributedDB::UserInfo;
     using RouteHeadHandlerCreator =
         std::function<std::shared_ptr<DistributedData::RouteHeadHandler>(const DistributedDB::ExtendInfo &info)>;
+    using DataHeadInfo = DistributedDB::DataHeadInfo;
+    using DataUserInfo = DistributedDB::DataUserInfo;
 
     API_EXPORT static ProcessCommunicatorImpl *GetInstance();
     API_EXPORT void SetRouteHeadHandlerCreator(RouteHeadHandlerCreator handlerCreator);
@@ -62,10 +64,8 @@ public:
 
     API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;
-    API_EXPORT DBStatus GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength,
-        const std::string &device) override;
-    API_EXPORT DBStatus GetDataUserInfo(const uint8_t *data, uint32_t totalLen, const std::string &label,
-        const std::string &device, std::vector<UserInfo> &userInfos) override;
+    API_EXPORT DBStatus GetDataHeadInfo(DataHeadInfo dataHeadInfo, uint32_t &headLength) override;
+    API_EXPORT DBStatus GetDataUserInfo(DataUserInfo dataUserInfo, std::vector<UserInfo> &userInfos) override;
 
     Status ReuseConnect(const DeviceId &deviceId);
 
