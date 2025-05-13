@@ -332,6 +332,42 @@ ohos_unittest("FeatureStubImplTest") {
   part_name = "datamgr_service"
 }
 
+ohos_unittest("UpgradeManagerTest") {
+  module_out_path = module_output_path
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/app/src/session_manager",
+    "${data_service_path}/app/test/mock/capability",
+    "${data_service_path}/framework/include",
+   ]
+
+  sources = [
+    "${data_service_path}/app/test/mock/capability/metadata/meta_data_manager.cpp",
+    "${data_service_path}/app/test/mock/capability/device_manager_adapter.cpp",
+    "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
+    "${data_service_path}/framework/metadata/capability_meta_data.cpp",
+    "${data_service_path}/framework/serializable/serializable.cpp",
+    "${data_service_path}/framework/utils/anonymous.cpp",
+    "${data_service_path}/framework/utils/constant.cpp",
+    "${data_service_path}/app/test/unittest/upgrade_manager_test.cpp",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+  ]
+
+  part_name = "datamgr_service"
+}
+
 ###############################################################################
 
 group("unittest") {
@@ -343,11 +379,6 @@ group("unittest") {
     ":KvStoreDataServiceClearTest",
     ":KvStoreDataServiceTest",
     ":SessionManagerTest",
+    ":UpgradeManagerTest",
   ]
 }
-
-###############################################################################
-group("moduletest") {
-  testonly = true
-}
-###############################################################################
