@@ -76,17 +76,18 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
 {
     auto [nodes, status] = ConvertQuery(extend);
     std::shared_ptr<Cursor> cursor = nullptr;
+    int32_t code = E_OK;
     if (status == GeneralError::E_OK && !nodes.empty()) {
         RdbQuery query;
         query.SetQueryNodes(tableName, std::move(nodes));
-        cursor = cloudDB_->Query(query, ValueProxy::Convert(std::move(extend)));
+        std::tie(code, cursor) = cloudDB_->Query(query, ValueProxy::Convert(std::move(extend)));
     } else {
-        cursor = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
+        std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
-    if (cursor == nullptr) {
+    if (cursor == nullptr || code != E_OK) {
         ZLOGE("cursor is null, table:%{public}s, extend:%{public}zu",
             Anonymous::Change(tableName).c_str(), extend.size());
-        return ConvertStatus(static_cast<GeneralError>(E_ERROR));
+        return ConvertStatus(static_cast<GeneralError>(code != E_OK ? code : E_ERROR));
     }
     int32_t count = cursor->GetCount();
     data.reserve(count);

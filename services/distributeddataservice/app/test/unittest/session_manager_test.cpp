@@ -627,6 +627,7 @@ HWTEST_F(SessionManagerTest, CheckSession, TestSize.Level1)
     localNormal.appId = "test_app";
     localNormal.deviceId = "local_device";
     localNormal.storeId = "test_store";
+    localNormal.accountId = "test_account";
     std::vector<StoreMetaData> datas;
     CreateStoreMetaData(datas, localSys);
     EXPECT_CALL(*metaDataMock, LoadMeta(_, _, _))
@@ -635,11 +636,11 @@ HWTEST_F(SessionManagerTest, CheckSession, TestSize.Level1)
     EXPECT_CALL(AuthHandlerMock::GetInstance(), CheckAccess(_, _, _, _))
         .WillOnce(Return(std::pair(false, true)))
         .WillOnce(Return(std::pair(true, false)));
-    bool result = SessionManager::GetInstance().CheckSession(localSys, localNormal);
+    bool result = SessionManager::GetInstance().CheckSession(localSys, localNormal, true);
     EXPECT_FALSE(result);
-    result = SessionManager::GetInstance().CheckSession(localSys, localNormal);
+    result = SessionManager::GetInstance().CheckSession(localSys, localNormal, true);
     EXPECT_FALSE(result);
-    result = SessionManager::GetInstance().CheckSession(localNormal, localSys);
+    result = SessionManager::GetInstance().CheckSession(localNormal, localSys, true);
     EXPECT_TRUE(result);
 }
 } // namespace
