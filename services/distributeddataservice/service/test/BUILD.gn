@@ -129,6 +129,7 @@ ohos_unittest("CloudDataTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -146,9 +147,8 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "../../framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
-    "//third_party/googletest:gtest_main",
   ]
 
   cflags = [
@@ -228,6 +228,7 @@ ohos_unittest("CloudServiceImplTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -247,7 +248,6 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "../../framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
-    "//third_party/googletest:gtest_main",
   ]
 
   cflags = [
@@ -267,6 +267,7 @@ ohos_unittest("CloudTest") {
     "ability_base:base",
     "ability_base:want",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
@@ -277,7 +278,6 @@ ohos_unittest("CloudTest") {
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
     "mock:distributeddata_mock_static",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -306,6 +306,7 @@ ohos_unittest("ValueProxyServiceTest") {
     "ability_base:base",
     "ability_base:want",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
@@ -316,7 +317,6 @@ ohos_unittest("ValueProxyServiceTest") {
     "${relational_store_inner_api_path}:native_rdb_static",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -330,16 +330,16 @@ ohos_unittest("ConfigFactoryTest") {
     "ability_base:base",
     "ability_base:want",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
   ]
 
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
   ]
 }
 
@@ -355,15 +355,15 @@ ohos_unittest("DirectoryManagerTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
 
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -379,15 +379,15 @@ ohos_unittest("CryptoManagerTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
 
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -413,16 +413,16 @@ ohos_unittest("DeviceMatrixTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/frameworks/libs/distributeddb:distributeddb",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -463,9 +463,11 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -473,8 +475,6 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
-    "${kv_store_distributeddb_path}:distributeddb",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -580,16 +580,16 @@ ohos_unittest("RdbResultSetImplTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddb",
   ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${kv_store_distributeddb_path}:distributeddb",
     "${relational_store_inner_api_path}:native_rdb_static",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -638,6 +638,7 @@ ohos_unittest("RdbServiceTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
@@ -648,7 +649,6 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${relational_store_inner_api_path}:native_rdb_static",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -739,6 +739,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "c_utils:utils",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
@@ -749,7 +750,6 @@ ohos_unittest("ObjectAssetLoaderTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 
   cflags = [
@@ -778,6 +778,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "c_utils:utils",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
@@ -788,7 +789,6 @@ ohos_unittest("ObjectAssetMachineTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -811,6 +811,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
   external_deps = [
     "c_utils:utils",
     "dmsfwk:distributed_sdk",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
@@ -819,7 +820,6 @@ ohos_unittest("ObjectDmsHandlerTest") {
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "//third_party/googletest:gtest_main",
   ]
 
   cflags = [
@@ -875,6 +875,7 @@ ohos_unittest("ObjectManagerTest") {
     "dmsfwk:distributed_sdk",
     "googletest:gmock_main",
     "googletest:gtest_main",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
@@ -888,7 +889,6 @@ ohos_unittest("ObjectManagerTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 
   cflags = [
@@ -918,6 +918,7 @@ ohos_unittest("ObjectSnapshotTest") {
     "c_utils:utils",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
@@ -928,7 +929,6 @@ ohos_unittest("ObjectSnapshotTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -963,11 +963,13 @@ ohos_unittest("MetaDataTest") {
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -975,8 +977,6 @@ ohos_unittest("MetaDataTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
-    "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -1013,11 +1013,14 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "dsoftbus:softbus_client",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
@@ -1027,9 +1030,6 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/udmf:udmf_server",
-    "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
   ]
 
   defines = [
@@ -1142,6 +1142,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -1150,6 +1151,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "kv_store:distributeddb",
     "qos_manager:concurrent_task_client",
     "qos_manager:qos",
@@ -1164,8 +1166,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${kv_store_distributeddb_path}:distributeddb",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -1216,10 +1216,12 @@ ohos_unittest("KvdbServiceImplTest") {
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "googletest:gmock_main",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
 
@@ -1228,9 +1230,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
-    "${kv_store_path}/frameworks/libs/distributeddb:distributeddb",
     "mock:distributeddata_mock_static",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -1252,6 +1252,7 @@ ohos_unittest("DumpHelperTest") {
 
   external_deps = [
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
@@ -1261,7 +1262,6 @@ ohos_unittest("DumpHelperTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -1714,8 +1714,8 @@ ohos_unittest("BootStrapMockTest") {
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",
-    "../../framework:distributeddatasvcfwk",
   ]
 
   cflags = [
@@ -2024,6 +2024,7 @@ group("unittest") {
       ":KvdbServiceImplTest",
       ":QueryHelperUnitTest",
       ":UpgradeMockTest",
+      ":UserDelegateMockTest",
     ]
   }
 

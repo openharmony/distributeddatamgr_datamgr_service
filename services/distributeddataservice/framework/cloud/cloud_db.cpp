@@ -40,14 +40,14 @@ int32_t CloudDB::BatchDelete(const std::string &table, VBuckets &extends)
     return E_NOT_SUPPORT;
 }
 
-std::shared_ptr<Cursor> CloudDB::Query(const std::string &table, const VBucket &extend)
+std::pair<int32_t, std::shared_ptr<Cursor>> CloudDB::Query(const std::string &table, const VBucket &extend)
 {
-    return nullptr;
+    return { E_NOT_SUPPORT, nullptr };
 }
 
-std::shared_ptr<Cursor> CloudDB::Query(GenQuery &query, const VBucket &extend)
+std::pair<int32_t, std::shared_ptr<Cursor>> CloudDB::Query(GenQuery &query, const VBucket &extend)
 {
-    return nullptr;
+    return { E_NOT_SUPPORT, nullptr };
 }
 
 int32_t CloudDB::PreSharing(const std::string &table, VBuckets &extend)

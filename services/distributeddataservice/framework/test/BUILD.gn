@@ -21,30 +21,19 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
-    "../include/",
-    "../../service/bootstrap/include/",
-    "../../service/common/",
-    "../../service/rdb/",
-    "../../../../../relational_store/interfaces/inner_api/rdb/include",
-    "../../../../../relational_store/interfaces/inner_api/common_type/include",
-    "${kv_store_distributeddb_path}/interfaces/include",
-    "${kv_store_distributeddb_path}/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/src",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
+    "${data_service_path}/service/bootstrap/include/",
+    "${data_service_path}/service/common/",
+    "${data_service_path}/service/rdb/",
     "${data_service_path}/adapter/include",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/config/include",
     "${data_service_path}/app/src",
     "${data_service_path}/adapter/include/account",
+    "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/app/src/security",
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/matrix/include",
-    "//third_party/json/single_include",
+    "${data_service_path}/service/kvdb",
   ]
   cflags = [ "-Werror" ]
   ldflags = [ "-Wl,--whole-archive" ]
@@ -61,17 +50,17 @@ ohos_unittest("CheckerManagerTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
   ]
 
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
   ]
 }
 
@@ -83,15 +72,13 @@ ohos_unittest("EventCenterTest") {
 
   external_deps = [
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
   ]
 
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
 ohos_unittest("SerializableTest") {
@@ -105,16 +92,14 @@ ohos_unittest("SerializableTest") {
     "ability_base:base",
     "ability_base:want",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
   ]
 
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/kv_store/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
-  ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
 ohos_unittest("ServiceUtilsTest") {
@@ -133,14 +118,13 @@ ohos_unittest("ServiceUtilsTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
   ]
 
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "//third_party/googletest:gtest_main",
-  ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
 ohos_unittest("StoreTest") {
@@ -170,6 +154,7 @@ ohos_unittest("StoreTest") {
     "access_token:libnativetoken",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
@@ -183,7 +168,6 @@ ohos_unittest("StoreTest") {
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/test/mock:distributeddata_mock_static",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -213,6 +197,11 @@ ohos_unittest("CloudInfoTest") {
   sources = [ "cloud_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("EventTest") {
@@ -227,6 +216,7 @@ ohos_unittest("GeneralStoreTest") {
   sources = [ "general_store_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("SubscriptionTest") {
@@ -234,16 +224,18 @@ ohos_unittest("SubscriptionTest") {
   sources = [ "subscription_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("FeatureTest") {
   module_out_path = module_output_path
   sources = [ "feature_test.cpp" ]
   configs = [ ":module_private_config" ]
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${kv_store_path}/interfaces/innerkits/distributeddata:distributeddata_inner",
-  ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [ "kv_store:distributeddata_inner" ]
 }
 
 ohos_unittest("MetaDataManagerTest") {
@@ -255,14 +247,15 @@ ohos_unittest("MetaDataManagerTest") {
 
   external_deps = [
     "c_utils:utils",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
   ]
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "//third_party/googletest:gtest_main",
   ]
 }
 
@@ -271,6 +264,7 @@ ohos_unittest("StoreMetaDataLocalTest") {
   sources = [ "store_meta_data_local_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [ "json:nlohmann_json_static" ]
 }
 
 ohos_unittest("ConstantTest") {
@@ -308,47 +302,22 @@ ohos_unittest("ServiceMetaDataTest") {
 
   configs = [ ":module_private_config" ]
 
-  include_dirs = [
-    "${device_manager_path}/interfaces/inner_kits/native_cpp/include",
-    "../include/",
-    "../../service/bootstrap/include/",
-    "../../service/common/",
-    "../../service/rdb/",
-    "../../../../../relational_store/interfaces/inner_api/rdb/include",
-    "../../../../../relational_store/interfaces/inner_api/common_type/include",
-    "${kv_store_distributeddb_path}/interfaces/include",
-    "${kv_store_distributeddb_path}/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/src",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/framework/include",
-    "${data_service_path}/service/config/include",
-    "${data_service_path}/app/src",
-    "${data_service_path}/adapter/include/account",
-    "${data_service_path}/app/src/security",
-    "${data_service_path}/service/crypto/include",
-    "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/kvdb",
-    "//third_party/json/single_include",
-    "${data_service_path}/adapter/include/communicator",
-  ]
-
   external_deps = [
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -360,11 +329,6 @@ ohos_unittest("ServiceMetaDataTest") {
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
-    "${kv_store_distributeddb_path}:distributeddb",
-    "${kv_store_path}/interfaces/innerkits/distributeddata:distributeddata_inner",
-    "${kv_store_path}/interfaces/innerkits/distributeddatamgr:distributeddata_mgr",
-    "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
   ]
 }
 
