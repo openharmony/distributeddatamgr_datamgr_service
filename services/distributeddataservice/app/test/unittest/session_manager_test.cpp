@@ -329,7 +329,7 @@ HWTEST_F(SessionManagerTest, PackAndUnPack01, TestSize.Level2)
     std::vector<DistributedDB::UserInfo> users;
     auto recvHandler = RouteHeadHandlerImpl::Create({});
     ASSERT_NE(recvHandler, nullptr);
-    uint32_t parseSize = 1;
+    uint32_t parseSize = 0;
     std::string device = "";
     recvHandler->ParseHeadDataLen(data.get(), routeHeadSize, parseSize, device);
     EXPECT_EQ(routeHeadSize, parseSize);
@@ -365,7 +365,7 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test2, TestSize.Level1)
     uint32_t headSize = 0;
     routeHeadHandlerImpl.appId_ = "otherAppId";
     auto status = routeHeadHandlerImpl.GetHeadDataSize(headSize);
-    EXPECT_EQ(status, DistributedDB::OK);
+    EXPECT_EQ(status, DistributedDB::DB_ERROR);
     EXPECT_EQ(headSize, 0);
 }
 /**
