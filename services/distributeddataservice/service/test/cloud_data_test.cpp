@@ -580,7 +580,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo007, TestSize.Level0)
     lastSyncInfo.syncStatus = 1;
     MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
         TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true);
-    
+
     std::vector<CloudLastSyncInfo> lastSyncInfos;
     MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
         TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfos, true);
@@ -626,7 +626,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo008, TestSize.Level0)
     lastSyncInfo1.code = 0;
     MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
         TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo1, true);
-    
+
     std::vector<CloudLastSyncInfo> lastSyncInfos;
     MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
         ""), lastSyncInfos, true);
@@ -679,7 +679,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo009, TestSize.Level0)
     lastSyncInfo1.code = 0;
     MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
         TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo1, true);
-    
+
     std::vector<CloudLastSyncInfo> lastSyncInfos;
     MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE, ""),
         lastSyncInfos, true);
@@ -725,7 +725,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo010, TestSize.Level0)
     lastSyncInfo1.code = 0;
     MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
         TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo1, true);
-    
+
     CloudData::SyncManager sync;
     CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     auto [status, result] = sync.QueryLastSyncInfo({ { user, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "1234"} });
@@ -785,7 +785,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo012, TestSize.Level0)
     lastSyncInfo.syncStatus = 1;
     MetaDataManager::GetInstance().SaveMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
         TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true);
-    
+
     std::vector<CloudLastSyncInfo> lastSyncInfos;
     MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, TEST_CLOUD_BUNDLE,
          TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfos, true);
@@ -2593,7 +2593,7 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark001, TestSize.Level0)
     SchemaMeta schemaMeta;
     schemaMeta.version = 1;
     schemaMeta.databases.push_back(database);
-    
+
     SchemaMeta::Database database1;
     database1.name = TEST_CLOUD_STORE_1;
     database1.version = 2;
@@ -2629,7 +2629,7 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark002, TestSize.Level0)
     SchemaMeta schemaMeta;
     schemaMeta.version = 1;
     schemaMeta.databases.push_back(database);
-    
+
     SchemaMeta::Database database1;
     database1.name = TEST_CLOUD_STORE;
     database1.version = 1;
@@ -2665,7 +2665,7 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark003, TestSize.Level0)
     SchemaMeta schemaMeta;
     schemaMeta.version = 1;
     schemaMeta.databases.push_back(database);
-    
+
     SchemaMeta::Database database1;
     database1.name = TEST_CLOUD_STORE;
     database1.version = 2;
@@ -2729,7 +2729,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
     EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
 }
- 
+
 /**
 * @tc.name: TryUpdateDeviceId002
 * @tc.desc: TryUpdateDeviceId test
@@ -2755,7 +2755,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
     EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
 }
- 
+
 /**
 * @tc.name: TryUpdateDeviceId003
 * @tc.desc: TryUpdateDeviceId test
@@ -2781,7 +2781,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId003, TestSize.Level1)
     EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
 }
- 
+
 /**
 * @tc.name: TryUpdateDeviceId004
 * @tc.desc: TryUpdateDeviceId test
@@ -2806,6 +2806,35 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId004, TestSize.Level1)
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+}
+
+/**
+* @tc.name: OnInitialize
+* @tc.desc: OnInitialize test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, OnInitialize, TestSize.Level1)
+{
+    auto code = cloudServiceImpl_->OnInitialize();
+    EXPECT_EQ(code, E_OK);
+}
+
+/**
+* @tc.name: CleanWaterVersion
+* @tc.desc: CleanWaterVersion test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, CleanWaterVersion, TestSize.Level1)
+{
+    auto ret = cloudServiceImpl_->CleanWaterVersion(200);
+    EXPECT_FALSE(ret);
+    ret = cloudServiceImpl_->CleanWaterVersion(
+        AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID()));
+    EXPECT_TRUE(ret);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
