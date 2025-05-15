@@ -45,10 +45,7 @@ int RdbObserverProxy::CreateAshmem(RdbChangeNode &changeNode)
         return E_ERROR;
     }
     if (changeNode.memory_ != nullptr) {
-        ZLOGE(
-            "Unknown error: changeNode.memory_ should be null, but something is there %{public}p",
-            (void *)changeNode.memory_
-        );
+        ZLOGE("Unknown error: changeNode.memory_ should be null, but something is there.");
         return E_ERROR;
     }
     changeNode.memory_ = memory;
