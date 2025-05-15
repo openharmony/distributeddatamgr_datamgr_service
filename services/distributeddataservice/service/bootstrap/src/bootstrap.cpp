@@ -201,7 +201,7 @@ void Bootstrap::LoadDeviceSyncAppWhiteLists()
         return;
     }
     std::vector<DeviceSyncAppManager::WhiteList> infos;
-    for (auto &info : deviceSyncAppWhiteLists->whiteLists) {
+    for (const auto &info : deviceSyncAppWhiteLists->whiteLists) {
         infos.push_back({ info.appId, info.bundleName, info.version });
     }
     DeviceSyncAppManager::GetInstance().Initialize(infos);
