@@ -16,6 +16,7 @@
 #define LOG_TAG "AppAccessCheckConfigManager"
 #include "access_check/app_access_check_config_manager.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedData {
 AppAccessCheckConfigManager &AppAccessCheckConfigManager::GetInstance()
@@ -38,7 +39,7 @@ bool AppAccessCheckConfigManager::IsTrust(const AppMappingInfo &mapper)
         return true;
     }
     ZLOGW("check access failed, bundleName:%{public}s, appId:%{public}s",
-        mapper.bundleName.c_str(), mapper.appId.c_str());
+        mapper.bundleName.c_str(), Anonymous::Change(mapper.appId).c_str());
     return false;
 }
 
