@@ -19,6 +19,7 @@
 #include "store_cache.h"
 #include "udmf_service_stub.h"
 #include "kv_store_delegate_manager.h"
+#include "checker_manager.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -61,7 +62,14 @@ private:
     void TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData);
     bool IsNeedTransferDeviceType(const QueryOption &query);
     bool CheckDragParams(UnifiedKey &key, const QueryOption &query);
-
+    int32_t CheckAddPrivilegePermission(UnifiedKey &key, std::string &processName, const QueryOption &query);
+    int32_t ProcessData(const QueryOption &query, std::vector<UnifiedData> &dataSet);
+    int32_t VerifyIntentionPermission(const QueryOption &query, UnifiedData &dataSet,
+        UnifiedKey &key, CheckerManager::CheckInfo &info);
+    bool IsFileMangerSa();
+    bool IsFileMangerIntention(const std::string &intention);
+    std::string FindIntentionMap(const Intention &queryintention);
+    bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
     class Factory {
     public:
         Factory();

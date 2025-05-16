@@ -1274,6 +1274,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/udmf/permission",
   ]
 
   cflags = [
@@ -1313,6 +1314,7 @@ ohos_unittest("UdmfServiceStubTest") {
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/udmf/permission",
   ]
 
   cflags = [
