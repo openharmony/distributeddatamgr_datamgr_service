@@ -50,7 +50,10 @@ ohos_source_set("distributeddata_network") {
     "-Oz",
   ]
 
-  external_deps = [ "kv_store:datamgr_common" ]
+  external_deps = [
+    "kv_store:datamgr_common",
+    "samgr:samgr_proxy",
+  ]
 
   if (datamgr_service_cloud) {
     sources += [ "src/network_delegate_normal_impl.cpp" ]
