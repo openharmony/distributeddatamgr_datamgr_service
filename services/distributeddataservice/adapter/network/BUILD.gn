@@ -50,10 +50,7 @@ ohos_source_set("distributeddata_network") {
     "-Oz",
   ]
 
-  external_deps = [
-    "kv_store:datamgr_common",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = [ "kv_store:datamgr_common" ]
 
   if (datamgr_service_cloud) {
     sources += [ "src/network_delegate_normal_impl.cpp" ]
@@ -64,6 +61,7 @@ ohos_source_set("distributeddata_network") {
       "device_manager:devicemanagersdk",
       "hilog:libhilog",
       "netmanager_base:net_conn_manager_if",
+      "samgr:samgr_proxy",
     ]
   } else {
     sources += [ "src/network_delegate_default_impl.cpp" ]
