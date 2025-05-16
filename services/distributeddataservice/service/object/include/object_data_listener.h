@@ -38,6 +38,9 @@ public:
                   const std::string &dstBundleName) override;
     int32_t OnFinished(const std::string &srcNetworkId,
                      const sptr<AssetObj> &assetObj, int32_t result) override;
+    int32_t OnRecvProgress(const std::string &srcNetworkId,
+                     const sptr<AssetObj> &assetObj, 
+                     uint64_t totalBytes, uint64_t processBytes) override;   
 };
 }  // namespace DistributedObject
 }  // namespace OHOS

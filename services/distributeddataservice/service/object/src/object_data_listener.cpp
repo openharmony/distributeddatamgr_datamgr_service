@@ -71,5 +71,22 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
     ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, assetObj->dstBundleName_, srcNetworkId);
     return OBJECT_SUCCESS;
 }
+
+
+int32_t ObjectAssetsRecvListener::OnRecvProgress(const std::string &srcNetworkId, const sptr<AssetObj> &assetObj,
+    uint64_t totalBytes, uint64_t processBytes)
+{
+    if (assetObj == nullptr) {
+        ZLOGE("OnRecvProgress error! srcNetworkId:%{public}s",
+            DistributedData::Anonymous::Change(srcNetworkId).c_str());
+        return OBJECT_INNER_ERROR;
+    }
+
+    auto objectKey = assetObj->dstBundleName_ + assetObj->sessionId_;
+    ZLOGI("OnRecvProgress, srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}llu,"
+        "processBytes: %{public}llu.",
+        DistributedData::Anonymous::Change(srcNetworkId).c_str(), objectKey.c_str(), totalBytes, processBytes);
+    return OBJECT_SUCCESS;
+}
 }  // namespace DistributedObject
 }  // namespace OHOS
