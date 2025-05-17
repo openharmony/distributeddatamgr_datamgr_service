@@ -194,6 +194,8 @@ HWTEST_F(ObjectManagerTest, Clear001, TestSize.Level0)
     auto manager = ObjectStoreManager::GetInstance();
     auto result = manager->Clear();
     ASSERT_EQ(result, OHOS::DistributedObject::OBJECT_SUCCESS);
+    auto size = manager->callbacks_.Size();
+    ASSERT_EQ(size, 0);
 }
 
 /**
