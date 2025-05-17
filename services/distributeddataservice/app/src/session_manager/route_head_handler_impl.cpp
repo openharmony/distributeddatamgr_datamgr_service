@@ -62,21 +62,17 @@ RouteHeadHandlerImpl::RouteHeadHandlerImpl(const ExtendInfo &info)
 void RouteHeadHandlerImpl::Init()
 {
     ZLOGD("begin");
-    if (deviceId_.empty()) {
+    if (deviceId_.empty() || !DmAdapter::GetInstance().IsOHOSType(deviceId_)) {
         return;
     }
     if (userId_ != DEFAULT_USERID) {
-        if (!DmAdapter::GetInstance().IsOHOSType(deviceId_)) {
+        StoreMetaData metaData;
+        metaData.deviceId = deviceId_;
+        metaData.user = DEFAULT_USERID;
+        metaData.bundleName = appId_;
+        metaData.storeId = storeId_;
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
             userId_ = DEFAULT_USERID;
-        } else {
-            StoreMetaData metaData;
-            metaData.deviceId = deviceId_;
-            metaData.user = DEFAULT_USERID;
-            metaData.bundleName = appId_;
-            metaData.storeId = storeId_;
-            if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
-                userId_ = DEFAULT_USERID;
-            }
         }
     }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
@@ -96,8 +92,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
-    auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
-    if (devInfo.osType != OH_OS_TYPE) {
+    if(!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId))
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
         if (!IsTrust()) {
