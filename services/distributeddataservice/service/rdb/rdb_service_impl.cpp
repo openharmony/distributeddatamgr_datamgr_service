@@ -609,7 +609,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
 }
 
 int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOption &option,
-    RdbStoreObserver *observer)
+    std::shared_ptr<RdbStoreObserver> observer)
 {
     if (option.mode < 0 || option.mode >= SUBSCRIBE_MODE_MAX) {
         ZLOGE("mode:%{public}d error", option.mode);
@@ -639,7 +639,7 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
 }
 
 int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
-    RdbStoreObserver *observer)
+    std::shared_ptr<RdbStoreObserver> observer)
 {
     if (option.mode < 0 || option.mode >= SUBSCRIBE_MODE_MAX) {
         ZLOGE("mode:%{public}d error", option.mode);
