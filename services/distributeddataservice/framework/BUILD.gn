@@ -34,9 +34,6 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
-    "${data_service_path}/framework/include/account",
-    "${data_service_path}/framework/include/dfx",
-    "${data_service_path}/framework/include/network",
     "${kv_store_common_path}",
   ]
 }

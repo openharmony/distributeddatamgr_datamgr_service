@@ -16,7 +16,7 @@
 #define LOG_TAG "DBAdaptor"
 #include "db_delegate.h"
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "kv_delegate.h"
 #include "log_print.h"
 #include "rdb_delegate.h"

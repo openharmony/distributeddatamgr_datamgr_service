@@ -22,11 +22,11 @@
 
 #include "accesstoken_kit.h"
 #include "bundle_mgr_proxy.h"
+#include "changeevent/remote_change_event.h"
 #include "common_event_subscribe_info.h"
 #include "common_event_subscriber.h"
-#include "changeevent/remote_change_event.h"
-#include "data_proxy_observer.h"
 #include "data_provider_config.h"
+#include "data_proxy_observer.h"
 #include "data_share_db_config.h"
 #include "data_share_service_stub.h"
 #include "data_share_silent_config.h"

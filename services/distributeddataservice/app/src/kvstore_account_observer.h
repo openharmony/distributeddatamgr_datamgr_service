@@ -18,7 +18,7 @@
 
 #include <atomic>
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "executor_pool.h"
 
 namespace OHOS {

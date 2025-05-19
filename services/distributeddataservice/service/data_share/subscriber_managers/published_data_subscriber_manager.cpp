@@ -95,6 +95,10 @@ int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_
             }
             return true;
         });
+    if (result != E_OK) {
+        ZLOGE("disable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
+            DistributedData::Anonymous::Change(key.key).c_str(), key.bundleName.c_str(), key.subscriberId);
+    }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
@@ -110,6 +114,10 @@ int PublishedDataSubscriberManager::Enable(const PublishedDataKey &key, uint32_t
             }
             return true;
         });
+    if (result != E_OK) {
+        ZLOGE("enable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
+            DistributedData::Anonymous::Change(key.key).c_str(), key.bundleName.c_str(), key.subscriberId);
+    }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 

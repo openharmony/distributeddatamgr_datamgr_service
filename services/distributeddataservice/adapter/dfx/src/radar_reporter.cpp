@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "radar_reporter.h"
+#include "dfx/radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "hisysevent.h"
 

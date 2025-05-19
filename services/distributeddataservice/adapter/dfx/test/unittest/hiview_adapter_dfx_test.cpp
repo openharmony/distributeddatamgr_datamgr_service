@@ -15,11 +15,11 @@
 #define LOG_TAG "HiViewAdapterDfxTest"
 
 #include "device_manager_adapter.h"
-#include "dfx_types.h"
+#include "dfx/dfx_types.h"
+#include "dfx/radar_reporter.h"
 #include "gtest/gtest.h"
 #include "hiview_adapter.h"
 #include "log_print.h"
-#include "radar_reporter.h"
 
 using namespace OHOS;
 using namespace testing;

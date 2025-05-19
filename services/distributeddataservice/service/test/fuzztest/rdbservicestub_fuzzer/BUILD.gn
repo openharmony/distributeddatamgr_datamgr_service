@@ -102,11 +102,14 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/cloud:distributeddata_cloud",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/rdb:distributeddata_rdb",
     "${kv_store_distributeddb_path}:distributeddb",
-    "${relational_store_inner_api_path}:native_rdb_static",
   ]
 
   external_deps = [
@@ -123,7 +126,6 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",

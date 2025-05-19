@@ -16,7 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_NETWORK_DELEGATE_DEFAULT_IMPL_H
 #define OHOS_DISTRIBUTED_DATA_NETWORK_DELEGATE_DEFAULT_IMPL_H
 
-#include "network_delegate.h"
+#include "network/network_delegate.h"
 
 namespace OHOS::DistributedData {
 class NetworkDelegateDefaultImpl : public NetworkDelegate {

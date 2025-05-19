@@ -125,10 +125,10 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
             callingTokenId}, true);
         auto [errCode, ret] = dbDelegate->InsertEx(providerInfo.tableName, valuesBucket);
         if (errCode == E_OK && ret > 0) {
-            // only notify specific userId
             NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
-        } else {
+        } 
+        if (errCode != E_OK) {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
         timeoutReport.Report();
@@ -175,7 +175,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
-        } else {
+        } 
+        if (errCode != E_OK) {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
         timeoutReport.Report();
@@ -203,7 +204,8 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
-        } else {
+        } 
+        if (errCode != E_OK) {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
         timeoutReport.Report();

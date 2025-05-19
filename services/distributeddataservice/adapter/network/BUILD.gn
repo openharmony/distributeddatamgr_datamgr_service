@@ -13,15 +13,9 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-config("network_public_config") {
+config("module_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [
-    "${data_service_path}/adapter/network/src",
-    "${data_service_path}/framework/include/network",
-  ]
-  if (datamgr_service_cloud) {
-    include_dirs += [ "${data_service_path}/adapter/include/communicator" ]
-  }
+  include_dirs = [ "${data_service_path}/adapter" ]
 }
 
 ohos_source_set("distributeddata_network") {
@@ -39,7 +33,7 @@ ohos_source_set("distributeddata_network") {
     "-Oz",
   ]
 
-  configs = [ ":network_public_config" ]
+  configs = [ ":module_public_config" ]
   cflags = [
     "-fdata-sections",
     "-ffunction-sections",
@@ -50,13 +44,12 @@ ohos_source_set("distributeddata_network") {
     "-Oz",
   ]
 
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [ "kv_store:datamgr_common" ]
 
   if (datamgr_service_cloud) {
     sources += [ "src/network_delegate_normal_impl.cpp" ]
-    deps = [
-      "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    ]
+    deps += [ "${data_service_path}/adapter/communicator:distributeddata_communicator" ]
     external_deps += [
       "device_manager:devicemanagersdk",
       "hilog:libhilog",
