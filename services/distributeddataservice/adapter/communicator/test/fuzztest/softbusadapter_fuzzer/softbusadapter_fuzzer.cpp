@@ -13,23 +13,26 @@
  * limitations under the License.
  */
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 #include "softbusadapter_fuzzer.h"
 
 #include <cstddef>
 #include <cstdint>
 
-#include "softbus_adapter_standard.cpp"
 #include "message_parcel.h"
 #include "securec.h"
+#include "softbus_adapter_standard.cpp"
 
 using namespace OHOS::AppDistributedKv;
 
 namespace OHOS {
-bool OnBytesReceivedFuzz(const uint8_t *data, size_t size)
+bool OnBytesReceivedFuzz(FuzzedDataProvider &provider)
 {
-    int connId = static_cast<int>(*data);
-    unsigned int dataLen = static_cast<unsigned int>(size);
-    AppDataListenerWrap::OnClientBytesReceived(connId, data, dataLen);
+    int connId = provider.ConsumeIntegral<int>();
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    AppDataListenerWrap::OnClientBytesReceived(connId, static_cast<void *>(remainingData.data()),
+        remainingData.size());
     return true;
 }
 } // namespace OHOS
@@ -37,11 +40,7 @@ bool OnBytesReceivedFuzz(const uint8_t *data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (data == nullptr) {
-        return 0;
-    }
-
-    OHOS::OnBytesReceivedFuzz(data, size);
-
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnBytesReceivedFuzz(provider);
     return 0;
 }
