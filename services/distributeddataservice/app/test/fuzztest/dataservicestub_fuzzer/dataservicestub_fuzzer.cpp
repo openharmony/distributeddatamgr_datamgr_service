@@ -36,8 +36,8 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
-    request.WriteBuffer(static_cast<void *>(remainingData .data()), remainingData .size());
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
     request.RewindRead(0);
     MessageParcel reply;
     MessageOption option;

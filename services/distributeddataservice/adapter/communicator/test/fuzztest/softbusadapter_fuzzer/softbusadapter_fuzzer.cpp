@@ -30,9 +30,9 @@ namespace OHOS {
 bool OnBytesReceivedFuzz(FuzzedDataProvider &provider)
 {
     int connId = provider.ConsumeIntegral<int>();
-    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
-    AppDataListenerWrap::OnClientBytesReceived(connId, static_cast<void *>(remainingData .data()),
-        remainingData .size());
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    AppDataListenerWrap::OnClientBytesReceived(connId, static_cast<void *>(remainingData.data()),
+        remainingData.size());
     return true;
 }
 } // namespace OHOS

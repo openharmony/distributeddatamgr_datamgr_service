@@ -49,10 +49,10 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     Bootstrap::GetInstance().LoadNetworks();
 
     uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
-    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(static_cast<void *>(remainingData .data()), remainingData .size());
+    request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
     request.RewindRead(0);
     MessageParcel reply;
     std::shared_ptr<KVDBServiceStub> kvdbServiceStub = kvdbServiceImpl;
