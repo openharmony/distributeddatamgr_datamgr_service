@@ -20,16 +20,12 @@ ohos_fuzztest("UdmfServiceFuzzTest") {
   module_out_path = "datamgr_service/datamgr_service"
 
   include_dirs = [
-    "${udmf_path}/framework/common",
-    "${udmf_path}/interfaces/innerkits/common",
-    "${udmf_path}/interfaces/innerkits/data",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
-    "${kv_store_path}/frameworks/common",
   ]
 
   fuzz_config_file =

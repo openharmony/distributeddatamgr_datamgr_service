@@ -21,7 +21,6 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "//foundation/distributedhardware/device_manager/interfaces/inner_kits/native_cpp/include",
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
@@ -44,12 +43,6 @@ config("module_private_config") {
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb/",
     "${data_service_path}/service/test/mock",
-    "${dataobject_path}/interfaces/innerkits",
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/include/",
-    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
     "${data_service_path}/adapter/include/communicator",
   ]
   cflags = [ "-Werror" ]
@@ -85,6 +78,7 @@ ohos_unittest("CloudDataTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
@@ -136,6 +130,7 @@ ohos_unittest("CloudServiceImplTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
@@ -193,11 +188,6 @@ ohos_unittest("ValueProxyServiceTest") {
     "value_proxy_test.cpp",
   ]
 
-  include_dirs = [
-    "../../../../../relational_store/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   cflags = [
@@ -215,11 +205,11 @@ ohos_unittest("ValueProxyServiceTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
 
   deps = [
-    "${kv_store_distributeddb_path}:distributeddb",
-    "${relational_store_inner_api_path}:native_rdb_static",
     "../../framework:distributeddatasvcfwk",
     "../../service:distributeddatasvc",
   ]
@@ -318,6 +308,7 @@ ohos_unittest("DeviceMatrixTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
@@ -350,9 +341,6 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "${data_service_path}/service/common",
     "${data_service_path}/service/rdb",
     "${data_service_path}/service/kvdb",
-    "${relational_store_path}/interfaces/innerapi/clouddata/include",
-    "${relational_store_path}/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -368,11 +356,13 @@ ohos_unittest("KVDBGeneralStoreTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
 
   deps = [
@@ -465,9 +455,6 @@ ohos_unittest("RdbResultSetImplTest") {
 
   include_dirs = [
     "${data_service_path}/service/rdb",
-    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
-    "${relational_store_path}/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -489,12 +476,12 @@ ohos_unittest("RdbResultSetImplTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${relational_store_inner_api_path}:native_rdb_static",
   ]
 }
 
@@ -523,12 +510,6 @@ ohos_unittest("RdbServiceTest") {
     "rdb_result_set_stub_test.cpp",
   ]
 
-  include_dirs = [
-    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
-    "${relational_store_path}/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   cflags = [
@@ -543,17 +524,19 @@ ohos_unittest("RdbServiceTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${relational_store_inner_api_path}:native_rdb_static",
   ]
 }
 
@@ -715,6 +698,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
 
   external_deps = [
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "dmsfwk:distributed_sdk",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -854,9 +838,6 @@ ohos_unittest("MetaDataTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/adapter/include/account",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${data_service_path}/adapter/include/communicator",
   ]
 
@@ -867,6 +848,7 @@ ohos_unittest("MetaDataTest") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "c_utils:utils",
+    "device_manager:devicemanagersdk",
     "dataclassification:data_transit_mgr",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -874,7 +856,9 @@ ohos_unittest("MetaDataTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
   ]
 
   deps = [
@@ -914,6 +898,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -949,10 +934,6 @@ ohos_unittest("DataShareServiceImplTest") {
 
   include_dirs = [
     "${data_service_path}/service/config/include",
-    "${datashare_path}/frameworks/native/common/include",
-    "${datashare_path}/interfaces/inner_api/common/include",
-    "${datashare_path}/interfaces/inner_api/consumer/include",
-    "//third_party/json/single_include",
   ]
 
   sources = [
@@ -1042,6 +1023,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hicollie:libhicollie",
@@ -1096,9 +1078,6 @@ ohos_unittest("KvdbServiceImplTest") {
     "${data_service_path}/framework/include/cloud",
     "${data_service_path}/framework/include/eventcenter",
     "${data_service_path}/service/test/mock",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
     "${data_service_path}/adapter/include/communicator",
   ]
 
@@ -1116,13 +1095,16 @@ ohos_unittest("KvdbServiceImplTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
     "relational_store:native_rdb",
   ]
 
