@@ -192,6 +192,8 @@ HWTEST_F(ObjectManagerTest, DeleteNotifierNoLock001, TestSize.Level0)
 HWTEST_F(ObjectManagerTest, Clear001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
+    std::string dataDir = "/data/app/el2/100/database";
+    manager->SetData(dataDir, userId_);
     auto result = manager->Clear();
     ASSERT_EQ(result, OHOS::DistributedObject::OBJECT_SUCCESS);
     auto size = manager->callbacks_.Size();
