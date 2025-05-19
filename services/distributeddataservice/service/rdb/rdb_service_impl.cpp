@@ -232,12 +232,23 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
     return CheckerManager::GetInstance().IsValid(storeInfo);
 }
 
-std::string RdbServiceImpl::ObtainDistributedTableName(const std::string &device, const std::string &table)
+std::string RdbServiceImpl::ObtainDistributedTableName(const RdbSyncerParam &param, const std::string &device,
+    const std::string &table)
 {
-    ZLOGI("device=%{public}s table=%{public}s", Anonymous::Change(device).c_str(), table.c_str());
-    auto uuid = DmAdapter::GetInstance().GetUuidByNetworkId(device);
+    if (!CheckAccess(param.bundleName_, "")) {
+        ZLOGE("bundleName:%{public}s. Permission error", param.bundleName_.c_str());
+        return "";
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    std::string appId = " ";
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) == Security::AccessToken::TOKEN_HAP) {
+        auto uid = IPCSkeleton::GetCallingUid();
+        appId = CheckerManager::GetInstance().GetAppId({ uid, tokenId, param.bundleName_ });
+    }
+    auto uuid = DmAdapter::GetInstance().CalcClientUuid(appId, DmAdapter::GetInstance().ToUUID(device));
     if (uuid.empty()) {
-        ZLOGE("get uuid failed");
+        ZLOGE("get uuid failed, bundle:%{public}s, deviceId:%{public}s, table:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(device).c_str(), Anonymous::Change(table).c_str());
         return "";
     }
     return DistributedDB::RelationalStoreManager::GetDistributedTableName(uuid, table);
@@ -598,7 +609,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
                     ? GeneralStore::ASSETS_SYNC_MODE
                     : (option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode, highMode));
-    SyncParam syncParam = { mixMode, (option.isAsync ? 0 : WAIT_TIME), option.isCompensation };
+    SyncParam syncParam = { mixMode, (option.isAsync ? 0 : static_cast<int32_t>(WAIT_TIME)), option.isCompensation };
     syncParam.asyncDownloadAsset = param.asyncDownloadAsset_;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
@@ -609,7 +620,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
 }
 
 int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOption &option,
-    RdbStoreObserver *observer)
+    std::shared_ptr<RdbStoreObserver> observer)
 {
     if (option.mode < 0 || option.mode >= SUBSCRIBE_MODE_MAX) {
         ZLOGE("mode:%{public}d error", option.mode);
@@ -639,7 +650,7 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
 }
 
 int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
-    RdbStoreObserver *observer)
+    std::shared_ptr<RdbStoreObserver> observer)
 {
     if (option.mode < 0 || option.mode >= SUBSCRIBE_MODE_MAX) {
         ZLOGE("mode:%{public}d error", option.mode);

@@ -15,11 +15,7 @@
 
 #include "app_pipe_handler.h"
 #include <thread>
-#include <codecvt>
-#include <locale>
-#include <string>
 #include "log_print.h"
-#include "reporter.h"
 
 #ifdef LOG_TAG
     #undef LOG_TAG

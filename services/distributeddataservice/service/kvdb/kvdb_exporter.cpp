@@ -16,10 +16,10 @@
 #include "kvdb_exporter.h"
 
 #include "backup_manager.h"
+#include "dfx/reporter.h"
 #include "directory/directory_manager.h"
 #include "kvdb_general_store.h"
 #include "log_print.h"
-#include "reporter.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedDataDfx;

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 
 namespace OHOS {
 namespace DistributedData {

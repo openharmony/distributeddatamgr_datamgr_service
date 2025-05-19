@@ -204,6 +204,10 @@ int RdbSubscriberManager::Disable(const Key &key, uint32_t firstCallerTokenId)
     if (isAllDisabled) {
         SchedulerManager::GetInstance().Disable(key);
     }
+    if (result != E_OK) {
+        ZLOGE("disable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
+    }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
 
@@ -234,6 +238,10 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
     });
     if (isChanged) {
         SchedulerManager::GetInstance().Enable(key, context->visitedUserId, metaData);
+    }
+    if (result != E_OK) {
+        ZLOGE("enable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
+            DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
     }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }

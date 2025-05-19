@@ -28,15 +28,17 @@ namespace OHOS::DistributedRdb {
 using Anonymous = DistributedData::Anonymous;
 int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, MessageParcel &reply)
 {
+    RdbSyncerParam param;
     std::string device;
     std::string table;
-    if (!ITypesUtil::Unmarshal(data, device, table)) {
+    if (!ITypesUtil::Unmarshal(data, param, device, table)) {
         ZLOGE("Unmarshal device:%{public}s table:%{public}s", Anonymous::Change(device).c_str(), table.c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    std::string distributedTableName = ObtainDistributedTableName(device, table);
-    if (!ITypesUtil::Marshal(reply, distributedTableName)) {
+    std::string distributedTableName = ObtainDistributedTableName(param, device, table);
+    int32_t status = distributedTableName.empty() ? RDB_ERROR : RDB_OK;
+    if (!ITypesUtil::Marshal(reply, status, distributedTableName)) {
         ZLOGE("Marshal distributedTableName:%{public}s", distributedTableName.c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

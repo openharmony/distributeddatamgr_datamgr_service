@@ -19,12 +19,12 @@
 #include <memory>
 #include <mutex>
 
-#include "behaviour_reporter.h"
-#include "dfx_types.h"
+#include "dfx/behaviour_reporter.h"
+#include "dfx/dfx_types.h"
 #include "executor_pool.h"
-#include "fault_reporter.h"
-#include "reporter.h"
-#include "statistic_reporter.h"
+#include "dfx/fault_reporter.h"
+#include "dfx/reporter.h"
+#include "dfx/statistic_reporter.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {

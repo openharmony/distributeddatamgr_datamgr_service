@@ -16,7 +16,7 @@
 #ifndef DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_IMPL_H
 #define DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_IMPL_H
 
-#include "behaviour_reporter.h"
+#include "dfx/behaviour_reporter.h"
 #include "hiview_adapter.h"
 
 namespace OHOS {

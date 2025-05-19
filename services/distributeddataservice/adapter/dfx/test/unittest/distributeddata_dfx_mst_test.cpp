@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <openssl/sha.h>
-#include "reporter.h"
+#include "dfx/reporter.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedDataDfx;

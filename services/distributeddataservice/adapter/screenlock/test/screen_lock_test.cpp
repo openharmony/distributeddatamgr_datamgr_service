@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "screen_lock.h"
+#include "screenlock/screen_lock.h"
 
 #include <gtest/gtest.h>
 namespace {
@@ -65,7 +65,6 @@ public:
 HWTEST_F(ScreenLockTest, Subscribe001, TestSize.Level0)
 {
     auto screenLock = std::make_shared<ScreenLock>();
-    screenLock->ScreenManager::Subscribe(nullptr);
     screenLock->Subscribe(nullptr);
     EXPECT_TRUE(screenLock->observerMap_.Empty());
     auto observer = std::make_shared<ScreenLockObserver>();
@@ -101,7 +100,6 @@ HWTEST_F(ScreenLockTest, Subscribe002, TestSize.Level0)
 HWTEST_F(ScreenLockTest, Unsubscribe001, TestSize.Level0)
 {
     auto screenLock = std::make_shared<ScreenLock>();
-    screenLock->ScreenManager::Unsubscribe(nullptr);
     auto observer = std::make_shared<ScreenLockObserver>();
     screenLock->Subscribe(observer);
     EXPECT_EQ(screenLock->observerMap_.Size(), 1);
@@ -122,10 +120,8 @@ HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
     screenLock->BindExecutor(executor);
     ASSERT_NE(screenLock->executors_, nullptr);
     EXPECT_EQ(screenLock->eventSubscriber_, nullptr);
-    screenLock->ScreenManager::SubscribeScreenEvent();
     screenLock->SubscribeScreenEvent();
     EXPECT_NE(screenLock->eventSubscriber_, nullptr);
-    screenLock->ScreenManager::UnsubscribeScreenEvent();
     screenLock->UnsubscribeScreenEvent();
 }
 } // namespace

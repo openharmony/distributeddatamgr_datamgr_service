@@ -42,7 +42,7 @@
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "model/component_config.h"
-#include "network_delegate.h"
+#include "network/network_delegate.h"
 #include "network_delegate_mock.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
