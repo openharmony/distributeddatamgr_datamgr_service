@@ -21,18 +21,6 @@ ohos_fuzztest("DumpHelperFuzzTest") {
 
   include_dirs = [
     "${data_service_path}/service/dumper/include",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_distributeddb_path}",
-    "${kv_store_distributeddb_path}/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
-    "${relational_store_path}/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
     "//third_party/json/single_include",
   ]
 
@@ -55,7 +43,6 @@ ohos_fuzztest("DumpHelperFuzzTest") {
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${kv_store_distributeddb_path}:distributeddb",
   ]
 
   external_deps = [
@@ -76,6 +63,7 @@ ohos_fuzztest("DumpHelperFuzzTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",
+    "kv_store:distributeddb"
   ]
 }
 
