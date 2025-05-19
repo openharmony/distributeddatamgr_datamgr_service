@@ -32,7 +32,7 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
-#include "reporter.h"
+#include "dfx/reporter.h"
 #include "store_account_observer.h"
 #include "system_ability_definition.h"
 #include "uri_permission_manager.h"

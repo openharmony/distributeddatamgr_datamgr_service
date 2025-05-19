@@ -20,9 +20,8 @@
 #include <thread>
 #include <unistd.h>
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "bootstrap.h"
-#include "cloud/change_event.h"
 #include "communication_provider.h"
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"

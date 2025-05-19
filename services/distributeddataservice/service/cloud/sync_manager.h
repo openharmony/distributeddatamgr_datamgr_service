@@ -23,6 +23,7 @@
 #include "cloud_types.h"
 #include "cloud/sync_event.h"
 #include "concurrent_map.h"
+#include "dfx/radar_reporter.h"
 #include "eventcenter/event.h"
 #include "executor_pool.h"
 #include "metadata/store_meta_data_local.h"
@@ -30,7 +31,6 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "utils/ref_count.h"
-#include "radar_reporter.h"
 
 namespace OHOS::CloudData {
 class SyncManager {

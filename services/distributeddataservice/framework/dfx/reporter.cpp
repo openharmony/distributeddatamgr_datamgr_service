@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "reporter.h"
+#include "dfx/reporter.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {

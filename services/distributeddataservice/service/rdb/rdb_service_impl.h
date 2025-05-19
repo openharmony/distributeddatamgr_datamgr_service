@@ -53,7 +53,8 @@ public:
     virtual ~RdbServiceImpl();
 
     /* IPC interface */
-    std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
+    std::string ObtainDistributedTableName(const RdbSyncerParam &param, const std::string &device,
+        const std::string &table) override;
 
     int32_t InitNotifier(const RdbSyncerParam &param, sptr<IRemoteObject> notifier) override;
 

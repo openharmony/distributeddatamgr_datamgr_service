@@ -16,14 +16,14 @@
 #include <string>
 #include <thread>
 
-#include "communicator_context.h"
 #include "communication/connect_manager.h"
+#include "communicator_context.h"
 #include "data_level.h"
 #include "device_manager_adapter.h"
-#include "dfx_types.h"
+#include "dfx/dfx_types.h"
+#include "dfx/reporter.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
-#include "reporter.h"
 #include "securec.h"
 #include "session.h"
 #include "softbus_adapter.h"

@@ -15,8 +15,8 @@
 
 #ifndef DISTRIBUTEDDATAMGR_RUNTIME_FAULT_IMPL_H
 #define DISTRIBUTEDDATAMGR_RUNTIME_FAULT_IMPL_H
+#include "dfx/fault_reporter.h"
 #include "hiview_adapter.h"
-#include "fault_reporter.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
@@ -37,6 +37,6 @@ public:
 private:
     std::shared_ptr<ExecutorPool> executors_;
 };
-}  // namespace DistributedDataDfx
-}  // namespace OHOS
+} // namespace DistributedDataDfx
+} // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_RUNTIME_FAULT_IMPL_H

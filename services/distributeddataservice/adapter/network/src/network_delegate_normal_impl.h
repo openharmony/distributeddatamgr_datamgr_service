@@ -20,7 +20,7 @@
 #include <cstdint>
 
 #include "dm_device_info.h"
-#include "network_delegate.h"
+#include "network/network_delegate.h"
 
 namespace OHOS::DistributedData {
 class NetworkDelegateNormalImpl : public NetworkDelegate {
