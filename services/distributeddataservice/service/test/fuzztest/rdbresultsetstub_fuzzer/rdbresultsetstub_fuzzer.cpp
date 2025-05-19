@@ -13,33 +13,34 @@
  * limitations under the License.
  */
 
-#include "rdbresultsetstub_fuzzer.h"
-
 #include <fuzzer/FuzzedDataProvider.h>
+
+#include "rdbresultsetstub_fuzzer.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 
-#include "message_parcel.h"
 #include "rdb_result_set_impl.h"
 #include "rdb_result_set_stub.h"
-#include "securec.h"
+#include "message_parcel.h"
 #include "store/cursor.h"
+#include "securec.h"
 
 using namespace OHOS::DistributedRdb;
+
 namespace OHOS {
 using Code = NativeRdb::RemoteResultSet::Code;
 const std::u16string INTERFACE_TOKEN = u"OHOS::NativeRdb.IResultSet";
 
-bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
+bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
-    FuzzedDataProvider provider(data, size);
-    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(0, Code::CMD_MAX);
-    std::vector<uint8_t> remaining_data = provider.ConsumeRemainingBytes<uint8_t>();
+    const int min = 0;
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(min, Code::CMD_MAX);
+    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(static_cast<void *>(remaining_data.data()), remaining_data.size());
+    request.WriteBuffer(static_cast<void *>(remainingData .data()), remainingData .size());
     request.RewindRead(0);
     MessageParcel reply;
     MessageOption option;
@@ -54,6 +55,7 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    OHOS::OnRemoteRequestFuzz(data, size);
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnRemoteRequestFuzz(provider);
     return 0;
 }

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 #include "dataservicestub_fuzzer.h"
 
 #include <cstddef>
@@ -29,12 +31,13 @@ const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.IKvStoreDataService"
 const uint32_t CODE_MIN = 0;
 const uint32_t CODE_MAX = 10;
 
-bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
+bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
-    uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(data, size);
+    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
+    request.WriteBuffer(static_cast<void *>(remainingData .data()), remainingData .size());
     request.RewindRead(0);
     MessageParcel reply;
     MessageOption option;
@@ -47,11 +50,7 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (data == nullptr) {
-        return 0;
-    }
-
-    OHOS::OnRemoteRequestFuzz(data, size);
-
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnRemoteRequestFuzz(provider);
     return 0;
 }

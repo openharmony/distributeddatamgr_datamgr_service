@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 #include "objectservicestub_fuzzer.h"
 
 #include <cstddef>
@@ -32,17 +34,18 @@ constexpr uint32_t CODE_MAX = static_cast<uint32_t>(ObjectCode::OBJECTSTORE_SERV
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
-bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
+bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     objectServiceImpl->OnBind(
         { "ObjectServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
-    uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
+    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(data, size);
+    request.WriteBuffer(static_cast<void *>(remainingData .data()), remainingData .size());
     request.RewindRead(0);
     MessageParcel reply;
     std::shared_ptr<ObjectServiceStub> objectServiceStub = objectServiceImpl;
@@ -54,11 +57,7 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (data == nullptr) {
-        return 0;
-    }
-
-    OHOS::OnRemoteRequestFuzz(data, size);
-
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnRemoteRequestFuzz(provider);
     return 0;
 }

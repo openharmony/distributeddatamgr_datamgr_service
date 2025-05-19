@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 #include "udmfservice_fuzzer.h"
 
 #include "accesstoken_kit.h"
@@ -36,12 +38,11 @@ constexpr size_t NUM_MAX = 12;
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 
-QueryOption GenerateFuzzQueryOption(const uint8_t* data, size_t size)
+QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
     std::vector<uint8_t> groupId(ID_LEN, '0');
-    size_t length = groupId.size() > size ? size : groupId.size();
-    for (size_t i = 0; i < length; ++i) {
-        groupId[i] = data[i] % MINIMUM + MINIMUM;
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MINIMUM);
     }
     std::string groupIdStr(groupId.begin(), groupId.end());
     UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
@@ -52,31 +53,33 @@ QueryOption GenerateFuzzQueryOption(const uint8_t* data, size_t size)
     return query;
 }
 
-bool OnRemoteRequestFuzz(const uint8_t* data, size_t size)
+bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
-    uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
+    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(data, size);
+    request.WriteBuffer(static_cast<void *>(remainingData .data()), remainingData .size());
     request.RewindRead(0);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(code, request, reply);
     return true;
 }
 
-void SetDataFuzz(const uint8_t *data, size_t size)
+void SetDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     CustomOption option1 = {.intention = Intention::UD_INTENTION_DRAG};
-    std::string svalue(data, data + size);
+
+    std::string svalue = provider.ConsumeRandomLengthString();
     UnifiedData data1;
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
@@ -91,13 +94,13 @@ void SetDataFuzz(const uint8_t *data, size_t size)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DATA), request, reply);
 }
 
-void GetDataFuzz(const uint8_t *data, size_t size)
+void GetDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, query);
@@ -105,13 +108,13 @@ void GetDataFuzz(const uint8_t *data, size_t size)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_DATA), request, reply);
 }
 
-void GetBatchDataFuzz(const uint8_t *data, size_t size)
+void GetBatchDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, query);
@@ -119,14 +122,14 @@ void GetBatchDataFuzz(const uint8_t *data, size_t size)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_BATCH_DATA), request, reply);
 }
 
-void UpdateDataFuzz(const uint8_t *data, size_t size)
+void UpdateDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
-    std::string svalue(data, data + size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
+    std::string svalue = provider.ConsumeRandomLengthString();
     UnifiedData data1;
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
@@ -141,13 +144,13 @@ void UpdateDataFuzz(const uint8_t *data, size_t size)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::UPDATE_DATA), request, reply);
 }
 
-void DeleteDataFuzz(const uint8_t *data, size_t size)
+void DeleteDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, query);
@@ -155,13 +158,13 @@ void DeleteDataFuzz(const uint8_t *data, size_t size)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::DELETE_DATA), request, reply);
 }
 
-void GetSummaryFuzz(const uint8_t *data, size_t size)
+void GetSummaryFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, query);
@@ -169,13 +172,13 @@ void GetSummaryFuzz(const uint8_t *data, size_t size)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_SUMMARY), request, reply);
 }
 
-void AddPrivilegeDataFuzz(const uint8_t *data, size_t size)
+void AddPrivilegeDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
 
     Privilege privilege = {
         .tokenId = 1,
@@ -191,13 +194,13 @@ void AddPrivilegeDataFuzz(const uint8_t *data, size_t size)
         request, replyUpdate);
 }
 
-void SyncDataFuzz(const uint8_t *data, size_t size)
+void SyncDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
     std::vector<std::string> devices = { "11", "22" };
     MessageParcel requestUpdate;
     requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
@@ -207,13 +210,13 @@ void SyncDataFuzz(const uint8_t *data, size_t size)
         requestUpdate, replyUpdate);
 }
 
-void IsRemoteDataFuzz(const uint8_t *data, size_t size)
+void IsRemoteDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(data, size);
+    QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel requestUpdate;
     requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(requestUpdate, query);
@@ -222,16 +225,15 @@ void IsRemoteDataFuzz(const uint8_t *data, size_t size)
         requestUpdate, replyUpdate);
 }
 
-void ObtainAsynProcessFuzz(const uint8_t *data, size_t size)
+void ObtainAsynProcessFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     std::vector<uint8_t> groupId(ID_LEN, '0');
-    size_t length = groupId.size() > size ? size : groupId.size();
-    for (size_t i = 0; i < length; ++i) {
-        groupId[i] = data[i] % MINIMUM + MINIMUM;
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MINIMUM);
     }
     std::string businessUdKey(groupId.begin(), groupId.end());
     AsyncProcessInfo processInfo = {
@@ -245,16 +247,15 @@ void ObtainAsynProcessFuzz(const uint8_t *data, size_t size)
         requestUpdate, replyUpdate);
 }
 
-void ClearAsynProcessFuzz(const uint8_t *data, size_t size)
+void ClearAsynProcessFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     std::vector<uint8_t> groupId(ID_LEN, '0');
-    size_t length = groupId.size() > size ? size : groupId.size();
-    for (size_t i = 0; i < length; ++i) {
-        groupId[i] = data[i] % MINIMUM + MINIMUM;
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MINIMUM);
     }
     std::string businessUdKey(groupId.begin(), groupId.end());
     MessageParcel requestUpdate;
@@ -278,25 +279,22 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return 0;
-    }
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnRemoteRequestFuzz(provider);
+    OHOS::SetDataFuzz(provider);
+    OHOS::GetDataFuzz(provider);
 
-    OHOS::OnRemoteRequestFuzz(data, size);
-    OHOS::SetDataFuzz(data, size);
-    OHOS::GetDataFuzz(data, size);
+    OHOS::GetBatchDataFuzz(provider);
+    OHOS::UpdateDataFuzz(provider);
+    OHOS::DeleteDataFuzz(provider);
 
-    OHOS::GetBatchDataFuzz(data, size);
-    OHOS::UpdateDataFuzz(data, size);
-    OHOS::DeleteDataFuzz(data, size);
+    OHOS::GetSummaryFuzz(provider);
+    OHOS::AddPrivilegeDataFuzz(provider);
+    OHOS::SyncDataFuzz(provider);
 
-    OHOS::GetSummaryFuzz(data, size);
-    OHOS::AddPrivilegeDataFuzz(data, size);
-    OHOS::SyncDataFuzz(data, size);
-
-    OHOS::IsRemoteDataFuzz(data, size);
-    OHOS::ObtainAsynProcessFuzz(data, size);
-    OHOS::ClearAsynProcessFuzz(data, size);
+    OHOS::IsRemoteDataFuzz(provider);
+    OHOS::ObtainAsynProcessFuzz(provider);
+    OHOS::ClearAsynProcessFuzz(provider);
 
     return 0;
 }

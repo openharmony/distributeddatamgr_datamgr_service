@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <fuzzer/FuzzedDataProvider.h>
+
 #include "kvdbservicestub_fuzzer.h"
 
 #include <cstddef>
@@ -33,7 +36,7 @@ constexpr uint32_t CODE_MAX = static_cast<uint32_t>(KVDBServiceInterfaceCode::TR
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
-bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
+bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<KVDBServiceImpl> kvdbServiceImpl = std::make_shared<KVDBServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
@@ -45,10 +48,11 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
     Bootstrap::GetInstance().LoadCheckers();
     Bootstrap::GetInstance().LoadNetworks();
 
-    uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
+    std::vector<uint8_t> remainingData  = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(data, size);
+    request.WriteBuffer(static_cast<void *>(remainingData .data()), remainingData .size());
     request.RewindRead(0);
     MessageParcel reply;
     std::shared_ptr<KVDBServiceStub> kvdbServiceStub = kvdbServiceImpl;
@@ -60,11 +64,7 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (data == nullptr) {
-        return 0;
-    }
-
-    OHOS::OnRemoteRequestFuzz(data, size);
-
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnRemoteRequestFuzz(provider);
     return 0;
 }
