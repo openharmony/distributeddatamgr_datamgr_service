@@ -305,7 +305,7 @@ bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
     }
 
     auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
-    for (auto storeMeta : metaDatas) {
+    for (auto &storeMeta : metaDatas) {
         if (storeMeta.appId == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }
