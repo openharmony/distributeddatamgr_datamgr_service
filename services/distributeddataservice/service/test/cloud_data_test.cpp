@@ -1046,6 +1046,44 @@ HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level1)
 }
 
 /**
+* @tc.name: CloudSync001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync001, TestSize.Level1)
+{
+    int32_t syncMode = 4;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: InitNotifier001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, InitNotifier001, TestSize.Level1)
+{
+    int32_t syncMode = 4;
+    uint32_t seqNum = 10;
+    std::string bundleName = "";
+    sptr<RdbNotifierProxy> notifier = nullptr;
+    auto ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+
+    bundleName = "bundleName";
+    ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+
+    sptr<RdbNotifierProxy> notifier = new RdbNotifierProxy();
+    ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
 * @tc.name: Clean
 * @tc.desc:
 * @tc.type: FUNC
@@ -1697,6 +1735,51 @@ HWTEST_F(CloudDataTest, OnSetCloudStrategy, TestSize.Level0)
     std::vector<CommonType::Value> values;
     ITypesUtil::Marshal(data, strategy, values);
     ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_SET_CLOUD_STRATEGY, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnCloudSync
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnCloudSync, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CLOUD_SYNC, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string bundleName = "bundleName";
+    std::string storeId = "storeId";
+    CloudData::CloudService::Option option;
+    option.syncMode = 4;
+    option.seqNum = 1;
+    ITypesUtil::Marshal(data, bundleName, storeId, option);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CLOUD_SYNC, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnInitNotifier
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnInitNotifier, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_INIT_NOTIFIER, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string bundleName = "bundleName";
+    sptr<IRemoteObject> notifier = nullptr;
+    ITypesUtil::Marshal(data, bundleName, notifier);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_INIT_NOTIFIER, data, reply);
     EXPECT_EQ(ret, ERR_NONE);
 }
 

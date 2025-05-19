@@ -23,6 +23,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
+#include "cloud/change_event.h"
 #include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_server.h"
@@ -1229,6 +1230,97 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user, CloudSyncScene scene)
     instance->ReleaseUserInfo(user);
     ZLOGI("notify release user info, user:%{public}d", user);
     return true;
+}
+
+bool CloudServiceImpl::CheckAccess(const std::string &bundleName, const std::string &storeId)
+{
+    CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = IPCSkeleton::GetCallingUid();
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.bundleName = bundleName;
+    storeInfo.storeId = storeId;
+    return !CheckerManager::GetInstance().GetAppId(storeInfo).empty();
+}
+
+int32_t CloudServiceImpl::InitNotifier(const std::string &bundleName, sptr<IRemoteObject> notifier)
+{
+    if (!CheckAccess(bundleName, "")) {
+        ZLOGE("Permission error, bundleName:%{public}s", bundleName.c_str());
+        return INVALID_ARGUMENT;
+    }
+    if (notifier == nullptr) {
+        ZLOGE("no notifier, bundleName:%{public}s", bundleName.c_str());
+        return INVALID_ARGUMENT;
+    }
+    auto notifierProxy = iface_cast<RdbNotifierProxy>(notifier);
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    syncAgents_.Compute(tokenId, [bundleName, notifierProxy, pid](auto, SyncAgents &agents) {
+        auto agent = agents.find(pid);
+        if (agent == agents.end()) {
+            SyncAgent temp;
+            temp.notifiers_emplace(bundleName, notifierProxy);
+            agents.emplace(pid, temp);
+        } else {
+            agent->second.notifiers_.emplace(bundleName, notifierProxy);
+        }
+        return true;
+    });
+    return SUCCESS;
+}
+
+Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
+{
+    Details dbDetails;
+    for (const auto& [id, detail] : details) {
+        auto &dbDetail = dbDetails[id];
+        dbDetail.progress = detail.progress;
+        dbDetail.code = detail.code;
+        for (auto &[name, table] : detail.details) {
+            auto &dbTable = dbDetail.details[name];
+            Constant::Copy(&dbTable, &table);
+        }
+    }
+    return dbDetails;
+}
+
+void CloudServiceImpl::OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result)
+{
+    sptr<RdbNotifierProxy> notifier = nullptr;
+    syncAgents_.ComputeIfPresent(storeInfo.tokenId, [&notifier, pid, storeInfo, seqNum](auto, SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pid);
+        if (it != syncAgents.end()) {
+            auto iter = it->second.notifiers_.find(storeInfo.bundleName);
+            if (iter != it->second.notifiers_.end()) {
+                notifier = iter->second;
+            }
+        }
+        return true;
+    });
+    if (notifier != nullptr) {
+        notifier->OnComplete(seqNum, std::move(result));
+    }
+}
+
+int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::string &storeId,
+    const Option &option, const AsyncDetail &async)
+{
+    StoreInfo storeInfo;
+    storeInfo.bundleName = bundleName;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.storeName = storeId;
+    auto pid = IPCSkeleton::GetCallingPid();
+    GenAsync asyncCallback = [this, storeInfo, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
+        OnAsyncComplete(storeInfo, pid, seqNum, HandleGenDetails(result));
+    }
+    auto highMode = GeneralStore::MANUAL_SYNC_MODE;
+    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
+    SyncParam syncParam = { mixMode, 0, false };
+    auto info = ChangeEvent::EventInfo(syncParam, false, nullptr, asyncCallback);
+    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return SUCCESS;
 }
 
 bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)

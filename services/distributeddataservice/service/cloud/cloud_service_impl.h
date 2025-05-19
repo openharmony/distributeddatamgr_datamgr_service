@@ -28,11 +28,14 @@
 #include "cloud_service_stub.h"
 #include "dfx/dfx_types.h"
 #include "feature/static_acts.h"
+#include "../rdb/rdb_notifier_proxy.h"
+#include "../rdb/rdb_watcher.h"
 #include "store/general_store.h"
 #include "sync_manager.h"
 #include "values_bucket.h"
 
 namespace OHOS::CloudData {
+using namespace DistributedRdb;
 class CloudServiceImpl : public CloudServiceStub {
 public:
     using CloudLastSyncInfo = DistributedData::CloudLastSyncInfo;
@@ -51,6 +54,9 @@ public:
     std::pair<int32_t, QueryLastResults> QueryLastSyncInfo(
         const std::string &id, const std::string &bundleName, const std::string &storeId) override;
     int32_t SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values) override;
+    int32_t CloudSync(const std::string &bundleName, const std::string &storeId, const Option &option,
+        const AsyncDetail &async) override;
+    int32_t InitNotifier(const std::string &bundleName, sptr<IRemoteObject> notifier) override;
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string &storeId,
         const DistributedRdb::PredicatesMemo &predicates, const std::vector<std::string> &columns,
@@ -126,6 +132,12 @@ private:
         std::string bundleName;
     };
 
+    struct SyncAgent {
+        SyncAgent() = default;
+        std::map<std::string, sptr<RdbNotifierProxy>> notifiers_;
+    }
+    using SyncAgents = std::map<int32_t, SyncAgent>;
+
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static HapInfo GetHapInfo(uint32_t tokenId);
     static std::string GetDfxFaultType(CloudSyncScene scene);
@@ -192,8 +204,11 @@ private:
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
+    static Details HandleGenDetails(const GenDetails &details);
     QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
                                          const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
+    void OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result);
+    bool CheckAccess(const std::string &bundleName, const std::string &storeId);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
@@ -203,6 +218,7 @@ private:
     uint64_t expireTime_ = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
             .count());
+    ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;

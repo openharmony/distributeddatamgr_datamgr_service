@@ -37,6 +37,7 @@ private:
     int32_t OnQueryStatistics(MessageParcel &data, MessageParcel &reply);
     int32_t OnQueryLastSyncInfo(MessageParcel &data, MessageParcel &reply);
     int32_t OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply);
+    int32_t OnCloudSync(MessageParcel &data, MessageParcel &reply);
 
     int32_t OnAllocResourceAndShare(MessageParcel &data, MessageParcel &reply);
     int32_t OnShare(MessageParcel &data, MessageParcel &reply);
@@ -49,6 +50,7 @@ private:
     int32_t OnChangeConfirmation(MessageParcel &data, MessageParcel &reply);
 
     int32_t OnSetCloudStrategy(MessageParcel &data, MessageParcel &reply);
+    int32_t OnInitNotifier(MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[TRANS_BUTT];
 };
 } // namespace OHOS::CloudData
