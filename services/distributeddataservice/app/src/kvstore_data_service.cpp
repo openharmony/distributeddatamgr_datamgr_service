@@ -162,7 +162,7 @@ sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &n
 {
     sptr<FeatureStubImpl> feature;
     bool isFirstCreate = false;
-    features_.Compute(name, [&feature, &isFirstCreate](const auto &key, auto &value) ->bool {
+    features_.Compute(name, [&feature, &isFirstCreate](const auto &key, auto &value) -> bool {
         if (value != nullptr) {
             feature = value;
             return true;
@@ -204,7 +204,8 @@ void KvStoreDataService::LoadFeatures()
 }
 
 /* RegisterClientDeathObserver */
-Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer)
+Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer,
+    const std::string &featureName)
 {
     ZLOGD("begin.");
     KVSTORE_ACCOUNT_EVENT_PROCESSING_CHECKER(Status::SYSTEM_ACCOUNT_EVENT_PROCESSING);
@@ -223,13 +224,47 @@ Status KvStoreDataService::RegisterClientDeathObserver(const AppId &appId, sptr<
         return Status::PERMISSION_DENIED;
     }
     auto pid = IPCSkeleton::GetCallingPid();
-    clients_.Compute(
-        info.tokenId, [&appId, &info, pid, this, obs = std::move(observer)](const auto tokenId, auto &clients) {
-            auto res = clients.try_emplace(pid, appId, *this, std::move(obs));
-            ZLOGI("bundleName:%{public}s, uid:%{public}d, pid:%{public}d, inserted:%{public}s.", appId.appId.c_str(),
-                info.uid, pid, res.second ? "success" : "failed");
+    clients_.Compute(info.tokenId,
+        [&appId, &info, pid, this, obs = std::move(observer), featureName](const auto tokenId, auto &clients) {
+            auto it = clients.find(pid);
+            if (it == clients.end()) {
+                auto res = clients.try_emplace(pid, appId, *this, std::move(obs), featureName);
+                ZLOGI("bundle:%{public}s, feature:%{public}s, uid:%{public}d, pid:%{public}d, emplace:%{public}s.",
+                    appId.appId.c_str(), featureName.c_str(), info.uid, pid, res.second ? "success" : "failed");
+            } else {
+                auto res = it->second.Insert(obs, featureName);
+                ZLOGI("bundle:%{public}s, feature:%{public}s, uid:%{public}d, pid:%{public}d, inserted:%{public}s.",
+                    appId.appId.c_str(), featureName.c_str(), info.uid, pid, res ? "success" : "failed");
+            }
             return !clients.empty();
         });
+    return Status::SUCCESS;
+}
+
+int32_t KvStoreDataService::Exit(const std::string &featureName)
+{
+    ZLOGI("AppExit");
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto pid = IPCSkeleton::GetCallingPid();
+    std::string bundleName;
+    KvStoreClientDeathObserverImpl impl(*this);
+    clients_.ComputeIfPresent(tokenId, [pid, &featureName, &bundleName, &impl](auto &, auto &value) {
+        auto it = value.find(pid);
+        if (it == value.end()) {
+            return !value.empty();
+        }
+        bundleName = it->second.GetAppId();
+        it->second.Delete(featureName);
+        if (it->second.Empty()) {
+            impl = std::move(it->second);
+            value.erase(it);
+        }
+        return !value.empty();
+    });
+    auto [exist, feature] = features_.Find(featureName);
+    if (exist && feature != nullptr) {
+        feature->OnFeatureExit(IPCSkeleton::GetCallingUid(), pid, tokenId, bundleName);
+    }
     return Status::SUCCESS;
 }
 
@@ -732,20 +767,20 @@ void KvStoreDataService::OnStop()
     Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 0, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
 }
 
-KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(
-    const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer)
-    : appId_(appId), dataService_(service), observerProxy_(std::move(observer)),
-      deathRecipient_(new KvStoreDeathRecipient(*this))
+KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(const AppId &appId,
+    KvStoreDataService &service, sptr<IRemoteObject> observer, const std::string &featureName)
+    : appId_(appId), dataService_(service), deathRecipient_(new KvStoreDeathRecipient(*this))
 {
     ZLOGD("KvStoreClientDeathObserverImpl");
     uid_ = IPCSkeleton::GetCallingUid();
     pid_ = IPCSkeleton::GetCallingPid();
     token_ = IPCSkeleton::GetCallingTokenID();
-    if (observerProxy_ != nullptr) {
+    if (observer != nullptr) {
         ZLOGI("add death recipient");
-        observerProxy_->AddDeathRecipient(deathRecipient_);
+        observer->AddDeathRecipient(deathRecipient_);
+        observerProxy_.insert_or_assign(featureName, std::move(observer));
     } else {
-        ZLOGW("observerProxy_ is nullptr");
+        ZLOGW("observer is nullptr");
     }
 }
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverImpl(KvStoreDataService &service)
@@ -776,9 +811,13 @@ KvStoreDataService::KvStoreClientDeathObserverImpl &KvStoreDataService::KvStoreC
 KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverImpl()
 {
     ZLOGI("~KvStoreClientDeathObserverImpl");
-    if (deathRecipient_ != nullptr && observerProxy_ != nullptr) {
+    if (deathRecipient_ != nullptr && !observerProxy_.empty()) {
         ZLOGI("remove death recipient");
-        observerProxy_->RemoveDeathRecipient(deathRecipient_);
+        for (auto &[key, value] : observerProxy_) {
+            if (value != nullptr) {
+                value->RemoveDeathRecipient(deathRecipient_);
+            }
+        }
     }
     if (uid_ == INVALID_UID || pid_ == INVALID_PID || token_ == INVALID_TOKEN || !appId_.IsValid()) {
         return;
@@ -808,6 +847,32 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::Reset()
     appId_.appId = "";
 }
 
+bool KvStoreDataService::KvStoreClientDeathObserverImpl::Insert(sptr<IRemoteObject> observer,
+    const std::string &featureName)
+{
+    observer->AddDeathRecipient(deathRecipient_);
+    return observerProxy_.insert_or_assign(featureName, std::move(observer)).second;
+}
+
+bool KvStoreDataService::KvStoreClientDeathObserverImpl::Delete(const std::string &featureName)
+{
+    auto it = observerProxy_.find(featureName);
+    if (it != observerProxy_.end() && it->second != nullptr) {
+        it->second->RemoveDeathRecipient(deathRecipient_);
+    }
+    return observerProxy_.erase(featureName) != 0;
+}
+
+std::string KvStoreDataService::KvStoreClientDeathObserverImpl::GetAppId()
+{
+    return appId_;
+}
+
+bool KvStoreDataService::KvStoreClientDeathObserverImpl::Empty()
+{
+    return observerProxy_.empty();
+}
+
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvStoreDeathRecipient(
     KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl)
     : kvStoreClientDeathObserverImpl_(kvStoreClientDeathObserverImpl)
@@ -825,7 +890,9 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
 {
     (void) remote;
     ZLOGI("begin");
-    kvStoreClientDeathObserverImpl_.NotifyClientDie();
+    if (!clientDead_.exchange(true)) {
+        kvStoreClientDeathObserverImpl_.NotifyClientDie();
+    }
 }
 
 void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)

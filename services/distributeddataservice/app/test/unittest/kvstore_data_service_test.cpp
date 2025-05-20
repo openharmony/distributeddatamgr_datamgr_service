@@ -154,6 +154,18 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver001, TestSize.Level1
 }
 
 /**
+* @tc.name: Exit001
+* @tc.desc: feature Exit
+* @tc.type: FUNC
+*/
+HWTEST_F(KvStoreDataServiceTest, Exit001, TestSize.Level1)
+{
+    KvStoreDataService kvDataService;
+    EXPECT_EQ(kvDataService.Exit(""), Status::SUCCESS);
+}
+
+
+/**
 * @tc.name: GetIndentation001
 * @tc.desc:
 * @tc.type: FUNC
