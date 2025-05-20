@@ -100,6 +100,8 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
         msg.appId = "unknown";
         res = E_ERROR;
     } else {
+        RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+            BizScene::SET_DATA, SetDataStage::SET_DATA_SERVICE_BEGIN, StageRes::IDLE, bundleName);
         msg.appId = bundleName;
         res = SaveData(option, unifiedData, key);
     }
