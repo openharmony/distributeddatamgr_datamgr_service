@@ -411,7 +411,17 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     ptr += userPairSize;
     leftSize -= userPairSize;
 
-    if (!UnPackAppId(&ptr, leftSize) || !UnPackStoreId(&ptr, leftSize) || !UnPackAccountId(&ptr, leftSize)) {
+    if (!UnPackAppId(&ptr, leftSize)) {
+        return false;
+    }
+    bool flag = false;
+    auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.sourceDeviceId, flag);
+    if (!flag) {
+        ZLOGE("get peer cap failed, peer deviceId:%{public}s", Anonymous::Change(session_.sourceDeviceId).c_str());
+        return false;
+    }
+    if (peerCap.version >= CapMetaData::ACCOUNT_VERSION &&
+        (!UnPackStoreId(&ptr, leftSize) || !UnPackAccountId(&ptr, leftSize))) {
         return false;
     }
     return true;

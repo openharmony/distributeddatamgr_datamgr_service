@@ -15,18 +15,13 @@
 
 #ifndef DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H
 #define DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H
-#include <string>
 
-#include "auth_delegate.h"
 #include "concurrent_map.h"
-#include "kvstore_meta_manager.h"
 #include "metadata/capability_meta_data.h"
 #include "executor_pool.h"
 #include "types.h"
-namespace OHOS::DistributedData {
-using DistributedDB::KvStoreNbDelegate;
-using OHOS::DistributedKv::KvStoreTuple;
 
+namespace OHOS::DistributedData {
 class UpgradeManager {
 public:
     static UpgradeManager &GetInstance();
@@ -39,10 +34,6 @@ private:
     ExecutorPool::Task GetTask();
     ConcurrentMap<std::string, CapMetaData> capabilities_ {};
     std::shared_ptr<ExecutorPool> executors_;
-
-    static constexpr int32_t NO_ACCOUNT = 0;
-    static constexpr int32_t IDENTICAL_ACCOUNT = 1;
-    static constexpr const char *defaultAccountId = "ohosAnonymousUid";
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_UPGRADE_MANAGER_H

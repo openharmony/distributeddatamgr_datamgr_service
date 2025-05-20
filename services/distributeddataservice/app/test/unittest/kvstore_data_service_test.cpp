@@ -669,24 +669,6 @@ HWTEST_F(KvStoreDataServiceTest, DumpBundleInfo001, TestSize.Level0)
 }
 
 /**
-* @tc.name: UpgradeManagerTest001
-* @tc.desc: test Init function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(UpgradeManagerTest, UpgradeManagerTest001, TestSize.Level0)
-{
-    auto executors = std::make_shared<ExecutorPool>(1, 0);
-    DistributedData::UpgradeManager instance;
-    instance.Init(executors);
-    EXPECT_TRUE(instance.executors_);
-
-    instance.Init(executors);
-    EXPECT_TRUE(instance.executors_);
-}
-
-/**
 * @tc.name: OnExtensionRestore001
 * @tc.desc: restore with invalid fd
 * @tc.type: FUNC

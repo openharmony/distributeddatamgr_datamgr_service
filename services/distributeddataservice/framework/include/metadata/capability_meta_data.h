@@ -25,6 +25,7 @@ public:
     static constexpr int32_t INVALID_VERSION = -1;
     static constexpr int32_t ACCOUNT_VERSION = 2;
     int32_t version = INVALID_VERSION;
+    std::string deviceId = "";
 
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
@@ -34,6 +35,7 @@ class CapMetaRow {
 public:
     static constexpr const char *KEY_PREFIX = "CapabilityMeta";
     API_EXPORT static std::vector<uint8_t> GetKeyFor(const std::string &key);
+    API_EXPORT static const std::string GetDeviceId(const std::string &key);
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_CAPABILITY_META_DATA_H
