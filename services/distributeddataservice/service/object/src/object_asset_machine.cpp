@@ -134,7 +134,7 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& c
     const std::pair<std::string, Asset>& newAsset)
 {
     if (eventId < 0 || eventId >= EVENT_BUTT || changedAssetInfo.status >= STATUS_BUTT) {
-        ZLOGI("invalid parameters, eventId: %{public}d, status:%{public}d", eventId, changedAssetInfo.status);
+        ZLOGE("invalid parameters, eventId: %{public}d, status:%{public}d", eventId, changedAssetInfo.status);
         return GeneralError::E_ERROR;
     }
 
