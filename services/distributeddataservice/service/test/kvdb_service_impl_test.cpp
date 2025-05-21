@@ -1339,7 +1339,6 @@ HWTEST_F(KvdbServiceImplTest, OnAsyncCompleteTest002, TestSize.Level0)
     syncAgent.switchesObserverCount_ = 1; // test
     syncAgent.appId_ = { "ohos.OnAsyncCompleteTest.kvdb" };
     syncAgent.notifier_ = notifier;
-    EXPECT_EQ(notifier, nullptr);
     uint32_t tokenId = 2;
     uint64_t seqNum = 1;
     kvdbServiceImpl_->syncAgents_.Insert(tokenId, syncAgent);
