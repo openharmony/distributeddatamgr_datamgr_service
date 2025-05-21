@@ -32,14 +32,13 @@ void AppAccessCheckConfigManager::Initialize(const std::vector<AppMappingInfo> &
     }
 }
 
-bool AppAccessCheckConfigManager::IsTrust(const AppMappingInfo &mapper)
+bool AppAccessCheckConfigManager::IsTrust(const std::string &appId)
 {
-    auto it = appMapper_.find(mapper.bundleName);
-    if (it != appMapper_.end() && (it->second == mapper.appId)) {
+    auto it = appMapper_.find(appId);
+    if (it != appMapper_.end() && (it->second == appId)) {
         return true;
     }
-    ZLOGW("check access failed, bundleName:%{public}s, appId:%{public}s",
-        mapper.bundleName.c_str(), Anonymous::Change(mapper.appId).c_str());
+    ZLOGW("check access failed, appId:%{public}s", Anonymous::Change(appId).c_str());
     return false;
 }
 

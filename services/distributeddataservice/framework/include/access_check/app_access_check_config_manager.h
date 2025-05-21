@@ -28,7 +28,7 @@ public:
     };
     API_EXPORT static AppAccessCheckConfigManager &GetInstance();
     API_EXPORT void Initialize(const std::vector<AppMappingInfo> &mapper);
-    API_EXPORT bool IsTrust(const AppMappingInfo &mapper);
+    API_EXPORT bool IsTrust(const std::string &appId);
 
 private:
     std::map<std::string, std::string> appMapper_;

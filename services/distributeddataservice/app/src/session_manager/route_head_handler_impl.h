@@ -16,7 +16,6 @@
 #ifndef DISTRIBUTEDDATAMGR_ROUTE_HEAD_HANDLER_H
 #define DISTRIBUTEDDATAMGR_ROUTE_HEAD_HANDLER_H
 #include "process_communicator_impl.h"
-#include "metadata/store_meta_data.h"
 #include "route_head_handler.h"
 #include "serializable/serializable.h"
 #include "session_manager.h"

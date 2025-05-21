@@ -96,8 +96,8 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         if (appId_.empty()) {
             return DistributedDB::DB_ERROR;
         }
-        auto appId = AppIdMappingConfigManager::GetInstance().Convert(appId_);
-        if (!AppAccessCheckConfigManager::GetInstance().IsTrust({ appId, appId })) {
+        if (!AppAccessCheckConfigManager::GetInstance().IsTrust(
+            AppIdMappingConfigManager::GetInstance().Convert(appId_))) {
             return DistributedDB::DB_ERROR;
         }
         return DistributedDB::OK;
@@ -261,6 +261,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         return false;
     }
     if (!DmAdapter::GetInstance().IsOHOSType(device)) {
+        ZLOGI("other type device received. device:%{public}d", Anonymous::Change(device).c_str());
         return true;
     }
     RouteHead head = { 0 };

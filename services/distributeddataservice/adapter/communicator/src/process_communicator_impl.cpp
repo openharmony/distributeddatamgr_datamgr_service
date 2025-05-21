@@ -264,7 +264,8 @@ DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(DataHeadInfo dataHeadInfo, uin
     }
     auto ret = handler->ParseHeadDataLen(dataHeadInfo.data, dataHeadInfo.totalLen, headLength, dataHeadInfo.device);
     if (!ret) {
-        ZLOGE("illegal head format, dataLen:%{public}u, headLength:%{public}u", dataHeadInfo.totalLen, headLength);
+        ZLOGE("illegal head format, dataLen:%{public}u, headLength:%{public}u, device:%{public}s",
+            dataHeadInfo.totalLen, headLength, Anonymous::Change(dataHeadInfo.device).c_str());
         return DBStatus::INVALID_FORMAT;
     }
     return DBStatus::OK;
@@ -283,8 +284,9 @@ DBStatus ProcessCommunicatorImpl::GetDataUserInfo(DataUserInfo dataUserInfo, std
     }
     auto ret = handler->ParseHeadDataUser(dataUserInfo.data, dataUserInfo.totalLen, dataUserInfo.label, userInfos);
     if (!ret) {
-        ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s",
-            dataUserInfo.totalLen, Anonymous::Change(dataUserInfo.label).c_str());
+        ZLOGE("illegal head format, dataLen:%{public}u, label:%{public}s, device:%{public}s",
+            dataUserInfo.totalLen, Anonymous::Change(dataUserInfo.label).c_str(),
+            Anonymous::Change(dataUserInfo.device).c_str());
         return DBStatus::INVALID_FORMAT;
     }
     if (userInfos.empty()) {
