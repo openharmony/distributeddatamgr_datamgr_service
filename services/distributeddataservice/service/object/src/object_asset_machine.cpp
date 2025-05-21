@@ -133,7 +133,8 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
 int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& changedAssetInfo, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
-    if (eventId < 0 || eventId >= EVENT_BUTT) {
+    if (eventId < 0 || eventId >= EVENT_BUTT || changedAssetInfo.status >= STATUS_BUTT) {
+        ZLOGE("invalid parameters, eventId: %{public}d, status:%{public}d", eventId, changedAssetInfo.status);
         return GeneralError::E_ERROR;
     }
 
