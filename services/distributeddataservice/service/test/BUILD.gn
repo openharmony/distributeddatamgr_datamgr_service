@@ -779,6 +779,7 @@ ohos_unittest("ObjectManagerTest") {
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [
@@ -865,6 +866,7 @@ ohos_unittest("MetaDataTest") {
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [
@@ -915,6 +917,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "kv_store:distributeddb",
     "openssl:libcrypto_shared",
     "samgr:samgr_proxy",
+    "safwk:system_ability_fwk",
     "udmf:udmf_client",
   ]
 
@@ -1115,6 +1118,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:kvdb_inner_lite",
     "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [
@@ -1849,6 +1853,7 @@ ohos_unittest("BackupManagerServiceTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [
