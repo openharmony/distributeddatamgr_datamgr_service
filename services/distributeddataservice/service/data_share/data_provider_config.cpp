@@ -42,6 +42,13 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
         LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.visitedUserId,
             callerTokenId, providerInfo_.bundleName);
         URIUtils::FormatUri(providerInfo_.uri);
+        // if visitedUserId is 0, set current foreground userId as visitedUserId
+        if (providerInfo_.visitedUserId == 0) {
+            if (!(AccountDelegate::GetInstance()->QueryForegroundUserId(providerInfo_.visitedUserId))) {
+                ZLOGE("Get foreground userId failed");
+                providerInfo_.visitedUserId = -1;
+            }
+        }
     } else {
         auto [success, data] = URIUtils::GetUserFromProxyURI(providerInfo_.uri);
         if (success) {
