@@ -91,10 +91,10 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
   ]
 
@@ -143,10 +143,10 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
   ]
 
@@ -453,9 +453,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "rdb_result_set_impl_test.cpp",
   ]
 
-  include_dirs = [
-    "${data_service_path}/service/rdb",
-  ]
+  include_dirs = [ "${data_service_path}/service/rdb" ]
 
   configs = [ ":module_private_config" ]
 
@@ -813,6 +811,7 @@ ohos_unittest("ObjectSnapshotTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "relational_store:native_rdb",
   ]
 
   deps = [
@@ -848,8 +847,9 @@ ohos_unittest("MetaDataTest") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
+    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -932,9 +932,7 @@ ohos_unittest("DataShareServiceImplTest") {
   }
   module_out_path = module_output_path
 
-  include_dirs = [
-    "${data_service_path}/service/config/include",
-  ]
+  include_dirs = [ "${data_service_path}/service/config/include" ]
 
   sources = [
     "${data_service_path}/service/common/xcollie.cpp",
@@ -1159,6 +1157,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/udmf/permission",
   ]
 
   cflags = [
@@ -1198,6 +1197,7 @@ ohos_unittest("UdmfServiceStubTest") {
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/udmf/permission",
   ]
 
   cflags = [
@@ -1598,8 +1598,8 @@ ohos_unittest("BootStrapMockTest") {
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/backup:distributeddata_backup",
   ]
 
   cflags = [

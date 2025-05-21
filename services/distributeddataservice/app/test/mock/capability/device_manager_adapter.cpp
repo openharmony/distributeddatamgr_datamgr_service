@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,5 +13,18 @@
  * limitations under the License.
  */
 
-#include "include/fake_hiview.h"
-std::map<std::string, std::any> FakeHivew::fakeCache_;
+#include "device_manager_adapter.h"
+
+namespace OHOS::DistributedData {
+static constexpr const char* LOCAL_DEVICE = "ABCDEF0123456789";
+DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
+{
+    static DeviceManagerAdapter dmAdapter;
+    return dmAdapter;
+}
+
+DeviceInfo DeviceManagerAdapter::GetLocalDevice()
+{
+    return { .uuid = LOCAL_DEVICE };
+}
+} // namespace OHOS::DistributedData

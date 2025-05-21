@@ -111,6 +111,8 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+    "relational_store:native_rdb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

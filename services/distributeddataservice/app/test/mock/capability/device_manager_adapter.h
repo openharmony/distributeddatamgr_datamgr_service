@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,5 +13,24 @@
  * limitations under the License.
  */
 
-#include "include/fake_hiview.h"
-std::map<std::string, std::any> FakeHivew::fakeCache_;
+#ifndef MOCK_META_DEVICE_MANAGER_H
+#define MOCK_META_DEVICE_MANAGER_H
+
+#include <string>
+
+namespace OHOS::DistributedData {
+struct DeviceInfo {
+    std::string uuid;
+};
+
+class DeviceManagerAdapter {
+public:
+    static DeviceManagerAdapter &GetInstance();
+    DeviceInfo GetLocalDevice();
+
+private:
+    DeviceManagerAdapter() = default;
+    ~DeviceManagerAdapter() = default;
+};
+} // namespace OHOS::DistributedData
+#endif // MOCK_META_DEVICE_MANAGER_H

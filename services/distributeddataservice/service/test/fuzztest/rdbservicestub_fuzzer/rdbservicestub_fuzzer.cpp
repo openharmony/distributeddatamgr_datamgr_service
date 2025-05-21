@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-#include "rdbservicestub_fuzzer.h"
-
 #include <fuzzer/FuzzedDataProvider.h>
+
+#include "rdbservicestub_fuzzer.h"
 
 #include <cstddef>
 #include <cstdint>
 
 #include "ipc_skeleton.h"
-#include "message_parcel.h"
 #include "rdb_service_impl.h"
+#include "message_parcel.h"
 #include "securec.h"
 
 using namespace OHOS::DistributedRdb;
@@ -32,20 +32,18 @@ const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedRdb.IRdbService";
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
-bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
+bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<RdbServiceImpl> rdbServiceImpl = std::make_shared<RdbServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     rdbServiceImpl->OnBind(
         { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
-    FuzzedDataProvider provider(data, size);
-    uint32_t code =
-        provider.ConsumeIntegralInRange<uint32_t>(0, static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX));
-    std::vector<uint8_t> remaining_data = provider.ConsumeRemainingBytes<uint8_t>();
+    uint32_t code = provider.ConsumeIntegral<uint32_t>();
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(static_cast<void *>(remaining_data.data()), remaining_data.size());
+    request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
     request.RewindRead(0);
     MessageParcel reply;
     std::shared_ptr<RdbServiceStub> rdbServiceStub = rdbServiceImpl;
@@ -57,6 +55,7 @@ bool OnRemoteRequestFuzz(const uint8_t *data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    OHOS::OnRemoteRequestFuzz(data, size);
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnRemoteRequestFuzz(provider);
     return 0;
 }

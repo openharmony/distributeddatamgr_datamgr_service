@@ -35,12 +35,6 @@ config("module_public_config") {
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_distributeddb_path}/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
   ]
   cflags = [ "-Wno-c99-designator" ]
 }

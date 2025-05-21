@@ -61,6 +61,7 @@ ohos_fuzztest("DumpHelperFuzzTest") {
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "kv_store:distributeddb"
   ]
 }
 

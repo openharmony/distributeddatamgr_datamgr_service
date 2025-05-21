@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 #include "dumphelper_fuzzer.h"
 
 #include <cstddef>
@@ -30,16 +32,15 @@ using namespace OHOS::Security::AccessToken;
 
 namespace OHOS {
 
-bool DumpFuzz(const uint8_t *data, size_t size)
+bool DumpFuzz(FuzzedDataProvider &provider)
 {
-    int connId = static_cast<int>(*data);
+    int connId = provider.ConsumeIntegral<int>();
     std::vector<std::string> args;
     const std::string argstest1 = "OHOS.DistributedData.DumpHelper1";
     const std::string argstest2 = "OHOS.DistributedData.DumpHelper2";
     args.emplace_back(argstest1);
     args.emplace_back(argstest2);
     DumpHelper::GetInstance().Dump(connId, args);
-
     return true;
 }
 } // namespace OHOS
@@ -47,11 +48,7 @@ bool DumpFuzz(const uint8_t *data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (data == nullptr) {
-        return 0;
-    }
-
-    OHOS::DumpFuzz(data, size);
-
+    FuzzedDataProvider provider(data, size);
+    OHOS::DumpFuzz(provider);
     return 0;
 }
