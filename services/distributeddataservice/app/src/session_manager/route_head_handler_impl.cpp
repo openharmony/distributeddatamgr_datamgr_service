@@ -39,8 +39,6 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
-constexpr const char *DEFAULT_ACCOUNT = "default";
-constexpr const char *ANONYMOUS_ACCOUNT = "ohosAnonymousUid";
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
     auto handler = std::make_shared<RouteHeadHandlerImpl>(info);
@@ -95,8 +93,11 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     if(!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
-        if (!IsTrust()) {
-            ZLOGE("distrust app, appId:%{public}s", Anonymous::Change(appId_).c_str());
+        if (appId_.empty()) {
+            return DistributedDB::DB_ERROR;
+        }
+        auto appId = AppIdMappingConfigManager::GetInstance().Convert(appId_);
+        if (!AppAccessCheckConfigManager::GetInstance().IsTrust({ appId, appId })) {
             return DistributedDB::DB_ERROR;
         }
         return DistributedDB::OK;
@@ -260,62 +261,13 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         return false;
     }
     if (!DmAdapter::GetInstance().IsOHOSType(device)) {
-        return false;
+        return true;
     }
     RouteHead head = { 0 };
     auto ret = UnPackDataHead(data, totalLen, head);
     headSize = ret ? sizeof(RouteHead) + head.dataLen : 0;
     ZLOGI("unpacked data size:%{public}u, ret:%{public}d", headSize, ret);
     return ret;
-}
-
-bool RouteHeadHandlerImpl::ParseStoreInfo(const std::string &accountId, const std::string &label,
-    StoreMetaData &storeMeta)
-{
-    std::vector<std::string> accountIds { accountId, ANONYMOUS_ACCOUNT, DEFAULT_ACCOUNT };
-    auto appId = AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId);
-    for (auto &id : accountIds) {
-        const std::string tempTripleLabel =
-            DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, appId,
-                storeMeta.storeId, false);
-        if (tempTripleLabel == label) {
-            ZLOGI("find triple identifier,storeId:%{public}s,storeMeta.bundleName:%{public}s",
-                Anonymous::Change(storeMeta.storeId).c_str(), Anonymous::Change(storeMeta.bundleName).c_str());
-            storeMeta.appId = appId;
-            storeMeta.bundleName = appId;
-            return true;
-        }
-    }
-    return false;
-}
-
-bool RouteHeadHandlerImpl::IsTrust()
-{
-    StoreMetaData metaData;
-    auto appId = AppIdMappingConfigManager::GetInstance().Convert(appId_);
-    return AppAccessCheckConfigManager::GetInstance().IsTrust({ appId, appId });
-}
-
-bool RouteHeadHandlerImpl::IsTrust(const std::string &label)
-{
-    std::vector<StoreMetaData> metaDatas;
-    auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaDatas)) {
-        return false;
-    }
-
-    auto accountId = AccountDelegate::GetInstance()->GetUnencryptedAccountId();
-    for (auto &storeMeta : metaDatas) {
-        if (storeMeta.appId == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
-            continue;
-        }
-        if (!ParseStoreInfo(accountId, label, storeMeta)) {
-            continue;
-        }
-        return AppAccessCheckConfigManager::GetInstance().IsTrust({ storeMeta.bundleName, storeMeta.appId });
-    }
-    ZLOGI("not found app msg:%{public}s", label.c_str());
-    return false;
 }
 
 std::string RouteHeadHandlerImpl::ParseStoreId(const std::string &deviceId, const std::string &label)
@@ -336,15 +288,6 @@ std::string RouteHeadHandlerImpl::ParseStoreId(const std::string &deviceId, cons
         return storeMeta.storeId;
     }
     return "";
-}
-
-DistributedDB::DBStatus RouteHeadHandlerImpl::IsAppTrusted(const std::string &label)
-{
-    if (!IsTrust(label)) {
-        ZLOGE("app not trust.");
-        return DBStatus::DB_ERROR;
-    }
-    return DBStatus::OK;
 }
 
 bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,

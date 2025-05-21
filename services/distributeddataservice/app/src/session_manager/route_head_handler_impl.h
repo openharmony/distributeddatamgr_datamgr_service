@@ -76,7 +76,6 @@ public:
         const std::string &device) override;
     bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
         std::vector<UserInfo> &userInfos) override;
-    DBStatus IsAppTrusted(const std::string &label) override;
 
 private:
     void Init();
@@ -93,10 +92,6 @@ private:
     bool UnPackStoreId(uint8_t **data, uint32_t leftSize);
     bool UnPackAccountId(uint8_t **data, uint32_t leftSize);
     std::string ParseStoreId(const std::string &deviceId, const std::string &label);
-    bool IsTrust(const std::string &label);
-    bool IsTrust();
-    bool ParseStoreInfo(const std::string &accountId, const std::string &label,
-        StoreMetaData &storeMeta);
 
     std::string userId_;
     std::string appId_;

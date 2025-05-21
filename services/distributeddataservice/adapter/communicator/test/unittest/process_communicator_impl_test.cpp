@@ -108,11 +108,6 @@ class ConcreteRouteHeadHandler : public RouteHeadHandler {
                 }
                 return false;
         }
-
-        DBStatus IsAppTrusted(const std::string &label)
-        {
-            return DBStatus::INVALID_FORMAT;
-        }
 };
 }
 

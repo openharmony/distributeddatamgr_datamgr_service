@@ -281,9 +281,6 @@ DBStatus ProcessCommunicatorImpl::GetDataUserInfo(DataUserInfo dataUserInfo, std
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    if (!DmAdapter::GetInstance().IsOHOSType(dataUserInfo.device)) {
-        return handler->IsAppTrusted(dataUserInfo.label);
-    }
     auto ret = handler->ParseHeadDataUser(dataUserInfo.data, dataUserInfo.totalLen, dataUserInfo.label, userInfos);
     if (!ret) {
         ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s",
