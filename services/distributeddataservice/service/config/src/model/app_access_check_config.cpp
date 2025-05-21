@@ -21,22 +21,26 @@ bool AppAccessCheckConfig::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(trusts)], trusts);
     return true;
 }
+
 bool AppAccessCheckConfig::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(trusts), trusts);
     return true;
 }
+
 bool AppAccessCheckConfig::TrustApp::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(bundleName)], bundleName);
     SetValue(node[GET_NAME(appId)], appId);
     return true;
 }
+
 bool AppAccessCheckConfig::TrustApp::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(appId), appId);
     return true;
 }
+
 } // namespace DistributedData
 } // namespace OHOS
