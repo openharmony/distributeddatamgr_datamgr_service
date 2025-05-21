@@ -63,6 +63,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",

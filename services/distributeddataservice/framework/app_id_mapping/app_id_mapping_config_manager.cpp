@@ -40,4 +40,13 @@ std::pair<std::string, std::string> AppIdMappingConfigManager::Convert(const std
     return std::make_pair(it->second, "default");
 }
 
+
+std::string AppIdMappingConfigManager::Convert(const std::string &appId)
+{
+    auto it = toDstMapper_.find(appId);
+    if (it == toDstMapper_.end()) {
+        return appId;
+    }
+    return it->second;
+}
 } // namespace OHOS::DistributedData

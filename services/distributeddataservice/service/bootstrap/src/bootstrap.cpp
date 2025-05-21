@@ -17,6 +17,7 @@
 
 #include <dlfcn.h>
 
+#include "access_check/app_access_check_config_manager.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "backup_manager.h"
 #include "backuprule/backup_rule_manager.h"
@@ -200,10 +201,23 @@ void Bootstrap::LoadDeviceSyncAppWhiteLists()
         return;
     }
     std::vector<DeviceSyncAppManager::WhiteList> infos;
-    for (auto &info : deviceSyncAppWhiteLists->whiteLists) {
+    for (const auto &info : deviceSyncAppWhiteLists->whiteLists) {
         infos.push_back({ info.appId, info.bundleName, info.version });
     }
     DeviceSyncAppManager::GetInstance().Initialize(infos);
+}
+
+void Bootstrap::LoadSyncTrustedApp()
+{
+    auto *config = ConfigFactory::GetInstance().GetSyncAppsConfig();
+    if (config == nullptr) {
+        return;
+    }
+    std::vector<AppAccessCheckConfigManager::AppMappingInfo> infos;
+    for (const auto &info : config->trusts) {
+        infos.push_back({ info.bundleName, info.appId });
+    }
+    AppAccessCheckConfigManager::GetInstance().Initialize(infos);
 }
 } // namespace DistributedData
 } // namespace OHOS
