@@ -75,6 +75,7 @@ void ObjectAssetMachineTest::SetUp()
     storeInfo_ = storeInfo;
     ChangedAssetInfo changedAssetInfo(asset, AssetBindInfo, storeInfo);
     changedAssets_[uri_] = changedAssetInfo;
+    changedAssets_[uri_].status = STATUS_STABLE;
     if (machine == nullptr) {
         machine = std::make_shared<ObjectAssetMachine>();
         auto executors = std::make_shared<ExecutorPool>(2, 1);
@@ -171,6 +172,26 @@ HWTEST_F(ObjectAssetMachineTest, DFAPostEvent001, TestSize.Level0)
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
     changedAssets_[uri_].status = STATUS_UPLOADING;
     auto ret = machine->DFAPostEvent(EVENT_BUTT, changedAssets_[uri_], asset, changedAsset);
+    ASSERT_EQ(ret, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: DFAPostEvent001
+* @tc.desc: DFAPostEvent invalid status test
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectAssetMachineTest, DFAPostEvent002, TestSize.Level0)
+{
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    std::pair<std::string, Asset> changedAsset{ "device_2", asset };
+    changedAssets_[uri_].status = DistributedData::STATUS_NO_CHANGE;
+    auto ret = machine->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(ret, GeneralError::E_ERROR);
 }
 
