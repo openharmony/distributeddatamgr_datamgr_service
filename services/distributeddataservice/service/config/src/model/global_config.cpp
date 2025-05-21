@@ -64,6 +64,7 @@ GlobalConfig::~GlobalConfig()
     delete cloud;
     delete appIdMapping;
     delete thread;
+    delete dataShare;
     delete deviceSyncAppWhiteList;
 }
 } // namespace DistributedData
