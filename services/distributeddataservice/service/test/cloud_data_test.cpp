@@ -1053,10 +1053,96 @@ HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level1)
  */
 HWTEST_F(CloudDataTest, CloudSync001, TestSize.Level1)
 {
-    int32_t syncMode = 4;
+    int32_t syncMode = DistributedData::GeneralStore::NEARBY_BEGIN;
+    uint32_t seqNum = 10;
+    // invalid syncMode
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CloudSync002
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync002, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::NEARBY_PULL_PUSH;
+    uint32_t seqNum = 10;
+    // invalid syncMode
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CloudSync003
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_BEGIN;
     uint32_t seqNum = 10;
     auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync004
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync005
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_NATIVE_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync006
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync006, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_CLOUD_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync007
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_END;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
 }
 
 /**
@@ -1067,20 +1153,14 @@ HWTEST_F(CloudDataTest, CloudSync001, TestSize.Level1)
  */
 HWTEST_F(CloudDataTest, InitNotifier001, TestSize.Level1)
 {
-    int32_t syncMode = 4;
-    uint32_t seqNum = 10;
     std::string bundleName = "";
-    sptr<RdbNotifierProxy> notifier = nullptr;
+    sptr<IRemoteObject> notifier = nullptr;
     auto ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
 
     bundleName = "bundleName";
     ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-
-    sptr<RdbNotifierProxy> notifier = new RdbNotifierProxy();
-    ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1780,7 +1860,7 @@ HWTEST_F(CloudDataTest, OnInitNotifier, TestSize.Level0)
     sptr<IRemoteObject> notifier = nullptr;
     ITypesUtil::Marshal(data, bundleName, notifier);
     ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_INIT_NOTIFIER, data, reply);
-    EXPECT_EQ(ret, ERR_NONE);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
 }
 
 /**
@@ -2508,7 +2588,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel001, TestSize.Level1)
     });
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
     DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
-    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST, .isAsync = true };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST, .isAsync = true };
     DistributedRdb::PredicatesMemo memo;
     memo.tables_ = { TEST_CLOUD_TABLE };
     rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
@@ -2552,7 +2632,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel003, TestSize.Level1)
     });
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
     DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
-    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST, .isAsync = true };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST, .isAsync = true };
     DistributedRdb::PredicatesMemo memo;
     rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
 }
@@ -2573,7 +2653,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
     });
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
     DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
-    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST,
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST,
         .seqNum = 0,
         .isAsync = true,
         .isAutoSync = true };

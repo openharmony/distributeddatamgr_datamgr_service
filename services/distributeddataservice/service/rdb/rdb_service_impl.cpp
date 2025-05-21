@@ -605,7 +605,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
             async(HandleGenDetails(details));
         }
     };
-    auto highMode = (!predicates.tables_.empty() && option.mode == DistributedData::GeneralStore::CLOUD_ClOUD_FIRST)
+    auto highMode = (!predicates.tables_.empty() && option.mode == DistributedData::GeneralStore::CLOUD_CLOUD_FIRST)
                     ? GeneralStore::ASSETS_SYNC_MODE
                     : (option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode, highMode));

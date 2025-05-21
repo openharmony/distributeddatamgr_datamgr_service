@@ -49,6 +49,7 @@
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 #include "values_bucket.h"
 #include "xcollie.h"
 
@@ -181,6 +182,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     }
     Execute(GenTask(0, cloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
+    syncAgents_.Clear();
     return SUCCESS;
 }
 
@@ -1232,22 +1234,8 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user, CloudSyncScene scene)
     return true;
 }
 
-bool CloudServiceImpl::CheckAccess(const std::string &bundleName, const std::string &storeId)
-{
-    CheckerManager::StoreInfo storeInfo;
-    storeInfo.uid = IPCSkeleton::GetCallingUid();
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.bundleName = bundleName;
-    storeInfo.storeId = storeId;
-    return !CheckerManager::GetInstance().GetAppId(storeInfo).empty();
-}
-
 int32_t CloudServiceImpl::InitNotifier(const std::string &bundleName, sptr<IRemoteObject> notifier)
 {
-    if (!CheckAccess(bundleName, "")) {
-        ZLOGE("Permission error, bundleName:%{public}s", bundleName.c_str());
-        return INVALID_ARGUMENT;
-    }
     if (notifier == nullptr) {
         ZLOGE("no notifier, bundleName:%{public}s", bundleName.c_str());
         return INVALID_ARGUMENT;
@@ -1259,7 +1247,7 @@ int32_t CloudServiceImpl::InitNotifier(const std::string &bundleName, sptr<IRemo
         auto agent = agents.find(pid);
         if (agent == agents.end()) {
             SyncAgent temp;
-            temp.notifiers_emplace(bundleName, notifierProxy);
+            temp.notifiers_.emplace(bundleName, notifierProxy);
             agents.emplace(pid, temp);
         } else {
             agent->second.notifiers_.emplace(bundleName, notifierProxy);
@@ -1286,8 +1274,9 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
 
 void CloudServiceImpl::OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result)
 {
+    ZLOGI("tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", storeInfo.tokenId, pid, seqNum);
     sptr<RdbNotifierProxy> notifier = nullptr;
-    syncAgents_.ComputeIfPresent(storeInfo.tokenId, [&notifier, pid, storeInfo, seqNum](auto, SyncAgents &syncAgents) {
+    syncAgents_.ComputeIfPresent(storeInfo.tokenId, [&notifier, pid, storeInfo](auto, SyncAgents &syncAgents) {
         auto it = syncAgents.find(pid);
         if (it != syncAgents.end()) {
             auto iter = it->second.notifiers_.find(storeInfo.bundleName);
@@ -1305,6 +1294,11 @@ void CloudServiceImpl::OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, ui
 int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::string &storeId,
     const Option &option, const AsyncDetail &async)
 {
+    if (option.syncMode < DistributedData::GeneralStore::CLOUD_BEGIN ||
+        option.syncMode >= DistributedData::GeneralStore::CLOUD_END) {
+        ZLOGE("not support cloud sync, syncMode = %{public}d", option.syncMode);
+        return INVALID_ARGUMENT;
+    }
     StoreInfo storeInfo;
     storeInfo.bundleName = bundleName;
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
@@ -1313,7 +1307,7 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
     auto pid = IPCSkeleton::GetCallingPid();
     GenAsync asyncCallback = [this, storeInfo, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
         OnAsyncComplete(storeInfo, pid, seqNum, HandleGenDetails(result));
-    }
+    };
     auto highMode = GeneralStore::MANUAL_SYNC_MODE;
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
     SyncParam syncParam = { mixMode, 0, false };

@@ -28,8 +28,8 @@
 #include "cloud_service_stub.h"
 #include "dfx/dfx_types.h"
 #include "feature/static_acts.h"
-#include "../rdb/rdb_notifier_proxy.h"
-#include "../rdb/rdb_watcher.h"
+#include "rdb_notifier_proxy.h"
+#include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "sync_manager.h"
 #include "values_bucket.h"
@@ -135,7 +135,7 @@ private:
     struct SyncAgent {
         SyncAgent() = default;
         std::map<std::string, sptr<RdbNotifierProxy>> notifiers_;
-    }
+    };
     using SyncAgents = std::map<int32_t, SyncAgent>;
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
@@ -204,11 +204,10 @@ private:
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
-    static Details HandleGenDetails(const GenDetails &details);
+    static Details HandleGenDetails(const DistributedData::GenDetails &details);
     QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
                                          const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
     void OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result);
-    bool CheckAccess(const std::string &bundleName, const std::string &storeId);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;
