@@ -214,7 +214,7 @@ void Bootstrap::LoadSyncTrustedApp()
         return;
     }
     std::vector<AppAccessCheckConfigManager::AppMappingInfo> infos;
-    for (auto &info : config->trusts) {
+    for (const auto &info : config->trusts) {
         infos.push_back({ info.bundleName, info.appId });
     }
     AppAccessCheckConfigManager::GetInstance().Initialize(infos);

@@ -261,7 +261,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         return false;
     }
     if (!DmAdapter::GetInstance().IsOHOSType(device)) {
-        ZLOGI("other type device received. device:%{public}d", Anonymous::Change(device).c_str());
+        ZLOGI("other type device received. device:%{public}s", Anonymous::Change(device).c_str());
         return true;
     }
     RouteHead head = { 0 };

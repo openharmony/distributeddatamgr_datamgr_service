@@ -38,7 +38,7 @@ bool AppAccessCheckConfigManager::IsTrust(const std::string &appId)
     if (it != appMapper_.end() && (it->second == appId)) {
         return true;
     }
-    ZLOGW("check access failed, appId:%{public}s", Anonymous::Change(appId).c_str());
+    ZLOGE("check access failed, appId:%{public}s", Anonymous::Change(appId).c_str());
     return false;
 }
 

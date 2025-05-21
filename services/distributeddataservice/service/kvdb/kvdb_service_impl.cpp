@@ -801,8 +801,7 @@ bool KVDBServiceImpl::CompareTripleIdentifier(const std::string &accountId, cons
 {
     std::vector<std::string> accountIds { accountId, "ohosAnonymousUid", "default" };
     for (auto &id : accountIds) {
-        auto appId =
-            AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId);
+        auto appId = AppIdMappingConfigManager::GetInstance().Convert(storeMeta.appId);
         const std::string &tempTripleIdentifier =
             DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier(id, appId,
                 storeMeta.storeId, false);
