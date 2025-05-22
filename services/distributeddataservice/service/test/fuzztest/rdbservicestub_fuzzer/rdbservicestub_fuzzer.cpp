@@ -29,6 +29,8 @@ using namespace OHOS::DistributedRdb;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedRdb.IRdbService";
+constexpr uint32_t CODE_MIN = 0;
+constexpr uint32_t CODE_MAX = static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_MAX) + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
@@ -39,7 +41,7 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     rdbServiceImpl->OnBind(
         { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
-    uint32_t code = provider.ConsumeIntegral<uint32_t>();
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
