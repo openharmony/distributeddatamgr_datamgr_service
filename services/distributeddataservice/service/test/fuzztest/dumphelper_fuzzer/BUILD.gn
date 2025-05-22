@@ -21,7 +21,6 @@ ohos_fuzztest("DumpHelperFuzzTest") {
 
   include_dirs = [
     "${data_service_path}/service/dumper/include",
-    "//third_party/json/single_include",
   ]
 
   fuzz_config_file =
@@ -60,6 +59,7 @@ ohos_fuzztest("DumpHelperFuzzTest") {
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",
