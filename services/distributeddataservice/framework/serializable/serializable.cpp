@@ -551,7 +551,6 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator[](size_t index)
     }
     if (!is_array()) {
         ZLOGE("cannot use operator[].");
-        //throw std::invalid_argument("cannot use operator[]");
     }
     int size = cJSON_GetArraySize(json_);
     auto len = children_.size();
@@ -562,7 +561,6 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator[](size_t index)
     }
     if (index > len) {
         ZLOGE("cannot use operator[].");
-        //throw std::invalid_argument("cannot use operator[]");
     }
     if (index == len) {
         auto item = cJSON_GetArrayItem(json_, len);
@@ -575,12 +573,10 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator[](size_t index) c
 {
     if (!is_array()) {
         ZLOGE("invalid args.");
-        //throw std::invalid_argument("invalid args");
     }
     int size = cJSON_GetArraySize(json_);
     if (index >= size) {
         ZLOGE("invalid args.");
-        //throw std::out_of_range("invalid args");
     }
     auto len = children_.size();
     while (len < size) {
@@ -813,7 +809,6 @@ Serializable::iterator Serializable::JSONWrapper::begin() const
 {
     if (json_ == nullptr || (!is_array() && !is_object())) {
         ZLOGE("not support.");
-        //throw std::logic_error("not support");
     }
     auto size = cJSON_GetArraySize(json_);
     auto len = children_.size();
@@ -831,7 +826,6 @@ Serializable::iterator Serializable::JSONWrapper::end() const
 {
     if (json_ == nullptr || json_->child == nullptr || (!is_array() && !is_object())) {
         ZLOGE("not support.");
-        //throw std::logic_error("not support");
     }
     auto size = cJSON_GetArraySize(json_);
     auto len = children_.size();
