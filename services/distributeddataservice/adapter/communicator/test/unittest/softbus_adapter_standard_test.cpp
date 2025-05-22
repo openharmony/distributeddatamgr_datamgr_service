@@ -586,6 +586,25 @@ HWTEST_F(SoftbusAdapterStandardTest, OpenConnect, TestSize.Level1)
 }
 
 /**
+* @tc.name: OpenConnect002
+* @tc.desc: open connect with networkId changed.
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftbusAdapterStandardTest, OpenConnect002, TestSize.Level1)
+{
+    PipeInfo pipeInfo;
+    pipeInfo.pipeId = "appId";
+    pipeInfo.userId = "groupId";
+    DeviceId device = {"DeviceId"};
+    std::shared_ptr<SoftBusClient> conn = std::make_shared<SoftBusClient>(
+        pipeInfo, device, "old", SoftBusClient::QOS_HML);
+    SoftBusAdapter::GetInstance()->OpenConnect(conn, device);
+    EXPECT_NE(conn->GetNetworkId(), "old");
+    SoftBusAdapter::GetInstance()->OpenConnect(conn, device);
+    EXPECT_EQ(conn->GetNetworkId(), "");
+}
+
+/**
 * @tc.name: CloseSession
 * @tc.desc: close session
 * @tc.type: FUNC

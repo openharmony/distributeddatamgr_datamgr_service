@@ -155,8 +155,9 @@ Status SoftBusClient::CheckStatus()
 int32_t SoftBusClient::Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async)
 {
     int32_t status = ::Bind(socket, QOS_INFOS[type % QOS_BUTT], QOS_COUNTS[type % QOS_BUTT], listener);
-    ZLOGI("Bind %{public}s,session:%{public}s,socketId:%{public}d",
-        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket);
+    ZLOGI("Bind device:%{public}s,session:%{public}s,socketId:%{public}d,networkId:%{public}s",
+        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket,
+        KvStoreUtils::ToBeAnonymous(networkId_).c_str());
 
     if (status != 0) {
         ZLOGE("[Bind] device:%{public}s socket failed, session:%{public}s,result:%{public}d",
@@ -258,6 +259,13 @@ Status SoftBusClient::ReuseConnect(const ISocketListener *listener)
 
 const std::string& SoftBusClient::GetNetworkId() const
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return networkId_;
+}
+
+void SoftBusClient::UpdateNetworkId(const std::string& networkId)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    networkId_ = networkId;
 }
 } // namespace OHOS::AppDistributedKv

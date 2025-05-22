@@ -186,4 +186,17 @@ HWTEST_F(SoftbusClientTest, ReuseConnect, TestSize.Level0)
     status = client->ReuseConnect(listener);
     EXPECT_EQ(status, Status::NETWORK_ERROR);
 }
+
+/**
+* @tc.name: UpdateNetworkId
+* @tc.desc: UpdateNetworkId test
+* @tc.type: FUNC
+ */
+HWTEST_F(SoftbusClientTest, UpdateNetworkId, TestSize.Level1)
+{
+    ASSERT_NE(client, nullptr);
+    const std::string newNetworkId = "newId";
+    client->UpdateNetworkId(newNetworkId);
+    EXPECT_EQ(client->GetNetworkId(), newNetworkId);
+}
 } // namespace OHOS::Test

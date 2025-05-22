@@ -230,13 +230,21 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
 std::pair<Status, int32_t> SoftBusAdapter::OpenConnect(const std::shared_ptr<SoftBusClient> &conn,
     const DeviceId &deviceId)
 {
+    auto networkId = DmAdapter::GetInstance().ToNetworkID(deviceId.deviceId);
+    if (conn != nullptr) {
+        auto oldNetworkId = conn->GetNetworkId();
+        if (networkId != oldNetworkId) {
+            ZLOGI("NetworkId changed, %{public}s->%{public}s", KvStoreUtils::ToBeAnonymous(oldNetworkId).c_str(),
+                KvStoreUtils::ToBeAnonymous(networkId).c_str());
+            conn->UpdateNetworkId(networkId);
+        }
+    }
     auto task = [this, connect = std::weak_ptr<SoftBusClient>(conn)]() {
         auto conn = connect.lock();
         if (conn != nullptr) {
             conn->OpenConnect(&clientListener_);
         }
     };
-    auto networkId = DmAdapter::GetInstance().GetDeviceInfo(deviceId.deviceId).networkId;
     ConnectManager::GetInstance()->ApplyConnect(networkId, task);
     return std::make_pair(Status::RATE_LIMIT, 0);
 }
