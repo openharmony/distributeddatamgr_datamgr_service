@@ -57,7 +57,6 @@ ohos_fuzztest("DumpHelperFuzzTest") {
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
