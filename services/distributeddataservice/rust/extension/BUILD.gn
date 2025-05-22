@@ -23,7 +23,6 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "../../framework/include",
-    "${kv_store_common_path}",
   ]
 }
 

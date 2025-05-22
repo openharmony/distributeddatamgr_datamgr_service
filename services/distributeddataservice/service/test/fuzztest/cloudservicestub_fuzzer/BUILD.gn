@@ -30,6 +30,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/object",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb",
+    "${data_service_path}/adapter/include/communicator",
   ]
 
   fuzz_config_file = "${data_service_path}/service/test/fuzztest/cloudservicestub_fuzzer"
@@ -54,11 +55,11 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/cloud:distributeddata_cloud",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${kv_store_distributeddb_path}:distributeddb",
   ]
 
   external_deps = [
@@ -77,6 +78,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "kv_store:datamgr_common",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
     "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
