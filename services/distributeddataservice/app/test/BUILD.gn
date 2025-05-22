@@ -168,7 +168,7 @@ ohos_unittest("SessionManagerTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -242,7 +242,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -361,7 +361,7 @@ ohos_unittest("UpgradeManagerTest") {
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
   ]
 

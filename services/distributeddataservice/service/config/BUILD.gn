@@ -60,7 +60,7 @@ ohos_source_set("distributeddata_config") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

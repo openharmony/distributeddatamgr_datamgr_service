@@ -22,7 +22,6 @@
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
-#include "nlohmann/json.hpp"
 #include "utils/crypto.h"
 #include "screen/screen_manager.h"
 #include "store/general_store.h"
@@ -249,7 +248,7 @@ HWTEST_F(CloudInfoTest, CloudInfoTest001, TestSize.Level0)
 
     Serializable::json node1;
     cloudInfo1.Marshal(node1);
-    EXPECT_EQ(Serializable::Marshall(cloudInfo1), to_string(node1));
+    EXPECT_EQ(Serializable::Marshall(cloudInfo1), Serializable::JSONWrapper::to_string(node1));
 
     CloudInfo cloudInfo2;
     cloudInfo2.Unmarshal(node1);
@@ -274,7 +273,7 @@ HWTEST_F(CloudInfoTest, AppInfoTest, TestSize.Level0)
 
     Serializable::json node1;
     cloudInfoAppInfo1.Marshal(node1);
-    EXPECT_EQ(Serializable::Marshall(cloudInfoAppInfo1), to_string(node1));
+    EXPECT_EQ(Serializable::Marshall(cloudInfoAppInfo1), Serializable::JSONWrapper::to_string(node1));
 
     CloudInfo::AppInfo cloudInfoAppInfo2;
     cloudInfoAppInfo2.Unmarshal(node1);
@@ -304,7 +303,7 @@ HWTEST_F(CloudInfoTest, TableTest, TestSize.Level0)
     table1.fields.push_back(field1);
     Serializable::json node1;
     table1.Marshal(node1);
-    EXPECT_EQ(Serializable::Marshall(table1), to_string(node1));
+    EXPECT_EQ(Serializable::Marshall(table1), Serializable::JSONWrapper::to_string(node1));
 
     Table table2;
     table2.Unmarshal(node1);

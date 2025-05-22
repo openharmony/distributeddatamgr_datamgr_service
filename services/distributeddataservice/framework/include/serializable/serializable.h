@@ -15,14 +15,16 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
+#include <memory>
 #include <string>
 #include <vector>
+#include <map>
 #include "visibility.h"
 #ifndef JSON_NOEXCEPTION
 #define JSON_NOEXCEPTION
 #endif
 #include <variant>
-#include <nlohmann/json.hpp>
+struct cJSON;
 namespace OHOS {
 namespace DistributedData {
 #ifndef GET_NAME
@@ -30,9 +32,101 @@ namespace DistributedData {
 #endif
 struct Serializable {
 public:
-    using json = nlohmann::json;
-    using size_type = nlohmann::json::size_type;
-    using error_handler_t = nlohmann::detail::error_handler_t;
+    class iterator;
+    class JSONWrapper final{
+    public:
+        friend iterator;
+        enum class Type : uint8_t {
+            ARRAY,
+            OBJECT,
+        };
+        API_EXPORT JSONWrapper();
+        API_EXPORT JSONWrapper(cJSON *json, cJSON *root, const std::string &key = "");
+        API_EXPORT JSONWrapper(const std::string &jsonStr);
+        API_EXPORT JSONWrapper(JSONWrapper &&jsonWrapper);
+        
+        API_EXPORT operator std::string() const;
+        API_EXPORT bool operator==(int32_t value) const;
+        API_EXPORT bool operator==(const std::string &value) const;
+        
+        API_EXPORT JSONWrapper &operator=(JSONWrapper &&jsonWrapper);
+        API_EXPORT JSONWrapper &operator=(JSONWrapper::Type type);
+        API_EXPORT JSONWrapper &operator=(bool value);
+        API_EXPORT JSONWrapper &operator=(int32_t value);
+        API_EXPORT JSONWrapper &operator=(uint32_t value);
+        API_EXPORT JSONWrapper &operator=(int64_t value);
+        API_EXPORT JSONWrapper &operator=(uint64_t value);
+        API_EXPORT JSONWrapper &operator=(double value);
+        API_EXPORT JSONWrapper &operator=(const char *value);
+        API_EXPORT JSONWrapper &operator=(const std::string &value);
+        API_EXPORT JSONWrapper &operator=(const std::vector<uint8_t> &value);
+        API_EXPORT JSONWrapper &operator[](const std::string &key);
+        API_EXPORT JSONWrapper &operator[](size_t index);
+        API_EXPORT JSONWrapper &operator[](size_t index) const;
+
+        API_EXPORT bool is_null() const;
+        API_EXPORT bool is_boolean() const;
+        API_EXPORT bool is_number_integer() const;
+        API_EXPORT bool is_number_unsigned() const;
+        API_EXPORT bool is_number_float() const;
+        API_EXPORT bool is_string() const;
+        API_EXPORT bool is_array() const;
+        API_EXPORT bool is_object() const;
+        API_EXPORT bool is_discarded() const;
+        API_EXPORT bool get_to(bool &values) const;
+        API_EXPORT bool get_to(int16_t &values) const;
+        API_EXPORT bool get_to(uint16_t &values) const;
+        API_EXPORT bool get_to(int32_t &values) const;
+        API_EXPORT bool get_to(uint32_t &values) const;
+        API_EXPORT bool get_to(int64_t &values) const;
+        API_EXPORT bool get_to(uint64_t &values) const;
+        API_EXPORT bool get_to(double &values) const;
+        API_EXPORT bool get_to(std::string &values) const;
+        API_EXPORT bool get_to(std::vector<uint8_t> &values) const;
+        API_EXPORT size_t size() const;
+        API_EXPORT std::string dump() const;
+        API_EXPORT iterator find(const std::string &key) const;
+        API_EXPORT iterator begin() const;
+        API_EXPORT iterator end() const;
+        API_EXPORT ~JSONWrapper();
+        API_EXPORT static JSONWrapper parse(const std::string &str);
+        API_EXPORT static bool accept(const std::string &str);
+
+        API_EXPORT static JSONWrapper array();
+        API_EXPORT void push_back(const JSONWrapper &value);
+        API_EXPORT static std::string to_string(const JSONWrapper &jsonWrapper);
+        API_EXPORT bool operator==(const std::map<std::string, std::string>& value) const;
+        API_EXPORT bool operator==(const std::map<std::string, uint64_t>& value) const;
+        API_EXPORT bool operator==(const std::vector<std::string>& value) const;
+        API_EXPORT bool empty() const;
+        API_EXPORT JSONWrapper& operator=(const std::map<std::string, uint64_t>& value);
+        API_EXPORT JSONWrapper &operator=(const std::map<std::string, std::string>& value); 
+        API_EXPORT bool erase(const std::string& key);
+        API_EXPORT bool erase(int index);
+    private:
+        void AddToRoot();
+        JSONWrapper(const JSONWrapper& jsonWrapper) = delete;
+        JSONWrapper &operator=(const JSONWrapper &jsonWrapper) = delete;
+        cJSON *json_ = nullptr;
+        cJSON *root_ = nullptr;
+        std::string key_;
+        bool needDel_ = false;
+        mutable std::vector<std::shared_ptr<JSONWrapper>> children_;
+    };
+    class iterator {
+    public:
+        API_EXPORT iterator(std::vector<std::shared_ptr<JSONWrapper>>::iterator it);
+        API_EXPORT iterator &operator++();
+        API_EXPORT bool operator==(const iterator &iter) const;
+        API_EXPORT bool operator!=(const iterator &iter) const;
+        API_EXPORT const JSONWrapper &operator*() const;
+        API_EXPORT std::string key() const;
+        API_EXPORT const JSONWrapper &value() const;
+
+    private:
+        std::vector<std::shared_ptr<JSONWrapper>>::iterator node_;
+    };
+    using json = JSONWrapper;
 
     API_EXPORT json Marshall() const;
     template<typename T>
@@ -40,7 +134,7 @@ public:
     {
         json root;
         SetValue(root, values);
-        return root.dump(-1, ' ', false, error_handler_t::replace);
+        return root.dump();
     }
 
     API_EXPORT bool Unmarshall(const std::string &jsonStr);
@@ -62,6 +156,7 @@ public:
     API_EXPORT static bool GetValue(const json &node, const std::string &name, bool &value);
     API_EXPORT static bool GetValue(const json &node, const std::string &name, std::vector<uint8_t> &value);
     API_EXPORT static bool GetValue(const json &node, const std::string &name, Serializable &value);
+    API_EXPORT static bool GetValue(const json &node, const std::string &name, double &value);
     API_EXPORT static bool SetValue(json &node, const std::string &value);
     API_EXPORT static bool SetValue(json &node, const uint32_t &value);
     API_EXPORT static bool SetValue(json &node, const int32_t &value);
@@ -128,8 +223,9 @@ bool Serializable::GetValue(const json &node, const std::string &name, std::vect
         return false;
     }
     bool result = true;
-    values.resize(subNode.size());
-    for (size_type i = 0; i < subNode.size(); ++i) {
+    auto size = subNode.size();
+    values.resize(size);
+    for (size_t i = 0; i < size; ++i) {
         result = GetValue(subNode[i], "", values[i]) && result;
     }
     return result;
@@ -139,8 +235,8 @@ template<typename T>
 bool Serializable::SetValue(json &node, const std::vector<T> &values)
 {
     bool result = true;
-    size_type i = 0;
-    node = json::value_t::array;
+    size_t i = 0;
+    node = JSONWrapper::Type::ARRAY;
     for (const auto &value : values) {
         result = SetValue(node[i], value) && result;
         i++;
@@ -166,7 +262,7 @@ template<typename T>
 bool Serializable::SetValue(json &node, const std::map<std::string, T> &values)
 {
     bool result = true;
-    node = json::value_t::object;
+    node = JSONWrapper::Type::OBJECT;
     for (const auto &[key, value] : values) {
         result = SetValue(node[key], value) && result;
     }

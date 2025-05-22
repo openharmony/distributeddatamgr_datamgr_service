@@ -62,7 +62,7 @@ ohos_source_set("distributeddata_permit") {
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]

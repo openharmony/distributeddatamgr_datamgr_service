@@ -58,8 +58,8 @@ HWTEST_F(SubscriptionTest, RelationUnmarshal, TestSize.Level1)
     Subscription::json node;
     node["id"] = "testId";
     node["bundleName"] = "testBundleName";
-    node["relations"] = testRelation;
     Subscription::Relation relation;
+    relation.SetRelations(node["relations"], testRelation);
     relation.Unmarshal(node);
     ASSERT_EQ(relation.id, "testId");
     ASSERT_EQ(relation.bundleName, "testBundleName");
@@ -94,8 +94,8 @@ HWTEST_F(SubscriptionTest, Unmarshal, TestSize.Level1)
     Subscription::json node;
     node["userId"] = 100;
     node["id"] = "testId";
-    node["expiresTime"] = testExpiresTime;
     Subscription subscription;
+    subscription.SetSubscriptions(node["expiresTime"], testExpiresTime);
     subscription.Unmarshal(node);
     ASSERT_EQ(subscription.userId, 100);
     ASSERT_EQ(subscription.id, "testId");
