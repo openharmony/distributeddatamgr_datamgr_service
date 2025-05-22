@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_GLOBAL_CONFIG_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_GLOBAL_CONFIG_H
+#include "model/app_access_check_config.h"
 #include "model/app_id_mapping_config.h"
 #include "model/backup_config.h"
 #include "model/checker_config.h"
@@ -44,6 +45,7 @@ public:
     ThreadConfig *thread = nullptr;
     DataShareConfig *dataShare = nullptr;
     DeviceSyncAppWhiteListConfig *deviceSyncAppWhiteList = nullptr;
+    AppAccessCheckConfig *syncAppList = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

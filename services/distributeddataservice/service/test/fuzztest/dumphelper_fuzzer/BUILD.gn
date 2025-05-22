@@ -19,9 +19,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 ohos_fuzztest("DumpHelperFuzzTest") {
   module_out_path = "datamgr_service/datamgr_service"
 
-  include_dirs = [
-    "${data_service_path}/service/dumper/include",
-  ]
+  include_dirs = [ "${data_service_path}/service/dumper/include" ]
 
   fuzz_config_file =
       "${data_service_path}/service/test/fuzztest/dumphelper_fuzzer"
@@ -62,6 +60,7 @@ ohos_fuzztest("DumpHelperFuzzTest") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
     "kv_store:distributeddb"
   ]

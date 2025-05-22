@@ -91,10 +91,10 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
   ]
 
@@ -143,10 +143,10 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "mock:distributeddata_mock_static",
   ]
 
@@ -453,9 +453,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "rdb_result_set_impl_test.cpp",
   ]
 
-  include_dirs = [
-    "${data_service_path}/service/rdb",
-  ]
+  include_dirs = [ "${data_service_path}/service/rdb" ]
 
   configs = [ ":module_private_config" ]
 
@@ -510,12 +508,6 @@ ohos_unittest("RdbServiceTest") {
     "rdb_result_set_stub_test.cpp",
   ]
 
-  include_dirs = [
-    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
-    "${relational_store_path}/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   cflags = [
@@ -535,14 +527,14 @@ ohos_unittest("RdbServiceTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb"
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
   ]
 
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${relational_store_inner_api_path}:native_rdb_static",
   ]
 }
 
@@ -858,11 +850,13 @@ ohos_unittest("MetaDataTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_manager:devicemanagersdk",
+    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
@@ -941,13 +935,7 @@ ohos_unittest("DataShareServiceImplTest") {
   }
   module_out_path = module_output_path
 
-  include_dirs = [
-    "${data_service_path}/service/config/include",
-    "${datashare_path}/frameworks/native/common/include",
-    "${datashare_path}/interfaces/inner_api/common/include",
-    "${datashare_path}/interfaces/inner_api/consumer/include",
-    "//third_party/json/single_include",
-  ]
+  include_dirs = [ "${data_service_path}/service/config/include" ]
 
   sources = [
     "${data_service_path}/service/common/xcollie.cpp",
@@ -1036,6 +1024,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hicollie:libhicollie",
@@ -1113,9 +1102,9 @@ ohos_unittest("KvdbServiceImplTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "kv_store:distributeddb",
-    "kv_store:distributeddata_mgr",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
@@ -1587,6 +1576,7 @@ ohos_unittest("BootStrapMockTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
@@ -1613,8 +1603,8 @@ ohos_unittest("BootStrapMockTest") {
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/backup:distributeddata_backup",
   ]
 
   cflags = [

@@ -91,7 +91,7 @@ HWTEST_F(AuthDelegateMockTest, CheckAccess001, testing::ext::TestSize.Level0)
     EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillOnce(Return(peerUsers));
     EXPECT_CALL(*devMgrAdapterMock, IsOHOSType(_)).WillOnce(Return(false));
     auto result = authHandler->CheckAccess(localUserId, peerUserId, peerDevId, aclParams);
-    EXPECT_TRUE(result.first);
+    EXPECT_FALSE(result.first);
 }
 
 /**

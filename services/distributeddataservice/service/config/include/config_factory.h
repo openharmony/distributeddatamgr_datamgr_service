@@ -35,6 +35,7 @@ public:
     API_EXPORT ThreadConfig *GetThreadConfig();
     API_EXPORT DataShareConfig *GetDataShareConfig();
     API_EXPORT DeviceSyncAppWhiteListConfig *GetDeviceSyncAppWhiteListConfig();
+    API_EXPORT AppAccessCheckConfig *GetSyncAppsConfig();
 private:
     static constexpr const char *CONF_PATH = "/system/etc/distributeddata/conf";
     ConfigFactory();

@@ -32,6 +32,7 @@ bool GlobalConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(thread)], thread);
     SetValue(node[GET_NAME(dataShare)], dataShare);
     SetValue(node[GET_NAME(deviceSyncAppWhiteList)], deviceSyncAppWhiteList);
+    SetValue(node[GET_NAME(syncAppList)], syncAppList);
     return true;
 }
 
@@ -51,6 +52,7 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(thread), thread);
     GetValue(node, GET_NAME(dataShare), dataShare);
     GetValue(node, GET_NAME(deviceSyncAppWhiteList), deviceSyncAppWhiteList);
+    GetValue(node, GET_NAME(syncAppList), syncAppList);
     return true;
 }
 
@@ -66,6 +68,7 @@ GlobalConfig::~GlobalConfig()
     delete thread;
     delete dataShare;
     delete deviceSyncAppWhiteList;
+    delete syncAppList;
 }
 } // namespace DistributedData
 } // namespace OHOS

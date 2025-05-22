@@ -1083,21 +1083,6 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
             errCode, URIUtils::Anonymous(calledInfo.uri).c_str());
         return errCode;
     }
-    DataShareDbConfig dbConfig;
-    DataShareDbConfig::DbConfig dbArg;
-    dbArg.uri = calledInfo.uri;
-    dbArg.bundleName = calledInfo.bundleName;
-    dbArg.storeName = calledInfo.storeName;
-    dbArg.userId = calledInfo.singleton ? 0 : calledInfo.visitedUserId;
-    dbArg.hasExtension = calledInfo.hasExtension;
-    dbArg.appIndex = calledInfo.appIndex;
-    auto [code, metaData] = dbConfig.GetMetaData(dbArg);
-    if (code != E_OK) {
-        ZLOGE("Get metaData fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            calledInfo.bundleName.c_str(), calledInfo.tableName.c_str(), tokenId,
-            URIUtils::Anonymous(calledInfo.uri).c_str());
-        return E_METADATA_NOT_EXISTS;
-    }
     return E_OK;
 }
 

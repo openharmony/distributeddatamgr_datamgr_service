@@ -30,19 +30,6 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/crypto/include",
     "${data_service_path}/service/object/include",
     "${data_service_path}/service/matrix/include",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_distributeddb_path}",
-    "${kv_store_distributeddb_path}/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "//third_party/json/single_include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/utils",
   ]
@@ -63,6 +50,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
@@ -94,7 +82,6 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${kv_store_distributeddb_path}:distributeddb",
   ]
 
   external_deps = [
@@ -105,6 +92,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "data_object:data_object_inner",
     "data_object:distributeddataobject_impl",
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
@@ -118,6 +106,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
   ]
 }
 

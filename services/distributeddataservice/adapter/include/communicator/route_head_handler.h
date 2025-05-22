@@ -26,7 +26,8 @@ public:
     using DBStatus = DistributedDB::DBStatus;
     using UserInfo = DistributedDB::UserInfo;
 
-    virtual bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize) = 0;
+    virtual bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize,
+        const std::string &device) = 0;
     virtual bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
         std::vector<UserInfo> &userInfos) = 0;
 };

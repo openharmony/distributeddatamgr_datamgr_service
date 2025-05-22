@@ -35,19 +35,6 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/service/object",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_distributeddb_path}",
-    "${kv_store_distributeddb_path}/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${relational_store_path}/interfaces/inner_api/cloud_data/include",
-    "${relational_store_path}/interfaces/inner_api/rdb/include",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-    "//third_party/json/single_include",
     "${data_service_path}/adapter/include/communicator",
   ]
 
@@ -72,11 +59,11 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/cloud:distributeddata_cloud",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${kv_store_distributeddb_path}:distributeddb",
   ]
 
   external_deps = [
@@ -97,6 +84,7 @@ ohos_fuzztest("RdbServiceStubFuzzTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
     "resource_management:global_resmgr",
     "samgr:samgr_proxy",
