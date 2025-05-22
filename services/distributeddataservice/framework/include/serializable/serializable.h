@@ -107,6 +107,7 @@ public:
         void AddToRoot();
         JSONWrapper(const JSONWrapper& jsonWrapper) = delete;
         JSONWrapper &operator=(const JSONWrapper &jsonWrapper) = delete;
+        bool ReplaceNode(cJSON *node);
         cJSON *json_ = nullptr;
         cJSON *root_ = nullptr;
         std::string key_;
