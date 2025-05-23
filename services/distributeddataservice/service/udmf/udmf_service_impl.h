@@ -67,6 +67,7 @@ private:
     bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
     int32_t ProcessCrossDeviceData(UnifiedData &unifiedData, std::vector<Uri> &uris);
+    bool CheckDragParams(UnifiedKey &key, const QueryOption &query);
 
     class Factory {
     public:

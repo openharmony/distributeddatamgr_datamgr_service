@@ -183,11 +183,23 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     return res;
 }
 
+bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key, const QueryOption &query)
+{
+    if (!key.IsValid()) {
+        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+        return false;
+    }
+    if (key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        ZLOGE("Invalid intention:%{public}s", key.intention.c_str());
+        return false;
+    }
+    return true;
+}
+
 int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &unifiedData)
 {
     UnifiedKey key(query.key);
-    if (!key.IsValid()) {
-        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+    if (!CheckDragParams(key, query)) {
         return E_INVALID_PARAMETERS;
     }
     auto store = StoreCache::GetInstance().GetStore(key.intention);
@@ -698,15 +710,16 @@ int32_t UdmfServiceImpl::QueryDataCommon(
 {
     auto find = UD_INTENTION_MAP.find(query.intention);
     std::string intention = find == UD_INTENTION_MAP.end() ? intention : find->second;
-    if (!UnifiedDataUtils::IsValidOptions(query.key, intention)) {
+    UnifiedKey key(query.key);
+    if (!UnifiedDataUtils::IsValidOptions(key, intention, UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB))) {
         ZLOGE("Unified key: %{public}s and intention: %{public}s is invalid.", query.key.c_str(), intention.c_str());
         return E_INVALID_PARAMETERS;
     }
-    std::string dataPrefix = DATA_PREFIX + intention;
-    UnifiedKey key(query.key);
-    key.IsValid();
-    if (intention.empty()) {
-        dataPrefix = key.key;
+    std::string dataPrefix;
+    if (key.key.empty()) {
+        dataPrefix = DATA_PREFIX + intention;
+    } else {
+        dataPrefix = UnifiedKey(key.key).GetKeyCommonPrefix();
         intention = key.intention;
     }
     ZLOGD("dataPrefix = %{public}s, intention: %{public}s.", dataPrefix.c_str(), intention.c_str());
