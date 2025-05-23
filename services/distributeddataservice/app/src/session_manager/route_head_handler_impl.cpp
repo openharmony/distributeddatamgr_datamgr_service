@@ -82,6 +82,16 @@ void RouteHeadHandlerImpl::Init()
           session_.sourceUserId, Anonymous::Change(session_.targetDeviceId).c_str());
 }
 
+std::string RouteHeadHandlerImpl::GetTargetUserId()
+{
+    if (!session_.IsValid()) {
+        ZLOGE("session has no valid user to peer device, targetDeviceId:%{public}s",
+            Anonymous::Change(session_.targetDeviceId).c_str());
+        return "";
+    }
+    return std::to_string(session_.targetUserIds[0]);
+}
+
 DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize)
 {
     ZLOGD("begin");
@@ -337,7 +347,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
     for (const auto &item : session_.targetUserIds) {
         local.userId = item;
         if (SessionManager::GetInstance().CheckSession(local, peer, accountFlag)) {
-            UserInfo userInfo = { .receiveUser = std::to_string(item) };
+            UserInfo userInfo = { .receiveUser = std::to_string(item), .sendUser = std::to_string(peer.userId) };
             userInfos.emplace_back(userInfo);
         }
     }
