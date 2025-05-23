@@ -100,7 +100,7 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     std::vector<Entry> entries;
     std::string intention = unifiedData.GetRuntime()->key.intention;
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        PutSummary(unifiedData, entries);
+        PutSummaryFromUData(unifiedData, entries);
     }
     auto status = DataHandler::MarshalToEntries(unifiedData, entries);
     if (status != E_OK) {
@@ -124,7 +124,7 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
-Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &entries)
+Status RuntimeStore::PutSummaryFromUData(const UnifiedData &data, std::vector<Entry> &entries)
 {
     UpdateTime();
     UDDetails details {};
@@ -135,7 +135,31 @@ Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &ent
         UnifiedDataHelper::GetSummary(data, summary);
     }
 
-    auto propertyKey = data.GetRuntime()->key.GetKeyCommonPrefix();
+    auto status = PutSummary(data.GetRuntime()->key, summary, entries);
+    if (status != E_OK) {
+        ZLOGE("Put summary failed, status:%{public}d", status);
+        return status;
+    }
+    return E_OK;
+}
+
+Status RuntimeStore::PutSummaryFromDataLoadInfo(UnifiedKey &key, const DataLoadInfo &dataLoadInfo)
+{
+    Summary summary;
+    UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
+
+    std::vector<Entry> entries;
+    auto status = PutSummary(key, summary, entries);
+    if (status != E_OK) {
+        ZLOGE("Put summary failed, status:%{public}d", status);
+        return status;
+    }
+    return PutEntries(entries);
+}
+
+Status RuntimeStore::PutSummary(UnifiedKey &key, const Summary &summary, std::vector<Entry> &entries)
+{
+    auto propertyKey = key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
     if (status != E_OK) {

@@ -289,5 +289,61 @@ int32_t UdmfServiceStub::OnClearAsynProcessByKey(MessageParcel &data, MessagePar
     }
     return E_OK;
 }
+
+int32_t UdmfServiceStub::OnSetDelayInfo(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGE("zzz start");
+    DataLoadInfo dataLoadInfo;
+    sptr<IRemoteObject> iUdmfNotifier;
+
+    if (!ITypesUtil::Unmarshal(data, dataLoadInfo, iUdmfNotifier)) {
+        ZLOGE("Unmarshal failed!");
+        return E_READ_PARCEL_ERROR;
+    }
+    std::string key;
+    int32_t status = SetDelayInfo(dataLoadInfo, iUdmfNotifier, key);
+    if (!ITypesUtil::Marshal(reply, status, key)) {
+        ZLOGE("Marshal failed:%{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceStub::OnSetDelayData(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGE("zzz start");
+    std::string businessUdKey;
+    UnifiedData unifiedData;
+
+    if (!ITypesUtil::Unmarshal(data, businessUdKey, unifiedData)) {
+        ZLOGE("Unmarshal failed!");
+        return E_READ_PARCEL_ERROR;
+    }
+
+    int32_t status = SetDelayData(businessUdKey, unifiedData);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal failed:%{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceStub::OnGetDelayData(MessageParcel &data, MessageParcel &reply)
+{
+    ZLOGE("zzz start");
+    DataLoadInfo dataLoadInfo;
+    sptr<IRemoteObject> iUdmfNotifier;
+    if (!ITypesUtil::Unmarshal(data, dataLoadInfo, iUdmfNotifier)) {
+        ZLOGE("Unmarshal failed!");
+        return E_READ_PARCEL_ERROR;
+    }
+    auto unifiedData = std::make_shared<UnifiedData>();
+    int32_t status = GetDelayData(dataLoadInfo, iUdmfNotifier, unifiedData);
+    if (!ITypesUtil::Marshal(reply, status, *unifiedData)) {
+        ZLOGE("Marshal failed:%{public}d", status);
+        return E_WRITE_PARCEL_ERROR;
+    }
+    return E_OK;
+}
 } // namespace UDMF
 } // namespace OHOS
