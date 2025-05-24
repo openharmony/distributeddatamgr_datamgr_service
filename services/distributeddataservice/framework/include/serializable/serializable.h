@@ -108,6 +108,7 @@ public:
         JSONWrapper(const JSONWrapper& jsonWrapper) = delete;
         JSONWrapper &operator=(const JSONWrapper &jsonWrapper) = delete;
         bool ReplaceNode(cJSON *node);
+        void SyncChildren() const;
         cJSON *json_ = nullptr;
         cJSON *root_ = nullptr;
         std::string key_;
