@@ -139,7 +139,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"

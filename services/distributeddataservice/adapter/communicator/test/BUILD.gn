@@ -215,7 +215,7 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",

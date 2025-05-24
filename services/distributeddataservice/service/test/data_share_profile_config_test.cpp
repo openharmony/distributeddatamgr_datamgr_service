@@ -113,7 +113,9 @@ HWTEST_F(DataShareProfileConfigTest, ProfileInfo001, TestSize.Level1)
 
     Serializable::json node;
     info.Marshal(node);
-    EXPECT_EQ(node["isSilentProxyEnable"], true);
+    bool ret;
+    node["isSilentProxyEnable"].get_to(ret);
+    EXPECT_EQ(ret, true);
     EXPECT_EQ(node["path"], "storeName/tableName");
     EXPECT_EQ(node["scope"], "module");
     EXPECT_EQ(node["type"], "rdb");

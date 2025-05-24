@@ -148,7 +148,7 @@ ohos_shared_library("distributeddataservice") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
