@@ -1051,8 +1051,11 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
         ZLOGE("Get store failed:%{public}s", key.c_str());
         return E_DB_ERROR;
     }
-    if (store->PutSummaryFromDataLoadInfo(udkey, dataLoadInfo) != E_OK) {
-        ZLOGE("Put unified data failed:%{public}s", key.c_str());
+
+    Summary summary;
+    UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
+    if (store->PutSummary(udkey, summary) != E_OK) {
+        ZLOGE("Put summary failed:%{public}s", key.c_str());
         return E_DB_ERROR;
     }
     return E_OK;
@@ -1070,8 +1073,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     }
     int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
     if (ret != E_OK) {
-        ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
-            unifiedData.GetRuntime()->createPackage.c_str());
+        ZLOGE("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
         return ret;
     }
 
@@ -1098,6 +1100,10 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
 
     TransferToEntriesIfNeed(query, unifiedData);
     auto callback = iface_cast<DelayDataCallbackProxy>(it.second.dataCallback);
+    if (callback == nullptr) {
+        ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
     callback->DelayDataCallback(key, unifiedData);
     delayDataCallback_.Erase(key);
     return E_OK;
@@ -1110,6 +1116,10 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const DataLoadInfo &dataLoadInfo, sp
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
         .key = dataLoadInfo.udKey
     };
+    if (unifiedData == nullptr) {
+        ZLOGE("Data is null, key:%{public}s", dataLoadInfo.udKey.c_str());
+        return E_ERROR;
+    }
     auto status = RetrieveData(query, *unifiedData);
     if (status == E_OK) {
         return E_OK;
@@ -1122,7 +1132,7 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const DataLoadInfo &dataLoadInfo, sp
         .dataCallback = iUdmfNotifier,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
     };
-    delayDataCallback_.Insert(query.key, delayGetDataInfo);
+    delayDataCallback_.InsertOrAssign(query.key, std::move(delayGetDataInfo));
 
     auto it = dataLoadCallback_.Find(query.key);
     if (!it.first) {

@@ -43,7 +43,7 @@ public:
     Status DeleteLocal(const std::string &key) override;
     Status PutRuntime(const std::string &key, const Runtime &runtime) override;
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
-    Status PutSummaryFromDataLoadInfo(UnifiedKey &key, const DataLoadInfo &dataLoadInfo) override;
+    Status PutSummary(UnifiedKey &key, const Summary &summary) override;
     void Close() override;
     bool Init() override;
 
@@ -65,8 +65,7 @@ private:
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
-    Status PutSummaryFromUData(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
-    Status PutSummary(UnifiedKey &key, const Summary &summary, std::vector<DistributedDB::Entry> &entries);
+    Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
 };
 } // namespace UDMF
 } // namespace OHOS
