@@ -141,9 +141,8 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+            ZLOGW("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
                   unifiedData.GetRuntime()->createPackage.c_str());
-            return ret;
         }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
@@ -1072,7 +1071,7 @@ int32_t UdmfServiceImpl::SetDelayData(const std::string &key, UnifiedData &unifi
     int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
     if (ret != E_OK) {
         ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
-                unifiedData.GetRuntime()->createPackage.c_str());
+            unifiedData.GetRuntime()->createPackage.c_str());
         return ret;
     }
 
@@ -1100,6 +1099,7 @@ int32_t UdmfServiceImpl::SetDelayData(const std::string &key, UnifiedData &unifi
     TransferToEntriesIfNeed(query, unifiedData);
     auto callback = iface_cast<DelayDataCallbackProxy>(it.second.dataCallback);
     callback->DelayDataCallback(key, unifiedData);
+    delayDataCallback_.Erase(key);
     return E_OK;
 }
 
@@ -1130,6 +1130,7 @@ int32_t UdmfServiceImpl::GetDelayData(const DataLoadInfo &dataLoadInfo, sptr<IRe
         return E_ERROR;
     }
     it.second->HandleDelayObserver(query.key, dataLoadInfo);
+    dataLoadCallback_.Erase(query.key);
     return E_OK;
 }
 } // namespace UDMF
