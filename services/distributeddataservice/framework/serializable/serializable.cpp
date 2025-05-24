@@ -247,6 +247,7 @@ const Serializable::json &Serializable::GetSubNode(const json &node, const std::
 Serializable::JSONWrapper::JSONWrapper() : root_(nullptr)
 {
     json_ = cJSON_CreateNull();
+    needDel_ = true;
 }
 
 Serializable::JSONWrapper::JSONWrapper(cJSON *json, cJSON *root, const std::string &key)
@@ -256,25 +257,11 @@ Serializable::JSONWrapper::JSONWrapper(cJSON *json, cJSON *root, const std::stri
 
 Serializable::JSONWrapper::JSONWrapper(const std::string &jsonStr) : root_(nullptr), needDel_(true)
 {
-    if (json_ != nullptr) {
-        cJSON_Delete(json_);
-        children_.clear();
-    }
     json_ = cJSON_Parse(jsonStr.c_str());
 }
 
 Serializable::JSONWrapper::JSONWrapper(JSONWrapper &&jsonWrapper)
 {
-    if (this == &jsonWrapper) {
-        return;
-    }
-    if (json_ != nullptr) { 
-        if (root_ == nullptr) { 
-            cJSON_Delete(json_); 
-        }
-        json_ = nullptr; 
-        root_ = nullptr; 
-    }
     json_ = std::move(jsonWrapper.json_);
     jsonWrapper.json_ = nullptr;
     root_ = jsonWrapper.root_;
@@ -291,6 +278,9 @@ Serializable::JSONWrapper::operator std::string() const
 
 Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(JSONWrapper &&jsonWrapper)
 {
+    if (this == &jsonWrapper) {
+        return *this;
+    }
     if (root_ == nullptr) {
         cJSON_Delete(json_);
         json_ = nullptr;
@@ -301,6 +291,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(JSONWrapper &&js
     jsonWrapper.root_ = nullptr;
     key_ = std::move(jsonWrapper.key_);
     children_ = std::move(jsonWrapper.children_);
+	needDel_ = jsonWrapper.needDel_;
     return *this;
 }
 
@@ -360,17 +351,27 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(int32_t value)
         cJSON_Delete(json_);
         json_ = nullptr;
     }
-    if (json_ != nullptr) {
-        if (cJSON_IsNumber(json_)) {
-            cJSON_SetNumberValue(json_, value);
+    if (json_ == nullptr) {
+        json_ = cJSON_CreateNumber(value);
+        if (json_ == nullptr || root_ == nullptr) {
+            return *this;
         }
+        AddToRoot();
+    }
+    if (json_ == nullptr) {
         return *this;
     }
-    json_ = cJSON_CreateNumber(value);
-    if (json_ == nullptr || root_ == nullptr) {
+    if (cJSON_IsNumber(json_)) {
+        cJSON_SetNumberValue(json_, value);
         return *this;
     }
-    AddToRoot();
+    cJSON *node = cJSON_CreateNumber(value);
+    if (node == nullptr) {
+        return *this;
+    }
+    if (!ReplaceNode(node)) {
+        cJSON_Delete(node);
+    }
     return *this;
 }
 
@@ -386,17 +387,27 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(int64_t value)
         cJSON_Delete(json_);
         json_ = nullptr;
     }
-    if (json_ != nullptr) {
-        if (cJSON_IsNumber(json_)) {
-            cJSON_SetNumberValue(json_, value);
+    if (json_ == nullptr) {
+        json_ = cJSON_CreateNumber(value);
+        if (json_ == nullptr || root_ == nullptr) {
+            return *this;
         }
+        AddToRoot();
+    }
+    if (json_ == nullptr) {
         return *this;
     }
-    json_ = cJSON_CreateNumber(value);
-    if (json_ == nullptr || root_ == nullptr) {
+    if (cJSON_IsNumber(json_)) {
+        cJSON_SetNumberValue(json_, value);
         return *this;
     }
-    AddToRoot();
+    cJSON *node = cJSON_CreateNumber(value);
+    if (node == nullptr) {
+        return *this;
+    }
+    if (!ReplaceNode(node)) {
+        cJSON_Delete(node);
+    }
     return *this;
 }
 
@@ -412,17 +423,27 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(double value)
         cJSON_Delete(json_);
         json_ = nullptr;
     }
-    if (json_ != nullptr) {
-        if (cJSON_IsNumber(json_)) {
-            cJSON_SetNumberValue(json_, value);
+    if (json_ == nullptr) {
+        json_ = cJSON_CreateNumber(value);
+        if (json_ == nullptr || root_ == nullptr) {
+            return *this;
         }
+        AddToRoot();
+    }
+    if (json_ == nullptr) {
         return *this;
     }
-    json_ = cJSON_CreateNumber(value);
-    if (json_ == nullptr || root_ == nullptr) {
+    if (cJSON_IsNumber(json_)) {
+        cJSON_SetNumberValue(json_, value);
         return *this;
     }
-    AddToRoot();
+    cJSON *node = cJSON_CreateNumber(value);
+    if (node == nullptr) {
+        return *this;
+    }
+    if (!ReplaceNode(node)) {
+        cJSON_Delete(node);
+    }
     return *this;
 }
 
@@ -475,6 +496,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(const std::vecto
         auto node = cJSON_CreateNumber(value[i]);
         if (!node || !cJSON_AddItemToArray(json_, node)) {
             cJSON_Delete(json_);
+			cJSON_Delete(node);
             json_ = nullptr;
             children_.clear();
             return *this;
@@ -505,6 +527,7 @@ bool Serializable::JSONWrapper::ReplaceNode(cJSON *node)
     
     if (success) {
         json_ = node;
+		children_.clear();
     }
     return success;
 }
@@ -750,17 +773,8 @@ bool Serializable::JSONWrapper::empty() const
     if (cJSON_IsNull(json_)) {
         return true;
     }
-    if (cJSON_IsArray(json_)) {
+    if (cJSON_IsArray(json_) || cJSON_IsObject(json_)) {
         return cJSON_GetArraySize(json_) == 0;
-    }
-    if (cJSON_IsObject(json_)) {
-        int size = 0;
-        cJSON *child = json_->child;
-        while (child) {
-            size++;
-            child = child->next;
-        }
-        return size == 0;
     }
     return false;
 }
@@ -993,7 +1007,9 @@ Serializable::JSONWrapper& Serializable::JSONWrapper::operator=(const std::map<s
     json_ = cJSON_CreateObject();
     for (const auto& pair : value) {
         cJSON* num = cJSON_CreateNumber(pair.second);
-        cJSON_AddItemToObject(json_, pair.first.c_str(), num);
+        if (!cJSON_AddItemToObject(json_, pair.first.c_str(), num)) {
+            cJSON_Delete(num);
+        }
     }
     children_.clear();
     return *this;
@@ -1008,7 +1024,9 @@ Serializable::JSONWrapper& Serializable::JSONWrapper::operator=(const std::map<s
     json_ = cJSON_CreateObject();
     for (const auto& pair : value) {
         cJSON* str = cJSON_CreateString(pair.second.c_str());
-        cJSON_AddItemToObject(json_, pair.first.c_str(), str);
+        if (!cJSON_AddItemToObject(json_, pair.first.c_str(), str)) {
+            cJSON_Delete(str);
+        }
     }
     children_.clear();
     return *this;
