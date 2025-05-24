@@ -1058,7 +1058,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::SetDelayData(const std::string &key, UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
 {
     CustomOption option {
         .intention = UD_INTENTION_DRAG,
@@ -1103,7 +1103,7 @@ int32_t UdmfServiceImpl::SetDelayData(const std::string &key, UnifiedData &unifi
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::GetDelayData(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
+int32_t UdmfServiceImpl::GetDataIfAvailable(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
 {
     ZLOGD("start");
     QueryOption query {

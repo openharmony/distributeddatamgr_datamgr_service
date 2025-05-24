@@ -51,8 +51,8 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
         std::string &key) override;
-    int32_t SetDelayData(const std::string &key, UnifiedData &unifiedData) override;
-    int32_t GetDelayData(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
+    int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData) override;
+    int32_t GetDataIfAvailable(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
         std::shared_ptr<UnifiedData> unifiedData) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
