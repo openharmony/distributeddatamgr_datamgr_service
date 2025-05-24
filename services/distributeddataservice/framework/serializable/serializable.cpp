@@ -800,15 +800,7 @@ std::string Serializable::JSONWrapper::dump() const
 
 Serializable::iterator Serializable::JSONWrapper::find(const std::string &key) const
 {
-    auto size = cJSON_GetArraySize(json_);
-    auto len = children_.size();
-    if (len != size) {
-        children_.clear();
-        for (int i = 0; i < size; i++) {
-            auto item = cJSON_GetArrayItem(json_, i);
-            children_.push_back(std::make_shared<JSONWrapper>(item, json_, is_object() ? item->string:""));
-        }
-    }
+    SyncChildren();
     auto it = children_.begin();
     while (it != children_.end()) {
         if ((*it)->key_ == key) {
@@ -824,15 +816,7 @@ Serializable::iterator Serializable::JSONWrapper::begin() const
     if (json_ == nullptr || (!is_array() && !is_object())) {
         ZLOGE("not support.");
     }
-    auto size = cJSON_GetArraySize(json_);
-    auto len = children_.size();
-    if (len != size) {
-        children_.clear();
-        for (int i = 0; i < size; i++) {
-            auto item = cJSON_GetArrayItem(json_, i);
-            children_.push_back(std::make_shared<JSONWrapper>(item, json_, is_object() ? item->string:""));
-        }
-    }
+    SyncChildren();
     return children_.begin();
 }
 
@@ -841,6 +825,12 @@ Serializable::iterator Serializable::JSONWrapper::end() const
     if (json_ == nullptr || json_->child == nullptr || (!is_array() && !is_object())) {
         ZLOGE("not support.");
     }
+    SyncChildren();
+    return children_.end();
+}
+
+void Serializable::JSONWrapper::SyncChildren() const
+{
     auto size = cJSON_GetArraySize(json_);
     auto len = children_.size();
     if (len != size) {
@@ -850,7 +840,6 @@ Serializable::iterator Serializable::JSONWrapper::end() const
             children_.push_back(std::make_shared<JSONWrapper>(item, json_, is_object() ? item->string:""));
         }
     }
-    return children_.end();
 }
 
 Serializable::JSONWrapper::~JSONWrapper()
