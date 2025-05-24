@@ -906,6 +906,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "openssl:libcrypto_shared",
     "samgr:samgr_proxy",
@@ -1384,6 +1385,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
+    "kv_store:datamgr_common",
     "udmf:udmf_client",
   ]
 }
