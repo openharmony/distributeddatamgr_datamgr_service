@@ -28,9 +28,6 @@ struct API_EXPORT Subscription final : public Serializable {
         std::map<std::string, std::string> relations;
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
-        void SetRelations(Serializable::json &node, const std::map<std::string, std::string> &values) {
-            Serializable::SetValue(node, values);
-        }
     };
 
     bool Marshal(json &node) const;
@@ -41,9 +38,6 @@ struct API_EXPORT Subscription final : public Serializable {
     static std::string GetKey(int32_t userId);
     static std::string GetRelationKey(int32_t userId, const std::string &bundleName);
     static std::string GetPrefix(const std::initializer_list<std::string> &fields);
-    void SetSubscriptions(Serializable::json &node, const std::map<std::string, uint64_t> &values) {
-        Serializable::SetValue(node, values);
-    }
 
 private:
     static constexpr const char *PREFIX = "CLOUD_SUBSCRIPTION";

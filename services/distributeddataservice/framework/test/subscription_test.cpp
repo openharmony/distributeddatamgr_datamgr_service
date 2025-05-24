@@ -55,11 +55,13 @@ HWTEST_F(SubscriptionTest, RelationMarshal, TestSize.Level1)
 */
 HWTEST_F(SubscriptionTest, RelationUnmarshal, TestSize.Level1)
 {
+    Subscription::Relation relationOri;
+    relationOri.id = "testId";
+    relationOri.bundleName = "testBundleName";
+    relationOri.relations = testRelation;
     Subscription::json node;
-    node["id"] = "testId";
-    node["bundleName"] = "testBundleName";
+    relationOri.Marshal(node);
     Subscription::Relation relation;
-    relation.SetRelations(node["relations"], testRelation);
     relation.Unmarshal(node);
     ASSERT_EQ(relation.id, "testId");
     ASSERT_EQ(relation.bundleName, "testBundleName");
@@ -91,11 +93,13 @@ HWTEST_F(SubscriptionTest, Marshal, TestSize.Level1)
 */
 HWTEST_F(SubscriptionTest, Unmarshal, TestSize.Level1)
 {
+    Subscription subscriptionOri;
+    subscriptionOri.userId = 100;
+    subscriptionOri.id = "testId";
+    subscriptionOri.expiresTime = testExpiresTime;
     Subscription::json node;
-    node["userId"] = 100;
-    node["id"] = "testId";
+    subscriptionOri.Marshal(node);
     Subscription subscription;
-    subscription.SetSubscriptions(node["expiresTime"], testExpiresTime);
     subscription.Unmarshal(node);
     ASSERT_EQ(subscription.userId, 100);
     ASSERT_EQ(subscription.id, "testId");
