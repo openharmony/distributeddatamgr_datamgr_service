@@ -1042,7 +1042,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
     std::string bundleName;
     auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName);
-    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.udKey);
+    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.sequenceKey);
     key = udkey.GetUnifiedKey();
     dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
 
@@ -1109,15 +1109,16 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::GetDataIfAvailable(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
+int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
+    sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
 {
     ZLOGD("start");
     QueryOption query {
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
-        .key = dataLoadInfo.udKey
+        .key = key
     };
     if (unifiedData == nullptr) {
-        ZLOGE("Data is null, key:%{public}s", dataLoadInfo.udKey.c_str());
+        ZLOGE("Data is null, key:%{public}s", key.c_str());
         return E_ERROR;
     }
     auto status = RetrieveData(query, *unifiedData);
@@ -1125,22 +1126,22 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const DataLoadInfo &dataLoadInfo, sp
         return E_OK;
     }
     if (status != E_NOT_FOUND) {
-        ZLOGE("Retrieve data failed, key:%{public}s", dataLoadInfo.udKey.c_str());
+        ZLOGE("Retrieve data failed, key:%{public}s", key.c_str());
         return status;
     }
     DelayGetDataInfo delayGetDataInfo = {
         .dataCallback = iUdmfNotifier,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
     };
-    delayDataCallback_.InsertOrAssign(query.key, std::move(delayGetDataInfo));
+    delayDataCallback_.InsertOrAssign(key, std::move(delayGetDataInfo));
 
-    auto it = dataLoadCallback_.Find(query.key);
+    auto it = dataLoadCallback_.Find(key);
     if (!it.first) {
-        ZLOGE("DataLoad callback no exist, key:%{public}s", query.key.c_str());
+        ZLOGE("DataLoad callback no exist, key:%{public}s", key.c_str());
         return E_ERROR;
     }
-    it.second->HandleDelayObserver(query.key, dataLoadInfo);
-    dataLoadCallback_.Erase(query.key);
+    it.second->HandleDelayObserver(key, dataLoadInfo);
+    dataLoadCallback_.Erase(key);
     return E_OK;
 }
 } // namespace UDMF

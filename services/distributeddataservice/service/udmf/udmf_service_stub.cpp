@@ -312,15 +312,15 @@ int32_t UdmfServiceStub::OnSetDelayInfo(MessageParcel &data, MessageParcel &repl
 int32_t UdmfServiceStub::OnPushDelayData(MessageParcel &data, MessageParcel &reply)
 {
     ZLOGD("start");
-    std::string businessUdKey;
+    std::string key;
     UnifiedData unifiedData;
 
-    if (!ITypesUtil::Unmarshal(data, businessUdKey, unifiedData)) {
+    if (!ITypesUtil::Unmarshal(data, key, unifiedData)) {
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
     }
 
-    int32_t status = PushDelayData(businessUdKey, unifiedData);
+    int32_t status = PushDelayData(key, unifiedData);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
@@ -331,14 +331,19 @@ int32_t UdmfServiceStub::OnPushDelayData(MessageParcel &data, MessageParcel &rep
 int32_t UdmfServiceStub::OnGetDataIfAvailable(MessageParcel &data, MessageParcel &reply)
 {
     ZLOGD("start");
+    std::string key;
     DataLoadInfo dataLoadInfo;
     sptr<IRemoteObject> iUdmfNotifier;
-    if (!ITypesUtil::Unmarshal(data, dataLoadInfo, iUdmfNotifier)) {
+    if (!ITypesUtil::Unmarshal(data, key, dataLoadInfo, iUdmfNotifier)) {
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
     }
     auto unifiedData = std::make_shared<UnifiedData>();
-    int32_t status = GetDataIfAvailable(dataLoadInfo, iUdmfNotifier, unifiedData);
+    int32_t status = GetDataIfAvailable(key, dataLoadInfo, iUdmfNotifier, unifiedData);
+    if (unifiedData == nullptr) {
+        ZLOGE("Data is null, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
     if (!ITypesUtil::Marshal(reply, status, *unifiedData)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
