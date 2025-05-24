@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,14 +14,14 @@
  */
 
 #define LOG_TAG "UDMFNotifierProxy"
-
 #include "udmf_notifier_proxy.h"
+
 #include "distributeddata_udmf_ipc_interface_code.h"
 #include "log_print.h"
 #include "message_parcel.h"
 #include "message_option.h"
-#include "utils/anonymous.h"
 #include "udmf_types_util.h"
+#include "utils/anonymous.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -45,7 +45,6 @@ namespace UDMF {
                 ipcStatus = E_IPC;                                                           \
                 break;                                                                       \
             }                                                                                \
-                                                                                             \
             ITypesUtil::Unmarshal(reply, ipcStatus);                                         \
         } while (0);                                                                         \
         ipcStatus;                                                                           \

@@ -292,7 +292,7 @@ int32_t UdmfServiceStub::OnClearAsynProcessByKey(MessageParcel &data, MessagePar
 
 int32_t UdmfServiceStub::OnSetDelayInfo(MessageParcel &data, MessageParcel &reply)
 {
-    ZLOGE("zzz start");
+    ZLOGD("start");
     DataLoadInfo dataLoadInfo;
     sptr<IRemoteObject> iUdmfNotifier;
 
@@ -311,7 +311,7 @@ int32_t UdmfServiceStub::OnSetDelayInfo(MessageParcel &data, MessageParcel &repl
 
 int32_t UdmfServiceStub::OnSetDelayData(MessageParcel &data, MessageParcel &reply)
 {
-    ZLOGE("zzz start");
+    ZLOGD("start");
     std::string businessUdKey;
     UnifiedData unifiedData;
 
@@ -330,7 +330,7 @@ int32_t UdmfServiceStub::OnSetDelayData(MessageParcel &data, MessageParcel &repl
 
 int32_t UdmfServiceStub::OnGetDelayData(MessageParcel &data, MessageParcel &reply)
 {
-    ZLOGE("zzz start");
+    ZLOGD("start");
     DataLoadInfo dataLoadInfo;
     sptr<IRemoteObject> iUdmfNotifier;
     if (!ITypesUtil::Unmarshal(data, dataLoadInfo, iUdmfNotifier)) {
