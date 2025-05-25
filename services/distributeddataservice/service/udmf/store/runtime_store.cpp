@@ -147,6 +147,20 @@ Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &ent
     return E_OK;
 }
 
+Status RuntimeStore::PutSummary(UnifiedKey &key, const Summary &summary)
+{
+    auto propertyKey = key.GetKeyCommonPrefix();
+    Value value;
+    auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
+    if (status != E_OK) {
+        ZLOGE("Marshal summary failed, key: %{public}s, status:%{public}d", propertyKey.c_str(), status);
+        return status;
+    }
+    auto summaryKey = propertyKey + SUMMARY_SUFIX;
+    std::vector<Entry> entries{{{summaryKey.begin(), summaryKey.end()}, value}};;
+    return PutEntries(std::move(entries));
+}
+
 Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
 {
     UpdateTime();
