@@ -37,7 +37,8 @@ int32_t KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote(MessageParce
     if (kvStoreClientDeathObserverProxy == nullptr) {
         return -1;
     }
-    Status status = RegisterClientDeathObserver(appId, std::move(kvStoreClientDeathObserverProxy));
+    std::string featureName = data.ReadString();
+    Status status = RegisterClientDeathObserver(appId, std::move(kvStoreClientDeathObserverProxy), featureName);
     if (!reply.WriteInt32(static_cast<int>(status))) {
         return -1;
     }
@@ -67,8 +68,21 @@ int32_t KvStoreDataServiceStub::ClearAppStorageOnRemote(MessageParcel &data, Mes
     if (!ITypesUtil::Unmarshal(data, bundleName, userId, appIndex, tokenId)) {
         return -1;
     }
-    auto remoteObject = ClearAppStorage(bundleName, userId, appIndex, tokenId);
-    if (!ITypesUtil::Marshal(reply, remoteObject)) {
+    auto code = ClearAppStorage(bundleName, userId, appIndex, tokenId);
+    if (!ITypesUtil::Marshal(reply, code)) {
+        return -1;
+    }
+    return 0;
+}
+
+int32_t KvStoreDataServiceStub::ExitOnRemote(MessageParcel &data, MessageParcel &reply)
+{
+    std::string featureName;
+    if (!ITypesUtil::Unmarshal(data, featureName)) {
+        return -1;
+    }
+    auto code = Exit(featureName);
+    if (!ITypesUtil::Marshal(reply, code)) {
         return -1;
     }
     return 0;

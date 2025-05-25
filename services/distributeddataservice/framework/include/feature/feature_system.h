@@ -47,6 +47,7 @@ public:
         virtual int32_t OnInitialize();
         virtual int32_t OnBind(const BindInfo &bindInfo);
         virtual int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
+        virtual int32_t OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
         virtual int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
         virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
         virtual int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index);

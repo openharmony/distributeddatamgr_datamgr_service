@@ -26,6 +26,7 @@ private:
    int32_t GetFeatureInterfaceOnRemote(MessageParcel &data, MessageParcel &reply);
    int32_t RegisterClientDeathObserverOnRemote(MessageParcel &data, MessageParcel &reply);
    int32_t ClearAppStorageOnRemote(MessageParcel &data, MessageParcel &reply);
+   int32_t ExitOnRemote(MessageParcel &data, MessageParcel &reply);
 
    using RequestHandler = int32_t (KvStoreDataServiceStub::*)(MessageParcel &, MessageParcel &);
    using code = KvStoreDataServiceInterfaceCode;
@@ -33,6 +34,7 @@ private:
        &KvStoreDataServiceStub::GetFeatureInterfaceOnRemote,
        &KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote,
        &KvStoreDataServiceStub::ClearAppStorageOnRemote,
+       &KvStoreDataServiceStub::ExitOnRemote,
    };
 };
 } // namespace OHOS::DistributedKv

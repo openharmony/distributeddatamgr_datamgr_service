@@ -221,6 +221,35 @@ int32_t RdbServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const 
     return E_OK;
 }
 
+int32_t RdbServiceImpl::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    ZLOGI("rdb exit, tokenId:%{public}d, pid:%{public}d, bundleName:%{public}s.", tokenId, pid, bundleName.c_str());
+    bool destroyed = false;
+    syncAgents_.ComputeIfPresent(tokenId, [pid, &destroyed](auto &key, SyncAgents &agents) {
+        auto it = agents.find(pid);
+        if (it != agents.end()) {
+            it->second.SetNotifier(nullptr);
+            agents.erase(it);
+        }
+        if (!agents.empty()) {
+            return true;
+        }
+        destroyed = true;
+        return false;
+    });
+    if (destroyed) {
+        auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId);
+        for (auto store : stores) {
+            if (store != nullptr) {
+                store->UnregisterDetailProgressObserver();
+            }
+        }
+        AutoCache::GetInstance().Enable(tokenId);
+    }
+    heartbeatTaskIds_.Erase(pid);
+    return E_OK;
+}
+
 bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::string& storeName)
 {
     CheckerManager::StoreInfo storeInfo;
