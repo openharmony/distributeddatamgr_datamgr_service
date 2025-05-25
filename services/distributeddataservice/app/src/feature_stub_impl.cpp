@@ -53,6 +53,14 @@ int32_t FeatureStubImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
     return featureImpl_->OnAppExit(uid, pid, tokenId, bundleName);
 }
 
+int32_t FeatureStubImpl::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    if (featureImpl_ == nullptr) {
+        return -1;
+    }
+    return featureImpl_->OnFeatureExit(uid, pid, tokenId, bundleName);
+}
+
 int32_t FeatureStubImpl::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     if (featureImpl_ == nullptr) {
