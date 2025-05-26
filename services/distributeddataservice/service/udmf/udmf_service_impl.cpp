@@ -376,13 +376,18 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
         ZLOGW("DataSet empty,key:%{public}s,intention:%{public}d", query.key.c_str(), query.intention);
         return E_OK;
     }
-    if (!IsFileMangerSa() && ProcessData(query, dataSet) != E_OK) {
+    for (auto &data : dataSet) {
+        if (query.intention == Intention::UD_INTENTION_DATA_HUB &&
+            data.GetRuntime()->visibility == VISIBILITY_OWN_PROCESS &&
+            query.tokenId != data.GetRuntime()->tokenId) {
+            continue;
+        } else {
+            unifiedDataSet.push_back(std::move(data));
+        }
+    }
+    if (!IsFileMangerSa() && ProcessData(query, unifiedDataSet) != E_OK) {
         ZLOGE("Query no permission.");
         return E_NO_PERMISSION;
-    }
-    for (auto &data : dataSet) {
-        PreProcessUtils::SetRemoteData(data);
-        unifiedDataSet.push_back(data);
     }
     return E_OK;
 }
