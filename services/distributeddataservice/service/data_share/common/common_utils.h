@@ -30,5 +30,11 @@ bool CheckSystemAbility(uint32_t tokenId);
 
 bool CheckSystemCallingPermission(uint32_t tokenId, uint64_t fullTokenId);
 
+inline int64_t GetSystemTime()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_COMMON_UTILS_H

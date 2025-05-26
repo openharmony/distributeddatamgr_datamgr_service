@@ -64,6 +64,7 @@ struct BundleConfig {
 
 class BundleMgrProxy final : public std::enable_shared_from_this<BundleMgrProxy> {
 public:
+    BundleMgrProxy() = default;
     ~BundleMgrProxy();
     static std::shared_ptr<BundleMgrProxy> GetInstance();
     int GetBundleInfoFromBMS(const std::string &bundleName, int32_t userId,
@@ -74,7 +75,6 @@ public:
     sptr<IRemoteObject> CheckBMS();
     std::pair<int, std::string> GetCallerAppIdentifier(const std::string &bundleName, int32_t userId);
 private:
-    BundleMgrProxy() = default;
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
         explicit ServiceDeathRecipient(std::weak_ptr<BundleMgrProxy> owner) : owner_(owner) {}
