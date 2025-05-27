@@ -39,6 +39,10 @@ config("module_public_config") {
   cflags = [ "-Wno-c99-designator" ]
 }
 
+config("distributeddatasvc_link_config") {
+  ldflags = [ "-Wl,--lto-O0" ]
+}
+
 ohos_shared_library("distributeddatasvc") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -67,6 +71,7 @@ ohos_shared_library("distributeddatasvc") {
   ]
 
   configs = [ ":module_public_config" ]
+  configs += [ ":distributeddatasvc_link_config" ]
   public_configs = [ ":module_public_config" ]
 
   deps = [
