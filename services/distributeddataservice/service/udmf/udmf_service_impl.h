@@ -85,6 +85,10 @@ private:
     int32_t CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName);
     void CloseStoreWhenCorrupted(const std::string &intention, int32_t status);
     void HandleDbError(const std::string &intention, int32_t &status);
+    int32_t HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,
+        const std::string &key);
+    int32_t VerifyDataAccessPermission(std::shared_ptr<Runtime> runtime, const QueryOption &query,
+        const UnifiedData &unifiedData);
     class Factory {
     public:
         Factory();
@@ -94,6 +98,7 @@ private:
         std::shared_ptr<UdmfServiceImpl> product_;
     };
     static Factory factory_;
+    mutable std::recursive_mutex cacheMutex_;
     std::map<std::string, Privilege> privilegeCache_;
     std::shared_ptr<ExecutorPool> executors_;
 
