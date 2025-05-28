@@ -54,7 +54,6 @@ ohos_source_set("distributeddata_network") {
       "device_manager:devicemanagersdk",
       "hilog:libhilog",
       "netmanager_base:net_conn_manager_if",
-      "samgr:samgr_proxy",
     ]
   } else {
     sources += [ "src/network_delegate_default_impl.cpp" ]
