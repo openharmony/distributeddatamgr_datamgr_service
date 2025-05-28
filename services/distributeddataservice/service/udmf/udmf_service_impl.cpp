@@ -26,9 +26,11 @@
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "checker_manager.h"
 #include "device_manager_adapter.h"
+#include "device_matrix.h"
 #include "iservice_registry.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
+#include "metadata/capability_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
@@ -570,14 +572,7 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
-    std::vector<std::string> syncDevices;
-    for (auto const &device : devices) {
-        if (!DistributedData::DeviceManagerAdapter::GetInstance().IsSameAccount(device)) {
-            ZLOGW("is diff account. device:%{public}s", DistributedData::Anonymous::Change(device).c_str());
-            continue;
-        }
-        syncDevices.emplace_back(device);
-    }
+
     RegisterAsyncProcessInfo(query.key);
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
@@ -599,7 +594,11 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     };
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
-    if (store->Sync(syncDevices, callback) != E_OK) {
+    StoreMetaData meta = StoreMetaData("0", DistributedData::Bootstrap::GetInstance().GetProcessLabel(), key.intention);
+    if (IsNeedMetaSync(meta, devices) && !DistributedData::MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+        ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
+    }
+    if (store->Sync(devices, callback) != E_OK) {
         ZLOGE("Store sync failed:%{public}s", key.intention.c_str());
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
@@ -823,8 +822,8 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
     }
 
     for (const auto &storeMeta : metaData) {
-        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
-            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
+        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_UDMF_BEGIN ||
+            storeMeta.storeType > StoreMetaData::StoreType::STORE_UDMF_END ||
             storeMeta.appId != DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }
@@ -1143,5 +1142,34 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     dataLoadCallback_.Erase(key);
     return E_OK;
 }
+
+bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
+{
+    using namespace OHOS::DistributedData;
+    bool isAfterMeta = false;
+    for (const auto &uuid : uuids) {
+        auto metaData = meta;
+        metaData.deviceId = uuid;
+        CapMetaData capMeta;
+        auto capKey = CapMetaRow::GetKeyFor(uuid);
+        if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
+        if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuid);
+        if ((localMask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+    }
+    return isAfterMeta;
+}
+
 } // namespace UDMF
 } // namespace OHOS

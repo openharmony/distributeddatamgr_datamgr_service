@@ -96,7 +96,8 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 {
     ZLOGD("begin");
     headSize = 0;
-    if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
+    bool udmfStore = IsUdmfStore();
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && !udmfStore) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
@@ -121,6 +122,10 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     if (peerCap.version == CapMetaData::INVALID_VERSION) {
         // older versions ignore pack extend head
         ZLOGI("ignore older version device");
+        return DistributedDB::OK;
+    }
+    if (udmfStore && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+        ZLOGI("ignore older version device for udmf");
         return DistributedDB::OK;
     }
     if (!session_.IsValid()) {
@@ -274,6 +279,19 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         ZLOGI("other type device received. device:%{public}s", Anonymous::Change(device).c_str());
         return true;
     }
+    
+    bool flag = false;
+    bool udmfStore = IsUdmfStore();
+    auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
+    if (!flag) {
+        ZLOGI("get peer cap failed");
+        return false;
+    }
+    if (udmfStore && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+        ZLOGI("ignore older version device for udmf");
+        return false;
+    }
+
     RouteHead head = { 0 };
     auto ret = UnPackDataHead(data, totalLen, head);
     headSize = ret ? sizeof(RouteHead) + head.dataLen : 0;
@@ -496,5 +514,15 @@ bool RouteHeadHandlerImpl::UnPackAccountId(uint8_t **data, uint32_t leftSize)
     }
     session_.accountId = std::string(accountId->accountId, accountIdLen);
     return true;
+}
+
+bool RouteHeadHandlerImpl::IsUdmfStore()
+{
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
+        if (storeId_ != Bootstrap::GetInstance().GetMetaDBName() && storeId_ != "") {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace OHOS::DistributedData

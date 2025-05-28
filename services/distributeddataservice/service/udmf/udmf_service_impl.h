@@ -19,6 +19,7 @@
 #include "store_cache.h"
 #include "udmf_service_stub.h"
 #include "kv_store_delegate_manager.h"
+#include "metadata/store_meta_data.h"
 #include "checker_manager.h"
 #include "udmf_notifier_proxy.h"
 namespace OHOS {
@@ -76,6 +77,8 @@ private:
     bool IsFileMangerIntention(const std::string &intention);
     std::string FindIntentionMap(const Intention &queryintention);
     bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
+    bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
+
     class Factory {
     public:
         Factory();
