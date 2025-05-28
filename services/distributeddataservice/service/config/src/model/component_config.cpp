@@ -36,7 +36,7 @@ bool ComponentConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(destructor), destructor);
     const auto &subNode = GetSubNode(node, GET_NAME(params));
     if (!subNode.is_null()) {
-        params = to_string(subNode);
+        params = Serializable::JSONWrapper::to_string(subNode);
     }
     return true;
 }

@@ -70,7 +70,7 @@ ohos_source_set("distributeddata_cloud") {
     "access_token:libtokenid_sdk",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:cloud_data_inner",

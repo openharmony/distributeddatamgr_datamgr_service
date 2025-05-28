@@ -56,7 +56,7 @@ ohos_source_set("distributeddata_backup") {
   external_deps = [
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
   ]
   subsystem_name = "distributeddatamgr"

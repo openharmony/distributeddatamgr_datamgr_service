@@ -100,6 +100,8 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
         msg.appId = "unknown";
         res = E_ERROR;
     } else {
+        RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+            BizScene::SET_DATA, SetDataStage::SET_DATA_SERVICE_BEGIN, StageRes::IDLE, bundleName);
         msg.appId = bundleName;
         res = SaveData(option, unifiedData, key);
     }
@@ -139,9 +141,8 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+            ZLOGW("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
                   unifiedData.GetRuntime()->createPackage.c_str());
-            return ret;
         }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
@@ -1034,6 +1035,113 @@ bool UdmfServiceImpl::IsValidOptionsNonDrag(UnifiedKey &key, const std::string &
         return !key.key.empty() || intention == UD_INTENTION_MAP.at(Intention::UD_INTENTION_DATA_HUB);
     }
     return false;
+}
+
+int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::string &key)
+{
+    std::string bundleName;
+    auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName);
+    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.sequenceKey);
+    key = udkey.GetUnifiedKey();
+    dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
+
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+
+    Summary summary;
+    UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
+    if (store->PutSummary(udkey, summary) != E_OK) {
+        ZLOGE("Put summary failed:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
+{
+    CustomOption option {
+        .intention = UD_INTENTION_DRAG,
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
+    };
+    if (PreProcessUtils::RuntimeDataImputation(unifiedData, option) != E_OK) {
+        ZLOGE("Imputation failed");
+        return E_ERROR;
+    }
+    int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
+    if (ret != E_OK) {
+        ZLOGW("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+    }
+
+    auto it = delayDataCallback_.Find(key);
+    if (!it.first) {
+        ZLOGE("DelayData callback no exist, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    QueryOption query {
+        .tokenId = it.second.tokenId,
+        .key = key
+    };
+    if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
+        ZLOGE("No permission");
+        return E_NO_PERMISSION;
+    }
+    ret = ProcessUri(query, unifiedData);
+    if (ret != E_OK) {
+        ZLOGE("ProcessUri failed:%{public}d", ret);
+        return E_NO_PERMISSION;
+    }
+    privilegeCache_.erase(key);
+    PreProcessUtils::SetRemoteData(unifiedData);
+
+    TransferToEntriesIfNeed(query, unifiedData);
+    auto callback = iface_cast<DelayDataCallbackProxy>(it.second.dataCallback);
+    if (callback == nullptr) {
+        ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    callback->DelayDataCallback(key, unifiedData);
+    delayDataCallback_.Erase(key);
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
+    sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
+{
+    ZLOGD("start");
+    QueryOption query {
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
+        .key = key
+    };
+    if (unifiedData == nullptr) {
+        ZLOGE("Data is null, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    auto status = RetrieveData(query, *unifiedData);
+    if (status == E_OK) {
+        return E_OK;
+    }
+    if (status != E_NOT_FOUND) {
+        ZLOGE("Retrieve data failed, key:%{public}s", key.c_str());
+        return status;
+    }
+    DelayGetDataInfo delayGetDataInfo = {
+        .dataCallback = iUdmfNotifier,
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
+    };
+    delayDataCallback_.InsertOrAssign(key, std::move(delayGetDataInfo));
+
+    auto it = dataLoadCallback_.Find(key);
+    if (!it.first) {
+        ZLOGE("DataLoad callback no exist, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    it.second->HandleDelayObserver(key, dataLoadInfo);
+    dataLoadCallback_.Erase(key);
+    return E_OK;
 }
 } // namespace UDMF
 } // namespace OHOS

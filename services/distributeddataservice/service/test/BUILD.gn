@@ -80,7 +80,7 @@ ohos_unittest("CloudDataTest") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
@@ -132,7 +132,7 @@ ohos_unittest("CloudServiceImplTest") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
@@ -431,7 +431,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
@@ -629,7 +629,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
   ]
 
@@ -668,7 +668,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
   ]
 
@@ -766,11 +766,12 @@ ohos_unittest("ObjectManagerTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [
@@ -809,7 +810,7 @@ ohos_unittest("ObjectSnapshotTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "relational_store:native_rdb",
   ]
@@ -854,11 +855,12 @@ ohos_unittest("MetaDataTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [
@@ -906,10 +908,12 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:distributeddata_mgr",
     "openssl:libcrypto_shared",
     "samgr:samgr_proxy",
+    "safwk:system_ability_fwk",
     "udmf:udmf_client",
   ]
 
@@ -1032,7 +1036,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "huks:libhukssdk",
     "init:libbegetutil",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "kv_store:distributeddb",
@@ -1106,6 +1110,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
     "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [
@@ -1156,6 +1161,7 @@ ohos_unittest("UdmfServiceImplTest") {
   ]
 
   include_dirs = [
+    "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
@@ -1182,7 +1188,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
@@ -1196,6 +1202,7 @@ ohos_unittest("UdmfServiceStubTest") {
   sources = [ "udmf_service_stub_test.cpp" ]
 
   include_dirs = [
+    "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
@@ -1258,6 +1265,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
+    "${data_service_path}/service/udmf/preprocess/udmf_notifier_proxy.cpp",
     "${data_service_path}/service/udmf/store/runtime_store.cpp",
     "${data_service_path}/service/udmf/store/store_account_observer.cpp",
     "${data_service_path}/service/udmf/store/store_cache.cpp",
@@ -1386,7 +1394,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
-    "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
     "udmf:udmf_client",
   ]
 }
@@ -1552,7 +1560,7 @@ ohos_unittest("PermitDelegateMockTest") {
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
@@ -1654,7 +1662,7 @@ ohos_unittest("QueryHelperUnitTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
@@ -1684,7 +1692,7 @@ ohos_unittest("AuthDelegateMockTest") {
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:distributeddata_inner",
   ]
 
@@ -1735,7 +1743,7 @@ ohos_unittest("UpgradeMockTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "huks:libhukssdk",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]
@@ -1783,7 +1791,7 @@ ohos_unittest("UserDelegateMockTest") {
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]
@@ -1842,6 +1850,7 @@ ohos_unittest("BackupManagerServiceTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
   ]
 
   deps = [

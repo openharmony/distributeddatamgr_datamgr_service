@@ -879,8 +879,9 @@ void DataShareServiceImpl::RegisterDataShareServiceInfo()
 
 void DataShareServiceImpl::RegisterHandler()
 {
-    Handler handler =
-        std::bind(&DataShareServiceImpl::DumpDataShareServiceInfo, this, std::placeholders::_1, std::placeholders::_2);
+    Handler handler = [] (int fd, std::map<std::string, std::vector<std::string>> &params) {
+        DumpDataShareServiceInfo(fd, params);
+    };
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
 }
 
@@ -1082,6 +1083,21 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
         ZLOGE("CalledInfo failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s", tokenId,
             errCode, URIUtils::Anonymous(calledInfo.uri).c_str());
         return errCode;
+    }
+    DataShareDbConfig dbConfig;
+    DataShareDbConfig::DbConfig dbArg;
+    dbArg.uri = calledInfo.uri;
+    dbArg.bundleName = calledInfo.bundleName;
+    dbArg.storeName = calledInfo.storeName;
+    dbArg.userId = calledInfo.singleton ? 0 : calledInfo.visitedUserId;
+    dbArg.hasExtension = calledInfo.hasExtension;
+    dbArg.appIndex = calledInfo.appIndex;
+    auto [code, metaData] = dbConfig.GetMetaData(dbArg);
+    if (code != E_OK) {
+        ZLOGE("Get metaData fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
+            calledInfo.bundleName.c_str(), calledInfo.tableName.c_str(), tokenId,
+            URIUtils::Anonymous(calledInfo.uri).c_str());
+        return E_METADATA_NOT_EXISTS;
     }
     return E_OK;
 }

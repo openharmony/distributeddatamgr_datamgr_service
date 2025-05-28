@@ -75,6 +75,7 @@ public:
         const std::string &device) override;
     bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
         std::vector<UserInfo> &userInfos) override;
+    std::string GetTargetUserId() override;
 
 private:
     void Init();
