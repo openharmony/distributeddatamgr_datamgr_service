@@ -38,8 +38,6 @@ ohos_sa_profile("distributeddata_profile") {
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/screen",
@@ -150,6 +148,7 @@ ohos_shared_library("distributeddataservice") {
     "ipc:ipc_core",
     "cJSON:cjson",
     "kv_store:datamgr_common",
+    "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "memmgr:memmgrclient",
