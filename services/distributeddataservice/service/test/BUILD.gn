@@ -613,16 +613,11 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "object_asset_loader_test.cpp",
   ]
 
-  include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -652,16 +647,11 @@ ohos_unittest("ObjectAssetMachineTest") {
     "object_asset_machine_test.cpp",
   ]
 
-  include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -743,9 +733,6 @@ ohos_unittest("ObjectManagerTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/service/common",
     "${data_service_path}/service/test/mock",
-    "${dataobject_path}/interfaces/innerkits",
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
   ]
 
   configs = [ ":module_private_config" ]
@@ -755,6 +742,7 @@ ohos_unittest("ObjectManagerTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "data_object:data_object_inner",
     "data_object:distributeddataobject_impl",
     "dataclassification:data_transit_mgr",
     "dfs_service:cloudsync_asset_kit_inner",
@@ -794,16 +782,11 @@ ohos_unittest("ObjectSnapshotTest") {
     "object_snapshot_test.cpp",
   ]
 
-  include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
