@@ -53,7 +53,8 @@ public:
     virtual ~RdbServiceImpl();
 
     /* IPC interface */
-    std::string ObtainDistributedTableName(const std::string& device, const std::string& table) override;
+    std::string ObtainDistributedTableName(const RdbSyncerParam &param, const std::string &device,
+        const std::string &table) override;
 
     int32_t InitNotifier(const RdbSyncerParam &param, sptr<IRemoteObject> notifier) override;
 
@@ -66,10 +67,12 @@ public:
     int32_t Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async) override;
 
-    int32_t Subscribe(const RdbSyncerParam &param, const SubscribeOption &option, RdbStoreObserver *observer) override;
+    int32_t Subscribe(const RdbSyncerParam &param,
+                      const SubscribeOption &option,
+                      std::shared_ptr<RdbStoreObserver> observer) override;
 
     int32_t UnSubscribe(const RdbSyncerParam &param, const SubscribeOption &option,
-        RdbStoreObserver *observer) override;
+        std::shared_ptr<RdbStoreObserver>observer) override;
 
     int32_t RegisterAutoSyncCallback(const RdbSyncerParam& param,
         std::shared_ptr<DetailProgressObserver> observer) override;
@@ -80,6 +83,8 @@ public:
     int32_t ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param) override;
 
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
+
+    int32_t OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
     int32_t Delete(const RdbSyncerParam &param) override;
 

@@ -21,23 +21,23 @@
 #include <mutex>
 #include <set>
 
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "clone/clone_backup_info.h"
 #include "clone/secret_key_backup_data.h"
+#include "dfx/reporter.h"
+#include "executor_pool.h"
 #include "feature_stub_impl.h"
 #include "ikvstore_data_service.h"
 #include "ithread_pool.h"
+#include "kvstore_data_service_stub.h"
 #include "kvstore_device_listener.h"
 #include "kvstore_meta_manager.h"
-#include "kvstore_data_service_stub.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
-#include "reporter.h"
 #include "runtime_config.h"
 #include "screen/screen_manager.h"
 #include "security/security.h"
 #include "system_ability.h"
-#include "executor_pool.h"
 #include "types.h"
 #include "unique_fd.h"
 
@@ -92,11 +92,14 @@ public:
     void PrintfInfo(int fd, const std::map<std::string, BundleInfo> &datas);
     void DumpBundleInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
-    Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer) override;
+    Status RegisterClientDeathObserver(const AppId &appId, sptr<IRemoteObject> observer,
+        const std::string &featureName) override;
 
     sptr<IRemoteObject> GetFeatureInterface(const std::string &name) override;
 
     int32_t ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex, int32_t tokenId) override;
+
+    int32_t Exit(const std::string &featureName) override;
 
     void OnDump() override;
 
@@ -138,15 +141,19 @@ public:
         const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
         const std::string &userId, const std::vector<uint8_t> &iv, std::string &content);
 
-  private:
+private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
     class KvStoreClientDeathObserverImpl {
     public:
-        KvStoreClientDeathObserverImpl(const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer);
+        KvStoreClientDeathObserverImpl(const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer,
+            const std::string &featureName);
         explicit KvStoreClientDeathObserverImpl(KvStoreDataService &service);
         explicit KvStoreClientDeathObserverImpl(KvStoreClientDeathObserverImpl &&impl);
         KvStoreClientDeathObserverImpl &operator=(KvStoreClientDeathObserverImpl &&impl);
-
+        bool Insert(sptr<IRemoteObject> observer, const std::string &featureName);
+        bool Delete(const std::string &featureName);
+        bool Empty();
+        std::string GetAppId();
         virtual ~KvStoreClientDeathObserverImpl();
 
         pid_t GetPid() const;
@@ -160,6 +167,7 @@ public:
 
         private:
             KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl_;
+            std::atomic_bool clientDead_ = false;
         };
         void NotifyClientDie();
         void Reset();
@@ -168,7 +176,7 @@ public:
         uint32_t token_;
         AppId appId_;
         KvStoreDataService &dataService_;
-        sptr<IRemoteObject> observerProxy_;
+        std::map<std::string, sptr<IRemoteObject>> observerProxy_;
         sptr<KvStoreDeathRecipient> deathRecipient_;
     };
 

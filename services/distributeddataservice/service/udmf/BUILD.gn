@@ -57,6 +57,7 @@ ohos_source_set("udmf_server") {
     "permission/uri_permission_manager.cpp",
     "preprocess/data_handler.cpp",
     "preprocess/preprocess_utils.cpp",
+    "preprocess/udmf_notifier_proxy.cpp",
     "store/runtime_store.cpp",
     "store/store_account_observer.cpp",
     "store/store_cache.cpp",

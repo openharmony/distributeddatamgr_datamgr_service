@@ -24,6 +24,7 @@ ohos_source_set("distributeddata_config") {
   }
   sources = [
     "src/config_factory.cpp",
+    "src/model/app_access_check_config.cpp",
     "src/model/app_id_mapping_config.cpp",
     "src/model/backup_config.cpp",
     "src/model/checker_config.cpp",
@@ -59,7 +60,7 @@ ohos_source_set("distributeddata_config") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

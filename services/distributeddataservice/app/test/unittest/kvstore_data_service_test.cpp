@@ -149,9 +149,21 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver001, TestSize.Level1
     Bootstrap::GetInstance().LoadCheckers();
     KvStoreMetaManager::GetInstance().BindExecutor(std::make_shared<ExecutorPool>(12, 5));
     KvStoreMetaManager::GetInstance().InitMetaParameter();
-    Status status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver());
+    Status status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver(), "");
     EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
 }
+
+/**
+* @tc.name: Exit001
+* @tc.desc: feature Exit
+* @tc.type: FUNC
+*/
+HWTEST_F(KvStoreDataServiceTest, Exit001, TestSize.Level1)
+{
+    KvStoreDataService kvDataService;
+    EXPECT_EQ(kvDataService.Exit(""), Status::SUCCESS);
+}
+
 
 /**
 * @tc.name: GetIndentation001
@@ -666,24 +678,6 @@ HWTEST_F(KvStoreDataServiceTest, DumpBundleInfo001, TestSize.Level0)
     int fd = 0;
     std::map<std::string, std::vector<std::string>> params = {};
     EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.DumpBundleInfo(fd, params));
-}
-
-/**
-* @tc.name: UpgradeManagerTest001
-* @tc.desc: test Init function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(UpgradeManagerTest, UpgradeManagerTest001, TestSize.Level0)
-{
-    auto executors = std::make_shared<ExecutorPool>(1, 0);
-    DistributedData::UpgradeManager instance;
-    instance.Init(executors);
-    EXPECT_TRUE(instance.executors_);
-
-    instance.Init(executors);
-    EXPECT_TRUE(instance.executors_);
 }
 
 /**

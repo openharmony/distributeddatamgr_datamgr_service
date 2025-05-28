@@ -19,6 +19,8 @@
 #include <cinttypes>
 #include "account/account_delegate.h"
 #include "auth_delegate.h"
+#include "access_check/app_access_check_config_manager.h"
+#include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
@@ -58,21 +60,17 @@ RouteHeadHandlerImpl::RouteHeadHandlerImpl(const ExtendInfo &info)
 void RouteHeadHandlerImpl::Init()
 {
     ZLOGD("begin");
-    if (deviceId_.empty()) {
+    if (deviceId_.empty() || !DmAdapter::GetInstance().IsOHOSType(deviceId_)) {
         return;
     }
     if (userId_ != DEFAULT_USERID) {
-        if (!DmAdapter::GetInstance().IsOHOSType(deviceId_)) {
+        StoreMetaData metaData;
+        metaData.deviceId = deviceId_;
+        metaData.user = DEFAULT_USERID;
+        metaData.bundleName = appId_;
+        metaData.storeId = storeId_;
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
             userId_ = DEFAULT_USERID;
-        } else {
-            StoreMetaData metaData;
-            metaData.deviceId = deviceId_;
-            metaData.user = DEFAULT_USERID;
-            metaData.bundleName = appId_;
-            metaData.storeId = storeId_;
-            if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
-                userId_ = DEFAULT_USERID;
-            }
         }
     }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
@@ -84,6 +82,16 @@ void RouteHeadHandlerImpl::Init()
           session_.sourceUserId, Anonymous::Change(session_.targetDeviceId).c_str());
 }
 
+std::string RouteHeadHandlerImpl::GetTargetUserId()
+{
+    if (!session_.IsValid()) {
+        ZLOGE("session has no valid user to peer device, targetDeviceId:%{public}s",
+            Anonymous::Change(session_.targetDeviceId).c_str());
+        return "";
+    }
+    return std::to_string(session_.targetUserIds[0]);
+}
+
 DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize)
 {
     ZLOGD("begin");
@@ -92,10 +100,16 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
-    auto devInfo = DmAdapter::GetInstance().GetDeviceInfo(session_.targetDeviceId);
-    if (devInfo.osType != OH_OS_TYPE) {
+    if(!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
+        if (appId_.empty()) {
+            return DistributedDB::DB_ERROR;
+        }
+        if (!AppAccessCheckConfigManager::GetInstance().IsTrust(
+            AppIdMappingConfigManager::GetInstance().Convert(appId_))) {
+            return DistributedDB::DB_ERROR;
+        }
         return DistributedDB::OK;
     }
     bool flag = false;
@@ -249,11 +263,16 @@ bool RouteHeadHandlerImpl::PackAccountId(uint8_t **data, const uint8_t *end)
     return true;
 }
 
-bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize)
+bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize,
+    const std::string &device)
 {
     if (data == nullptr) {
         ZLOGE("invalid input data, totalLen:%{public}d", totalLen);
         return false;
+    }
+    if (!DmAdapter::GetInstance().IsOHOSType(device)) {
+        ZLOGI("other type device received. device:%{public}s", Anonymous::Change(device).c_str());
+        return true;
     }
     RouteHead head = { 0 };
     auto ret = UnPackDataHead(data, totalLen, head);
@@ -328,7 +347,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
     for (const auto &item : session_.targetUserIds) {
         local.userId = item;
         if (SessionManager::GetInstance().CheckSession(local, peer, accountFlag)) {
-            UserInfo userInfo = { .receiveUser = std::to_string(item) };
+            UserInfo userInfo = { .receiveUser = std::to_string(item), .sendUser = std::to_string(peer.userId) };
             userInfos.emplace_back(userInfo);
         }
     }
@@ -411,7 +430,17 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
     ptr += userPairSize;
     leftSize -= userPairSize;
 
-    if (!UnPackAppId(&ptr, leftSize) || !UnPackStoreId(&ptr, leftSize) || !UnPackAccountId(&ptr, leftSize)) {
+    if (!UnPackAppId(&ptr, leftSize)) {
+        return false;
+    }
+    bool flag = false;
+    auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.sourceDeviceId, flag);
+    if (!flag) {
+        ZLOGE("get peer cap failed, peer deviceId:%{public}s", Anonymous::Change(session_.sourceDeviceId).c_str());
+        return false;
+    }
+    if (peerCap.version >= CapMetaData::ACCOUNT_VERSION &&
+        (!UnPackStoreId(&ptr, leftSize) || !UnPackAccountId(&ptr, leftSize))) {
         return false;
     }
     return true;

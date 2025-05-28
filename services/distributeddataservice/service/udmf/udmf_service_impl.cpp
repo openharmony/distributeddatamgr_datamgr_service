@@ -32,11 +32,12 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
-#include "reporter.h"
+#include "dfx/reporter.h"
 #include "store_account_observer.h"
 #include "system_ability_definition.h"
 #include "uri_permission_manager.h"
 #include "udmf_radar_reporter.h"
+#include "udmf_utils.h"
 #include "unified_data_helper.h"
 #include "utils/anonymous.h"
 
@@ -60,6 +61,7 @@ constexpr const char *DEVICE_2IN1_TAG = "2in1";
 constexpr const char *DEVICE_PHONE_TAG = "phone";
 constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
+constexpr uint32_t FOUNDATION_UID = 5523;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -98,6 +100,8 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
         msg.appId = "unknown";
         res = E_ERROR;
     } else {
+        RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
+            BizScene::SET_DATA, SetDataStage::SET_DATA_SERVICE_BEGIN, StageRes::IDLE, bundleName);
         msg.appId = bundleName;
         res = SaveData(option, unifiedData, key);
     }
@@ -137,9 +141,8 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+            ZLOGW("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
                   unifiedData.GetRuntime()->createPackage.c_str());
-            return ret;
         }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
@@ -373,6 +376,10 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
         ZLOGW("DataSet empty,key:%{public}s,intention:%{public}d", query.key.c_str(), query.intention);
         return E_OK;
     }
+    if (!IsFileMangerSa() && ProcessData(query, dataSet) != E_OK) {
+        ZLOGE("Query no permission.");
+        return E_NO_PERMISSION;
+    }
     for (auto &data : dataSet) {
         PreProcessUtils::SetRemoteData(data);
         unifiedDataSet.push_back(data);
@@ -385,6 +392,12 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     UnifiedKey key(query.key);
     if (!unifiedData.IsValid() || !key.IsValid()) {
         ZLOGE("data or key is invalid,key=%{public}s", query.key.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    std::string intention = FindIntentionMap(query.intention);
+    if (!IsValidOptionsNonDrag(key, intention) ||
+        key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
+        ZLOGE("Invlid param :key.intention:%{public}s, intention:%{public}s", key.intention.c_str(), intention.c_str());
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
@@ -429,6 +442,16 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
 int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)
 {
     ZLOGD("start");
+    UnifiedKey key(query.key);
+    if (!key.IsValid() && !key.key.empty()) {
+        ZLOGE("invalid key, query.key: %{public}s", query.key.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    std::string intention = FindIntentionMap(query.intention);
+    if (!IsValidOptionsNonDrag(key, intention)) {
+        ZLOGE("invalid option, query.key: %{public}s, intention: %{public}d", query.key.c_str(), query.intention);
+        return E_INVALID_PARAMETERS;
+    }
     std::vector<UnifiedData> dataSet;
     std::shared_ptr<Store> store;
     auto status = QueryDataCommon(query, dataSet, store);
@@ -497,17 +520,16 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
     std::string processName;
     if (!PreProcessUtils::GetNativeProcessNameByToken(query.tokenId, processName)) {
+        ZLOGE("GetNativeProcessNameByToken is faild");
         return E_ERROR;
     }
 
-    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        if (find(DRAG_AUTHORIZED_PROCESSES, std::end(DRAG_AUTHORIZED_PROCESSES), processName) ==
-            std::end(DRAG_AUTHORIZED_PROCESSES)) {
-            ZLOGE("Process:%{public}s lacks permission for intention:drag", processName.c_str());
-            return E_NO_PERMISSION;
-        }
-    } else {
-        ZLOGE("Intention: %{public}s has no authorized processes", key.intention.c_str());
+    if (CheckAddPrivilegePermission(key, processName, query) != E_OK) {
+        ZLOGE("Intention:%{public}s no permission", key.intention.c_str());
+        return E_NO_PERMISSION;
+    }
+    if (!UTILS::IsNativeCallingToken()) {
+        ZLOGE("Calling Token is not native");
         return E_NO_PERMISSION;
     }
 
@@ -715,10 +737,13 @@ int32_t UdmfServiceImpl::OnInitialize()
 int32_t UdmfServiceImpl::QueryDataCommon(
     const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store)
 {
-    auto find = UD_INTENTION_MAP.find(query.intention);
-    std::string intention = find == UD_INTENTION_MAP.end() ? intention : find->second;
     UnifiedKey key(query.key);
-    if (!UnifiedDataUtils::IsValidOptions(key, intention, UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB))) {
+    if (!key.IsValid() && !key.key.empty()) {
+        ZLOGE("invalid key, query.key: %{public}s", query.key.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    std::string intention = FindIntentionMap(query.intention);
+    if (!IsValidOptionsNonDrag(key, intention)) {
         ZLOGE("Unified key: %{public}s and intention: %{public}s is invalid.", query.key.c_str(), intention.c_str());
         return E_INVALID_PARAMETERS;
     }
@@ -905,6 +930,218 @@ bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
         }
     }
     return false;
+}
+
+int32_t UdmfServiceImpl::CheckAddPrivilegePermission(UnifiedKey &key,
+    std::string &processName, const QueryOption &query)
+{
+    if (IsFileMangerIntention(key.intention)) {
+        if (IsFileMangerSa()) {
+            return E_OK;
+        }
+        std::string intention = FindIntentionMap(query.intention);
+        if (!intention.empty() && key.intention != intention) {
+            ZLOGE("Query.intention no not equal to key.intention");
+            return E_INVALID_PARAMETERS;
+        }
+        return E_OK;
+    }
+    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        if (find(DRAG_AUTHORIZED_PROCESSES, std::end(DRAG_AUTHORIZED_PROCESSES), processName) ==
+            std::end(DRAG_AUTHORIZED_PROCESSES)) {
+            ZLOGE("Process:%{public}s lacks permission for intention:drag", processName.c_str());
+            return E_NO_PERMISSION;
+        }
+        return E_OK;
+    }
+    ZLOGE("Check addPrivilege permission is faild.");
+    return E_NO_PERMISSION;
+}
+
+bool UdmfServiceImpl::IsFileMangerSa()
+{
+    if (IPCSkeleton::GetCallingUid() == FOUNDATION_UID) {
+        return true;
+    }
+    ZLOGE("Caller no permission");
+    return false;
+}
+
+int32_t UdmfServiceImpl::ProcessData(const QueryOption &query, std::vector<UnifiedData> &dataSet)
+{
+    UnifiedKey key(query.key);
+    if (!key.key.empty() && !key.IsValid()) {
+        ZLOGE("invalid key, query.key: %{public}s", query.key.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    std::string intention = FindIntentionMap(query.intention);
+    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB) ||
+        key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
+        return E_OK;
+    }
+    CheckerManager::CheckInfo info;
+    info.tokenId = query.tokenId;
+    for (auto &data : dataSet) {
+        auto ret = VerifyIntentionPermission(query, data, key, info);
+        if (ret != E_OK) {
+            ZLOGE("Verify intention permission is faild:%{public}d", ret);
+            return ret;
+        }
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::VerifyIntentionPermission(const QueryOption &query,
+    UnifiedData &data, UnifiedKey &key, CheckerManager::CheckInfo &info)
+{
+    std::shared_ptr<Runtime> runtime = data.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("runtime is nullptr.");
+        return E_DB_ERROR;
+    }
+    if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info)) {
+        ZLOGE("Query no permission.");
+        return E_NO_PERMISSION;
+    }
+    if (!IsReadAndKeep(runtime->privileges, query)) {
+        if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
+            ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
+            return E_DB_ERROR;
+        }
+    }
+    return E_OK;
+}
+
+bool UdmfServiceImpl::IsFileMangerIntention(const std::string &intention)
+{
+    Intention optionIntention = UnifiedDataUtils::GetIntentionByString(intention);
+    if (optionIntention == UD_INTENTION_SYSTEM_SHARE ||
+        optionIntention == UD_INTENTION_MENU ||
+        optionIntention == UD_INTENTION_PICKER) {
+        return true;
+    }
+    return false;
+}
+
+std::string UdmfServiceImpl::FindIntentionMap(const Intention &queryIntention)
+{
+    auto find = UD_INTENTION_MAP.find(queryIntention);
+    return find == UD_INTENTION_MAP.end() ? "" : find->second;
+}
+
+bool UdmfServiceImpl::IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention)
+{
+    if (UnifiedDataUtils::IsValidOptions(key, intention)) {
+        return !key.key.empty() || intention == UD_INTENTION_MAP.at(Intention::UD_INTENTION_DATA_HUB);
+    }
+    return false;
+}
+
+int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::string &key)
+{
+    std::string bundleName;
+    auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName);
+    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.sequenceKey);
+    key = udkey.GetUnifiedKey();
+    dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
+
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+
+    Summary summary;
+    UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
+    if (store->PutSummary(udkey, summary) != E_OK) {
+        ZLOGE("Put summary failed:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
+{
+    CustomOption option {
+        .intention = UD_INTENTION_DRAG,
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
+    };
+    if (PreProcessUtils::RuntimeDataImputation(unifiedData, option) != E_OK) {
+        ZLOGE("Imputation failed");
+        return E_ERROR;
+    }
+    int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
+    if (ret != E_OK) {
+        ZLOGW("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+    }
+
+    auto it = delayDataCallback_.Find(key);
+    if (!it.first) {
+        ZLOGE("DelayData callback no exist, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    QueryOption query {
+        .tokenId = it.second.tokenId,
+        .key = key
+    };
+    if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
+        ZLOGE("No permission");
+        return E_NO_PERMISSION;
+    }
+    ret = ProcessUri(query, unifiedData);
+    if (ret != E_OK) {
+        ZLOGE("ProcessUri failed:%{public}d", ret);
+        return E_NO_PERMISSION;
+    }
+    privilegeCache_.erase(key);
+    PreProcessUtils::SetRemoteData(unifiedData);
+
+    TransferToEntriesIfNeed(query, unifiedData);
+    auto callback = iface_cast<DelayDataCallbackProxy>(it.second.dataCallback);
+    if (callback == nullptr) {
+        ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    callback->DelayDataCallback(key, unifiedData);
+    delayDataCallback_.Erase(key);
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
+    sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
+{
+    ZLOGD("start");
+    QueryOption query {
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
+        .key = key
+    };
+    if (unifiedData == nullptr) {
+        ZLOGE("Data is null, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    auto status = RetrieveData(query, *unifiedData);
+    if (status == E_OK) {
+        return E_OK;
+    }
+    if (status != E_NOT_FOUND) {
+        ZLOGE("Retrieve data failed, key:%{public}s", key.c_str());
+        return status;
+    }
+    DelayGetDataInfo delayGetDataInfo = {
+        .dataCallback = iUdmfNotifier,
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
+    };
+    delayDataCallback_.InsertOrAssign(key, std::move(delayGetDataInfo));
+
+    auto it = dataLoadCallback_.Find(key);
+    if (!it.first) {
+        ZLOGE("DataLoad callback no exist, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    it.second->HandleDelayObserver(key, dataLoadInfo);
+    dataLoadCallback_.Erase(key);
+    return E_OK;
 }
 } // namespace UDMF
 } // namespace OHOS

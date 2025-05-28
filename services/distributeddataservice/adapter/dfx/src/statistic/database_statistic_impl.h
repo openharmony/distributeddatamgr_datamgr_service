@@ -16,7 +16,7 @@
 #ifndef DISTRIBUTEDDATAMGR_DATABASE_STATISTIC_IMPL_H
 #define DISTRIBUTEDDATAMGR_DATABASE_STATISTIC_IMPL_H
 
-#include "statistic_reporter.h"
+#include "dfx/statistic_reporter.h"
 #include "hiview_adapter.h"
 
 namespace OHOS {

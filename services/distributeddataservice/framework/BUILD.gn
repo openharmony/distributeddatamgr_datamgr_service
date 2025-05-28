@@ -34,9 +34,6 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
-    "${data_service_path}/framework/include/account",
-    "${data_service_path}/framework/include/dfx",
-    "${data_service_path}/framework/include/network",
     "${kv_store_common_path}",
   ]
 }
@@ -52,6 +49,7 @@ ohos_shared_library("distributeddatasvcfwk") {
   }
   sources = [
     "account/account_delegate.cpp",
+    "access_check/app_access_check_config_manager.cpp",
     "app_id_mapping/app_id_mapping_config_manager.cpp",
     "backuprule/backup_rule_manager.cpp",
     "changeevent/remote_change_event.cpp",
@@ -141,7 +139,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"

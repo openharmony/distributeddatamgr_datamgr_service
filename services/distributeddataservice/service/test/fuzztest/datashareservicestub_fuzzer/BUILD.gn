@@ -34,10 +34,6 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "${data_service_path}/service/data_share",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
-    "${datashare_path}/frameworks/native/common/include",
-    "${datashare_path}/interfaces/inner_api/common/include",
-    "${datashare_path}/interfaces/inner_api/consumer/include",
-    "//third_party/json/single_include",
     "${data_service_path}/adapter/include/communicator",
   ]
 
@@ -123,6 +119,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",

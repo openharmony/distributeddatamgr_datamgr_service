@@ -43,15 +43,14 @@ ohos_source_set("distributeddata_dfx") {
     "./src/fault",
     "./src/statistic",
     "../include/dfx",
-    "../include/log",
-    "../include/utils",
-    "../include/communicator",
-    "${data_service_path}/framework/include/dfx",
-    "${data_service_path}/framework/include/utils",
   ]
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+  ]
   external_deps = [
     "c_utils:utils",
     "device_manager:devicemanagersdk",

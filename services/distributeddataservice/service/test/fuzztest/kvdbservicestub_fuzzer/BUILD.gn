@@ -33,16 +33,6 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_distributeddb_path}",
-    "${kv_store_distributeddb_path}/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-    "//third_party/json/single_include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/utils",
   ]
@@ -64,6 +54,7 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
     "${data_service_path}/service/config/src/model/backup_config.cpp",
     "${data_service_path}/service/config/src/model/checker_config.cpp",
@@ -102,7 +93,6 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${kv_store_distributeddb_path}:distributeddb",
   ]
 
   external_deps = [
@@ -121,6 +111,9 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+    "relational_store:native_rdb",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

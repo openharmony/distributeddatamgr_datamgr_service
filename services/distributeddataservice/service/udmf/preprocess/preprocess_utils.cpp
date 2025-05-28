@@ -231,7 +231,7 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
     DdsTrace trace(
         std::string(TAG) + std::string(__FUNCTION__), TraceSwitch::BYTRACE_ON | TraceSwitch::TRACE_CHAIN_ON);
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::IDLE, BizState::DFX_BEGIN);
+        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::IDLE);
     std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
     int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, dfsUris);
     if (ret != 0 || dfsUris.empty()) {
@@ -265,7 +265,7 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
         });
     }
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::SUCCESS, BizState::DFX_END);
+        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::SUCCESS);
     return E_OK;
 }
 

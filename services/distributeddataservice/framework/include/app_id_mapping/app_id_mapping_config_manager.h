@@ -30,7 +30,7 @@ public:
     API_EXPORT void Initialize(const std::vector<AppMappingInfo> &mapper);
     API_EXPORT std::pair<std::string, std::string> Convert(const std::string &appId,
         const std::string &accountId);
-
+    API_EXPORT std::string Convert(const std::string &appId);
 private:
     std::map<std::string, std::string> toDstMapper_;
 };

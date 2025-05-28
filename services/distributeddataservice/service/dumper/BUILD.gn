@@ -42,7 +42,7 @@ ohos_source_set("distributeddata_dumper") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]

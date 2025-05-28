@@ -76,6 +76,10 @@ int32_t FeatureSystem::Feature::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId
     return E_OK;
 }
 
+int32_t FeatureSystem::Feature::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    return E_OK;
+}
 int32_t FeatureSystem::Feature::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     return E_OK;

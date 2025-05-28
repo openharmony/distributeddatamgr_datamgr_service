@@ -317,6 +317,7 @@ int32_t ObjectStoreManager::Clear()
         return STORE_NOT_OPEN;
     }
     result = RevokeSaveToStore("");
+    callbacks_.Clear();
     Close();
     return result;
 }

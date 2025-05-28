@@ -16,14 +16,10 @@
 
 #include "upgrade_manager.h"
 
-#include <thread>
-#include "account_delegate.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/anonymous.h"
-#include "utils/constant.h"
-#include "app_id_mapping/app_id_mapping_config_manager.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedKv;
@@ -36,18 +32,42 @@ UpgradeManager &UpgradeManager::GetInstance()
 
 void UpgradeManager::Init(std::shared_ptr<ExecutorPool> executors)
 {
-    if (executors_) {
-        return;
+    MetaDataManager::GetInstance().Subscribe(
+        CapMetaRow::KEY_PREFIX, [this](const std::string &key, const std::string &value, int32_t flag) -> auto {
+            CapMetaData capMeta;
+            if (value.empty()) {
+                MetaDataManager::GetInstance().LoadMeta(key, capMeta);
+            } else {
+                CapMetaData::Unmarshall(value, capMeta);
+            }
+            auto deviceId = CapMetaRow::GetDeviceId(key);
+            if (deviceId.empty()) {
+                ZLOGE("deviceId is empty, key:%{public}s, flag:%{public}d", Anonymous::Change(key).c_str(), flag);
+                return false;
+            }
+            if (deviceId == DmAdapter::GetInstance().GetLocalDevice().uuid) {
+                return true;
+            }
+            capMeta.deviceId = capMeta.deviceId.empty() ? deviceId : capMeta.deviceId;
+            ZLOGI("CapMetaData has change, deviceId:%{public}s, version:%{public}d, flag:%{public}d",
+                Anonymous::Change(capMeta.deviceId).c_str(), capMeta.version, flag);
+            if (flag == MetaDataManager::INSERT || flag == MetaDataManager::UPDATE) {
+                capabilities_.InsertOrAssign(capMeta.deviceId, capMeta);
+            } else if (flag == MetaDataManager::DELETE) {
+                capabilities_.Erase(capMeta.deviceId);
+            }
+            return true;
+        });
+    if (executors != nullptr) {
+        executors_ = std::move(executors);
+        executors_->Execute(GetTask());
     }
-    executors_ = std::move(executors);
-    executors_->Execute(GetTask());
 }
 
 ExecutorPool::Task UpgradeManager::GetTask()
 {
     return [this] {
-        auto succ = InitLocalCapability();
-        if (succ) {
+        if (InitLocalCapability() || executors_ == nullptr) {
             return;
         }
         executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GetTask());
@@ -79,6 +99,7 @@ bool UpgradeManager::InitLocalCapability()
     auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     CapMetaData capMetaData;
     capMetaData.version = CapMetaData::CURRENT_VERSION;
+    capMetaData.deviceId = localDeviceId;
     auto dbKey = CapMetaRow::GetKeyFor(localDeviceId);
     bool status = MetaDataManager::GetInstance().SaveMeta({ dbKey.begin(), dbKey.end() }, capMetaData);
     if (status) {

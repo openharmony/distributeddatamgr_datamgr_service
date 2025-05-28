@@ -251,7 +251,7 @@ std::shared_ptr<ExtendHeaderHandle> ProcessCommunicatorImpl::GetExtendHeaderHand
     return {};
 }
 
-DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t totalLen, uint32_t &headLength)
+DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(DataHeadInfo dataHeadInfo, uint32_t &headLength)
 {
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");
@@ -262,16 +262,16 @@ DBStatus ProcessCommunicatorImpl::GetDataHeadInfo(const uint8_t *data, uint32_t 
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    auto ret = handler->ParseHeadDataLen(data, totalLen, headLength);
+    auto ret = handler->ParseHeadDataLen(dataHeadInfo.data, dataHeadInfo.totalLen, headLength, dataHeadInfo.device);
     if (!ret) {
-        ZLOGE("illegal head format, dataLen:%{public}u, headLength:%{public}u", totalLen, headLength);
+        ZLOGE("illegal head format, dataLen:%{public}u, headLength:%{public}u, device:%{public}s",
+            dataHeadInfo.totalLen, headLength, Anonymous::Change(dataHeadInfo.device).c_str());
         return DBStatus::INVALID_FORMAT;
     }
     return DBStatus::OK;
 }
 
-DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t totalLen, const std::string &label,
-    std::vector<UserInfo> &userInfos)
+DBStatus ProcessCommunicatorImpl::GetDataUserInfo(DataUserInfo dataUserInfo, std::vector<UserInfo> &userInfos)
 {
     if (routeHeadHandlerCreator_ == nullptr) {
         ZLOGE("header handler creator not registered");
@@ -282,9 +282,11 @@ DBStatus ProcessCommunicatorImpl::GetDataUserInfo(const uint8_t *data, uint32_t 
         ZLOGE("failed to get header handler");
         return DBStatus::DB_ERROR;
     }
-    auto ret = handler->ParseHeadDataUser(data, totalLen, label, userInfos);
+    auto ret = handler->ParseHeadDataUser(dataUserInfo.data, dataUserInfo.totalLen, dataUserInfo.label, userInfos);
     if (!ret) {
-        ZLOGD("illegal head format, dataLen:%{public}u, label:%{public}s", totalLen, Anonymous::Change(label).c_str());
+        ZLOGE("illegal head format, dataLen:%{public}u, label:%{public}s, device:%{public}s",
+            dataUserInfo.totalLen, Anonymous::Change(dataUserInfo.label).c_str(),
+            Anonymous::Change(dataUserInfo.device).c_str());
         return DBStatus::INVALID_FORMAT;
     }
     if (userInfos.empty()) {

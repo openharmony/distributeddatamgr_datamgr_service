@@ -39,6 +39,7 @@ public:
     virtual Status DeleteLocal(const std::string &key) = 0;
     virtual Status PutRuntime(const std::string &key, const Runtime &runtime) = 0;
     virtual Status GetRuntime(const std::string &key, Runtime &runtime) = 0;
+    virtual Status PutSummary(UnifiedKey &key, const Summary &summary) = 0;
     virtual bool Init() = 0;
     virtual void Close() = 0;
 

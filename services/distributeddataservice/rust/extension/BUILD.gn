@@ -23,7 +23,6 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "../../framework/include",
-    "${kv_store_common_path}",
   ]
 }
 
@@ -61,7 +60,7 @@ ohos_shared_library("opencloudextension") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
   ]
   subsystem_name = "distributeddatamgr"

@@ -239,7 +239,8 @@ HWTEST_F(RdbServiceImplTest, ResolveAutoLaunch006, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, false), true);
     RdbServiceImpl service;
     auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    auto ret = service.ObtainDistributedTableName(deviceId, TEST_STORE);
+    RdbSyncerParam param{ .bundleName_ = TEST_BUNDLE };
+    auto ret = service.ObtainDistributedTableName(param, deviceId, TEST_STORE);
     EXPECT_GT(ret.length(), 0);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), false), true);
 }
@@ -255,7 +256,8 @@ HWTEST_F(RdbServiceImplTest, ObtainDistributedTableName001, TestSize.Level0)
 {
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, false), true);
     RdbServiceImpl service;
-    auto ret = service.ObtainDistributedTableName("invalid_device_id", TEST_STORE);
+    RdbSyncerParam param;
+    auto ret = service.ObtainDistributedTableName(param, "invalid_device_id", TEST_STORE);
     EXPECT_EQ(ret.length(), 0);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), false), true);
 }

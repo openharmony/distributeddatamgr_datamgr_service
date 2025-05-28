@@ -19,6 +19,8 @@
 #include "store_cache.h"
 #include "udmf_service_stub.h"
 #include "kv_store_delegate_manager.h"
+#include "checker_manager.h"
+#include "udmf_notifier_proxy.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -47,6 +49,11 @@ public:
     int32_t ClearAsynProcessByKey(const std::string &businessUdKey) override;
     int32_t ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+    int32_t SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
+        std::string &key) override;
+    int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData) override;
+    int32_t GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
+        sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
 private:
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
@@ -61,7 +68,14 @@ private:
     void TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData);
     bool IsNeedTransferDeviceType(const QueryOption &query);
     bool CheckDragParams(UnifiedKey &key, const QueryOption &query);
-
+    int32_t CheckAddPrivilegePermission(UnifiedKey &key, std::string &processName, const QueryOption &query);
+    int32_t ProcessData(const QueryOption &query, std::vector<UnifiedData> &dataSet);
+    int32_t VerifyIntentionPermission(const QueryOption &query, UnifiedData &dataSet,
+        UnifiedKey &key, CheckerManager::CheckInfo &info);
+    bool IsFileMangerSa();
+    bool IsFileMangerIntention(const std::string &intention);
+    std::string FindIntentionMap(const Intention &queryintention);
+    bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
     class Factory {
     public:
         Factory();
@@ -76,6 +90,8 @@ private:
 
     std::mutex mutex_;
     std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
+    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_;
+    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_;
 };
 } // namespace UDMF
 } // namespace OHOS

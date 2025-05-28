@@ -153,9 +153,6 @@ ohos_unittest("ProcessCommunicatorImplTest") {
     "../src",
     "../../include/communicator",
     "../../include/utils",
-    "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include/dfx",
-    "${data_service_path}/framework/include/utils",
   ]
 
   external_deps = [
@@ -180,7 +177,6 @@ ohos_unittest("ProcessCommunicatorImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "../../dfx:distributeddata_dfx",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -190,9 +186,7 @@ ohos_unittest("SoftbusAdapterStandardTest") {
 
   sources = [
     "../src/app_pipe_handler.cpp",
-    "../src/app_pipe_handler.h",
     "../src/app_pipe_mgr.cpp",
-    "../src/app_pipe_mgr.h",
     "../src/ark_communication_provider.cpp",
     "../src/communication_provider.cpp",
     "../src/communication_provider_impl.cpp",
@@ -200,9 +194,7 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "../src/data_buffer.cpp",
     "../src/device_manager_adapter.cpp",
     "../src/process_communicator_impl.cpp",
-    "../src/softbus_adapter.h",
     "../src/softbus_client.cpp",
-    "../src/softbus_client.h",
     "unittest/softbus_adapter_standard_test.cpp",
   ]
 
@@ -223,7 +215,7 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
+    "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
@@ -235,7 +227,6 @@ ohos_unittest("SoftbusAdapterStandardTest") {
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "../../dfx:distributeddata_dfx",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

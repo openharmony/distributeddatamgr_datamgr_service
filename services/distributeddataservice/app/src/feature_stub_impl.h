@@ -32,6 +32,7 @@ public:
         MessageOption &option) override;
     int32_t OnInitialize(std::shared_ptr<ExecutorPool> executor);
     int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
+    int32_t OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName);
     int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index);
     int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
     int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index);

@@ -21,7 +21,6 @@
 #include <string>
 #include <map>
 #include "log_print.h"
-#include "reporter.h"
 #include "app_data_change_listener.h"
 #include "softbus_adapter.h"
 

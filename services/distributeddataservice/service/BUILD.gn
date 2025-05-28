@@ -35,14 +35,12 @@ config("module_public_config") {
     "${data_service_path}/adapter/include",
     "${data_service_path}/app/src",
     "${data_service_path}/framework/include",
-    "${kv_store_common_path}",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/kvdb/include",
-    "${kv_store_distributeddb_path}/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/interfaces/include/relational",
   ]
   cflags = [ "-Wno-c99-designator" ]
+}
+
+config("distributeddatasvc_link_config") {
+  ldflags = [ "-Wl,--lto-O0" ]
 }
 
 ohos_shared_library("distributeddatasvc") {
@@ -73,11 +71,13 @@ ohos_shared_library("distributeddatasvc") {
   ]
 
   configs = [ ":module_public_config" ]
+  configs += [ ":distributeddatasvc_link_config" ]
   public_configs = [ ":module_public_config" ]
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",

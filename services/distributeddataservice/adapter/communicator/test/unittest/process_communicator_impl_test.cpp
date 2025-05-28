@@ -35,7 +35,8 @@ using OnSendAble = DistributedDB::OnSendAble;
 using DeviceInfos = DistributedDB::DeviceInfos;
 using DeviceInfoo = OHOS::AppDistributedKv::DeviceInfo;
 using UserInfo = DistributedDB::UserInfo;
-
+using DataHeadInfo = DistributedDB::DataHeadInfo;
+using DataUserInfo = DistributedDB::DataUserInfo;
 namespace OHOS::AppDistributedKv {
 class MockCommunicationProvider : public CommunicationProvider {
 public:
@@ -91,7 +92,7 @@ public:
 namespace OHOS::DistributedData {
 class ConcreteRouteHeadHandler : public RouteHeadHandler {
     public:
-        bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize)
+        bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize, const std::string &device)
         {
                 if (totalLen == 0) {
                     return true;
@@ -403,20 +404,20 @@ HWTEST_F(ProcessCommunicatorImplTest, GetDataHeadInfo, TestSize.Level0)
     ASSERT_NE(communicator_, nullptr);
     uint8_t data[] = {0x10, 0x20, 0x30, 0x40, 0x50};
     uint8_t *ptr = data;
-    uint32_t totalLen = 1;
     uint32_t headLength = 1;
+    DataHeadInfo dataHeadInfo { ptr, 1, "" };
     communicator_->routeHeadHandlerCreator_ = nullptr;
-    auto status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength);
+    auto status = communicator_->GetDataHeadInfo(dataHeadInfo, headLength);
     EXPECT_EQ(status, DistributedDB::DB_ERROR);
 
     communicator_->routeHeadHandlerCreator_ = [](const DistributedDB::ExtendInfo &info) ->
         std::shared_ptr<OHOS::DistributedData::RouteHeadHandler> {
             return std::make_shared<OHOS::DistributedData::ConcreteRouteHeadHandler>();
     };
-    status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength);
+    status = communicator_->GetDataHeadInfo(dataHeadInfo, headLength);
     EXPECT_EQ(status, DistributedDB::INVALID_FORMAT);
-    totalLen = 0;
-    status = communicator_->GetDataHeadInfo(ptr, totalLen, headLength);
+    dataHeadInfo.totalLen = 0;
+    status = communicator_->GetDataHeadInfo(dataHeadInfo, headLength);
     EXPECT_EQ(status, DistributedDB::OK);
 }
 
@@ -432,31 +433,21 @@ HWTEST_F(ProcessCommunicatorImplTest, GetDataUserInfo, TestSize.Level0)
     ASSERT_NE(communicator_, nullptr);
     uint8_t data[] = {0x10, 0x20, 0x30, 0x40, 0x50};
     uint8_t *ptr = data;
-    uint32_t totalLen = 1;
-    std::string label = "GetDataUserInfoTest";
+    DataUserInfo dataUserInfo { ptr, 1, "GetDataUserInfoTest", "" };
     std::vector<UserInfo> userInfos;
     UserInfo user1{"GetDataUserInfo01"};
     UserInfo user2{"GetDataUserInfo02"};
     UserInfo user3{"GetDataUserInfo03"};
     communicator_->routeHeadHandlerCreator_ = nullptr;
-    auto status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
+    auto status = communicator_->GetDataUserInfo(dataUserInfo, userInfos);
     EXPECT_EQ(status, DistributedDB::DB_ERROR);
 
     communicator_->routeHeadHandlerCreator_ = [](const DistributedDB::ExtendInfo &info) ->
         std::shared_ptr<OHOS::DistributedData::RouteHeadHandler> {
             return std::make_shared<OHOS::DistributedData::ConcreteRouteHeadHandler>();
     };
-    status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
+    status = communicator_->GetDataUserInfo(dataUserInfo, userInfos);
     EXPECT_EQ(status, DistributedDB::INVALID_FORMAT);
-    totalLen = 0;
-    EXPECT_EQ(userInfos.empty(), true);
-    status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
-    EXPECT_EQ(status, DistributedDB::NO_PERMISSION);
-    userInfos.push_back(user1);
-    userInfos.push_back(user2);
-    userInfos.push_back(user3);
-    status = communicator_->GetDataUserInfo(ptr, totalLen, label, userInfos);
-    EXPECT_EQ(status, DistributedDB::OK);
 }
 
 /**

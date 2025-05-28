@@ -71,9 +71,11 @@ public:
     explicit RouteHeadHandlerImpl(const ExtendInfo &info);
     DBStatus GetHeadDataSize(uint32_t &headSize) override;
     DBStatus FillHeadData(uint8_t *data, uint32_t headSize, uint32_t totalLen) override;
-    bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize) override;
+    bool ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize,
+        const std::string &device) override;
     bool ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
         std::vector<UserInfo> &userInfos) override;
+    std::string GetTargetUserId() override;
 
 private:
     void Init();

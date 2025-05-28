@@ -22,8 +22,11 @@ group("unittest") {
     "../account/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
-    "../screenlock/test:unittest",
   ]
+
+  if (defined(global_parts_info) && defined(global_parts_info.theme_screenlock_mgr)) {
+    deps += [ "${data_service_path}/adapter/screenlock/test:unittest" ]
+  }
 
   if (datamgr_service_cloud) {
     deps += [ "../network/test:unittest" ]

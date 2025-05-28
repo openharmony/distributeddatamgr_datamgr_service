@@ -128,7 +128,7 @@ HWTEST_F(SerializableTest, GetNormalVal, TestSize.Level2)
     normal.value = -56;
     normal.isClear = true;
     normal.cols = {"adfasdfas"};
-    auto jstr = to_string(normal.Marshall());
+    auto jstr = Serializable::JSONWrapper::to_string(normal.Marshall());
     Normal normal1;
     normal1.Unmarshall(jstr);
     ASSERT_TRUE(normal == normal1) << normal1.name;
@@ -161,7 +161,7 @@ HWTEST_F(SerializableTest, GetMutilVal, TestSize.Level2)
     NormalEx normalEx;
     normalEx.normals = {Normal()};
     normalEx.name = "normalEx";
-    auto jstr = to_string(normalEx.Marshall());
+    auto jstr = Serializable::JSONWrapper::to_string(normalEx.Marshall());
     NormalEx normal1;
     normal1.Unmarshall(jstr);
     ASSERT_TRUE(normalEx == normal1) << normal1.name;
@@ -296,7 +296,7 @@ HWTEST_F(SerializableTest, SetPointerValue, TestSize.Level2)
     in.value = new int64_t(-100);
     in.status = new uint32_t(110);
     in.isClear = new bool(true);
-    auto json = to_string(in.Marshall());
+    auto json = Serializable::JSONWrapper::to_string(in.Marshall());
     Test out;
     out.Unmarshall(json);
     ASSERT_TRUE(in == out) << in.count;
