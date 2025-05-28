@@ -246,6 +246,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
