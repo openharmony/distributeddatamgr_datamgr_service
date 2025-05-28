@@ -475,6 +475,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "kv_store:datamgr_common",
   ]
 
   deps = [
