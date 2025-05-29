@@ -23,10 +23,6 @@ config("module_config") {
     "include",
     "include/utils",
     "${data_service_path}/adapter/include",
-    "${kv_store_path}/interfaces/innerkits/distributeddata/include",
-    "${kv_store_common_path}",
-    "${kv_store_distributeddb_path}/interfaces/include/",
-    "${kv_store_distributeddb_path}/include/",
   ]
 }
 
@@ -34,7 +30,6 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
-    "${kv_store_common_path}",
   ]
 }
 
@@ -141,6 +136,8 @@ ohos_shared_library("distributeddatasvcfwk") {
     "hilog:libhilog",
     "cJSON:cjson",
     "openssl:libcrypto_shared",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
   ]
   subsystem_name = "distributeddatamgr"
 
