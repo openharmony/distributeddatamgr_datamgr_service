@@ -314,4 +314,21 @@ HWTEST_F(SerializableTest, IsJson, TestSize.Level1)
     ASSERT_FALSE(Serializable::IsJson(str));
     ASSERT_TRUE(Serializable::IsJson(jsonStr));
 }
+
+/**
+* @tc.name: ToString
+* @tc.desc: string.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, ToString, TestSize.Level1)
+{
+    Serializable::JSONWrapper wrapper;
+    wrapper["name"] = "Alice";
+    wrapper["age"] = 30;
+    wrapper["height"] = 1.75;
+    wrapper["is_student"] = false;
+    std::string result = wrapper;
+    EXPECT_EQ(result, "{\"name\":\"Alice\",\"age\":30,\"height\":1.75,\"is_student\":false}");
+    EXPECT_TRUE(wrapper["age"].is_number_float());
+}
 } // namespace OHOS::Test

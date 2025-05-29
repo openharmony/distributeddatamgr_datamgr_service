@@ -90,6 +90,12 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/service/common/xcollie.cpp",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   configs = [ ":module_private_config" ]
 
   external_deps = [
