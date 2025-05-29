@@ -282,7 +282,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
     
     bool flag = false;
     bool udmfStore = IsUdmfStore();
-    auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
+    auto peerCap = UpgradeManager::GetInstance().GetCapability(device, flag);
     if (!flag) {
         ZLOGI("get peer cap failed");
         return false;
@@ -519,7 +519,7 @@ bool RouteHeadHandlerImpl::UnPackAccountId(uint8_t **data, uint32_t leftSize)
 bool RouteHeadHandlerImpl::IsUdmfStore()
 {
     if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
-        if (storeId_ != Bootstrap::GetInstance().GetMetaDBName() && storeId_ != "") {
+        if (storeId_ != Bootstrap::GetInstance().GetMetaDBName() && storeId_ != "distributedObject_") {
             return true;
         }
     }

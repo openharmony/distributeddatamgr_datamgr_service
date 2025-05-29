@@ -181,7 +181,9 @@ std::string DirectoryManager::GetArea(const StoreMetaData &metaData) const
 std::string DirectoryManager::GetUserId(const StoreMetaData &metaData) const
 {
     auto type = AccessTokenKit::GetTokenTypeFlag(metaData.tokenId);
-    if ((type == TOKEN_NATIVE || type == TOKEN_SHELL) && (metaData.user == StoreMetaData::ROOT_USER)) {
+    if ((type == TOKEN_NATIVE || type == TOKEN_SHELL) && (metaData.user == StoreMetaData::ROOT_USER) &&
+        (metaData.storeType < StoreMetaData::StoreType::STORE_UDMF_BEGIN ||
+        metaData.storeType >= StoreMetaData::StoreType::STORE_UDMF_END)) {
         return "public";
     }
     return metaData.user;
@@ -288,6 +290,7 @@ bool DirectoryManager::CreateDirectory(const std::string &path) const
 
         if (access(subPath.c_str(), F_OK) != 0) {
             if (mkdir(subPath.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) != 0) {
+                ZLOGE("mkdir error:%{public}d", errno);
                 return false;
             }
         }

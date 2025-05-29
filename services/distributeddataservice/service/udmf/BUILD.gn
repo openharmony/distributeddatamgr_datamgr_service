@@ -21,6 +21,7 @@ config("module_public_config") {
     "${data_service_path}/framework/include/dfx",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/account",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
