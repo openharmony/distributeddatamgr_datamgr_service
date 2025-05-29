@@ -173,8 +173,8 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         return;
     }
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
@@ -242,8 +242,8 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
     }
     syncTask_.Erase(dvInfo.uuid);
     ZLOGI("[offline] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
     auto task = [this, dvInfo]() {
         observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
@@ -264,8 +264,8 @@ void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
         return;
     }
     ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d osType:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
 }
 
 void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
@@ -277,8 +277,8 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
     }
     readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
-        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), dvInfo.deviceName.c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     auto task = [this, dvInfo]() {
         observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
             if (value != nullptr) {
@@ -499,7 +499,8 @@ DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
         return {};
     }
     ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d, osType:%{public}d",
-        KvStoreUtils::ToBeAnonymous(uuid).c_str(), info.deviceName, info.deviceTypeId, deviceExtraInfo.OS_TYPE);
+        KvStoreUtils::ToBeAnonymous(uuid).c_str(), KvStoreUtils::ToBeAnonymous(info.deviceName).c_str(),
+        info.deviceTypeId, deviceExtraInfo.OS_TYPE);
     return { std::move(uuid), std::move(udid), std::move(networkId), std::string(info.deviceName), info.deviceTypeId,
         deviceExtraInfo.OS_TYPE, static_cast<int32_t>(info.authForm) };
 }
