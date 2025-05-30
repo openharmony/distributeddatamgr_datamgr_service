@@ -210,6 +210,46 @@ HWTEST_F(FeatureStubImplTest, OnAppExit002, TestSize.Level1)
 }
 
 /**
+* @tc.name: OnFeatureExit001
+* @tc.desc: OnFeatureExit function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(FeatureStubImplTest, OnFeatureExit001, TestSize.Level1)
+{
+    std::shared_ptr<FeatureSystem::Feature> feature = nullptr;
+    std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
+    pid_t uid = 0;
+    pid_t pid = 0;
+    uint32_t tokenId = 0;
+    std::string bundleName = "com.ohos.test";
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
+    auto result = featureStubImpl->OnFeatureExit(uid, pid, tokenId, bundleName);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+* @tc.name: OnFeatureExit001
+* @tc.desc: OnFeatureExit function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(FeatureStubImplTest, OnFeatureExit002, TestSize.Level1)
+{
+    std::shared_ptr<FeatureSystem::Feature> feature = std::make_shared<MockFeature>();
+    std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
+    pid_t uid = 0;
+    pid_t pid = 0;
+    uint32_t tokenId = 0;
+    std::string bundleName = "com.ohos.test";
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
+    auto result = featureStubImpl->OnFeatureExit(uid, pid, tokenId, bundleName);
+    EXPECT_EQ(result, E_OK);
+}
+
+/**
 * @tc.name: OnAppUninstall001
 * @tc.desc: OnAppUninstall function test.
 * @tc.type: FUNC
