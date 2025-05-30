@@ -17,10 +17,7 @@ config("module_public_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "${data_service_path}/framework/include",
-    "${data_service_path}/framework/include/dfx",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/account",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
@@ -28,10 +25,6 @@ config("module_public_config") {
     "${data_service_path}/service/udmf/utd",
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/bootstrap/include",
-    "${udmf_path}/framework/common",
-    "${udmf_path}/interfaces/innerkits/common",
-    "${udmf_path}/interfaces/innerkits/data",
-    "${data_service_path}/adapter/account/src",
   ]
 }
 
