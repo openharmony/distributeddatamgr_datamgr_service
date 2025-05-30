@@ -262,7 +262,7 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
     }
 
     std::vector<uint8_t> encryptedKey(cipherText.data, cipherText.data + cipherText.size);
-    (void)memset_s(cipherBuf, sizeof(cipherBuf), 0, sizeof(cipherBuf));
+    std::fill(cipherBuf, cipherBuf + sizeof(cipherBuf), 0);
     return encryptedKey;
 }
 
@@ -363,7 +363,7 @@ bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &
     }
 
     key.assign(plainKeyBlob.data, plainKeyBlob.data + plainKeyBlob.size);
-    (void)memset_s(plainBuf, sizeof(plainBuf), 0, sizeof(plainBuf));
+    std::fill(plainBuf, plainBuf + sizeof(plainBuf), 0);
     return true;
 }
 
