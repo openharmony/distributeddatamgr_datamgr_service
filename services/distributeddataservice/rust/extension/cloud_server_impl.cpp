@@ -337,12 +337,10 @@ int32_t CloudServerImpl::Subscribe(int32_t userId, const std::map<std::string, s
         for (auto &item : db) {
             auto data = ExtensionUtil::Convert(item);
             if (data.first == nullptr) {
-                OhCloudExtVectorFree(database);
                 return DBErr::E_ERROR;
             }
             auto status = OhCloudExtVectorPush(database, data.first, data.second);
             if (status != ERRNO_SUCCESS) {
-                OhCloudExtVectorFree(database);
                 return DBErr::E_ERROR;
             }
             databaseLen += 1;
@@ -350,7 +348,6 @@ int32_t CloudServerImpl::Subscribe(int32_t userId, const std::map<std::string, s
         auto status = OhCloudExtHashMapInsert(pDatabases.get(),
             const_cast<void *>(reinterpret_cast<const void *>(bundle.c_str())), bundle.size(), database, databaseLen);
         if (status != ERRNO_SUCCESS) {
-            OhCloudExtVectorFree(database);
             return DBErr::E_ERROR;
         }
     }
@@ -557,14 +554,13 @@ int32_t CloudServerImpl::Unsubscribe(int32_t userId, const std::map<std::string,
             }
             uint32_t subId = static_cast<uint32_t>(std::atoi(it->second.c_str()));
             if (OhCloudExtVectorPush(relation, &subId, sizeof(uint32_t)) != ERRNO_SUCCESS) {
-                OhCloudExtVectorFree(relation);
                 return DBErr::E_ERROR;
             }
             relationLen += 1;
         }
-        if (OhCloudExtHashMapInsert(pSubs.get(), const_cast<void *>(reinterpret_cast<const void *>(bundle.c_str())),
-            bundle.size(), relation, relationLen) != ERRNO_SUCCESS) {
-            OhCloudExtVectorFree(relation);
+        auto status = OhCloudExtHashMapInsert(pSubs.get(),
+            const_cast<void *>(reinterpret_cast<const void *>(bundle.c_str())), bundle.size(), relation, relationLen);
+        if (status != ERRNO_SUCCESS) {
             return DBErr::E_ERROR;
         }
         bundles.emplace_back(bundle);
@@ -572,6 +568,7 @@ int32_t CloudServerImpl::Unsubscribe(int32_t userId, const std::map<std::string,
     if (DoUnsubscribe(pServer, pSubs, bundles, sub) != DBErr::E_OK) {
         return DBErr::E_ERROR;
     }
+    DBMetaMgr::GetInstance().SaveMeta(sub.GetKey(), sub, true);
     return DBErr::E_OK;
 }
 
@@ -610,7 +607,7 @@ int32_t CloudServerImpl::DoUnsubscribe(std::shared_ptr<OhCloudExtCloudSync> serv
             DBMetaMgr::GetInstance().DelMeta(sub.GetRelationKey(bundles[i]), true);
         }
     }
-    return DBMetaMgr::GetInstance().SaveMeta(sub.GetKey(), sub, true) ? DBErr::E_OK : DBErr::E_ERROR;
+    return DBErr::E_OK;
 }
 
 std::shared_ptr<DBAssetLoader> CloudServerImpl::ConnectAssetLoader(uint32_t tokenId, const DBMeta &dbMeta)
