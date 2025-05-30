@@ -57,6 +57,7 @@ public:
     int32_t CloudSync(const std::string &bundleName, const std::string &storeId, const Option &option,
         const AsyncDetail &async) override;
     int32_t InitNotifier(const std::string &bundleName, sptr<IRemoteObject> notifier) override;
+    int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string &storeId,
         const DistributedRdb::PredicatesMemo &predicates, const std::vector<std::string> &columns,
@@ -164,7 +165,9 @@ private:
     static std::pair<int32_t, CloudInfo> GetCloudInfoFromServer(int32_t userId);
     static int32_t UpdateCloudInfoFromServer(int32_t user);
     static std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
+    static Details HandleGenDetails(const DistributedData::GenDetails &details);
 
+    void OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result);
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(
@@ -204,10 +207,8 @@ private:
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
-    static Details HandleGenDetails(const DistributedData::GenDetails &details);
     QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
                                          const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
-    void OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

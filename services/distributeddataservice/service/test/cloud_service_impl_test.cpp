@@ -42,6 +42,7 @@
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "model/component_config.h"
+#include "nativetoken_kit.h"
 #include "network/network_delegate.h"
 #include "network_delegate_mock.h"
 #include "rdb_query.h"
@@ -65,6 +66,7 @@ static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
+static OHOS::DistributedKv::AppId appId = { "ohos.test.cloud_service_test" };
 class CloudServiceImplTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -314,6 +316,36 @@ HWTEST_F(CloudServiceImplTest, DoSubscribe, TestSize.Level0)
     int32_t user = 100;
     auto status = cloudServiceImpl_->DoSubscribe(user, CloudSyncScene::ENABLE_CLOUD);
     EXPECT_TRUE(status);
+}
+
+/**
+* @tc.name: OnAppExitTest001
+* @tc.desc: OnAppExit test
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(CloudServiceImplTest, OnAppExitTest001, TestSize.Level0)
+{
+    ZLOGI("OnAppExitTest001 start");
+    pid_t uid = 1;
+    pid_t pid = 2;
+    const char **perms = new const char *[2];
+    perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
+    perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 2,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint32_t tokenId = GetAccessTokenId(&infoInstance);
+    auto status = cloudServiceImpl_->OnAppExit(uid, pid, tokenId, appId);
+    ZLOGI("OnAppExitTest001 status = :%{public}d", status);
+    ASSERT_EQ(status, Status::SUCCESS);
 }
 
 /**

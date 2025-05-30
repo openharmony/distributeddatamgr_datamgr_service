@@ -134,6 +134,7 @@ ohos_unittest("CloudServiceImplTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "hicollie:libhicollie",
