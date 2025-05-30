@@ -362,7 +362,7 @@ group("unittest") {
     ":FeatureTest",
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
-    "ScreenManagerTest",
+    ":ScreenManagerTest",
     ":SerializableTest",
     ":ServiceMetaDataTest",
     ":ServiceUtilsTest",
