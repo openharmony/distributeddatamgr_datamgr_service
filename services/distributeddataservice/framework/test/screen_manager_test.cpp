@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2024 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -16,9 +16,6 @@
 #define LOG_TAG "ScreenManagerTest"
 #include <gtest/gtest.h>
 
-
-#include "nlohmann/json.hpp"
-#include "utils/crypto.h"
 #include "screen/screen_manager.h"
 
 using namespace testing::ext;
