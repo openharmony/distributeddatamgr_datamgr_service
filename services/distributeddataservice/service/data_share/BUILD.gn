@@ -33,6 +33,9 @@ config("module_public_config") {
     "../crypto/include",
     "../permission/include",
   ]
+  if (is_emulator) {
+    defines = [ "IS_EMULATOR" ]
+  }
 }
 group("build_module") {
   deps = [ ":data_share_service" ]
