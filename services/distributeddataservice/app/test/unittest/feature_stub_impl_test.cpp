@@ -184,7 +184,6 @@ HWTEST_F(FeatureStubImplTest, OnAppExit001, TestSize.Level1)
     pid_t pid = 0;
     uint32_t tokenId = 0;
     std::string bundleName = "com.ohos.test";
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
     auto result = featureStubImpl->OnAppExit(uid, pid, tokenId, bundleName);
     EXPECT_EQ(result, -1);
 }
@@ -204,7 +203,6 @@ HWTEST_F(FeatureStubImplTest, OnAppExit002, TestSize.Level1)
     pid_t pid = 0;
     uint32_t tokenId = 0;
     std::string bundleName = "com.ohos.test";
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
     auto result = featureStubImpl->OnAppExit(uid, pid, tokenId, bundleName);
     EXPECT_EQ(result, E_OK);
 }
@@ -214,7 +212,6 @@ HWTEST_F(FeatureStubImplTest, OnAppExit002, TestSize.Level1)
 * @tc.desc: OnFeatureExit function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
 */
 HWTEST_F(FeatureStubImplTest, OnFeatureExit001, TestSize.Level1)
 {
@@ -224,17 +221,15 @@ HWTEST_F(FeatureStubImplTest, OnFeatureExit001, TestSize.Level1)
     pid_t pid = 0;
     uint32_t tokenId = 0;
     std::string bundleName = "com.ohos.test";
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
     auto result = featureStubImpl->OnFeatureExit(uid, pid, tokenId, bundleName);
     EXPECT_EQ(result, -1);
 }
 
 /**
-* @tc.name: OnFeatureExit001
+* @tc.name: OnFeatureExit002
 * @tc.desc: OnFeatureExit function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
 */
 HWTEST_F(FeatureStubImplTest, OnFeatureExit002, TestSize.Level1)
 {
@@ -244,7 +239,6 @@ HWTEST_F(FeatureStubImplTest, OnFeatureExit002, TestSize.Level1)
     pid_t pid = 0;
     uint32_t tokenId = 0;
     std::string bundleName = "com.ohos.test";
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
     auto result = featureStubImpl->OnFeatureExit(uid, pid, tokenId, bundleName);
     EXPECT_EQ(result, E_OK);
 }
