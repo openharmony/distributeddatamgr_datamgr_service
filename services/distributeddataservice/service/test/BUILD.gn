@@ -883,6 +883,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/app/src",
     "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/preprocess",
@@ -1158,6 +1159,7 @@ ohos_unittest("UdmfServiceImplTest") {
   ]
 
   include_dirs = [
+    ${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
@@ -1199,6 +1201,7 @@ ohos_unittest("UdmfServiceStubTest") {
   sources = [ "udmf_service_stub_test.cpp" ]
 
   include_dirs = [
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
@@ -1244,6 +1247,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/framework/feature/feature_system.cpp",
     "${data_service_path}/framework/metadata/appid_meta_data.cpp",
     "${data_service_path}/framework/metadata/auto_launch_meta_data.cpp",
+    "${data_service_path}/framework/metadata/capability_meta_data.cpp",
     "${data_service_path}/framework/metadata/capability_range.cpp",
     "${data_service_path}/framework/metadata/meta_data_manager.cpp",
     "${data_service_path}/framework/metadata/secret_key_meta_data.cpp",
@@ -1272,6 +1276,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
   ]
 
   include_dirs = [
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
@@ -1360,6 +1365,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
   ]
 
   include_dirs = [
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/service/udmf/store",

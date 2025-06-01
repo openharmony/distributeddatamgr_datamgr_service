@@ -21,6 +21,7 @@ ohos_fuzztest("UdmfServiceFuzzTest") {
 
   include_dirs = [
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
@@ -45,6 +46,7 @@ ohos_fuzztest("UdmfServiceFuzzTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
     "${data_service_path}/service/udmf:udmf_server",
   ]
 
