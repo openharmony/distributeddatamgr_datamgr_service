@@ -39,6 +39,7 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
+constexpr static const char *UDMF_DRAG_STORE = "drag";
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
     auto handler = std::make_shared<RouteHeadHandlerImpl>(info);
@@ -72,6 +73,11 @@ void RouteHeadHandlerImpl::Init()
         if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
             userId_ = DEFAULT_USERID;
         }
+    }
+    if (IsUdmfStore()) {
+        int foregroundUserId = 0;
+        AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+        userId_ = std::to_string(foregroundUserId);
     }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
         static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_,
@@ -518,10 +524,8 @@ bool RouteHeadHandlerImpl::UnPackAccountId(uint8_t **data, uint32_t leftSize)
 
 bool RouteHeadHandlerImpl::IsUdmfStore()
 {
-    if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
-        if (storeId_ != Bootstrap::GetInstance().GetMetaDBName() && storeId_ != "distributedObject_") {
-            return true;
-        }
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == UDMF_DRAG_STORE) {
+        return true;
     }
     return false;
 }

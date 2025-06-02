@@ -597,7 +597,7 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
     int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
     StoreMetaData meta = StoreMetaData(std::to_string(userId), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
-    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {})) {
         ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
     }
     if (store->Sync(devices, callback) != E_OK) {

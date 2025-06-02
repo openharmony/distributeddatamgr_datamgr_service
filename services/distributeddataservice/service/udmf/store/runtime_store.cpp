@@ -464,7 +464,6 @@ bool RuntimeStore::BuildMetaDataParam(DistributedData::StoreMetaData &metaData)
     }
 
     uint32_t token = IPCSkeleton::GetSelfTokenID();
-    // uint32_t token = IPCSkeleton::GetCallingTokenID();
     const std::string userId = std::to_string(DistributedData::AccountDelegate::GetInstance()->GetUserByToken(token));
     metaData.appType = "harmony";
     metaData.deviceId = localDeviceId;
@@ -502,7 +501,6 @@ bool RuntimeStore::SaveMetaData()
     }
     saveMeta.user = std::to_string(foregroundUserId);
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta); // or use constant value
-    // saveMeta.dataDir.append("/").append(std::to_string(foregroundUserId));// delete
     if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
         ZLOGE("Create directory error, dataDir: %{public}s.", saveMeta.dataDir.c_str()); // log or not?
         return false;

@@ -432,6 +432,44 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test4, TestSize.Level1)
     status = sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
     EXPECT_EQ(status, DistributedDB::DB_ERROR);
 }
+
+/**
+  * @tc.name: PackAndUnPack05
+  * @tc.desc: test get udmf store
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: illybyy
+  */
+HWTEST_F(SessionManagerTest, PackAndUnPack05, TestSize.Level1)
+{
+    const DistributedDB::ExtendInfo info = {
+        .appId = "distributeddata", .storeId = "drag", .userId = "100", .dstTarget = PEER_DEVICE_ID
+    };
+    auto sendHandler = RouteHeadHandlerImpl::Create(info);
+    ASSERT_NE(sendHandler, nullptr);
+
+
+    CapMetaData capMetaData;
+    capMetaData.version = CapMetaData::INVALID_VERSION;
+
+    auto peerCapMetaKey = CapMetaRow::GetKeyFor(PEER_DEVICE_ID);
+    MetaDataManager::GetInstance().SaveMeta({ peerCapMetaKey.begin(), peerCapMetaKey.end() }, capMetaData);
+
+
+    uint32_t routeHeadSize = 0;
+    sendHandler->GetHeadDataSize(routeHeadSize);
+    ASSERT_NE(routeHeadSize, 0);
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(routeHeadSize);
+    sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
+
+    std::vector<DistributedDB::UserInfo> users;
+    auto recvHandler = RouteHeadHandlerImpl::Create({});
+    ASSERT_NE(recvHandler, nullptr);
+    uint32_t parseSize = 0;
+    std::string device = "from_device";
+    recvHandler->ParseHeadDataLen(data.get(), routeHeadSize, parseSize, device);
+    EXPECT_EQ(routeHeadSize, parseSize);
+}
 /**
   * @tc.name: ParseHeadDataUserTest001
   * @tc.desc: test parse null data.
