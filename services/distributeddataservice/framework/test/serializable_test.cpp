@@ -329,6 +329,8 @@ HWTEST_F(SerializableTest, ToString, TestSize.Level1)
     wrapper["is_student"] = false;
     std::string result = wrapper;
     EXPECT_EQ(result, "{\"name\":\"Alice\",\"age\":30,\"height\":1.75,\"is_student\":false}");
+    EXPECT_TRUE(wrapper["name"].is_string());
     EXPECT_TRUE(wrapper["age"].is_number_float());
+    EXPECT_TRUE(wrapper["is_student"].is_boolean());
 }
 } // namespace OHOS::Test

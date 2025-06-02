@@ -90,12 +90,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/service/common/xcollie.cpp",
   ]
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
@@ -252,7 +246,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
-    "kv_store:kvdb_inner_lite",
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
