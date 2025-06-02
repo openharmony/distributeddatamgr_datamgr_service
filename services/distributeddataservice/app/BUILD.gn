@@ -148,7 +148,6 @@ ohos_shared_library("distributeddataservice") {
     "ipc:ipc_core",
     "cJSON:cjson",
     "kv_store:datamgr_common",
-    "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "memmgr:memmgrclient",
