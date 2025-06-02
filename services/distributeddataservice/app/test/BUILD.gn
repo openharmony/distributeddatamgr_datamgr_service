@@ -19,6 +19,8 @@ module_output_path = "datamgr_service/datamgr_service/distributeddataservice"
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
+    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/src",
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include",
@@ -112,7 +114,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
-    "kv_store:kvdb_inner_lite",
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -171,7 +172,6 @@ ohos_unittest("SessionManagerTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
-    "kv_store:kvdb_inner_lite",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
