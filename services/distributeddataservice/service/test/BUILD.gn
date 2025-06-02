@@ -1159,7 +1159,7 @@ ohos_unittest("UdmfServiceImplTest") {
   ]
 
   include_dirs = [
-    ${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",

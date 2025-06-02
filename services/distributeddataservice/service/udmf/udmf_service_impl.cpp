@@ -47,6 +47,7 @@ namespace OHOS {
 namespace UDMF {
 using namespace Security::AccessToken;
 using namespace OHOS::DistributedHardware;
+using namespace OHOS::DistributedData;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
 using Reporter = OHOS::DistributedDataDfx::Reporter;
@@ -594,8 +595,9 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     };
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
-    StoreMetaData meta = StoreMetaData("0", DistributedData::Bootstrap::GetInstance().GetProcessLabel(), key.intention);
-    if (IsNeedMetaSync(meta, devices) && !DistributedData::MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+    int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
+    StoreMetaData meta = StoreMetaData(std::to_string(userId), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
         ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
     }
     if (store->Sync(devices, callback) != E_OK) {
@@ -824,7 +826,7 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
     for (const auto &storeMeta : metaData) {
         if (storeMeta.storeType < StoreMetaData::StoreType::STORE_UDMF_BEGIN ||
             storeMeta.storeType > StoreMetaData::StoreType::STORE_UDMF_END ||
-            storeMeta.appId != DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
+            storeMeta.appId != Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }
         auto identifierTag = DistributedDB::KvStoreDelegateManager::GetKvStoreIdentifier("", storeMeta.appId,
@@ -834,11 +836,10 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         }
         auto store = StoreCache::GetInstance().GetStore(storeMeta.storeId);
         if (store == nullptr) {
-            ZLOGE("GetStore fail, storeId:%{public}s", DistributedData::Anonymous::Change(storeMeta.storeId).c_str());
+            ZLOGE("GetStore fail, storeId:%{public}s", Anonymous::Change(storeMeta.storeId).c_str());
             continue;
         }
-        ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s",
-            DistributedData::Anonymous::Change(storeMeta.storeId).c_str(),
+        ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s", Anonymous::Change(storeMeta.storeId).c_str(),
             storeMeta.appId.c_str(), storeMeta.user.c_str());
         return E_OK;
     }
