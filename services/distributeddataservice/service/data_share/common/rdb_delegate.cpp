@@ -97,16 +97,32 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
     return std::make_pair(E_OK, config);
 }
 
-RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
-    bool registerFunction, const std::string &extUri, const std::string &backup)
-    : tokenId_(meta.tokenId), bundleName_(meta.bundleName), storeName_(meta.storeId),
-    haMode_(meta.haMode), extUri_(extUri), backup_(backup), user_(meta.user)
+RdbDelegate::RdbDelegate()
 {
+}
+
+bool RdbDelegate::Init(const DistributedData::StoreMetaData &meta, int version,
+    bool registerFunction, const std::string &extUri, const std::string &backup)
+{
+    if (isInited_) {
+        return true;
+    }
+    std::lock_guard<std::mutex> lock(initMutex_);
+    if (isInited_) {
+        return true;
+    }
+    tokenId_ = meta.tokenId;
+    bundleName_ = meta.bundleName;
+    storeName_ = meta.storeId;
+    haMode_ = meta.haMode;
+    extUri_ = extUri;
+    backup_ = backup;
+    user_ = meta.user;
     auto [err, config] = GetConfig(meta, registerFunction);
     if (err != E_OK) {
         ZLOGW("Get rdbConfig failed, errCode is %{public}d, dir is %{public}s", err,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
-        return;
+        return false;
     }
     DefaultOpenCallback callback;
     TimeoutReport timeoutReport({meta.bundleName, "", meta.storeId, __FUNCTION__, 0});
@@ -117,8 +133,12 @@ RdbDelegate::RdbDelegate(const DistributedData::StoreMetaData &meta, int version
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
             DistributedData::Anonymous::Change(meta.dataDir).c_str());
         RdbDelegate::TryAndSend(errCode_);
+        return false;
     }
+    isInited_ = true;
+    return true;
 }
+
 RdbDelegate::~RdbDelegate()
 {
     ZLOGI("Destruct. BundleName: %{public}s. StoreName: %{public}s. user: %{public}s", bundleName_.c_str(),
